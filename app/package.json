@@ -1,7 +1,18 @@
 {
   "name": "app",
+  "description": "MaterialsMine Web App",
   "version": "0.1.0",
   "private": true,
+  "contributors": [
+    {
+      "name": "Fateye, Tolulomo J.",
+      "email": "tolulomofateye@gmail.com"
+    },
+    {
+      "name": "Wallace, Anya S.",
+      "email": "awallace@caltech.edu"
+    }
+  ],
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
