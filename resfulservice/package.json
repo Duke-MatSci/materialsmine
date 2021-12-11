@@ -2,7 +2,7 @@
     "name": "materialsmine",
     "displayName": "Materialsmine Restful Service",
     "version": "1.0.0",
-    "main": "service.js",
+    "main": "src/server.js",
     "author": "Fateye Tolulomo J.",
     "contributors": [
         ""
@@ -22,7 +22,9 @@
         "swagger-ui-express": "^4.2.0"
     },
     "scripts": {
-        
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint src",
+        "lint:test": "npm-run-all -s lint test"
     },
     "repository": {
         "type": "git",
@@ -32,6 +34,13 @@
         "npm": ">=5.6.x"
     },
     "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^5.6.0",
+        "@typescript-eslint/parser": "^5.6.0",
+        "eslint": "^7.32.0",
+        "eslint-config-standard": "^16.0.3",
+        "eslint-plugin-import": "^2.25.3",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^5.2.0",
         "nodemon": "^2.0.15"
     }
 }
