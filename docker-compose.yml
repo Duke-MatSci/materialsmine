@@ -1,0 +1,25 @@
+version: '3'
+services:
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./resfulservice
+    ports:
+      - '3000:3000'
+    volumes:
+      - /app/node_modules
+      - ./server:/app
+  client:
+    depends_on:
+      - api
+    stdin_open: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./app
+    ports:
+      - '4000:8080'
+    volumes:
+      - /app/node_modules
+      - ./app:/app
