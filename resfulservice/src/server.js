@@ -4,7 +4,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 
-
 const app = express();
 
 const fileStorage = multer.diskStorage({
@@ -20,7 +19,7 @@ const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === 'image/png' ||
     file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image/jpeg' 
+    file.mimetype === 'image/jpeg'
   ) {
     cb(null, true);
   } else {
@@ -55,7 +54,7 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: message, data: data });
 });
 
-app.listen(process.env.PORT || 3000)
+app.listen(process.env.PORT || 3000);
 
 // mongoose
 //   .connect(MONGODB_URI)
