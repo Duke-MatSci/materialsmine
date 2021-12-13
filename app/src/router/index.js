@@ -1,11 +1,10 @@
-import { defineAsyncComponent } from 'vue';
+import { defineAsyncComponent } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
+import Store from "../store";
 
 import Home from "../pages/Home.vue";
 
-const AboutPage = defineAsyncComponent(() =>
-  import('../pages/About.vue')
-);
+const AboutPage = defineAsyncComponent(() => import("../pages/About.vue"));
 
 // route level code-splitting
 // this generates a separate chunk (about.[hash].js) for this route
@@ -18,9 +17,9 @@ const routes = [
   {
     path: "/about",
     component: AboutPage,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true },
   },
-  { path: '/:notFound(.*)', component: Home } //TODO: Not found component
+  { path: "/:notFound(.*)", component: Home }, //TODO: Not found component
 ];
 
 const router = createRouter({
@@ -28,11 +27,11 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(function(to, _, next) {
-  if (to.meta.requiresAuth && !store.getters.isAuthenticated) {
-    next('/'); //TODO: Develop auth component
-  } else if (to.meta.requiresUnauth && store.getters.isAuthenticated) {
-    next('/');
+router.beforeEach(function (to, _, next) {
+  if (to.meta.requiresAuth && !Store.getters.isAuthenticated) {
+    next("/"); //TODO: Develop auth component
+  } else if (to.meta.requiresUnauth && Store.getters.isAuthenticated) {
+    next("/");
   } else {
     next();
   }

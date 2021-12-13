@@ -1,0 +1,35 @@
+{
+    "name": "materialsmine",
+    "displayName": "Materialsmine Platform Manager",
+    "version": "1.0.0",
+    "author": "Fateye Tolulomo J.",
+    "contributors": [
+        ""
+    ],
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Duke-MatSci/materialsmine"
+    },
+    "engines": {
+        "npm": ">=5.6.x"
+    },
+    "devDependencies": {
+        "husky": "^7.0.4"
+    },
+    "materialsmine": {
+        "app-desc": {
+            "appId": "@APPID@",
+            "name": "Materialsmine Platform Manager",
+            "version": "@APP_VER",
+            "sha": "@APP_SHA@",
+            "branch": "@APP_BRANCH@"
+        }
+    },
+    "scripts": {
+        "prepare": "husky install",
+        "lint:frontend": "(cd app && npm run lint:test)",
+        "lint:server": "(cd resfulservice && npm run lint:test)",
+        "lint": "npm-run-all -s lint:frontend lint:server"
+    }
+}
