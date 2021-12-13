@@ -1,0 +1,60 @@
+@mixin clearfix {
+    &::after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+@mixin absCenter {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+@mixin chartDisplayAdjust($i, $num) {
+    @if $i > $num {
+        visibility: hidden;
+        display: none;
+        opacity: 0;
+    }
+}
+
+
+
+@mixin respond($breakpoint) {
+    @if $breakpoint == phone {
+        @media only screen and (max-width: 40.5em) { @content };    //600px
+    }
+    @if $breakpoint == tab-port {
+        @media only screen and (max-width: 56.25em) { @content };     //900px
+    }
+    @if $breakpoint == tab-land {
+        @media only screen and (max-width: 75em) { @content };    //1200px
+    }
+    @if $breakpoint == laptop {
+        @media only screen and (max-width: 90em) { @content };    //1440px
+    }
+    @if $breakpoint == big-desktop-chart-adjust {
+        @media only screen and (min-width: 112.5em) and (min-resolution: 250dpi) { @content };    //1800
+    }
+    @if $breakpoint == big-desktop {
+        @media only screen and (min-width: 112.5em) { @content };    //1800
+    }
+}
+
+
+@supports (-webkit-hyphens:none){
+  .safari_only {
+    bottom: 1.5rem !important;
+  }
+} 
+
+/* @media screen and (min-color-index:0) and(-webkit-min-device-pixel-ratio:0){ 
+    @media screen {
+        _:-webkit-full-screen, .safari_only {
+            bottom: 1.5rem !important;
+        }
+    }
+} */

@@ -1,0 +1,61 @@
+.header {
+    position: fixed;
+    background-color: $primary;
+    z-index: 11;
+    width: 100%;
+    transition: background-color .4s ease-out;
+    border-bottom: .1rem solid $primary-white;
+
+    @include respond(tab-port){
+        padding: 0.12rem;
+    }
+
+    @include respond(phone){
+        border-bottom: .01rem solid $primary-white;
+    }
+
+    &-logo {
+        transition: all 1.2s ease-out;
+        width: 27rem;
+        display: inline-block;
+        margin: .5rem 0;
+        cursor: pointer;
+
+        @include respond(tab-land){
+            width: 21rem;
+        }
+
+        @include respond(tab-port){
+            width: 16rem;
+        }
+
+        @include respond(phone) {
+            width: 14rem;
+            padding: .4rem 0 0 0;
+            margin: .1rem 0 0.2rem 2rem;
+        }
+    }
+
+    &_nav {
+        position: absolute;
+        right: 6.1875rem;
+        opacity: 1;
+        transition: all 1.2s ease-out;
+        top: 0.8rem;
+
+        @include respond(tab-land){
+            top: 0.1rem;
+            right: 2.1875rem;
+        }
+
+        @include respond(tab-port){
+            right: 3.1875rem;
+        }
+
+        @include respond(phone){
+            visibility: hidden;
+            display: none;
+            opacity: 0;
+        }
+    }
+}
