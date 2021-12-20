@@ -1,29 +1,30 @@
-import { defineAsyncComponent } from "vue";
-import { createRouter, createWebHistory } from "vue-router";
-import Store from "../store";
+import Vue from 'vue';
+import VueRouter from 'vue-router';
 
-import Home from "../pages/Home.vue";
+import Home from '@/pages/Home.vue';
+Vue.use(VueRouter);
 
-const AboutPage = defineAsyncComponent(() => import("../pages/About.vue"));
-
-// route level code-splitting
-// this generates a separate chunk (about.[hash].js) for this route
-// which is lazy-loaded when the route is visited.
 const routes = [
   {
-    path: "/",
-    component: Home,
+    path: '/',
+    name: 'Home',
+    component: Home
   },
   {
-    path: "/about",
-    component: AboutPage,
+    path: '/about',
+    name: 'About',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
     meta: { requiresAuth: true },
   },
-  { path: "/:notFound(.*)", component: Home }, //TODO: Not found component
-];
+  { path: '/:notFound(.*)', component: Home }, //TODO: Not found component
+]
 
-const router = createRouter({
-  history: createWebHistory(),
+const router = new VueRouter({
+  mode: 'history',
+  base: process.env.BASE_URL,
   routes,
 });
 
