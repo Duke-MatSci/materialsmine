@@ -9,17 +9,17 @@
 
 <script>
 // @ is an alias to /src
-import HelloWorld from "@/components/HelloWorld.vue";
+import HelloWorld from '@/components/HelloWorld.vue'
 
 export default {
-  name: "Home",
+  name: 'Home',
   data: () => ({
-    boolean: true,
+    boolean: true
   }),
   components: {
-    HelloWorld,
-  },
-};
+    HelloWorld
+  }
+}
 </script>
 
 <style lang="scss" scoped>

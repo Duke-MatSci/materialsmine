@@ -1,8 +1,8 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-
-import Home from '@/pages/Home.vue';
-Vue.use(VueRouter);
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import store from '@/store/index.js'
+import Home from '@/pages/Home.vue'
+Vue.use(VueRouter)
 
 const routes = [
   {
@@ -17,25 +17,25 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true }
   },
-  { path: '/:notFound(.*)', component: Home }, //TODO: Not found component
+  { path: '/:notFound(.*)', component: Home } // TODO: Not found component
 ]
 
 const router = new VueRouter({
   mode: 'history',
   base: process.env.BASE_URL,
-  routes,
-});
+  routes
+})
 
 router.beforeEach(function (to, _, next) {
-  if (to.meta.requiresAuth && !Store.getters.isAuthenticated) {
-    next("/"); //TODO: Develop auth component
-  } else if (to.meta.requiresUnauth && Store.getters.isAuthenticated) {
-    next("/");
+  if (to.meta.requiresAuth && !store.getters.isAuthenticated) {
+    next('/') // TODO: Develop auth component
+  } else if (to.meta.requiresUnauth && store.getters.isAuthenticated) {
+    next('/')
   } else {
-    next();
+    next()
   }
-});
+})
 
-export default router;
+export default router
