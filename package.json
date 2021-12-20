@@ -15,7 +15,8 @@
         "npm": ">=5.6.x"
     },
     "devDependencies": {
-        "husky": "^7.0.4"
+        "husky": "^7.0.4",
+        "npm-run-all": "^4.1.5"
     },
     "materialsmine": {
         "app-desc": {
