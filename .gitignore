@@ -2,6 +2,8 @@
 .github/
 node_modules/
 package-lock.json
+**/package-lock.json
+**/node_modules
 
 # dotenv environment variables file
 .env
@@ -12,3 +14,6 @@ package-lock.json
 
 # vuepress build output
 .vuepress/dist
+
+# Mac
+.DS_Store
