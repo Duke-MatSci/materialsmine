@@ -22,7 +22,7 @@ const routes = [
   {
     path: '/how',
     name: 'HowTo',
-    component: () => import(/* webpackChunkName: "about" */ '@/pages/howTo/HowTo.vue'),
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/howto/HowTo.vue'),
     meta: { requiresAuth: false }
   },
   { path: '/:notFound(.*)', component: Home } // TODO: Not found component
