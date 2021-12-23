@@ -5,7 +5,7 @@ import getters from './getters.js'
 export default {
   state () {
     return {
-      appHeaderInfo: {icon: '', name: 'MaterialsMine'},
+      appHeaderInfo: { icon: '', name: 'MaterialsMine' }
     }
   },
   mutations,

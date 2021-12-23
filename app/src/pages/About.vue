@@ -8,7 +8,7 @@
 export default {
   name: 'About',
   created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'groups', name: 'Our Team'})
-  },
+    this.$store.commit('setAppHeaderInfo', { icon: 'groups', name: 'Our Team' })
+  }
 }
 </script>

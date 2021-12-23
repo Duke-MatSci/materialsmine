@@ -94,6 +94,7 @@
                 display: block;
                 border-bottom: 1px solid rgba($primary-grey, .2);
                 transition: background-color .5s ease-out;
+                text-decoration: none;
                 & > a {
                     color: $primary-light;
                     font-size: 1.4rem;
@@ -112,7 +113,11 @@
                         color: $primary-white;
                     }
                 }
+                &:last-child {
+                    border: none;
+                }
             }
+            
 
             &-lists-removebdr {
                 border: none;

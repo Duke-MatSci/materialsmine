@@ -1,6 +1,5 @@
 export default {
-    setAppHeaderInfo (state, info) {
-        state.appHeaderInfo = info
-      },
+  setAppHeaderInfo (state, info) {
+    state.appHeaderInfo = info
   }
-  
+}

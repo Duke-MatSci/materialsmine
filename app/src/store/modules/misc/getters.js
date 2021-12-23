@@ -1,5 +1,5 @@
 export default {
-    appHeaderInfo (state) {
-      return state.appHeaderInfo
-    },
+  appHeaderInfo (state) {
+    return state.appHeaderInfo
   }
+}
