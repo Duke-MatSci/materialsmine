@@ -1,13 +1,14 @@
 <template>
     <div>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
         <header class="header">
             <!-- <analytics/> -->
             <div class="wrapper">
-                <div class="header-logo" @click="links('/nm#/')">
+                <router-link to="/" class="header-logo">
                     <div class="">
                         <img src="../assets/img/materialsmine_logo.png" alt="MaterialsMine Logo">
                     </div>
-                </div>
+                </router-link>
                 <div class="nav_mobile-icon">
                     <div class="nav_mobile-icon-menu"></div>
                 </div>
@@ -34,9 +35,13 @@
                 </div>
             </div>
         </header>
-        <div class="section_banner section_banner__misc">
+        <div :class="['section_banner', info.name=='MaterialsMine' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
-                <div class="section_banner__text-content">
+                <div v-if="info.name=='MaterialsMine'" class="section_banner__text-content">
+                    <span class="u_adjust-banner-text">Welcome to MaterialsMine!</span>
+                    <p class="u_adjust-banner-text_subtitle">{{info.subtitle}}</p>
+                </div>
+                <div v-else class="section_banner__text-content">
                     <i class="material-icons">{{info.icon}}</i>
                     <span class="u_adjust-banner-text">{{ info.name }}</span>
                 </div>

@@ -94,8 +94,10 @@
         }
     }
 
-    &_teams {
+    &_pages {
         margin: 0 0 4rem 0;
+        padding: 2rem 0;
+        background-color: $primary-white;
 
         @include respond(laptop) {
             margin: 0 0 2.5rem 0;
@@ -147,8 +149,4 @@
         }
     }
 
-    &_teams {
-        padding: 2rem 0;
-        background-color: $primary-white;
-    }
 }

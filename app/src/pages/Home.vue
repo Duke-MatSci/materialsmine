@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div class="home section_pages">
     <img alt="Vue logo" src="../assets/logo.png" />
     <md-switch v-model="boolean">Accent <small>(Default)</small></md-switch>
     <md-switch v-model="boolean" class="md-primary">Primary</md-switch>
@@ -18,6 +18,9 @@ export default {
   }),
   components: {
     HelloWorld
+  },
+  created () {
+    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'MaterialsMine', subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'})
   }
 }
 </script>
