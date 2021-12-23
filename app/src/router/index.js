@@ -19,6 +19,12 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/how',
+    name: 'HowTo',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/howTo/HowTo.vue'),
+    meta: { requiresAuth: false }
+  },
   { path: '/:notFound(.*)', component: Home } // TODO: Not found component
 ]
 

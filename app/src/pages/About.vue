@@ -6,6 +6,9 @@
 
 <script>
 export default {
-  name: 'About'
+  name: 'About',
+  created () {
+    this.$store.commit('setAppHeaderInfo', { icon: 'groups', name: 'Our Team'})
+  },
 }
 </script>
