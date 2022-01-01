@@ -1,0 +1,148 @@
+.wrapper {
+    padding-left: 1.1875rem;
+    padding-right: 1.1875rem;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+
+    @include respond(tab-port){
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    &--medium {
+        max-width: 80%;
+    }
+
+    .wrapper {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+.u {
+    &--bg {
+        background-color: $primary !important;
+        color: $primary-white !important
+    }
+
+    &--alt-bg {
+        background-color: $tertiary !important;
+        color: $primary !important
+    }
+    &-clear {
+        @include clearfix;
+    }
+
+    &_divider {
+        height: .1rem;
+        width: 50%;
+        margin: 0 auto;
+        background-color: rgba($primary-grey, .3);
+    }
+
+    &--inline {
+        display: inline-block;
+    }
+    &--default-size {
+        font-size: $default-size !important;
+
+        @include respond(tab-land){
+            font-size: $medium-mid-size !important;
+        }
+    }
+    &_adjust-banner-text {
+        position: relative;
+        top: -36px;
+        font-size: 5rem;
+
+        @include respond(tab-land){
+            top: -40px;
+            font-size: 4.5rem;
+        }
+        @include respond(phone){
+            top: -20px;
+            font-size: 3rem;
+        }
+    }
+
+    &_margin-top {
+        &-med {
+            margin-top: 3.1rem !important;
+        }
+    }
+
+    &_margin-right {
+        &-small {
+            margin-right: 1.5rem;
+            @include respond(tab-land) {
+                margin-right: .5rem;
+            }
+
+            @include respond(tab-port) {
+                margin-right: .2rem;
+            }
+        }
+    }
+
+    &_margin-bottom {
+        &-big {
+            margin-bottom: 7rem;
+            @include respond(phone){
+                margin-bottom: 0.4rem;
+            }
+        }
+
+        &-small {
+            margin-bottom: 1rem !important;
+        }
+    }
+
+    &_toggle-display-off {
+        @include respond(phone){
+            display: none;
+        }
+    }
+
+    &_pointer {
+        cursor: pointer;
+    }
+
+    &_centralize {
+        &_text {
+            text-align: center;
+        }
+        &_other {
+            margin: 0 auto;
+        }
+    }
+
+    &_searchimage {
+        &_form-group {
+            margin-bottom: 0 !important;
+            width: 55% !important;
+            @include respond(phone){
+                width: 80%;
+            }
+        }
+        &_input {
+            padding: .2rem !important;
+        }
+    }
+
+    &_myprofile {
+        position: relative;
+        margin: .4rem;
+
+        &--container{
+            position: absolute;
+            left: 50%;
+            right: 50%;
+            transform: translate(-50%, -50%);
+        }
+        &--image {
+            height: 12rem;
+        }
+    }
+
+}
