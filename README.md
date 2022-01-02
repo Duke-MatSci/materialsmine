@@ -32,6 +32,6 @@ npm install
 | :house: Root Directory | | |
 | -  | :-: | - |
 | :open_file_folder: app | Frontend Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/app) |
+| :open_file_folder: nginx | A proxy server | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/router) |
 | :open_file_folder: restfulservice | Backend Server Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/resfulservice) |
-| :open_file_folder: router | A proxy server | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/router) |
 | :open_file_folder: whyis | Whyis Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/whyis) |
