@@ -12,7 +12,7 @@ npm install
 docker-compose build .
 
 # To start all services after the first or initial build
-docker-compose up
+docker-compose up -d
 
 # To shutdown/terminate all services
 docker-compose down
