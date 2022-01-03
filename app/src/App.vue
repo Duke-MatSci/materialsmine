@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <page-header :info="info"></page-header>
+    <page-header id="header" :info="info"></page-header>
     <!-- <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link>
@@ -27,10 +27,15 @@ export default {
 <style lang="scss">
 @import '@/assets/css/style.scss';
 #app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: $primary-white;
+  color: $primary;
+}
+
+#header {
+  text-align: left;
 }
 
 #nav {

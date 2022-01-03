@@ -8,11 +8,11 @@
         z-index: 10;
 
         @include respond(tab-land){
-            height: 24rem;
+            height: 26rem;
         }
 
         @include respond(tab-port) {
-            height: 19rem;
+            height: 22rem;
             background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-medium.png);
         }
 
@@ -38,7 +38,7 @@
             }
 
             & > span {
-                font-weight: 300;
+                font-weight: 400;
             }
 
             & > i {

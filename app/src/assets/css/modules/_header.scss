@@ -5,10 +5,7 @@
     width: 100%;
     transition: background-color .4s ease-out;
     border-bottom: .1rem solid $primary-white;
-
-    @include respond(tab-port){
-        padding: 0.12rem;
-    }
+    padding: .5rem;
 
     @include respond(phone){
         border-bottom: .01rem solid $primary-white;

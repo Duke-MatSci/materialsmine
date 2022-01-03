@@ -15,8 +15,8 @@
                 <div class="header_nav">
                     <div class="nav nav_menu u--inline">
                         <ul>
-                            <li><a href="/">NanoMine</a></li>
-                            <li><a href="/">MetaMine</a></li>
+                            <li><a href="/nm">NanoMine</a></li>
+                            <li><a href="/mm">MetaMine</a></li>
                         </ul>
                     </div>
                     <div class="u--inline">
@@ -35,10 +35,10 @@
                 </div>
             </div>
         </header>
-        <div :class="['section_banner', info.name=='MaterialsMine' ? '' : 'section_banner__misc']">
+        <div :class="['section_banner', info.type=='home' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
-                <div v-if="info.name=='MaterialsMine'" class="section_banner__text-content">
-                    <span class="u_adjust-banner-text">Welcome to MaterialsMine!</span>
+                <div v-if="info.type=='home'" class="section_banner__text-content">
+                    <span class="u_adjust-banner-text">Welcome to {{info.name}}!</span>
                     <p class="u_adjust-banner-text_subtitle">{{info.subtitle}}</p>
                 </div>
                 <div v-else class="section_banner__text-content">
@@ -73,8 +73,8 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/nm#/XMLCONV" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
-                                    <span class="nav_menu--siblings-lists" @click="opnLinks()"><a @click="opnLinks()">Direct Dataset Entry Form</a></span>
+                                    <router-link to="/nm/xmlconv" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
+                                    <router-link to="/mm/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -82,17 +82,16 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Tools</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/nm#/tools" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
-                                    <router-link to="/nm#/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
-                                    <router-link to="/nm#/ChemProps" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
-                                    <router-link to="/nm#/CurationPlot" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
-                                    <router-link to="/nm#/pixelunit" class="nav_menu--siblings-lists"><a>Geometry Explorer</a></router-link>
+                                    <router-link to="/nm/modtools" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
+                                    <router-link to="/nm/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
+                                    <router-link to="/nm/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
+                                    <router-link to="/nm/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
                                 </div>
                             </div>
                         </li>
                         <li class="u_margin-right-small" v-if="$store.getters.isAuthenticated">
                             <div class="nav_menu--container">
-                                <a class="u--default-size" href="/nm#/mypage">My Portal</a>
+                                <a class="u--default-size" href="/mypage">My Portal</a>
                             </div>
                         </li>
                     </ul>

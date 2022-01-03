@@ -27,18 +27,19 @@
                 & > a,
                 & > div > a {
                     text-decoration: none;
-                    font-weight: 400;
-                    color: $primary-white;
+                    font-weight: 500;
+                    color: $primary-white !important;
                     padding: 0.1rem 0.2rem;
-                    font-size: 1.05rem;
+                    font-size: 1.4rem;
 
                     &:hover{
-                        color: $tertiary;
+                        color: $tertiary !important;
                         border-bottom: .2rem solid #d7df71;
+                        text-decoration: none;
                     }
     
                     @include respond(tab-port){
-                        font-size: .8rem;
+                        font-size: 1.2rem;
                         padding: 0.3rem 0.6rem;
                     }
     
@@ -96,10 +97,9 @@
                 transition: background-color .5s ease-out;
                 text-decoration: none;
                 & > a {
-                    color: $primary-light;
+                    color: $primary-light !important;
                     font-size: 1.4rem;
                     padding: 0 0.6rem;
-                    text-decoration: none;
 
                     &:hover{
                         color: $primary-white;
@@ -110,7 +110,8 @@
                     background-color: $primary;
                     cursor: pointer;
                     & > a {
-                        color: $primary-white;
+                        color: $primary-white !important;
+                        text-decoration: none !important;
                     }
                 }
                 &:last-child {
