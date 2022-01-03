@@ -9,10 +9,10 @@ Make sure to install [docker](https://docs.docker.com/get-docker/) on your machi
 npm install
 
 # 2. Build all services 
-docker-compose build .
+docker-compose build
 
 # To start all services after the first or initial build
-docker-compose up -d
+docker-compose start -d
 
 # To shutdown/terminate all services
 docker-compose down
