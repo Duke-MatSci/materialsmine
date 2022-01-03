@@ -12,11 +12,12 @@ export default {
     boolean: true
   }),
   created () {
-    this.$store.commit('setAppHeaderInfo', { 
-      icon: '', 
-      type: 'home', 
-      name: 'NanoMine', 
-      subtitle: 'An open source repository for nanocomposite data' })
+    this.$store.commit('setAppHeaderInfo', {
+      icon: '',
+      type: 'home',
+      name: 'NanoMine',
+      subtitle: 'An open source repository for nanocomposite data'
+    })
   }
 }
 </script>

@@ -12,11 +12,12 @@ export default {
     boolean: true
   }),
   created () {
-    this.$store.commit('setAppHeaderInfo', { 
-      icon: '', 
-      type: 'home', 
-      name: 'MetaMine', 
-      subtitle: 'An open source repository for mechanical metamaterials data' })
+    this.$store.commit('setAppHeaderInfo', {
+      icon: '',
+      type: 'home',
+      name: 'MetaMine',
+      subtitle: 'An open source repository for mechanical metamaterials data'
+    })
   }
 }
 </script>

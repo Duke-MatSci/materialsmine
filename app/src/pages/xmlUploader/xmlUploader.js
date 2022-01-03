@@ -1,6 +1,6 @@
 export default {
   name: 'XmlUploader',
   created () {
-    this.$store.commit('setAppHeaderInfo', {icon: 'cloud_upload', name: 'Data Uploader'})
+    this.$store.commit('setAppHeaderInfo', { icon: 'cloud_upload', name: 'Data Uploader' })
   }
 }

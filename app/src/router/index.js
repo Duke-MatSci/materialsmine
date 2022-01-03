@@ -14,7 +14,7 @@ const routes = [
     path: '/nm',
     name: 'HomeNM',
     component: () => import(/* webpackChunkName: "homenm" */ '@/pages/HomeNM/Home.vue'),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false }
   },
   {
     path: '/mm',

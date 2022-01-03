@@ -5,11 +5,12 @@ import getters from './getters.js'
 export default {
   state () {
     return {
-      appHeaderInfo: { 
-        icon: '', 
+      appHeaderInfo: {
+        icon: '',
         type: 'home',
-        name: 'MaterialsMine', 
-        subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)' }
+        name: 'MaterialsMine',
+        subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
+      }
     }
   },
   mutations,
