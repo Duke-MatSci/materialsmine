@@ -27,12 +27,10 @@ export default {
 <style lang="scss">
 @import '@/assets/css/style.scss';
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  // text-align: center;
-  color: #2c3e50;
-  // color: $primary-white
+  text-align: center;
+  color: $primary-white;
 }
 
 #nav {
@@ -40,9 +38,12 @@ export default {
 
   a {
     font-weight: bold;
+    // color: #2c3e50;
+    color: $primary-grey;
 
     &.router-link-exact-active {
-      color: #42b983;
+      // color: #42b983;
+      color: $tertiary;
     }
   }
 }
