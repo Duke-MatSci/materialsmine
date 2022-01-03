@@ -14,8 +14,14 @@ npm install
 # 2. Build all services 
 docker-compose build
 
+# Note:
+# The build might stall at first try. If this occurs, repeat the previous step.
+
 # To start all services after the first or initial build
-docker-compose start -d
+docker-compose up
+
+# To start all services after the first or initial build in detachable mode
+docker-compose up -d
 
 # To shutdown/terminate all services
 docker-compose down
