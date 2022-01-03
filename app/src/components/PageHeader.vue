@@ -73,7 +73,7 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/nm/xmlconv" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
+                                    <router-link to="/nm/xml-uploader" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
                                     <router-link to="/mm/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
                                 </div>
                             </div>
