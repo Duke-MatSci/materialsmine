@@ -7,6 +7,8 @@ package-lock.json
 # dotenv environment variables file
 .env
 .env.test
+restful/misc/envVarFile
+restful/misc/secrets.json
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -16,3 +18,5 @@ package-lock.json
 
 # Mac
 .DS_Store
+
+
