@@ -40,7 +40,7 @@ export default {
   props: {
     msg: {
       type: String,
-      default: "Testing"
+      default: 'Testing'
     }
   },
   data: () => {

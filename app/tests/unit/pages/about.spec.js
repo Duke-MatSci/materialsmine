@@ -13,7 +13,7 @@ describe('Header.vue', () => {
     const msg = 'James Bond'
     const wrapper = mount(HelloWorld)
     const existingMovies = wrapper.vm.movies
-    wrapper.setData({movies: [...existingMovies, msg]})
+    wrapper.setData({ movies: [...existingMovies, msg] })
     expect(wrapper.vm.movies.length).toEqual(3)
   })
   it('check h1 inside helloworld.vue', () => {
