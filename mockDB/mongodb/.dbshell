@@ -1,5 +1,0 @@
-var rootUser = 'MONGODEVOWNER';
-var rootPassword = 'nM4455BXWy';
-var admin = db.getSiblingDB('admin');
-var user = '';
-var passwd = '>LQeenKey845$';
