@@ -5,7 +5,7 @@ exports.testUser = async (req, res, next) => {
     const foundUser = await User.find().limit(1);
     res.status(200).json({
       message: 'Fetched user successfully.',
-      foundUser,
+      foundUser
     });
   } catch (err) {
     if (!err.statusCode) {

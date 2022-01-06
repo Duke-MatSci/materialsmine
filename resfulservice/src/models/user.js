@@ -3,28 +3,28 @@ const Schema = mongoose.Schema;
 
 const usersSchema = new Schema(
   {
-    alias: {          // random unless overridden by user - not used for attribution, only display
-      type: String,
+    alias: {
+      type: String
     },
     userid: {
-      type: String,
+      type: String
     },
-    givenName: {      // first name
-      type: String,
+    givenName: {
+      type: String
     },
-    surName: {        // last name
-      type: String,
+    surName: {
+      type: String
     },
-    displayName: {    // full name
-      type: String,
+    displayName: {
+      type: String
     },
     email: {
-      type: String,
+      type: String
     },
-    apiAccess: {      // api token | refresh token | accessToken:expiration
+    apiAccess: {
       type: [String]
     }
   }
-)
+);
 
-module.exports = mongoose.model('User', usersSchema)
+module.exports = mongoose.model('User', usersSchema);
