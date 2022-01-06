@@ -1,7 +1,9 @@
+import store from '@/store/index.js'
+
 export default {
   name: 'HowTo',
   data: () => ({
-    videos: []
+    videos: store.getters.videos
   }),
   methods: {
     showBox () {
