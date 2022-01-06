@@ -20,4 +20,7 @@ package-lock.json
 .DS_Store
 **/**/.DS_Store
 
+# Local DBs
+**/**/db
+
 
