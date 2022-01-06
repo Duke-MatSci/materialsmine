@@ -1,7 +1,7 @@
 version: '3'
 services:
   mongo:
-    image: 'mongo:latest'
+    image: 'mongo:4.4'
     restart: always
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
