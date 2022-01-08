@@ -1,0 +1,24 @@
+name: CI
+on:
+  pull_request:
+    branches: [develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use NodeJS
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.x"
+      - name: Install app & restful service dependencies
+        id: app-install
+        run: |
+          cd app
+          npm ci
+          cd ../restfulservice
+          npm ci
+      - run: npm ci
+      - run: npm run test
+        env:
+          CI: true
