@@ -8,9 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Use NodeJS
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "16.x"
+          node-version: "16.3.0"
       - name: Install app & restful service dependencies
         id: app-install
         run: |
@@ -19,6 +19,6 @@ jobs:
           cd ../restfulservice
           npm ci
       - run: npm ci
-      - run: npm run lint
+      - run: npm run test
         env:
           CI: true
