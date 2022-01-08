@@ -68,6 +68,12 @@ jobs:
           context: ./app
           push: true
           tags: dukematsci/dev-app:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Build Restful Service
         id: restuful-docker_build
         uses: docker/build-push-action@v2
