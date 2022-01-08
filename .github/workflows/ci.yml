@@ -5,6 +5,12 @@ on:
   push:
     branches: [develop]
 jobs:
+  env:
+    - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
+    - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
+    - MONGO_DEVS=${MONGO_TEST}
+    - MONGO_DEV_PWD=${MONGO_TEST_PWD}
+    - MM_DB=${MM_DB}
   test:
     runs-on: ubuntu-latest
     steps:
@@ -91,12 +97,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: github.event_name == 'push'
-    env:
-      - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
-      - MONGO_DEVS=${MONGO_TEST}
-      - MONGO_DEV_PWD=${MONGO_TEST_PWD}
-      - MM_DB=${MM_DB}
     steps:
       - name: Get Init
         run: |
