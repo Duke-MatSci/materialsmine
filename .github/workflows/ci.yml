@@ -82,7 +82,9 @@ jobs:
       #     rm -rf /tmp/.buildx-cache
       #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Echo directory
-        run: pwd
+        run: |
+          pwd
+          ls -a
       - name: Build Restful Service
         id: restuful-docker_build
         uses: docker/build-push-action@v2
