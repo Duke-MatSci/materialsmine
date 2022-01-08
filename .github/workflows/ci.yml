@@ -117,7 +117,7 @@ jobs:
       api:
         image: dukematsci/dev-restful:latest
         env:
-          - DB_USERNAME=${MONGO_DEVS}
-          - DB_PASSWORD=${MONGO_DEV_PWD}
+          DB_USERNAME: ${MONGO_DEVS}
+          DB_PASSWORD: ${MONGO_DEV_PWD}
       client:
         image: dukematsci/dev-app:latest
