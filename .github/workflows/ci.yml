@@ -4,13 +4,13 @@ on:
     branches: [develop]
   push:
     branches: [develop]
+env:
+  - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
+  - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
+  - MONGO_DEVS=${MONGO_TEST}
+  - MONGO_DEV_PWD=${MONGO_TEST_PWD}
+  - MM_DB=${MM_DB}
 jobs:
-  env:
-    - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
-    - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
-    - MONGO_DEVS=${MONGO_TEST}
-    - MONGO_DEV_PWD=${MONGO_TEST_PWD}
-    - MM_DB=${MM_DB}
   test:
     runs-on: ubuntu-latest
     steps:
