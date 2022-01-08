@@ -19,6 +19,6 @@ jobs:
           cd ../restfulservice
           npm ci
       - run: npm ci
-      - run: npm run test
+      - run: npm run lint
         env:
           CI: true
