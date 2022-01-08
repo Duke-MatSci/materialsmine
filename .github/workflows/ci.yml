@@ -19,7 +19,7 @@ jobs:
         run: |
           cd resfulservice
           npm install
-      - run: npm ci
+      - run: npm install
       - run: npm run test
         env:
           CI: true
