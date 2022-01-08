@@ -7,18 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Use NodeJS
-        uses: actions/setup-node@v2
-        with:
-          node-version: "16.3.0"
-      - name: Install app & restful service dependencies
-        id: app-install
-        run: |
-          cd app
-          npm ci
-          cd ../restfulservice
-          npm ci
-      - run: npm ci
-      - run: npm run test
-        env:
-          CI: true
+      # - name: Use NodeJS
+      #   uses: actions/setup-node@v2
+      #   with:
+      #     node-version: "16.3.0"
+      # - name: Install app & restful service dependencies
+      #   id: app-install
+      #   run: |
+      #     cd app
+      #     npm ci
+      #     cd ../restfulservice
+      #     npm ci
+      # - run: npm ci
+      # - run: npm run test
+      #   env:
+      #     CI: true
