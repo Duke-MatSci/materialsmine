@@ -8,17 +8,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Use NodeJS
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: "16.x"
-      - name: Install app & restful service dependencies
-        id: app-install
+          node-version: "16.3.0"
+      - name: Install frontend dependencies
         run: |
           cd app
-          npm ci
-          cd ../restfulservice
-          npm ci
-      - run: npm ci
+          npm install
+      - name: Install restful service dependencies
+        run: |
+          cd resfulservice
+          npm install
+      - run: npm install
       - run: npm run test
         env:
           CI: true
