@@ -4,12 +4,6 @@ on:
     branches: [develop]
   push:
     branches: [develop]
-env:
-  - MONGO_INITDB_ROOT_USERNAME=${secrets.MM_MONGO_USER}
-  - MONGO_INITDB_ROOT_PASSWORD=${secrets.MM_MONGO_PWD}
-  - MONGO_DEVS=${secrets.MONGO_TEST}
-  - MONGO_DEV_PWD=${secrets.MONGO_TEST_PWD}
-  - MM_DB=${secrets.MM_DB}
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -95,6 +89,12 @@ jobs:
           echo ::set-output name=content::$(cat mongo-init.sh) 
   testBuild:
     runs-on: ubuntu-latest
+    env:
+      MONGO_INITDB_ROOT_USERNAME: ${{secrets.MM_MONGO_USER}}
+      MONGO_INITDB_ROOT_PASSWORD: ${{secrets.MM_MONGO_PWD}}
+      MONGO_DEVS: ${{secrets.MONGO_TEST}}
+      MONGO_DEV_PWD: ${{secrets.MONGO_TEST_PWD}}
+      MM_DB: ${{secrets.MM_DB}}
     needs: [build]
     if: github.event_name == 'push'
     steps:
@@ -112,19 +112,12 @@ jobs:
           - ./mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh                      
       proxy:
         image: dukematsci/dev-proxy:latest
-        depends_on:
-          - api
-          - client
         ports:
           - '80:80'
       api:
         image: dukematsci/dev-restful:latest
-        depends_on:
-          - mongo
         env:
           - DB_USERNAME=${MONGO_DEVS}
           - DB_PASSWORD=${MONGO_DEV_PWD}
       client:
         image: dukematsci/dev-app:latest
-        depends_on:
-          - api
