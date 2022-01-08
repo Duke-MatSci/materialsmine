@@ -1,5 +1,4 @@
-![](https://github.com/Duke-MatSci/materialsmine/workflows/devCI/badge.svg?branch=develop&event=push)
-![](https://github.com/Duke-MatSci/materialsmine/workflows/devCI/badge.svg?branch=main&event=push)
+![](https://github.com/Duke-MatSci/materialsmine/workflows/CI/badge.svg?branch=develop&event=push)
 
 # materialsmine
 MaterialsMine App
