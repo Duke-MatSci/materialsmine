@@ -62,21 +62,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build Frontend
-        id: docker_build
+        id: app-docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./app
           push: true
           tags: dukematsci/dev-app:latest
       - name: Build Restful Service
-        id: docker_build
+        id: restuful-docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./restfulservice
           push: true
           tags: dukematsci/dev-restful:latest
       - name: Build Proxy
-        id: docker_build
+        id: proxy-docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./nginx
