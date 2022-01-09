@@ -19,7 +19,7 @@ on:
         required: true
 
 jobs:
-  Build-${ inputs.id }:
+  Build:
     name: ${{ inputs.id }}
     runs-on: ubuntu-latest
     # if: github.event_name == 'push'
