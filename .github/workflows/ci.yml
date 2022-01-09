@@ -48,108 +48,43 @@ jobs:
       - run: npm run test
         env:
           CI: true
-  BuildApp:
-    runs-on: ubuntu-latest
+  BuildFrontend:
     needs: [test]
-    # if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${ DCK_USER }
-          password: ${ DCK_PWD }
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-single-buildx
-      - name: Build Frontend
-        id: app-docker_build
-        uses: docker/build-push-action@v2
-        with:
-          context: ./app
-          push: true
-          tags: dukematsci/dev-app:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml
+    with:
+      id: app
+      context: ./app
+      tags: dukematsci/dev-app:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildRESTFUL:
-    runs-on: ubuntu-latest
-    needs: [BuildApp]
-    # if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${ DCK_USER }
-          password: ${ DCK_PWD }
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-single-buildx
-      - name: Build Restful Service
-        id: restuful-docker_build
-        uses: docker/build-push-action@v2
-        with:
-          context: ./restfulservice
-          push: true
-          tags: dukematsci/dev-restful:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml
+    with:
+      id: restful
+      context: ./restfulservice
+      tags: dukematsci/dev-restful:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildProxy:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml
+    with:
+      id: proxy
+      context: ./nginx
+      tags: dukematsci/dev-proxy:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  TestBuild:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [BuildRESTFUL]
-    # if: github.event_name == 'push'
+    needs: [BuildFrontend,BuildRESTFUL,BuildProxy]
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${ DCK_USER }
-          password: ${ DCK_PWD }
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-single-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-single-buildx
-      - name: Build Proxy
-        id: proxy-docker_build
-        uses: docker/build-push-action@v2
-        with:
-          context: ./nginx
-          push: true
-          tags: dukematsci/dev-proxy:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Status
+        run : pwd
   # Build:
   #   runs-on: ubuntu-latest
   #   outputs: 
