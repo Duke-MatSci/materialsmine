@@ -27,7 +27,8 @@
         "start": "nodemon src/server.js",
         "test": "echo \"Error: no test specified\" && exit 0",
         "lint": "eslint src",
-        "lint:test": "npm-run-all -s lint test"
+        "lint:test": "npm-run-all -s lint test",
+        "start:prod": "node src/server.js"
     },
     "repository": {
         "type": "git",
