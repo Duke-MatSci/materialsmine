@@ -63,7 +63,7 @@ jobs:
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@b2ad7ae8019bd352c330fdb33063e427e48ebd78
     with:
       myid: restful
-      context: ./restfulservice
+      context: ./resfulservice
       tags: dukematsci/dev-restful:latest
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
