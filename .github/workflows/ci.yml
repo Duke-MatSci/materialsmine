@@ -50,7 +50,7 @@ jobs:
           CI: true
   BuildFrontend:
     needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@88e10e42bf77382dfc903754b3eed89a652af3fe
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@b2ad7ae8019bd352c330fdb33063e427e48ebd78
     with:
       myid: app
       context: ./app
@@ -60,7 +60,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildRESTFUL:
     needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@88e10e42bf77382dfc903754b3eed89a652af3fe
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@b2ad7ae8019bd352c330fdb33063e427e48ebd78
     with:
       myid: restful
       context: ./restfulservice
@@ -70,7 +70,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildProxy:
     needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@88e10e42bf77382dfc903754b3eed89a652af3fe
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@b2ad7ae8019bd352c330fdb33063e427e48ebd78
     with:
       myid: proxy
       context: ./nginx
