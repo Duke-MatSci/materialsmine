@@ -48,43 +48,43 @@ jobs:
       - run: npm run test
         env:
           CI: true
-  BuildFrontend:
-    needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
-    with:
-      id: app
-      context: ./app
-      tags: dukematsci/dev-app:latest
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  BuildRESTFUL:
-    needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
-    with:
-      id: restful
-      context: ./restfulservice
-      tags: dukematsci/dev-restful:latest
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  BuildProxy:
-    needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
-    with:
-      id: proxy
-      context: ./nginx
-      tags: dukematsci/dev-proxy:latest
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  TestBuild:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    needs: [BuildFrontend,BuildRESTFUL,BuildProxy]
-    steps:
-      - name: Status
-        run : pwd
+  # BuildFrontend:
+  #   needs: [test]
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
+  #   with:
+  #     id: app
+  #     context: ./app
+  #     tags: dukematsci/dev-app:latest
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # BuildRESTFUL:
+  #   needs: [test]
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
+  #   with:
+  #     id: restful
+  #     context: ./restfulservice
+  #     tags: dukematsci/dev-restful:latest
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # BuildProxy:
+  #   needs: [test]
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@v1
+  #   with:
+  #     id: proxy
+  #     context: ./nginx
+  #     tags: dukematsci/dev-proxy:latest
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # TestBuild:
+  #   if: github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   needs: [BuildFrontend,BuildRESTFUL,BuildProxy]
+  #   steps:
+  #     - name: Status
+  #       run : pwd
   # Build:
   #   runs-on: ubuntu-latest
   #   outputs: 
