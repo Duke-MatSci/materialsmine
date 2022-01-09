@@ -52,7 +52,7 @@ jobs:
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@576250afd31d9d3660cbb6a77c640decebd2b9cf
     with:
-      id: app
+      myid: app
       context: ./app
       tags: dukematsci/dev-app:latest
     secrets:
@@ -62,7 +62,7 @@ jobs:
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@576250afd31d9d3660cbb6a77c640decebd2b9cf
     with:
-      id: restful
+      myid: restful
       context: ./restfulservice
       tags: dukematsci/dev-restful:latest
     secrets:
@@ -72,7 +72,7 @@ jobs:
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@576250afd31d9d3660cbb6a77c640decebd2b9cf
     with:
-      id: proxy
+      myid: proxy
       context: ./nginx
       tags: dukematsci/dev-proxy:latest
     secrets:
