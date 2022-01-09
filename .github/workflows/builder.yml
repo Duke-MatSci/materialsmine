@@ -20,7 +20,7 @@ on:
 
 jobs:
   Build:
-    name: ${{ inputs.id }}
+    name: ${ inputs.id }
     runs-on: ubuntu-latest
     # if: github.event_name == 'push'
     steps:
@@ -40,8 +40,8 @@ jobs:
           key: ${{ runner.os }}-single-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-single-buildx
-      - name: Build ${{ inputs.id }}
-        id: ${{ inputs.id }}
+      - name: Build ${ inputs.id }
+        id: ${ inputs.id }
         uses: docker/build-push-action@v2
         with:
           context: ${{ inputs.context }}
