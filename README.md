@@ -5,6 +5,11 @@ MaterialsMine App
 
 ## :high_brightness: Installation
 Make sure to install [docker](https://docs.docker.com/get-docker/) on your machine first & then git clone the repo and run `cmd` below to instantiate or terminate the application.
+
+Windows OS: 
+- Be sure to run the Docker installer as an administrator
+- If the Docker engine fails to start, install the latest WSL2 Linux kernel update package by following Step 4 [here](https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)
+
 ```bash
 # Run the following command from the root directory:
 # 1. Install npm @ root directory:
