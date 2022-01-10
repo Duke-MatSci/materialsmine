@@ -1,8 +1,12 @@
 const path = require('path');
-
 const express = require('express');
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const multer = require('multer');
+
+const testRoutes = require('./routes/test');
+
+const { DB_USERNAME, DB_PASSWORD, MM_DB } = process.env;
 
 const app = express();
 
@@ -43,8 +47,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// app.use('/test', testRoutes);
-// app.use('/auth', authRoutes);
+app.use('/test', testRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -54,11 +57,11 @@ app.use((error, req, res, next) => {
   res.status(status).json({ message: message, data: data });
 });
 
-app.listen(process.env.PORT || 3000);
-
-// mongoose
-//   .connect(MONGODB_URI)
-//   .then(result => {
-//     app.listen(process.env.PORT || 3000);
-//   })
-//   .catch(err => console.log(err));
+mongoose
+  .connect(`mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${MM_DB}`, {
+    useNewUrlParser: true, useUnifiedTopology: true
+  })
+  .then(result => {
+    app.listen(process.env.PORT || 3000);
+  })
+  .catch(err => console.log(err));
