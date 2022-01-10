@@ -14,7 +14,7 @@ export default {
   created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
-      type: 'home',
+      pagetype: 'home',
       name: 'MetaMine',
       subtitle: 'An open source repository for mechanical metamaterials data'
     })

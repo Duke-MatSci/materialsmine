@@ -7,7 +7,7 @@ export default {
     return {
       appHeaderInfo: {
         icon: '',
-        type: 'home',
+        pagetype: 'home',
         name: 'MaterialsMine',
         subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       }

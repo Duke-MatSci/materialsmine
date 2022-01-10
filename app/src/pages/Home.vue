@@ -20,7 +20,7 @@ export default {
     HelloWorld
   },
   created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', type: 'home', name: 'MaterialsMine', subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)' })
+    this.$store.commit('setAppHeaderInfo', { icon: '', pagetype: 'home', name: 'MaterialsMine', subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)' })
   }
 }
 </script>

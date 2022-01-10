@@ -35,9 +35,9 @@
                 </div>
             </div>
         </header>
-        <div :class="['section_banner', info.type=='home' ? '' : 'section_banner__misc']">
+        <div :class="['section_banner', info.pagetype=='home' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
-                <div v-if="info.type=='home'" class="section_banner__text-content">
+                <div v-if="info.pagetype=='home'" class="section_banner__text-content">
                     <span class="u_adjust-banner-text">Welcome to {{info.name}}!</span>
                     <p class="u_adjust-banner-text_subtitle">{{info.subtitle}}</p>
                 </div>
@@ -104,7 +104,17 @@
 // import AppMixin from './mixins'
 export default {
   name: 'Header',
-  props: ['info']
+  props: {
+    info: {
+      type: Object,
+      default () {
+        return {
+          pagetype: 'home',
+          name: 'MaterialsMine'
+        }
+      }
+    }
+  }
   // mixins: [AppMixin],
 }
 </script>
