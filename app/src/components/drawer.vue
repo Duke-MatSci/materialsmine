@@ -82,25 +82,24 @@
             </md-list-item>
       </md-list>
     </md-drawer>
-    
+
 </div>
 </template>
-
 
 <script>
 
 export default {
   name: 'Drawer',
-  data() {
+  data () {
     return {
-        showSidebar: false,
+      showSidebar: false
     }
   },
-  computed:{
-      isAuthenticated () {
-        return this.$store.getters.isAuthenticated
-      }
-  },
+  computed: {
+    isAuthenticated () {
+      return this.$store.getters.isAuthenticated
+    }
+  }
 }
 </script>
 

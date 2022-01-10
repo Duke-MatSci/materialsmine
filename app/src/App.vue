@@ -17,7 +17,7 @@ import Drawer from '@/components/drawer.vue'
 export default {
   components: {
     PageHeader,
-    MdDrawer: Drawer,
+    MdDrawer: Drawer
   },
   computed: {
     info () {
