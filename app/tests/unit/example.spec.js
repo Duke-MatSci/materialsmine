@@ -20,7 +20,7 @@ describe('Header.vue', () => {
     const existingMovies = wrapper.vm.movies
     wrapper.setData({ movies: [...existingMovies, msg] })
     expect(wrapper.vm.movies.length).toEqual(3)
-    expect(wrapper.vm.movies).toMatchSnapshot()
+    // expect(wrapper.vm.movies).toMatchSnapshot()
   })
   it('check h1 inside helloworld.vue', () => {
     const wrapper = mount(HelloWorld)
@@ -40,7 +40,7 @@ describe('Header.vue', () => {
  * for each test cases using before each.
  */
 // describe('Header.vue', () => {
-  
+
 //   beforeEach(() => {
 //     const wrapper = mount(HelloWorld)
 //   })
@@ -63,5 +63,3 @@ describe('Header.vue', () => {
 //     expect(wrapper.html('h1').match('Testing'))
 //   })
 // })
-
-
