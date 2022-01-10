@@ -141,15 +141,17 @@
     &_mobile-icon {
         display: none;
         visibility: hidden;
+        text-align: left;
         @include respond(phone){
-            height: 1.3rem;
-            width: 1.25rem;
+            height: 1.5rem;
+            width: 1.5rem;
             position: absolute;
-            top: .7rem;
-            left: .8rem;
-            z-index: 5;
+            top: 1.5rem;
+            left: 1rem;
+            z-index: 12;
             display: block;
             visibility: visible;
+            cursor: pointer;
         }
 
         &::before {

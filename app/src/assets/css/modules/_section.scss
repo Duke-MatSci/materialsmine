@@ -12,12 +12,10 @@
         }
 
         @include respond(tab-port) {
-            height: 22rem;
             background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-medium.png);
         }
 
         @include respond(phone) {
-            height: 16rem;
             background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-small.png);
         }
 
