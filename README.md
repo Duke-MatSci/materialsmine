@@ -1,5 +1,4 @@
-![](https://github.com/Duke-MatSci/materialsmine/workflows/devCI/badge.svg?branch=develop&event=push)
-![](https://github.com/Duke-MatSci/materialsmine/workflows/devCI/badge.svg?branch=main&event=push)
+![](https://github.com/Duke-MatSci/materialsmine/workflows/CI/badge.svg?branch=develop&event=push)
 
 # materialsmine
 MaterialsMine App
@@ -44,3 +43,8 @@ npm install
 | :open_file_folder: nginx | A proxy server | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/router) |
 | :open_file_folder: restfulservice | Backend Server Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/resfulservice) |
 | :open_file_folder: whyis | Whyis Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/whyis) |
+
+## :high_brightness: Access services via:
+- Frontend: http://localhost:80
+- Resful API: http://localhost:80/api
+- Whyis: http://localhost:80/whyis
