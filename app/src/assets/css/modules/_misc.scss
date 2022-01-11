@@ -52,18 +52,20 @@
     &_container {
         border: .01rem solid rgba($primary-grey, .1);
         box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-        width: 25rem;
-        height: 32.5rem;
+        width: 35rem;
+        height: 45.5rem;
         border-radius: 3px;
-        margin: 0 2rem 3rem 0;
+        margin: 0 2.8rem 4.2rem 0;
         place-items: center;
         background: #fff;
         overflow: hidden;
         display: grid;
+        line-height: 1.5;
 
         @include respond(phone){
             width: 95% !important;
-            margin: 0 1rem 3rem 0;
+            margin: 0 1.4rem 4.2rem 0;
+            height: 57rem;
         }
     }
 
@@ -128,20 +130,31 @@
 
         &-header {
             margin: 0 0 2px 0;
-            font-size: 1.5rem;
+            font-size: 2.1rem;
+            @include respond(phone){
+                font-size: 2.7rem;
+            }
         }
 
         &-subhead {
-            font-size: .8rem;
+            font-size: 1.1rem;
+            @include respond(phone){
+                font-size: 1.4rem;
+            }
         }
 
         &-text {
-           font-size: .9rem;
+           font-size: 1.26rem;
            color: $primary-grey; 
            font-style: italic;
-           line-height: 1.5;
-           margin: .5rem 0;
-           padding: 0 1rem;
+        //    line-height: 1.5;
+           margin: .7rem 0;
+           padding: 0 1.4rem;
+           letter-spacing: 0rem;
+
+           @include respond(phone){
+               font-size: 1.6rem;
+           }
         }
 
         &_link {
@@ -153,7 +166,7 @@
             transform: rotate(-8deg) translateY(69px);
             transition: .5s;
             transform-origin: left;
-            right: 0.9rem;
+            right: 1.3rem;
             bottom: .1px;
 
             @include respond(phone){
