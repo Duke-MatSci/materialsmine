@@ -1,5 +1,6 @@
 <template>
-  <div id="app">
+  <div id="app" class="page-container">
+    <mdDrawer id="leftdrawer"></mdDrawer>
     <page-header id="header" :info="info"></page-header>
     <!-- <div id="nav">
       <router-link to="/">Home</router-link> |
@@ -11,10 +12,12 @@
 
 <script>
 import PageHeader from '@/components/PageHeader.vue'
+import Drawer from '@/components/drawer.vue'
 
 export default {
   components: {
-    PageHeader
+    PageHeader,
+    MdDrawer: Drawer
   },
   computed: {
     info () {
