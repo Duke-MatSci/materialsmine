@@ -1,6 +1,6 @@
 .teams {
     &_text {
-        font-size: 1.6rem;
+        font-size: 2.2rem;
         font-weight: 300;
         word-spacing: .2rem;
         margin: 0 0 5rem 0;
@@ -13,7 +13,7 @@
 
         @include respond(phone){
             margin: 0 0 3rem 0;
-            font-size: 1.1rem;
+            font-size: 1.5rem;
         }
     }
 
