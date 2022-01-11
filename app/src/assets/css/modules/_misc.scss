@@ -147,7 +147,6 @@
            font-size: 1.26rem;
            color: $primary-grey; 
            font-style: italic;
-        //    line-height: 1.5;
            margin: .7rem 0;
            padding: 0 1.4rem;
            letter-spacing: 0rem;
@@ -169,6 +168,10 @@
             right: 1.3rem;
             bottom: .1px;
 
+            @include respond(tab-port){
+                transform: rotate(-8deg) translateY(36px);
+            }
+
             @include respond(phone){
                 transform: rotate(-8deg) translateY(63px);
             }
@@ -186,8 +189,9 @@
             }
             &_adjust {
                 @include respond(phone){
-                    transform: rotate(-11deg) translateY(63px) !important;
+                    transform: rotate(-8deg) translateY(105px) !important;
                     bottom: 10px !important;
+                    right: 15px !important;
                 }
             }
         }
