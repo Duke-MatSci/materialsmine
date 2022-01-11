@@ -2,7 +2,7 @@ export default {
   name: 'News',
   methods: {
     link (args) {
-      return window.open(args, '_blank');
+      return window.open(args, '_blank')
     }
   },
   created () {

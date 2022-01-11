@@ -10,7 +10,7 @@ export default {
       console.log(this.filter)
     },
     hideVideos (idx) {
-      let vm = this
+      const vm = this
       let noTouch = null
       if (idx >= 0) {
         noTouch = idx
@@ -18,31 +18,31 @@ export default {
       vm.videos.forEach(function (v, i) {
         if (i !== noTouch) {
         // vm.videos[i].hide = true
-          let o = vm.videos[i]
+          const o = vm.videos[i]
           o.hide = true
           vm.$set(vm.videos, i, o)
         }
       })
     },
     displayVideo (idx, link) {
-      if(link){
-        return window.open('https://youtu.be/o2FA1yM85M8', '_blank');
+      if (link) {
+        return window.open('https://youtu.be/o2FA1yM85M8', '_blank')
       }
-      let vm = this
+      const vm = this
       vm.hideVideos(idx)
-      let isHidden = vm.videos[idx].hide
-      let o = vm.videos[idx]
+      const isHidden = vm.videos[idx].hide
+      const o = vm.videos[idx]
       o.hide = !isHidden
       vm.$set(vm.videos, idx, o)
       console.log('Hidden(' + idx + ') = ' + vm.videos[idx].hide)
     }
   },
-  mounted() {
-    let vm = this;
-    let vids = vm.$store.getters.getCmsAllVideos
+  mounted () {
+    const vm = this
+    const vids = vm.$store.getters.getCmsAllVideos
     Object.keys(vids).forEach((v, idx) => {
-      let key = v
-      let o = vids[key]
+      const key = v
+      const o = vids[key]
       o.hide = true
       o.nm = key
       vm.videos.push(o)

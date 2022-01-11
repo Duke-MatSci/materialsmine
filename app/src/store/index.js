@@ -16,6 +16,6 @@ export default new Vuex.Store({
   modules: {
     auth: authModule,
     misc: miscModule,
-    howto: howtoModule,
+    howto: howtoModule
   }
 })
