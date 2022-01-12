@@ -1,0 +1,71 @@
+.search_box {
+    margin: 0 auto;
+    width: 70%;
+    font-size: 2rem;
+    font-weight: 200;
+    line-height: 1.5;
+
+    &_header {
+        font-size: 5rem;
+        font-weight: 300;
+        text-align: left;
+        color: $primary;
+        margin-top: 8rem;
+    }
+
+    &_text {
+        font-size: 1.4rem;
+        text-align: left;
+        margin-top: -2rem;
+    }
+
+    &_form {
+        display: flex;
+        flex-direction: row;
+
+        &-item-1 {
+            flex-grow: 220;
+        }
+        &-item-2 {
+            flex-grow: 1;
+            align-self: flex-start;
+        }
+        &_btn {
+            display: block !important;
+            padding: 1.5rem 3.5rem !important;
+            font-size: 1.2rem;
+            &:hover {
+                transform: translateY(0) !important;
+            }
+        }
+
+        &_label {
+            text-align: left;
+            color: $primary;
+        }
+    }
+}
+
+.explorer_page {
+    &-nav {
+        margin: 0 auto;
+        width: 70%;
+        margin-top: 10rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content:space-between;
+
+        &-item {
+            // flex-grow: 1;
+            // width: 30%;
+            // height: 150px;
+            flex: 0 0 33.333333%;
+
+            &-card {
+                align-self: center !important;
+                width: 50% !important;
+            }
+        }
+
+    }
+}
