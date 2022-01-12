@@ -5,8 +5,19 @@
       <router-link to="/about">About</router-link>
     </div>
     <router-view/>
+    <page-footer id="footer"></page-footer>
   </div>
 </template>
+
+<script>
+import PageFooter from '@/components/PageFooter.vue'
+
+export default {
+  components: {
+    PageFooter
+  }
+}
+</script>
 
 <style lang="scss">
 @import './assets/css/style.scss';
@@ -14,7 +25,12 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: $primary-white;
+  color: $primary;
+  background-color: $primary-white;
+}
+
+#header, #footer {
+  text-align: left;
 }
 
 #nav {
