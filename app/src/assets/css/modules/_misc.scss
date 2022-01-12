@@ -76,22 +76,22 @@
             margin: 0 auto;
         }
         &-nsf {
-            width: 12rem;
+            width: 16.8rem;
             @include respond(tab-land){
-                width: 7rem;
+                width: 9.8rem;
             }
         }
         &-chimad {
-            width: 24rem;
+            width: 33.6rem;
             @include respond(tab-land){
-                width: 13rem;
+                width: 18.2rem;
             }
         }
         &-naval,
         &-nist {
-            width: 18rem;
+            width: 25.2rem;
             @include respond(tab-land){
-                width: 9rem;
+                width: 12.6rem;
             }
         }
 
@@ -110,7 +110,7 @@
         }
 
         &-container {
-            margin-top: 14rem;
+            margin-top: 19.6rem;
         }
     }
 
