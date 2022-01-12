@@ -38,6 +38,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/sample/:label',
+    name: 'Sample',
+    component: () => import(/* webpackChunkName: "howto" */ '@/pages/sample/Sample.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/news',
     name: 'News',
     component: () => import(/* webpackChunkName: "news" */ '@/pages/researchnews/News.vue'),
