@@ -1,25 +1,22 @@
 .section {
     &_banner {
         position: relative;
-        // background-image: linear-gradient(0deg,rgba(8,35,60,.1),rgba(14,95,118,.1)),url(/nmstatic/img/random_network.png);
-        background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network.png);
+        background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network.png);
         height: 30rem;
         width: 100%;
         background-size: cover;
         z-index: 10;
 
         @include respond(tab-land){
-            height: 24rem;
+            height: 26rem;
         }
 
         @include respond(tab-port) {
-            height: 19rem;
-            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network-medium.png);
+            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-medium.png);
         }
 
         @include respond(phone) {
-            height: 16rem;
-            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network-small.png);
+            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-small.png);
         }
 
         &__text-content {
@@ -39,7 +36,7 @@
             }
 
             & > span {
-                font-weight: 300;
+                font-weight: 400;
             }
 
             & > i {
@@ -88,6 +85,20 @@
             @include respond(phone){
                 height: 13rem !important;
             }
+        }
+    }
+
+    &_pages {
+        margin: 0 0 4rem 0;
+        padding: 2rem 0;
+        background-color: $primary-white;
+
+        @include respond(laptop) {
+            margin: 0 0 2.5rem 0;
+        }
+
+        @include respond(tab-port) {
+            margin: 0;
         }
     }
 
