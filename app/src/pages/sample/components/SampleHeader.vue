@@ -11,6 +11,9 @@
         <li>Label: {{ sample.sample_label }}</li>
       </ul>
     </div>
+    <div v-if="sample === undefined">
+      <h1 class="sample_header">Sample not found</h1>
+    </div>
   </div>
 </template>
 
@@ -29,6 +32,7 @@ export default {
         route: this.$route.params.label,
       })
         .then((sample) => {
+          console.log(sample);
           this.sample = sample;
           this.loading = false;
         })
