@@ -13,11 +13,14 @@ const routes = [
   {
     path: '/about',
     name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
+    component: () => import('@/pages/About.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/explorer',
+    name: 'ExplorerHome',
+    component: () => import('@/pages/explorer/Home.vue'),
+    // meta: { requiresAuth: true }
   },
   { path: '/:notFound(.*)', component: Home } // TODO: Not found component
 ]
