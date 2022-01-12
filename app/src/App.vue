@@ -7,16 +7,19 @@
       <router-link to="/about">About</router-link>
     </div> -->
     <router-view/>
+    <page-footer id="footer"></page-footer>
   </div>
 </template>
 
 <script>
 import PageHeader from '@/components/PageHeader.vue'
+import PageFooter from '@/components/PageFooter.vue'
 import Drawer from '@/components/drawer.vue'
 
 export default {
   components: {
     PageHeader,
+    PageFooter,
     MdDrawer: Drawer
   },
   computed: {
@@ -35,9 +38,10 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: $primary;
+  background-color: $primary-white;
 }
 
-#header {
+#header, #footer {
   text-align: left;
 }
 
