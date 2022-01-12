@@ -45,3 +45,13 @@ jobs:
       - run: npm run test
         env:
           CI: true
+  BuildFrontend:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@b2ad7ae8019bd352c330fdb33063e427e48ebd78
+    with:
+      myid: app
+      context: ./app
+      tags: dukematsci/dev-app:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
