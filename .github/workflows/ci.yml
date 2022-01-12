@@ -47,7 +47,7 @@ jobs:
           CI: true
   BuildFrontend:
     needs: [test]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@dev
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
       myid: app
       context: ./app
