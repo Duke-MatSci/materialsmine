@@ -289,42 +289,43 @@
         }
 
         & > img {
-            height: 15rem; 
+            height: 21rem; 
             width: auto;
         }
 
         & > i {
-            font-size: 10rem !important;
+            font-size: 14rem !important;
             @include respond(phone){
-                font-size: 4rem !important;
+                font-size: 5.6rem !important;
             }
         }
     }
 
     &_text {
-        font-size: 1.4rem;
+        font-size: 2rem;
         font-weight: 300;
         word-spacing: .2rem;
         line-height: 1.7;
         text-align: justify;
         @include respond(phone){
-            font-size: 1rem !important;
+            font-size: 1.7rem !important;
         }
     }
 
     &_title{
         font-weight: 500;
-        font-size: 2rem;
+        font-size: 2.8rem;
+        line-height: 1.7;
         color: $primary;
         @include respond(phone){
-            font-size: 1.2rem !important;
+            font-size: 2rem !important;
         }
     }
 
     &_info {
         margin-top: 1rem;
         @include respond(phone){
-            font-size: .7rem !important;
+            font-size: 1rem !important;
         }
         &-left {
             color: $primary;
