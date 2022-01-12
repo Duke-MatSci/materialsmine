@@ -1,4 +1,4 @@
-import SampleViewTitle from './components/SampleViewTitle.vue'
+import SampleHeader from './components/SampleHeader.vue'
 import SampleImages from './components/SampleImages.vue'
 import MaterialComponentsAndAttributes from './components/MaterialComponentsAndAttributes.vue'
 import CuratedProcessingStepsParameters from './components/CuratedProcessingStepsParameters.vue'
@@ -11,7 +11,7 @@ export default {
     }
   },
   components: {
-    SampleViewTitle,
+    SampleHeader,
     SampleImages,
     MaterialComponentsAndAttributes,
     CuratedProcessingStepsParameters,
