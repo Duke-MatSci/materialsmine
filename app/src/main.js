@@ -4,14 +4,14 @@ import 'vue-material/dist/vue-material.min.css'
 import 'vue-material/dist/theme/default.css'
 import App from './App.vue'
 import './registerServiceWorker'
-import router from './router'
 import store from './store'
+import router from './router'
 
 Vue.use(VueMaterial)
 Vue.config.productionTip = false
 
 new Vue({
-  router,
   store,
+  router,
   render: h => h(App)
 }).$mount('#app')
