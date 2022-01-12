@@ -45,3 +45,23 @@ jobs:
       - run: npm run test
         env:
           CI: true
+  BuildFrontend:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: app
+      context: ./app
+      tags: dukematsci/dev-app:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  BuildProxy:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: proxy
+      context: ./nginx
+      tags: dukematsci/dev-proxy:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

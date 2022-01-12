@@ -13,13 +13,13 @@ const routes = [
   {
     path: '/nm',
     name: 'HomeNM',
-    component: () => import(/* webpackChunkName: "homenm" */ '@/pages/HomeNM/Home.vue'),
+    component: () => import(/* webpackChunkName: "homenm" */ '@/pages/nanomine/HomeNM/Home.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/mm',
     name: 'HomeMM',
-    component: () => import(/* webpackChunkName: "homemm" */ '@/pages/HomeMM/Home.vue'),
+    component: () => import(/* webpackChunkName: "homemm" */ '@/pages/metamine/HomeMM/Home.vue'),
     meta: { requiresAuth: false }
   },
   {
@@ -52,31 +52,31 @@ const routes = [
   {
     path: '/nm/xml-uploader',
     name: 'XmlUploader',
-    component: () => import(/* webpackChunkName: "xmlupload" */ '@/pages/xmlUploader/XmlUploader.vue'),
+    component: () => import(/* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/nm/modtools',
     name: 'ModuleTools',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/tools/module/ModuleTools.vue'),
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/ModuleTools.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/nm/simtools',
     name: 'SimulationTools',
-    component: () => import(/* webpackChunkName: "simtools" */ '@/pages/tools/simulation/SimulationTools.vue'),
+    component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/simulation/SimulationTools.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/nm/plot-curation',
     name: 'CsvPlotter',
-    component: () => import(/* webpackChunkName: "plotcuration" */ '@/pages/tools/csvPlotter/CsvPlotter.vue'),
+    component: () => import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/tools/csvPlotter/CsvPlotter.vue'),
     meta: { requiresAuth: false }
   },
   {
     path: '/nm/chemprops',
     name: 'ChemProps',
-    component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/tools/chemProps/ChemProps.vue'),
+    component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemProps/ChemProps.vue'),
     meta: { requiresAuth: false }
   },
   { path: '/:notFound(.*)', component: Home } // TODO: Not found component
