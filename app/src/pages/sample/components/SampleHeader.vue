@@ -32,7 +32,6 @@ export default {
         route: this.$route.params.label,
       })
         .then((sample) => {
-          console.log(sample);
           this.sample = sample;
           this.loading = false;
         })
