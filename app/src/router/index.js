@@ -38,7 +38,7 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/sample/:label',
+    path: '/explorer/sample/:label',
     name: 'Sample',
     component: () => import(/* webpackChunkName: "howto" */ '@/pages/sample/Sample.vue'),
     meta: { requiresAuth: false }
