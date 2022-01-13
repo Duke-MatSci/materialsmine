@@ -1,9 +1,7 @@
-import store from '@/store/index.js'
-
 export default {
   name: 'HowTo',
   data: () => ({
-    videos: store.getters.videos
+    videos: []
   }),
   methods: {
     showBox () {
@@ -39,7 +37,7 @@ export default {
   },
   mounted () {
     const vm = this
-    const vids = vm.$store.getters.getCmsAllVideos
+    const vids = vm.$store.getters.videos
     Object.keys(vids).forEach((v, idx) => {
       const key = v
       const o = vids[key]
