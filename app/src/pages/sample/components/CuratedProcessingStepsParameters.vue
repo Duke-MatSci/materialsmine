@@ -1,58 +1,84 @@
 <template>
   <div>
-    <h1>Curated Processing Steps and Parameters</h1>
-    <h3>Class: {{ processLabel }}</h3>
-    <h3>Processing Steps:</h3>
-    <ul>
-      <li v-for="step in steps" :key="step.description">
-        <span>{{ step.parameterLabel }}</span> |
-        {{ step.description }}
-      </li>
-    </ul>
+    <div v-if="loadingProcessLabel" class="loading">Loading...</div>
+    <div v-if="processLabel">
+      <h1>Curated Processing Steps and Parameters</h1>
+      <h3>Class: {{ processLabel }}</h3>
+    </div>
+    <div v-if="loadingSteps">Loading...</div>
+    <div v-if="steps">
+      <h3>Processing Steps:</h3>
+      <ul>
+        <li v-for="step in steps" :key="step.description">
+          <span>{{ step.parameterLabel }}</span> |
+          {{ step.description }}
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
-import classQuery from '../queries/classQuery'
-import processingStepsQuery from '../queries/processingStepsQuery'
-import getClass from '../services/getClass'
-import getProcessingSteps from '../services/getProcessingSteps'
-import { querySparqlEndpoint } from '../queries/settings'
+import classQuery from "../queries/classQuery";
+import getClass from "../services/getClass";
+import processingStepsQuery from "../queries/processingStepsQuery";
+import getProcessingSteps from "../services/getProcessingSteps";
 
 export default {
-  props: {
-    name: 'CuratedProcessingStepsParameters',
-    route: {
-      type: String,
-      default: 'no route'
-    }
+  methods: {
+    fetchClass() {
+      this.error = null;
+      this.loadingProcessLabel = true;
+      this.steps = null;
+      getClass({
+        query: classQuery,
+        route: this.$route.params.label,
+      })
+        .then((processLabel) => {
+          this.processLabel = processLabel;
+          this.loadingProcessLabel = false;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.error = "Sorry, something went wrong";
+          this.loadingProcessLabel = false;
+        });
+    },
+    fetchProcessingSteps() {
+      this.error = null;
+      this.loadingSteps = true;
+      this.steps = null;
+      getProcessingSteps({
+        query: processingStepsQuery,
+        route: this.$route.params.label,
+      })
+        .then((steps) => {
+          this.steps = steps;
+          this.loadingSteps = false;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.error = "Sorry, something went wrong";
+          this.loadingSteps = false;
+        });
+    },
   },
-  data () {
+  data() {
     return {
-      processLabel: '',
-      steps: []
-    }
+      processLabel: null,
+      loadingProcessLabel: false,
+      loadingSteps: false,
+      steps: null,
+    };
   },
-  mounted () {
-    // get class
-    const urlEncodedClassQuery = querySparqlEndpoint({
-      query: classQuery,
-      route: this.route
-    })
-    getClass(urlEncodedClassQuery).then(
-      (processLabel) => (this.processLabel = processLabel)
-    )
-
-    // get process steps
-    const urlEncodedProcessStepsQuery = querySparqlEndpoint({
-      query: processingStepsQuery,
-      route: this.route
-    })
-    getProcessingSteps(urlEncodedProcessStepsQuery).then(
-      (steps) => (this.steps = steps)
-    )
-  }
-}
+  created() {
+    this.fetchClass();
+    this.fetchProcessingSteps();
+  },
+  watch: {
+    $route: ["fetchClass", "fetchProcessingSteps"],
+  },
+};
 </script>
 
 <style></style>
