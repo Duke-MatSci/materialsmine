@@ -1,9 +1,7 @@
 <template>
   <div>
     <div v-if="loading" class="loading">Loading...</div>
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
+    <div v-if="error" class="error"></div>
     <div v-if="images && images.length > 0">
       <h1>Sample Images</h1>
       <div v-for="image in images" :key="image.src">
