@@ -1,40 +1,64 @@
 <template>
   <div>
-    <h1>Material Components and Attributes</h1>
-    <div v-for="item in data" :key="item.name">
-      <ListInfo :item="item" />
+    <div v-if="loading">loading...</div>
+    <div v-if="materialsData">
+      <h1>Material Components and Attributes</h1>
+      <ul v-for="material in materialsData" :key="material.classType">
+        <li>Class: {{ material.classType }}</li>
+        <li>Role: {{ material.role }}</li>
+        <li>
+          <div
+            v-for="property in material.materialProperties"
+            :key="property.type"
+          >
+            <span>{{ property.type }}: </span>
+            <span>{{ property.value }}</span>
+            <span> {{ property.units }}</span>
+          </div>
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
 <script>
-import { querySparqlEndpoint } from '../queries/settings'
-import cardQuery from '../queries/cardQuery'
-import getCardsData from '../services/getCardsData'
-import ListInfo from './ListInfo.vue'
-export default {
-  props: {
-    route: {
-      type: String,
-      default: 'no route'
-    }
-  },
-  components: {
-    ListInfo
-  },
-  data () {
-    return {
-      data: null
-    }
-  },
-  mounted () {
-    const urlEncodedQuery = querySparqlEndpoint({
-      query: cardQuery,
-      route: this.route
-    })
-    getCardsData(urlEncodedQuery).then((cardData) => (this.data = cardData))
-  }
-}
-</script>
+import cardQuery from "../queries/cardQuery";
+import getCardsData from "../services/getCardsData";
 
+export default {
+  methods: {
+    fetchData() {
+      this.error = null;
+      this.loading = true;
+      this.materialsData = null;
+      getCardsData({
+        query: cardQuery,
+        route: this.$route.params.label,
+      })
+        .then((materialsData) => {
+          this.materialsData = materialsData;
+          this.loading = false;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.error = "Sorry, something went wrong";
+          this.loading = false;
+        });
+    },
+  },
+  data() {
+    return {
+      materialsData: null,
+      loading: false,
+      error: null,
+    };
+  },
+  created() {
+    this.fetchData();
+  },
+  watch: {
+    $route: "fetchData",
+  },
+};
+</script>
 <style></style>

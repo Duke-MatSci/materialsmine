@@ -1,51 +1,56 @@
-import { requestOptions } from '../queries/settings'
+import { requestOptions } from "../queries/settings";
+import { parseSPARQL } from "./damien";
+import { querySparqlEndpoint } from "../queries/settings";
 
-const parseCardsData = data => {
-  const extractAllClasses = data.results.bindings.map(classType => {
-    const { value } = classType.std_name
-    return value
-  })
+function parsePropertyData(data) {
+  const seen = new Set();
+  const filteredArr = data
+    .filter((item) => {
+      const duplicate = seen.has(item.std_name);
+      seen.add(item.std_name);
+      return !duplicate;
+    })
+    .map((item) => {
+      return {
+        classType: item.std_name,
+        role: item.role,
+      };
+    });
 
-  const classes = [...new Set(extractAllClasses)]
-  const cardsData = classes.map(className => {
-    return { name: className }
-  })
-
-  cardsData.forEach(uniqueClass => {
-    const classData = data.results.bindings
-      .filter(item => item.std_name.value === uniqueClass.name)
-      .map(item => {
-        const { value: url } = item.attrType
-        const slug = url
-          .split('/')
+  filteredArr.forEach((element) => {
+    const materialProperties = data
+      .filter((item) => item.std_name === element.classType)
+      .map((item) => {
+        const { attrUnits, attrValue: value, attrType } = item;
+        const units = attrUnits || "";
+        const type = attrType
+          .split("/")
           .pop()
           .match(/[A-Z][a-z]+|[0-9]+/g)
-          .join(' ')
-        const { value: unit } = item.attrUnits
-        const { value } = item.attrValue
-        const { value: label } = item.fullLabel
+          .join(" ");
         return {
-          url,
-          slug,
+          type,
+          units,
           value,
-          unit,
-          label
-        }
-      })
-    uniqueClass.properties = [...classData]
-  })
-  return cardsData
+        };
+      });
+    element.materialProperties = materialProperties;
+  });
+  return filteredArr;
 }
+const parseMaterialData = (data) => {
+  const parsedSPARQL = parseSPARQL(data);
+  const materialData = parsePropertyData(parsedSPARQL);
+  return materialData;
+};
 
-export default async function getCardsData (
-  urlEncodedQuery,
-  options = requestOptions
-) {
-  try {
-    const res = await fetch(urlEncodedQuery, options)
-    const cardsData = await res.json().then(parseCardsData)
-    return cardsData
-  } catch (error) {
-    console.log(error)
-  }
+export default async function getMaterialData({
+  query,
+  route,
+  options = requestOptions,
+}) {
+  const urlEncodedQuery = querySparqlEndpoint({ query, route });
+  const res = await fetch(urlEncodedQuery, options);
+  const materialData = await res.json().then(parseMaterialData);
+  return materialData;
 }
