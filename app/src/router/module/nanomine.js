@@ -1,7 +1,7 @@
 const nanomineRoutes = [
 	{
 		path: '/nm',
-		name: 'Home',
+		name: 'HomeNM',
 		component: () => import(/* webpackChunkName: "homenm" */ '@/pages/nanomine/Home/Home.vue'),
 		meta: { requiresAuth: false }
 	},

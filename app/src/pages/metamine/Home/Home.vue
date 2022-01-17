@@ -7,7 +7,7 @@
 <script>
 
 export default {
-  name: 'Home',
+  name: 'HomeMM',
   data: () => ({
     boolean: true
   }),
