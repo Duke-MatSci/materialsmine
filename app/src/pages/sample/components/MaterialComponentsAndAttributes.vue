@@ -22,8 +22,8 @@
 </template>
 
 <script>
-import cardQuery from "../queries/cardQuery";
-import getCardsData from "../services/getCardsData";
+import materialComponentsQuery from "../queries/materialComponentQuery";
+import getMaterialData from "../services/getMaterialData";
 
 export default {
   methods: {
@@ -31,8 +31,8 @@ export default {
       this.error = null;
       this.loading = true;
       this.materialsData = null;
-      getCardsData({
-        query: cardQuery,
+      getMaterialData({
+        query: materialComponentsQuery,
         route: this.$route.params.label,
       })
         .then((materialsData) => {
