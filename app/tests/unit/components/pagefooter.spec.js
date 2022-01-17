@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import PageFooter from '@/components/PageFooter.vue'
+import PageFooter from '@/components/nanomine/PageFooter.vue'
 import router from '@/router/index.js'
 
 const factory = () => {
