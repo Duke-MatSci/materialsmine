@@ -48,30 +48,29 @@
 	</div>
 </template>
 
-
 <script>
 import ExpHeader from '@/components/explorer/Header.vue'
 import Drawer from '@/components/explorer/Drawer.vue'
 export default {
-	name: 'ExplorerHome',
-	components: {
-		mdAppToolbar: ExpHeader,
-		Drawer
-	},
-	data () {
-		return {
-			menuVisible: false,
-			pageNavLinks: [
-				{ icon: 'grid_view', text: 'Gallery', link: ''},
-				{ icon: 'cloud_upload', text: 'Curate', link: ''},
-				{ icon: 'help', text: 'Help', link: ''}
-			]
-		}
-	},
-	methods: {
-    toggleMenu () {
-      return this.menuVisible = !this.menuVisible
+  name: 'ExplorerHome',
+  components: {
+    mdAppToolbar: ExpHeader,
+    Drawer
+  },
+  data () {
+    return {
+      menuVisible: false,
+      pageNavLinks: [
+        { icon: 'grid_view', text: 'Gallery', link: '' },
+        { icon: 'cloud_upload', text: 'Curate', link: '' },
+        { icon: 'help', text: 'Help', link: '' }
+      ]
     }
   },
+  methods: {
+    toggleMenu () {
+      this.menuVisible = !this.menuVisible
+    }
+  }
 }
 </script>

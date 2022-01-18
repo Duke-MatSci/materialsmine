@@ -1,5 +1,5 @@
 export default {
-  setMenuVisible(state) {
+  setMenuVisible (state) {
     state.menuVisible = !state.menuVisible
   }
 }

@@ -21,11 +21,13 @@ describe('Header.vue', () => {
   })
 
   it('renders page navs correctly', async () => {
-    wrapper.setData({ pageNavLinks: [
-        {icon: 'grid', text: 'test'},
-        {icon: 'grid', text: 'test2'},
-        {icon: 'grid', text: 'test3'}
-    ] })
+    wrapper.setData({
+      pageNavLinks: [
+        { icon: 'grid', text: 'test' },
+        { icon: 'grid', text: 'test2' },
+        { icon: 'grid', text: 'test3' }
+      ]
+    })
     const length = wrapper.vm.pageNavLinks.length
     const navLinks = wrapper.findAll('.explorer_page-nav-card')
     expect(navLinks.length).toEqual(length)
