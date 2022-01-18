@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import PageHeader from '@/components/PageHeader.vue'
+import PageHeader from '@/components/nanomine/PageHeader.vue'
 
 const factory = (isAuthenticated = false, info = {}) => {
   return mount(PageHeader, {
