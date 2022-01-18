@@ -1,11 +1,11 @@
 const nanomineRoutes = [
-	{
-		path: '/nm',
-		name: 'HomeNM',
-		component: () => import(/* webpackChunkName: "homenm" */ '@/pages/nanomine/Home/Home.vue'),
-		meta: { requiresAuth: false }
-	},
-	{
+  {
+    path: '/nm',
+    name: 'HomeNM',
+    component: () => import(/* webpackChunkName: "homenm" */ '@/pages/nanomine/Home/Home.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/nm/xml-uploader',
     name: 'XmlUploader',
     component: () => import(/* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'),
@@ -35,7 +35,7 @@ const nanomineRoutes = [
     component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemProps/ChemProps.vue'),
     meta: { requiresAuth: false }
   },
-	{
+  {
     path: '/nm/about',
     name: 'About',
     component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
@@ -52,7 +52,7 @@ const nanomineRoutes = [
     name: 'News',
     component: () => import(/* webpackChunkName: "news" */ '@/pages/nanomine/researchnews/News.vue'),
     meta: { requiresAuth: false }
-  },
+  }
 ]
 
-export default nanomineRoutes;
+export default nanomineRoutes

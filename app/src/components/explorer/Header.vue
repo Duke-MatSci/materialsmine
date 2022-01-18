@@ -37,7 +37,7 @@ export default {
   name: 'ExpHeader',
   props: ['toggler'],
   methods: {
-    toggleMenu(){
+    toggleMenu () {
       this.toggler()
     }
   }

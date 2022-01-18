@@ -6,7 +6,7 @@
             <div class="wrapper">
                 <router-link to="/" class="header-logo">
                     <div class="">
-                        <img src="../assets/img/materialsmine_logo.png" alt="MaterialsMine Logo">
+                        <img src="@/assets/img/materialsmine_logo.png" alt="MaterialsMine Logo">
                     </div>
                 </router-link>
                 <div class="nav_mobile-icon">

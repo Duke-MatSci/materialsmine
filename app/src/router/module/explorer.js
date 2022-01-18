@@ -1,3 +1,3 @@
 const explorerRoutes = []
 
-export default explorerRoutes;
+export default explorerRoutes

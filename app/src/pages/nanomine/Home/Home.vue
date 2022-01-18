@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="page-container">
+  <div>
     <mdDrawer id="leftdrawer"></mdDrawer>
     <page-header id="header" :info="info"></page-header>
     <!-- <div>
