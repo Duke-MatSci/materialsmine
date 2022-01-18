@@ -14,8 +14,8 @@
 
 
 <script>
-import ExpHeader from '@/components/baseUI/explorer/Header.vue'
-import Drawer from '@/components/baseUI/explorer/Drawer.vue'
+import ExpHeader from '@/components/explorer/Header.vue'
+import Drawer from '@/components/explorer/Drawer.vue'
 export default {
 	name: 'Component Name',
 	components: {
