@@ -21,11 +21,10 @@ describe('Header.vue', () => {
   })
 
   it('renders page navs correctly', async () => {
-    wrapper.setData({
+    await wrapper.setData({
       pageNavLinks: [
         { icon: 'grid', text: 'test' },
-        { icon: 'grid', text: 'test2' },
-        { icon: 'grid', text: 'test3' }
+        { icon: 'grid', text: 'test2' }
       ]
     })
     const length = wrapper.vm.pageNavLinks.length
