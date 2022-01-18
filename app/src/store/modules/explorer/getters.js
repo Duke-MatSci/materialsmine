@@ -1,5 +1,5 @@
 export default {
   menuVisible (state) {
-    return state.menuVisible
+    return state.toggleMenuVisibility
   }
 }

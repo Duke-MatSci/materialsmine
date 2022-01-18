@@ -2,7 +2,7 @@
 	<div>
 		<md-app md-waterfall md-mode="fixed-last">
 			<md-app-toolbar :toggler='toggleMenu' />
-			<md-app-drawer :md-active.sync="menuVisible">
+			<md-app-drawer :md-active.sync="toggleMenuVisibility">
 				<drawer />
 			</md-app-drawer>
 
@@ -59,7 +59,7 @@ export default {
   },
   data () {
     return {
-      menuVisible: false,
+      toggleMenuVisibility: false,
       pageNavLinks: [
         { icon: 'grid_view', text: 'Gallery', link: '' },
         { icon: 'cloud_upload', text: 'Curate', link: '' },
@@ -69,7 +69,7 @@ export default {
   },
   methods: {
     toggleMenu () {
-      this.menuVisible = !this.menuVisible
+      this.toggleMenuVisibility = !this.toggleMenuVisibility
     }
   }
 }
