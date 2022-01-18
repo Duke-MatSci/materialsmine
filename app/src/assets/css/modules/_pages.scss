@@ -47,25 +47,54 @@
 }
 
 .explorer_page {
+    &_footer {
+        color: $primary;
+        margin-top: 5rem;
+        text-align: center;
+        &-text {
+            font-size: 1.5rem;
+        }
+    }
+    &-container {
+        background-size: cover;
+        background-image: linear-gradient(90deg,$primary 25%,$primary-light),url(~@/assets/img/large-mesh.jpg) !important;
+        background-blend-mode: screen;
+        padding: 1rem;
+    }
     &-nav {
         margin: 0 auto;
         width: 70%;
-        margin-top: 10rem;
+        margin-top: 9rem;
         display: flex;
         flex-wrap: wrap;
-        justify-content:space-between;
+        justify-content:center;
+        align-items: center;
 
-        &-item {
-            // flex-grow: 1;
-            // width: 30%;
-            // height: 150px;
-            flex: 0 0 33.333333%;
+        &-card {
+            height: 25rem;
+            // background-color: $primary;
+            cursor: pointer;
+            margin-right: 5rem;
+            &_icon {
+                margin-top: 7rem;
+                font-size: 12rem !important;
+                color: $primary !important;
+            }
+            &_text {
+                color: $primary;
+                font-size: 3rem;
+                font-weight: 300;
+            }
 
-            &-card {
-                align-self: center !important;
-                width: 50% !important;
+            &:hover {
+                background-color: $tertiary;
+                & > .explorer_page-nav-card_icon, & > .explorer_page-nav-card_text{
+                    color: $primary !important;
+                }
             }
         }
-
+    }
+    &-list {
+        margin-bottom: 4rem;
     }
 }

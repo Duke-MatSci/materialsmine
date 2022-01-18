@@ -1,7 +1,7 @@
 <template>
 	<md-app md-waterfall md-mode="fixed-last">
 		<md-app-toolbar :toggler='toggleMenu' />
-		<md-app-drawer :md-active.sync="menuVisible">
+		<md-app-drawer :md-active.sync="toggleMenuVisibility">
 			<drawer />
 		</md-app-drawer>
 		<md-app-content>
@@ -20,12 +20,12 @@ export default {
   },
   data () {
     return {
-      menuVisible: false
+      toggleMenuVisibility: false
     }
   },
   methods: {
     toggleMenu () {
-      this.menuVisible = !this.menuVisible
+      this.toggleMenuVisibility = !this.toggleMenuVisibility
     }
   }
 }
