@@ -1,5 +1,5 @@
 <template>
-	<div class="page-container">
+	<div>
 		<md-app md-waterfall md-mode="fixed-last">
 			<md-app-toolbar :toggler='toggleMenu' />
 			<md-app-drawer :md-active.sync="menuVisible">
@@ -25,14 +25,23 @@
 							MM Explorer is a research-focused discovery tool that enables collaboration among scholars of nano and meta materials. Browse or search information on publication, images, charts, etc.
 						</p>
 					</div>
-					<!-- <div class="explorer_page-nav">
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-						<div class="explorer_page-nav-item"><md-content class="md-elevation-3 explorer_page-nav-item-card">3</md-content></div>
-					</div> -->
+				</div>
+				<div class="explorer_page-container">
+					<div class="explorer_page-nav">
+						<div class="teams_list explorer_page-list">
+							<ul>
+								<li v-for="link in pageNavLinks" :key="link.text">
+									<div class="teams_container explorer_page-nav-card">
+										<md-icon class="explorer_page-nav-card_icon">{{ link.icon }}</md-icon>
+										<span class="explorer_page-nav-card_text">{{ link.text }}</span>
+									</div>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div class="explorer_page_footer">
+					<span class="explorer_page_footer-text">&copy; 2022 MaterialsMine Project</span>
 				</div>
 			</md-app-content>
 		</md-app>
@@ -41,8 +50,8 @@
 
 
 <script>
-import ExpHeader from '@/components/baseUI/explorer/Header.vue'
-import Drawer from '@/components/baseUI/explorer/Drawer.vue'
+import ExpHeader from '@/components/explorer/Header.vue'
+import Drawer from '@/components/explorer/Drawer.vue'
 export default {
 	name: 'ExplorerHome',
 	components: {
@@ -51,7 +60,12 @@ export default {
 	},
 	data () {
 		return {
-			menuVisible: false
+			menuVisible: false,
+			pageNavLinks: [
+				{ icon: 'grid_view', text: 'Gallery', link: ''},
+				{ icon: 'cloud_upload', text: 'Curate', link: ''},
+				{ icon: 'help', text: 'Help', link: ''}
+			]
 		}
 	},
 	methods: {
