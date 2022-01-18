@@ -4,6 +4,10 @@
     height: 100vh !important;
 }
 
+.md-app-content {
+    padding: 16px 0;
+}
+
 .md-drawer {
     width: 230px;
     max-width: calc(100vw - 125px);
@@ -23,7 +27,7 @@
 }
 
 .md-avatar.md-theme-default {
-    border: .2rem solid $secondary;
+    border: .2rem solid $tertiary;
 }
 
 .md-button-content {
