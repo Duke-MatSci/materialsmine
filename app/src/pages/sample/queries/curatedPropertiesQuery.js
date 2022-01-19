@@ -1,4 +1,4 @@
-import { commonPrefixes } from "./settings";
+import { commonPrefixes } from './settings'
 
 const query = (
   route
@@ -12,6 +12,6 @@ const query = (
     ?attr sio:hasUnit [ rdfs:label ?unit ]
   }
 } GROUP BY ?attr ?AttrType ?value 
-VALUES ?sample { <http://materialsmine.org/sample/${route}> }`;
+VALUES ?sample { <http://materialsmine.org/sample/${route}> }`
 
-export default query;
+export default query

@@ -22,43 +22,43 @@
 </template>
 
 <script>
-import materialComponentsQuery from "../queries/materialComponentQuery";
-import getMaterialData from "../services/getMaterialData";
+import materialComponentsQuery from '../queries/materialComponentQuery'
+import getMaterialData from '../services/getMaterialData'
 
 export default {
   methods: {
-    fetchData() {
-      this.error = null;
-      this.loading = true;
-      this.materialsData = null;
+    fetchData () {
+      this.error = null
+      this.loading = true
+      this.materialsData = null
       getMaterialData({
         query: materialComponentsQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((materialsData) => {
-          this.materialsData = materialsData;
-          this.loading = false;
+          this.materialsData = materialsData
+          this.loading = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loading = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loading = false
+        })
+    }
   },
-  data() {
+  data () {
     return {
       materialsData: null,
       loading: false,
-      error: null,
-    };
+      error: null
+    }
   },
-  created() {
-    this.fetchData();
+  created () {
+    this.fetchData()
   },
   watch: {
-    $route: "fetchData",
-  },
-};
+    $route: 'fetchData'
+  }
+}
 </script>
 <style></style>

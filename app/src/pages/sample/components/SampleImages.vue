@@ -12,43 +12,43 @@
 </template>
 
 <script>
-import imageQuery from "../queries/imagesQuery";
-import getSampleImages from "../services/getSampleImages";
+import imageQuery from '../queries/imagesQuery'
+import getSampleImages from '../services/getSampleImages'
 
 export default {
   methods: {
-    fetchData() {
-      this.error = null;
-      this.loading = true;
-      this.images = null;
+    fetchData () {
+      this.error = null
+      this.loading = true
+      this.images = null
       getSampleImages({
         query: imageQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((images) => {
-          this.images = images;
-          this.loading = false;
+          this.images = images
+          this.loading = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loading = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loading = false
+        })
+    }
   },
-  created() {
-    this.fetchData();
+  created () {
+    this.fetchData()
   },
-  data() {
+  data () {
     return {
       images: null,
       loading: false,
-      error: null,
-    };
+      error: null
+    }
   },
   watch: {
-    $route: "fetchData",
-  },
-};
+    $route: 'fetchData'
+  }
+}
 </script>
 <style></style>

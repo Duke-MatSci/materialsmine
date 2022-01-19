@@ -19,44 +19,44 @@
 </template>
 
 <script>
-import curatedPropertiesQuery from "../queries/curatedPropertiesQuery";
-import getCuratedProperties from "../services/getCuratedProperties";
+import curatedPropertiesQuery from '../queries/curatedPropertiesQuery'
+import getCuratedProperties from '../services/getCuratedProperties'
 
 export default {
   methods: {
-    fetchData() {
-      this.error = null;
-      this.loading = true;
-      this.curatedProperties = null;
+    fetchData () {
+      this.error = null
+      this.loading = true
+      this.curatedProperties = null
       getCuratedProperties({
         query: curatedPropertiesQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((curatedProperties) => {
-          this.curatedProperties = curatedProperties;
-          this.loading = false;
+          this.curatedProperties = curatedProperties
+          this.loading = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loading = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loading = false
+        })
+    }
   },
-  data() {
+  data () {
     return {
       loading: false,
       error: null,
-      curatedProperties: null,
-    };
+      curatedProperties: null
+    }
   },
-  created() {
-    this.fetchData();
+  created () {
+    this.fetchData()
   },
   watch: {
-    $route: "fetchData",
-  },
-};
+    $route: 'fetchData'
+  }
+}
 </script>
 
 <style></style>

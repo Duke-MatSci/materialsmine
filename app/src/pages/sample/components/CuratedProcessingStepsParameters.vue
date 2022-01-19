@@ -19,66 +19,66 @@
 </template>
 
 <script>
-import classQuery from "../queries/classQuery";
-import getClass from "../services/getClass";
-import processingStepsQuery from "../queries/processingStepsQuery";
-import getProcessingSteps from "../services/getProcessingSteps";
+import classQuery from '../queries/classQuery'
+import getClass from '../services/getClass'
+import processingStepsQuery from '../queries/processingStepsQuery'
+import getProcessingSteps from '../services/getProcessingSteps'
 
 export default {
   methods: {
-    fetchClass() {
-      this.error = null;
-      this.loadingProcessLabel = true;
-      this.steps = null;
+    fetchClass () {
+      this.error = null
+      this.loadingProcessLabel = true
+      this.steps = null
       getClass({
         query: classQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((processLabel) => {
-          this.processLabel = processLabel;
-          this.loadingProcessLabel = false;
+          this.processLabel = processLabel
+          this.loadingProcessLabel = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loadingProcessLabel = false;
-        });
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loadingProcessLabel = false
+        })
     },
-    fetchProcessingSteps() {
-      this.error = null;
-      this.loadingSteps = true;
-      this.steps = null;
+    fetchProcessingSteps () {
+      this.error = null
+      this.loadingSteps = true
+      this.steps = null
       getProcessingSteps({
         query: processingStepsQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((steps) => {
-          this.steps = steps;
-          this.loadingSteps = false;
+          this.steps = steps
+          this.loadingSteps = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loadingSteps = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loadingSteps = false
+        })
+    }
   },
-  data() {
+  data () {
     return {
       processLabel: null,
       loadingProcessLabel: false,
       loadingSteps: false,
-      steps: null,
-    };
+      steps: null
+    }
   },
-  created() {
-    this.fetchClass();
-    this.fetchProcessingSteps();
+  created () {
+    this.fetchClass()
+    this.fetchProcessingSteps()
   },
   watch: {
-    $route: ["fetchClass", "fetchProcessingSteps"],
-  },
-};
+    $route: ['fetchClass', 'fetchProcessingSteps']
+  }
+}
 </script>
 
 <style></style>

@@ -8,7 +8,7 @@ PREFIX mm: <http://materialsmine.org/ns/>
 PREFIX prov: <http://www.w3.org/ns/prov#>`
 
 export const requestOptions = {
-  headers: { accept: 'application/sparql-results+json' },
+  headers: { accept: 'application/sparql-results+json' }
 }
 export const encodeQuery = (query) =>
   `${urlEndpoint}?query=${encodeURIComponent(query)}&output=json`

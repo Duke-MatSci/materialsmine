@@ -18,43 +18,43 @@
 </template>
 
 <script>
-import titleQuery from "../queries/titleQuery";
-import getSampleHeader from "../services/getSampleHeader";
+import titleQuery from '../queries/titleQuery'
+import getSampleHeader from '../services/getSampleHeader'
 
 export default {
   methods: {
-    fetchData() {
-      this.error = null;
-      this.loading = true;
-      this.sample = null;
+    fetchData () {
+      this.error = null
+      this.loading = true
+      this.sample = null
       getSampleHeader({
         query: titleQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((sample) => {
-          this.sample = sample;
-          this.loading = false;
+          this.sample = sample
+          this.loading = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loading = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loading = false
+        })
+    }
   },
-  created() {
-    this.fetchData();
+  created () {
+    this.fetchData()
   },
-  data() {
+  data () {
     return {
       loading: false,
       error: null,
-      sample: null,
-    };
+      sample: null
+    }
   },
   watch: {
-    $route: "fetchData",
-  },
-};
+    $route: 'fetchData'
+  }
+}
 </script>
 <style></style>

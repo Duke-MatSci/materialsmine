@@ -16,43 +16,43 @@
 </template>
 
 <script>
-import otherSamplesQuery from "../queries/otherSamplesQuery";
-import getOtherSamples from "../services/getOtherSamples";
+import otherSamplesQuery from '../queries/otherSamplesQuery'
+import getOtherSamples from '../services/getOtherSamples'
 
 export default {
   methods: {
-    fetchData() {
-      this.error = null;
-      this.loading = true;
-      this.links = null;
+    fetchData () {
+      this.error = null
+      this.loading = true
+      this.links = null
       getOtherSamples({
         query: otherSamplesQuery,
-        route: this.$route.params.label,
+        route: this.$route.params.label
       })
         .then((links) => {
-          this.links = links;
-          this.loading = false;
+          this.links = links
+          this.loading = false
         })
         .catch((error) => {
-          console.error(error);
-          this.error = "Sorry, something went wrong";
-          this.loading = false;
-        });
-    },
+          console.error(error)
+          this.error = 'Sorry, something went wrong'
+          this.loading = false
+        })
+    }
   },
-  created() {
-    this.fetchData();
+  created () {
+    this.fetchData()
   },
-  data() {
+  data () {
     return {
       loading: false,
       error: null,
-      links: [],
-    };
+      links: []
+    }
   },
   watch: {
-    $route: "fetchData",
-  },
-};
+    $route: 'fetchData'
+  }
+}
 </script>
 <style></style>
