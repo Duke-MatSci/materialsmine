@@ -1,14 +1,12 @@
 import { mount, createLocalVue } from '@vue/test-utils'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import vPlayBack from 'v-playback' 
 
 import HowTo from '@/pages/howTo/HowTo.vue'
 import store from '@/store'
 
 const localVue = createLocalVue()
 localVue.use(Vuex)
-localVue.use(vPlayBack)
 
 beforeAll(() => {
   jest.resetModules()
