@@ -57,4 +57,20 @@ describe('HowTo.vue', () => {
     await videoTitle.at(1).trigger('click')
     expect(wrapper.findAll('#videoPlayerContainer').length).toEqual(1)
   })
+
+  it('correctly opens a link if passed one', async () => {
+    // suppress jsdom alert 'Not implemented window.open'
+    window.open = jest.fn()
+    window.open.mockClear()
+
+    const wrapper = mount(HowTo, { store, localVue })
+    await Vue.nextTick() // wait for videos to load
+
+    const videoIcon = wrapper.find('.fa-youtube')
+
+    await videoIcon.trigger('click')
+
+    expect(window.open.mock.calls.length).toBeGreaterThanOrEqual(1)
+    expect(window.open.mock.calls[window.open.mock.calls.length - 1][0]).not.toBeNull()
+  })
 })
