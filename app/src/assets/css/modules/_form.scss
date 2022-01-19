@@ -29,6 +29,19 @@
         &::-webkit-input-placeholder {
             color: $primary-light;
         }
+
+        &--adjust {
+            border: .15rem solid $primary;
+            padding: 1.2rem;
+
+            &:focus {
+                border: .15rem solid $primary;
+            }
+
+            &:focus:invalid {
+                border: .15rem solid $tertiary;
+            }
+        }
     }
 
 
