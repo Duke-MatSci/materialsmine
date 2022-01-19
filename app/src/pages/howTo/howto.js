@@ -1,8 +1,17 @@
+import Vue from 'vue'
+
+// video display
+import vPlayBack from 'v-playback'
+Vue.use(vPlayBack)
+
 export default {
   name: 'HowTo',
   data: () => ({
     videos: []
   }),
+  // components: {
+  //   vPlayBack
+  // },
   methods: {
     showBox () {
       console.log(this.filter)
