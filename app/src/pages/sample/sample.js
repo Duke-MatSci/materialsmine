@@ -1,28 +1,21 @@
-import SampleHeader from './components/SampleHeader.vue'
-import SampleImages from './components/SampleImages.vue'
-import MaterialComponentsAndAttributes from './components/MaterialComponentsAndAttributes.vue'
-import CuratedProcessingStepsParameters from './components/CuratedProcessingStepsParameters.vue'
-import OtherSamples from './components/OtherSamples.vue'
+import SampleHeader from "./components/SampleHeader.vue";
+import SampleImages from "./components/SampleImages.vue";
+import MaterialComponentsAndAttributes from "./components/MaterialComponentsAndAttributes.vue";
+import CuratedProcessingStepsParameters from "./components/CuratedProcessingStepsParameters.vue";
+import OtherSamples from "./components/OtherSamples.vue";
+import CuratedPropertiesOfNanocompositeSample from "./components/CuratedPropertiesOfNanocompositeSample.vue";
+
 export default {
-  name: 'Sample',
-  data () {
-    return {
-      route: ''
-    }
-  },
+  name: "Sample",
   components: {
     SampleHeader,
     SampleImages,
     MaterialComponentsAndAttributes,
     CuratedProcessingStepsParameters,
-    OtherSamples
+    CuratedPropertiesOfNanocompositeSample,
+    OtherSamples,
   },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'science', name: 'Sample' })
-    this.route = this.$route.params.label
+  created() {
+    this.$store.commit("setAppHeaderInfo", { icon: "science", name: "Sample" });
   },
-  beforeRouteUpdate (to, from, next) {
-    this.route = to.params.label
-    next()
-  }
-}
+};

@@ -1,0 +1,62 @@
+<template>
+  <div>
+    <div v-if="loading" class="loading">Loading...</div>
+    <div v-if="curatedProperties">
+      <h2>Curated Properties of Nanocomposite Sample</h2>
+      <h3>Scalar attributes:</h3>
+      <ul>
+        <li
+          v-for="property in curatedProperties"
+          :key="property.type + property.value"
+        >
+          <span>{{ property.type }}: </span>
+          <span>{{ property.value }}</span>
+          <span> {{ property.units }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<script>
+import curatedPropertiesQuery from "../queries/curatedPropertiesQuery";
+import getCuratedProperties from "../services/getCuratedProperties";
+
+export default {
+  methods: {
+    fetchData() {
+      this.error = null;
+      this.loading = true;
+      this.curatedProperties = null;
+      getCuratedProperties({
+        query: curatedPropertiesQuery,
+        route: this.$route.params.label,
+      })
+        .then((curatedProperties) => {
+          this.curatedProperties = curatedProperties;
+          this.loading = false;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.error = "Sorry, something went wrong";
+          this.loading = false;
+        });
+    },
+  },
+  data() {
+    return {
+      loading: false,
+      error: null,
+      curatedProperties: null,
+    };
+  },
+  created() {
+    this.fetchData();
+  },
+  watch: {
+    $route: "fetchData",
+  },
+};
+</script>
+
+<style></style>
