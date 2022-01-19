@@ -1,6 +1,6 @@
 import { mount, createLocalVue } from '@vue/test-utils'
 import Vuex from 'vuex'
-import News from '@/pages/researchnews/News.vue'
+import News from '@/pages/nanomine/researchnews/News.vue'
 import store from '@/store'
 
 const localVue = createLocalVue()

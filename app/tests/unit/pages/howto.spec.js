@@ -2,7 +2,7 @@ import { mount, createLocalVue } from '@vue/test-utils'
 import Vue from 'vue'
 import Vuex from 'vuex'
 
-import HowTo from '@/pages/howTo/HowTo.vue'
+import HowTo from '@/pages/nanomine/howTo/HowTo.vue'
 import store from '@/store'
 
 const localVue = createLocalVue()
