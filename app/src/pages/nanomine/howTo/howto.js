@@ -33,7 +33,8 @@ export default {
     },
     displayVideo (idx, link) {
       if (link) {
-        return window.open('https://youtu.be/o2FA1yM85M8', '_blank')
+        console.log('Opening ' + link)
+        return window.open(link, '_blank')
       }
       const vm = this
       vm.hideVideos(idx)
