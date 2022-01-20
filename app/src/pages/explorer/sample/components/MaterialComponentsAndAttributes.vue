@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="loading">loading...</div>
-    <div v-if="materialsData">
+    <div v-if="materialsData && materialsData.length > 0">
       <h1>Material Components and Attributes</h1>
       <ul v-for="material in materialsData" :key="material.classType">
         <li>Class: {{ material.classType }}</li>

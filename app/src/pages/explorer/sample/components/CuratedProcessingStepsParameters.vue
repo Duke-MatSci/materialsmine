@@ -6,7 +6,7 @@
       <h3>Class: {{ processLabel }}</h3>
     </div>
     <div v-if="loadingSteps">Loading...</div>
-    <div v-if="steps">
+    <div v-if="steps && steps.length > 0">
       <h3>Processing Steps:</h3>
       <ul>
         <li v-for="step in steps" :key="step.description">

@@ -11,7 +11,7 @@
         <li>Label: {{ sample.sample_label }}</li>
       </ul>
     </div>
-    <div v-if="sample === undefined">
+    <div v-if="sample === null">
       <h1 class="sample_header">Sample not found</h1>
     </div>
   </div>

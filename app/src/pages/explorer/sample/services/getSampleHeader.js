@@ -3,6 +3,7 @@ import { parseSPARQL } from './damien'
 
 const parseTitleData = (data) => {
   const parsedData = parseSPARQL(data)
+  if (!parsedData.length) return null
   const [sampleData] = parsedData
   return sampleData
 }

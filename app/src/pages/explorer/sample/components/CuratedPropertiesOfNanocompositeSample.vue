@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="loading" class="loading">Loading...</div>
-    <div v-if="curatedProperties">
+    <div v-if="curatedProperties && curatedProperties.length > 0">
       <h2>Curated Properties of Nanocomposite Sample</h2>
       <h3>Scalar attributes:</h3>
       <ul>
