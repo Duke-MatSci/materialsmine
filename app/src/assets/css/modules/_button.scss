@@ -111,7 +111,7 @@
 
     &:hover {
         background-color: $primary;
-        color: $primary-white;
+        color: $primary-white !important;
         box-shadow: 0 1rem 2rem rgba($primary-black, .15);
         transform: translateY(-2px);
         border-bottom: 1px solid $primary-light;

@@ -48,21 +48,21 @@
     &_header {
         text-align: center;
         &-h1 {
-            font-size: 3rem;
+            font-size: 4.2rem;
             font-weight: 300;
             margin-bottom: 2rem;
+            line-height: 1;
             background-image: linear-gradient(to right bottom, $primary, rgba($primary-light, 0.4));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
 
             @include respond(tab-land){
-                font-size: 2.5rem;
                 margin-bottom: 1.4rem;
             }
 
             @include respond(phone){
-                font-size: 2.1rem;
+                font-size: 2.8rem;
                 margin-bottom: 0;
             }
         }
