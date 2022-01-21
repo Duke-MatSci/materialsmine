@@ -85,7 +85,7 @@
     </div>
 
 <div class="md-layout md-gutter md-alignment-top-center">
-    <div class="md-layout-item md-medium-size-35  md-small-size-100">
+    <div class="md-layout-item  md-size-35 md-small-size-100">
       <div class="loading-dialog_justify">
         <div class="visualize">
           <div class="viz-sample__header" v-if="vizOfTheDay">
@@ -117,7 +117,7 @@
         </div>
       </div>
     </div>
-    <div class="md-layout-item md-medium-size-60 md-small-size-100">
+    <div class="md-layout-item md-size-60 md-small-size-100">
       <div class="loading-dialog" style="margin: auto" v-if="loading">
         <spinner :loading="loading" />
       </div>

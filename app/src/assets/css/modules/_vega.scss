@@ -419,7 +419,7 @@ pre.CodeMirror{
                 color: $primary !important;
             }
         }
-        & > .jsoneditor-container  {
+        .jsoneditor-container  {
             &.min-box{
                 min-width: 0px !important;
             }
