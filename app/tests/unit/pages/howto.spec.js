@@ -35,10 +35,10 @@ describe('HowTo.vue', () => {
     expect(videoTitle.exists()).toBeTruthy()
 
     await videoTitle.trigger('click')
-    expect(wrapper.find('#videoPlayerContainer').exists()).toBeTruthy()
+    expect(wrapper.find('video').exists()).toBeTruthy()
 
     await videoTitle.trigger('click')
-    expect(wrapper.find('#videoPlayerContainer').exists()).toBeFalsy()
+    expect(wrapper.find('video').exists()).toBeFalsy()
   })
 
   it('closes any other open videos when a new one is clicked', async () => {
@@ -52,10 +52,10 @@ describe('HowTo.vue', () => {
     const videoTitle = wrapper.findAll('.howto_item .howto_item-header')
 
     await videoTitle.at(0).trigger('click')
-    expect(wrapper.findAll('#videoPlayerContainer').length).toEqual(1)
+    expect(wrapper.findAll('video').length).toEqual(1)
 
     await videoTitle.at(1).trigger('click')
-    expect(wrapper.findAll('#videoPlayerContainer').length).toEqual(1)
+    expect(wrapper.findAll('video').length).toEqual(1)
   })
 
   it('correctly opens a link if passed one', async () => {

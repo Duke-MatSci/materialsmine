@@ -7,7 +7,7 @@
                 </div>
                 <p>{{ video.text }}</p>
                 <div v-if="!video.hide">
-                    <v-playback :url="video.url"></v-playback>
+                    <video controls autoplay :src="video.url"></video>
                 </div>
             </div>
             <div class="howto_item">
