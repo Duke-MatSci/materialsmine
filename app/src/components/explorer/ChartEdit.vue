@@ -74,14 +74,14 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import { mapState, mapGetters, mapMutations, mapActions } from 'vuex'
 import splitPane from 'vue-splitpane'
 import VJsoneditor from 'v-jsoneditor'
 import yasqe from '@/components/yasqe'
 import yasr from '@/components/yasr'
 
-export default Vue.component('chart-editor', {
+export default {
+  name: 'chart-edit',
   props: ['instances'],
   data () {
     return {
@@ -162,6 +162,6 @@ export default Vue.component('chart-editor', {
     this.defineAction()
     this.initializeChart()
   }
-})
+}
 
 </script>

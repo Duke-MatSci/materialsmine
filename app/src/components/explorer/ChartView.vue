@@ -135,13 +135,16 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import VJsoneditor from 'v-jsoneditor'
-
 import Dialog from '@/components/dialog.vue'
 import { getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
 
-export default Vue.component('chartview', {
+export default {
+  name: 'chart-view',
+  components: {
+    MdDialog: Dialog,
+    VJsoneditor
+  },
   data () {
     return {
       error: { status: false, message: null },
@@ -171,10 +174,6 @@ export default Vue.component('chartview', {
         }
       }
     }
-  },
-  components: {
-    MdDialog: Dialog,
-    VJsoneditor
   },
   computed: {
     specViewerSpec () {
@@ -216,5 +215,5 @@ export default Vue.component('chartview', {
     //   .$on('isauthenticated', (data) => this.authenticated = data)
     //   .$on('allowChartEdit', (data) => this.allowEdit = data)
   }
-})
+}
 </script>
