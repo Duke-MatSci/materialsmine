@@ -13,7 +13,7 @@
         <template slot="paneL">
           <div class="splitpane_panel">
             <md-tabs class="vega-tabs">
-            <md-tab id="tab-sparql" class="viz-editor-tabs-item tabselected" md-label="Sparql" style="color:$primary-black !important">
+            <md-tab id="tab-sparql" md-label="Sparql">
                 <yasqe
                     :value="query"
                     :readOnly="queryEditorReadOnly"
