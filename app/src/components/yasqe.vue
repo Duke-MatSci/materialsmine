@@ -54,6 +54,7 @@ export default {
       }
     })
     this.yasqe.setValue(this.value)
+    setTimeout(() => this.yasqe.refresh(), 1)
     this.yasqe.on('error', function () {
       console.error('YASQE query error', arguments)
       yasqeContext.$emit('query-error', arguments)
