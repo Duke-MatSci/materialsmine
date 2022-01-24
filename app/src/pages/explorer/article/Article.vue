@@ -8,24 +8,11 @@
       <!-- **** Content Goes Here *** -->
       <div class="article">
         <h1>{{ doi }}</h1>
+        <div>{{articleMetadata}}</div>
+        <div>{{referencesMetadata}}</div>
+        <div>{{citationsMetadata}}</div>
       </div>
     </md-app-content>
   </md-app>
 </template>
-
-<script>
-export default {
-  name: 'Article',
-  props: {
-    doi: {
-      type: String,
-      default: '10.1002/polb.20925'
-    }
-  },
-  data: async (vm) => {
-    return {
-      SS_response: await (fetch(`https://api.semanticscholar.org/v1/paper/` + vm.doi)).json()
-    }
-  }
-}
-</script>
+<script src='./article.js'></script>
