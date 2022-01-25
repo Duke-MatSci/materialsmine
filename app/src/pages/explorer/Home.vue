@@ -7,6 +7,7 @@
 			</md-app-drawer>
 
 			<md-app-content>
+				<dialog-box :active="true" />
 				<div class="section_teams">
 					<div class="search_box">
 						<h2 class="search_box_header">Welcome to MM Explorer</h2>
@@ -51,11 +52,13 @@
 <script>
 import ExpHeader from '@/components/explorer/Header.vue'
 import Drawer from '@/components/explorer/Drawer.vue'
+import Dialog from '@/components/Dialog.vue'
 export default {
   name: 'ExplorerHome',
   components: {
     mdAppToolbar: ExpHeader,
-    Drawer
+    Drawer,
+	dialogBox: Dialog,
   },
   data () {
     return {
@@ -65,6 +68,11 @@ export default {
         { icon: 'cloud_upload', text: 'Curate', link: '' },
         { icon: 'help', text: 'Help', link: '' }
       ]
+    }
+  },
+  computed: {
+    dialogBox() {
+      return this.$store.getters.dialogBox;
     }
   },
   methods: {
