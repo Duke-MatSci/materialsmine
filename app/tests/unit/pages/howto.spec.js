@@ -69,7 +69,7 @@ describe('HowTo.vue', () => {
     const videoIcons = wrapper.findAll('.material-icons')
 
     if (videoIcons.exists()) {
-      for (let videoIcon of videoIcons.wrappers) {
+      for (const videoIcon of videoIcons.wrappers) {
         if (videoIcon.text().indexOf('smart_display') !== -1) {
           await videoIcon.trigger('click')
           expect(window.open.mock.calls.length).toBeGreaterThanOrEqual(1)
