@@ -5,6 +5,7 @@
 <script>
 import Yasqe from '@triply/yasqe'
 import '@triply/yasqe/build/yasqe.min.css'
+
 export default {
   name: 'yasqe',
   props: {

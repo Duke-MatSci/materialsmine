@@ -77,8 +77,8 @@
 import { mapState, mapGetters, mapMutations, mapActions } from 'vuex'
 import splitPane from 'vue-splitpane'
 import VJsoneditor from 'v-jsoneditor'
-import yasqe from '@/components/yasqe'
-import yasr from '@/components/yasr'
+import yasqe from '@/components/explorer/yasqe'
+import yasr from '@/components/explorer/yasr'
 
 export default {
   name: 'chart-edit',
