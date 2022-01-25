@@ -16,9 +16,19 @@ export default {
   data: () => {
     return {
       toggleMenuVisibility: false,
-      articleMetadata: {},
-      citationsMetadata: {},
-      referencesMetadata: {}
+      article: {},
+      articleCitations: {},
+      articleReferences: {}
+    }
+  },
+  computed: {
+    articleAuthors: function () {
+      if (this.article.authors){
+        return this.article.authors.map(author => author.name).join(', ')
+      }
+      else {
+        return ''
+      }
     }
   },
   created: function() {

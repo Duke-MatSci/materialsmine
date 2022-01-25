@@ -1,0 +1,18 @@
+<md-app md-waterfall md-mode="fixed-last">
+    <md-app-toolbar :toggler="toggleMenu" />
+    <md-app-drawer :md-active.sync="toggleMenuVisibility">
+      <drawer />
+    </md-app-drawer>
+    <md-app-content>
+      <div class="section_pages">
+          <div class="wrapper">
+            <div class="article_title">
+                <h1>{{ article.title }}</h1>
+            </div>
+            <div class="article_authors">
+                {{ articleAuthors }}
+            </div>
+          </div>
+      </div>
+    </md-app-content>
+</md-app>
