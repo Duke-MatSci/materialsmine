@@ -48,7 +48,7 @@
                         </md-field>
                         </div>
                         <div style="display: block;">
-                        <button type="submit" class="btn btn--primary">{{ actionType }} <md-icon style="color:#32CD32">check</md-icon></button>
+                        <button id="saveChartButton" type="submit" class="btn btn--primary">{{ actionType }} <md-icon style="color:#32CD32">check</md-icon></button>
                         </div>
                     </form>
                 </div>
