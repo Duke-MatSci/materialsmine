@@ -12,7 +12,7 @@ export default {
         name: 'MaterialsMine',
         subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
-      dialogBox: false,
+      dialogBox: false
     }
   },
   mutations,

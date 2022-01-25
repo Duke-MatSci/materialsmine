@@ -58,7 +58,7 @@ export default {
   components: {
     mdAppToolbar: ExpHeader,
     Drawer,
-	dialogBox: Dialog,
+    dialogBox: Dialog
   },
   data () {
     return {
@@ -71,8 +71,8 @@ export default {
     }
   },
   computed: {
-    dialogBox() {
-      return this.$store.getters.dialogBox;
+    dialogBox () {
+      return this.$store.getters.dialogBox
     }
   },
   methods: {
