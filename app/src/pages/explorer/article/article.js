@@ -3,15 +3,15 @@ import Drawer from '@/components/explorer/Drawer.vue'
 
 export default {
   name: 'Article',
+  components: {
+    mdAppToolbar: ExpHeader,
+    Drawer
+  },
   props: {
     doi: {
       type: String,
       default: '10.1063/1.5046839'
     }
-  },
-  components: {
-    mdAppToolbar: ExpHeader,
-    Drawer
   },
   data: () => {
     return {
@@ -21,41 +21,48 @@ export default {
       referencesMetadata: {}
     }
   },
+  created: function() {
+    this.retrieveArticleMetadata()
+  },
   methods: {
     toggleMenu () {
       this.toggleMenuVisibility = !this.toggleMenuVisibility
     },
-    async fetchJSON (requestURL){
-      return fetch(requestURL).then(response => {
-        if (!response.ok) {
-          response.text().then(data => { 
-            throw new Error(`${response.status} ${JSON.parse(data).error}`) 
-          })
-        }
-        else {
-          return response.json()
-        }
-      }).then(data => {
-        return data
-      }).catch(error => {
-        console.error('Error while fetching DOI:', error)
-      })
-    },
     async retrieveArticleMetadata () {
-      var semanticScholarAPI = `https://api.semanticscholar.org/graph/v1/paper/DOI:${this.doi}`
-      var articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess']
-      var articleRequest = `${semanticScholarAPI}?fields=${articleFields.join(',')}`
-      var citationFields = ['title', 'authors', 'year']
-      var citationRequest = `${semanticScholarAPI}/citations?fields=${citationFields.join(',')}`
-      var referencesFields = ['title', 'authors', 'year']
-      var referencesRequest = `${semanticScholarAPI}/references?fields=${referencesFields.join(',')}`
+      var semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${this.doi}/`
 
-      this.articleMetadata = await this.fetchJSON(articleRequest)
-      this.citationsMetadata = await this.fetchJSON(citationRequest)
-      this.referencesMetadata = await this.fetchJSON(referencesRequest)
+      var articleRequest = new URL(semanticScholarBase)
+      var articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess']
+      articleRequest.search = new URLSearchParams({fields: articleFields.join(',')})
+
+      var citationRequest = new URL(semanticScholarBase + 'citations')
+      var citationFields = ['title', 'authors', 'year']
+      citationRequest.search = new URLSearchParams({fields: citationFields.join(',')})
+
+      var referencesRequest = new URL(semanticScholarBase + 'references')
+      var referencesFields = ['title', 'authors', 'year']
+      referencesRequest.search = new URLSearchParams({fields: referencesFields.join(',')})
+
+      this.article = await fetchJSON(articleRequest)
+      this.articleCitations = await fetchJSON(citationRequest)
+      this.articleReferences = await fetchJSON(referencesRequest)
     }
-  },
-  created: function() {
-    this.retrieveArticleMetadata()
   }
+}
+
+async function fetchJSON(requestURL){
+  return fetch(requestURL).then(response => {
+    if (!response.ok) {
+      response.text().then(data => {
+        throw new Error(`${response.status} ${JSON.parse(data).error}`)
+      })
+    }
+    else {
+      return response.json()
+    }
+  }).then(data => {
+    return data
+  }).catch(error => {
+    console.error('Error while fetching DOI:', error)
+  })
 }
