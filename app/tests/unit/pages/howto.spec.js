@@ -66,11 +66,16 @@ describe('HowTo.vue', () => {
     const wrapper = mount(HowTo, { store, localVue })
     await Vue.nextTick() // wait for videos to load
 
-    const videoIcon = wrapper.find('.fa-youtube')
+    const videoIcons = wrapper.findAll('.material-icons')
 
-    await videoIcon.trigger('click')
-
-    expect(window.open.mock.calls.length).toBeGreaterThanOrEqual(1)
-    expect(window.open.mock.calls[window.open.mock.calls.length - 1][0]).not.toBeNull()
+    if (videoIcons.exists()) {
+      for (let videoIcon of videoIcons.wrappers) {
+        if (videoIcon.text().indexOf('smart_display') !== -1) {
+          await videoIcon.trigger('click')
+          expect(window.open.mock.calls.length).toBeGreaterThanOrEqual(1)
+          expect(window.open.mock.calls[window.open.mock.calls.length - 1][0]).not.toBeNull()
+        }
+      }
+    }
   })
 })
