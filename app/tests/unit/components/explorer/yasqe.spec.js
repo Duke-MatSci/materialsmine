@@ -23,4 +23,16 @@ describe('yasqe.vue', () => {
     const yasqeComponent = wrapper.findComponent('#yasqeTest > .yasqe')
     expect(yasqeComponent.exists()).toBeTruthy()
   })
+  it('displays query from prop', async () => {
+    const value = `SELECT DISTINCT ?testvariable 
+    WHERE {
+        ?testvariable a ?item.
+    } LIMIT 1`
+    const wrapper = mount(YasqeWrapper, {
+      propsData: {
+        value
+      }
+    })
+    expect(wrapper.text()).toContain('?testvariable')
+  })
 })

@@ -4,7 +4,6 @@
 
 <script>
 import YASR from '@triply/yasr'
-import '@triply/yasr/build/yasr.min.css'
 
 export default {
   name: 'yasr',
@@ -44,3 +43,6 @@ export default {
   }
 }
 </script>
+
+<style css src='@triply/yasr/build/yasr.min.css'>
+</style>
