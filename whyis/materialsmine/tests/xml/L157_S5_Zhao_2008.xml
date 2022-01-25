@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L157_S5_Zhao_2008</ID>
+  <Control_ID>L157_S1_Zhao_2008</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Composites Science and Technology</Publication>
+        <Title>Mechanisms leading to improved mechanical performance in nanoscale alumina filled epoxy</Title>
+        <Author>Zhao, Su</Author>
+        <Author>Schadler, Linda S.</Author>
+        <Author>Duncan, Renee</Author>
+        <Author>Hillborg, Henrik</Author>
+        <Author>Auletta, Tommaso</Author>
+        <Keyword>Nanocomposites</Keyword>
+        <Keyword>Interface</Keyword>
+        <Keyword>Stress/strain curves</Keyword>
+        <Keyword>Fracture</Keyword>
+        <Keyword>Mechanisms</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2008</PublicationYear>
+        <DOI>10.1016/j.compscitech.2008.01.009</DOI>
+        <Volume>68</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0266353808000213?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Department of Materials Science and Engineering and Rensselaer Nanotechnology Center, Rensselaer Polytechnic Institute, 110 8th Street, Troy, NY 12180, USA</Location>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0266-3538</ISSN>
+          <Issue>14</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>epoxy</ChemicalName>
+        <Abbreviation>ER</Abbreviation>
+        <PlasticType>thermoset</PlasticType>
+        <PolymerClass>Polyepoxide</PolymerClass>
+        <PolymerType>homopolymer</PolymerType>
+        <ManufacturerOrSourceName>Huntsman</ManufacturerOrSourceName>
+        <TradeName>Araldite F</TradeName>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>alumina</ChemicalName>
+        <Abbreviation>Al2O3</Abbreviation>
+        <ManufacturerOrSourceName>Nanophase Technologies Corporation</ManufacturerOrSourceName>
+        <TradeName>NanoTek</TradeName>
+        <SphericalParticleDiameter>
+          <value>45</value>
+          <unit>nm</unit>
+        </SphericalParticleDiameter>
+      </FillerComponent>
+      <FillerComposition>
+        <Fraction>
+          <volume>0.061</volume>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>nanoparticles were dried in vacuum</Description>
+          <Temperature>
+            <value>190</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>24</value>
+            <unit>hours</unit>
+          </Time>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Mixer>Hauschild SpeedMixer (DAC-150)</Mixer>
+          <MixingMethod>high shear mixing</MixingMethod>
+          <ChemicalUsed>
+            <description>epoxy</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>alumina</description>
+          </ChemicalUsed>
+          <RPM>
+            <value>3450</value>
+          </RPM>
+          <Time>
+            <value>20</value>
+            <unit>minutes</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>hardener</Description>
+          <Additive>Aradur HY905</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>catalyst</Description>
+          <Additive>DY062</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Description>curing</Description>
+          <Temperature>
+            <value>80</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>6</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Description>post-curing</Description>
+          <Temperature>
+            <value>135</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>10</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>casting</MoldingMode>
+        </Molding>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Transmission_Electron_Microscopy>
+      <EquipmentUsed>JEOL CM12</EquipmentUsed>
+    </Transmission_Electron_Microscopy>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>JEOL 6330F</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Differential_Scanning_Calorimetry>
+      <Equipment>model Q100</Equipment>
+      <Description>TA Instruments</Description>
+      <HeatingRate>
+        <value>10</value>
+        <unit>C/min</unit>
+      </HeatingRate>
+    </Differential_Scanning_Calorimetry>
+    <Fourier_Transform_Infrared_Spectroscopy>
+      <Equipment>Nicolet 4700 FT-IR spectrometer</Equipment>
+    </Fourier_Transform_Infrared_Spectroscopy>
+    <Thermogravimetric_Analysis>
+      <Equipment>model Q50</Equipment>
+      <Description>TA Instruments</Description>
+    </Thermogravimetric_Analysis>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Mechanical>
+      <Tensile>
+        <TensileModulus>
+          <value>4.03</value>
+          <unit>GPa</unit>
+          <uncertainty>
+            <type>absolute</type>
+            <value>0.1</value>
+          </uncertainty>
+        </TensileModulus>
+        <TensileStressAtBreak>
+          <value>92</value>
+          <unit>GPa</unit>
+          <uncertainty>
+            <type>absolute</type>
+            <value>1.5</value>
+          </uncertainty>
+        </TensileStressAtBreak>
+        <ElongationAtBreak>
+          <value>4.7</value>
+          <unit>%</unit>
+          <uncertainty>
+            <type>absolute</type>
+            <value>0.5</value>
+          </uncertainty>
+        </ElongationAtBreak>
+      </Tensile>
+    </Mechanical>
+    <Thermal>
+      <GlassTransitionTemperature>
+        <value>112</value>
+        <unit>Celsius</unit>
+        <uncertainty>
+          <type>absolute</type>
+          <value>1</value>
+        </uncertainty>
+      </GlassTransitionTemperature>
+    </Thermal>
+  </PROPERTIES>
+</PolymerNanocomposite>

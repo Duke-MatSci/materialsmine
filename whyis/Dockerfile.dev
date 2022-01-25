@@ -1,7 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y software-properties-common gcc && \
     add-apt-repository -y ppa:deadsnakes/ppa
 
-RUN apt-get update && apt-get install -y python3 python3-distutils python3-pip python3-apt curl
+RUN apt-get update && apt-get install -y python3.9 python3.9-distutils python3.9-dev python3-pip curl libdb5.3-dev default-jdk-headless
+RUN python3.9 -m pip install requests wheel
+RUN python3.9 -m pip install whyis==2.0a4
 WORKDIR '/apps'
 CMD [ "/bin/bash" ]
