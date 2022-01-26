@@ -7,12 +7,6 @@ export default {
     mdAppToolbar: ExpHeader,
     Drawer
   },
-  props: {
-    doi: {
-      type: String,
-      default: '10.1063/1.5046839'
-    }
-  },
   data: () => {
     return {
       toggleMenuVisibility: false,
@@ -22,6 +16,9 @@ export default {
     }
   },
   computed: {
+    doi: function () {
+      return this.$route.params.doi
+    },
     articleAuthors: function () {
       if (this.article.authors){
         return this.article.authors.map(author => author.name).join(', ')
@@ -30,6 +27,9 @@ export default {
         return ''
       }
     }
+  },
+  watch: {
+    $route: 'retrieveArticleMetadata'
   },
   created: function() {
     this.retrieveArticleMetadata()
