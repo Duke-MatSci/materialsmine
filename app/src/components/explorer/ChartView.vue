@@ -138,6 +138,7 @@
 import VJsoneditor from 'v-jsoneditor'
 import Dialog from '@/components/dialog.vue'
 import { getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'chart-view',
@@ -148,17 +149,11 @@ export default {
   data () {
     return {
       error: { status: false, message: null },
-      filter: false,
       loading: true,
       spec: null,
-      chart: {
-        title: 'Test title',
-        description: 'Here is a description of a chart which depicts some data that was recorded by researchers. The research corresponds to a paper which was published in a journal at a date. The data is stored in a database which can be accessed via a link.'
-      },
+      chart: null,
       chartTags: [],
       args: null,
-      authenticated: true,
-      // authenticated: EventServices.authUser,
       allowEdit: false,
       vizOfTheDay: false,
       voyager: {
@@ -176,6 +171,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters('auth', ['isAuthenticated']),
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     }
@@ -211,9 +207,6 @@ export default {
   },
   created () {
     this.loading = true
-    //   EventServices
-    //   .$on('isauthenticated', (data) => this.authenticated = data)
-    //   .$on('allowChartEdit', (data) => this.allowEdit = data)
   }
 }
 </script>
