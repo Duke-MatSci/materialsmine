@@ -1,6 +1,6 @@
 import fetchJSON from './fetchJSON.js'
 
-export default async function getArticleMetadata ({doi}) {
+export default async function getArticleMetadata ({ doi }) {
   var semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/`
 
   var articleRequest = new URL(semanticScholarBase)
@@ -37,32 +37,30 @@ export default async function getArticleMetadata ({doi}) {
   return article
 }
 
-function cleanPapers(rawData, prop) {
-  let cleanedData = rawData.data.map(paper => paper[prop]).filter(articleFilter()).sort(articleSort())
-  for (let ref of cleanedData) {
-    if(ref.authors){
+function cleanPapers (rawData, prop) {
+  const cleanedData = rawData.data.map(paper => paper[prop]).filter(articleFilter()).sort(articleSort())
+  for (const ref of cleanedData) {
+    if (ref.authors) {
       ref.authorNames = ref.authors.map(author => author.name).join(', ')
     }
   }
   return cleanedData
 }
 
-function articleSort() {
-  return function(a, b) {
+function articleSort () {
+  return function (a, b) {
     if (a.year < b.year) {
       return -1
-    }
-    else if (a.year > b.year) {
+    } else if (a.year > b.year) {
       return 1
-    }
-    else {
+    } else {
       return a.title.localeCompare(b.title)
     }
   }
 }
 
-function articleFilter() {
-  return function(paper) {
+function articleFilter () {
+  return function (paper) {
     return paper.title && paper.authors && paper.year && paper.paperId
   }
 }

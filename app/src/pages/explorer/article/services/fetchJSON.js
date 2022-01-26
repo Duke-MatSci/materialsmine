@@ -1,11 +1,10 @@
-export default async function fetchJSON(requestURL){
+export default async function fetchJSON (requestURL) {
   return fetch(requestURL).then(response => {
     if (!response.ok) {
       response.text().then(data => {
         throw new Error(`${response.status} ${JSON.parse(data).error}`)
       })
-    }
-    else {
+    } else {
       return response.json()
     }
   }).then(data => {

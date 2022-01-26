@@ -1,5 +1,6 @@
 import ExpHeader from '@/components/explorer/Header.vue'
 import Drawer from '@/components/explorer/Drawer.vue'
+
 import getArticleMetadata from './services/getArticleMetadata'
 
 export default {
@@ -21,19 +22,18 @@ export default {
     doiLink: function () {
       if (this.doi) {
         return new URL(this.doi, 'https://www.doi.org')
-      }
-      else {
+      } else {
         return ''
       }
     }
   },
   watch: {
     $route: async function (newDOI) {
-      this.article = await retrieveArticleMetadata({newDOI})
+      this.article = await getArticleMetadata({ doi: newDOI })
     }
   },
-  created: async function() {
-    this.article = await getArticleMetadata({doi: this.doi})
+  created: async function () {
+    this.article = await getArticleMetadata({ doi: this.doi })
   },
   methods: {
     toggleMenu () {
