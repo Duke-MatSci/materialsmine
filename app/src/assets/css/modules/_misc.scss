@@ -42,12 +42,12 @@
             @include respond(phone){
                 padding-left: 0;
             }
-            
+
             & > li {
                 display: inline-block;
                 list-style: none;
             }
-        } 
+        }
     }
 
     &_container {
@@ -146,7 +146,7 @@
 
         &-text {
            font-size: 1.26rem;
-           color: $primary-grey; 
+           color: $primary-grey;
            font-style: italic;
            margin: .7rem 0;
            padding: 0 1.4rem;
@@ -176,7 +176,7 @@
             @include respond(phone){
                 transform: rotate(-8deg) translateY(63px);
             }
-            
+
             &-list {
                 position: absolute;
                 top: 20px;
@@ -289,7 +289,7 @@
         }
 
         & > img {
-            height: 21rem; 
+            height: 21rem;
             width: auto;
         }
 
@@ -362,13 +362,13 @@
                     display: table-cell;
                     margin-right: 5rem;
                     margin-bottom: 5rem;
-    
+
                     @include respond(tab-port){
                         display: block;
                         margin-right: 0;
                     }
                 }
-            } 
+            }
         }
     }
 
@@ -380,7 +380,7 @@
         height: 30rem;
 
         &--1 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                     rgba($primary-light, 1) 0%,
                                     rgba($primary-light, .5) 0%,
                                     transparent 0%),
@@ -388,7 +388,7 @@
         }
 
         &--2 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                 rgba($primary-light, 1) 0%,
                                 rgba($primary-light, .5) 0%,
                                 transparent 0%),
@@ -396,7 +396,7 @@
         }
 
         &--3 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                 rgba($primary-light, 1) 0%,
                                 rgba($primary-light, .5) 0%,
                                 transparent 0%),
@@ -467,14 +467,14 @@
 
         & * button,
         & button {
-            background-color: $tertiary !important; 
-            color: $primary !important; 
+            background-color: $tertiary !important;
+            color: $primary !important;
         }
     }
 
     &_btns {
-        background-color: $tertiary !important; 
-        color: $primary !important; 
+        background-color: $tertiary !important;
+        color: $primary !important;
     }
 
     &_txt {
@@ -504,6 +504,93 @@
             word-spacing: .2rem;
             text-align: justify;
             margin-bottom: 1rem;
+        }
+    }
+}
+
+.article {
+    &_title {
+        margin: 1rem 0;
+        padding-bottom: 0.2rem;
+    }
+
+    &_subtitle {
+        margin: 1rem 0;
+        font-weight: bold;
+        font-size: 2.2rem;
+    }
+
+    &_authors {
+        margin: 1rem 0;
+        font-style: italic;
+        font-size: 2.2rem;
+    }
+
+    &_metadata {
+        margin: 1rem 0;
+        font-size: 1.5rem;
+
+        &_strong {
+            font-weight: bold;
+        }
+    }
+
+    &_abstract {
+        width: 90%;
+        font-size: 1.7rem;
+        line-height: 1.3;
+        margin: 1rem 0;
+    }
+
+    &_table {
+        height: 50rem;
+        overflow: auto;
+        margin: 2rem 0;
+
+        & > table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        & tr {
+            border: solid;
+            border-color: #555;
+            border-width: 1px 0;
+
+            &:first-child {
+                border-top: none;
+            }
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        & th {
+            text-align: left;
+            font-size: 1.7rem;
+            position: sticky;
+            top: 0;
+            background: #eee;
+            &:nth-child(1){
+                width: 2.5em;
+            }
+            &:nth-child(2){
+                width: 20%;
+            }
+            &:nth-child(3){
+                width: 75%;
+            }
+        }
+
+        & td {
+            overflow: hidden;
+            max-width: 30%;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 1.5rem;
+            text-align: left;
         }
     }
 }
