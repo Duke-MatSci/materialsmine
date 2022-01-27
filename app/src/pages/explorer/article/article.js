@@ -56,6 +56,3 @@ export default {
     }
   }
 }
-
-//10.1002%2Fpolb.20925
-//
