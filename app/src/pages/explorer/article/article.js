@@ -9,10 +9,12 @@ export default {
     mdAppToolbar: ExpHeader,
     Drawer
   },
-  data: () => {
+  data () {
     return {
       toggleMenuVisibility: false,
-      article: {}
+      article: null,
+      loading: false,
+      error: null
     }
   },
   computed: {
@@ -28,16 +30,32 @@ export default {
     }
   },
   watch: {
-    $route: async function (newDOI) {
-      this.article = await getArticleMetadata({ doi: newDOI })
-    }
+    $route: 'fetchData'
   },
-  created: async function () {
-    this.article = await getArticleMetadata({ doi: this.doi })
+  created () {
+    this.fetchData()
   },
   methods: {
     toggleMenu () {
       this.toggleMenuVisibility = !this.toggleMenuVisibility
+    },
+    async fetchData () {
+      this.article = null
+      this.loading = true
+      this.error = null
+      getArticleMetadata({ doi: this.doi })
+        .then((article) => {
+          this.article = article
+          this.loading = false
+        })
+        .catch((error) => {
+          console.log(error)
+          this.error = 'Error loading article metadata'
+          this.loading = false
+        })
     }
   }
 }
+
+//10.1002%2Fpolb.20925
+//
