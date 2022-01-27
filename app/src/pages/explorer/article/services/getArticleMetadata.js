@@ -4,7 +4,7 @@ export default async function getArticleMetadata ({ doi }) {
   var semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/`
 
   var articleRequest = new URL(semanticScholarBase)
-  var articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess']
+  var articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue']
   articleRequest.search = new URLSearchParams({
     fields: articleFields.join(','),
     limit: 500
