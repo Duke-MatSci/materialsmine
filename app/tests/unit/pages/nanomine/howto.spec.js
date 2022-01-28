@@ -1,5 +1,4 @@
 import { mount, createLocalVue } from '@vue/test-utils'
-import Vue from 'vue'
 import Vuex from 'vuex'
 
 import HowTo from '@/pages/nanomine/howTo/HowTo.vue'
@@ -29,7 +28,7 @@ describe('HowTo.vue', () => {
     window.open.mockClear()
 
     const wrapper = mount(HowTo, { store, localVue })
-    await Vue.nextTick() // wait for videos to load
+    await localVue.nextTick() // wait for videos to load
 
     const videoTitle = wrapper.find('.howto_item .howto_item-header')
     expect(videoTitle.exists()).toBeTruthy()
@@ -47,7 +46,7 @@ describe('HowTo.vue', () => {
     window.open.mockClear()
 
     const wrapper = mount(HowTo, { store, localVue })
-    await Vue.nextTick() // wait for videos to load
+    await localVue.nextTick() // wait for videos to load
 
     const videoTitle = wrapper.findAll('.howto_item .howto_item-header')
 
@@ -64,7 +63,7 @@ describe('HowTo.vue', () => {
     window.open.mockClear()
 
     const wrapper = mount(HowTo, { store, localVue })
-    await Vue.nextTick() // wait for videos to load
+    await localVue.nextTick() // wait for videos to load
 
     const videoIcons = wrapper.findAll('.material-icons')
 
