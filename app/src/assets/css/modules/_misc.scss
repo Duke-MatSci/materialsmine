@@ -542,10 +542,13 @@
         margin: 1rem 0;
     }
 
-    &_table {
-        height: 50rem;
-        overflow: auto;
+    &_citations,&_references {
         margin: 2rem 0;
+    }
+
+    &_table {
+        max-height: 50rem;
+        overflow: auto;
 
         & > table {
             table-layout: fixed;

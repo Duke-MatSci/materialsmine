@@ -24,43 +24,47 @@
             <div class="article_metadata">
               Cited by <span class="article_metadata_strong">{{ article.citationCount }}</span> other works.
             </div>
-            <div class="article_references article_table">
+            <div class="article_references">
               <div class="article_subtitle">References</div>
-              <table class="article_table">
-                <thead>
-                  <tr class="article_table-header">
-                    <th scope="col">Year</th>
-                    <th scope="col">Author(s)</th>
-                    <th scope="col">Title</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="article_table-row" v-for="(refObject, index) of article.references" :key="refObject.paperId">
-                    <td>{{ refObject.year }}</td>
-                    <td>{{ refObject.authorNames }}</td>
-                    <td>{{ refObject.title }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="article_table">
+                <table class="article_table">
+                  <thead>
+                    <tr class="article_table-header">
+                      <th scope="col">Year</th>
+                      <th scope="col">Author(s)</th>
+                      <th scope="col">Title</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="article_table-row" v-for="(refObject, index) of article.references" :key="refObject.paperId">
+                      <td>{{ refObject.year }}</td>
+                      <td>{{ refObject.authorNames }}</td>
+                      <td>{{ refObject.title }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="article_citations article_table">
+            <div class="article_citations">
               <div class="article_subtitle">Cited By</div>
-              <table>
-                <thead>
-                  <tr class="article_table-header">
-                    <th scope="col">Year</th>
-                    <th scope="col">Author(s)</th>
-                    <th scope="col">Title</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr class="article_table-row" v-for="(refObject, index) of article.citations" :key="refObject.paperId">
-                    <td>{{ refObject.year }}</td>
-                    <td>{{ refObject.authorNames }}</td>
-                    <td>{{ refObject.title }}</td>
-                  </tr>
-                </tbody>
-              </table>
+              <div class="article_table">
+                <table>
+                  <thead>
+                    <tr class="article_table-header">
+                      <th scope="col">Year</th>
+                      <th scope="col">Author(s)</th>
+                      <th scope="col">Title</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="article_table-row" v-for="(refObject, index) of article.citations" :key="refObject.paperId">
+                      <td>{{ refObject.year }}</td>
+                      <td>{{ refObject.authorNames }}</td>
+                      <td>{{ refObject.title }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           <div v-else class="wrapper article_title" key="article_loading">
