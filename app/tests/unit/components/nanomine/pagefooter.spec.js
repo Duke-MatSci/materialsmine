@@ -15,16 +15,17 @@ function findComponentByText (wrapperArray) {
 describe('PageFooter.vue', () => {
   it('redirects to home on logo click', async () => {
     const wrapper = factory()
-    wrapper.vm.$router.push('/testroute')
     const logo = wrapper.findComponent('.footer_icon-img')
     await logo.trigger('click')
-    expect(wrapper.vm.$route.path).toEqual('/')
+    expect(wrapper.vm.$route.path).toEqual('/nm/')
   })
+
   it('contains link to privacy policy', async () => {
     const wrapper = factory()
     const privacyPolicy = findComponentByText(wrapper.findAll('a')).hasText('Privacy').at(0)
     expect(privacyPolicy.attributes('href')).toBe('https://oarc.duke.edu/privacy/duke-university-privacy-statement')
   })
+
   it('contains link to terms of use', async () => {
     const wrapper = factory()
     const termsofuse = findComponentByText(wrapper.findAll('a')).hasText('Terms').at(0)
