@@ -59,8 +59,8 @@
         many university users to login with the same credentials they use for their own university.
       </p>
       <p><span>MetaMine is built on both a <a
-        href="https://github.com/Duke-MatSci/nanomine-schema/tree/master/xml" target="_blank" class="mid-second-link">schema</a>* and an ontology 
-        to provide a robustness to the FAIR principles. MetaMine also allows for the registration of materials resources, bridging the gap 
+        href="https://github.com/Duke-MatSci/nanomine-schema/tree/master/xml" target="_blank" class="mid-second-link">schema</a>* and an ontology
+        to provide a robustness to the FAIR principles. MetaMine also allows for the registration of materials resources, bridging the gap
         between existing resources and the end users and making those existing resources available for research to material community.</span>
       </p>
     </div>
@@ -103,7 +103,7 @@
 export default {
   name: 'HomeMM',
   methods: {
-    openLinks(arg) {
+    openLinks (arg) {
       this.$router.push({
         path: arg
       })

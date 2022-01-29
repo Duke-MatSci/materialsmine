@@ -18,6 +18,6 @@ export default {
     PageHeader,
     PageFooter,
     MdDrawer: Drawer
-  },
+  }
 }
 </script>

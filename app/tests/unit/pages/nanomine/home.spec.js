@@ -3,29 +3,29 @@ import Home from '@/pages/nanomine/home/Home.vue'
 import router from '@/router/index.js'
 
 const factory = (info = {}) => {
-    return mount(Home, {
-        router,
-        data() {
-            return {
-                gifChart: []
-            }
-        },
-        mocks: {
-            $store: {
-                commit: () => {
-                    return {
-                        setAppHeaderInfo: info
-                    }
-                }
-            }
+  return mount(Home, {
+    router,
+    data () {
+      return {
+        gifChart: []
+      }
+    },
+    mocks: {
+      $store: {
+        commit: () => {
+          return {
+            setAppHeaderInfo: info
+          }
         }
-    })
+      }
+    }
+  })
 }
 
 describe('Nanomine Homepage', () => {
   it('mount component correctly', async () => {
     const wrapper = await factory()
-    await wrapper.setData({ gifChart: [{},{},{},{}] })
+    await wrapper.setData({ gifChart: [{}, {}, {}, {}] })
 
     expect(wrapper.find('.visualize_header-h1').exists()).toBe(true)
     expect(wrapper.findAll('.visualize_chart').length).toEqual(4)

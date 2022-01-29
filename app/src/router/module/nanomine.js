@@ -52,7 +52,7 @@ const nanomineRoutes = [
     name: 'News',
     component: () => import(/* webpackChunkName: "news" */ '@/pages/nanomine/researchnews/News.vue'),
     meta: { requiresAuth: false }
-  },
+  }
 ]
 
 export default nanomineRoutes

@@ -34,7 +34,7 @@ const routes = [
     path: '/explorer',
     component: ExplorerBase,
     children: [
-      ...explorerRoutes,
+      ...explorerRoutes
     ]
   },
   { path: '/explorer:notFound(.*)', redirect: '/explorer' },
@@ -46,11 +46,11 @@ const routes = [
 const router = new VueRouter({
   mode: 'history',
   routes,
-  scrollBehavior (to, from, prevPosition){
-    if(prevPosition) {
+  scrollBehavior (to, from, prevPosition) {
+    if (prevPosition) {
       return prevPosition
     }
-    if(to.hash) {
+    if (to.hash) {
       return { selector: to.hash }
     }
     return { x: 0, y: 0 }

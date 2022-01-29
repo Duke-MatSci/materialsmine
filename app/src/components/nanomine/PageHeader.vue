@@ -104,7 +104,7 @@ export default {
   name: 'Header',
   computed: {
     ...mapGetters({
-        info: 'appHeaderInfo'
+      info: 'appHeaderInfo'
     })
   }
 }

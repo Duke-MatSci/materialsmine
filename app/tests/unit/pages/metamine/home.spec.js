@@ -3,9 +3,9 @@ import Home from '@/pages/metamine/Home.vue'
 import router from '@/router/index.js'
 
 const factory = () => {
-    return mount(Home, {
-        router,
-    })
+  return mount(Home, {
+    router
+  })
 }
 
 describe('Nanomine Homepage', () => {
