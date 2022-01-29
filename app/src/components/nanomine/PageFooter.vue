@@ -44,9 +44,7 @@
 <style scoped lang="scss">
 </style>
 <script>
-// import AppMixin from './mixins'
 export default {
   name: 'Footer'
-  // mixins: [AppMixin],
 }
 </script>
