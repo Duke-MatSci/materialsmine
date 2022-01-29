@@ -1,8 +1,6 @@
 <template>
     <div>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
         <header class="header">
-            <!-- <analytics/> -->
             <div class="wrapper">
                 <router-link to="/" class="header-logo">
                     <div class="">
@@ -38,7 +36,7 @@
         <div :class="['section_banner', info.pagetype=='home' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
                 <div v-if="info.pagetype=='home'" class="section_banner__text-content">
-                    <span class="u_adjust-banner-text">Welcome to {{info.name}}!</span>
+                    <span class="u_adjust-banner-text">{{ info.name }}</span>
                     <p class="u_adjust-banner-text_subtitle">{{info.subtitle}}</p>
                 </div>
                 <div v-else class="section_banner__text-content">
@@ -63,9 +61,9 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Visualize</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
-                                    <router-link to="/nm/chart-gallery" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
-                                    <router-link to="/nm/image-gallery" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
+                                    <router-link to="/explorer" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
+                                    <router-link to="/explorer/chart-gallery" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
+                                    <router-link to="/explorer/image-gallery" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -74,7 +72,7 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/nm/xml-uploader" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
-                                    <router-link to="/mm/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
+                                    <router-link to="/explorer/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -101,20 +99,13 @@
     </div>
 </template>
 <script>
-// import AppMixin from './mixins'
+import { mapGetters } from 'vuex'
 export default {
   name: 'Header',
-  props: {
-    info: {
-      type: Object,
-      default () {
-        return {
-          pagetype: 'home',
-          name: 'MaterialsMine'
-        }
-      }
-    }
+  computed: {
+    ...mapGetters({
+        info: 'appHeaderInfo'
+    })
   }
-  // mixins: [AppMixin],
 }
 </script>
