@@ -10,8 +10,8 @@
 	</md-app>
 </template>
 <script>
-import ExpHeader from '@/components/explorer/Header.vue'
 import Drawers from '@/components/Drawer.vue'
+import ExpHeader from '@/components/explorer/Header.vue'
 export default {
   name: 'ExplorerBase',
   components: {

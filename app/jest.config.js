@@ -9,6 +9,7 @@ module.exports = {
   moduleNameMapper: {
     '\\.(gif)$': '<rootDir>/tests/jest/__mocks__/fileMock.js',
     '^@$': '<rootDir>/src',
-    '^@/(.*)': '<rootDir>/src/$1'
+    '^@/(.*)': '<rootDir>/src/$1',
+    '^@\/(.*)': '<rootDir>/src/$1',
   }
 }

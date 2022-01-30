@@ -10,7 +10,7 @@
 <script>
 import PageHeader from '@/components/nanomine/PageHeader.vue'
 import PageFooter from '@/components/nanomine/PageFooter.vue'
-import Drawer from '@/components/nanomine/Drawer.vue'
+import Drawer from '@/components/nanomine/Drawers.vue'
 
 export default {
   name: 'NanomineBase',
