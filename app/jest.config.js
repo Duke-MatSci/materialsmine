@@ -6,8 +6,9 @@ module.exports = {
   snapshotSerializers: [
     '<rootDir>/node_modules/jest-serializer-vue'
   ],
-  setupFiles: ['<rootDir>/tests/jest/script/test-setup.js'],
   moduleNameMapper: {
-    '^.+\\.gif$': '<rootDir>/tests/jest/__mocks__/fileMock.js'
+    '\\.(gif)$': '<rootDir>/tests/jest/__mocks__/fileMock.js',
+    '^@$': '<rootDir>/src',
+    '^@/(.*)': '<rootDir>/src/$1'
   }
 }

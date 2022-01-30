@@ -1,7 +1,7 @@
 <template>
   <div id="nanomine_app">
     <mdDrawer id="leftdrawer"></mdDrawer>
-    <page-header id="header" :info="info"></page-header>
+    <page-header id="header"></page-header>
     <router-view />
     <page-footer id="footer"></page-footer>
   </div>

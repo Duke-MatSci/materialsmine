@@ -10,21 +10,21 @@
       <h3 class="metamine_headline"><span>MetaMine is an open source, data resource for members of the metamaterial community with four key goals:</span></h3>
       <div class="card-container">
         <ul class="ul_adjust">
-          <li class="card card-float inline-display" @click="openLinks('/explorer/curate')">
+          <li class="card card-float inline-display" @click.prevent="openLinks('/explorer/curate')">
             <div class="card-inside">
               <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">people_alt</i></div>
               <h2 class="card-heading">Curation</h2>
               <p>Provide a curation platform for sharing of data across the community in ways that are findable, accessible, interoperable and reusable (FAIR ww.force11.org)</p>
             </div>
           </li>
-          <li class="card card-float inline-display" @click="openLinks('/explorer')">
+          <li class="card card-float inline-display" @click.prevent="openLinks('/explorer')">
             <div class="card-inside">
               <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">tune</i></div>
               <h2 class="card-heading">Visualizing Data</h2>
               <p>Provide a platform for visualizing data, and mechanisms for visualization methods to be shared</p>
             </div>
           </li>
-          <li class="card card-float inline-display" @click="openLinks('/pixelunit')">
+          <li class="card card-float inline-display" @click.prevent="openLinks('/pixelunit')">
             <div class="card-inside">
               <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">grain</i></div>
               <h2 class="card-heading">Module Tools</h2>
@@ -47,7 +47,7 @@
         <li class="inline-display mid-first-li mid-first-container">
           <p class="mid-first-p">New to MetaMine? <span class="mid-first-span">View Our step-by-step tutorials!</span></p>
         </li>
-        <li class="inline-display mid-first-container" @click="openLinks('/how')" style="cursor:pointer"><i class="material-icons card-icon">arrow_right_alt</i></li>
+        <li class="inline-display mid-first-container" @click.prevent="openLinks('/how')" style="cursor:pointer"><i class="material-icons card-icon">arrow_right_alt</i></li>
       </ul>
     </div>
     <div class="mid-second">

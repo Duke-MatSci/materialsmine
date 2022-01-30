@@ -45,16 +45,17 @@ const routes = [
 
 const router = new VueRouter({
   mode: 'history',
-  routes,
-  scrollBehavior (to, from, prevPosition) {
-    if (prevPosition) {
-      return prevPosition
-    }
-    if (to.hash) {
-      return { selector: to.hash }
-    }
-    return { x: 0, y: 0 }
-  }
+  routes
+  /** Currently triggering error at testing */
+  // scrollBehavior (to, from, prevPosition) {
+  //   if (prevPosition) {
+  //     return prevPosition
+  //   }
+  //   if (to.hash) {
+  //     return { selector: to.hash }
+  //   }
+  //   return { x: 0, y: 0 }
+  // }
 })
 
 router.beforeEach(function (to, _, next) {
