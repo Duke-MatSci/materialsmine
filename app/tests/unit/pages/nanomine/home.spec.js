@@ -1,5 +1,5 @@
 import { mount } from '@vue/test-utils'
-import Home from '@/pages/nanomine/home/Home.vue'
+import Home from '@/pages/nanomine/Home/Home.vue'
 import router from '@/router/index.js'
 
 const factory = (info = {}) => {
