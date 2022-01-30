@@ -82,3 +82,8 @@
     </md-list>
   </div>
 </template>
+<script>
+export default {
+  name: 'Drawers'
+}
+</script>

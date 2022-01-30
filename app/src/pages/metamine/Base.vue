@@ -21,7 +21,7 @@
             </div>
         </md-app-toolbar>
         <md-app-drawer :md-active.sync="toggleMenuVisibility">
-            <drawer />
+            <drawers />
         </md-app-drawer>
         <md-app-content>
 			<router-view />
@@ -30,11 +30,11 @@
 </template>
 
 <script>
-import Drawer from '@/components/Drawer.vue'
+import Drawers from '@/components/Drawer.vue'
 export default {
   name: 'MetamineBase',
   components: {
-    Drawer
+    Drawers
   },
   data () {
     return {
