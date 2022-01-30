@@ -1,3 +1,4 @@
+a.btn,
 .btn {
     &,
     &:link,
@@ -11,6 +12,7 @@
         position: relative;
         font-size: $medium-size;
         font-weight: bold;
+        text-decoration: none !important;
 
         //Change for the <button> element
         border: none;
@@ -97,6 +99,7 @@
     }
 }
 
+a.btn-text,
 .btn-text {
     &:link,
     &:visited {
@@ -107,6 +110,7 @@
         border-bottom: 1px solid $primary;
         padding: 3px;
         transition: all .2s;
+        text-decoration: none;
     }
 
     &:hover {
