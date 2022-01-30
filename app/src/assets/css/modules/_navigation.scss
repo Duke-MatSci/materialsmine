@@ -26,7 +26,7 @@
                 
                 & > a,
                 & > div > a {
-                    text-decoration: none;
+                    text-decoration: none !important;
                     font-weight: 500;
                     color: $primary-white !important;
                     padding: 0.1rem 0.2rem;
@@ -95,7 +95,7 @@
                 display: block;
                 border-bottom: 1px solid rgba($primary-grey, .2);
                 transition: background-color .5s ease-out;
-                text-decoration: none;
+                text-decoration: none !important;
                 & > a {
                     color: $primary-light !important;
                     font-size: 1.4rem;
