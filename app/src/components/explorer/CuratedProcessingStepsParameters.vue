@@ -19,10 +19,10 @@
 </template>
 
 <script>
-import classQuery from '../queries/classQuery'
-import getClass from '../services/getClass'
-import processingStepsQuery from '../queries/processingStepsQuery'
-import getProcessingSteps from '../services/getProcessingSteps'
+import classQuery from '@/modules/queries/classQuery'
+import getClass from '@/modules/services/getClass'
+import processingStepsQuery from '@/modules/queries/processingStepsQuery'
+import getProcessingSteps from '@/modules/services/getProcessingSteps'
 
 export default {
   methods: {

@@ -2,35 +2,31 @@
   <div>
     <div v-if="loading" class="loading">Loading...</div>
     <div v-if="error" class="error"></div>
-    <div v-if="links && links.length > 0">
-      <h2>Other Samples from this Research Article</h2>
-      <router-link
-        :to="`/explorer/sample/${link}`"
-        v-for="link in links"
-        :key="link"
-      >
-        {{ link }}
-      </router-link>
+    <div v-if="images && images.length > 0">
+      <h1>Sample Images</h1>
+      <div data-test="sample_image" v-for="image in images" :key="image.src">
+        <img :src="image.src" :alt="image.alt" />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import otherSamplesQuery from '../queries/otherSamplesQuery'
-import getOtherSamples from '../services/getOtherSamples'
+import imagesQuery from '@/modules/queries/imagesQuery'
+import getSampleImages from '@/modules/services/getSampleImages'
 
 export default {
   methods: {
     fetchData () {
       this.error = null
       this.loading = true
-      this.links = null
-      getOtherSamples({
-        query: otherSamplesQuery,
+      this.images = null
+      getSampleImages({
+        query: imagesQuery,
         route: this.$route.params.label
       })
-        .then((links) => {
-          this.links = links
+        .then((images) => {
+          this.images = images
           this.loading = false
         })
         .catch((error) => {
@@ -45,9 +41,9 @@ export default {
   },
   data () {
     return {
+      images: null,
       loading: false,
-      error: null,
-      links: []
+      error: null
     }
   },
   watch: {

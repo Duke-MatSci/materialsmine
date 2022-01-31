@@ -26,8 +26,8 @@
 </template>
 
 <script>
-import materialComponentsQuery from '../queries/materialComponentQuery'
-import getMaterialData from '../services/getMaterialData'
+import materialComponentsQuery from '@/modules/queries/materialComponentQuery'
+import getMaterialData from '@/modules/services/getMaterialData'
 
 export default {
   methods: {

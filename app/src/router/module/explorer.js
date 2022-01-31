@@ -8,7 +8,7 @@ const explorerRoutes = [
   {
     path: '/explorer/sample/:label',
     name: 'Sample View',
-    component: () => import('@/pages/explorer/sample/Sample.vue'),
+    component: () => import('@/pages/explorer/Sample.vue'),
     meta: { requiresAuth: false }
   }
 ]

@@ -18,8 +18,8 @@
 </template>
 
 <script>
-import titleQuery from '../queries/titleQuery'
-import getSampleHeader from '../services/getSampleHeader'
+import titleQuery from '@/modules/queries/titleQuery'
+import getSampleHeader from '@/modules/services/getSampleHeader'
 
 export default {
   methods: {

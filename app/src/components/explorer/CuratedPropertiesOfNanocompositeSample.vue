@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import curatedPropertiesQuery from '../queries/curatedPropertiesQuery'
-import getCuratedProperties from '../services/getCuratedProperties'
+import curatedPropertiesQuery from '@/modules/queries/curatedPropertiesQuery'
+import getCuratedProperties from '@/modules/services/getCuratedProperties'
 
 export default {
   methods: {
