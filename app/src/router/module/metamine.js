@@ -1,8 +1,8 @@
 const metamineRoutes = [
   {
-    path: '/mm',
+    path: '',
     name: 'HomeMM',
-    component: () => import(/* webpackChunkName: "homemm" */ '@/pages/metamine/Home/Home.vue'),
+    component: () => import(/* webpackChunkName: "homemm" */ '@/pages/metamine/Home.vue'),
     meta: { requiresAuth: false }
   }
 ]

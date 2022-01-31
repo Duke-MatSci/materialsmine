@@ -10,12 +10,21 @@
         <md-divider></md-divider>
         <md-list md-expand-single=true class="utility-transparentbg">
 
-            <router-link :to="{name: 'Home'}" v-slot="{navigate, href}" custom>
-                <md-list-item :href="href" @click="navigate">
-                    <md-icon class="utility-navfonticon">home</md-icon>
-                    <span class="md-list-item-text utility-navfont">Home</span>
-                </md-list-item>
-            </router-link>
+            <md-list-item md-expand>
+                <md-icon class="utility-navfonticon">home</md-icon>
+                <span class="md-list-item-text utility-navfont">Home</span>
+                <md-list slot="md-expand">
+                <router-link to="/explorer" v-slot="{navigate, href}" custom>
+                    <md-list-item :href="href" @click="navigate" class="md-inset"> Explorer </md-list-item>
+                </router-link>
+                <router-link to="/mm" v-slot="{navigate, href}" custom>
+                    <md-list-item :href="href" @click="navigate" class="md-inset"> Metamine </md-list-item>
+                </router-link>
+                <router-link to="/nm" v-slot="{navigate, href}" custom>
+                    <md-list-item :href="href" @click="navigate"  class="md-inset">Nanomine</md-list-item>
+                </router-link>
+                </md-list>
+            </md-list-item>
 
             <md-list-item md-expand>
                 <md-icon class="utility-navfonticon">groups</md-icon>
