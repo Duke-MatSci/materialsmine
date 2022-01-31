@@ -1,5 +1,5 @@
 import VueMaterial from 'vue-material'
-import { enableAutoDestroy, shallowMount, createLocalVue, resetAutoDestroyState } from '@vue/test-utils'
+import { enableAutoDestroy, shallowMount, createLocalVue } from '@vue/test-utils'
 import ExplorerHome from '@/pages/explorer/Home.vue'
 describe('Header.vue', () => {
   let wrapper
@@ -11,7 +11,6 @@ describe('Header.vue', () => {
     })
   })
   enableAutoDestroy(afterEach)
-  afterAll(resetAutoDestroyState)
 
   it('render search div correctly', () => {
     expect(wrapper.find('.section_teams').exists()).toBe(true)
