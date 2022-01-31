@@ -1,13 +1,48 @@
 version: '3'
 services:
-  web:
-    stdin_open: true
+  redis:
+    image: "redis:alpine"
+    command: redis-server
+    volumes:
+     - $PWD/redis-data:/var/lib/redis
+    ports:
+      - '6379:6379'
+  celery:
+    command: celery -A wsgi.celery worker -l INFO -c 4 --logfile logs/celery.log
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - '5000:5000'
+      dockerfile: Dockerfile
     volumes:
-      - .:/apps
+      - $PWD:/apps
+  celerybeat:
+    command: celery -A wsgi.celery beat -l INFO -c 4 --logfile logs/celerybeat.log
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - $PWD:/apps
+  fuseki:
+    command: whyis fuseki
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - $PWD:/apps
+  web:
+    stdin_open: true
+    command: gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4}
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8081:5000'
+    volumes:
+      - $PWD:/apps

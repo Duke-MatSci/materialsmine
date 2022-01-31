@@ -1,9 +1,23 @@
-FROM ubuntu:20.04
-RUN apt-get update && apt-get install -y software-properties-common gcc && \
-    add-apt-repository -y ppa:deadsnakes/ppa
+FROM jrei/systemd-ubuntu:20.04
+RUN apt-get update && apt-get install -y software-properties-common gcc
 
-RUN apt-get update && apt-get install -y python3.9 python3.9-distutils python3.9-dev python3-pip curl libdb5.3-dev default-jdk-headless
-RUN python3.9 -m pip install requests wheel
-RUN python3.9 -m pip install whyis==2.0a4
+RUN apt-get update && apt-get install -y \
+    python3.8-distutils \
+    apache2-dev \
+    apache2 \
+    python3.8-dev \
+    python3-pip \
+    python3.8-venv \
+    curl \
+    libdb5.3-dev \
+    default-jdk-headless
+WORKDIR '/apps'
+RUN python3.8 -m venv /opt/venv
+RUN sh -c ". /opt/venv/bin/activate && pip install requests wheel"
+RUN useradd --system whyis
+RUN sh -c ". /opt/venv/bin/activate && pip install whyis==2.0a4 mod-wsgi==4.9.0 whyis-unit-converter==0.0.2"
+COPY materialsmine /opt/materialsmine
+RUN sh -c ". /opt/venv/bin/activate && cd /opt/materialsmine && whyis init"
+RUN sh -c ". /opt/venv/bin/activate && cd /opt/materialsmine && ./script/setup"
 WORKDIR '/apps'
 CMD [ "/bin/bash" ]
