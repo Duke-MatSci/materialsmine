@@ -18,7 +18,7 @@
                 top: 10.5rem;
                 cursor: pointer;
                 @include respond(tab-port) {
-                    top: 12.5rem;
+                    top: 15.5rem;
                 }
                 @include respond(phone) {
                     top: 14.5rem;
@@ -58,12 +58,12 @@
             color: transparent;
 
             @include respond(tab-land){
-                margin-bottom: 1.4rem;
+                margin: 4rem 0 1.4rem 0;
             }
 
             @include respond(phone){
                 font-size: 2.8rem;
-                margin-bottom: 0;
+                margin-bottom: 1rem;
             }
         }
     }
@@ -165,7 +165,8 @@
     }
     &_btn {
         text-align: right;
-        margin-right: 6rem;
+        margin: 9rem 18rem 0 0;
+
 
         @include respond(laptop) {
             margin-right: 1rem;
@@ -249,10 +250,10 @@
             margin-top: 0px;
         } @else if $i == 4 {
             // transition: top .5s ease-out;
-            top: calc(60px/(#{$i}-2));
+            top: calc(60px/2);
         } @else if $i == 5 {
             // transition: top .5s ease-out;
-            top: calc(60px/(#{$i}-4));
+            top: calc(60px/1);
             z-index: 4 !important;
         }
 
@@ -309,11 +310,18 @@
                 margin-top: 0px;
                 top: 0;
             }
+            @if $i == 1 {
+                margin-right: 5rem;
+            }
         }
 
 
         @include respond(tab-port) {
             top: .4rem;
+        }
+
+        @include respond(phone) {
+            margin-right: 0;
         }
 
         &:hover {

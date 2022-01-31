@@ -63,7 +63,7 @@
     }
     &-nav {
         margin: 0 auto;
-        width: 70%;
+        width: 80%;
         margin-top: 9rem;
         display: flex;
         flex-wrap: wrap;
@@ -96,5 +96,180 @@
     }
     &-list {
         margin-bottom: 4rem;
+    }
+}
+
+.metamine {
+    &_intro {
+        &-banner {
+            background: url('~@/assets/img/random_network.png') no-repeat bottom center !important;
+            background-size: cover !important;
+            margin-top: -2rem;
+            padding: 1.5rem;
+        }
+        &-content {
+            text-align: center;
+            color: $primary-white;
+            padding: 4rem 2rem;
+        }
+        &-header {
+            margin: 2rem 0 2.5rem 0;
+            font-size: 5rem;
+            font-weight: 500;
+
+        }
+        &-span {
+            display: block;
+            font-size: 2.5rem;
+        }
+    }
+    &_sponsor {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+        &-content {
+            align-self: center;
+            text-align: center;
+            width: 70%;
+        }
+        &-img {
+            height: 18rem !important;
+        }
+    }
+    &_headline {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    &_menu {
+        color: $primary-white !important;
+        font-weight: 500;
+
+        &-icon {
+            color: $primary !important;
+        }
+    }
+    &_footer {
+        &-text {
+            font-weight: bold;
+            text-align: left;
+            padding-left: 15%;
+            padding-right: 15%;
+        }
+        &-ref {
+            text-align: left;
+            padding-left: 12%;
+            padding-right: 12%;
+
+            &-header {
+                margin-top: 2rem;
+            }
+        }
+    }
+}
+
+.card {
+    background: #fff;
+    border-radius: 2px;
+    display: inline-block;
+    height: 300px;
+    margin: 1rem;
+    position: relative;
+    width: 300px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    cursor: pointer;
+
+    &-icon {
+        font-size: 10rem;
+        @include respond(phone) {
+            font-size: 4rem;
+        }
+    
+        &-adjust {
+            @include respond(phone) {
+                font-size: 8rem !important;
+            }
+        }
+        &-container {
+            margin-bottom: 2.5rem;
+            margin-top: 1rem;
+        }
+    }
+
+    &-container {
+        margin: 1.5rem 0;
+        padding: .5rem;
+    }
+    &-heading {
+      font-size: 2.5rem;
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    &-float {
+      text-align: center;
+      padding: .1rem 1rem;
+    }
+}
+
+.inline-display {
+    display: inline-flex !important;
+}
+
+
+
+.mid {
+    &-first {
+        background-color: #08233c;
+        padding: 2.5rem 1rem;
+        margin: 1.5rem 0;
+        margin-bottom: 0;
+        color: $primary-white;
+        @include respond(phone) {
+            padding-bottom: 0.5rem !important
+        }
+
+        &-span {
+            display: block;
+        }
+
+        &-p {
+            line-height: 1.2;
+            margin-top: 0.5rem;
+            font-size: 3.5rem;
+            @include respond(phone) {
+                font-size: 1.14rem;
+            }
+        }
+
+        &-li {
+            margin-right: 5rem;
+            @include respond(phone) {
+                margin-right: 2rem;
+            }
+        }
+
+        &-container {
+            height: 8rem;
+        }
+    }
+
+    &-second {
+        background-color: rgba(0,0,0,.6);
+        padding: 6rem 15rem;
+        margin: 0 0 1.5rem 0;
+        color: $primary-white;
+        font-size: 1.5rem;
+        line-height: 1.6;
+
+        &-link {
+            color: $primary-white !important;
+            text-decoration: underline !important;
+        }
+    
+        @include respond(tab-port) {
+            padding: 6rem 3rem;
+        }
     }
 }
