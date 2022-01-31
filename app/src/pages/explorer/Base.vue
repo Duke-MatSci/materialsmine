@@ -2,21 +2,21 @@
 	<md-app md-waterfall md-mode="fixed-last">
 		<md-app-toolbar :toggler='toggleMenu' />
 		<md-app-drawer :md-active.sync="toggleMenuVisibility">
-			<drawer />
+			<drawers />
 		</md-app-drawer>
 		<md-app-content>
-			<!-- **** Content Goes Here *** -->
+			<router-view />
 		</md-app-content>
 	</md-app>
 </template>
 <script>
+import Drawers from '@/components/Drawer.vue'
 import ExpHeader from '@/components/explorer/Header.vue'
-import Drawer from '@/components/explorer/Drawer.vue'
 export default {
-  name: 'Component Name',
+  name: 'ExplorerBase',
   components: {
     mdAppToolbar: ExpHeader,
-    Drawer
+    Drawers
   },
   data () {
     return {

@@ -6,17 +6,17 @@ const factory = (isAuthenticated = false, info = {}) => {
     mocks: {
       $store: {
         getters: {
-          isAuthenticated
+          isAuthenticated,
+          appHeaderInfo: info
         }
       }
     },
-    stubs: ['router-link', 'router-view'],
-    propsData: { info }
+    stubs: ['router-link', 'router-view']
   })
 }
 
 describe('PageHeader.vue', () => {
-  it('renders title from passed prop', () => {
+  it('renders title from passed state', () => {
     const info = {
       name: 'Test page',
       pagetype: 'test',
