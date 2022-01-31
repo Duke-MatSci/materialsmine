@@ -11,5 +11,6 @@ RUN apt-get update && apt-get install -y \
     default-jdk-headless
 RUN python3.8 -m pip install requests wheel gunicorn
 RUN python3.8 -m pip install whyis==2.0a5 whyis-unit-converter==0.0.2
-WORKDIR '/apps/materialsmine'
+WORKDIR '/app'
+RUN whyis init
 CMD [ "/bin/bash" ]

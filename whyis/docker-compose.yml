@@ -4,45 +4,52 @@ services:
     image: "redis:alpine"
     command: redis-server
     volumes:
-     - $PWD/redis-data:/var/lib/redis
+     - ./redis-data:/var/lib/redis
     ports:
       - '6379:6379'
   celery:
-    command: celery -A wsgi.celery worker -l INFO -c 4 --logfile logs/celery.log
+    depends_on:
+      - redis
+      - fuseki
+    command: celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - $PWD:/apps
+      - ./materialsmine:/app
   celerybeat:
-    command: celery -A wsgi.celery beat -l INFO -c 4 --logfile logs/celerybeat.log
+      - redis
+      - fuseki
+    command: celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - $PWD:/apps
+      - ./materialsmine:/app
   fuseki:
-    command: whyis fuseki
+    command: fuseki-server --mem /ds
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - $PWD:/apps
+      - ./materialsmine:/app
   web:
+      - redis
+      - fuseki
     stdin_open: true
-    command: gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4}
+    command: gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4} --timeout 90
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '8081:5000'
+      - '8000:8000'
     volumes:
-      - $PWD:/apps
+      - ./materialsmine:/app
