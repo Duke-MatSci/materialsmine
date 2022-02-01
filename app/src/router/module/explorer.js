@@ -13,7 +13,6 @@ const explorerRoutes = [
   },
   {
     path: 'chart/:id',
-    name: 'Chart',
     component: () => import('@/pages/explorer/vega/Base.vue'),
     children: [
       {
