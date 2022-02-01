@@ -42,12 +42,12 @@
             @include respond(phone){
                 padding-left: 0;
             }
-            
+
             & > li {
                 display: inline-block;
                 list-style: none;
             }
-        } 
+        }
     }
 
     &_container {
@@ -146,7 +146,7 @@
 
         &-text {
            font-size: 1.26rem;
-           color: $primary-grey; 
+           color: $primary-grey;
            font-style: italic;
            margin: .7rem 0;
            padding: 0 1.4rem;
@@ -176,14 +176,14 @@
             @include respond(phone){
                 transform: rotate(-8deg) translateY(63px);
             }
-            
+
             &-list {
                 position: absolute;
                 top: 20px;
                 right: 15px;
                 transform: rotate(10deg);
 
-                & > a, & i {
+                & > a, & span {
                     color: $primary-white;
                     font-size: 2rem;
                     @include respond(tab-port){
@@ -289,7 +289,7 @@
         }
 
         & > img {
-            height: 21rem; 
+            height: 21rem;
             width: auto;
         }
 
@@ -362,13 +362,13 @@
                     display: table-cell;
                     margin-right: 5rem;
                     margin-bottom: 5rem;
-    
+
                     @include respond(tab-port){
                         display: block;
                         margin-right: 0;
                     }
                 }
-            } 
+            }
         }
     }
 
@@ -380,7 +380,7 @@
         height: 30rem;
 
         &--1 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                     rgba($primary-light, 1) 0%,
                                     rgba($primary-light, .5) 0%,
                                     transparent 0%),
@@ -388,7 +388,7 @@
         }
 
         &--2 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                 rgba($primary-light, 1) 0%,
                                 rgba($primary-light, .5) 0%,
                                 transparent 0%),
@@ -396,7 +396,7 @@
         }
 
         &--3 {
-            background-image: linear-gradient(0deg, 
+            background-image: linear-gradient(0deg,
                                 rgba($primary-light, 1) 0%,
                                 rgba($primary-light, .5) 0%,
                                 transparent 0%),
@@ -467,14 +467,14 @@
 
         & * button,
         & button {
-            background-color: $tertiary !important; 
-            color: $primary !important; 
+            background-color: $tertiary !important;
+            color: $primary !important;
         }
     }
 
     &_btns {
-        background-color: $tertiary !important; 
-        color: $primary !important; 
+        background-color: $tertiary !important;
+        color: $primary !important;
     }
 
     &_txt {
