@@ -1,14 +1,7 @@
-import ExpHeader from '@/components/explorer/Header.vue'
-import Drawer from '@/components/explorer/Drawer.vue'
-
-import getArticleMetadata from './services/getArticleMetadata'
+import getArticleMetadata from '@/modules/explorer/article/services/getArticleMetadata'
 
 export default {
   name: 'Article',
-  components: {
-    mdAppToolbar: ExpHeader,
-    Drawer
-  },
   data () {
     return {
       toggleMenuVisibility: false,
@@ -19,7 +12,12 @@ export default {
   },
   computed: {
     doi: function () {
-      return this.$route.params.doi
+      if (this.$route) {
+        return this.$route.params.doi
+      }
+      else {
+        return null
+      }
     },
     doiLink: function () {
       if (this.doi) {
@@ -43,7 +41,8 @@ export default {
       this.article = null
       this.loading = true
       this.error = null
-      getArticleMetadata({ doi: this.doi })
+      if (this.doi) {
+        getArticleMetadata({ doi: this.doi })
         .then((article) => {
           this.article = article
           this.loading = false
@@ -53,6 +52,7 @@ export default {
           this.error = 'Error loading article metadata'
           this.loading = false
         })
+      }
     }
   }
 }

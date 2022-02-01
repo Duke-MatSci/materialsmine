@@ -1,75 +1,67 @@
-<md-app md-waterfall md-mode="fixed-last">
-    <md-app-toolbar :toggler="toggleMenu" />
-    <md-app-drawer :md-active.sync="toggleMenuVisibility">
-      <drawer />
-    </md-app-drawer>
-    <md-app-content>
-      <div class="section_pages">
-          <div v-if="!loading" class="wrapper" key="article_loaded">
-            <h1 class="visualize_header-h1 article_title">{{ article.title }}</h1>
-            <div class="article_authors">{{ article.authorNames }}</div>
-            <div v-if="article.venue" class="article_metadata" key="article_venue">
-              <span class="article_metadata_strong">{{ article.venue }}</span> ({{ article.year }})
-            </div>
-            <div v-else class="article_metadata" key="article_no_venue">
-              {{ article.year }}
-            </div>
-            <div class="article_abstract teams_text">
-              <h3>Abstract</h3>
-              <p>{{ article.abstract }}</p>
-            </div>
-            <div class="article_metadata">
-              DOI: <a :href="doiLink" target="_blank">{{ doi }}</a>
-            </div>
-            <div class="article_metadata">
-              Cited by <span class="article_metadata_strong">{{ article.citationCount }}</span> other works.
-            </div>
-            <div class="article_references">
-              <div class="article_subtitle">References</div>
-              <div class="article_table">
-                <table class="article_table">
-                  <thead>
-                    <tr class="article_table-header">
-                      <th scope="col">Year</th>
-                      <th scope="col">Author(s)</th>
-                      <th scope="col">Title</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="article_table-row" v-for="(refObject, index) of article.references" :key="refObject.paperId">
-                      <td>{{ refObject.year }}</td>
-                      <td>{{ refObject.authorNames }}</td>
-                      <td>{{ refObject.title }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <div class="article_citations">
-              <div class="article_subtitle">Cited By</div>
-              <div class="article_table">
-                <table>
-                  <thead>
-                    <tr class="article_table-header">
-                      <th scope="col">Year</th>
-                      <th scope="col">Author(s)</th>
-                      <th scope="col">Title</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="article_table-row" v-for="(refObject, index) of article.citations" :key="refObject.paperId">
-                      <td>{{ refObject.year }}</td>
-                      <td>{{ refObject.authorNames }}</td>
-                      <td>{{ refObject.title }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div v-else class="wrapper article_title" key="article_loading">
-            <h1>Loading...</h1>
-          </div>
+<div class="section_pages">
+    <div v-if="!loading" class="wrapper" key="article_loaded">
+      <h1 class="visualize_header-h1 article_title">{{ article.title }}</h1>
+      <div class="article_authors">{{ article.authorNames }}</div>
+      <div v-if="article.venue" class="article_metadata" key="article_venue">
+        <span class="article_metadata_strong">{{ article.venue }}</span> ({{ article.year }})
       </div>
-    </md-app-content>
-</md-app>
+      <div v-else class="article_metadata" key="article_no_venue">
+        {{ article.year }}
+      </div>
+      <div class="article_abstract teams_text">
+        <h3>Abstract</h3>
+        <p>{{ article.abstract }}</p>
+      </div>
+      <div class="article_metadata">
+        DOI: <a :href="doiLink" target="_blank">{{ doi }}</a>
+      </div>
+      <div class="article_metadata">
+        Cited by <span class="article_metadata_strong">{{ article.citationCount }}</span> other works.
+      </div>
+      <div class="article_references">
+        <div class="article_subtitle">References</div>
+        <div class="article_table">
+          <table class="article_table">
+            <thead>
+              <tr class="article_table-header">
+                <th scope="col">Year</th>
+                <th scope="col">Author(s)</th>
+                <th scope="col">Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="article_table-row" v-for="(refObject, index) of article.references" :key="refObject.paperId">
+                <td>{{ refObject.year }}</td>
+                <td>{{ refObject.authorNames }}</td>
+                <td>{{ refObject.title }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="article_citations">
+        <div class="article_subtitle">Cited By</div>
+        <div class="article_table">
+          <table>
+            <thead>
+              <tr class="article_table-header">
+                <th scope="col">Year</th>
+                <th scope="col">Author(s)</th>
+                <th scope="col">Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="article_table-row" v-for="(refObject, index) of article.citations" :key="refObject.paperId">
+                <td>{{ refObject.year }}</td>
+                <td>{{ refObject.authorNames }}</td>
+                <td>{{ refObject.title }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div v-else class="wrapper article_title" key="article_loading">
+      <h1>Loading...</h1>
+    </div>
+</div>

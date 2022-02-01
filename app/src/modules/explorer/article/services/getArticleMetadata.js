@@ -1,5 +1,3 @@
-import fetchJSON from './fetchJSON.js'
-
 export default async function getArticleMetadata ({ doi }) {
   var semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/`
 
@@ -38,7 +36,7 @@ export default async function getArticleMetadata ({ doi }) {
 }
 
 function cleanPapers (rawData, prop) {
-  const cleanedData = rawData.data.map(paper => paper[prop]).filter(articleFilter()).sort(articleSort())
+  const cleanedData = rawData.data.map(paper => paper[prop]).filter(articleFilter).sort(articleSort)
   for (const ref of cleanedData) {
     if (ref.authors) {
       ref.authorNames = ref.authors.map(author => author.name).join(', ')
@@ -47,20 +45,32 @@ function cleanPapers (rawData, prop) {
   return cleanedData
 }
 
-function articleSort () {
-  return function (a, b) {
-    if (a.year < b.year) {
-      return -1
-    } else if (a.year > b.year) {
-      return 1
-    } else {
-      return a.title.localeCompare(b.title)
-    }
+function articleSort (a, b) {
+  if (a.year < b.year) {
+    return -1
+  } else if (a.year > b.year) {
+    return 1
+  } else {
+    return a.title.localeCompare(b.title)
   }
 }
 
-function articleFilter () {
-  return function (paper) {
-    return paper.title && paper.authors && paper.year && paper.paperId
-  }
+function articleFilter (paper) {
+  return paper.title && paper.authors && paper.year && paper.paperId
+}
+
+async function fetchJSON (requestURL) {
+  return fetch(requestURL).then(response => {
+    if (!response.ok) {
+      response.text().then(data => {
+        throw new Error(`${response.status} ${JSON.parse(data).error}`)
+      })
+    } else {
+      return response.json()
+    }
+  }).then(data => {
+    return data
+  }).catch(error => {
+    console.error(`Error while fetching ${requestURL}:`, error)
+  })
 }
