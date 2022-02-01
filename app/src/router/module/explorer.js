@@ -6,14 +6,30 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/chart/:id/edit',
-    name: 'ChartEdit',
-    component: () => import('@/pages/explorer/ChartEditor.vue')
+    path: 'chart/new',
+    name: 'ChartNew',
+    component: () => import('@/pages/explorer/vega/edit/VegaEdit.vue'),
+    meta: { requiresAuth: false }
   },
   {
-    path: '/chart/:id/view',
-    name: 'ChartView',
-    component: () => import('@/pages/explorer/ChartViewer.vue')
+    path: 'chart/:id',
+    name: 'Chart',
+    component: () => import('@/pages/explorer/vega/Base.vue'),
+    children: [
+      {
+        path: '',
+        alias: 'view',
+        name: 'ChartView',
+        component: () => import('@/pages/explorer/vega/view/VegaView.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'edit',
+        name: 'ChartEdit',
+        component: () => import('@/pages/explorer/vega/edit/VegaEdit.vue'),
+        meta: { requiresAuth: false }
+      }
+    ]
   }
 ]
 

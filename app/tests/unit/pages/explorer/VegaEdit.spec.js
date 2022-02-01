@@ -1,6 +1,6 @@
 import VueMaterial from 'vue-material'
 import { enableAutoDestroy, mount, createLocalVue, resetAutoDestroyState } from '@vue/test-utils'
-import ChartEdit from '@/components/explorer/ChartEdit.vue'
+import VegaEdit from '@/pages/explorer/vega/edit/VegaEdit.vue'
 import store from '@/store'
 
 document.body.createTextRange = (elem) => {
@@ -11,12 +11,12 @@ document.body.createTextRange = (elem) => {
   return textRange
 }
 
-describe('ChartEdit.vue', () => {
+describe('VegaEdit.vue', () => {
   let wrapper
   beforeEach(async () => {
     const localVue = createLocalVue()
     localVue.use(VueMaterial)
-    wrapper = mount(ChartEdit, {
+    wrapper = mount(VegaEdit, {
       localVue,
       store
     })

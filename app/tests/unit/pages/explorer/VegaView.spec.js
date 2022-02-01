@@ -1,13 +1,13 @@
 import VueMaterial from 'vue-material'
 import { enableAutoDestroy, shallowMount, createLocalVue, resetAutoDestroyState } from '@vue/test-utils'
-import ChartView from '@/components/explorer/ChartView.vue'
+import VegaView from '@/pages/explorer/vega/view/VegaView.vue'
 
-describe('ChartView.vue', () => {
+describe('VegaView.vue', () => {
   let wrapper
   beforeEach(async () => {
     const localVue = createLocalVue()
     localVue.use(VueMaterial)
-    wrapper = shallowMount(ChartView, {
+    wrapper = shallowMount(VegaView, {
       localVue
     })
   })
