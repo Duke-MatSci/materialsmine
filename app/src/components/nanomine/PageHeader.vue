@@ -51,9 +51,9 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">About</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/about" class="nav_menu--siblings-lists"><a>About Us</a></router-link>
-                                    <router-link to="/how" class="nav_menu--siblings-lists"><a>How To</a></router-link>
-                                    <router-link to="/news" class="nav_menu--siblings-lists"><a>Research + News</a></router-link>
+                                    <router-link to="about" class="nav_menu--siblings-lists"><a>About Us</a></router-link>
+                                    <router-link to="how" class="nav_menu--siblings-lists"><a>How To</a></router-link>
+                                    <router-link to="news" class="nav_menu--siblings-lists"><a>Research + News</a></router-link>
                                 </div>
                             </div>
                         </li>
