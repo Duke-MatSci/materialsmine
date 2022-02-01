@@ -14,8 +14,7 @@ export default {
     doi: function () {
       if (this.$route) {
         return this.$route.params.doi
-      }
-      else {
+      } else {
         return null
       }
     },
@@ -43,15 +42,15 @@ export default {
       this.error = null
       if (this.doi) {
         getArticleMetadata({ doi: this.doi })
-        .then((article) => {
-          this.article = article
-          this.loading = false
-        })
-        .catch((error) => {
-          console.log(error)
-          this.error = 'Error loading article metadata'
-          this.loading = false
-        })
+          .then((article) => {
+            this.article = article
+            this.loading = false
+          })
+          .catch((error) => {
+            console.log(error)
+            this.error = 'Error loading article metadata'
+            this.loading = false
+          })
       }
     }
   }
