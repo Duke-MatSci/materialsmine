@@ -1,31 +1,31 @@
-export default articleMetadata = {
+export default {
   get: async function ({ doi }) {
-    let semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/`
+    const semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/`
 
-    let articleRequest = new URL(semanticScholarBase)
-    let articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue']
+    const articleRequest = new URL(semanticScholarBase)
+    const articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue']
     articleRequest.search = new URLSearchParams({
       fields: articleFields.join(','),
       limit: 500
     })
 
-    let citationRequest = new URL(semanticScholarBase + 'citations')
-    let citationFields = ['title', 'authors', 'year', 'paperId']
+    const citationRequest = new URL(semanticScholarBase + 'citations')
+    const citationFields = ['title', 'authors', 'year', 'paperId']
     citationRequest.search = new URLSearchParams({
       fields: citationFields.join(','),
       limit: 500
     })
 
-    let referencesRequest = new URL(semanticScholarBase + 'references')
-    let referencesFields = ['title', 'authors', 'year', 'paperId']
+    const referencesRequest = new URL(semanticScholarBase + 'references')
+    const referencesFields = ['title', 'authors', 'year', 'paperId']
     referencesRequest.search = new URLSearchParams({
       fields: referencesFields.join(','),
       limit: 500
     })
 
-    let article = await fetchJSON(articleRequest)
-    let articleCitationsRaw = await fetchJSON(citationRequest)
-    let articleReferencesRaw = await fetchJSON(referencesRequest)
+    const article = await fetchJSON(articleRequest)
+    const articleCitationsRaw = await fetchJSON(citationRequest)
+    const articleReferencesRaw = await fetchJSON(referencesRequest)
 
     article.citations = cleanPapers(articleCitationsRaw, 'citingPaper')
     article.references = cleanPapers(articleReferencesRaw, 'citedPaper')

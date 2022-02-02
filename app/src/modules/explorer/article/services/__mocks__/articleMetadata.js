@@ -1,3 +1,4 @@
+/* globals jest */
 function getResponse (doi) {
   return {
     paperId: 'abc',
@@ -105,7 +106,7 @@ export default {
     if (this.testingData) {
       return Promise.resolve(getResponse(doi))
     } else if (this.testingRejection) {
-      return Promise.reject('Testing rejection of fetch(article) Promise')
+      return Promise.reject(new Error('Testing rejection of fetch(article) Promise'))
     } else {
       return Promise.resolve()
     }

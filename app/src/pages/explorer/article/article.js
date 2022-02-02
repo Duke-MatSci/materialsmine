@@ -43,7 +43,7 @@ export default {
       if (this.doi) {
         articleMetadata.get({ doi: this.doi })
           .then((article) => {
-            if (!!article) {
+            if (article) {
               this.article = article
               this.loading = false
             } else {
@@ -51,9 +51,9 @@ export default {
             }
           })
           .catch((error) => {
-            this.error = `Error loading article metadata: ${error}`
+            this.error = { ...error, message: `Error loading article metadata: ${error.message}` }
             this.loading = false
-            console.log(error)
+            console.log(error.message)
           })
       }
     }

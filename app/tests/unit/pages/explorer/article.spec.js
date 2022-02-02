@@ -56,12 +56,12 @@ describe('Article.vue', () => {
     articleMetadata.__setTestingRejection(true)
     wrapper = mountArticle()
     await localVue.nextTick()
-    expect(wrapper.vm.error).toMatch(/Testing rejection/)
+    expect(wrapper.vm.error.message).toMatch(/Testing rejection/)
     expect(wrapper.vm.loading).toBeFalsy()
   })
 })
 
-function mountArticle() {
+function mountArticle () {
   return shallowMount(Article, {
     localVue,
     mocks: {
