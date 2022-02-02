@@ -1,11 +1,11 @@
-import getArticleMetadata from '@/modules/explorer/article/services/getArticleMetadata'
+import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
 
 export default {
   name: 'Article',
   data () {
     return {
       toggleMenuVisibility: false,
-      article: null,
+      article: {},
       loading: false,
       error: null
     }
@@ -27,7 +27,7 @@ export default {
     }
   },
   watch: {
-    $route: 'fetchData'
+    doi: 'fetchData'
   },
   created () {
     this.fetchData()
@@ -37,19 +37,23 @@ export default {
       this.toggleMenuVisibility = !this.toggleMenuVisibility
     },
     async fetchData () {
-      this.article = null
+      this.article = {}
       this.loading = true
       this.error = null
       if (this.doi) {
-        getArticleMetadata({ doi: this.doi })
+        articleMetadata.get({ doi: this.doi })
           .then((article) => {
-            this.article = article
-            this.loading = false
+            if (!!article) {
+              this.article = article
+              this.loading = false
+            } else {
+              throw new Error('Empty article returned')
+            }
           })
           .catch((error) => {
-            console.log(error)
-            this.error = 'Error loading article metadata'
+            this.error = `Error loading article metadata: ${error}`
             this.loading = false
+            console.log(error)
           })
       }
     }
