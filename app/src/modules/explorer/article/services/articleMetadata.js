@@ -26,9 +26,22 @@ export default {
     const article = await fetchJSON(articleRequest)
     const articleCitationsRaw = await fetchJSON(citationRequest)
     const articleReferencesRaw = await fetchJSON(referencesRequest)
+    if (article.error) {
+      return article
+    }
 
-    article.citations = cleanPapers(articleCitationsRaw, 'citingPaper')
-    article.references = cleanPapers(articleReferencesRaw, 'citedPaper')
+    if (articleCitationsRaw.error) {
+      article.citations = { error: articleCitationsRaw.error }
+    } else {
+      article.citations = cleanPapers(articleCitationsRaw, 'citingPaper')
+    }
+
+    if (articleReferencesRaw.error) {
+      article.references = { error: articleReferencesRaw.error }
+    } else {
+      article.references = cleanPapers(articleReferencesRaw, 'citedPaper')
+    }
+
     if (article.authors) {
       article.authorNames = article.authors.map(author => author.name).join(', ')
     }
@@ -62,17 +75,9 @@ function articleFilter (paper) {
 }
 
 async function fetchJSON (requestURL) {
-  return fetch(requestURL).then(response => {
-    if (!response.ok) {
-      response.text().then(data => {
-        throw new Error(`${response.status} ${JSON.parse(data).error}`)
-      })
-    } else {
-      return response.json()
-    }
-  }).then(data => {
-    return data
-  }).catch(error => {
-    console.error(`Error while fetching ${requestURL}:`, error)
-  })
+  return fetch(requestURL).then(response => response.json())
+    .catch(error => {
+      console.log(`Error while fetching ${requestURL}:`, error.message)
+      return { error }
+    })
 }
