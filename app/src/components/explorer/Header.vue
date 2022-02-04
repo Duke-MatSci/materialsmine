@@ -3,7 +3,7 @@
     <md-app-toolbar class="md-large md-dense md-primary" id="reset_bg">
       <div class="md-toolbar-row">
         <div class="md-toolbar-section-start">
-          <md-button class="md-icon-button" @click="toggleMenu">
+          <md-button class="md-icon-button" @click="toggler">
             <md-icon>menu</md-icon>
           </md-button>
 
@@ -11,9 +11,10 @@
         </div>
 
         <div class="md-toolbar-section-end">
-          <!-- <md-button class="md-icon-button">
-            <md-icon>more_vert</md-icon>
-          </md-button> -->
+          <div class="u_margin-top-small u_width--small u_margin-right-small" v-if="searchEnabled">
+            <input type="text" class="form__input form__input--flat" placeholder="Searching..." name="search" id="search" v-model="searchTerm"  />
+            <label htmlFor="search" class="form__label form__input--flat-label">Searching...</label>
+          </div>
           <md-badge id="header-badge" class="md-primary" md-content="12">
             <md-avatar>
               <img src="@/assets/img/brinson.jpeg" alt="Avatar">
@@ -33,13 +34,15 @@
   </div>
 </template>
 <script>
+import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
   props: ['toggler'],
-  methods: {
-    toggleMenu () {
-      this.toggler()
-    }
-  }
+  computed: {
+    ...mapGetters('explorer', {
+      searchTerm: 'getSearchKeyword',
+      searchEnabled: 'getSearching',
+    })
+  },
 }
 </script>

@@ -10,6 +10,7 @@
 	</md-app>
 </template>
 <script>
+import '@/modules/facet.js'
 import Drawers from '@/components/Drawer.vue'
 import ExpHeader from '@/components/explorer/Header.vue'
 export default {
