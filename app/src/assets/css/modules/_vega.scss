@@ -1,4 +1,7 @@
 .vega {
+    &-view{
+        margin: 2.5rem
+    }
     &-tabs{
         height:100% !important;
         .md-button {
@@ -29,6 +32,11 @@
         &-controls{
             padding-left: 20px;
             padding-right: 20px;
+        }
+    }
+    &-embed{
+        &-chartview{
+            margin-top:5rem
         }
     }
     

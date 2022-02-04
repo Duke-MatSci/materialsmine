@@ -1,4 +1,4 @@
-<div>
+<div class="vega-view">
     <div class="utility-content__result">
     <div class="utility-gridicon" v-if="!loading">
         <div>
@@ -29,7 +29,9 @@
                     </md-button>
                 </template>
                 <template v-slot:content>
-                    Query goes here
+                    <div class="viz-intro-query">
+                        <yasqe v-model="chart.query" :showBtns='true'></yasqe>
+                    </div>
                 </template>
             </mdDialog>
         </div>
@@ -42,7 +44,9 @@
                     </md-button>
                 </template>
                 <template v-slot:content>
-                    Data
+                    <div class="viz-intro-query" style="min-height: 40rem !important">
+                        <yasr :results="results"></yasr>
+                    </div>
                 </template>
             </mdDialog>
         </div>
@@ -117,14 +121,12 @@
     </div>
     </div>
     <div class="md-layout-item md-size-60 md-small-size-100">
-    <div class="loading-dialog" style="margin: auto" v-if="loading">
-        <spinner :loading="loading" />
+    <div class="loading-dialog" style="margin: 5rem" v-if="loading">
+        <spinner :loading="loading" :text="'Loading chart data'"/>
     </div>
     <div class="loading-dialog" style="margin: auto" v-else>
         <div class="viz-u-display__desktop" style="margin-bottom: 2rem"/>
-        <img src="https://www.seekpng.com/png/detail/238-2383560_clipart-stock-transparent-graph-cartoon-graph-icon-creative.png"
-            style="height:50rem"/>
-        <!-- <vega-lite :spec="spec" class="btn--animated"/> -->
+        <vega-lite :spec="spec" class="btn--animated vega-embed-chartview"/>
         <a @click.prevent="navBack(true)" class="btn btn_small btn--primary utility-margin-big viz-u-display__ph" v-if="vizOfTheDay">View Gallery</a>
     </div>
     <data-voyager v-if="voyager.show" :data="spec.data"></data-voyager>

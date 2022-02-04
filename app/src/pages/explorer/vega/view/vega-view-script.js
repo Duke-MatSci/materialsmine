@@ -1,13 +1,21 @@
 import VJsoneditor from 'v-jsoneditor'
 import Dialog from '@/components/dialog.vue'
 import { getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
-import { mapGetters } from 'vuex'
+import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
+import yasqe from '@/components/explorer/yasqe'
+import yasr from '@/components/explorer/yasr'
+import spinner from '@/components/Spinner'
+import { querySparql } from '@/modules/sparql'
 
 export default {
   name: 'chart-view',
   components: {
     MdDialog: Dialog,
-    VJsoneditor
+    VJsoneditor,
+    VegaLite,
+    yasqe,
+    yasr,
+    spinner
   },
   data () {
     return {
@@ -30,19 +38,22 @@ export default {
           mainMenuBar: false,
           onEditable: () => false
         }
-      }
+      },
+      results: null,
     }
   },
   computed: {
-    ...mapGetters('auth', ['isAuthenticated']),
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     }
   },
   methods: {
     async loadVisualization () {
-      this.chart = getDefaultChart()
-      this.spec = buildSparqlSpec(this.chart.baseSpec, null)
+      this.chart = getDefaultChart() //TODO: Load actual chart 
+      if (this.chart.query) {
+        this.results = await querySparql(this.chart.query)
+      }
+      this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
       this.loading = false
     },
     navBack (args) {
@@ -62,13 +73,11 @@ export default {
     tableView () {
     }
   },
-  beforeMount () {
-    return this.loadVisualization()
-  },
   destroyed () {
     this.error = { status: false, message: null }
   },
   created () {
     this.loading = true
+    return this.loadVisualization()
   }
 }

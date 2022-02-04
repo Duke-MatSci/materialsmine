@@ -235,8 +235,11 @@
     }
     &-gridicon {
         position: absolute;
-        right: .3rem;
+        right: 4.5rem;
         z-index: 10000000;
+        @include respond(tab-land){
+            right: 2.5rem;
+        }
 
         & > div {
             display: inline-block;
