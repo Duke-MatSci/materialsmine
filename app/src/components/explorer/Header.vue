@@ -34,15 +34,24 @@
   </div>
 </template>
 <script>
-import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
   props: ['toggler'],
   computed: {
-    ...mapGetters('explorer', {
-      searchTerm: 'getSearchKeyword',
-      searchEnabled: 'getSearching',
-    })
+    searchTerm: {
+			get(){
+				return this.$store.getters['explorer/getSearchKeyword']
+			},
+			set (payload) {
+				this.$store.commit('explorer/setSearchKeyword', payload)
+        if (!payload) {
+          this.$store.commit('explorer/setSearching')
+        }
+			}
+		},
+    searchEnabled(){
+			return this.$store.getters['explorer/getSearching']
+		}
   },
 }
 </script>
