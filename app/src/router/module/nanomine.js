@@ -39,7 +39,7 @@ const nanomineRoutes = [
     path: 'about',
     name: 'About',
     component: () => import(/* webpackChunkName: "about" */ '@/pages/nanomine/teams/Teams.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
   },
   {
     path: 'how',
