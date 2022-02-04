@@ -36,19 +36,19 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/about',
+    path: 'about',
     name: 'About',
-    component: () => import(/* webpackChunkName: "about" */ '@/pages/teams/Teams.vue'),
-    meta: { requiresAuth: true }
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/nanomine/teams/Teams.vue'),
+    meta: { requiresAuth: false }
   },
   {
-    path: '/how',
+    path: 'how',
     name: 'HowTo',
     component: () => import(/* webpackChunkName: "howto" */ '@/pages/nanomine/howTo/HowTo.vue'),
     meta: { requiresAuth: false }
   },
   {
-    path: '/news',
+    path: 'news',
     name: 'News',
     component: () => import(/* webpackChunkName: "news" */ '@/pages/nanomine/researchnews/News.vue'),
     meta: { requiresAuth: false }
