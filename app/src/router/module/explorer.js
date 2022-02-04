@@ -9,7 +9,7 @@ const explorerRoutes = [
     path: 'chart/view/:uri',
     name: 'ChartView',
     component: () => import('@/pages/explorer/vega/view/VegaView.vue')
-  },
+  }
 ]
 
 export default explorerRoutes

@@ -1,3 +1,6 @@
+import { literal, namedNode } from '@rdfjs/data-model'
+import { fromRdf } from 'rdf-literal'
+
 const defaultQuery = `
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT DISTINCT ?c (COUNT(?x) AS ?count)

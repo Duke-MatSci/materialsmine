@@ -39,7 +39,7 @@ export default {
           onEditable: () => false
         }
       },
-      results: null,
+      results: null
     }
   },
   computed: {
@@ -49,7 +49,7 @@ export default {
   },
   methods: {
     async loadVisualization () {
-      this.chart = getDefaultChart() //TODO: Load actual chart 
+      this.chart = getDefaultChart() // TODO: Load actual chart
       if (this.chart.query) {
         this.results = await querySparql(this.chart.query)
       }
