@@ -40,7 +40,7 @@ const routes = [
   { path: '/explorer:notFound(.*)', redirect: '/explorer' },
   { path: '/mm:notFound(.*)', redirect: '/mm' },
   { path: '/nm:notFound(.*)', redirect: '/nm' },
-  { path: '/:notFound(.*)', component: Home }
+  { path: '/:notFound(.*)', redirect: '/nm' }
 ]
 
 const router = new VueRouter({
