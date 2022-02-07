@@ -9,7 +9,10 @@ describe('@/components/Dialog.vue', () => {
     const localVue = await createLocalVue()
     localVue.use(VueMaterial)
     wrapper = shallowMount(Dialog, {
-      localVue
+      localVue,
+      slots: {
+        default: ['<p>Testing</p>']
+      }
     })
   })
 
@@ -19,19 +22,17 @@ describe('@/components/Dialog.vue', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('renders props.msg when passed', async () => {
+  it('confirms props', async () => {
     const testProps = {
-      active: false,
-      cancelTextBtn: 'Disagree',
-      confirmTextBtn: 'Agree',
-      textContent: 'Testing <strong>Materialsmine</strong>.',
-      dialogTitle: 'Dialog Box'
+      active: false
     }
     await wrapper.setProps({ ...testProps })
     expect(wrapper.props('active')).toBe(testProps.active)
-    expect(wrapper.props('cancelTextBtn')).toBe(testProps.cancelTextBtn)
-    expect(wrapper.props('confirmTextBtn')).toBe(testProps.confirmTextBtn)
-    expect(wrapper.props('textContent')).toBe(testProps.textContent)
-    expect(wrapper.props('dialogTitle')).toBe(testProps.dialogTitle)
+  })
+
+  it('contains slot', () => {
+    const slotExist = wrapper.find('p')
+    expect(slotExist.exists()).toBe(true)
+    expect(slotExist.text()).toBe('Testing')
   })
 })
