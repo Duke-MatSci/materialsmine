@@ -1,4 +1,4 @@
-FROM jrei/systemd-ubuntu:20.04
+FROM ubuntu:20.04
 RUN apt-get update && apt-get install -y software-properties-common gcc
 
 RUN apt-get update && apt-get install -y \
@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     libdb5.3-dev \
     default-jdk-headless
-RUN python3.8 -m pip install requests wheel gunicorn
-RUN python3.8 -m pip install whyis==2.0a5 whyis-unit-converter==0.0.2
+RUN python3.8 -m venv /opt/venv
+RUN /opt/venv/bin/pip install requests>=2.27.1 wheel gunicorn
+RUN /opt/venv/bin/pip install whyis==2.0a7 whyis-unit-converter==0.0.2
+COPY /materialsmine /app
 WORKDIR '/app'
-RUN whyis init
 CMD [ "/bin/bash" ]

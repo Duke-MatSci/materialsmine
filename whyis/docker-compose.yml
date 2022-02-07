@@ -4,52 +4,57 @@ services:
     image: "redis:alpine"
     command: redis-server
     volumes:
-     - ./redis-data:/var/lib/redis
-    ports:
-      - '6379:6379'
+     - ./mockDB/redis-data:/var/lib/redis
   celery:
     depends_on:
       - redis
       - fuseki
-    command: celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
+    command: /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
+    volumes:
+      - ./materialsmine:/app
+      - ./whyis:/opt/whyis
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
+      dockerfile: Dockerfile.dev
       context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./materialsmine:/app
   celerybeat:
+    depends_on:
       - redis
       - fuseki
-    command: celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
+    command: /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
+    volumes:
+      - ./materialsmine:/app
+      - ./whyis:/opt/whyis
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
+      dockerfile: Dockerfile.dev
       context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./materialsmine:/app
   fuseki:
-    command: fuseki-server --mem /ds
+    command: /opt/venv/bin/whyis fuseki # ; /opt/venv/bin/fuseki-server --mem /ds
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
+      dockerfile: Dockerfile.dev
       context: .
-      dockerfile: Dockerfile
+    ports:
+      - '3030:3030'
     volumes:
-      - ./materialsmine:/app
-  web:
+      - ./mockDB/fuseki:/app/run
+  whyis:
+    depends_on:
       - redis
       - fuseki
     stdin_open: true
-    command: gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4} --timeout 90
+    command: /bin/bash #/opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4} --timeout 90 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
+      dockerfile: Dockerfile.dev
       context: .
-      dockerfile: Dockerfile
-    ports:
-      - '8000:8000'
     volumes:
       - ./materialsmine:/app
+      - ./whyis:/opt/whyis
+    ports:
+      - '5000:5000'

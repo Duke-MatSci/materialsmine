@@ -32,7 +32,7 @@
   whyis:hasFacets "pnc_facets.json";
   whyis:hasFacetValues "facet_values_20210625_HARDCODED.json".
 
-<http://nanomine.org/gallery> a whyis:ChartVizGallery.
+<http://materialsmine.org/gallery> a whyis:ChartVizGallery.
 
 whyis:DatasetClass a owl:Class;
   rdfs:subClassOf owl:Class;
@@ -45,4 +45,3 @@ whyis:ChartVizGallery whyis:hasView "chart_gallery.html".
 
 :NanomaterialChart a whyis:ChartClass.
 :MetamaterialChart a whyis:ChartClass.
-
