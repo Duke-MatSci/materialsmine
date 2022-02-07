@@ -7,7 +7,10 @@ export default {
       toggleMenuVisibility: false,
       article: {},
       loading: false,
-      error: null
+      error: null,
+      articleError: null,
+      citationsError: null,
+      referencesError: null
     }
   },
   computed: {
@@ -37,24 +40,42 @@ export default {
       this.toggleMenuVisibility = !this.toggleMenuVisibility
     },
     async fetchData () {
-      this.article = {}
       this.loading = true
+      this.articleError = null
       this.error = null
+      this.citationsError = null
+      this.referencesError = null
+      this.article = {}
       if (this.doi) {
-        articleMetadata.get({ doi: this.doi })
-          .then((article) => {
-            if (article) {
-              this.article = article
-              this.loading = false
-            } else {
-              throw new Error('Empty article returned')
-            }
-          })
-          .catch((error) => {
-            this.error = { ...error, message: `Error loading article metadata: ${error.message}` }
-            this.loading = false
-            console.log(error.message)
-          })
+        try {
+          this.article = await articleMetadata.get({ doi: this.doi })
+          this.loading = false
+          this.articleError = this.getError('article')
+          this.citationsError = this.getError('citations')
+          this.referencesError = this.getError('references')
+
+          this.error = this.referencesError || this.citationsError || this.articleError
+        } catch (error) {
+          this.error = error.message
+          this.citationsError = true
+          this.referencesError = true
+          this.loading = false
+        }
+      }
+    },
+    getError(prop) {
+      let base
+      if (prop === 'article') {
+        base = this.article
+      } else {
+        base = this.article[prop]
+      }
+      if (!base) {
+        return true
+      } else if (!base.ok) {
+        return base.error ? base.error : `${base.status} ${base.statusText}`
+      } else {
+        return false
       }
     }
   }
