@@ -86,7 +86,7 @@ function response (responseType, testingSection) {
           ok: false,
           status: 404,
           statusText: 'Testing Not Found',
-          json: () => Promise.resolve({ error: 'Testing bad response' }),
+          json: () => Promise.resolve({ error: 'Testing bad response' })
         })
       } else if (responseType === 'reject') {
         return Promise.reject(new TypeError('Testing rejection of fetch(article) Promise'))

@@ -63,7 +63,7 @@ export default {
         }
       }
     },
-    getError(prop) {
+    getError (prop) {
       let base
       if (prop === 'article') {
         base = this.article

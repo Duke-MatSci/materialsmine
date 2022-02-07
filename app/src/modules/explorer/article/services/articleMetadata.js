@@ -25,7 +25,7 @@ export default {
 
     articleResponse.citations = {
       ...articleCitationsResponse,
-      data: cleanPaperResponse(articleCitationsResponse, 'citingPaper'),
+      data: cleanPaperResponse(articleCitationsResponse, 'citingPaper')
     }
     articleResponse.references = {
       ...articleReferencesResponse,
@@ -37,7 +37,7 @@ export default {
 }
 
 function cleanPaperResponse (rawData, prop) {
-  if(!rawData || !rawData.ok) {
+  if (!rawData || !rawData.ok) {
     return rawData
   } else {
     const cleanedData = rawData.data.map(paper => paper[prop]).filter(articleFilter).sort(articleSort)
@@ -65,7 +65,7 @@ function articleFilter (paper) {
 }
 
 async function fetchSemanticScholarResponse (doi, path, fields) {
-  const semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/${path ? path : ''}`
+  const semanticScholarBase = `https://api.semanticscholar.org/graph/v1/paper/DOI:${doi}/${path || ''}`
   const requestURL = new URL(semanticScholarBase)
   requestURL.search = new URLSearchParams({
     fields: fields.join(','),
