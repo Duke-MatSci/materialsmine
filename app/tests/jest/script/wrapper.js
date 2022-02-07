@@ -16,17 +16,17 @@ localVue.use(VueMaterial)
  * @returns {*} Vue Wrapper
  */
 function createWrapper (component, overrides, useMount = true) {
-    const mountType = !useMount ? shallowMount : mount
-    const defaultMountOptions = {
-        localVue,
-        // mocks: {
-        //     $router: _.merge({ push: jest.fn() }, overrides.router || {})
-        // },
-        router,
-        store,
-        propsData: _.merge({}, overrides)
-    }
-    return mountType(component, defaultMountOptions)
+  const mountType = !useMount ? shallowMount : mount
+  const defaultMountOptions = {
+    localVue,
+    // mocks: {
+    //     $router: _.merge({ push: jest.fn() }, overrides.router || {})
+    // },
+    router,
+    store,
+    propsData: _.merge({}, overrides)
+  }
+  return mountType(component, defaultMountOptions)
 }
 
 export default createWrapper
