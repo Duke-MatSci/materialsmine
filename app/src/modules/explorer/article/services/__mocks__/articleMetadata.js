@@ -1,6 +1,9 @@
 /* globals jest */
 function getResponse (doi) {
   return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
     paperId: 'abc',
     title: 'NanoMine schema: A shortened data representation for testing Article View',
     abstract: 'Polymer nanocomposites consist of a polymer matrix and fillers like this is a testing matrix and filler material',
