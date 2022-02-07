@@ -15,7 +15,7 @@ export default {
     active: {
       type: Boolean,
       default: false
-    },
+    }
   }
 }
 </script>
