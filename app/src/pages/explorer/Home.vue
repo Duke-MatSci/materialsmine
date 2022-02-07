@@ -1,14 +1,14 @@
 <template>
 	<div>
-		<facet-panel :searchEnabled="searchEnabled" />
+		<facet-panel :searchEnabled="searchEnabled" class="facet_panel" />
 		<div class="section_teams" v-if="!searchEnabled">
 			<div class="search_box">
 				<h2 class="search_box_header">Welcome to MM Explorer</h2>
 				<form class="form" @submit.prevent="setSearching">
 					<div class="search_box_form">
 						<div class="form__group search_box_form-item-1">
-								<input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
-								<label htmlFor="search" class="form__label search_box_form_label">Search</label>
+							<input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
+							<label htmlFor="search" class="form__label search_box_form_label">Search</label>
 						</div>
 						<div class="form__group search_box_form-item-2">
 							<button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
