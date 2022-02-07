@@ -50,14 +50,6 @@ export default {
         { icon: 'help', text: 'Help', link: '' }
       ]
     }
-  },
-  computed: {
-    dialogBox () {
-      return this.$store.getters.dialogBox
-    }
-  },
-  methods: {
-
   }
 }
 </script>
