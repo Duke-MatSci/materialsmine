@@ -22,7 +22,7 @@ describe('articleMetadata.js', () => {
     global.fetch = response('good', 'all')
     const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
     expect(article.title).toBe(cleanResponse.title)
-    expect(article.references[0].paperId).toBe(cleanResponse.references[0].paperId)
+    expect(article.references.data[0].paperId).toBe(cleanResponse.references[0].paperId)
   })
 
   it('handles a bad fetch response to the article request', async () => {
@@ -48,20 +48,20 @@ describe('articleMetadata.js', () => {
   it('handles a rejected fetch response to the article request', async () => {
     global.fetch = response('reject', 'article')
     const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
-    expect(article.error.message).toMatch(/Testing rejection/)
+    expect(article.error).toMatch(/Testing rejection/)
   })
 
   it('handles a rejected fetch response to the references request', async () => {
     global.fetch = response('reject', 'references')
     const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
-    expect(article.references.error.message).toMatch(/Testing rejection/)
+    expect(article.references.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a rejected fetch response to the citations request', async () => {
     global.fetch = response('reject', 'citations')
     const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
-    expect(article.citations.error.message).toMatch(/Testing rejection/)
+    expect(article.citations.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)
   })
 })
@@ -83,15 +83,20 @@ function response (responseType, testingSection) {
     if (responseType !== 'good' && testingSection === requestedSection) {
       if (responseType === 'bad') {
         return Promise.resolve({
-          status: 403,
-          json: () => Promise.resolve({ error: 'Testing bad response' })
+          ok: false,
+          status: 404,
+          statusText: 'Testing Not Found',
+          json: () => Promise.resolve({ error: 'Testing bad response' }),
         })
       } else if (responseType === 'reject') {
-        return Promise.reject(new Error('Testing rejection of fetch(article) Promise'))
+        return Promise.reject(new TypeError('Testing rejection of fetch(article) Promise'))
       }
     } else {
       // responseType is good, or we aren't testing this section
       return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
         json: () => Promise.resolve(rawResponse[requestedSection])
       })
     }

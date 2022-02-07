@@ -23,8 +23,14 @@ export default {
       articleResponse.authorNames = articleResponse.authors.map(author => author.name).join(', ')
     }
 
-    articleResponse.citations = cleanPaperResponse(articleCitationsResponse, 'citingPaper')
-    articleResponse.references = cleanPaperResponse(articleReferencesResponse, 'citedPaper')
+    articleResponse.citations = {
+      ...articleCitationsResponse,
+      data: cleanPaperResponse(articleCitationsResponse, 'citingPaper'),
+    }
+    articleResponse.references = {
+      ...articleReferencesResponse,
+      data: cleanPaperResponse(articleReferencesResponse, 'citedPaper')
+    }
 
     return articleResponse
   }

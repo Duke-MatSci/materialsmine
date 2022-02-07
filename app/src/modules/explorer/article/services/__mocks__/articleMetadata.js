@@ -25,6 +25,9 @@ function getResponse (doi) {
     authorNames: 'He Zhao, Yixing Wang',
     citations: [
       {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
         paperId: 'def',
         title: 'Bayesian Optimization for testing',
         year: 2019,
@@ -59,6 +62,9 @@ function getResponse (doi) {
     ],
     references: [
       {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
         paperId: 'jkl',
         title: 'A translation approach to portable ontology specifications',
         year: 1993,
