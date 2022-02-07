@@ -1,5 +1,5 @@
 <template>
-    <div :class="{facet: true, active: searchEnabled}">
+    <div :class="{facet: true, facet_active: searchEnabled}">
         <div class="facet_viewport">
             <md-list>
                 <md-subheader class="md-primary facet-header">Filter Panel</md-subheader>
@@ -10,13 +10,12 @@
     </div>
 </template>
 <script>
+import Facet from '@/modules/facet.js'
 export default {
     name: 'FacetPanel',
-    props: ['searchEnabled']
+    props: ['searchEnabled'],
+    mounted() {
+        Facet()
+    }
 }
 </script>
-<style lang="scss" scoped>
-    .active {
-        opacity: .6;
-    }
-</style>
