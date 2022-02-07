@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from '@/store/index.js'
-import Home from '@/pages/Home.vue'
 import ExplorerBase from '@/pages/explorer/Base.vue'
 import MetamineBase from '@/pages/metamine/Base.vue'
 import NanomineBase from '@/pages/nanomine/Base.vue'
