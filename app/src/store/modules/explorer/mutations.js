@@ -6,7 +6,7 @@ export default {
     state.searchKeyword = payload
   },
   setSearching (state) {
-    if(!!state?.searchKeyword?.length){
+    if (state?.searchKeyword?.length) {
       state.searching = true
     } else {
       state.searching = false

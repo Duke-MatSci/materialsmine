@@ -44,34 +44,34 @@
 import { mapMutations } from 'vuex'
 import FacetPanel from '@/components/explorer/Facet.vue'
 export default {
-	name: 'ExplorerHome',
-	data () {
-		return {
-			pageNavLinks: [
-				{ icon: 'grid_view', text: 'Gallery', link: '' },
-				{ icon: 'cloud_upload', text: 'Curate', link: '' },
-				{ icon: 'help', text: 'Help', link: '' }
-			],
-		}
-	},
-	computed: {
-		searchWord: {
-			get(){
-				return this.$store.getters['explorer/getSearchKeyword']
-			},
-			set (payload) {
-				return this.$store.commit('explorer/setSearchKeyword', payload)
-			}
-		},
-		searchEnabled(){
-			return this.$store.getters['explorer/getSearching']
-		}
-	},
-	components: {
-		FacetPanel
-	},
-	methods: {
-		...mapMutations('explorer', ['setSearching'])
-	}
+  name: 'ExplorerHome',
+  data () {
+    return {
+      pageNavLinks: [
+        { icon: 'grid_view', text: 'Gallery', link: '' },
+        { icon: 'cloud_upload', text: 'Curate', link: '' },
+        { icon: 'help', text: 'Help', link: '' }
+      ]
+    }
+  },
+  computed: {
+    searchWord: {
+      get () {
+        return this.$store.getters['explorer/getSearchKeyword']
+      },
+      set (payload) {
+        return this.$store.commit('explorer/setSearchKeyword', payload)
+      }
+    },
+    searchEnabled () {
+      return this.$store.getters['explorer/getSearching']
+    }
+  },
+  components: {
+    FacetPanel
+  },
+  methods: {
+    ...mapMutations('explorer', ['setSearching'])
+  }
 }
 </script>

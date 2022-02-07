@@ -39,19 +39,19 @@ export default {
   props: ['toggler'],
   computed: {
     searchTerm: {
-			get(){
-				return this.$store.getters['explorer/getSearchKeyword']
-			},
-			set (payload) {
-				this.$store.commit('explorer/setSearchKeyword', payload)
+      get () {
+        return this.$store.getters['explorer/getSearchKeyword']
+      },
+      set (payload) {
+        this.$store.commit('explorer/setSearchKeyword', payload)
         if (!payload) {
           this.$store.commit('explorer/setSearching')
         }
-			}
-		},
-    searchEnabled(){
-			return this.$store.getters['explorer/getSearching']
-		}
-  },
+      }
+    },
+    searchEnabled () {
+      return this.$store.getters['explorer/getSearching']
+    }
+  }
 }
 </script>

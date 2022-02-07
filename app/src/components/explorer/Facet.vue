@@ -12,10 +12,10 @@
 <script>
 import Facet from '@/modules/facet.js'
 export default {
-    name: 'FacetPanel',
-    props: ['searchEnabled'],
-    mounted() {
-        Facet()
-    }
+  name: 'FacetPanel',
+  props: ['searchEnabled'],
+  mounted () {
+    Facet()
+  }
 }
 </script>
