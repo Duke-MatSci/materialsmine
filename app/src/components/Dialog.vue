@@ -2,7 +2,7 @@
   <div>
     <md-dialog
       :md-active.sync="active"
-      :md-click-outside-to-close="true">
+      :md-click-outside-to-close="false">
       <slot></slot>
       </md-dialog>
   </div>
