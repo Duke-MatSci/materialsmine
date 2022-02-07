@@ -2,15 +2,17 @@
   <div>
     <div v-if="loadingProcessLabel" class="loading">Loading...</div>
     <div v-if="processLabel">
-      <h1>Curated Processing Steps and Parameters</h1>
-      <h3>Class: {{ processLabel }}</h3>
+      <div class="md-display-1" style="color: #000">
+        Curated Processing Steps and Parameters
+      </div>
+      <div class="md-subheading">Class: {{ processLabel }}</div>
     </div>
     <div v-if="loadingSteps">Loading...</div>
     <div v-if="steps && steps.length > 0">
-      <h3>Processing Steps:</h3>
+      <div class="md-title">Processing Steps:</div>
       <ul>
         <li v-for="step in steps" :key="step.description">
-          <span>{{ step.parameterLabel }}</span> |
+          <span class="md-body-2">{{ step.parameterLabel }}</span>
           {{ step.description }}
         </li>
       </ul>
@@ -81,4 +83,16 @@ export default {
 }
 </script>
 
-<style></style>
+<style scoped>
+.md-display-1 {
+  margin-top: 10px;
+  color: #000;
+}
+
+.md-title {
+  margin: 10px 0px 5px 0px;
+}
+li {
+  list-style-type: none;
+}
+</style>

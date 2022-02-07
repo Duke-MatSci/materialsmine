@@ -3,14 +3,16 @@
     <div v-if="loading" class="loading">Loading...</div>
     <div v-if="error" class="error"></div>
     <div v-if="links && links.length > 0">
-      <h2>Other Samples from this Research Article</h2>
-      <router-link
-        :to="`/explorer/sample/${link}`"
-        v-for="link in links"
-        :key="link"
-      >
-        {{ link }}
-      </router-link>
+      <h2 class="md-display-1">Other Samples from this Research Article</h2>
+      <div class="link-container">
+        <router-link
+          :to="`/explorer/sample/${link}`"
+          v-for="link in links"
+          :key="link"
+        >
+          {{ link }}
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -55,4 +57,14 @@ export default {
   }
 }
 </script>
-<style></style>
+<style scoped>
+.md-display-1 {
+  margin: 10px 0px;
+  color: #000;
+}
+
+.link-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+</style>

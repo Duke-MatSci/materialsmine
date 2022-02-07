@@ -1,11 +1,13 @@
 <template>
-  <div id="sample_page">
-    <SampleHeader />
-    <SampleImages />
-    <MaterialComponentsAndAttributes />
-    <CuratedProcessingStepsParameters />
-    <CuratedPropertiesOfNanocompositeSample />
-    <OtherSamples />
+  <div class="sample_page">
+    <div class="sample_container">
+      <SampleHeader />
+      <SampleImages />
+      <MaterialComponentsAndAttributes />
+      <CuratedProcessingStepsParameters />
+      <CuratedPropertiesOfNanocompositeSample />
+      <OtherSamples />
+    </div>
   </div>
 </template>
 <script>
@@ -31,3 +33,14 @@ export default {
   }
 }
 </script>
+<style scoped>
+.sample_page {
+  display: flex;
+  justify-content: center;
+}
+
+.sample_container {
+  max-width: 1024px;
+  padding: 0px 16px;
+}
+</style>

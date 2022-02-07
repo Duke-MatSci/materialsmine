@@ -5,11 +5,15 @@
       {{ error }}
     </div>
     <div v-if="sample">
-      <h1 class="sample_header">Sample: {{ this.$route.params.label }}</h1>
-      <ul class="sample_labels">
-        <li data-test="DOI">DOI: {{ sample.DOI }}</li>
-        <li data-test="sample_label">Label: {{ sample.sample_label }}</li>
-      </ul>
+      <div class="md-display-2" style="color: #000">
+        {{ this.$route.params.label }}
+      </div>
+      <div data-test="sample_label">
+        <span class="md-body-2">Label:</span> {{ sample.sample_label }}
+      </div>
+      <div data-test="DOI">
+        <span class="md-body-2">DOI:</span> {{ sample.DOI }}
+      </div>
     </div>
     <div v-if="sample === null">
       <h1 class="sample_header">Sample not found</h1>
@@ -57,4 +61,9 @@ export default {
   }
 }
 </script>
-<style></style>
+<style>
+.md-display-2 {
+  margin: 20px 0px;
+  font-weight: 500;
+}
+</style>

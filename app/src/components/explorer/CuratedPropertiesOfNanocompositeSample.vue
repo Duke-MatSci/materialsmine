@@ -2,14 +2,17 @@
   <div>
     <div v-if="loading" class="loading">Loading...</div>
     <div v-if="curatedProperties && curatedProperties.length > 0">
-      <h2>Curated Properties of Nanocomposite Sample</h2>
-      <h3>Scalar attributes:</h3>
+      <h2 class="md-display-1" style="color: #000">
+        Curated Properties of Nanocomposite Sample
+      </h2>
+      <h3 class="md-title">Scalar attributes:</h3>
       <ul>
         <li
           v-for="property in curatedProperties"
           :key="property.type + property.value"
+          class="md-body-1"
         >
-          <span>{{ property.type }}: </span>
+          <span class="md-body-2">{{ property.type }}: </span>
           <span>{{ property.value }}</span>
           <span> {{ property.units }}</span>
         </li>
@@ -59,4 +62,16 @@ export default {
 }
 </script>
 
-<style></style>
+<style scoped>
+.md-display-1 {
+  margin: 10px 0px;
+  color: #000;
+}
+li {
+  list-style-type: none;
+}
+
+.md-title {
+  margin-bottom: 5px;
+}
+</style>
