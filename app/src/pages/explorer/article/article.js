@@ -57,6 +57,7 @@ export default {
           this.error = this.referencesError || this.citationsError || this.articleError
         } catch (error) {
           this.error = error.message
+          this.articleError = error.message
           this.citationsError = true
           this.referencesError = true
           this.loading = false
@@ -73,7 +74,7 @@ export default {
       if (!base) {
         return true
       } else if (!base.ok) {
-        return base.error ? base.error : `${base.status} ${base.statusText}`
+        return base.error || `${base.status} ${base.statusText}`
       } else {
         return false
       }

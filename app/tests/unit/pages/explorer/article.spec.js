@@ -1,18 +1,10 @@
-import { shallowMount, createLocalVue } from '@vue/test-utils'
+import createWrapper from '../../../jest/script/wrapper'
 
 import Article from '@/pages/explorer/article/Article.vue'
 import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
 jest.mock('@/modules/explorer/article/services/articleMetadata')
 
-const localVue = createLocalVue()
-
 var wrapper = null
-
-const $route = {
-  params: {
-    doi: '10.1063/1.5046839'
-  }
-}
 
 afterEach(() => {
   articleMetadata.__reset()
@@ -20,18 +12,14 @@ afterEach(() => {
 })
 
 describe('Article.vue', () => {
-  beforeAll(done => {
-    try {
-      wrapper = mountArticle()
-      done()
-    } catch (error) {
-      done(error)
-    }
+  const baseDOI = '10.1063/1.5046839'
+  beforeAll(() => {
+    wrapper = mountArticle(baseDOI)
   })
 
   it('loads DOI', () => {
     const doiWrapper = wrapper.find('.article_doi')
-    expect(doiWrapper.text()).toMatch(new RegExp($route.params.doi))
+    expect(doiWrapper.text()).toMatch(new RegExp(baseDOI))
   })
 
   it('displays provided data', () => {
@@ -42,10 +30,11 @@ describe('Article.vue', () => {
   })
 
   it('updates when passed a new DOI', async () => {
-    await localVue.nextTick() // ensures all previous async calls are complete
-    wrapper.vm.$route.params.doi = '10.1002%2Fpolb.20925'
-    await localVue.nextTick() // gives vue time to update wrapper.vm.doi
-    expect(wrapper.vm.doi).toBe('10.1002%2Fpolb.20925')
+    const newDOI = '10.1002/polb.20925'
+    wrapper.vm.$router.push(doiLink(newDOI))
+    expect(wrapper.vm.doi).toBe(newDOI)
+
+    await wrapper.vm.$nextTick()
     expect(articleMetadata.get.mock.calls.length).toBe(1)
   })
 })
@@ -55,17 +44,26 @@ describe('Article.vue', () => {
     articleMetadata.__setTestingData(false)
     articleMetadata.__setTestingRejection(true)
     wrapper = mountArticle()
-    await localVue.nextTick()
+
+    // one tick to retrieve data, one tick to update view
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
     expect(wrapper.vm.error).toBeTruthy()
     expect(wrapper.vm.loading).toBeFalsy()
+    const errorTitle = wrapper.find('.article_title p')
+    expect(errorTitle.exists()).toBeTruthy()
+    expect(errorTitle.text()).toMatch(/Testing rejection/)
   })
 })
 
-function mountArticle () {
-  return shallowMount(Article, {
-    localVue,
-    mocks: {
-      $route
-    }
+function mountArticle (doi) {
+  const wrapper = createWrapper(Article, {
+    props: {},
+    slots: {}
   })
+  wrapper.vm.$router.push(doiLink(doi || 'fake/doi'))
+  return wrapper
 }
+
+const doiLink = doi => `/explorer/sample/article/${doi}`
