@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from '@/store/index.js'
-import Home from '@/pages/Home.vue'
 import ExplorerBase from '@/pages/explorer/Base.vue'
 import MetamineBase from '@/pages/metamine/Base.vue'
 import NanomineBase from '@/pages/nanomine/Base.vue'
@@ -40,7 +39,7 @@ const routes = [
   { path: '/explorer:notFound(.*)', redirect: '/explorer' },
   { path: '/mm:notFound(.*)', redirect: '/mm' },
   { path: '/nm:notFound(.*)', redirect: '/nm' },
-  { path: '/:notFound(.*)', component: Home }
+  { path: '/:notFound(.*)', redirect: '/nm' }
 ]
 
 const router = new VueRouter({
