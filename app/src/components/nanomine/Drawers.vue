@@ -30,13 +30,13 @@
                 <md-icon class="utility-navfonticon">groups</md-icon>
                 <span class="md-list-item-text utility-navfont">About</span>
                 <md-list slot="md-expand">
-                    <router-link :to="'/about'" v-slot="{navigate, href}" custom>
+                    <router-link :to="'/nm/about'" v-slot="{navigate, href}" custom>
                         <md-list-item :href="href" @click="navigate" class="md-inset"> About Us </md-list-item>
                     </router-link>
-                    <router-link :to="'/how'" v-slot="{navigate, href}" custom>
+                    <router-link :to="'/nm/how'" v-slot="{navigate, href}" custom>
                         <md-list-item :href="href" @click="navigate"  class="md-inset">How To</md-list-item>
                     </router-link>
-                    <router-link :to="'/news'" v-slot="{navigate, href}" custom>
+                    <router-link :to="'/nm/news'" v-slot="{navigate, href}" custom>
                         <md-list-item :href="href" @click="navigate"  class="md-inset">Research + News</md-list-item>
                     </router-link>
                 </md-list>
@@ -46,7 +46,6 @@
                 <md-icon class="utility-navfonticon">view_comfy</md-icon>
                 <span class="md-list-item-text utility-navfont">Visualize</span>
                 <md-list slot="md-expand">
-                    <md-list-item class="md-inset">Browse Data</md-list-item>
                     <md-list-item class="md-inset">Chart Gallery</md-list-item>
                     <md-list-item class="md-inset">Image Gallery</md-list-item>
                 </md-list>

@@ -1,18 +1,11 @@
-
-import VueMaterial from 'vue-material'
-import { enableAutoDestroy, shallowMount, createLocalVue } from '@vue/test-utils'
+import createWrapper from '../../../jest/script/wrapper'
+import { enableAutoDestroy } from '@vue/test-utils'
 import Home from '@/pages/metamine/Home.vue'
-import router from '@/router/index.js'
 
 describe('Metamine Home page', () => {
   let wrapper
-  beforeEach(async () => {
-    const localVue = await createLocalVue()
-    localVue.use(VueMaterial)
-    wrapper = shallowMount(Home, {
-      localVue,
-      router
-    })
+  beforeEach(() => {
+    wrapper = createWrapper(Home, {}, false)
   })
 
   enableAutoDestroy(afterEach)

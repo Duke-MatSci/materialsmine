@@ -6,7 +6,9 @@ export default {
   namespaced: true,
   state () {
     return {
-      toggleMenuVisibility: false
+      toggleMenuVisibility: false,
+      searchKeyword: '',
+      searching: false
     }
   },
   mutations,

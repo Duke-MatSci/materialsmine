@@ -1,79 +1,34 @@
 <div class="vega-view">
     <div class="utility-content__result">
     <div class="utility-gridicon" v-if="!loading">
-        <div>
         <md-button class="md-icon-button" @click.native.prevent="navBack">
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
         </md-button>
-        </div>
-        <div>
-            <mdDialog :title="'Share Chart'">
-                <template v-slot:button>
-                    <md-button class="md-icon-button">
-                        <md-tooltip> Share Chart </md-tooltip>
-                        <md-icon>share</md-icon>
-                    </md-button>
-                </template>
-                <template v-slot:content>
-                    Link to chart
-                </template>
-            </mdDialog>
-        </div>
+        <md-button class="md-icon-button" @click.native.prevent="shareChart">
+            <md-tooltip> Share Chart </md-tooltip>
+            <md-icon>share</md-icon>
+        </md-button>
         <div v-if="chart.query">
-            <mdDialog :title="'Preview Chart Query'">
-                <template v-slot:button>
-                    <md-button class="md-icon-button">
-                        <md-tooltip> Preview Chart Query </md-tooltip>
-                        <md-icon>preview</md-icon>
-                    </md-button>
-                </template>
-                <template v-slot:content>
-                    <div class="viz-intro-query">
-                        <yasqe v-model="chart.query" :showBtns='true'></yasqe>
-                    </div>
-                </template>
-            </mdDialog>
+            <md-button class="md-icon-button"  @click.native.prevent="viewQuery">
+                <md-tooltip> Preview Chart Query </md-tooltip>
+                <md-icon>preview</md-icon>
+            </md-button>
+        </div>
+        <div v-if="results">
+            <md-button class="md-icon-button" @click.native.prevent="viewTable">
+                <md-tooltip> View Data as Table </md-tooltip>
+                <md-icon>table_view</md-icon>
+            </md-button>
+        </div>
+        <div v-if="specViewerSpec">
+            <md-button class="md-icon-button" @click.native.prevent="viewVegaSpec">
+                <md-tooltip> Preview Chart Spec </md-tooltip>
+                <md-icon>integration_instructions</md-icon>
+            </md-button>
         </div>
         <div>
-            <mdDialog :title="'View Data as Table'">
-                <template v-slot:button>
-                    <md-button class="md-icon-button">
-                        <md-tooltip> View Data as Table </md-tooltip>
-                        <md-icon>table_view</md-icon>
-                    </md-button>
-                </template>
-                <template v-slot:content>
-                    <div class="viz-intro-query" style="min-height: 40rem !important">
-                        <yasr :results="results"></yasr>
-                    </div>
-                </template>
-            </mdDialog>
-        </div>
-        <div>
-            <mdDialog :title="'Chart Vega Spec'">
-                <template v-slot:button>
-                    <md-button class="md-icon-button">
-                        <md-tooltip> Preview Chart Spec </md-tooltip>
-                        <md-icon>integration_instructions</md-icon>
-                    </md-button>
-                </template>
-                <template v-slot:content>
-                    <md-content>
-                    <v-jsoneditor
-                        v-model="specViewerSpec"
-                        :options="specViewer.jsonEditorOpts"
-                    >
-                    </v-jsoneditor>
-                    </md-content>
-                    <div class="vega-spec-controls">
-                        <md-checkbox v-model="specViewer.includeData">Include data in spec</md-checkbox>
-                    </div>
-                </template>
-            </mdDialog>
-        </div>
-        <div>
-        <md-button class="md-icon-button" @click.native.prevent="openVoyager()">
+        <md-button class="md-icon-button" @click.native.prevent="openVoyager">
             <md-tooltip> View Data in Voyager </md-tooltip>
             <md-icon>dynamic_form</md-icon>
         </md-button>
@@ -127,9 +82,36 @@
     <div class="loading-dialog" style="margin: auto" v-else>
         <div class="viz-u-display__desktop" style="margin-bottom: 2rem"/>
         <vega-lite :spec="spec" class="btn--animated vega-embed-chartview"/>
-        <a @click.prevent="navBack(true)" class="btn btn_small btn--primary utility-margin-big viz-u-display__ph" v-if="vizOfTheDay">View Gallery</a>
     </div>
-    <data-voyager v-if="voyager.show" :data="spec.data"></data-voyager>
     </div>
 </div>
+
+<dialogbox :active="dialogBoxActive">
+    <div>
+        <md-dialog-title>{{dialog.title}}</md-dialog-title>
+        <div v-if="dialog.type=='share'">
+            <md-field> <label>Chart Link</label> </md-field>
+            <div>Copy the link above to share this chart</div>
+        </div>
+        <div v-if="dialog.type=='query'" class="viz-intro-query" style="max-height: 40rem !important">
+            <yasqe v-model="chart.query" :showBtns='false'></yasqe>
+        </div> 
+        <div v-if="dialog.type=='data'" class="viz-intro-query" style="min-height: 40rem !important">
+            <yasr :results="results"></yasr>
+        </div>
+        <div v-if="dialog.type=='vega'">
+            <md-content>
+            <v-jsoneditor
+                v-model="specViewerSpec"
+                :options="specViewer.jsonEditorOpts"
+            >
+            </v-jsoneditor>
+            </md-content>
+            <div class="vega-spec-controls">
+                <md-checkbox v-model="specViewer.includeData">Include data in spec</md-checkbox>
+            </div>
+        </div>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+    </div> 
+</dialogbox>
 </div>

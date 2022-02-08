@@ -18,9 +18,9 @@
                         </div>
                         <div class="footer_list">
                             <ul>
-                                <li><router-link to="/about">About Us</router-link></li>
-                                <li><router-link to="/how">How To</router-link></li>
-                                <li><router-link to="/news">Research & News</router-link></li>
+                                <li><router-link to="/nm/about">About Us</router-link></li>
+                                <li><router-link to="/nm/how">How To</router-link></li>
+                                <li><router-link to="/nm/news">Research & News</router-link></li>
                             </ul>
                         </div>
                         <div class="footer_list">

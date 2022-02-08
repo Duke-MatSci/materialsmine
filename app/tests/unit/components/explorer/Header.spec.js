@@ -1,19 +1,14 @@
-import VueMaterial from 'vue-material'
-import { enableAutoDestroy, shallowMount, createLocalVue, resetAutoDestroyState } from '@vue/test-utils'
+import createWrapper from '../../../jest/script/wrapper'
 import ExpHeader from '@/components/explorer/Header.vue'
 describe('Header.vue', () => {
   let wrapper
-  beforeEach(async () => {
-    const localVue = await createLocalVue()
-    localVue.use(VueMaterial)
-    wrapper = shallowMount(ExpHeader, {
-      localVue
-    })
+  const toggler = jest.fn()
+  beforeEach(() => {
+    wrapper = createWrapper(ExpHeader, { props: { toggler } }, false)
   })
-  enableAutoDestroy(afterEach)
-  afterAll(resetAutoDestroyState)
 
   it('renders logo correctly', () => {
+    expect.assertions(2)
     const srcString = '@/assets/img/materialsmine_logo_sm.png'
     const logo = wrapper.find('#logo')
     expect(logo.exists()).toBe(true)
@@ -21,11 +16,13 @@ describe('Header.vue', () => {
   })
 
   it('triggers toggleMenu', async () => {
+    expect.assertions(1)
     const menuBtn = wrapper.find('.md-icon-button')
     expect(menuBtn.exists()).toBe(true)
   })
 
   it('renders Menu tabs correctly', async () => {
+    expect.assertions(1)
     const menuItems = wrapper.findAll('.tabs')
     expect(menuItems.length).toBe(3)
   })

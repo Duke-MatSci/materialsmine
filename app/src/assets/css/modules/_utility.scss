@@ -21,6 +21,9 @@
 }
 
 .u {
+    &_width--small {
+        width: 15rem;
+    }
     &--bg {
         background-color: $primary !important;
         color: $primary-white !important
@@ -83,8 +86,11 @@
     }
 
     &_margin-top {
+        &-small {
+            margin-top: 1rem !important;
+        }
         &-med {
-            margin-top: 3.1rem !important;
+            margin-top: 3.2rem !important;
         }
     }
 

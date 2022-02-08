@@ -1,16 +1,17 @@
 import VJsoneditor from 'v-jsoneditor'
-import Dialog from '@/components/dialog.vue'
+import Dialog from '@/components/Dialog.vue'
 import { getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
 import yasr from '@/components/explorer/yasr'
 import spinner from '@/components/Spinner'
 import { querySparql } from '@/modules/sparql'
+import { mapMutations, mapGetters } from 'vuex'
 
 export default {
   name: 'chart-view',
   components: {
-    MdDialog: Dialog,
+    dialogbox: Dialog,
     VJsoneditor,
     VegaLite,
     yasqe,
@@ -39,15 +40,24 @@ export default {
           onEditable: () => false
         }
       },
-      results: null
+      results: null,
+      dialog: {
+        title: '',
+      }
     }
   },
   computed: {
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox'
+    }),
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     }
   },
   methods: {
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox', // map `this.setDialogBox()` to `this.$store.commit('setDialogBox')`
+    }),
     async loadVisualization () {
       this.chart = getDefaultChart() // TODO: Load actual chart
       if (this.chart.query) {
@@ -60,18 +70,32 @@ export default {
     },
     openVoyager () {
     },
-    shareChart () {
-    },
     editChart () {
     },
-    chartQuery () {
+    shareChart () {
+      this.setDialogData("Share chart", "share")
+      this.toggleDialogBox()
+    },
+    viewQuery () {
+      this.setDialogData("Chart Query", "query")
+      this.toggleDialogBox()
+    },
+    viewTable () {
+      this.setDialogData("Chart Data Table", "data")
+      this.toggleDialogBox()
+    },
+    viewVegaSpec() {
+      this.setDialogData("Chart Vega Spec", "vega")
+      this.toggleDialogBox()
+    },
+    setDialogData(title, type) {
+      this.dialog.title = title;
+      this.dialog.type = type
     },
     slugify (args) {
       // return Slug(args)
       return args
     },
-    tableView () {
-    }
   },
   destroyed () {
     this.error = { status: false, message: null }

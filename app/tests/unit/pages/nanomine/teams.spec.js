@@ -1,6 +1,6 @@
 import { mount, createLocalVue } from '@vue/test-utils'
 import Vuex from 'vuex'
-import TeamsPage from '@/pages/teams/Teams.vue'
+import TeamsPage from '@/pages/nanomine/teams/Teams.vue'
 import store from '@/store'
 
 const localVue = createLocalVue()
