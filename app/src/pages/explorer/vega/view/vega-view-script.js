@@ -42,7 +42,7 @@ export default {
       },
       results: null,
       dialog: {
-        title: '',
+        title: ''
       }
     }
   },
@@ -56,7 +56,7 @@ export default {
   },
   methods: {
     ...mapMutations({
-      toggleDialogBox: 'setDialogBox', // map `this.setDialogBox()` to `this.$store.commit('setDialogBox')`
+      toggleDialogBox: 'setDialogBox' // map `this.setDialogBox()` to `this.$store.commit('setDialogBox')`
     }),
     async loadVisualization () {
       this.chart = getDefaultChart() // TODO: Load actual chart
@@ -73,29 +73,29 @@ export default {
     editChart () {
     },
     shareChart () {
-      this.setDialogData("Share chart", "share")
+      this.setDialogData('Share chart', 'share')
       this.toggleDialogBox()
     },
     viewQuery () {
-      this.setDialogData("Chart Query", "query")
+      this.setDialogData('Chart Query', 'query')
       this.toggleDialogBox()
     },
     viewTable () {
-      this.setDialogData("Chart Data Table", "data")
+      this.setDialogData('Chart Data Table', 'data')
       this.toggleDialogBox()
     },
-    viewVegaSpec() {
-      this.setDialogData("Chart Vega Spec", "vega")
+    viewVegaSpec () {
+      this.setDialogData('Chart Vega Spec', 'vega')
       this.toggleDialogBox()
     },
-    setDialogData(title, type) {
-      this.dialog.title = title;
+    setDialogData (title, type) {
+      this.dialog.title = title
       this.dialog.type = type
     },
     slugify (args) {
       // return Slug(args)
       return args
-    },
+    }
   },
   destroyed () {
     this.error = { status: false, message: null }
