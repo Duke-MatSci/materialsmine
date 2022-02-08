@@ -5,11 +5,5 @@
 </template>
 
 <style lang="scss">
-@import 'assets/css/style.scss';
-#app {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: $primary;
-  background-color: $primary-white;
-}
+  @import 'assets/css/style.scss';
 </style>

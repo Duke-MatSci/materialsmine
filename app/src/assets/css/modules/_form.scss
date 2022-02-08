@@ -42,6 +42,31 @@
                 border: .15rem solid $tertiary;
             }
         }
+
+        &--flat {
+            border: none;
+            border-bottom: .15rem solid $primary-white;
+            font-size: inherit;
+            color: $primary-white;
+            background-color: transparent;
+            padding: .5rem .2rem;
+
+            &:focus {
+                border-bottom: .15rem solid $primary-white;
+                background-color: transparent;
+            }
+
+            &:focus:invalid {
+                border-bottom: .15rem solid $tertiary;
+            }
+            &::-webkit-input-placeholder {
+                color: $primary-white;
+            }
+
+            &-label {
+                color: $primary-white;
+            }
+        }
     }
 
 

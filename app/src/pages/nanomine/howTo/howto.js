@@ -3,9 +3,6 @@ export default {
   data: () => ({
     videos: []
   }),
-  // components: {
-  //   vPlayBack
-  // },
   methods: {
     showBox () {
       console.log(this.filter)

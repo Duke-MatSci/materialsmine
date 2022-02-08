@@ -183,7 +183,7 @@
                 right: 15px;
                 transform: rotate(10deg);
 
-                & > a, & i {
+                & > a, & span {
                     color: $primary-white;
                     font-size: 2rem;
                     @include respond(tab-port){
@@ -214,7 +214,7 @@
         -webkit-box-align: center;
         -ms-flex-align: center;
         align-items: center;
-        & > i {
+        & > span {
             font-size: 8.4rem;
             margin-right: 2.1rem;
             background-image: linear-gradient(to right bottom, $primary, rgba($primary-light, 0.4));
