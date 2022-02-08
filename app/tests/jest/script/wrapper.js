@@ -24,7 +24,8 @@ function createWrapper (component, overrides, useMount = true) {
     // },
     router,
     store,
-    propsData: _.merge({}, overrides)
+    propsData: _.merge({}, overrides.props),
+    slots: _.merge({}, overrides.slots)
   }
   return mountType(component, defaultMountOptions)
 }

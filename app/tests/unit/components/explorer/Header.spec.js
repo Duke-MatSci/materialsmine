@@ -4,7 +4,7 @@ describe('Header.vue', () => {
   let wrapper
   const toggler = jest.fn()
   beforeEach(() => {
-    wrapper = createWrapper(ExpHeader, { toggler }, false)
+    wrapper = createWrapper(ExpHeader, { props: { toggler } }, false)
   })
 
   it('renders logo correctly', () => {

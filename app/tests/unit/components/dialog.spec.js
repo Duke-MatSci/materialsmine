@@ -1,28 +1,25 @@
-import VueMaterial from 'vue-material'
-import { enableAutoDestroy, createLocalVue, shallowMount } from '@vue/test-utils'
+import createWrapper from '../../jest/script/wrapper'
+import { enableAutoDestroy } from '@vue/test-utils'
 import Dialog from '@/components/Dialog.vue'
 
 describe('@/components/Dialog.vue', () => {
   let wrapper
-
-  beforeEach(async () => {
-    const localVue = await createLocalVue()
-    localVue.use(VueMaterial)
-    wrapper = shallowMount(Dialog, {
-      localVue,
-      slots: {
-        default: ['<p>Testing</p>']
-      }
-    })
+  const slots = {
+    default: ['<p>Testing</p>']
+  }
+  beforeEach(() => {
+    wrapper = createWrapper(Dialog, { slots }, false)
   })
 
   enableAutoDestroy(afterEach)
 
   it('check dialog box exist', () => {
+    expect.assertions(1)
     expect(wrapper.exists()).toBe(true)
   })
 
   it('confirms props', async () => {
+    expect.assertions(1)
     const testProps = {
       active: false
     }
@@ -31,6 +28,7 @@ describe('@/components/Dialog.vue', () => {
   })
 
   it('contains slot', () => {
+    expect.assertions(2)
     const slotExist = wrapper.find('p')
     expect(slotExist.exists()).toBe(true)
     expect(slotExist.text()).toBe('Testing')
