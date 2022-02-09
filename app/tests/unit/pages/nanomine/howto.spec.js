@@ -17,7 +17,7 @@ global.console = {
 
 describe('HowTo.vue', () => {
   beforeAll(async () => {
-    wrapper = createWrapper(HowTo, { props: {}, slots: {} })
+    wrapper = createWrapper(HowTo, {})
     await wrapper.vm.$nextTick()
   })
 

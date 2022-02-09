@@ -5,7 +5,7 @@ var wrapper = null
 
 describe('News.vue', () => {
   beforeAll(() => {
-    wrapper = createWrapper(News, { props: {}, slots: {} })
+    wrapper = createWrapper(News, {})
   })
   it('mounts properly', () => {
     expect(wrapper.exists()).toBeTruthy()

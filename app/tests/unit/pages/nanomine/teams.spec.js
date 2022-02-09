@@ -5,7 +5,7 @@ var wrapper = null
 
 describe('Teams.vue', () => {
   beforeAll(() => {
-    wrapper = createWrapper(TeamsPage, { props: {}, slots: {} })
+    wrapper = createWrapper(TeamsPage, {})
   })
 
   it('mounts properly', () => {
