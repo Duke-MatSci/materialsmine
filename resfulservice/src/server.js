@@ -26,7 +26,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}/${env.MM_DB}`, {
+  .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`, {
     useNewUrlParser: true, useUnifiedTopology: true
   })
   .then(app.listen(process.env.PORT || 3000))
