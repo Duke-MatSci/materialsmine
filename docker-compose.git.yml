@@ -29,6 +29,9 @@ services:
       - DB_USERNAME=${MONGO_TEST}
       - DB_PASSWORD=${MONGO_TEST_PWD}
       - MM_DB=${MM_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - TKNS=${TKNS}
   client:
     image: 'dukematsci/dev-app:latest'
     depends_on:
