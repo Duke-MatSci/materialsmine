@@ -218,6 +218,7 @@ export const rawResponse = {
 }
 
 export default {
+  // control properties and their setters
   testingData: true,
   __setTestingData: function (value) {
     this.testingData = !!value
@@ -230,6 +231,7 @@ export default {
     this.testingData = true
     this.testingRejection = false
   },
+  // mocked function
   get: jest.fn(function ({ doi }) {
     if (this.testingData) {
       return Promise.resolve(getResponse(doi))

@@ -7,10 +7,7 @@ export default {
       toggleMenuVisibility: false,
       article: {},
       loading: false,
-      error: null,
-      articleError: null,
-      citationsError: null,
-      referencesError: null
+      error: {}
     }
   },
   computed: {
@@ -41,25 +38,27 @@ export default {
     },
     async fetchData () {
       this.loading = true
-      this.articleError = null
-      this.error = null
-      this.citationsError = null
-      this.referencesError = null
+      this.error = {}
       this.article = {}
+
       if (this.doi) {
         try {
           this.article = await articleMetadata.get({ doi: this.doi })
           this.loading = false
-          this.articleError = this.getError('article')
-          this.citationsError = this.getError('citations')
-          this.referencesError = this.getError('references')
 
-          this.error = this.referencesError || this.citationsError || this.articleError
+          // ensure all parts were provided, set error flags if not
+          this.error = {
+            article: this.getError('article'),
+            citations: this.getError('citations'),
+            references: this.getError('references')
+          }
         } catch (error) {
-          this.error = error.message
-          this.articleError = error.message
-          this.citationsError = true
-          this.referencesError = true
+          // pass error message on to user
+          this.error = {
+            article: error.message,
+            citations: true,
+            references: true
+          }
           this.loading = false
         }
       }
@@ -71,11 +70,11 @@ export default {
       } else {
         base = this.article[prop]
       }
-      if (!base) {
+      if (!base) { // if metadata wasn't returned, error is unclear
         return true
-      } else if (!base.ok) {
+      } else if (!base.ok) { // fetch responded with error, or API did
         return base.error || `${base.status} ${base.statusText}`
-      } else {
+      } else { // no error detected
         return false
       }
     }

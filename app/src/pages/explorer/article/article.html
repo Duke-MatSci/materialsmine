@@ -1,5 +1,5 @@
 <div class="section_pages">
-    <div v-if="!loading && !articleError" class="wrapper" key="article_loaded">
+    <div v-if="!loading && !error.article" class="wrapper" key="article_loaded">
       <h1 class="visualize_header-h1 article_title">{{ article.title }}</h1>
       <div class="article_authors">{{ article.authorNames }}</div>
       <div v-if="article.venue" class="article_metadata article_venue" key="article_venue">
@@ -18,7 +18,7 @@
       <div class="article_metadata article_citation_count">
         Cited by <span class="article_metadata_strong">{{ article.citationCount }}</span> other works.
       </div>
-      <div v-if="!referencesError" class="article_references" key="references_loaded">
+      <div v-if="!error.references" class="article_references" key="references_loaded">
         <div class="article_subtitle">References</div>
         <div class="article_table">
           <table class="article_table">
@@ -42,7 +42,7 @@
       <div v-else class="article_references article_error" key="references_error">
         <div class="article_subtitle">References failed to load. Please try again in a moment.</div>
       </div>
-      <div v-if="!citationsError" class="article_citations" key="citations_loading">
+      <div v-if="!error.citations" class="article_citations" key="citations_loading">
         <div class="article_subtitle">Cited By</div>
         <div class="article_table">
           <table>
@@ -67,11 +67,11 @@
         <div class="article_subtitle article_error">Citations failed to load. Please try again in a moment.</div>
       </div>
     </div>
-    <div v-else-if="loading && !articleError" class="wrapper article_error" key="article_loading">
+    <div v-else-if="loading && !error.article" class="wrapper article_error" key="article_loading">
       <h1>Loading...</h1>
     </div>
     <div v-else class="wrapper article_title" key="article_title article_error">
       <h1>Error retrieving this article.</h1>
-      <p>Error: {{ articleError }}</p>
+      <p>Error: {{ error.article }}</p>
     </div>
 </div>
