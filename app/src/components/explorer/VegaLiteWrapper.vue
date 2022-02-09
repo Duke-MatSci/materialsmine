@@ -85,7 +85,6 @@ export default {
       }
       try {
         const { spec: vegaSpec } = vegaLiteVersions[versionNum].compile(this.spec)
-        console.log('vspec', vegaSpec)
         const result = await embed(`#${this.id}`, vegaSpec, {})
         if (this.data) {
           const name = this.dataname || ((this.spec || {}).data || {}).name || 'source_0'

@@ -1,12 +1,12 @@
-import { getDefaultChart } from '@/modules/vega-chart'
+import { getDefaultChart, loadChart } from '@/modules/vega-chart'
 
 export default {
   resetChart ({ dispatch }) {
     dispatch('setChart', getDefaultChart())
   },
   async loadChart ({ dispatch }, uri) {
-    // const chart = await loadChart(uri)
-    // dispatch('setChart', chart)
+    const chart = await loadChart(uri)
+    dispatch('setChart', chart)
   },
   setChart ({ commit }, chart) {
     commit('setBaseSpec', chart.baseSpec)

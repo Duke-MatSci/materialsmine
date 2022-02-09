@@ -1,9 +1,12 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
 import VegaView from '@/pages/explorer/vega/view/VegaView.vue'
-import { getDefaultChart } from '@/modules/vega-chart'
+import { getDefaultChart, loadChart } from '@/modules/vega-chart'
 jest.mock('@/modules/vega-chart')
-getDefaultChart.mockImplementation(() => {
+getDefaultChart.mockImplementation((uri) => {
+  return Object.assign({}, testChart)
+})
+loadChart.mockImplementation((uri) => {
   return Object.assign({}, testChart)
 })
 

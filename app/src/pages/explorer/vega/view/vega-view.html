@@ -90,10 +90,12 @@
     <div>
         <md-dialog-title>{{dialog.title}}</md-dialog-title>
         <div v-if="dialog.type=='share'">
-            <md-field> <label>Chart Link</label> </md-field>
+            <md-field> <label>Chart Link</label>
+                <md-input disabled v-model="pageUri"></md-input>
+            </md-field>
             <div>Copy the link above to share this chart</div>
         </div>
-        <div v-if="dialog.type=='query'" class="viz-intro-query" style="max-height: 40rem !important">
+        <div v-if="chart.query && dialog.type=='query'" class="viz-intro-query" style="max-height: 40rem !important">
             <yasqe v-model="chart.query" :showBtns='false'></yasqe>
         </div> 
         <div v-if="dialog.type=='data'" class="viz-intro-query" style="min-height: 40rem !important">

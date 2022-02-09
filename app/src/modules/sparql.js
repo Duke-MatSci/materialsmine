@@ -1,10 +1,8 @@
-const SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
-// const SPARQL_ENDPOINT = '/sparql'
+const SPARQL_ENDPOINT = 'https://materialsmine.org/wi/sparql'
 
 async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
   const urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(query)}&output=json`
   const requestOptions = {
-    method: 'POST',
     headers: {
       accept: 'application/sparql-results+json'
     }
