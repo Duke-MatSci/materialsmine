@@ -59,7 +59,7 @@ describe('VegaView.vue', () => {
   it('renders vega spec dialog button', () => {
     expect(wrapper.findComponent('#vegaSpecBtn').exists()).toBeTruthy()
   })
-  
+
   it('hides chart data dialog button if no data', () => {
     expect(wrapper.findComponent('#dataTableBtn').exists()).toBeFalsy()
   })
