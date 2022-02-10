@@ -1,4 +1,13 @@
 export default {
+  /**
+   * Retrieves article metadata for the given DOI, including:
+   * title, authors, publication year, publication venue, Open Access status,
+   * abstract, citation count;
+   * as well as the following for each citing paper and referenced paper:
+   * title, authors, publication year
+   * @param {string} doi DOI to request metadata for
+   * @returns article metadata, or error response if API call fails
+   */
   get: async function ({ doi }) {
     // SemanticScholar API fields
     const articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue']
@@ -41,6 +50,12 @@ export default {
   }
 }
 
+/**
+ * Sorts and cleans the raw array of citation/reference responses from SemanticScholar
+ * @param {*} rawData raw SemanticScholar API response
+ * @param {*} prop 'citingPaper' if cleaning citations, 'citedPaper' if cleaning references
+ * @returns A sorted, filtered, and cleaned array of citations or references
+ */
 function cleanPaperResponse (rawData, prop) {
   if (!rawData || !rawData.ok) { // if data was not returned or had an error, skip cleaning
     return rawData
@@ -58,6 +73,7 @@ function cleanPaperResponse (rawData, prop) {
   }
 }
 
+/** Sort function for citations, references */
 function articleSort (a, b) {
   if (a.year < b.year) {
     return -1
@@ -68,10 +84,18 @@ function articleSort (a, b) {
   }
 }
 
+/** Filter function for citations, references */
 function articleFilter (paper) {
   return paper.title && paper.authors && paper.year && paper.paperId
 }
 
+/**
+ * Gets SemanticScholar API response for a given DOI, path, and set of query fields.
+ * @param {string} doi DOI string to query for
+ * @param {string} path 'citations' for querying citations, 'references' for querying references, or blank for articles
+ * @param {Array.<string>} fields query fields to request from SemanticScholar
+ * @returns article response with JSON representation parsed, or error information
+ */
 async function fetchSemanticScholarResponse (doi, path, fields) {
   const semanticScholarQueryBase = `${doi}/${path || ''}`
   const requestURL = new URL(`https://api.semanticscholar.org/graph/v1/paper/DOI:${semanticScholarQueryBase}`)

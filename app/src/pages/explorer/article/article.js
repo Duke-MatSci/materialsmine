@@ -63,6 +63,11 @@ export default {
         }
       }
     },
+    /**
+     * Checks if articleMetadata.get() returned any error.
+     * @param {string} prop Part of article object to check
+     * @returns As much information as is available for the error, if any.
+     */
     getError (prop) {
       let base
       if (prop === 'article') {

@@ -13,6 +13,8 @@ global.console = {
   debug: console.debug
 }
 
+const doi = { doi: '10.1063/1.5046839' }
+
 describe('articleMetadata.js', () => {
   beforeEach(() => {
     fetch.mockClear()
@@ -20,52 +22,65 @@ describe('articleMetadata.js', () => {
 
   it('translates Semantic Scholar data correctly', async () => {
     global.fetch = response('good', 'all')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.title).toBe(cleanResponse.title)
     expect(article.references.data[0].paperId).toBe(cleanResponse.references[0].paperId)
   })
 
   it('handles a bad fetch response to the article request', async () => {
     global.fetch = response('bad', 'article')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.error).toMatch(/Testing bad response/)
   })
 
   it('handles a bad fetch response to the references request', async () => {
     global.fetch = response('bad', 'references')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.references.error).toMatch(/Testing bad response/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a bad fetch response to the citations request', async () => {
     global.fetch = response('bad', 'citations')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.citations.error).toMatch(/Testing bad response/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a rejected fetch response to the article request', async () => {
     global.fetch = response('reject', 'article')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.error).toMatch(/Testing rejection/)
   })
 
   it('handles a rejected fetch response to the references request', async () => {
     global.fetch = response('reject', 'references')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.references.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a rejected fetch response to the citations request', async () => {
     global.fetch = response('reject', 'citations')
-    const article = await articleMetadata.get({ doi: '10.1063/1.5046839' })
+    const article = await articleMetadata.get(doi)
     expect(article.citations.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)
   })
 })
 
+/**
+ * Returns a jest mock function with the proper functionality for the test,
+ * either returning complete data, a mocked 404 response, or a rejected
+ * promise.
+ *
+ * responseType determines whether the return value of the mock is a 200
+ * response with data, a 404 response without, or a rejected Promise.
+ * testingSection determines the section that receives the 404 or rejected
+ * Promise, for isolated testing. Has no effect if responseType is 'good'.
+ * @param {string} responseType either 'good', 'bad', or 'reject
+ * @param {*} testingSection either 'article', 'citations', or 'references'
+ * @returns a jest mock with the requested return functionality
+ */
 function response (responseType, testingSection) {
   return jest.fn((requestURL) => {
     // check which section is being requested, compare to testingSection
