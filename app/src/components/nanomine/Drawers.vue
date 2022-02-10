@@ -46,7 +46,6 @@
                 <md-icon class="utility-navfonticon">view_comfy</md-icon>
                 <span class="md-list-item-text utility-navfont">Visualize</span>
                 <md-list slot="md-expand">
-                    <md-list-item class="md-inset">Browse Data</md-list-item>
                     <md-list-item class="md-inset">Chart Gallery</md-list-item>
                     <md-list-item class="md-inset">Image Gallery</md-list-item>
                 </md-list>

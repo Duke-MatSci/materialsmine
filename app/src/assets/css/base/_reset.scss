@@ -42,11 +42,12 @@ img {
     text-shadow: none;
 }
 
-#nanomine_app,
-#metamine_app {
+#app {
     font-family: 'Avenir', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     color: #2c3e50;
     background-color: white;
+    color: $primary;
+    background-color: $primary-white;
 }

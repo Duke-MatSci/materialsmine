@@ -39,6 +39,9 @@ services:
       - DB_USERNAME=${MONGO_DEVS}
       - DB_PASSWORD=${MONGO_DEV_PWD}
       - MM_DB=${MM_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - TKNS=${TKNS}
   client:
     stdin_open: true
     environment:
