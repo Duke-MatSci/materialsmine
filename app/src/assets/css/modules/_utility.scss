@@ -168,3 +168,22 @@
     }
 
 }
+
+.dialog-box {
+    .md-dialog-container{
+        overflow: scroll !important;
+    }
+    &_header {
+        background-color: $secondary-mid !important;
+        padding: 1rem 1.5rem !important;
+
+        & > span {
+            padding: 0rem !important;
+        }
+    }
+    &_actions {
+        .md-button-content{
+            color: $secondary-mid !important
+        }
+    }
+}
