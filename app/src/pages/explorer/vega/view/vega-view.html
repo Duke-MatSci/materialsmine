@@ -91,7 +91,7 @@
     <template v-slot:content>
         <div v-if="dialog.type=='share'">
             <md-field> <label>Chart Link</label>
-                <md-input disabled v-model="pageUri"></md-input>
+                <md-textarea disabled v-model="pageUri"></md-textarea>
             </md-field>
             <div>Copy the link above to share this chart</div>
         </div>
