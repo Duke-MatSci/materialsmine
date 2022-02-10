@@ -2,7 +2,7 @@ import _ from 'lodash'
 import VueMaterial from 'vue-material'
 import store from '@/store'
 import router from '@/router'
-import { mount, createLocalVue, shallowMount } from '@vue/test-utils'
+import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-utils'
 
 /** Add external plugins as needed */
 const localVue = createLocalVue()
@@ -25,7 +25,10 @@ function createWrapper (component, overrides, useMount = true) {
     router,
     store,
     propsData: _.merge({}, overrides.props),
-    slots: _.merge({}, overrides.slots)
+    slots: _.merge({}, overrides.slots),
+    stubs: {
+      RouterLink: RouterLinkStub
+    }
   }
   return mountType(component, defaultMountOptions)
 }
