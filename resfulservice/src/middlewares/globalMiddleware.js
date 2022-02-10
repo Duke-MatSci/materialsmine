@@ -8,20 +8,20 @@ const { logParser, mmLogger } = require('./loggerService');
 const log = mmLogger();
 
 /**
- * globalMiddleWare - this function that instantiate all 
+ * globalMiddleWare - this function that instantiate all
  * global middleware services for the REST API
  * @param {*} app Express app object
  */
 const globalMiddleWare = (app) => {
-    app.use(bodyParser.json());
-    app.use(fileMgr);
-    app.use('/mm_fils', fileServer);
-    app.use(acceptedHeaders);
-    app.use('/graphql', mmGraphQL);
-    app.use(getEnv);
-    app.use(
-        (req, res, next) => logParser(log, req, next)
-    );
+  app.use(bodyParser.json());
+  app.use(fileMgr);
+  app.use('/mm_fils', fileServer);
+  app.use(acceptedHeaders);
+  app.use('/graphql', mmGraphQL);
+  app.use(getEnv);
+  app.use(
+    (req, res, next) => logParser(log, req, next)
+  );
 };
 
 /**
@@ -29,6 +29,6 @@ const globalMiddleWare = (app) => {
  * exports them to the server.js file.
  */
 module.exports = {
-    log,
-    globalMiddleWare
+  log,
+  globalMiddleWare
 };
