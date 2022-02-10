@@ -1,40 +1,40 @@
 <div class="vega-view">
     <div class="utility-content__result">
     <div class="utility-gridicon" v-if="!loading">
-        <md-button class="md-icon-button" @click.native.prevent="navBack">
+        <md-button id="navbackBtn" class="md-icon-button" @click.native.prevent="navBack">
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
         </md-button>
-        <md-button class="md-icon-button" @click.native.prevent="shareChart">
+        <md-button id="shareChartBtn"  class="md-icon-button" @click.native.prevent="renderDialog('Share chart', 'share')">
             <md-tooltip> Share Chart </md-tooltip>
             <md-icon>share</md-icon>
         </md-button>
         <div v-if="chart.query">
-            <md-button class="md-icon-button"  @click.native.prevent="viewQuery">
+            <md-button id="chartQueryBtn" class="md-icon-button"  @click.native.prevent="renderDialog('Chart Query', 'query')">
                 <md-tooltip> Preview Chart Query </md-tooltip>
                 <md-icon>preview</md-icon>
             </md-button>
         </div>
         <div v-if="results">
-            <md-button class="md-icon-button" @click.native.prevent="viewTable">
+            <md-button id="dataTableBtn" class="md-icon-button" @click.native.prevent="renderDialog('Chart Data Table', 'data')">
                 <md-tooltip> View Data as Table </md-tooltip>
                 <md-icon>table_view</md-icon>
             </md-button>
         </div>
         <div v-if="specViewerSpec">
-            <md-button class="md-icon-button" @click.native.prevent="viewVegaSpec">
+            <md-button id="vegaSpecBtn" class="md-icon-button" @click.native.prevent="renderDialog('Chart Vega Spec', 'vega')">
                 <md-tooltip> Preview Chart Spec </md-tooltip>
                 <md-icon>integration_instructions</md-icon>
             </md-button>
         </div>
         <div>
-        <md-button class="md-icon-button" @click.native.prevent="openVoyager">
+        <md-button disabled class="md-icon-button" @click.native.prevent="openVoyager">
             <md-tooltip> View Data in Voyager </md-tooltip>
             <md-icon>dynamic_form</md-icon>
         </md-button>
         </div>
         <div v-if="allowEdit">
-        <md-button class="md-icon-button" @click.native.prevent="editChart">
+        <md-button disabled class="md-icon-button" @click.native.prevent="editChart">
             <md-tooltip> Edit Chart </md-tooltip>
             <md-icon>edit</md-icon>
         </md-button>

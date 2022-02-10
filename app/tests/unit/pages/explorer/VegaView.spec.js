@@ -1,4 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
+// import { enableAutoDestroy } from '@vue/test-utils'
+
 import VegaView from '@/pages/explorer/vega/view/VegaView.vue'
 import { getDefaultChart, loadChart, buildSparqlSpec } from '@/modules/vega-chart'
 import { querySparql } from '@/modules/sparql'
@@ -30,7 +32,7 @@ const testChart = {
       }
     }
   },
-  query: '',
+  query: 'Test Query',
   title: 'Test Title',
   description: 'Test chart description'
 }
@@ -50,13 +52,24 @@ describe('VegaView.vue', () => {
     expect(wrapper.text()).toContain('Test chart description')
   })
 
+  it('renders chart query dialog button', () => {
+    expect(wrapper.findComponent('#chartQueryBtn').exists()).toBeTruthy()
+  })
+
+  it('renders vega spec dialog button', () => {
+    expect(wrapper.findComponent('#vegaSpecBtn').exists()).toBeTruthy()
+  })
+  
+  it('hides chart data dialog button if no data', () => {
+    expect(wrapper.findComponent('#dataTableBtn').exists()).toBeFalsy()
+  })
+
   it('opens share dialog on click', async () => {
     expect.assertions(2)
-    const shareButton = await wrapper.findAllComponents('.md-button').at(1)
-    const spy = jest.spyOn(wrapper.vm, 'shareChart')
+    const shareButton = await wrapper.findComponent('#shareChartBtn')
+    const spy = jest.spyOn(wrapper.vm, 'renderDialog')
     await shareButton.trigger('click')
     expect(spy).toHaveBeenCalled()
     expect(wrapper.findComponent('.dialog-box').exists()).toBeTruthy()
-    jest.restoreAllMocks()
   })
 })

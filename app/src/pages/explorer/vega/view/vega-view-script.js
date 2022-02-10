@@ -75,25 +75,10 @@ export default {
     },
     editChart () {
     },
-    shareChart () {
-      this.setDialogData('Share chart', 'share')
-      this.toggleDialogBox()
-    },
-    viewQuery () {
-      this.setDialogData('Chart Query', 'query')
-      this.toggleDialogBox()
-    },
-    viewTable () {
-      this.setDialogData('Chart Data Table', 'data')
-      this.toggleDialogBox()
-    },
-    viewVegaSpec () {
-      this.setDialogData('Chart Vega Spec', 'vega')
-      this.toggleDialogBox()
-    },
-    setDialogData (title, type) {
+    renderDialog (title, type) {
       this.dialog.title = title
       this.dialog.type = type
+      this.toggleDialogBox()
     },
     slugify (args) {
       // return Slug(args)
