@@ -58,36 +58,46 @@ services:
     depends_on:
       - redis
       - fuseki
+    volumes:
+      - ./mockDB/fuseki:/app/run
+      - ./whyis/materialsmine:/app
     command: /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
-    build: ./whyis
+    build: whyis
   celerybeat:
     depends_on:
       - redis
       - fuseki
+    volumes:
+      - ./mockDB/fuseki:/app/run
+      - ./whyis/materialsmine:/app
     command: /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
-    build: ./whyis
+    build: whyis
   fuseki:
-    command: /opt/venv/bin/whyis fuseki # ; /opt/venv/bin/fuseki-server --mem /ds
+    command:  /opt/venv/bin/fuseki-server --mem /ds #/opt/venv/bin/whyis fuseki
     environment:
       - CHOKIDAR_USEPOLLING=true
-    build: ./whyis
-    ports:
-      - '3030:3030'
+    build: whyis
+#    ports:
+#      - '3030:3030'
     volumes:
-      - ./mockDB/fuseki:/app/run
+      - ./materialsmine:/app
+      - ./whyis/materialsmine:/app
   whyis:
     depends_on:
       - redis
       - fuseki
     stdin_open: true
-    command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-4} --timeout 90 -b :8000
+    command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 90 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
-    build: ./whyis
+    build: whyis
+    volumes:
+      - ./whyis/materialsmine:/app
+      - ./mockDB/fuseki:/app/run
     ports:
       - '8000:8000'
 volumes:
