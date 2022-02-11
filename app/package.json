@@ -21,11 +21,23 @@
     "lint:test": "npm-run-all -s lint test:unit"
   },
   "dependencies": {
+    "@rdfjs/data-model": "^1.3.4",
+    "@triply/yasgui": "^4.2.21",
     "core-js": "^3.6.5",
+    "datavoyager": "^2.0.0-alpha.24",
+    "jsonschema": "^1.4.0",
+    "rdf-literal": "^1.1.0",
     "register-service-worker": "^1.7.1",
+    "v-jsoneditor": "^1.4.5",
+    "vega": "^5.21.0",
+    "vega-embed": "^6.20.5",
+    "vega-lite": "^5.2.0",
+    "vega-lite4": "npm:vega-lite@^4.17.0",
+    "vega-lite5": "npm:vega-lite@^5.1.1",
     "vue": "^2.6.11",
     "vue-material": "^1.0.0-beta-15",
     "vue-router": "^3.2.0",
+    "vue-splitpane": "^1.0.6",
     "vuex": "^3.4.0"
   },
   "devDependencies": {
@@ -47,6 +59,7 @@
     "eslint-plugin-vue": "^6.2.2",
     "jest-serializer-vue": "^2.0.2",
     "lint-staged": "^9.5.0",
+    "lodash": "^4.17.21",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
     "sinon": "^12.0.1",

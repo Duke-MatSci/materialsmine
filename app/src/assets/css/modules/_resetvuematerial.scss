@@ -9,13 +9,13 @@
 }
 
 .md-drawer {
-    width: 230px;
+    width: 258px;
     max-width: calc(100vw - 125px);
 }
 
 #reset_bg {
     background-color: none !important;
-    background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network.png) !important;
+    background: url('~@/assets/img/random_network.png') no-repeat center !important;
     background-size: cover !important;
 }
 
@@ -43,4 +43,24 @@
 
 .md-active {
     border-bottom-color: $tertiary !important;
+}
+
+.adjust {
+    &_metamine {
+        &-toolbar {
+            background-color: #8cb2ca !important;
+            min-height: 60px !important;
+        }
+        &-title {
+            font-weight: 300 !important;
+            color: $primary !important;
+            font-size: 3rem;
+        }
+    }
+}
+
+.md-toolbar-section-end {
+    @include respond(tab-port) {
+        display: none !important;
+    }
 }
