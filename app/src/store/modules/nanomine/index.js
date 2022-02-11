@@ -1,7 +1,9 @@
 import howtoModule from './howto/index.js'
+import toolsModule from './tools/index.js'
 
 export default {
   modules: {
-    howto: howtoModule
+    howto: howtoModule,
+    tools: toolsModule
   }
 }

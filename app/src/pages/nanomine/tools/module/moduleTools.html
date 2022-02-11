@@ -8,65 +8,9 @@
       pre-process and analyze structure and material property data. Each of the modules will specify the required
       input format and output data, and provide a brief introduction behind the mechanism of the algorithm.
     </div>
+
     <div class="md-layout">
-      <div class="md-layout-item">
-        <md-card>
-          <md-card-media>
-            <img src="@/assets/img/nanomine/recon_tool.png"></img>
-          </md-card-media>
-          <md-card-header>
-              <div class="md-title">
-                <router-link to="/mm/mcr_homepage">Microstructure Characterization and Reconstruction</router-link>
-              </div>
-          </md-card-header>
-          <md-card-content>
-            An essential component of computational material design involves microstructure analysis. Our user
-            friendly webtools allow users to characterize microstructure images and reconstruct statistically
-            equivalent microstructures. Users can choose among
-            multiple input formats as well as characterization and reconstruction methods. Available characterizationd
-            and reconstruction methods include: Correlation Functions (Two-point, Lineal Path, Cluster, and Surface),
-            Spectral Density Function (SDF), and Descriptors.
-          </md-card-content>
-        </md-card>
-      </div>
-
-      <div class="md-layout-item">
-        <md-card>
-          <md-card-media>
-            <img src="@/assets/img/nanomine/dynamfit.png"></img>
-          </md-card-media>
-          <md-card-header>
-            <h4>
-              <router-link to="/mm/Dynamfit">Dynamfit</router-link>
-            </h4>
-          </md-card-header>
-          <md-card-content>
-            Dynamfit is a sign control algorithm for Prony Series fitting. This program fits a viscoelastic
-            mastercurve from DMA experiments with a Prony Series. The Prony Series coefficients can be used as
-            baseline properties for the matrix in a FEA simulation of nanocomposites.
-          </md-card-content>
-        </md-card>
-      </div>
-
-      <!-- <div class="md-layout-item">
-        <md-card>
-          <md-card-media>
-            <img src="@/assets/img/nanomine/webtool_tuneshifting.png"></img>
-          </md-card-media>
-          <md-card-header>
-            <h4>
-              <router-link to="/AUTOFIT">Automatic Fitting of Interphase Relaxation Model in Nanocomposites</router-link>
-            </h4>
-          </md-card-header>
-          <md-card-content>
-            <h3>Under construction. Not currently available.</h3>
-            This algorithm derives interphase relaxation properties in nanocomposites using an inverse method that
-            starts from composite properties and microstructure. It integrates finite element analysis and
-            metamodeling optimization that predicts the interphase properties that results in minimal error between
-            simulated properties from FEA and experimental composite properties.
-          </md-card-content>
-        </md-card>
-      </div> -->
+      <tool-card v-for="tool of tools" v-bind="tool" :key="tool.title"></tool-card>
     </div>
   </div>
 </div>

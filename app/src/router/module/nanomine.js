@@ -12,25 +12,25 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/modtools',
+    path: 'modtools',
     name: 'ModuleTools',
     component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/ModuleTools.vue'),
     meta: { requiresAuth: false }
   },
   {
-    path: '/simtools',
+    path: 'simtools',
     name: 'SimulationTools',
     component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/simulation/SimulationTools.vue'),
     meta: { requiresAuth: false }
   },
   {
-    path: '/plot-curation',
+    path: 'plot-curation',
     name: 'CsvPlotter',
     component: () => import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/tools/csvPlotter/CsvPlotter.vue'),
     meta: { requiresAuth: false }
   },
   {
-    path: '/chemprops',
+    path: 'chemprops',
     name: 'ChemProps',
     component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemProps/ChemProps.vue'),
     meta: { requiresAuth: false }
