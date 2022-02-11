@@ -36,6 +36,12 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'chempropsapitoken',
+    name: 'ChemPropsAPIToken',
+    component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'about',
     name: 'About',
     component: () => import(/* webpackChunkName: "about" */ '@/pages/nanomine/teams/Teams.vue'),
