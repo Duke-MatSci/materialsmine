@@ -1,5 +1,16 @@
-<div>
-    <div class="simulationTools section_pages">
-        <h1>Material Property Simulation</h1>
+<div class="section_moduleTools">
+  <div class="wrapper">
+    <div class="team_header">
+      <h1 class="visualize_header-h1 teams_header">Material Property Simulation</h1>
     </div>
+    <div class="teams_text">
+      We provide online version of physics-based simulation tools that take advantage of our most recent
+      development in viscoelasticity and dielectric relaxation theories for interphase analysis in nanocomposites,
+      statistical structure-property correlation models, as well as materials optimization methods.
+    </div>
+
+    <div class="md-layout">
+      <tool-card v-for="tool of tools" v-bind="tool" :key="tool.title"></tool-card>
+    </div>
+  </div>
 </div>

@@ -14,6 +14,6 @@ export default {
     this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'Tools' })
   },
   mounted () {
-    this.tools = this.$store.getters.tools
+    this.tools = this.$store.getters.moduleTools
   }
 }

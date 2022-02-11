@@ -1,7 +1,9 @@
-import moduleModule from './module/index.js'
+import moduleModule from './module/index'
+import simulationModule from './simulation/index'
 
 export default {
   modules: {
-    module: moduleModule
+    module: moduleModule,
+    simulation: simulationModule
   }
 }
