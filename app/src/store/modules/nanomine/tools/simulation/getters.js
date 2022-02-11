@@ -1,5 +1,5 @@
 export default {
-    simulationTools (state) {
-      return state.tools
-    }
+  simulationTools (state) {
+    return state.tools
   }
+}

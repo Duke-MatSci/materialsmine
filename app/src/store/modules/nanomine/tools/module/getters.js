@@ -1,5 +1,5 @@
 export default {
-    moduleTools (state) {
-      return state.tools
-    }
+  moduleTools (state) {
+    return state.tools
   }
+}
