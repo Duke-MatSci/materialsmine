@@ -1,15 +1,15 @@
-<div class="section_simulationTools">
-  <div class="wrapper">
-    <div class="team_header">
+<div class="section_moduleTools">
+  <div class="wrapper md-layout md-alignment-top-center">
+    <div class="team_header md-layout-item md-size-80">
       <h1 class="visualize_header-h1 teams_header">Statistical Learning and Analysis Module Tools</h1>
     </div>
-    <div class="teams_text">
+    <div class="teams_text md-layout-item md-size-80">
       Statistical learning and analysis modules include web and downloadable packages that can be used to
       pre-process and analyze structure and material property data. Each of the modules will specify the required
       input format and output data, and provide a brief introduction behind the mechanism of the algorithm.
     </div>
 
-    <div class="md-layout">
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-center">
       <tool-card v-for="tool of tools" v-bind="tool" :key="tool.title"></tool-card>
     </div>
   </div>
