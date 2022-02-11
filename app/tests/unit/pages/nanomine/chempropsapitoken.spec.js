@@ -1,5 +1,5 @@
 import createWrapper from '../../../jest/script/wrapper'
-import ChemPropsAPIToken from '@/pages/nanomine/tools/chemProps/chemPropsAPIToken.vue'
+import ChemPropsAPIToken from '@/pages/nanomine/tools/chemPropsAPIToken/chemPropsAPIToken.vue'
 
 var wrapper = null
 global.console = {
