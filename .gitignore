@@ -23,4 +23,6 @@ package-lock.json
 # Local DBs
 **/**/db
 
+# Rest
+**/**/*.log
 
