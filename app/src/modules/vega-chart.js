@@ -15,7 +15,7 @@ LIMIT 10
 `.trim()
 
 const defaultSpec = {
-  $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
+  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
   mark: 'bar',
   encoding: {
     x: {
