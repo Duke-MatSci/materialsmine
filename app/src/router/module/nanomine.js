@@ -20,7 +20,7 @@ const nanomineRoutes = [
   {
     path: 'mcr_homepage',
     name: 'MCRHomepage',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/mcrTool/McrHomepage.vue'),
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/mcrTools/McrHomepage.vue'),
     meta: { requiresAuth: false }
   },
   // {

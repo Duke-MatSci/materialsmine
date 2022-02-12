@@ -42,7 +42,7 @@ export default {
           'In this section, you can upload a binary microstructure image / set of images and obtain 2D/3D' +
           'reconstructions using method of your choice.',
           display: true
-        },{
+        }, {
           imageFile: 'nanomine/Intelligent_Characterization.png',
           link: '/nm/IntelligentCharacterize',
           title: 'Intelligent Characterization',
