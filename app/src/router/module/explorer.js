@@ -24,24 +24,24 @@ const explorerRoutes = [
       {
         path: '/',
         name: 'ChartGallery',
-        meta: { requiresAuth: false },
+        meta: { requiresAuth: false }
       },
       {
         path: 'edit/:uri',
         name: 'ChartEdit',
-        meta: { requiresAuth: false },
+        meta: { requiresAuth: false }
       },
       {
         path: 'create',
         name: 'ChartCreate',
-        meta: { requiresAuth: false },
+        meta: { requiresAuth: false }
       },
       {
         path: 'view/:uri',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
-        meta: { requiresAuth: false },
-      },
+        meta: { requiresAuth: false }
+      }
     ]
   },
   {
