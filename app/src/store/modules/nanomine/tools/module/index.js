@@ -12,7 +12,7 @@ export default {
       tools: [
         {
           imageFile: 'nanomine/recon_tool.png',
-          link: '/mm/mcr_homepage',
+          link: '/nm/mcr_homepage',
           title: 'Microstructure Characterization and Reconstruction',
           text: 'An essential component of computational material design involves microstructure analysis. Our user ' +
           'friendly webtools allow users to characterize microstructure images and reconstruct statistically ' +
@@ -24,7 +24,7 @@ export default {
         },
         {
           imageFile: 'nanomine/dynamfit.png',
-          link: '/mm/Dynamfit',
+          link: '/nm/Dynamfit',
           title: 'Dynamfit',
           text: 'Dynamfit is a sign control algorithm for Prony Series fitting. This program fits a viscoelastic ' +
           'mastercurve from DMA experiments with a Prony Series. The Prony Series coefficients can be used as ' +
