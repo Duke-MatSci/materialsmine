@@ -12,7 +12,7 @@ export default {
     ReferenceContainer
   },
   created () {
-    this.$store.commit('setAppHeaderInfo', {icon: 'workspaces', name: 'MCR'})
+    this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'MCR' })
   },
   mounted () {
     this.tools = this.$store.getters.mcrTools
