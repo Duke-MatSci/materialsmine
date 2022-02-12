@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-dialog class="dialog-box"
+    <md-dialog :class="['dialog-box', dialogSizeClass]"
       :md-active.sync="active"
       :md-click-outside-to-close="false">
       <div class="dialog-box_header">
@@ -32,6 +32,19 @@ export default {
     active: {
       type: Boolean,
       default: false
+    },
+    minWidth: {
+      type: Number,
+      default: 60
+    }
+  },
+  computed: {
+    dialogSizeClass () {
+      return ({
+        40: 'dialog-box_size-sm',
+        60: 'dialog-box_size-md',
+        80: 'dialog-box_size-lg'
+      })[this.minWidth] ?? 'dialog-box_size-md'
     }
   }
 }

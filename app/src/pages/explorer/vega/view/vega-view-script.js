@@ -75,9 +75,12 @@ export default {
     },
     editChart () {
     },
-    renderDialog (title, type) {
-      this.dialog.title = title
-      this.dialog.type = type
+    renderDialog (title, type, minWidth) {
+      this.dialog = {
+        title,
+        type,
+        minWidth
+      }
       this.toggleDialogBox()
     },
     slugify (args) {
