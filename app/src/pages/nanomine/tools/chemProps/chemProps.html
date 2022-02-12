@@ -94,13 +94,8 @@
         </p>
       </div>
     </div>
-    <div class="md-layout-item md-size-66">
-      <h4 v-if="referenceOpen" @click="refOpen">References <i class="material-icons icon-adjust">keyboard_arrow_up</i></h4>
-      <h4 v-else @click="refOpen">References <i class="material-icons icon-adjust">keyboard_arrow_down</i></h4>
-    </div>
-    <div class="md-layout-item md-size-66" v-if="referenceOpen">
-      <p class="reference">Hu, Bingyin, Anqi Lin, and L. Catherine Brinson. "ChemProps: A RESTful API enabled database for composite polymer name standardization." Journal of cheminformatics 13.1 (2021): 1-13.</p>
-      <p class="reference">Probst, Daniel, and Jean-Louis Reymond. "Smilesdrawer: parsing and drawing SMILES-encoded molecular structures using client-side javascript." Journal of chemical information and modeling 58.1 (2018): 1-7.</p>
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left">
+      <reference-container v-bind:references="references" v-bind:openOnLoad="false"></reference-container>
     </div>
   </div>
 </div>

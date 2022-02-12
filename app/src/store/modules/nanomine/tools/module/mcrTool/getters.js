@@ -1,8 +1,8 @@
 export default {
-  tools (state) {
+  mcrTools (state) {
     return state.tools
   },
-  references (state) {
+  mcrReferences (state) {
     return state.references
   }
 }

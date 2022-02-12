@@ -1,6 +1,7 @@
 import {} from 'vuex'
 // import { Auth } from '@/modules/Auth.js'
 // import Smiles from './Smiles'
+import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 const SERVER = `${window.location.origin}/nmr/api`
 // const SERVER = `http://localhost:8000/nmr/api`
 const URL = SERVER
@@ -8,6 +9,7 @@ const URL = SERVER
 export default {
   name: 'ChemProps',
   components: {
+    ReferenceContainer
     // Smiles
   },
   data () {
@@ -42,7 +44,7 @@ export default {
         terminalCarbons: true,
         debug: false
       },
-      referenceOpen: false
+      references: []
     }
   },
   watch: {
@@ -67,6 +69,7 @@ export default {
       result = await result.json()
       if (result.token) this.chempropsToken = result.token
     }
+    this.references = this.$store.getters.chemPropsReferences
   },
   methods: {
     scrollToResult () {
@@ -197,10 +200,6 @@ export default {
       }
       this.smilesError = true
       console.log('SmilesTest - error: ' + this.smilesMessage)
-    },
-    refOpen () {
-      this.referenceOpen = !this.referenceOpen
-      return this.referenceOpen
     }
   },
   created () {

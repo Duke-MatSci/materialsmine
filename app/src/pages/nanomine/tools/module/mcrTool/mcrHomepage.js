@@ -15,7 +15,7 @@ export default {
     this.$store.commit('setAppHeaderInfo', {icon: 'workspaces', name: 'MCR'})
   },
   mounted () {
-    this.tools = this.$store.getters.tools
-    this.references = this.$store.getters.references
+    this.tools = this.$store.getters.mcrTools
+    this.references = this.$store.getters.mcrReferences
   }
 }
