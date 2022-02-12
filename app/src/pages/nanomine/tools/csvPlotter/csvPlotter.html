@@ -12,7 +12,7 @@
       @dragover="dragover"
       @dragleave="dragleave"
       @drop="drop"
-      v-bind:style="{ 'background-color': boxColor }">
+      :style="{ 'background-color': boxColor }">
         <input type="file" multiple name="fields[assetsFieldHandle][]" id="assetsFieldHandle"
         @change="onChange" ref="myUpload" accept=".csv" class="md-layout-item md-alignment-top-left"/>
         <label for="assetsFieldHandle" class="block cursor-pointer md-layout-item md-alignment-center-center">
