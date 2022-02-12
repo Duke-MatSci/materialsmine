@@ -6,6 +6,16 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'visualization',
+    name: 'ExplorerVisualization',
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'create',
+    name: 'ExplorerCreate',
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'chart/view/:uri',
     name: 'ChartView',
     component: () => import('@/pages/explorer/vega/view/VegaView.vue'),
