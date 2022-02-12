@@ -1,3 +1,4 @@
+import mcrTool from './mcrTool/index.js'
 import getters from './getters.js'
 
 export default {
@@ -44,5 +45,8 @@ export default {
       ]
     }
   },
-  getters
+  getters,
+  modules: {
+    mcrTool: mcrTool
+  }
 }

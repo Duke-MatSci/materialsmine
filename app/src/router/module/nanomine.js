@@ -18,6 +18,18 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'mcr_homepage',
+    name: 'MCRHomepage',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/mcrTool/McrHomepage.vue'),
+    meta: { requiresAuth: false }
+  },
+  // {
+  //   path: 'dynamfit',
+  //   name: 'Dynamfit',
+  //   component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
+  //   meta: { requiresAuth: false }
+  // },
+  {
     path: 'simtools',
     name: 'SimulationTools',
     component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/simulation/SimulationTools.vue'),
