@@ -1,46 +1,48 @@
 <div class="section_CSVPlotter">
   <div class="wrapper md-layout md-alignment-top-center curationplot">
-    <div class="md-layout-item md-size-66">
+    <div class="md-layout-item md-size-100">
       <div class="team_header md-layout-item md-size-66">
         <h1 class="visualize_header-h1 teams_header">
           Curation Plot
         </h1>
       </div>
-      <md-card
-      md-elevation-7
-      class="upload md-layout-item md-size-50 md-layout"
-      @dragover="dragover"
-      @dragleave="dragleave"
-      @drop="drop"
-      :style="{ 'background-color': boxColor }">
-        <input type="file" multiple name="fields[assetsFieldHandle][]" id="assetsFieldHandle"
-        @change="onChange" ref="myUpload" accept=".csv" class="md-layout-item md-alignment-top-left"/>
-        <label for="assetsFieldHandle" class="block cursor-pointer md-layout-item md-alignment-center-center">
-          <p>
-            Drop csv files here or click here to upload and plot
-          </p>
-        </label>
-        <ul class="mt-4" v-if="this.csvName.length" v-cloak style="list-style-type:none">
-          <li class="text-sm p-1" style="font-size:2em">
-            {{csvName}}
-            <v-btn class="ml-2" color="red" dark @click="remove()" title="Remove file">
-              remove
-              <v-icon dark>mdi-delete</v-icon>
-            </v-btn>
-          </li>
-        </ul>
-      </md-card>
-      <!-- Line chart -->
-      <md-card md-elevation-7 class="md-layout-item md-size-100 md-layout">
-        <div id="viz" class="chart">
-          <nm-linechart
-          :options="{ width: 500, height: 400 }"
-          :dataset="dataset"
-          :xlabel="xlabel"
-          :ylabel="ylabel"
-          ></nm-linechart>
-        </div>
-      </md-card>
+      <div class="md-layout-item md-size-100 md-layout">
+        <md-card
+        md-elevation-7
+        class="md-layout-item upload md-size-33"
+        @dragover="dragover"
+        @dragleave="dragleave"
+        @drop="drop"
+        :style="{ 'background-color': boxColor }">
+          <input type="file" multiple name="fields[assetsFieldHandle][]" id="assetsFieldHandle"
+          @change="onChange" ref="myUpload" accept=".csv" class="md-layout-item md-alignment-top-left"/>
+          <label for="assetsFieldHandle" class="block cursor-pointer md-layout-item md-alignment-center-center">
+            <p>
+              Drop csv files here or click here to upload and plot
+            </p>
+          </label>
+          <ul class="md-layout-item" v-if="this.csvName.length" v-cloak>
+            <li>
+              {{csvName}}
+              <md-button class="md-primary" @click="remove()" title="Remove file">
+                remove
+                <md-icon>mdi-delete</md-icon>
+              </md-button>
+            </li>
+          </ul>
+        </md-card>
+        <!-- Line chart -->
+        <md-card md-elevation-7 class="md-layout-item md-size-66">
+          <div id="viz" class="chart">
+            <nm-linechart
+            :options="{ width: 500, height: 400 }"
+            :dataset="dataset"
+            :xlabel="xlabel"
+            :ylabel="ylabel"
+            ></nm-linechart>
+          </div>
+        </md-card>
+      </div>
     </div>
   </div>
 </div>

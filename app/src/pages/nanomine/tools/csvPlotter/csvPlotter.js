@@ -35,28 +35,30 @@ export default {
   },
   methods: {
     reset () {
-      const vm = this
-      vm.boxColor = '#e3e3e3'
-      vm.csv = null
-      vm.csvName = ''
-      vm.csvText = ''
-      vm.data = []
-      vm.dataset = null
-      vm.xlabel = ''
-      vm.ylabel = ''
+      this.boxColor = '#e3e3e3'
+      this.csv = null
+      this.csvName = ''
+      this.csvText = ''
+      this.data = []
+      this.dataset = this.dataset = {
+        data: [],
+        xlabel: this.xlabel,
+        ylabel: this.ylabel
+      }
+      this.xlabel = ''
+      this.ylabel = ''
     },
     onChange () {
-      const vm = this
-      vm.csv = vm.$refs.myUpload.files[0]
-      console.log(vm.csv)
-      vm.csvName = vm.csv.name
-      console.log(vm.csvName)
+      this.csv = this.$refs.myUpload.files[0]
+      console.log(this.csv)
+      this.csvName = this.csv.name
+      console.log(this.csvName)
       const fr = new FileReader()
-      // fr.readAsDataURL(vm.csv);
-      fr.readAsText(vm.csv)
+      // fr.readAsDataURL(this.csv);
+      fr.readAsText(this.csv)
       fr.addEventListener('load', () => {
-        vm.csvText = fr.result
-        vm.csv2xy(vm.csvText)
+        this.csvText = fr.result
+        this.csv2xy(this.csvText)
       })
     },
     remove () {
@@ -87,7 +89,6 @@ export default {
       // event.currentTarget.classList.remove('bg-green-300');
     },
     csv2xy (csvText) {
-      const vm = this
       // var result = {}
       var rows = csvText.split(/\r\n|\r|\n/)
       const length = rows.length - 1
@@ -102,9 +103,9 @@ export default {
           y: +rowV[1]
         })
       }
-      vm.xlabel = xlabel
-      vm.ylabel = ylabel
-      vm.data = data
+      this.xlabel = xlabel
+      this.ylabel = ylabel
+      this.data = data
     }
   },
   // computed: {
@@ -121,17 +122,19 @@ export default {
   // },
   watch: {
     data (newData) {
-      console.log('xlabel: ' + this.xlabel)
-      console.log('ylabel: ' + this.ylabel)
-      console.log(newData[0].x)
-      console.log(newData[0].y)
-      console.log(newData)
-      // console.log("data: " + this.data);
-      console.log('watch run')
-      this.dataset = {
-        data: newData,
-        xlabel: this.xlabel,
-        ylabel: this.ylabel
+      if (newData.length > 0) {
+        console.log('xlabel: ' + this.xlabel)
+        console.log('ylabel: ' + this.ylabel)
+        console.log(newData[0].x)
+        console.log(newData[0].y)
+        console.log(newData)
+        // console.log("data: " + this.data);
+        console.log('watch run')
+        this.dataset = {
+          data: newData,
+          xlabel: this.xlabel,
+          ylabel: this.ylabel
+        }
       }
     }
   },

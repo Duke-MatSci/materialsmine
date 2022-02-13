@@ -67,7 +67,7 @@ export default {
           .range([0, this.width])
       }
 
-      if (!this.yLogScale) {
+      if (!this.yLogScale) { // .length === 0 ? this.data : [0]
         this.scales.y = d3
           .scaleLinear()
           .domain(d3.extent(this.data, d => d.y))
@@ -175,13 +175,22 @@ export default {
     //   const d1 = this.data[i];
     // },
     init () {
-      this.setSize()
-      this.setScales()
-      // this.renderYGrid();
-      this.renderAxes()
-      this.renderLine()
+      if (this.data && this.data.length > 0) {
+        this.setSize()
+        this.setScales()
+        // this.renderYGrid();
+        this.renderAxes()
+        this.renderLine()
+      } else {
+        this.reset()
+      }
       // this.initToolTip();
       // this.renderArea();
+    },
+    reset () {
+      d3.select('.nm-line').attr('d', '')
+      d3.select('.x-axis-label').text('')
+      d3.select('.y-axis-label').text('')
     }
   },
   watch: {
