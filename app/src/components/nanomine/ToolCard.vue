@@ -6,7 +6,7 @@
       </md-card-media>
       <md-card-header v-if="title" key="tool_title">
           <div class="md-title" v-if="link" key="has_tool_link">
-            <router-link v-if="internalLink()" :to="link">{{ title }}</router-link>
+            <router-link v-if="!externalLink" :to="link">{{ title }}</router-link>
             <a v-else :href="link" target="_blank">{{ title }}</a>
           </div>
           <div class="md-title" v-else key="no_tool_link">
@@ -36,6 +36,11 @@ export default {
       type: String,
       required: false
     },
+    externalLink: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
     text: {
       type: String,
       required: true
@@ -44,23 +49,6 @@ export default {
       type: Boolean,
       required: false,
       default: false
-    }
-  },
-  methods: {
-    internalLink: function () {
-      try {
-        const URLLink = new URL(this.link)
-        return URLLink.host === window.location.host
-      } catch (e) {
-        // URL() throws TypeError if its argument isn't a valid link --
-        // then it's probably an internal link, we can let router-link
-        // handle it
-        if (e instanceof TypeError) {
-          return true
-        } else {
-          throw e
-        }
-      }
     }
   }
 }

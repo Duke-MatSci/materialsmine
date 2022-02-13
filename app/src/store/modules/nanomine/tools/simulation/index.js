@@ -13,6 +13,7 @@ export default {
         {
           imageFile: 'nanomine/prop_simu.png',
           link: 'http://reccr.chem.rpi.edu/polymerizer/index.html',
+          externalLink: true,
           title: 'Polymerizer',
           text: 'Polymerizer is an online application for prediction of surface energy for nanocomposites featuring ' +
           'user-defined polymer structure input and structure-property MQSPR. This web app is in collaboration with ' +
