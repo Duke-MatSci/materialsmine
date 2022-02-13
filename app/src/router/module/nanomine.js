@@ -23,12 +23,12 @@ const nanomineRoutes = [
     component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/mcrTools/McrHomepage.vue'),
     meta: { requiresAuth: false }
   },
-  // {
-  //   path: 'dynamfit',
-  //   name: 'Dynamfit',
-  //   component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
-  //   meta: { requiresAuth: false }
-  // },
+  {
+    path: 'dynamfit',
+    name: 'Dynamfit',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
+    meta: { requiresAuth: false }
+  },
   {
     path: 'simtools',
     name: 'SimulationTools',

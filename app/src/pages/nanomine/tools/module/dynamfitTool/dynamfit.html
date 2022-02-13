@@ -1,0 +1,110 @@
+<div class="section_dynamfit">
+  <div class="wrapper md-layout md-alignment-top-center md-gutter requestToken">
+    <div class="team_header md-layout-item md-size-66">
+      <h1 class="visualize_header-h1 teams_header">
+        Dynamfit - Prony Series coefficient fitting
+      </h1>
+    </div>
+    <!-- <md-dialog
+      v-model="loginRequired"
+      type="error"
+      outline
+    >
+      {{loginRequiredMsg}}
+    </md-dialog> -->
+    <div class="md-layout-item md-size-66">
+      <h3>Description</h3>
+      <p>
+        This program fits a viscoelastic mastercurve (tan &#948; vs. frequency) from DMA experiments with a Prony Series. The Prony
+        Series coefficients can be used as baseline properties for the matrix in a FEA simulation of nanocomposites.
+      </p>
+      <p>
+        If this tool is new to you, please click
+        <md-button class="md-primary" href="/mm/DynamfitExample">
+          Example of Dynamfit
+        </md-button>
+        to get familiar with this tool.
+      </p>
+    </div>
+    <div class="md-layout-item md-size-66">
+      <h3>Instructions</h3>
+    </div>
+    <ol class="md-layout-item md-size-66 md-layout">
+      <div class="md-layout-item md-size-100">
+        <li>Upload #.X_T file containing three values per line (Frequency X' X''):</li>
+        <p>Upload #.X_T file here:</p>
+        <md-button class="md-primary" @click='pickTemplate'>Browse</md-button>
+        <input
+          type="file"
+          style="display: none"
+          accept=".X_T"
+          ref="myTemplate"
+          @change="onTemplatePicked"
+        >
+        <md-list v-model="templateName" subheader="true" v-if="templateUploaded">
+          <md-list-item :key="templateName">
+            <md-icon class="md-primary">check_circle_outline</md-icon>
+            <span class="md-list-item-text" v-text="templateName"></span>
+          </md-list-item>
+        </md-list>
+      </div>
+      <div class="md-layout-item md-size-100">
+        <li>Factor For Weighting X' and X'' data:</li>
+        <p>0.0 Means Consider Only X'' Data</p>
+        <p>2.0 Means Consider Only X' Data</p>
+        <p>1.0 Means Weight Evenly X' and X''<p>
+        <p>All Other Values Represent Uneven Weighting</p>
+        <md-field>
+          <label for="weight">Enter the weighting parameter you wish to use:</label>
+          <md-input id="weight" v-model="weight" placeholder="1.0"></md-input>
+        </md-field>
+      </div>
+      <div class="md-layout-item md-size-100">
+        <li>Standard deviation:</li>
+        <div>
+          <md-radio class="md-primary" v-model="stdRadios" value="std1">Data point values</md-radio>
+          <md-radio class="md-primary" v-model="stdRadios" value="std2">Unity</md-radio>
+        </div>
+      </div>
+      <div class="md-layout-item md-size-100">
+        <li>Number of elements (should larger than 2 and should NOT be too large):</li>
+        <md-field>
+          <label for="nEle">Enter the number of elements to use:</label>
+          <md-input id="nEle" v-model="nEle" placeholder="20"></md-input>
+        </md-field>
+      </div>
+      <div class="md-layout-item md-size-100">
+        <li>Data type:</li>
+        <div>
+          <md-radio class="md-primary" v-model="dtRadios" value="dt1">Compliance</md-radio>
+          <md-radio class="md-primary" v-model="dtRadios" value="dt2">Modulus</md-radio>
+        </div>
+      </div>
+    </ol>
+    <md-button v-on:click="submit()" class="md-layout-item md-size-66 md-primary">Run Simulation</md-button>
+
+    <!-- <md-dialog
+      v-model="uploadError"
+      type="error"
+      dismissible
+    >
+      {{uploadErrorMsg}}
+    </md-dialog> -->
+    <md-dialog v-model="successDlg" persistent max-width="500px">
+      <md-card>
+        <md-card-header>
+          <div class="md-title">Dynamfit Job Submitted Successfully</div>
+        </md-card-header>
+        <md-card-content>
+          Your uploader job is: {{jobId}} <br/> You should receive an email with a link to the job output.
+        </md-card-content>
+        <md-card-actions>
+          <md-button class="md-primary" flat @click="successDlgClicked()">Close</md-button>
+        </md-card-actions>
+      </md-card>
+    </md-dialog>
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left">
+      <reference-container :references="references" :openOnLoad="false"></reference-container>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 import mcrToolsModule from './mcrTools/index.js'
+import dynamfitModule from './dynamfit/index.js'
 import getters from './getters.js'
 
 export default {
@@ -47,6 +48,7 @@ export default {
   },
   getters,
   modules: {
-    mcrTool: mcrToolsModule
+    mcrTool: mcrToolsModule,
+    dynamfit: dynamfitModule
   }
 }
