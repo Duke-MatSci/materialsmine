@@ -1,0 +1,78 @@
+.vega {
+    &-view{
+        margin: 2.5rem
+    }
+    &-tabs{
+        height:100% !important;
+        .md-button {
+            &-content {
+                font-size: 1.5rem !important;
+                color: $primary !important;
+            }
+        }
+        .jsoneditor-container  {
+            &.min-box{
+                min-width: 0px !important;
+            }
+            .ace_scroller {
+                overflow:scroll !important;
+            }
+
+        }
+    }
+    &-spec{
+        &-container{
+            padding-left: 20px;
+            padding-right: 20px;
+            height: 600px;
+            max-height: 100%;
+            width: 724px;
+            max-width: 100%;
+        }
+        &-controls{
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+    }
+    &-embed{
+        &-chartview{
+            margin-top:5rem
+        }
+    }
+    
+}
+
+.loading-dialog {
+    text-align: center;
+    &_justify {
+        text-align: justify !important;
+    }
+}
+
+.splitpane {
+    .splitter-pane{
+        &.vertical{
+            min-height:100rem;
+        }
+        &.horizontal{
+            min-width:100rem;
+        }
+    } 
+    min-height:100rem;
+    
+    &_panel {
+        padding-left:2.5rem;
+        padding-right:1.5rem;
+    }
+}
+
+
+.CodeMirror{
+    height: auto;
+    &-gutter {
+        width: 1.5rem !important;
+    }
+    &-linenumber {
+        left: 0rem !important;
+    }
+}
