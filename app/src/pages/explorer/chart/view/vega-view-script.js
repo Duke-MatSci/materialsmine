@@ -62,12 +62,19 @@ export default {
       toggleDialogBox: 'setDialogBox'
     }),
     async loadVisualization () {
-      this.chart = await loadChart(`${this.pageUri}`)
-      if (this.chart.query) {
-        this.results = await querySparql(this.chart.query)
+      try {
+        this.chart = await loadChart(`${this.pageUri}`)
+        if (this.chart.query) {
+          this.results = await querySparql(this.chart.query)
+        }
+        this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
       }
-      this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
-      this.loading = false
+      catch(e) {
+        this.error = { status: true, message: e.message }
+      }
+      finally {
+        this.loading = false
+      }
     },
     navBack (args) {
     },

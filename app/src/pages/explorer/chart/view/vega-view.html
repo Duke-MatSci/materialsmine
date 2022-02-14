@@ -54,21 +54,22 @@
         </div>
         <div class="viz-sample__content">
             <div class="">
-            <div class="md-headline viz-u-mgup-sm btn--animated">{{chart.title}}</div>
-            <div class="btn--animated">
-                {{ slugify(chart.description) }}
-            </div>
-            <div class="viz-sample__list btn--animated">
-                <ul>
-                <li class="viz-u-postion__rel" v-for="(tag, index) in chartTags" :key="index">
-                    <div class="viz-sample__content__card viz-u-display__hide viz-u-postion__abs">
-                    {{ tag.description }}
-                    <div><a class="btn-text btn-text--simple" target="_blank" :href="tag.uri">More</a></div>
-                    </div>
-                    {{ tag.title }}
-                </li>
-                </ul>
-            </div>
+                <p v-if="error.status"> Error: {{error.message}} </p>
+                <div class="md-headline viz-u-mgup-sm btn--animated">{{chart.title}}</div>
+                <div class="btn--animated">
+                    {{ slugify(chart.description) }}
+                </div>
+                <div class="viz-sample__list btn--animated">
+                    <ul>
+                    <li class="viz-u-postion__rel" v-for="(tag, index) in chartTags" :key="index">
+                        <div class="viz-sample__content__card viz-u-display__hide viz-u-postion__abs">
+                        {{ tag.description }}
+                        <div><a class="btn-text btn-text--simple" target="_blank" :href="tag.uri">More</a></div>
+                        </div>
+                        {{ tag.title }}
+                    </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
