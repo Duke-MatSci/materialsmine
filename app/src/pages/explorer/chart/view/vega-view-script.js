@@ -68,11 +68,9 @@ export default {
           this.results = await querySparql(this.chart.query)
         }
         this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
-      }
-      catch(e) {
+      } catch (e) {
         this.error = { status: true, message: e.message }
-      }
-      finally {
+      } finally {
         this.loading = false
       }
     },
