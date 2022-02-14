@@ -1,7 +1,5 @@
 import createWrapper from '../../../jest/script/wrapper'
-// import { enableAutoDestroy } from '@vue/test-utils'
-
-import VegaView from '@/pages/explorer/vega/view/VegaView.vue'
+import VegaView from '@/pages/explorer/chart/view/VegaView.vue'
 import { getDefaultChart, loadChart, buildSparqlSpec } from '@/modules/vega-chart'
 import { querySparql } from '@/modules/sparql'
 jest.mock('@/modules/vega-chart')

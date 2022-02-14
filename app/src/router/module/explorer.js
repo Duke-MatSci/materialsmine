@@ -1,3 +1,4 @@
+import ChartBase from '@/pages/explorer/chart/Base.vue'
 const explorerRoutes = [
   {
     path: '',
@@ -6,10 +7,41 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'chart/view/:uri',
-    name: 'ChartView',
-    component: () => import('@/pages/explorer/vega/view/VegaView.vue'),
+    path: 'visualization',
+    name: 'ExplorerVisualization',
     meta: { requiresAuth: false }
+  },
+  {
+    path: 'create',
+    name: 'ExplorerCreate',
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'chart',
+    component: ChartBase,
+    children: [
+      {
+        path: '',
+        name: 'ChartGallery',
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'edit/:uri',
+        name: 'ChartEdit',
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'create',
+        name: 'ChartCreate',
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'view/:uri',
+        name: 'ChartView',
+        component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
+        meta: { requiresAuth: false }
+      }
+    ]
   },
   {
     path: 'sample/:label',

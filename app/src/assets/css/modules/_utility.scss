@@ -173,8 +173,27 @@
     .md-dialog-container{
         overflow: scroll !important;
     }
+    &_size {
+        &-sm {
+            .md-dialog-container{
+                min-width: 40vh !important;
+            }
+        }
+        &-md {
+            .md-dialog-container{
+                min-width: 60vh !important;
+            }
+        }
+        &-lg {
+            .md-dialog-container{
+                min-width: 80vh !important;
+            }
+        }    
+    }
+    
     &_header {
-        background-color: $secondary-mid !important;
+        background-color: $primary !important;
+        color: $primary-white !important;
         padding: 1rem 1.5rem !important;
 
         & > span {
@@ -183,7 +202,7 @@
     }
     &_actions {
         .md-button-content{
-            color: $secondary-mid !important
+            color: $secondary !important
         }
     }
 }
