@@ -19,10 +19,9 @@ const explorerRoutes = [
   {
     path: 'chart',
     component: ChartBase,
-    meta: { requiresAuth: false },
     children: [
       {
-        path: '/',
+        path: '',
         name: 'ChartGallery',
         meta: { requiresAuth: false }
       },
