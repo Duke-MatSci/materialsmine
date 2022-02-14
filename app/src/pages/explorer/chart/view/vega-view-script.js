@@ -62,12 +62,17 @@ export default {
       toggleDialogBox: 'setDialogBox'
     }),
     async loadVisualization () {
-      this.chart = await loadChart(`${this.pageUri}`)
-      if (this.chart.query) {
-        this.results = await querySparql(this.chart.query)
+      try {
+        this.chart = await loadChart(`${this.pageUri}`)
+        if (this.chart.query) {
+          this.results = await querySparql(this.chart.query)
+        }
+        this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
+      } catch (e) {
+        this.error = { status: true, message: e.message }
+      } finally {
+        this.loading = false
       }
-      this.spec = buildSparqlSpec(this.chart.baseSpec, this.results)
-      this.loading = false
     },
     navBack (args) {
     },
@@ -75,9 +80,12 @@ export default {
     },
     editChart () {
     },
-    renderDialog (title, type) {
-      this.dialog.title = title
-      this.dialog.type = type
+    renderDialog (title, type, minWidth) {
+      this.dialog = {
+        title,
+        type,
+        minWidth
+      }
       this.toggleDialogBox()
     },
     slugify (args) {

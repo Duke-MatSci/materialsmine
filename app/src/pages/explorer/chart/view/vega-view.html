@@ -5,7 +5,7 @@
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
         </md-button>
-        <md-button id="shareChartBtn"  class="md-icon-button" @click.native.prevent="renderDialog('Share chart', 'share')">
+        <md-button id="shareChartBtn"  class="md-icon-button" @click.native.prevent="renderDialog('Share chart', 'share', 60)">
             <md-tooltip> Share Chart </md-tooltip>
             <md-icon>share</md-icon>
         </md-button>
@@ -22,7 +22,7 @@
             </md-button>
         </div>
         <div v-if="specViewerSpec">
-            <md-button id="vegaSpecBtn" class="md-icon-button" @click.native.prevent="renderDialog('Chart Vega Spec', 'vega')">
+            <md-button id="vegaSpecBtn" class="md-icon-button" @click.native.prevent="renderDialog('Chart Vega Spec', 'vega', 80)">
                 <md-tooltip> Preview Chart Spec </md-tooltip>
                 <md-icon>integration_instructions</md-icon>
             </md-button>
@@ -54,21 +54,22 @@
         </div>
         <div class="viz-sample__content">
             <div class="">
-            <div class="md-headline viz-u-mgup-sm btn--animated">{{chart.title}}</div>
-            <div class="btn--animated">
-                {{ slugify(chart.description) }}
-            </div>
-            <div class="viz-sample__list btn--animated">
-                <ul>
-                <li class="viz-u-postion__rel" v-for="(tag, index) in chartTags" :key="index">
-                    <div class="viz-sample__content__card viz-u-display__hide viz-u-postion__abs">
-                    {{ tag.description }}
-                    <div><a class="btn-text btn-text--simple" target="_blank" :href="tag.uri">More</a></div>
-                    </div>
-                    {{ tag.title }}
-                </li>
-                </ul>
-            </div>
+                <p v-if="error.status"> Error: {{error.message}} </p>
+                <div class="md-headline viz-u-mgup-sm btn--animated">{{chart.title}}</div>
+                <div class="btn--animated">
+                    {{ slugify(chart.description) }}
+                </div>
+                <div class="viz-sample__list btn--animated">
+                    <ul>
+                    <li class="viz-u-postion__rel" v-for="(tag, index) in chartTags" :key="index">
+                        <div class="viz-sample__content__card viz-u-display__hide viz-u-postion__abs">
+                        {{ tag.description }}
+                        <div><a class="btn-text btn-text--simple" target="_blank" :href="tag.uri">More</a></div>
+                        </div>
+                        {{ tag.title }}
+                    </li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -86,7 +87,7 @@
     </div>
 </div>
 
-<dialogbox :active="dialogBoxActive">
+<dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
     <template v-slot:title>{{dialog.title}}</template>
     <template v-slot:content>
         <div v-if="dialog.type=='share'">
