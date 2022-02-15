@@ -1,88 +1,25 @@
-const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const multer = require('multer');
-// const { graphqlHttp } = require('express-graphql');
-// const graphqlSchema = require('./graphql/schema');
-// const graphqlResolver = require('./graphql/resolvers');
-
-const testRoutes = require('./routes/test');
-
-const { DB_USERNAME, DB_PASSWORD, MM_DB } = process.env;
+const { globalMiddleWare, log } = require('./middlewares/globalMiddleware');
+const env = process.env;
 
 const app = express();
-
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'mm_fils');
-  },
-  filename: (req, file, cb) => {
-    cb(null, new Date().toISOString() + '-' + file.originalname);
-  }
-});
-
-const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === 'image/png' ||
-    file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image/jpeg'
-  ) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
-app.use(bodyParser.json());
-app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).fields([{ name: 'uploadfile', maxCount: 20 }])
-);
-app.use('/mm_fils', express.static(path.join(__dirname, 'mm_files')));
-
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
-  );
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
-
-app.use('/test', testRoutes);
-
-// app.use(
-//   '/graphql',
-//   graphqlHttp({
-//     schema: graphqlSchema,
-//     rootValue: graphqlResolver,
-//     graphiql: true,
-//     formatError(err) {
-//       if (!err.originalError) {
-//         return err;
-//       }
-//       const data = err.originalError.data;
-//       const message = err.message || 'An error occurred.';
-//       const code = err.originalError.code || 500;
-//       return { message: message, status: code, data: data };
-//     }
-//   })
-// );
+globalMiddleWare(app);
 
 app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
-  res.status(status).json({ message: message, data: data });
+  res.status(status).json({ message, data });
 });
 
 mongoose
-  .connect(`mongodb://${DB_USERNAME}:${DB_PASSWORD}@mongo:27017/${MM_DB}`, {
+  .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`, {
     useNewUrlParser: true, useUnifiedTopology: true
   })
-  .then(result => {
+  .then(() => {
+    log.info('Rest server starting up...');
     app.listen(process.env.PORT || 3000);
   })
   .catch(err => console.log(err));
