@@ -66,4 +66,4 @@ function mountArticle (doi) {
   return wrapper
 }
 
-const doiLink = doi => `/explorer/sample/article/${doi}`
+const doiLink = doi => `/explorer/article/${doi}`
