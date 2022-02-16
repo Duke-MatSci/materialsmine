@@ -1,16 +1,17 @@
-import {} from 'vuex'
+import { mapMutations, mapGetters } from 'vuex'
 import { JobMgr } from '@/modules/JobMgr.js'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
+import Dialog from '@/components/Dialog'
 // import { Auth } from '@/modules/Auth.js'
 export default {
   name: 'Dynamfit',
   components: {
-    ReferenceContainer
+    ReferenceContainer,
+    dialogbox: Dialog
   },
   data () {
     return {
       // title: 'Dynamfit',
-      dialog: false,
       templateName: '',
       templateUrl: '',
       template: null,
@@ -26,7 +27,12 @@ export default {
       successDlg: false,
       jobId: '',
       references: [],
-      auth: { // mocked because auth is not yet implemented
+      examplePage: 'noExample',
+      dialog: {
+        title: ''
+      },
+      auth: {
+        // mocked because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
       }
@@ -43,6 +49,9 @@ export default {
     this.references = this.$store.getters.dynamfitReferences
   },
   methods: {
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    }),
     setLoading: function () {
       this.$store.commit('isLoading')
     },
@@ -90,50 +99,106 @@ export default {
     },
     submit: function () {
       if (!this.templateUploaded) {
-        this.uploadError = true
-        this.uploadErrorMsg = 'Please upload the .X_T file.'
+        if (this.examplePage === 'inputTest') {
+          this.renderDialog('Upload Error', 'Please upload EXAMPLE.X_T.')
+        } else {
+          this.renderDialog('Upload Error', 'Please upload the .X_T file.')
+        }
         return
       }
       if (this.weight === '') {
-        this.uploadError = true
-        this.uploadErrorMsg = 'Please input the weighting parameter.'
+        this.renderDialog(
+          'Input Error',
+          'Please input the weighting parameter.'
+        )
         return
       }
       if (this.stdRadios === '') {
-        this.uploadError = true
-        this.uploadErrorMsg = 'Please select the type of the standard deviation.'
+        this.renderDialog(
+          'Input Error',
+          'Please select the type of the standard deviation.'
+        )
         return
       }
       if (this.nEle === '') {
-        this.uploadError = true
-        this.uploadErrorMsg = 'Please input the number of Prony elements.'
+        this.renderDialog(
+          'Input Error',
+          'Please input the number of Prony elements.'
+        )
         return
       }
       if (this.dtRadios === '') {
-        this.uploadError = true
-        this.uploadErrorMsg = 'Please select the data type.'
+        this.renderDialog('Input Error', 'Please select the data type.')
         return
       }
       console.log('Job Submitted!')
       this.setLoading()
       const jm = new JobMgr()
       jm.setJobType('dynamfit')
-      jm.setJobParameters({ templateName: this.templateName, weight: this.weight, stddev: this.stdRadios, nEle: this.nEle, dt: this.dtRadios })
-      jm.addInputFile(this.templateName, this.templateUrl)
-      return jm.submitJob(function (jobId) {
-        console.log('Success! JobId is: ' + jobId)
-        this.jobId = jobId
-        this.resetLoading()
-        this.successDlg = true
-      }, function (errCode, errMsg) {
-        console.log('error: ' + errCode + ' msg: ' + errMsg)
-        this.uploadError = true
-        this.uploadErrorMsg = 'Error submitting files for upload: errCode: ' + errCode + ' msg: ' + errMsg
-        this.resetLoading()
+      jm.setJobParameters({
+        templateName: this.templateName,
+        weight: this.weight,
+        stddev: this.stdRadios,
+        nEle: this.nEle,
+        dt: this.dtRadios
       })
+      jm.addInputFile(this.templateName, this.templateUrl)
+      return jm.submitJob(
+        function (jobId) {
+          console.log('Success! JobId is: ' + jobId)
+          this.jobId = jobId
+          this.resetLoading()
+          this.successDlg = true
+        },
+        function (errCode, errMsg) {
+          console.log('error: ' + errCode + ' msg: ' + errMsg)
+          this.uploadError = true
+          this.uploadErrorMsg =
+            'Error submitting files for upload: errCode: ' +
+            errCode +
+            ' msg: ' +
+            errMsg
+          this.resetLoading()
+        }
+      )
+    },
+    displayExample: function (example) {
+      const examplePages = ['noExample', 'exampleInput', 'inputTest']
+      if (examplePages.includes(example)) {
+        this.examplePage = example
+      } else {
+        this.examplePage = 'noExample'
+      }
+    },
+    renderDialog (title, content, minWidth) {
+      this.dialog = {
+        title,
+        content,
+        minWidth
+      }
+      this.toggleDialogBox()
+    }
+  },
+  watch: {
+    examplePage: function () {
+      if (this.examplePage === 'exampleInput') {
+        this.stdRadios = 'std1'
+        this.dtRadios = 'dt2'
+      } else {
+        this.stdRadios = ''
+        this.dtRadios = ''
+      }
     }
   },
   created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'Dynamfit' })
+    this.$store.commit('setAppHeaderInfo', {
+      icon: 'workspaces',
+      name: 'Dynamfit'
+    })
+  },
+  computed: {
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox'
+    })
   }
 }
