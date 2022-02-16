@@ -1,0 +1,74 @@
+// import Axios from 'axios'
+import {} from 'vuex'
+
+export default {
+  name: 'DynamfitResult',
+  data () {
+    return {
+      resultsError: false,
+      resultsErrorMsg: '',
+      Eimg: '',
+      EEimg: '',
+      XPR: '',
+      XFF: '',
+      XTF: '',
+      references: []
+    }
+  },
+  mounted: function () {
+    this.getJobOutputParams()
+    this.references = this.$store.getters.dynamfitReferences
+  },
+  methods: {
+    setLoading: function () {
+      this.$store.commit('isLoading')
+    },
+    resetLoading: function () {
+      this.$store.commit('notLoading')
+    },
+    getEImage: function () {
+      return this.$route.query.ref + '/' + this.Eimg
+    },
+    getEEImage: function () {
+      return this.$route.query.ref + '/' + this.EEimg
+    },
+    getXPRFile: function () {
+      return this.$route.query.ref + '/' + this.XPR
+    },
+    getXFFFile: function () {
+      return this.$route.query.ref + '/' + this.XFF
+    },
+    getXTFFile: function () {
+      return this.$route.query.ref + '/' + this.XTF
+    },
+    getJobOutputParams: async function () {
+      const url = this.$route.query.ref + '/job_output_parameters.json'
+      this.setLoading()
+      var response
+      try {
+        response = await fetch(url)
+      } catch (err) {
+        console.log(err)
+        this.resultsErrorMsg = err
+        this.resultsError = true
+        this.resetLoading()
+        return
+      }
+
+      const myOutputParams = await response.json()
+      console.log(myOutputParams)
+      this.Eimg = myOutputParams.Eimg
+      this.EEimg = myOutputParams.EEimg
+      this.XPR = myOutputParams.XPR
+      this.XFF = myOutputParams.XFF
+      this.XTF = myOutputParams.XTF
+      this.resetLoading()
+    }
+  },
+  created () {
+    this.$store.commit('setAppHeaderInfo', {
+      icon: 'workspaces',
+      name: 'Dynamfit Result'
+    })
+  }
+}

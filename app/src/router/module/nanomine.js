@@ -30,6 +30,12 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'dynamfitResult',
+    name: 'DynamfitResult',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitResult/DynamfitResult.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'simtools',
     name: 'SimulationTools',
     component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/simulation/SimulationTools.vue'),

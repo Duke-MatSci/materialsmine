@@ -1,0 +1,86 @@
+<div class="section_dynamfit_result md-layout md-gutter md-alignment-top-center">
+  <div class="md-layout-item md-size-80 md-layout md-alignment-top-left">
+    <h1 class="md-layout-item md-size-100 visualize_header-h1 teams_header">
+      Dynamfit - Prony Series coefficient fitting
+    </h1>
+    <!-- <v-alert v-model="resultsError" type="error" dismissible>
+    {{resultsErrorMsg}}
+  </v-alert> -->
+    <h3 class="md-layout-item md-size-100">The fitting result is shown below:</h3>
+    <div class="md-layout-item md-size-100 md-layout md-alignment-top-space-around">
+      <div class="md-layout-item md-size-50">
+        <h4>Epsilon Prime</h4>
+        <img :src="getEImage()" />
+      </div>
+      <div class="md-layout-item md-size-50">
+        <h4>Epsilon Double Prime</h4>
+        <img :src="getEEImage()" />
+      </div>
+    </div>
+    <h3 class="md-layout-item md-size-100">
+      Prony Series Coefficients (the program writes three files.)
+    </h3>
+    <h5 class="md-layout-item md-size-100">File #.XPR</h5>
+    <p class="md-layout-item md-size-100">
+      This file contains the Prony series terms. It consists of N lines of
+      data with each line containing (&#947;<sub>i</sub>, P-SVD<sub>i</sub>,
+      RMS-SVD, P-Sign<sub>i</sub>, RMS-Sign), where &#947;<sub>i</sub> are the
+      relaxation times (constant term has &#947;<sub>i</sub> set to
+      10<sup>50</sup>, P-SVD<sub>i</sub> and P-Sign<sub>i</sub>are the Prony
+      series coefficients for the linear (SVD) and sign controlled method,
+      respectively, and RMS-SVD and RMS-Sign are the RMS percent errors
+      between the obtained fit and the entire data for the linear (SVD) and
+      sign controlled method, respectively. Note that the RMS errors are
+      provided on every line; this is a simplification to keep all lines in
+      the file identical in size.
+    </p>
+    <h5 class="md-layout-item md-size-100">File #.XFF</h5>
+
+    <p class="md-layout-item md-size-100">
+      This file contains the predicted frequency domain response obtained by
+      the program. It consists of U lines of data, where U is the number of
+      points specified by the user for the response predictions. Each line
+      contains (&#969;<sub>i</sub>, X<sup>'</sup>-SVD<sub>i</sub>,
+      X-SVD<sub>i</sub>, X-Sign<sub>i</sub>, X-Sign<sub>i</sub>), where
+      &#969;<sub>i</sub> are the frequency points of evaluation (U points
+      evenly spaced in the log domain between &#969;<sub>min</sub> and
+      &#969;<sub>max</sub>.
+    </p>
+    <h5 class="md-layout-item md-size-100">File #.XTF</h5>
+    <p class="md-layout-item md-size-100">
+      This file contains the predicted time domain response obtained by the
+      program. It consists of U lines of data, where U is the number of points
+      specified by the user for the response predictions. Each line contains
+      (t<sub>i</sub>, X-SVD<sub>i</sub>, X-Sign<sub>i</sub>, where t<sub>i</sub>
+      are the time points of evaluation (U points evenly spaced in the log
+      domain between t<sub>min</sub> = 2 &#960;/ &#969; <sub>min</sub>), and
+      X-SVD<sub>i</sub> and X-Sign<sub>i</sub> are the predicted time domain
+      values from the Prony series obtained by the linear (SVD) and sign
+      controlled method, respectively.
+    </p>
+    <p class="md-layout-item md-size-100">
+      These Prony Series coefficients associated with the elastic parameters
+      of nanoparticles are then imported into the material section of finite
+      element simulation.
+    </p>
+    <h3 class="md-layout-item md-size-100">Your results are ready to download</h3>
+    <p class="md-layout-item md-size-100">
+      Click <a :href="getXPRFile()">here</a> to download #.XPR file.
+    </p>
+    <p class="md-layout-item md-size-100">
+      Click <a :href="getXFFFile()">here</a> to download #.XFF file.
+    </p>
+    <p class="md-layout-item md-size-100">
+      Click <a :href="getXTFFile()">here</a> to download #.XTF file.
+    </p>
+    <div class="md-layout-item md-size-20">
+      <router-link tag="md-button" class="md-primary">Run Simulation</router-link>
+    </div>
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left">
+      <reference-container
+        :references="references"
+        :openOnLoad="false"
+      ></reference-container>
+    </div>
+  </div>
+</div>
