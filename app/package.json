@@ -29,6 +29,7 @@
     "jsonschema": "^1.4.0",
     "rdf-literal": "^1.1.0",
     "register-service-worker": "^1.7.1",
+    "smiles-drawer": "^1.2.0",
     "v-jsoneditor": "^1.4.5",
     "vega": "^5.21.0",
     "vega-embed": "^6.20.5",
