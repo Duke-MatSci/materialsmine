@@ -47,6 +47,31 @@
 }
 
 .explorer_page {
+    &_header {
+        margin: 5rem;
+        text-align: center;
+        .md-tabs.md-theme-default .md-tabs-indicator {
+            background-color: $primary-white !important;
+        }
+        .md-tab-nav-button {
+            background-color: $primary !important;
+            padding: 12px 24px;
+            transition: background-color 0.2s;
+            border: 1px solid $primary;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+            .md-button-content{
+                color: $primary-white !important;
+            }
+        }
+        .md-active {
+            background-color: transparent !important;
+            border-bottom-color: $primary-white !important;
+            .md-button-content {
+                color: $primary !important;
+            }
+        }
+    }
     &_footer {
         color: $primary;
         margin-top: 5rem;
