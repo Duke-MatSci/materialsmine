@@ -45,11 +45,11 @@ export default {
       return 0
     },
     materials () {
-        return 0
+      return 0
     },
     other () {
-        return 0
-    },
+      return 0
+    }
   }
 }
 </script>

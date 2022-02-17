@@ -11,10 +11,6 @@
         </div>
 
         <div class="md-toolbar-section-end">
-          <div class="u_margin-top-small u_width--small u_margin-right-small" v-if="searchEnabled">
-            <input type="text" class="form__input form__input--flat" placeholder="Searching..." name="search" id="search" v-model="searchTerm"  />
-            <label htmlFor="search" class="form__label form__input--flat-label">Searching...</label>
-          </div>
           <md-badge id="header-badge" class="md-primary" md-content="12">
             <md-avatar>
               <img src="@/assets/img/brinson.jpeg" alt="Avatar">
