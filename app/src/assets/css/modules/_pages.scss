@@ -48,20 +48,26 @@
 
 .explorer_page {
     &_header {
-        margin: 5rem;
-        text-align: center;
+        margin: 5rem 10rem;
+        .md-tabs-navigation {
+            border-bottom: 1px solid $primary !important;
+        }
         .md-tabs.md-theme-default .md-tabs-indicator {
             background-color: $primary-white !important;
+            height: 0.5rem;
+            bottom: -0.25rem;
         }
         .md-tab-nav-button {
             background-color: $primary !important;
-            padding: 12px 24px;
+            padding: 0.5rem;
             transition: background-color 0.2s;
-            border: 1px solid $primary;
-            border-radius: 10px 10px 0 0;
-            margin-right: 5px;
+            border: 1px solid $primary !important;
+            border-radius: 0.7rem 0.7rem 0 0;
+            margin-right: 1rem;
+            height: max-content;
             .md-button-content{
                 color: $primary-white !important;
+                font-size: 1.4rem;
             }
         }
         .md-active {

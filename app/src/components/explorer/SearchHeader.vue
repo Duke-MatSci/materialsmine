@@ -10,12 +10,12 @@
             </div>
         </div>
         <md-tabs class="btn--primary">
-            <md-tab :md-label="'Images (' + images + ')'"> Image Tab </md-tab>
-            <md-tab :md-label="'Samples (' + samples + ')'"> Sample Tab </md-tab>
             <md-tab :md-label="'Articles (' + articles + ')'"> Article Tab </md-tab>
+            <md-tab :md-label="'Samples (' + samples + ')'"> Sample Tab </md-tab>
+            <md-tab :md-label="'Images (' + images + ')'"> Image Tab </md-tab>
             <md-tab :md-label="'Charts (' + charts + ')'"> Chart Tab </md-tab>
-            <!-- <md-tab :md-label="'Datasets (' + datasets + ')'"> Dataset Tab </md-tab>
-            <md-tab :md-label="'Other (' + other + ')'"> Other Tab </md-tab> -->
+            <md-tab :md-label="'Materials (' + materials + ')'"> Materials Tab </md-tab>
+            <md-tab :md-label="'Other (' + other + ')'"> Other Tab </md-tab>
         </md-tabs>
     </div>
 </template>
@@ -43,13 +43,13 @@ export default {
     },
     charts () {
       return 0
-    }
-    // datasets () {
-    //     return 0
-    // },
-    // other () {
-    //     return 0
-    // },
+    },
+    materials () {
+        return 0
+    },
+    other () {
+        return 0
+    },
   }
 }
 </script>
