@@ -1,7 +1,8 @@
-import {} from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 // import { Auth } from '@/modules/Auth.js'
-// import Smiles from './Smiles'
+import SmilesCanvas from '@/components/nanomine/SmilesCanvas'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
+import Dialog from '@/components/Dialog'
 const SERVER = `${window.location.origin}/nmr/api`
 // const SERVER = `http://localhost:8000/nmr/api`
 const URL = SERVER
@@ -9,13 +10,16 @@ const URL = SERVER
 export default {
   name: 'ChemProps',
   components: {
-    ReferenceContainer
-    // Smiles
+    ReferenceContainer,
+    SmilesCanvas,
+    dialogbox: Dialog
   },
   data () {
     return {
       title: 'ChemProps',
-      dialog: false,
+      dialog: {
+        title: ''
+      },
       pfRadios: 'pol',
       quicksearchkeyword: '',
       chemicalname: '',
@@ -25,8 +29,6 @@ export default {
       stdname: '',
       density: '',
       uSMILES: '',
-      searchError: false,
-      searchErrorMsg: '',
       loginRequired: false,
       loginRequiredMsg: '',
       successDlg: false,
@@ -72,6 +74,9 @@ export default {
     this.references = this.$store.getters.chemPropsReferences
   },
   methods: {
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    }),
     scrollToResult () {
       const elem = document.getElementById('chemprops-displayed-result')
       if (elem) {
@@ -89,7 +94,9 @@ export default {
     resetOutput: function () {
       this.stdname = ''
       this.density = ''
-      this.searchError = false // reset the error message on click
+      if (this.dialogBoxActive) {
+        this.toggleDialogBox()
+      }
     },
     successDlgClicked: function () {
       // this.$router.go(-1) // go back to previous page
@@ -98,14 +105,18 @@ export default {
     search: function () {
       this.resetOutput()
       if (!this.chempropsToken) {
-        this.searchError = true
-        this.searchErrorMsg = 'System error, contact our system administrator'
+        this.renderDialog(
+          'Search Error',
+          'System error, contact our system administrator'
+        )
         return
       }
       if (this.pfRadios === 'pol' && this.quicksearchkeyword.trim() !== '') {
         if (this.quicksearchkeyword === '') {
-          this.searchError = true
-          this.searchErrorMsg = 'Please input the quick search keyword.'
+          this.renderDialog(
+            'Input Error',
+            'Please input the quick search keyword.'
+          )
           return
         }
         this.chemicalname = this.quicksearchkeyword
@@ -114,13 +125,17 @@ export default {
         this.SMILES = this.quicksearchkeyword
       }
       if (this.chemicalname === '') {
-        this.searchError = true
-        this.searchErrorMsg = 'Please input the chemical name.'
+        this.renderDialog(
+          'Input Error',
+          'Please input the chemical name.'
+        )
         return
       }
       if (this.pfRadios === '') {
-        this.searchError = true
-        this.searchErrorMsg = 'Please select the collection.'
+        this.renderDialog(
+          'Input Error',
+          'Please select the collection.'
+        )
         return
       }
       // TODO need to configure after nmcp API done
@@ -156,8 +171,10 @@ export default {
           }
           // check if stdname is found
           if (this.stdname === '') {
-            this.searchError = true
-            this.searchErrorMsg = 'No results found. Admin will update the database soon. Please try again in a week.'
+            this.renderDialog(
+              'Search Error',
+              'No results found. Admin will update the database soon. Please try again in a week.'
+            )
             this.resetOutput()
           }
           this.resetLoading()
@@ -165,11 +182,16 @@ export default {
         .catch(function (error) {
           console.log(error)
           this.resetOutput()
-          this.searchError = true
           if (error.message.includes('404')) {
-            this.searchErrorMsg = 'No results found. Admin will update the database soon. Please try again in a week.'
+            this.renderDialog(
+              'Search Error',
+              'No results found. Admin will update the database soon. Please try again in a week.'
+            )
           } else {
-            this.searchErrorMsg = 'An exception occurred when calling the ChemProps API service.'
+            this.renderDialog(
+              'Search Error',
+              'An exception occurred when calling the ChemProps API service.'
+            )
           }
           this.resetLoading()
         })
@@ -200,9 +222,22 @@ export default {
       }
       this.smilesError = true
       console.log('SmilesTest - error: ' + this.smilesMessage)
+    },
+    renderDialog (title, content, minWidth) {
+      this.dialog = {
+        title,
+        content,
+        minWidth
+      }
+      this.toggleDialogBox()
     }
   },
   created () {
     this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'ChemProps' })
+  },
+  computed: {
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox'
+    })
   }
 }

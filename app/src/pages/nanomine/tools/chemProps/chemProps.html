@@ -1,12 +1,12 @@
 <div class="chemprops">
   <div class="wrapper md-layout md-alignment-top-center md-gutter">
-    <!-- <md-dialog
-      v-model="submitError"
-      type="error"
-      outline
-      >
-      {{loginRequiredMsg}}
-    </md-dialog> -->
+    <dialogbox :active="dialogBoxActive">
+      <template v-slot:title>{{ dialog.title }}</template>
+      <template v-slot:content>{{ dialog.content }}</template>
+      <template v-slot:actions>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialogbox>
     <div class="team_header md-layout-item md-size-66">
       <h1 class="visualize_header-h1 teams_header">ChemProps - A growing polymer name and filler name standardization database</h1>
     </div>
@@ -26,9 +26,7 @@
         You must be logged in to request the ChemProps API token.
       </p>
     </div>
-    <router-link to="/nm/ChemPropsAPIToken" class="md-layout-item md-size-66">
-      <md-button class="md-primary">Request API Token</md-button>
-    </router-link>
+    <md-button to="/nm/ChemPropsAPIToken" class="md-layout-item md-size-66 md-primary">Request API Token</md-button>
     <div class="md-layout-item md-size-66">
       <h1>Instructions</h1>
     </div>
@@ -60,13 +58,6 @@
             <md-input id="fullSearch" v-if="pfRadios === 'pol'" v-model="tradename" placeholder="Enter the tradename (optional):"></md-input>
           </md-field>
         </div>
-        <!-- <md-dialog
-          v-model="searchError"
-          type="error"
-          dismissible
-          >
-          {{searchErrorMsg}}
-        </md-dialog> -->
         <md-button type="submit" class="md-primary" form="submit-chemprops-form">Search</md-button>
       </ol>
     </form>
@@ -88,7 +79,7 @@
           <md-input id="uSMILES" v-model="uSMILES" v-if="pfRadios === 'pol'" readonly></md-input>
         </md-field>
         <p v-if="pfRadios === 'pol'">Structure
-          <!-- <Smiles :smilesOptions="smilesOptions" :smilesInput="inputStr" :formulaHandler="formulaUpdated" :onSuccessHandler="onSuccess" :onErrorHandler="onError" height="100%" width="100%"></Smiles> -->
+          <smiles-canvas :smilesOptions="smilesOptions" :smilesInput="inputStr" :formulaHandler="formulaUpdated" :onSuccessHandler="onSuccess" :onErrorHandler="onError" height="100%" width="100%"></smiles-canvas>
         </p>
         <p v-if="pfRadios === 'pol'">Formula: {{molecularFormula}}
         </p>
