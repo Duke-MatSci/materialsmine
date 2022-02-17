@@ -1,5 +1,3 @@
-// use as object.[queryName]
-
 const commonPrefixes = `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX dct: <http://purl.org/dc/terms/>
@@ -8,7 +6,7 @@ PREFIX mm: <http://materialsmine.org/ns/>
 PREFIX prov: <http://www.w3.org/ns/prov#>`;
 
 export default {
-  classQuery: (
+  header: (
     sampleId
   ) => `${commonPrefixes}SELECT DISTINCT (REPLACE(STR(?doi),"http://dx.doi.org/","") AS ?DOI) ?sample_label ?process_label WHERE {
   ?sample a mm:PolymerNanocomposite ;
@@ -20,7 +18,7 @@ export default {
   FILTER(REGEX(STR(?ProcessType),"materialsmine"))
 } VALUES ?sample {<http://materialsmine.org/sample/${sampleId}>}`,
 
-  curatedPropertiesQuery: (
+  curatedProperties: (
     sampleId
   ) => `${commonPrefixes}SELECT DISTINCT ?AttrType ?value (GROUP_CONCAT(DISTINCT ?unit; SEPARATOR="; ") AS ?Units) WHERE {
       ?sample a mm:PolymerNanocomposite ;
@@ -34,7 +32,7 @@ export default {
     } GROUP BY ?attr ?AttrType ?value 
     VALUES ?sample { <http://materialsmine.org/sample/${sampleId}> }`,
 
-  imagesQuery: (sampleId) => `${commonPrefixes}SELECT DISTINCT * WHERE {
+  sampleImages: (sampleId) => `${commonPrefixes}SELECT DISTINCT * WHERE {
     ?sample a mm:PolymerNanocomposite ;
             sio:isRepresentedBy ?image .
     ?image a sio:Image .
@@ -43,7 +41,7 @@ export default {
     FILTER(!REGEX(STR(?image),"nanomine"))
   } VALUES ?sample { <http://materialsmine.org/sample/${sampleId}>}`,
 
-  materialComponentQuery: (
+  materialComponents: (
     sampleId
   ) => `${commonPrefixes}SELECT DISTINCT ?std_name ?role ?attrType ?attrValue (GROUP_CONCAT(DISTINCT ?AttrUnit; SEPARATOR="; ") AS ?attrUnits) ?fullLabel WHERE {
     {
@@ -76,7 +74,7 @@ export default {
   } GROUP BY ?std_name ?role ?attrType ?attrValue ?fullLabel ORDER BY ?std_name ?role ?AttrType
   VALUES ?sample {<http://materialsmine.org/sample/${sampleId}>}`,
 
-  processingStepsQuery: (
+  processingSteps: (
     sampleId
   ) => `${commonPrefixes}SELECT ?step ?param_label (GROUP_CONCAT(?ParamDescr; SEPARATOR="; ") AS ?Descr)
   WHERE {
@@ -106,16 +104,14 @@ export default {
     BIND(IF(BOUND(?unit_label), CONCAT(?attr, ": ", ?value, " ", ?unit_label), CONCAT(?attr, ": ", ?value)) AS ?ParamDescr)
   } GROUP BY ?step ?param_label ORDER BY ?step`,
 
-  otherSamplesQuery: (
-    sampleId
-  ) => `${commonPrefixes}SELECT DISTINCT ?sample WHERE {
+  otherSamples: (sampleId) => `${commonPrefixes}SELECT DISTINCT ?sample WHERE {
     ?doi sio:hasPart ?this, ?sample .
     ?sample a mm:PolymerNanocomposite .
     FILTER(?this != ?sample)
   } 
   VALUES ?this { <http://materialsmine.org/sample/${sampleId}>}`,
 
-  titleQuery: (sampleId) => `${commonPrefixes}
+  processLabel: (sampleId) => `${commonPrefixes}
   SELECT DISTINCT (REPLACE(STR(?doi),"http://dx.doi.org/","") AS ?DOI) ?sample_label ?process_label WHERE {
     ?sample a mm:PolymerNanocomposite ;
             rdfs:label ?sample_label ;
