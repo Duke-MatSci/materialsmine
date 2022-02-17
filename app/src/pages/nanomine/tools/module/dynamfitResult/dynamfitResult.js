@@ -1,8 +1,12 @@
 // import Axios from 'axios'
 import {} from 'vuex'
+import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 
 export default {
   name: 'DynamfitResult',
+  components: {
+    ReferenceContainer
+  },
   data () {
     return {
       resultsError: false,
@@ -21,10 +25,10 @@ export default {
   },
   methods: {
     setLoading: function () {
-      this.$store.commit('isLoading')
+      // this.$store.commit('isLoading')
     },
     resetLoading: function () {
-      this.$store.commit('notLoading')
+      // this.$store.commit('notLoading')
     },
     getEImage: function () {
       return this.$route.query.ref + '/' + this.Eimg
@@ -54,8 +58,16 @@ export default {
         this.resetLoading()
         return
       }
-
-      const myOutputParams = await response.json()
+      var myOutputParams
+      try {
+        myOutputParams = await response.json()
+      } catch (err) {
+        console.log(err)
+        this.resultsErrorMsg = 'Error retrieving result.'
+        this.resultsError = true
+        this.resetLoading()
+        return
+      }
       console.log(myOutputParams)
       this.Eimg = myOutputParams.Eimg
       this.EEimg = myOutputParams.EEimg
