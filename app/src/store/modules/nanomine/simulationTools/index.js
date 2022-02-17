@@ -38,7 +38,11 @@ export default {
           'Institute.',
           display: false
         }
-      ]
+      ],
+      title: 'Material Property Simulation',
+      description: 'We provide online version of physics-based simulation tools that take advantage of our most recent ' +
+      'development in viscoelasticity and dielectric relaxation theories for interphase analysis in nanocomposites, ' +
+      'statistical structure-property correlation models, as well as materials optimization methods.'
     }
   },
   getters

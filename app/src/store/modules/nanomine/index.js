@@ -1,9 +1,13 @@
 import howtoModule from './howto/index.js'
-import toolsModule from './tools/index.js'
+import moduleToolsModule from './moduleTools/index'
+import simulationToolsModule from './simulationTools/index'
+import chemPropsModule from './chemProps/index'
 
 export default {
   modules: {
     howto: howtoModule,
-    tools: toolsModule
+    moduleTools: moduleToolsModule,
+    simulationTools: simulationToolsModule,
+    chemProps: chemPropsModule
   }
 }
