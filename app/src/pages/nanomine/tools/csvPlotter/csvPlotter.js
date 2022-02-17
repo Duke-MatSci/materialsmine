@@ -42,11 +42,12 @@ export default {
       this.data = []
       this.dataset = this.dataset = {
         data: [],
-        xlabel: this.xlabel,
-        ylabel: this.ylabel
+        xlabel: '',
+        ylabel: ''
       }
       this.xlabel = ''
       this.ylabel = ''
+      document.getElementById('assetsFieldHandle').value = ''
     },
     onChange () {
       this.csv = this.$refs.myUpload.files[0]

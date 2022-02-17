@@ -249,16 +249,9 @@ export default {
         // this.renderYGrid();
         this.renderAxes()
         this.renderLine()
-      } else {
-        this.reset()
       }
       // this.initToolTip();
       // this.renderArea();
-    },
-    reset () {
-      d3.select('.nm-line').attr('d', '')
-      d3.select('.x-axis-label').text('')
-      d3.select('.y-axis-label').text('')
     }
   },
   watch: {

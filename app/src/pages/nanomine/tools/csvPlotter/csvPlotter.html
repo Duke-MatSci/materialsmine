@@ -36,7 +36,7 @@
       </div>
     </md-content>
     <!-- Line chart -->
-    <md-content id="viz" md-elevation-7 class="md-layout-item md-size-66 chart">
+    <md-content id="viz" md-elevation-7 class="md-layout-item md-size-66 chart" :key="csvName">
       <nm-linechart
         :options="{ width: 500, height: 400 }"
         :dataset="dataset"
