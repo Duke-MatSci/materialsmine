@@ -30,11 +30,11 @@ export default {
   name: 'pagination',
   props: {
     cpage: Number,
-    tpages: Number,
+    tpages: Number
   },
   methods: {
     goToPage (page) {
-      if (page != this.cpage) {
+      if (page !== this.cpage) {
         this.$emit('go-to-page', page)
       }
     },

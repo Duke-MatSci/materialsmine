@@ -117,11 +117,10 @@ export default {
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
     reduceDescription (args) {
-      let arr, arrSplice, res
-      arr = args.split(' ')
+      const arr = args.split(' ')
       arr.splice(15)
-      arrSplice = arr.reduce((a, b) => `${a} ${b}`, '')
-      res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '')
+      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       return `${res}...`
     },
     deleteChart (chart) {
@@ -135,7 +134,7 @@ export default {
   },
   async mounted () {
     await this.loadItems()
-  },
+  }
 }
 </script>
 <style lang="scss" scoped>

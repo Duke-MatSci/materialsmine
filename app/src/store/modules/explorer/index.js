@@ -7,7 +7,7 @@ import gallery from './gallery'
 export default {
   namespaced: true,
   modules: {
-    gallery,
+    gallery
   },
   state () {
     return {
