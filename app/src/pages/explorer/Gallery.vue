@@ -82,7 +82,7 @@
   </div>
 </template>
 <script>
-import spinner from '@/components/spinner'
+import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { mapGetters, mapActions } from 'vuex'
