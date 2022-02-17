@@ -1,4 +1,72 @@
-<template src="./lineChart.html"></template>
+<template>
+<div class="md-layout">
+  <div
+    class="md-layout-item md-size-20 md-alignment-top-left md-layout md-gutter"
+  >
+    <div class="md-layout-item">
+      <md-switch v-model="xLogScale" class="md-layout-item md-size-100"
+        >x Axis Log Scale</md-switch
+      >
+      <md-switch v-model="yLogScale" class="md-layout-item md-size-100"
+        >y Axis Log Scale</md-switch
+      >
+    </div>
+  </div>
+  <div class="md-layout-item">
+    <svg
+      :width="width + margin.left + margin.right"
+      :height="height + margin.top + margin.bottom"
+      class="nm-linechart"
+    >
+      <g :transform="`translate(${margin.left + 3}, ${10})`">
+        <!-- Axes -->
+        <g class="x-axis" :transform="`translate(0, ${height})`"></g>
+        <g class="y-axis"></g>
+        <!-- Axis Labels -->
+        <g>
+          <text
+            class="x-axis-label"
+            :transform="`translate(${width/2}, ${height+margin.top+20})`"
+            style="text-anchor: middle"
+          ></text>
+          <text
+            class="y-axis-label"
+            :transform="`rotate(-90)`"
+            :y="`${0 - margin.left}`"
+            :x="`${0 - (height/2)}`"
+            :dy="`1em`"
+            style="text-anchor: middle"
+          ></text>
+        </g>
+        <!-- Line -->
+        <g>
+          <path class="nm-line" d=""></path>
+          <!-- <path class="gf-area"></path> -->
+        </g>
+
+        <!-- Grids -->
+        <!--       <g>
+        <g class="gf-x-grid grid" :transform="`translate(0, ${height})`"></g>
+        <g class="gf-y-grid grid"></g>
+      </g> -->
+
+        <!-- Tooltip -->
+        <!-- <rect :width="width" :height="height" class="overlay"></rect>
+        <g class="focus">
+          <rect
+          width="100"
+          height="30"
+          class="tooltip"
+          y="0"
+          rx="4"
+          ry="4"
+          ></rect>
+        </g> -->
+      </g>
+    </svg>
+  </div>
+</div>
+</template>
 
 <script>
 import * as d3 from 'd3'

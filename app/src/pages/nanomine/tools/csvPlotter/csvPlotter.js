@@ -1,6 +1,6 @@
 import {} from 'vuex'
 // import { max } from 'd3'
-import LineChart from './LineChart'
+import LineChart from '@/components/nanomine/LineChart'
 // import { Auth } from '@/modules/Auth.js'
 export default {
   name: 'CurationPlot',
