@@ -14,13 +14,36 @@ const nanomineRoutes = [
   {
     path: 'modtools',
     name: 'ModuleTools',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/ModuleTools.vue'),
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+    props: route => ({ toolProp: 'ModuleTools' }),
     meta: { requiresAuth: false }
   },
   {
     path: 'mcr_homepage',
     name: 'MCRHomepage',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/mcrTools/McrHomepage.vue'),
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+    props: route => ({ toolProp: 'MCRTools' }),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'binarization_homepage',
+    name: 'BinarizationHomepage',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+    props: route => ({ toolProp: 'BinarizationTools' }),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'characterization_homepage',
+    name: 'CharacterizationHomepage',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+    props: route => ({ toolProp: 'CharacterizationTools' }),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'reconstruction_homepage',
+    name: 'ReconstructionHomepage',
+    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+    props: route => ({ toolProp: 'ReconstructionTools' }),
     meta: { requiresAuth: false }
   },
   {

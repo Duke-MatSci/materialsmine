@@ -1,19 +1,27 @@
 import ToolCard from '@/components/nanomine/ToolCard'
+import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 
 export default {
   name: 'ModuleTools',
   components: {
-    ToolCard
+    ToolCard,
+    ReferenceContainer
+  },
+  props: {
+    tool: {
+      type: String,
+      required: true
+    }
   },
   data: () => {
     return {
-      tools: []
+      pageContent: {}
     }
   },
   created () {
     this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'Tools' })
   },
   mounted () {
-    this.tools = this.$store.getters.moduleTools
+    this.pageContent = this.$store.getters[`${this.tool}/pageContent`]
   }
 }

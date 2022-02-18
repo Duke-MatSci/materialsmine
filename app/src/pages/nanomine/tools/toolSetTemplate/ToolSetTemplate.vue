@@ -1,5 +1,5 @@
-<template src="./moduleTools.html"></template>
-<script src="./moduleTools.js"></script>
+<template src="./toolSetTemplate.html"></template>
+<script src="./toolSetTemplate.js"></script>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
   img {
