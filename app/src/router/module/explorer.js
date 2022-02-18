@@ -46,7 +46,7 @@ const explorerRoutes = [
   {
     path: 'sample/:label',
     name: 'SampleView',
-    component: () => import('@/pages/explorer/Sample.vue'),
+    component: () => import('@/pages/explorer/sample/Sample.vue'),
     meta: { requiresAuth: false }
   }
 ]

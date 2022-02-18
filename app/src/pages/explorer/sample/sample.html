@@ -1,0 +1,58 @@
+<div class="sample-view">
+  <spinner v-if="loading" :loading="loading" :text="'Loading sample page'" />
+  <div v-else>
+    <div v-if="header" data-test="sample_label">
+      <h1>{{ this.$route.params.label }}</h1>
+      <span>{{ header.sample_label }}</span>
+      <span>{{ header.process_label }}</span>
+      <div data-test="DOI">DOI: {{ header.DOI }}</div>
+    </div>
+    <div v-if="materialComponents">
+      <h2>Material Components and Attributes</h2>
+      <ul v-for="material in materialComponents" :key="material.class">
+        <li>Class: {{ material.class }}</li>
+        <li>Role: {{ material.role }}</li>
+        <li v-for="property in material.materialProperties" :key="property.type">
+          <span>{{ property.type }}</span>:
+          <span>{{ property.value }}</span>
+          <span>{{ property.units }}</span>
+        </li>
+      </ul>
+    </div>
+    <div v-if="sampleImages">
+      <h2>Sample Images</h2>
+
+      <img data-test="sample_image" v-for="image in sampleImages" :key="image.src" :src="image.src" :alt="image.alt" />
+    </div>
+    <div v-if="curatedProperties">
+      <h2>Curated Properties of Nanocomposite Sample</h2>
+      <div>Scalar attributes:</div>
+      <ul>
+        <li v-for="property in curatedProperties" :key="property.type + property.value">
+          <span>{{ property.type }}:</span>
+          <span>{{ property.value }}</span>
+          <span>{{ property.units }}</span>
+        </li>
+      </ul>
+    </div>
+    <div v-if="processingSteps && processLabel">
+      <h2>Curated Processing Steps and Parameters</h2>
+      <div>Class: {{ processLabel }}</div>
+      <div>Processing Steps:</div>
+      <ul>
+        <li v-for="step in processingSteps" :key="step.description">
+          <span>{{ step.parameterLabel }}</span>
+          {{ step.description }}
+        </li>
+      </ul>
+    </div>
+    <div v-if="otherSamples">
+      <h2>Other Samples from this Research Article</h2>
+      <div>
+        <router-link style="display: block" :to="`/explorer/sample/${link}`" v-for="link in otherSamples" :key="link">
+          {{ link }}
+        </router-link>
+      </div>
+    </div>
+  </div>
+</div>
