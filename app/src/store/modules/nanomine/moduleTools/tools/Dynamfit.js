@@ -9,6 +9,13 @@ export default {
         name: 'MaterialsMine',
         subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
+      toolName: 'Dynamfit',
+      toolLink: '/mm/Dynamfit',
+      toolTitle: 'Dynamfit',
+      toolText: 'Dynamfit is a sign control algorithm for Prony Series fitting. This program fits a viscoelastic mastercurve from DMA ' +
+      'experiments with a Prony Series. The Prony Series coefficients can be used as baseline properties for the matrix in a FEA simulation ' +
+      'of nanocomposites.',
+      displayTool: true,
       references: [
         {
           authors: 'Bradshaw et al.',
