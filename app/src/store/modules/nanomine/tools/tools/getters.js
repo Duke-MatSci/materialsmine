@@ -22,6 +22,8 @@ export default {
       name: state.toolName,
       link: state.toolLink,
       linkText: state.linkText,
+      externalLink: state.externalLink,
+      imageFile: state.toolImageFile,
       title: state.toolTitle,
       text: state.toolText,
       display: state.displayTool,

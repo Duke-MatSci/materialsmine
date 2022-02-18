@@ -8,6 +8,7 @@ import OtsuBinarization from './OtsuBinarization'
 import SDFCharacterize from './SDFCharacterize'
 import SDFReconstruct from './SDFReconstruct'
 import TransferLearning from './TransferLearning'
+import Dynamfit from './Dynamfit'
 
 export default {
   modules: {
@@ -20,6 +21,7 @@ export default {
     OtsuBinarization,
     SDFCharacterize,
     SDFReconstruct,
-    TransferLearning
+    TransferLearning,
+    Dynamfit
   }
 }
