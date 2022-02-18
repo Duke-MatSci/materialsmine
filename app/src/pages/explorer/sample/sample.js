@@ -25,18 +25,21 @@ export default {
       return await querySparql(query(sampleId))
     },
     parseHeader (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const [sampleData] = parsedData
       return sampleData
     },
     parseOtherSamples (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const links = parsedData.map(({ sample }) => sample.split('/').pop())
       return links
     },
     parseProcessLabel (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const [processLabelObject] = parsedData
@@ -44,6 +47,7 @@ export default {
       return processLabel
     },
     parseMaterialData (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const seen = new Set()
@@ -82,6 +86,7 @@ export default {
       return filteredArr
     },
     parseCuratedProperties (data) {
+      if (!data) return null
       const parseData = parseSPARQL(data)
       if (!parseData.length) return null
       const curatedProperties = parseData.map((property) => {
@@ -99,6 +104,7 @@ export default {
       return curatedProperties
     },
     parseProcessingSteps (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const steps = parsedData.map(
@@ -109,6 +115,7 @@ export default {
       return steps
     },
     parseSampleImages (data) {
+      if (!data) return null
       const parsedData = parseSPARQL(data)
       if (!parsedData.length) return null
       const images = parsedData.map((item) => {
