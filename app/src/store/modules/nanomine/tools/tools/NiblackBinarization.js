@@ -4,12 +4,12 @@ export default {
   state () {
     return {
       toolName: 'Niblack',
-      link: '/nm/Niblack',
+      toolLink: '/nm/Niblack',
       linkText: 'Use Niblack Binarization Webtool',
-      title: "Niblack's Method",
-      text: "Niblack's method is an adaptive thresholding algorithm which calculates a pixel-wise threshold by sliding " +
+      toolTitle: "Niblack's Method",
+      toolText: "Niblack's method is an adaptive thresholding algorithm which calculates a pixel-wise threshold by sliding " +
     'a rectangular window over the image. It works well for gray-level images with low contrast between filler and matrix material.',
-      display: true,
+      displayTool: true,
       jobTitle: 'Niblack',
       pageTitle: 'Binarization - Niblack Method',
       description: [
