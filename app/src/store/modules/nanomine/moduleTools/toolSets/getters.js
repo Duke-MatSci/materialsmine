@@ -1,5 +1,5 @@
 export default {
-  toolCardContent (state, getters, rootState, rootGetters) {
+  toolsCardContent (state, getters, rootState, rootGetters) {
     const contentList = {}
     if (state.toolSets) {
       for (const toolSet of state.toolSets) {
@@ -36,5 +36,13 @@ export default {
       }
     }
     return referenceList
+  },
+  pageContent (state, getters) {
+    return {
+      title: state.toolSetTitle,
+      text: state.pageDescription,
+      cards: getters.toolsCardContent,
+      references: getters.references
+    }
   }
 }
