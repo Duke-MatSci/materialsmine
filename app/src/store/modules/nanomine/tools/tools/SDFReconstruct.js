@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'SDFReconstruct',
-      toolLink: '/mm/SDFReconstruct',
+      toolLink: '/nm/SDFReconstruct',
       linkText: 'Use Spectral Density Function Webtool',
       toolTitle: 'Spectral Density Function',
       toolText: 'The reconstruction method involves level-cutting a Gaussian Random Field which has the same spectral density function ' +

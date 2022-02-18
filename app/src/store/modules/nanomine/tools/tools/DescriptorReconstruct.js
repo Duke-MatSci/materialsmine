@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'DescriptorReconstruct',
-      toolLink: '/mm/DescriptorReconstruct',
+      toolLink: '/nm/DescriptorReconstruct',
       linkText: 'Use Physical Descriptor Webtool',
       toolTitle: 'Physical Descriptors',
       toolText: 'This webtool creates a 3D reconstruction from the 2D input image. It follows a four step hierarchical reconstruction ' +

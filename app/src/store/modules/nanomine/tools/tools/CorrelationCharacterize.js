@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'CorrelationCharacterize',
-      toolLink: '/mm/CorrelationCharacterize',
+      toolLink: '/nm/CorrelationCharacterize',
       linkText: 'Use Correlation Function Webtool',
       toolTitle: 'Correlation Functions',
       toolText: 'They are statistical descriptors that quantitatively connect the macroscopic properties of a heterogeneous image ' +

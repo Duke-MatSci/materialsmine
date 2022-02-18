@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'SDFCharacterize',
-      toolLink: '/mm/SDFCharacterize',
+      toolLink: '/nm/SDFCharacterize',
       linkText: 'Use Spectral Density Function Webtool',
       toolTitle: 'Spectral Density Function',
       toolText: 'The Spectral Density Function (SDF) is a frequency domain microstructure representation where different frequencies ' +

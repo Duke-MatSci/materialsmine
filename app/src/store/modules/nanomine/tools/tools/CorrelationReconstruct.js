@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'CorrelationReconstruct',
-      toolLink: '/mm/CorrelationReconstruct',
+      toolLink: '/nm/CorrelationReconstruct',
       linkText: 'Use Correlation Function Webtool',
       toolTitle: 'Correlation Functions',
       toolText: 'Reconstruction using correlation functions employs the Yeong-Torquato method which involves Simulated Annealing based ' +

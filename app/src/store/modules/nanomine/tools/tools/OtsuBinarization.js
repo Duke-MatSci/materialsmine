@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'Otsu',
-      toolLink: '/mm/Otsu',
+      toolLink: '/nm/Otsu',
       linkText: "Use Otsu's Binarization Webtool",
       toolTitle: "Otsu's Method",
       toolText: "Otsu's thresholding method involves iterating through all the possible threshold values and calculating a " +
