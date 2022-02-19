@@ -13,16 +13,17 @@
         <div style="text-align:right"> Query "{{searchWord}}" found 12345 results </div>
         </md-card>
         <md-tabs class="btn--primary">
-            <md-tab :md-label="'Articles (' + articles + ')'"></md-tab>
-            <md-tab :md-label="'Samples (' + samples + ')'"></md-tab>
-            <md-tab :md-label="'Images (' + images + ')'"></md-tab>
-            <md-tab :md-label="'Charts (' + charts + ')'"></md-tab>
-            <md-tab :md-label="'Materials (' + materials + ')'"></md-tab>
-            <!-- <md-tab :md-label="'Other (' + other + ')'"></md-tab> -->
+            <md-tab :md-label="'Articles (' + articles + ')'" @click="setResultsTab('Articles')"></md-tab>
+            <md-tab :md-label="'Samples (' + samples + ')'" @click="setResultsTab('Samples')"></md-tab>
+            <md-tab :md-label="'Images (' + images + ')'" @click="setResultsTab('Images')"></md-tab>
+            <md-tab :md-label="'Charts (' + charts + ')'" @click="setResultsTab('Charts')"></md-tab>
+            <md-tab :md-label="'Materials (' + materials + ')'" @click="setResultsTab('Materials')"></md-tab>
+            <!-- <md-tab :md-label="'Other (' + other + ')'" @click="setResultsTab('Other')"></md-tab> -->
         </md-tabs>
     </div>
 </template>
 <script>
+import { mapMutations } from 'vuex'
 export default {
   name: 'SearchHeader',
   props: ['searchEnabled'],
@@ -53,6 +54,9 @@ export default {
     // other () {
     //   return 0
     // }
+  },
+  methods: {
+    ...mapMutations( 'explorer', ['setResultsTab']),
   }
 }
 </script>

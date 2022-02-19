@@ -2,6 +2,9 @@ export default {
   setMenuVisible (state) {
     state.toggleMenuVisibility = !state.toggleMenuVisibility
   },
+  setResultsTab (state, payload) {
+    state.resultsTab = payload
+  },
   setSearchKeyword (state, payload) {
     state.searchKeyword = payload
   },
