@@ -25,31 +25,27 @@ export default {
       return await querySparql(query(sampleId))
     },
     parseHeader (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const [sampleData] = parsedData
       return sampleData
     },
     parseOtherSamples (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const links = parsedData.map(({ sample }) => sample.split('/').pop())
       return links
     },
     parseProcessLabel (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const [processLabelObject] = parsedData
       const { process_label: processLabel } = processLabelObject
       return processLabel
     },
     parseMaterialData (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const seen = new Set()
       const filteredArr = parsedData
         .filter((item) => {
@@ -86,7 +82,7 @@ export default {
       return filteredArr
     },
     parseCuratedProperties (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parseData = parseSPARQL(data)
       if (!parseData.length) return null
       const curatedProperties = parseData.map((property) => {
@@ -104,9 +100,8 @@ export default {
       return curatedProperties
     },
     parseProcessingSteps (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const steps = parsedData.map(
         ({ param_label: parameterLabel, Descr: description }) => {
           return { parameterLabel, description }
@@ -115,9 +110,8 @@ export default {
       return steps
     },
     parseSampleImages (data) {
-      if (!data) return null
+      if (!data || data.length === 0) return null
       const parsedData = parseSPARQL(data)
-      if (!parsedData.length) return null
       const images = parsedData.map((item) => {
         return { src: item.image, alt: item.sample }
       })
@@ -125,7 +119,6 @@ export default {
     },
     async fetchSamplePageData () {
       this.loading = true
-      // es 11
       await Promise.allSettled([
         this.fetchData(sampleQueries.materialComponents),
         this.fetchData(sampleQueries.curatedProperties),
@@ -136,7 +129,6 @@ export default {
         this.fetchData(sampleQueries.header)
       ])
         .then((res) => {
-          console.log(res)
           const data = res.map((promise) => {
             if (promise.status === 'fulfilled') return promise.value
             console.error(promise.reason)
@@ -169,8 +161,6 @@ export default {
     $route: 'fetchSamplePageData'
   },
   created () {
-    console.log('before')
     this.fetchSamplePageData()
-    console.log('after')
   }
 }
