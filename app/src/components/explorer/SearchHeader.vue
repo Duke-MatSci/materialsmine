@@ -56,7 +56,7 @@ export default {
     // }
   },
   methods: {
-    ...mapMutations( 'explorer', ['setResultsTab']),
+    ...mapMutations('explorer', ['setResultsTab'])
   }
 }
 </script>
