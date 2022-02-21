@@ -1,7 +1,11 @@
 import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
+import Spinner from '@/components/Spinner'
 
 export default {
   name: 'Article',
+  components: {
+    'loading-spinner': Spinner
+  },
   data () {
     return {
       toggleMenuVisibility: false,

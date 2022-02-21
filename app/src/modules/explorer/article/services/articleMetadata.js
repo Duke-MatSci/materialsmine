@@ -106,7 +106,6 @@ async function fetchSemanticScholarResponse (doi, path, fields) {
 
   try {
     const rawResponse = await fetch(requestURL)
-    console.log(`${rawResponse.statusText}: Retrieved ${semanticScholarQueryBase} from SemanticScholar`)
     const JSONResponse = await rawResponse.json()
 
     // pass along important Response properties returned by fetch() too, it
@@ -119,7 +118,6 @@ async function fetchSemanticScholarResponse (doi, path, fields) {
     }
   } catch (error) {
     if (error instanceof TypeError) { // fetch throws TypeErrors for network issues
-      console.log(`Error retrieving ${semanticScholarQueryBase} from SemanticScholar: ${error.message}`)
       // mock the important Response properties for ease of use
       return {
         ok: false,

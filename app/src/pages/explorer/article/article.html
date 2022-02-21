@@ -68,7 +68,7 @@
       </div>
     </div>
     <div v-else-if="loading && !error.article" class="wrapper article_error" key="article_loading">
-      <h1>Loading...</h1>
+      <loading-spinner :loading="loading && !error.article" key="article_loading"></loading-spinner>
     </div>
     <div v-else class="wrapper article_title" key="article_title article_error">
       <h1>Error retrieving this article.</h1>
