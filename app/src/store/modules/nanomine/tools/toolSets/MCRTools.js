@@ -20,7 +20,7 @@ export default {
       'of polymer nanocomposites. All webtools accept inputs in multiple formats and allow download of results. Please click on the ' +
       'appropriate button.',
       toolSetImageFile: 'nanomine/recon_tool.png',
-      toolSetLink: '/nm/mcr_homepage',
+      toolSetLink: 'mcr_homepage',
       displayToolSet: true,
       tools: [
         'IntelligentCharacterize'

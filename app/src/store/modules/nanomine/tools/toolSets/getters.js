@@ -16,7 +16,7 @@ export default {
   cardContent (state, getters) {
     return {
       name: state.toolSetName,
-      link: state.toolSetLink,
+      link: state.externalLink ? state.toolSetLink : `/nm/tools/${state.toolSetLink}`,
       imageFile: state.toolSetImageFile,
       title: state.toolSetTitle,
       text: state.toolSetDescription,

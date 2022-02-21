@@ -12,7 +12,7 @@ export default {
       },
       toolSetImageFile: 'nanomine/Microstructure_Reconstruction.png',
       toolSetName: 'ReconstructionTools',
-      toolSetLink: '/nm/reconstruction_homepage',
+      toolSetLink: 'reconstruction_homepage',
       toolSetTitle: 'Microstructure Reconstruction',
       toolSetDescription: 'Reconstruction involves constructing a statistically equivalent microstructure image' +
         'given some statistical characterization. In most cases,' +

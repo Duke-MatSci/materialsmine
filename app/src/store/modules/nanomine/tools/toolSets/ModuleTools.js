@@ -14,6 +14,7 @@ export default {
       pageDescription: 'Statistical learning and analysis modules include web and downloadable packages that can be used to pre-process ' +
       'and analyze structure and material property data. Each of the modules will specify the required input format and output data, and provide ' +
       'a brief introduction behind the mechanism of the algorithm.',
+      toolSetLink: 'module_homepage',
       tools: [
         'Dynamfit'
       ],

@@ -11,7 +11,7 @@ export default {
         subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
       toolName: 'Dynamfit',
-      toolLink: '/nm/Dynamfit',
+      toolLink: 'Dynamfit',
       toolTitle: 'Dynamfit',
       toolImageFile: 'nanomine/dynamfit.png',
       toolText: 'Dynamfit is a sign control algorithm for Prony Series fitting. This program fits a viscoelastic mastercurve from DMA ' +

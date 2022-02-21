@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'Niblack',
-      toolLink: '/nm/Niblack',
+      toolLink: 'Niblack',
       linkText: 'Use Niblack Binarization Webtool',
       toolTitle: "Niblack's Method",
       toolText: "Niblack's method is an adaptive thresholding algorithm which calculates a pixel-wise threshold by sliding " +

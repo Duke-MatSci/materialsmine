@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'DescriptorCharacterize',
-      toolLink: '/nm/DescriptorCharacterize',
+      toolLink: 'DescriptorCharacterize',
       linkText: 'Use Physical Descriptor Webtool',
       toolTitle: 'Physical Descriptors',
       toolText: 'Physical descriptors (aka features/predictors) provide a meaningful and convenient approach for direct elucidation ' +

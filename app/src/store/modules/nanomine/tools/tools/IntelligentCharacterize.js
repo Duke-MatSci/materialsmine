@@ -4,7 +4,7 @@ export default {
   state () {
     return {
       toolName: 'IntelligentCharacterize',
-      toolLink: '/nm/IntelligentCharacterize',
+      toolLink: 'IntelligentCharacterize',
       toolImageFile: 'nanomine/Intelligent_Characterization.png',
       toolTitle: 'Correlation Functions',
       toolText: 'The intelligent characterization tool selects the most suitable characterization method between the “physical descriptors” ' +

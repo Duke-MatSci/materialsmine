@@ -16,7 +16,7 @@ export default {
         '(assuming there are only 2 phases) by removing noise and thus simplifying its analysis.' +
         'All Characterization and Reconstruction algorithms work with binarized images only.',
       toolSetImageFile: 'nanomine/Image_Binarization.png',
-      toolSetLink: '/nm/binarization_homepage',
+      toolSetLink: 'binarization_homepage',
       displayToolSet: true,
       pageDescription: 'Choose the Binarization method from the options below.',
       tools: [

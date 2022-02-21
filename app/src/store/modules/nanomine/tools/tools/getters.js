@@ -20,7 +20,7 @@ export default {
   cardContent (state) {
     return {
       name: state.toolName,
-      link: state.toolLink,
+      link: state.externalLink ? state.toolLink : `/nm/tools/${state.toolLink}`,
       linkText: state.linkText,
       externalLink: state.externalLink,
       imageFile: state.toolImageFile,

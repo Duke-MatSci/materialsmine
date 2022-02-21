@@ -19,7 +19,7 @@ export default {
         'and serve as the basis for reconstruction algorithms.' +
         'Upload a binarized microstructure image / set of images and obtain characterization data of your choice.',
       toolSetImageFile: 'nanomine/Microstructure_Characterization.png',
-      toolSetLink: '/nm/characterization_homepage',
+      toolSetLink: 'characterization_homepage',
       displayToolSet: true,
       pageDescription: 'Choose the characterization method from the options below. Note that uploaded images will be binarized using Otsu method',
       tools: [
