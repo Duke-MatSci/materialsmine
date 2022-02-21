@@ -25,27 +25,31 @@ export default {
       return await querySparql(query(sampleId))
     },
     parseHeader (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const [sampleData] = parsedData
       return sampleData
     },
     parseOtherSamples (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const links = parsedData.map(({ sample }) => sample.split('/').pop())
       return links
     },
     parseProcessLabel (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const [processLabelObject] = parsedData
       const { process_label: processLabel } = processLabelObject
       return processLabel
     },
     parseMaterialData (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const seen = new Set()
       const filteredArr = parsedData
         .filter((item) => {
@@ -82,8 +86,9 @@ export default {
       return filteredArr
     },
     parseCuratedProperties (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parseData = parseSPARQL(data)
+      if (parseData.length === 0) return null
       if (!parseData.length) return null
       const curatedProperties = parseData.map((property) => {
         const { AttrType, value, Units: units } = property
@@ -100,8 +105,9 @@ export default {
       return curatedProperties
     },
     parseProcessingSteps (data) {
-      if (!data || data.length === 0) return null
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const steps = parsedData.map(
         ({ param_label: parameterLabel, Descr: description }) => {
           return { parameterLabel, description }
@@ -110,8 +116,10 @@ export default {
       return steps
     },
     parseSampleImages (data) {
-      if (!data || data.length === 0) return null
+      console.log(data)
+      if (!data) return null
       const parsedData = parseSPARQL(data)
+      if (parsedData.length === 0) return null
       const images = parsedData.map((item) => {
         return { src: item.image, alt: item.sample }
       })
