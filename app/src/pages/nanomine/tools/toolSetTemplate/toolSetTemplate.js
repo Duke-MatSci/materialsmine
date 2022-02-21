@@ -2,7 +2,7 @@ import ToolCard from '@/components/nanomine/ToolCard'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 
 export default {
-  name: 'ModuleTools',
+  name: 'ToolSetTemplate',
   components: {
     ToolCard,
     ReferenceContainer
@@ -13,7 +13,7 @@ export default {
       required: true
     }
   },
-  data: () => {
+  data: function () {
     return {
       pageContent: {}
     }
@@ -22,11 +22,28 @@ export default {
     this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'Tools' })
   },
   mounted () {
-    this.pageContent = this.$store.getters[`${this.tool}/pageContent`]
+    this.getPageContent()
   },
   computed: {
     tool: function () {
       return this.toolProp
+    },
+    toolName: function () {
+      if (this.pageContent) {
+        return this.pageContent.name || ''
+      } else {
+        return this.toolProp
+      }
+    }
+  },
+  methods: {
+    getPageContent () {
+      this.pageContent = this.$store.getters[`${this.tool}/pageContent`]
+    }
+  },
+  watch: {
+    $route (to, from) {
+      this.getPageContent()
     }
   }
 }
