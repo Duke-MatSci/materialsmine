@@ -74,7 +74,7 @@ export default {
         downloading: false
       },
       auth: {
-        // auth mocked because auth is not yet implemented
+        // AUTH MOCKED because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
       }
