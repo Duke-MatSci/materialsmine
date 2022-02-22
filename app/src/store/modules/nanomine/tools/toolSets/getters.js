@@ -28,12 +28,18 @@ export default {
     const referenceList = []
     if (state.tools) {
       for (const tool of state.tools) {
-        referenceList.push(...rootGetters[`${tool}/references`])
+        const newRefs = rootGetters[`${tool}/references`]
+        if (newRefs) {
+          referenceList.push(...newRefs)
+        }
       }
     }
     if (state.toolSets) {
       for (const toolSet of state.toolSets) {
-        referenceList.push(...rootGetters[`${toolSet}/references`])
+        const newRefs = rootGetters[`${toolSet}/references`]
+        if (newRefs) {
+          referenceList.push(...newRefs)
+        }
       }
     }
     return referenceList
