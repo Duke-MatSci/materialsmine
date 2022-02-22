@@ -1,0 +1,91 @@
+<div :class="`section_${toolName}`" class="md-layout md-alignment-top-center md-gutter" :key="tool">
+  <div class="wrapper md-layout-item md-size-80 md-layout md-alignment-top-left">
+    <div class="team_header md-layout-item md-size-100">
+      <h1 class="visualize_header-h1 teams_header">{{ pageContent.title }}</h1>
+    </div>
+    <!-- <div class="teams_text md-layout-item md-size-80">
+      {{ pageContent.text }}
+    </div>
+
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-center">
+      <tool-card v-for="card of pageContent.cards" v-bind="card" :key="card.name"></tool-card>
+    </div>
+
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left" v-if="pageContent.references">
+      <reference-container :references="pageContent.references" :openOnLoad="false"></reference-container>
+    </div> -->
+
+    <dialogbox :active="dialogBoxActive">
+      <template v-slot:title>{{ dialog.title }}</template>
+      <template v-slot:content v-html="dialog.content">{{ dialog.content }}</template>
+      <template v-slot:actions>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialogbox>
+
+    <div class="md-layout-item md-size-100">
+      <div>
+        <h3>Description</h3>
+        <div v-for='(sentence, index) in job.description' :key='index'>
+          <p v-html='sentence'>{{ sentence }}</p>
+        </div>
+      </div>
+      <div>
+        <h3>Input Options</h3>
+        <ol>
+          <li v-for="(uploadOption, index) of job.uploadOptions" :key="uploadOption.title">
+            <strong>{{ uploadOption.title }}:</strong> <span v-html="uploadOption.description"></span>
+          </li>
+        </ol>
+        <!-- <div v-for='(uploadOption, index) in job.uploadOptions' v-bind:key='uploadOption.title'>
+          <p><strong>{{ index + 1 }}. {{ uploadOption.title }}:</strong> <span v-html='uploadOption.description'>{{
+              uploadOption.description }}</span></p>
+        </div> -->
+      </div>
+    </div>
+
+    <div v-if='"results" in job' class="md-layout-item md-size-100 md-layout md-alignment-top-left result_container">
+      <h3>Results</h3>
+      <div v-for='(result, index) in job.results' :key='index' class="md-layout-item md-size-50 result_item">
+        <p v-html='result'></p>
+      </div>
+    </div>
+
+    <h3>Image Upload</h3>
+    <ImageUpload class='imageUpload' @setFiles="setFiles" @set-selectors="setSelectors" :aspectRatio="job.aspectRatio"
+      :selects='job.selects' :collectDimensions='job.getImageDimensions' :acceptFileTypes="job.acceptableFileTypes">
+    </ImageUpload>
+
+    <md-button class="md-layout-item md-size-100 md-primary" @click="submit()">{{ job.submit.submitButtonTitle }}
+    </md-button>
+
+    <div class="md-layout-item md-size-100" v-if='results.submitted && useWebsocket'>
+      <h3>Submission Results</h3>
+      <div v-if='results.obtained'>
+        <md-button class='resultsButton md-layout-item md-size-100 md-primary' @click="download()">
+          <span v-if='results.downloading'>Creating zipped file...</span>
+          <span v-else>Download results</span>
+        </md-button>
+        <div class='resultsContainer'>
+          <div class='resultsSubcontainer'>
+            <h4 class='resultsSubtitle'>Inputs</h4>
+            <div v-for='(file, index) in results.files' :key='index'>
+              <img class='resultsImage' :src='getResultImage(index, "input")'>
+            </div>
+          </div>
+          <div class='resultsSubcontainer'>
+            <h4 class='resultsSubtitle'>Outputs</h4>
+            <div v-for='(file, index) in results.files' :key='index'>
+              <img class='resultsImage' :src='getResultImage(index, "output")'>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p v-else>Loading...</p>
+    </div>
+
+    <div class="md-layout-item md-size-100 md-layout md-alignment-top-left">
+      <reference-container :references="pageContent.references" :openOnLoad="false"></reference-container>
+    </div>
+  </div>
+</div>
