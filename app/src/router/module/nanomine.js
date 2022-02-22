@@ -55,13 +55,13 @@ const nanomineRoutes = [
       {
         path: 'dynamfit',
         name: 'Dynamfit',
-        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
+        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'dynamfitResult',
         name: 'DynamfitResult',
-        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitResult/DynamfitResult.vue'),
+        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/dynamfitResult/DynamfitResult.vue'),
         meta: { requiresAuth: false }
       },
       {
