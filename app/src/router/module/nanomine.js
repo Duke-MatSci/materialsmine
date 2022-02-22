@@ -35,69 +35,15 @@ const nanomineRoutes = [
         meta: { requiresAuth: false }
       },
       {
-        path: 'Otsu',
-        props: { toolProp: 'OtsuBinarization' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'Niblack',
-        props: { toolProp: 'NiblackBinarization' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
         path: 'characterization_homepage',
         props: { toolProp: 'CharacterizationTools' },
         component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
         meta: { requiresAuth: false }
       },
       {
-        path: 'CorrelationCharacterize',
-        props: { toolProp: 'CorrelationCharacterize' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'DescriptorCharacterize',
-        props: { toolProp: 'DescriptorCharacterize' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'SDFCharacterize',
-        props: { toolProp: 'SDFCharacterize' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
         path: 'reconstruction_homepage',
         props: { toolProp: 'ReconstructionTools' },
         component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'CorrelationReconstruct',
-        props: { toolProp: 'CorrelationReconstruct' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'DescriptorReconstruct',
-        props: { toolProp: 'DescriptorReconstruct' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'SDFReconstruct',
-        props: { toolProp: 'SDFReconstruct' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'IntelligentCharacterize',
-        props: { toolProp: 'IntelligentCharacterize' },
-        component: () => import(/* webpackChunkName: "tooltemplate" */ '@/pages/nanomine/tools/toolTemplate/ToolTemplate.vue'),
         meta: { requiresAuth: false }
       }
     ]
