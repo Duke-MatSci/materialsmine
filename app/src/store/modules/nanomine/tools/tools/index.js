@@ -9,6 +9,7 @@ import SDFCharacterize from './SDFCharacterize'
 import SDFReconstruct from './SDFReconstruct'
 import TransferLearning from './TransferLearning'
 import Dynamfit from './Dynamfit'
+import Polymerizer from './Polymerizer'
 
 export default {
   modules: {
@@ -22,6 +23,7 @@ export default {
     SDFCharacterize,
     SDFReconstruct,
     TransferLearning,
-    Dynamfit
+    Dynamfit,
+    Polymerizer
   }
 }

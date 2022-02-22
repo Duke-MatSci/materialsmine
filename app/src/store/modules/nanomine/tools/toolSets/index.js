@@ -3,6 +3,7 @@ import CharacterizationTools from './CharacterizationTools'
 import ReconstructionTools from './ReconstructionTools'
 import MCRTools from './MCRTools'
 import ModuleTools from './ModuleTools'
+import SimulationTools from './SimulationTools'
 
 export default {
   modules: {
@@ -10,6 +11,7 @@ export default {
     CharacterizationTools,
     ReconstructionTools,
     MCRTools,
-    ModuleTools
+    ModuleTools,
+    SimulationTools
   }
 }
