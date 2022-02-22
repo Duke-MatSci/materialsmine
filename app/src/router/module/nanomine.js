@@ -45,44 +45,44 @@ const nanomineRoutes = [
         props: { toolProp: 'ReconstructionTools' },
         component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
         meta: { requiresAuth: false }
+      },
+      {
+        path: 'simtools',
+        props: { toolProp: 'SimulationTools' },
+        component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dynamfit',
+        name: 'Dynamfit',
+        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dynamfitResult',
+        name: 'DynamfitResult',
+        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitResult/DynamfitResult.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'plot-curation',
+        name: 'CsvPlotter',
+        component: () => import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/tools/csvPlotter/CsvPlotter.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'chemprops',
+        name: 'ChemProps',
+        component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemProps/ChemProps.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'chempropsapitoken',
+        name: 'ChemPropsAPIToken',
+        component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
+        meta: { requiresAuth: false }
       }
     ]
-  },
-  {
-    path: 'dynamfit',
-    name: 'Dynamfit',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitTool/Dynamfit.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'dynamfitResult',
-    name: 'DynamfitResult',
-    component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/module/dynamfitResult/DynamfitResult.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'simtools',
-    name: 'SimulationTools',
-    component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/simulation/SimulationTools.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'plot-curation',
-    name: 'CsvPlotter',
-    component: () => import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/tools/csvPlotter/CsvPlotter.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'chemprops',
-    name: 'ChemProps',
-    component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemProps/ChemProps.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'chempropsapitoken',
-    name: 'ChemPropsAPIToken',
-    component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
-    meta: { requiresAuth: false }
   },
   {
     path: 'about',
