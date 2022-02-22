@@ -9,10 +9,10 @@
     </div>
     <div v-if="materialComponents" data-test="materialComponents">
       <h2>Material Components and Attributes</h2>
-      <ul v-for="material in materialComponents" :key="material.class">
+      <ul v-for="(material, index) in materialComponents" :key="index">
         <li>Class: {{ material.class }}</li>
         <li>Role: {{ material.role }}</li>
-        <li v-for="property in material.materialProperties" :key="property.type">
+        <li v-for="(property, index) in material.materialProperties" :key="index">
           <span>{{ property.type }}</span>:
           <span>{{ property.value }}</span>
           <span>{{ property.units }}</span>
@@ -21,13 +21,13 @@
     </div>
     <div v-if="sampleImages" data-test="sampleImages">
       <h2>Sample Images</h2>
-      <img v-for="image in sampleImages" :key="image.src" :src="image.src" :alt="image.alt" />
+      <img v-for="(image,index) in sampleImages" :key="index" :src="image.src" :alt="image.alt" />
     </div>
     <div v-if="curatedProperties" data-test="curatedProperties">
       <h2>Curated Properties of Nanocomposite Sample</h2>
       <div>Scalar attributes:</div>
       <ul>
-        <li v-for="property in curatedProperties" :key="property.type + property.value">
+        <li v-for="(property, index) in curatedProperties" :key="index">
           <span>{{ property.type }}:</span>
           <span>{{ property.value }}</span>
           <span>{{ property.units }}</span>
@@ -39,7 +39,7 @@
       <div data-test="processLabel">Class: {{ processLabel }}</div>
       <div>Processing Steps:</div>
       <ul>
-        <li v-for="step in processingSteps" :key="step.description" data-test="processingSteps">
+        <li v-for="(step, index) in processingSteps" :key="index" data-test="processingSteps">
           <span>{{ step.parameterLabel }}</span>
           {{ step.description }}
         </li>
@@ -48,7 +48,12 @@
     <div v-if="otherSamples" data-test="otherSamples">
       <h2>Other Samples from this Research Article</h2>
       <div>
-        <router-link style="display: block" :to="`/explorer/sample/${link}`" v-for="link in otherSamples" :key="link">
+        <router-link
+          style="display: block"
+          :to="`/explorer/sample/${link}`"
+          v-for="(link, index) in otherSamples"
+          :key="index"
+        >
           {{ link }}
         </router-link>
       </div>
