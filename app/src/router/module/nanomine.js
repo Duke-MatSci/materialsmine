@@ -49,19 +49,19 @@ const nanomineRoutes = [
       {
         path: 'simtools',
         props: { toolProp: 'SimulationTools' },
-        component: () => import(/* webpackChunkName: "simtools" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'dynamfit',
         name: 'Dynamfit',
-        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
+        component: () => import(/* webpackChunkName: "dynamfit" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'dynamfitResult',
         name: 'DynamfitResult',
-        component: () => import(/* webpackChunkName: "modtools" */ '@/pages/nanomine/tools/dynamfitResult/DynamfitResult.vue'),
+        component: () => import(/* webpackChunkName: "dynamfitresult" */ '@/pages/nanomine/tools/dynamfitResult/DynamfitResult.vue'),
         meta: { requiresAuth: false }
       },
       {
@@ -79,7 +79,7 @@ const nanomineRoutes = [
       {
         path: 'chempropsapitoken',
         name: 'ChemPropsAPIToken',
-        component: () => import(/* webpackChunkName: "chemprops" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
         meta: { requiresAuth: false }
       }
     ]
