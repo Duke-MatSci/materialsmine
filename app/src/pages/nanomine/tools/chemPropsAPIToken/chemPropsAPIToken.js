@@ -8,7 +8,7 @@ export default {
   data () {
     return {
       title: 'ChemPropsAPIToken',
-      auth: { // mocked because auth is not yet implemented
+      auth: { // AUTH MOCKED because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
       },

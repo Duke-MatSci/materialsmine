@@ -32,7 +32,7 @@ export default {
         title: ''
       },
       auth: {
-        // mocked because auth is not yet implemented
+        // AUTH MOCKED because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
       }
