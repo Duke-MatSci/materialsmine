@@ -1,168 +1,144 @@
-import Sample from '@/pages/explorer/Sample.vue'
-import SampleHeader from '@/components/explorer/SampleHeader.vue'
-import SampleImages from '@/components/explorer/SampleImages.vue'
-import MaterialComponentsAndAttributes from '@/components/explorer/MaterialComponentsAndAttributes.vue'
-import CuratedProcessingStepsParameters from '@/components/explorer/CuratedProcessingStepsParameters.vue'
-import OtherSamples from '@/components/explorer/OtherSamples.vue'
-import CuratedPropertiesOfNanocompositeSample from '@/components/explorer/CuratedPropertiesOfNanocompositeSample.vue'
+import Sample from '@/pages/explorer/sample/Sample.vue'
+import createWrapper from '../../../jest/script/wrapper'
+import { querySparql } from '@/modules/sparql'
 
-import VueRouter from 'vue-router'
-import Vuex from 'vuex'
-import { createLocalVue, mount, shallowMount } from '@vue/test-utils'
+// mocking functions
+jest.mock('@/modules/sparql')
+querySparql.mockImplementation((uri) => {})
 
-// Data extracted from keyword l382-s2-huang-2019
+HTMLCanvasElement.prototype.getContext = () => {}
 
-const localVue = createLocalVue()
-localVue.use(VueRouter)
-localVue.use(Vuex)
-
-const store = new Vuex.Store()
-const router = new VueRouter()
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    json: () => Promise.resolve({})
+  })
+)
 
 describe('Sample.vue', () => {
-  let wrapper = null
-
-  beforeAll(() => {
-    wrapper = mount(Sample, {
-      localVue,
-      store,
-      router
-    })
+  let wrapper
+  // create wrapper and set loading to false
+  beforeAll(async () => {
+    wrapper = createWrapper(Sample, {}, false)
+    await wrapper.vm.$nextTick()
+    await wrapper.setData({ loading: false })
   })
 
-  it('mounts sample header component to Sample page', () => {
-    expect(wrapper.findComponent(SampleHeader)).toBeTruthy()
-  })
-
-  it('mounts sample images component to Sample page', () => {
-    expect(wrapper.findComponent(SampleImages)).toBeTruthy()
-  })
-
-  it('mounts material components and attributes component to Sample page', () => {
-    expect(wrapper.findComponent(MaterialComponentsAndAttributes)).toBeTruthy()
-  })
-
-  it('mounts curated processing steps parameters component to Sample page', () => {
-    expect(
-      wrapper.findComponent(CuratedProcessingStepsParameters)
-    ).toBeTruthy()
-  })
-
-  it('mounts other samples component to Sample page', () => {
-    expect(wrapper.findComponent(OtherSamples)).toBeTruthy()
-  })
-
-  it('mounts curated properties of nanocomposite sample component to Sample page', () => {
-    expect(
-      wrapper.findComponent(CuratedPropertiesOfNanocompositeSample)
-    ).toBeTruthy()
-  })
-})
-
-describe('SampleHeader.vue', () => {
-  it('renders loading placeholder for sample header', async () => {
-    const wrapper = shallowMount(SampleHeader, {
-      localVue,
-      store,
-      router
-    })
-    expect(wrapper.vm.$data.loading).toBe(true)
-  })
-
-  it('renders sample header', async () => {
-    const wrapper = shallowMount(SampleHeader, {
-      localVue,
-      store,
-      router
-    })
-    // set sample data
+  it('renders header', async () => {
     await wrapper.setData({
-      sample: {
-        DOI: '10.1021/acs.macromol.8b02071',
-        sample_label: 'gold nanoparticle in PS(40 kDa)-b-P4VP(5.6 kDa)'
-      },
-      loading: false
+      header: {
+        DOI: 'DOI of the sample',
+        sample_label: 'Sample label',
+        process_label: 'Sample process label'
+      }
     })
+    const header = wrapper.findComponent('[data-test="header"]')
 
-    expect(
-      wrapper.findComponent('[data-test="sample_label"]').text()
-    ).toContain('gold nanoparticle in PS(40 kDa)-b-P4VP(5.6 kDa)')
-    expect(wrapper.findComponent('[data-test="DOI"]').text()).toContain(
-      '10.1021/acs.macromol.8b02071'
-    )
-  })
-})
-
-describe('SampleImages.vue', () => {
-  it('renders loading placeholder for sample images', async () => {
-    const wrapper = shallowMount(SampleImages, {
-      localVue,
-      store,
-      router
-    })
-    expect(wrapper.vm.$data.loading).toBe(true)
+    expect.assertions(4)
+    expect(header.exists()).toBe(true)
+    expect(header.text()).toContain('DOI of the sample')
+    expect(header.text()).toContain('Sample label')
+    expect(header.text()).toContain('Sample process label')
   })
 
-  it('renders sample images', async () => {
-    const wrapper = shallowMount(SampleImages, {
-      localVue,
-      store,
-      router
-    })
+  it('renders materials components and attributes', async () => {
     await wrapper.setData({
-      images: [
+      materialComponents: [
         {
-          alt: 'http://materialsmine.org/sample/l382-s2-huang-2019',
-          src: 'https://qa.materialsmine.org/nmr/blob?id=5ed680a88d37da6c5907a969'
-        }
-      ],
-      loading: false
-    })
-    // console.log(
-    //   wrapper.findComponent('[data-test="sample_image"]').attributes()
-    // );
-    expect(
-      wrapper.findComponent('[data-test="sample_image"]').html()
-    ).toContain(
-      '<img src="https://qa.materialsmine.org/nmr/blob?id=5ed680a88d37da6c5907a969" alt="http://materialsmine.org/sample/l382-s2-huang-2019">'
-    )
-  })
-})
-
-describe('MaterialComponentsAndAttributes.vue', () => {
-  it('renders loading placeholder for material components', async () => {
-    const wrapper = shallowMount(MaterialComponentsAndAttributes, {
-      localVue,
-      store,
-      router
-    })
-    expect(wrapper.vm.$data.loading).toBe(true)
-  })
-
-  it('renders material components', async () => {
-    const wrapper = shallowMount(MaterialComponentsAndAttributes, {
-      localVue,
-      store,
-      router
-    })
-    await wrapper.setData({
-      materialsData: [
-        {
-          classType: 'Gold',
-          role: 'Filler',
+          class: 'Material class',
+          role: 'Material role',
           materialProperties: [
             {
-              type: 'Density',
-              units: 'Gram per Cubic Centimeter',
-              value: 19.3
+              type: 'Material property type',
+              value: 'Material property value',
+              units: 10
             }
           ]
         }
-      ],
-      loading: false
+      ]
     })
-    expect(
-      wrapper.findComponent('[data-test="material-properties"]').text()
-    ).toContain('Gold')
+    const materialComponents = wrapper.findComponent(
+      '[data-test="materialComponents"]'
+    )
+
+    expect.assertions(6)
+    expect(materialComponents.exists()).toBe(true)
+    expect(materialComponents.text()).toContain('Material class')
+    expect(materialComponents.text()).toContain('Material role')
+    expect(materialComponents.text()).toContain('Material property type')
+    expect(materialComponents.text()).toContain('Material property value')
+    expect(materialComponents.text()).toContain('10')
+  })
+
+  it('renders curated properties of nanocomposite sample', async () => {
+    await wrapper.setData({
+      curatedProperties: [
+        {
+          type: 'example type',
+          value: 10,
+          units: 'example units'
+        }
+      ]
+    })
+    const curatedProperties = wrapper.findComponent(
+      '[data-test="curatedProperties"]'
+    )
+
+    expect.assertions(4)
+    expect(curatedProperties.exists()).toBe(true)
+    expect(curatedProperties.text()).toContain('example type')
+    expect(curatedProperties.text()).toContain(10)
+    expect(curatedProperties.text()).toContain('example units')
+  })
+
+  it('renders process label and processing steps', async () => {
+    await wrapper.setData({
+      processLabel: 'example process label',
+      processingSteps: [
+        {
+          parameterLabel: 'example parameter label',
+          description: 'example description'
+        }
+      ]
+    })
+    const processLabel = wrapper.findComponent('[data-test="processLabel"]')
+    const processingSteps = wrapper.findComponent(
+      '[data-test="processingSteps"]'
+    )
+    expect.assertions(4)
+    expect(processLabel.exists()).toBe(true)
+    expect(processingSteps.exists()).toBe(true)
+
+    expect(processLabel.text()).toContain('example process label')
+    expect(processingSteps.text()).toContain('example parameter label')
+  })
+
+  it('renders sample images', async () => {
+    await wrapper.setData({
+      sampleImages: [
+        {
+          src: 'example src',
+          alt: 'example alt'
+        }
+      ]
+    })
+    const sampleImages = wrapper.findComponent('[data-test="sampleImages"]')
+
+    expect.assertions(2)
+    expect(sampleImages.exists()).toBe(true)
+    expect(sampleImages.html()).toContain(
+      '<img src="example src" alt="example alt">'
+    )
+  })
+
+  it('renders other samples', async () => {
+    await wrapper.setData({
+      otherSamples: ['sample-link-1', 'sample-link-2']
+    })
+    const otherSamples = wrapper.findComponent('[data-test="otherSamples"]')
+
+    expect.assertions(3)
+    expect(otherSamples.exists()).toBe(true)
+    expect(otherSamples.text()).toContain('sample-link-1')
+    expect(otherSamples.text()).toContain('sample-link-2')
   })
 })
