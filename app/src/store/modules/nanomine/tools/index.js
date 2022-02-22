@@ -1,11 +1,9 @@
-import moduleModule from './module/index'
-import simulationModule from './simulation/index'
-import chemPropsModule from './chemProps/index'
+import ToolModules from './tools/index'
+import ToolSetModules from './toolSets/index'
 
 export default {
   modules: {
-    module: moduleModule,
-    simulation: simulationModule,
-    chemProps: chemPropsModule
+    ...ToolModules.modules,
+    ...ToolSetModules.modules
   }
 }
