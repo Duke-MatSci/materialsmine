@@ -13,7 +13,7 @@ export default {
     'image involves application of image segmentation techniques to identify clusters of filler material followed by analysis of ' +
     'individual cluster. Although one can consider several descriptors, our webtool evaluates four descriptors - volume fraction, ' +
     'number of white phase aggregates, aspect ratio and nearest neighbor distance. This method is best suited for materials with ' +
-    'particulate filler clusters that are speherical/ellipsoidal in shape.',
+    'particulate filler clusters that are spherical/ellipsoidal in shape.',
       displayTool: true,
       jobTitle: 'Descriptor Characterization',
       pageTitle: 'Physical Descriptors',

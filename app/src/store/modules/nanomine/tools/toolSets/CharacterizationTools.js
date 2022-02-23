@@ -12,7 +12,7 @@ export default {
       },
       toolSetTitle: 'Microstructure Characterization',
       toolSetName: 'CharacterizationTools',
-      toolSetDescription: 'Microstructure Characterization refes to a statistical quantification of morphology.' +
+      toolSetDescription: 'Microstructure Characterization refers to a statistical quantification of morphology.' +
         'It essentially converts multi-dimensional microstructure recorded in images' +
         'into a set of functions (aka features/descriptors/predictors) that encode significant morphological details.' +
         'The functions obtained as a result are useful in developing insights on structure - property relationships' +
