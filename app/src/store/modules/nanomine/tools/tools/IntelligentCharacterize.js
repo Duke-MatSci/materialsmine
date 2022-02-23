@@ -57,12 +57,7 @@ export default {
       acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
       useWebsocket: false,
       references: [
-        {
-          authors: 'Bostanabad, R., Zhang, Y., Li, X., Kearney, T., Brinson, L. C., Apley, D., Wing K., and Chen, W.',
-          title: 'Computational Microstructure Characterization and Reconstruction: Review of the State-of-the-art Techniques',
-          venue: 'Progress in Materials Science 95',
-          date: 'June 2018'
-        }
+        '10.1016/j.pmatsci.2018.01.005'
       ]
     }
   },

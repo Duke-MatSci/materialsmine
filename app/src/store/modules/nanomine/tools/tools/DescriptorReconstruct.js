@@ -57,18 +57,8 @@ export default {
         'is provided to validate the accuracy of reconstruction.'
       ],
       references: [
-        {
-          authors: 'Xu, H., Li, Y., Brinson, C. and Chen, W.',
-          title: 'A descriptor-based design methodology for developing heterogeneous microstructural materials system',
-          venue: 'Journal of Mechanical Design, 136(5), p.051007',
-          date: '2014'
-        },
-        {
-          authors: 'Xu, H., Dikin, D.A., Burkhart, C. and Chen, W.',
-          title: 'Descriptor-based methodology for statistical characterization and 3D reconstruction of microstructural materials',
-          venue: 'Computational Materials Science, 85, pp.206-216',
-          date: '2014'
-        }
+        '10.1115/1.4026649',
+        '10.1016/j.commatsci.2013.12.046'
       ]
     }
   },

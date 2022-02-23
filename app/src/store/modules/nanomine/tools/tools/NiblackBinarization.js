@@ -60,18 +60,8 @@ export default {
         }
       ],
       references: [
-        {
-          authors: 'W. Niblack',
-          title: 'An Introduction to Image Processing',
-          venue: 'Englewood Cliffs, NJ: Prentice-Hall, 1986, pp. 115-116.',
-          date: '1986'
-        },
-        {
-          authors: 'Khurshid, K.,Siddiqi, I., Faure, C. and Vincent, N.',
-          title: 'Comparison of Niblack inspired Binarization methods for ancient document',
-          venue: 'DRR, 7247, pp.1-10',
-          date: '2009'
-        }
+        '978-0134806747',
+        '10.1117/12.805827'
       ]
     }
   },

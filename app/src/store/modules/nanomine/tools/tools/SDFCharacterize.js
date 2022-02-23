@@ -47,24 +47,9 @@ export default {
       acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
       useWebsocket: false,
       references: [
-        {
-          authors: 'Ghumman, U.F., Iyer, A., Dulal, R., Munshi, J., Wang, A., Chien, T., Balasubramanian, G., and Chen, W.',
-          title: 'A Spectral Density Function Approach for Active Layer Design of Organic Photovoltaic Cells',
-          venue: 'Journal of Mechanical Design, Special Issue on Design of Engineered Materials and Structures',
-          date: 'July 2018'
-        },
-        {
-          authors: 'Yu, S., Zhang, Y., Wang, C., Lee, W.K., Dong, B., Odom, T.W., Sun, C. and Chen, W.',
-          title: 'Characterization and design of functional quasi-random nanostructured materials using spectral density function',
-          venue: 'Journal of Mechanical Design, 139(7), p.071401',
-          date: '2017'
-        },
-        {
-          authors: 'Lee, W. K., Yu, S., Engel, C. J., Reese, T., Rhee, D., Chen, W., & Odom, T. W.',
-          title: 'Concurrent design of quasi-random photonic nanostructures',
-          venue: 'Proceedings of the National Academy of Sciences, 114(33), 8734-8739',
-          date: '2017'
-        }
+        '10.1115/DETC201886154',
+        '10.1115/1.4036582',
+        '10.1073/pnas.1704711114'
       ]
     }
   },

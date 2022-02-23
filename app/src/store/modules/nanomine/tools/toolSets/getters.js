@@ -1,3 +1,5 @@
+import referenceMap from '../references'
+
 export default {
   toolsCardContent (state, getters, rootState, rootGetters) {
     const contentList = {}
@@ -24,25 +26,31 @@ export default {
       references: getters.references
     }
   },
-  references (state, getters, rootState, rootGetters) {
-    const referenceList = []
+  toolReferenceSet (state, getters, rootState, rootGetters) {
+    const referenceSet = new Set()
     if (state.tools) {
       for (const tool of state.tools) {
         const newRefs = rootGetters[`${tool}/references`]
         if (newRefs) {
-          referenceList.push(...newRefs)
+          newRefs.forEach(ref => referenceSet.add(ref))
         }
       }
     }
     if (state.toolSets) {
       for (const toolSet of state.toolSets) {
-        const newRefs = rootGetters[`${toolSet}/references`]
+        const newRefs = rootGetters[`${toolSet}/toolReferenceSet`]
         if (newRefs) {
-          referenceList.push(...newRefs)
+          newRefs.forEach(ref => referenceSet.add(ref))
         }
       }
     }
-    return referenceList
+    return referenceSet
+  },
+  references (state, getters, rootState, rootGetters) {
+    const referenceSet = getters.toolReferenceSet
+    const referenceList = []
+    referenceSet.forEach(ref => referenceList.push(referenceMap[ref]))
+    return referenceList.sort((ref1, ref2) => ref1.authors.localeCompare(ref2.authors))
   },
   pageContent (state, getters) {
     return {

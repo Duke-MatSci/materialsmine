@@ -44,12 +44,7 @@ export default {
       acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
       useWebsocket: true,
       references: [
-        {
-          authors: 'N. Otsu',
-          title: 'A threshold selection method from gray-level histograms',
-          venue: 'IEEE transactions on systems, man, and cybernetics, vol. 9, no. 1, pp. 62-66',
-          date: '1979'
-        }
+        '10.1109/TSMC.1979.4310076'
       ]
     }
   },

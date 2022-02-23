@@ -19,12 +19,7 @@ export default {
       'of nanocomposites.',
       displayTool: true,
       references: [
-        {
-          authors: 'Bradshaw et al.',
-          title: 'A Sign Control Method for Fitting and Interconverting Material Functions for Linearly Viscoelastic Solids',
-          venue: 'Mechanics of Time-Dependent Materials. 1997 1(1)',
-          date: '1997'
-        }
+        '10.1023/A:1009772018066'
       ]
     }
   },

@@ -15,12 +15,7 @@ export default {
       'research purposes by clicking on the link below. You will asked to fill in a form and we will email you following the form completion.',
       display: true,
       references: [
-        {
-          authors: 'Li, X., Zhang, Y., Zhao, H., Burkhart, C., Brinson, L.C., Chen, W.',
-          title: 'A Transfer Learning Approach for Microstructure Reconstruction and Structure-property Predictions',
-          venue: 'Scientific Report',
-          date: '2018'
-        }
+        '10.1038/s41598-018-31571-7'
       ]
     }
   },

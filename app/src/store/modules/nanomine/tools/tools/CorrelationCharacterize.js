@@ -13,18 +13,8 @@ export default {
     'functions - autocorrelation, lineal path, cluster and surface correlation.',
       displayTool: true,
       references: [
-        {
-          authors: 'Rintoul, M.D. and Torquato, S.',
-          title: 'Reconstruction of the structure of dispersions',
-          venue: 'Journal of Colloid and Interface Science, 186(2), pp.467-476',
-          date: '1997'
-        },
-        {
-          authors: 'Yeong,C. and Torquato,S.',
-          title: 'Reconstructing random media',
-          venue: 'Physical Review E, vol. 57, no. 1, p.495',
-          date: '1998'
-        }
+        '10.1006/jcis.1996.4675',
+        '10.1103/PhysRevE.57.495'
       ],
       jobTitle: 'Correlation Characterize',
       pageTitle: 'Correlation Function Approach',
