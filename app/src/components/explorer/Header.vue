@@ -11,10 +11,6 @@
         </div>
 
         <div class="md-toolbar-section-end">
-          <div class="u_margin-top-small u_width--small u_margin-right-small" v-if="searchEnabled">
-            <input type="text" class="form__input form__input--flat" placeholder="Searching..." name="search" id="search" v-model="searchTerm"  />
-            <label htmlFor="search" class="form__label form__input--flat-label">Searching...</label>
-          </div>
           <md-badge id="header-badge" class="md-primary" md-content="12">
             <md-avatar>
               <img src="@/assets/img/brinson.jpeg" alt="Avatar">
@@ -25,9 +21,15 @@
       <!-- Toolbar -->
       <div class="md-toolbar-row u_margin-top-med">
         <md-tabs class="md-primary" id="reset_tab_bg">
-          <md-tab class="tabs" id="tab-home" md-label="Search"></md-tab>
-          <md-tab class="tabs" id="tab-pages" md-label="Visualization"></md-tab>
-          <md-tab class="tabs" id="tab-posts" md-label="Create"></md-tab>
+          <router-link  class="tabs" to="/explorer" v-slot="{navigate, href}" custom>
+              <md-tab :href="href" @click="navigate" id="tab-home" md-label="Search"> </md-tab>
+          </router-link>
+          <router-link class="tabs" to="/explorer/visualization" v-slot="{navigate, href}" custom>
+              <md-tab :href="href" @click="navigate" id="tab-pages" md-label="Visualization"> </md-tab>
+          </router-link>
+          <router-link class="tabs" to="/explorer/create" v-slot="{navigate, href}" custom>
+              <md-tab :href="href" @click="navigate" id="tab-posts" md-label="Create"> </md-tab>
+          </router-link>
         </md-tabs>
       </div>
     </md-app-toolbar>
