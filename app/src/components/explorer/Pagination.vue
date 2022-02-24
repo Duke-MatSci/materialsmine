@@ -5,22 +5,22 @@
       <button
         :disabled="cpage <= 1"
         @click.prevent="goToPage(1)"
-        class="pagination-button pagination-button-home viz-u-display__desktop"
+        class="pagination-button pagination-button-home"
       >Home</button>
       <button
         :disabled="cpage <= 1"
         @click.prevent="goToPage(cpage - 1)"
-        class="pagination-button pagination-button-prev viz-u-display__desktop"
+        class="pagination-button pagination-button-prev"
       >Prev</button>
       <button
         :disabled="cpage >= tpages"
         @click.prevent="goToPage(cpage + 1)"
-        class="pagination-button pagination-button-next viz-u-display__desktop"
+        class="pagination-button pagination-button-next"
       >Next</button>
       <button
         :disabled="cpage >= tpages"
         @click.prevent="goToPage(tpages)"
-        class="pagination-button pagination-button-end viz-u-display__desktop"
+        class="pagination-button pagination-button-end"
       >End</button>
     </div>
   </div>
