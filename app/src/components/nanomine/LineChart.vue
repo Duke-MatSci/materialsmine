@@ -272,8 +272,9 @@ export default {
     }
   },
   mounted () {
-    console.log('LineChart mounted')
-    this.data = this.dataset
+    this.data = this.dataset.data
+    this.xlabel = this.dataset.xlabel
+    this.ylabel = this.dataset.ylabel
     this.init()
   }
 }
