@@ -7,6 +7,7 @@ export default {
   state () {
     return {
       toggleMenuVisibility: false,
+      resultsTab: '',
       searchKeyword: '',
       searching: false
     }
