@@ -138,9 +138,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import "@/assets/css/base/_grid.scss";
 @import "@/assets/css/abstract/_mixins.scss";
-@import "@/assets/css/modules/_utility.scss";
 .viz-content {
   display: grid;
   grid-template-rows: repeat(10);
