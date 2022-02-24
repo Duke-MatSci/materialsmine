@@ -11,15 +11,21 @@
     >
       <div class="u_content__result">
         <!-- TODO TIME TO RESULT -->
-        <span v-if="otherArgs == null && total <= 1">{{total}} result (0.59 seconds)</span>
-        <span v-else-if="otherArgs == null && total >= 2">About {{total}} results (0.59 seconds)</span>
         <span
           class="u_color"
-          v-else-if="otherArgs != null"
         >
-          Home > <strong> {{ otherArgs }}</strong> > About {{total}} results (0.59 seconds)
+          <strong v-if="otherArgs != null">{{ otherArgs }}</strong>
+          <span v-if="total === 0">
+            No results
+          </span>
+          <span v-else-if="total === 1">
+            1 result
+          </span>
+          <span v-else>
+            About {{total}} results
+          </span>
+          ({{(queryTimeMillis/1000).toFixed(2)}} seconds)
         </span>
-        <span v-else>No result (0.59 seconds)</span>
       </div>
       <div class="viz-content">
         <md-card
@@ -45,13 +51,13 @@
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
-          <router-link :to="`/explorer/chart/view/${result.id}`">
+          <router-link :to="`/explorer/chart/view/${result.identifier}`">
             <md-card-media-cover
               md-solid
             >
               <md-card-media md-ratio="4:3">
                 <img
-                  :src="getViewUrl(result.thumbnail)"
+                  :src="getThumbnailUrl(result)"
                   :alt="result.label"
                   v-if="result.thumbnail"
                 >
@@ -85,6 +91,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
+import {getViewUrl} from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
 export default {
@@ -112,7 +119,7 @@ export default {
     spinner
   },
   computed: {
-    ...mapGetters('explorer/gallery', ['items', 'page', 'total', 'totalPages'])
+    ...mapGetters('explorer/gallery', ['items', 'page', 'total', 'totalPages', 'queryTimeMillis'])
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
@@ -130,6 +137,9 @@ export default {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
       this.loading = false
+    },
+    getThumbnailUrl(item) {
+      return getViewUrl({uri: item.thumbnail})
     }
   },
   async mounted () {

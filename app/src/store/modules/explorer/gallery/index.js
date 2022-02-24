@@ -6,10 +6,11 @@ export default {
   namespaced: true,
   state () {
     return {
+      allItems: null,
       items: null,
       pageSize: 50,
       page: 1,
-      total: null
+      queryTimeMillis: 0,
     }
   },
   mutations,

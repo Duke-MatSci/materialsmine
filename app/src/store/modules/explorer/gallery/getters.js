@@ -1,4 +1,7 @@
 export default {
+  allItems (state) {
+    return state.allItems
+  },
   items (state) {
     return state.items
   },
@@ -8,10 +11,13 @@ export default {
   page (state) {
     return state.page
   },
-  total (state) {
-    return state.total
+  total (state, getters) {
+    return (getters.allItems || []).length
   },
   totalPages (state, getters) {
     return Math.ceil(getters.total / getters.pageSize)
+  },
+  queryTimeMillis(state) {
+    return state.queryTimeMillis
   }
 }

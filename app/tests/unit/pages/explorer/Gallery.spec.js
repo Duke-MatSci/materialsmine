@@ -2,6 +2,17 @@ import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import ExplorerGallery from '@/pages/explorer/Gallery.vue'
 
+import { loadJsonView } from '@/modules/whyis-view'
+jest.mock('@/modules/whyis-view')
+loadJsonView.mockImplementation(() => {
+  return [...Array(333).keys()]
+    .map((i) => ({
+      identifier: `http://nanomine-mock.org/gallery_item_${i}`,
+      label: `Gallery Item #${i}: a label`,
+      description: `this text describes Gallery Item #${i}`
+    }))
+})
+
 describe('ExplorerHome.vue', () => {
   const itemsPerPage = 50
   let wrapper
@@ -18,7 +29,9 @@ describe('ExplorerHome.vue', () => {
 
   it('shows number of results', () => {
     expect.assertions(1)
-    expect(wrapper.find('.u_content__result').text()).toMatch(/^About [1-9]\d* results/)
+    expect(wrapper.find('.u_content__result').text()).toMatch(
+      /^About [1-9]\d* results/
+    )
   })
 
   it('provides links for each result', () => {
@@ -27,8 +40,9 @@ describe('ExplorerHome.vue', () => {
     console.log(items.length)
     for (const item of items) {
       expect(
-        wrapper.findAllComponents(RouterLinkStub)
-          .filter(w => w.props().to === `/explorer/chart/view/${item.id}`)
+        wrapper
+          .findAllComponents(RouterLinkStub)
+          .filter((w) => w.props().to === `/explorer/chart/view/${item.identifier}`)
           .at(0)
           .exists()
       ).toBe(true)
@@ -36,10 +50,9 @@ describe('ExplorerHome.vue', () => {
   })
 
   it('paginates gallery items', async () => {
-    const initialItemId = wrapper.vm.items[0].id
-    await wrapper.find('.pagination-button-next')
-      .trigger('click')
-    const newItemId = wrapper.vm.items[0].id
+    const initialItemId = wrapper.vm.items[0].identifier
+    await wrapper.find('.pagination-button-next').trigger('click')
+    const newItemId = wrapper.vm.items[0].identifier
     expect(newItemId).not.toEqual(initialItemId)
   })
 })
