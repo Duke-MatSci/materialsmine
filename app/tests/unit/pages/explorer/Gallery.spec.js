@@ -37,7 +37,6 @@ describe('ExplorerHome.vue', () => {
   it('provides links for each result', () => {
     const items = wrapper.vm.items
     expect.assertions(items.length)
-    console.log(items.length)
     for (const item of items) {
       expect(
         wrapper
