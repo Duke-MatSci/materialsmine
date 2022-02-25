@@ -12,22 +12,16 @@ var wrapper = null
 //   debug: console.debug
 // }
 
-const referenceProp = [
-  {
-    authors: 'Lee, W. K., Yu, S., Engel, C. J., Reese, T., Rhee, D., Chen, W., & Odom, T. W.',
-    title: 'Concurrent design of quasi-random photonic nanostructures',
-    venue: 'Proceedings of the National Academy of Sciences, 114(33), 8734-8739',
-    date: '2017'
-  },
-  {
-    authors: 'Li, X., Zhang, Y., Zhao, H., Burkhart, C., Brinson, L.C., Chen, W.',
-    title: 'A Transfer Learning Approach for Microstructure Reconstruction and Structure-property Predictions',
-    venue: 'Scientific Report',
-    date: '2018'
-  }
-]
+const referenceProp = ['10.1073/pnas.1704711114']
 
-const textMatch = new RegExp(referenceProp[0].title)
+const referenceAnswer = {
+  authors: 'Lee, W. K., Yu, S., Engel, C. J., Reese, T., Rhee, D., Chen, W., & Odom, T. W.',
+  title: 'Concurrent design of quasi-random photonic nanostructures',
+  venue: 'Proceedings of the National Academy of Sciences, 114(33), 8734-8739',
+  date: '2017'
+}
+
+const textMatch = new RegExp(referenceAnswer.title)
 
 describe('ReferenceContainer.vue', () => {
   beforeAll(() => {
@@ -36,7 +30,7 @@ describe('ReferenceContainer.vue', () => {
         references: referenceProp,
         openOnLoad: false
       }
-    })
+    }, false)
   })
 
   it('mounts properly', () => {

@@ -1,5 +1,3 @@
-import referenceMap from '../references'
-
 export default {
   toolsCardContent (state, getters, rootState, rootGetters) {
     const contentList = {}
@@ -46,11 +44,8 @@ export default {
     }
     return referenceSet
   },
-  references (state, getters, rootState, rootGetters) {
-    const referenceSet = getters.toolReferenceSet
-    const referenceList = []
-    referenceSet.forEach(ref => referenceList.push(referenceMap[ref]))
-    return referenceList.sort((ref1, ref2) => ref1.authors.localeCompare(ref2.authors))
+  references (state, getters) {
+    return Array.from(getters.toolReferenceSet)
   },
   pageContent (state, getters) {
     return {
