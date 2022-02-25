@@ -1,35 +1,35 @@
-import { mount, createLocalVue } from '@vue/test-utils'
-import Vuex from 'vuex'
-
+import createWrapper from '../../../jest/script/wrapper'
 import HowTo from '@/pages/nanomine/howTo/HowTo.vue'
-import store from '@/store'
 
-const localVue = createLocalVue()
-localVue.use(Vuex)
+var wrapper = null
+// suppress jsdom alert 'Not implemented window.open'
+window.open = jest.fn()
+window.open.mockClear()
+global.console = {
+  log: jest.fn(), // console.log are ignored in tests
 
-beforeAll(() => {
-  jest.resetModules()
-})
+  // Keep native behavior for other methods
+  error: console.error,
+  warn: console.warn,
+  info: console.info,
+  debug: console.debug
+}
 
 describe('HowTo.vue', () => {
+  beforeAll(async () => {
+    wrapper = createWrapper(HowTo, {})
+    await wrapper.vm.$nextTick()
+  })
+
   it('mounts properly', () => {
-    const wrapper = mount(HowTo, { store, localVue })
     expect(wrapper.exists()).toBeTruthy()
   })
 
   it('hides all videos to start', () => {
-    const wrapper = mount(HowTo, { store, localVue })
     expect(wrapper.find('#videoPlayerContainer').exists()).toBeFalsy()
   })
 
   it('displays video on first click, hides it on second click', async () => {
-    // suppress jsdom alert 'Not implemented window.open'
-    window.open = jest.fn()
-    window.open.mockClear()
-
-    const wrapper = mount(HowTo, { store, localVue })
-    await localVue.nextTick() // wait for videos to load
-
     const videoTitle = wrapper.find('.howto_item .howto_item-header')
     expect(videoTitle.exists()).toBeTruthy()
 
@@ -41,13 +41,6 @@ describe('HowTo.vue', () => {
   })
 
   it('closes any other open videos when a new one is clicked', async () => {
-    // suppress jsdom alert 'Not implemented window.open'
-    window.open = jest.fn()
-    window.open.mockClear()
-
-    const wrapper = mount(HowTo, { store, localVue })
-    await localVue.nextTick() // wait for videos to load
-
     const videoTitle = wrapper.findAll('.howto_item .howto_item-header')
 
     await videoTitle.at(0).trigger('click')
@@ -58,13 +51,6 @@ describe('HowTo.vue', () => {
   })
 
   it('correctly opens a link if passed one', async () => {
-    // suppress jsdom alert 'Not implemented window.open'
-    window.open = jest.fn()
-    window.open.mockClear()
-
-    const wrapper = mount(HowTo, { store, localVue })
-    await localVue.nextTick() // wait for videos to load
-
     const videoIcons = wrapper.findAll('.material-icons')
 
     if (videoIcons.exists()) {

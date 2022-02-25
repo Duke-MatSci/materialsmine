@@ -1,21 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const acceptedHeaders = require('./middlewares/accept');
-const getEnv = require('./middlewares/parseEnv');
-const { fileMgr, fileServer } = require('./middlewares/fileStorage');
-const mmGraphQL = require('./graphql');
-// const testRoutes = require('./routes/test');
+const { globalMiddleWare, log } = require('./middlewares/globalMiddleware');
 const env = process.env;
 
 const app = express();
-
-app.use(bodyParser.json());
-app.use(fileMgr);
-app.use('/mm_fils', fileServer);
-app.use(acceptedHeaders);
-app.use('/graphql', mmGraphQL);
-app.use(getEnv);
+globalMiddleWare(app);
 
 app.use((error, req, res, next) => {
   console.log(error);
@@ -29,5 +18,8 @@ mongoose
   .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`, {
     useNewUrlParser: true, useUnifiedTopology: true
   })
-  .then(app.listen(process.env.PORT || 3000))
+  .then(() => {
+    log.info('Rest server starting up...');
+    app.listen(process.env.PORT || 3000);
+  })
   .catch(err => console.log(err));
