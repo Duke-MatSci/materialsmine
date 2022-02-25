@@ -1,6 +1,4 @@
-import { literal, namedNode } from '@rdfjs/data-model'
-import { fromRdf } from 'rdf-literal'
-import { querySparql } from '@/modules/sparql'
+import { querySparql, parseSparql } from '@/modules/sparql'
 
 const defaultQuery = `
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -86,30 +84,12 @@ async function readChartSparqlRow (chartResult) {
   return chart
 }
 
-function transformSparqlData (sparqlResults) {
-  const data = []
-  if (sparqlResults) {
-    for (const row of sparqlResults.results.bindings) {
-      const resultData = {}
-      data.push(resultData)
-      Object.entries(row).forEach(([field, result, t]) => {
-        let value = result.value
-        if (result.type === 'literal' && result.datatype) {
-          value = fromRdf(literal(value, namedNode(result.datatype)))
-        }
-        resultData[field] = value
-      })
-    }
-  }
-  return data
-}
-
 function buildSparqlSpec (baseSpec, sparqlResults) {
   if (!baseSpec) {
     return null
   }
   const spec = Object.assign({}, baseSpec)
-  spec.data = { values: transformSparqlData(sparqlResults) }
+  spec.data = { values: parseSparql(sparqlResults) }
   return spec
 }
 
