@@ -17,7 +17,7 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
     .catch((err) => console.log(err))
 }
 
-function parseSPARQL (response) {
+function parseSparql (response) {
   const queryResults = []
   for (let i = 0; i < response.results.bindings.length; i++) {
     const newObject = {}
@@ -37,4 +37,4 @@ function parseSPARQL (response) {
   return queryResults
 }
 
-export { querySparql, parseSPARQL }
+export { querySparql, parseSparql }
