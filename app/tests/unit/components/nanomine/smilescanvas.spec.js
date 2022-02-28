@@ -31,8 +31,8 @@ describe('SmilesCanvas.vue', () => {
   // Can't debug why, but SmilesCanvas is unable to locate the canvas tag
   // internally when run using jest, so it errors out and doesn't parse
   // anything. This does not happen when loaded in browser.
-  it.skip('parses uSMILES successfully', () => {
-    wrapper.setProps({ smilesInput: 'C(C(Cl)[*])[*]' })
-    expect(smilesCanvasProps.formulaHandler.mock.calls[0]).toMatch('C2H3Cl')
-  })
+  // it('parses uSMILES successfully', () => {
+  //   wrapper.setProps({ smilesInput: 'C(C(Cl)[*])[*]' })
+  //   expect(smilesCanvasProps.formulaHandler.mock.calls[0]).toMatch('C2H3Cl')
+  // })
 })
