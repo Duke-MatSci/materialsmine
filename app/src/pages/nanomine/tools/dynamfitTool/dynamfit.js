@@ -26,7 +26,6 @@ export default {
       loginRequiredMsg: '',
       successDlg: false,
       jobId: '',
-      references: [],
       examplePage: 'noExample',
       dialog: {
         title: ''
@@ -44,9 +43,6 @@ export default {
       this.loginRequired = true
       this.loginRequiredMsg = 'Login is required.'
     }
-  },
-  mounted () {
-    this.references = this.$store.getters.dynamfitReferences
   },
   methods: {
     ...mapMutations({
@@ -198,7 +194,8 @@ export default {
   },
   computed: {
     ...mapGetters({
-      dialogBoxActive: 'dialogBox'
+      dialogBoxActive: 'dialogBox',
+      references: 'Dynamfit/references'
     })
   }
 }
