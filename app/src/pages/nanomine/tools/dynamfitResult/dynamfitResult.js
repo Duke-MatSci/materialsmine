@@ -1,5 +1,5 @@
 // import Axios from 'axios'
-import {} from 'vuex'
+import { mapGetters } from 'vuex'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 
 export default {
@@ -15,13 +15,16 @@ export default {
       EEimg: '',
       XPR: '',
       XFF: '',
-      XTF: '',
-      references: []
+      XTF: ''
     }
   },
   mounted: function () {
     this.getJobOutputParams()
-    this.references = this.$store.getters.dynamfitReferences
+  },
+  computed: {
+    ...mapGetters({
+      references: 'Dynamfit/references'
+    })
   },
   methods: {
     setLoading: function () {
