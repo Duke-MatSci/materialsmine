@@ -35,6 +35,7 @@
 			</div>
 		</div>
 		<search-header v-if="searchEnabled"/>
+		<search-results-table v-if="searchEnabled"/>
 		<div class="explorer_page_footer">
 			<span class="explorer_page_footer-text">&copy; 2022 MaterialsMine Project</span>
 		</div>
@@ -45,6 +46,7 @@
 import { mapMutations } from 'vuex'
 import FacetPanel from '@/components/explorer/Facet.vue'
 import SearchHeader from '@/components/explorer/SearchHeader.vue'
+import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
 export default {
   name: 'ExplorerHome',
   data () {
@@ -71,7 +73,8 @@ export default {
   },
   components: {
     FacetPanel,
-    SearchHeader
+    SearchHeader,
+    SearchResultsTable
   },
   methods: {
     ...mapMutations('explorer', ['setSearching'])
