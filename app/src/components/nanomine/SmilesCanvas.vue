@@ -18,7 +18,6 @@ export default {
     CanvasWrapper
   },
   name: 'Smiles',
-  inject: ['provider'],
   props: {
     smilesOptions: {
       type: Object,
@@ -69,7 +68,7 @@ export default {
     },
     smilesInput: function (v) {
       const vm = this
-      console.log('smiles input: ' + v)
+      // console.log('smiles input: ' + v)
       vm.smilesValue = v
       vm.setInput(v)
     },
@@ -82,7 +81,7 @@ export default {
   },
   mounted () {
     this.canvasId = this.$refs['canvas-wrapper'].canvasId
-    console.log('canvas-id: ' + this.canvasId)
+    // console.log('canvas-id: ' + this.canvasId)
     this.overrideOptions(this.smilesOptions)
     this.smilesDrawer = new SmilesDrawer.Drawer(this.smilesOptionsAdjusted)
   },
@@ -120,7 +119,7 @@ export default {
           if (vm.onErrorHandler) {
             vm.onErrorHandler(err)
           } else {
-            console.log('smilesDrawer error: ' + err)
+            // console.log('smilesDrawer error: ' + err)
           }
         })
       } else { // clear values on empty input
