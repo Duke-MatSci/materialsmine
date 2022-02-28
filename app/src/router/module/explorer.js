@@ -7,6 +7,14 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    // DOIs usually have more than one segment, i.e. 10.1063/1.5046839
+    // extended path regex needed to match those multiple segments
+    path: 'article/:doi+',
+    name: 'Article',
+    component: () => import('@/pages/explorer/article/Article.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'visualization',
     name: 'ExplorerVisualization',
     meta: { requiresAuth: false }
@@ -23,6 +31,7 @@ const explorerRoutes = [
       {
         path: '',
         name: 'ChartGallery',
+        component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
       {
@@ -46,7 +55,7 @@ const explorerRoutes = [
   {
     path: 'sample/:label',
     name: 'SampleView',
-    component: () => import('@/pages/explorer/Sample.vue'),
+    component: () => import('@/pages/explorer/sample/Sample.vue'),
     meta: { requiresAuth: false }
   }
 ]

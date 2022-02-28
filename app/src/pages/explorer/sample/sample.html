@@ -1,0 +1,62 @@
+<div>
+  <spinner v-if="loading" :loading="loading" :text="'Loading sample page'" />
+  <div v-else>
+    <div v-if="header" data-test="header">
+      <h1>{{ this.$route.params.label }}</h1>
+      <span>{{ header.sample_label }}</span>
+      <span>{{ header.process_label }}</span>
+      <div>DOI: {{ header.DOI }}</div>
+    </div>
+    <div v-if="materialComponents" data-test="materialComponents">
+      <h2>Material Components and Attributes</h2>
+      <ul v-for="(material, index) in materialComponents" :key="index">
+        <li>Class: {{ material.class }}</li>
+        <li>Role: {{ material.role }}</li>
+        <li v-for="(property, index) in material.materialProperties" :key="index">
+          <span>{{ property.type }}</span>:
+          <span>{{ property.value }}</span>
+          <span>{{ property.units }}</span>
+        </li>
+      </ul>
+    </div>
+    <div v-if="sampleImages" data-test="sampleImages">
+      <h2>Sample Images</h2>
+      <img v-for="(image,index) in sampleImages" :key="index" :src="image.src" :alt="image.alt" />
+    </div>
+    <div v-if="curatedProperties" data-test="curatedProperties">
+      <h2>Curated Properties of Nanocomposite Sample</h2>
+      <div>Scalar attributes:</div>
+      <ul>
+        <li v-for="(property, index) in curatedProperties" :key="index">
+          <span>{{ property.type }}:</span>
+          <span>{{ property.value }}</span>
+          <span>{{ property.units }}</span>
+        </li>
+      </ul>
+    </div>
+    <div v-if="processingSteps && processLabel">
+      <h2>Curated Processing Steps and Parameters</h2>
+      <div data-test="processLabel">Class: {{ processLabel }}</div>
+      <div>Processing Steps:</div>
+      <ul>
+        <li v-for="(step, index) in processingSteps" :key="index" data-test="processingSteps">
+          <span>{{ step.parameterLabel }}</span>
+          {{ step.description }}
+        </li>
+      </ul>
+    </div>
+    <div v-if="otherSamples" data-test="otherSamples">
+      <h2>Other Samples from this Research Article</h2>
+      <div>
+        <router-link
+          style="display: block"
+          :to="`/explorer/sample/${link}`"
+          v-for="(link, index) in otherSamples"
+          :key="index"
+        >
+          {{ link }}
+        </router-link>
+      </div>
+    </div>
+  </div>
+</div>
