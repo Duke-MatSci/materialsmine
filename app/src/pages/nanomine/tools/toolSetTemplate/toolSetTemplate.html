@@ -7,11 +7,11 @@
       {{ pageContent.text }}
     </div>
 
-    <div class="md-layout-item md-size-80 md-layout md-alignment-top-center">
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-center tool-card">
       <tool-card v-for="card of pageContent.cards" v-bind="card" :key="card.name"></tool-card>
     </div>
 
-    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left" v-if="pageContent.references">
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-left reference-container" v-if="pageContent.references">
       <reference-container :references="pageContent.references" :openOnLoad="false"></reference-container>
     </div>
   </div>
