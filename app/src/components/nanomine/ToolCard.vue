@@ -1,23 +1,21 @@
 <template>
-  <div class="md-layout-item" v-if="display" key="should_display">
-    <md-card>
-      <md-card-media v-if="imageFile" key="image">
-        <img :src="require(`@/assets/img/${imageFile}`)" :alt="imageFile"/>
-      </md-card-media>
-      <md-card-header v-if="title" key="tool_title">
-          <div class="md-title" v-if="link" key="has_tool_link">
-            <router-link v-if="!externalLink" :to="link">{{ title }}</router-link>
-            <a v-else :href="link" target="_blank">{{ title }}</a>
-          </div>
-          <div class="md-title" v-else key="no_tool_link">
-            {{ title }}
-          </div>
-      </md-card-header>
-      <md-card-content v-if="text" key="has_tool_text">
-        {{ text }}
-      </md-card-content>
-    </md-card>
-  </div>
+  <md-card class="md-layout-item" v-if="display" key="should_display">
+    <md-card-media v-if="imageFile" key="image">
+      <img :src="require(`@/assets/img/${imageFile}`)" :alt="imageFile"/>
+    </md-card-media>
+    <md-card-header v-if="title" key="tool_title">
+        <div class="md-title" v-if="link" key="has_tool_link">
+          <router-link v-if="!externalLink" :to="link">{{ title }}</router-link>
+          <a v-else :href="link" target="_blank">{{ title }}</a>
+        </div>
+        <div class="md-title" v-else key="no_tool_link">
+          {{ title }}
+        </div>
+    </md-card-header>
+    <md-card-content v-if="text" key="has_tool_text">
+      {{ text }}
+    </md-card-content>
+  </md-card>
 </template>
 
 <script>
