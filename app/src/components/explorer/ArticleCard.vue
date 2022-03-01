@@ -70,6 +70,9 @@ export default {
       if (this.doi) {
         try {
           this.article = await articleMetadata.get({ doi: this.doi })
+          if (this.article.error) {
+            this.error = this.article.error
+          }
           this.loading = false
         } catch (error) {
           this.error = error.message
