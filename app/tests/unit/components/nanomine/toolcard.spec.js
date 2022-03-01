@@ -32,14 +32,4 @@ describe('ToolCard.vue', () => {
   it('displays the provided prop tool', () => {
     expect(wrapper.text()).toMatch(new RegExp(toolProp.title))
   })
-  it('adds internal link properly', () => {
-    expect(wrapper.find('router-link-stub').attributes().to).toMatch(toolProp.link)
-    // expect().toBeFalsy()
-  })
-  it('adds external link properly', async () => {
-    wrapper.setProps({ externalLink: true })
-    await wrapper.vm.$nextTick()
-    expect(wrapper.find('router-link').exists()).toBeFalsy()
-    expect(wrapper.find('a').attributes().href).toMatch(toolProp.link)
-  })
 })
