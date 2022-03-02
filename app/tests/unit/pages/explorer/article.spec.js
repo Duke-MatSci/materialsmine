@@ -1,8 +1,8 @@
 import createWrapper from '../../../jest/script/wrapper'
 
 import Article from '@/pages/explorer/article/Article.vue'
-import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
-jest.mock('@/modules/explorer/article/services/articleMetadata')
+import articleMetadata from '@/modules/article/articleMetadata'
+jest.mock('@/modules/article/articleMetadata')
 
 var wrapper = null
 

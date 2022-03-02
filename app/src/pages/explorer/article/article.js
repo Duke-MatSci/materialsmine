@@ -1,4 +1,4 @@
-import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
+import articleMetadata from '@/modules/article/articleMetadata'
 import Spinner from '@/components/Spinner'
 
 export default {

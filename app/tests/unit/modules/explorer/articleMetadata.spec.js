@@ -1,5 +1,5 @@
-import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
-import { rawResponse, cleanResponse } from '@/modules/explorer/article/services/__mocks__/articleMetadata'
+import articleMetadata from '@/modules/article/articleMetadata'
+import { rawResponse, cleanResponse } from '@/modules/article/__mocks__/articleMetadata'
 
 global.fetch = jest.fn()
 

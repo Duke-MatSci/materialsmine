@@ -232,7 +232,7 @@ export default {
     this.testingRejection = false
   },
   /**
-   * A mock of @/components/modules/explorer/article/services/articleMetadata.get().
+   * A mock of @/components/modules/article/articleMetadata.get().
    *
    * Returns complete or empty data, or a rejected promise, depending on the desired
    * testing scenario.
