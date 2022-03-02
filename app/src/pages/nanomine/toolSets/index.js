@@ -6,12 +6,10 @@ import ModuleTools from './ModuleTools'
 import SimulationTools from './SimulationTools'
 
 export default {
-  modules: {
-    BinarizationTools,
-    CharacterizationTools,
-    ReconstructionTools,
-    MCRTools,
-    ModuleTools,
-    SimulationTools
-  }
+  BinarizationTools,
+  CharacterizationTools,
+  ReconstructionTools,
+  MCRTools,
+  ModuleTools,
+  SimulationTools
 }

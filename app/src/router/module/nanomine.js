@@ -20,37 +20,37 @@ const nanomineRoutes = [
         path: 'module_homepage',
         alias: '',
         props: { toolProp: 'ModuleTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ModuleTools.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'mcr_homepage',
         props: { toolProp: 'MCRTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/MCRTools.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'binarization_homepage',
         props: { toolProp: 'BinarizationTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/BinarizationTools.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'characterization_homepage',
         props: { toolProp: 'CharacterizationTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/CharacterizationTools.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'reconstruction_homepage',
         props: { toolProp: 'ReconstructionTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ReconstructionTools.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: 'simtools',
         props: { toolProp: 'SimulationTools' },
-        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ToolSetTemplate.vue'),
+        component: () => import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/SimulationTools.vue'),
         meta: { requiresAuth: false }
       }
     ]
@@ -88,13 +88,6 @@ const nanomineRoutes = [
         path: 'chempropsapitoken',
         name: 'ChemPropsAPIToken',
         component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'CorrelationCharacterize',
-        name: 'CorrelationCharacterize',
-        component: () => import(/* webpackChunkName: "CorrelationCharacterize" */ '@/pages/nanomine/tools/CorrelationCharacterize.vue'),
-        // props: { card: true },
         meta: { requiresAuth: false }
       }
     ]
