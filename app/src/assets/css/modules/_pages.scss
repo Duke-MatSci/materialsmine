@@ -140,6 +140,9 @@
             &-title {
                 color: $secondary !important;
                 font-weight: 900;
+                :hover {
+                    color:$primary !important;
+                }
             }
             &-type {
                 color: $secondary !important;

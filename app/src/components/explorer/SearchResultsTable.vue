@@ -52,8 +52,8 @@
                 v-if="result.thumbnail"
               >
             </md-avatar>
-            <router-link :to="`/explorer/chart/view/${result.identifier}`">
-              <div class="results_card-title">{{ result.label }}</div>
+            <router-link :to="`/explorer/chart/view/${result.identifier}`"  class="results_card-title">
+              <div >{{ result.label }}</div>
             </router-link>
             <div v-if="resultsTab !== 'Images' && resultsTab!=='Charts'">
               <div class="results_card-type">Type</div>
@@ -62,7 +62,6 @@
               </div>
             </div>
           </md-card-header>
-
 
         </div>
       </div>
