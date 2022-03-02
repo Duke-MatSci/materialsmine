@@ -1,13 +1,20 @@
 import { mapMutations, mapGetters } from 'vuex'
 import { JobMgr } from '@/modules/JobMgr.js'
-import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 import Dialog from '@/components/Dialog'
+import ToolTemplate from '../ToolTemplate'
 // import { Auth } from '@/modules/Auth.js'
 export default {
   name: 'Dynamfit',
   components: {
-    ReferenceContainer,
+    ToolTemplate,
     dialogbox: Dialog
+  },
+  props: {
+    card: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
   },
   data () {
     return {

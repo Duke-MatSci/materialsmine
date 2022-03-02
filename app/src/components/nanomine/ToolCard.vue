@@ -5,8 +5,8 @@
     </md-card-media>
     <md-card-header v-if="title" key="tool_title">
         <div class="md-title" v-if="link" key="has_tool_link">
-          <router-link v-if="!externalLink" :to="link">{{ title }}</router-link>
-          <a v-else :href="link" target="_blank">{{ title }}</a>
+          <router-link v-if="!externalLink" :to="linkTarget">{{ title }}</router-link>
+          <a v-else :href="linkTarget" target="_blank">{{ title }}</a>
         </div>
         <div class="md-title" v-else key="no_tool_link">
           {{ title }}
@@ -47,6 +47,11 @@ export default {
       type: Boolean,
       required: false,
       default: false
+    }
+  },
+  computed: {
+    linkTarget: function () {
+      return this.externalLink ? this.link : `/nm/tools/${this.link}`
     }
   }
 }

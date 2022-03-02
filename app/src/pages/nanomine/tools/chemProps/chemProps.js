@@ -1,7 +1,7 @@
 import { mapGetters, mapMutations } from 'vuex'
 // import { Auth } from '@/modules/Auth.js'
 import SmilesCanvas from '@/components/nanomine/SmilesCanvas'
-import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
+import ToolTemplate from '../ToolTemplate'
 import Dialog from '@/components/Dialog'
 const SERVER = `${window.location.origin}/nmr/api`
 // const SERVER = `http://localhost:8000/nmr/api`
@@ -10,9 +10,16 @@ const URL = SERVER
 export default {
   name: 'ChemProps',
   components: {
-    ReferenceContainer,
     SmilesCanvas,
+    ToolTemplate,
     dialogbox: Dialog
+  },
+  props: {
+    card: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
   },
   data () {
     return {
@@ -46,7 +53,12 @@ export default {
         terminalCarbons: true,
         debug: false
       },
-      references: []
+      tool: {
+        references: [
+          '10.1186/s13321-021-00502-6',
+          '10.1021/acs.jcim.7b00425'
+        ]
+      }
     }
   },
   watch: {
@@ -71,7 +83,6 @@ export default {
       result = await result.json()
       if (result.token) this.chempropsToken = result.token
     }
-    this.references = this.$store.getters.chemPropsReferences
   },
   methods: {
     ...mapMutations({
