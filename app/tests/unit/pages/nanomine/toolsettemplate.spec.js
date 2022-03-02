@@ -1,5 +1,5 @@
 import createWrapper from '../../../jest/script/wrapper'
-import ToolSetTemplate from '@/pages/nanomine/tools/toolSetTemplate/ToolSetTemplate.vue'
+import ToolSetTemplate from '@/pages/nanomine/toolSets/ToolSetTemplate.vue'
 
 var wrapper = null
 

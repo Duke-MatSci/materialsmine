@@ -34,6 +34,25 @@ export default {
         // AUTH MOCKED because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
+      },
+      tool: {
+        appHeaderInfo: {
+          icon: '',
+          type: 'home',
+          name: 'MaterialsMine',
+          subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
+        },
+        name: 'Dynamfit',
+        link: 'Dynamfit',
+        title: 'Dynamfit',
+        imageFile: 'nanomine/dynamfit.png',
+        text: 'Dynamfit is a sign control algorithm for Prony Series fitting. This program fits a viscoelastic mastercurve from DMA ' +
+        'experiments with a Prony Series. The Prony Series coefficients can be used as baseline properties for the matrix in a FEA simulation ' +
+        'of nanocomposites.',
+        display: true,
+        references: [
+          '10.1023/A:1009772018066'
+        ]
       }
     }
   },
@@ -194,8 +213,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      dialogBoxActive: 'dialogBox',
-      references: 'Dynamfit/references'
+      dialogBoxActive: 'dialogBox'
     })
   }
 }

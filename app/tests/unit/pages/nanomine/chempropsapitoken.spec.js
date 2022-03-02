@@ -13,7 +13,7 @@ global.console = {
 }
 global.fetch = jest.fn()
 
-describe('ChemProps.vue', () => {
+describe('ChemPropsAPIToken.vue', () => {
   beforeAll(() => {
     wrapper = createWrapper(ChemPropsAPIToken, {})
   })

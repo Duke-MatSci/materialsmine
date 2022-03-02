@@ -13,7 +13,7 @@ global.console = {
 }
 global.fetch = jest.fn()
 
-describe('ChemProps.vue', () => {
+describe('DynamfitResult.vue', () => {
   beforeAll(() => {
     wrapper = createWrapper(DynamfitResult, {})
   })
