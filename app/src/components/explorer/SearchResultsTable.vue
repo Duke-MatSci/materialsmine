@@ -13,9 +13,9 @@
         <div
           v-for="(result, index) in items"
           :key="index"
-          class="btn--animated gallery-item results_card"
+          class="btn--animated md-card gallery-item results_card"
         >
-          <!-- <div class="utility-gridicon">
+          <div class="utility-gridicon_explorer">
             <div
               @click.prevent="bookmark(result.name, true)"
               v-if="result.bookmark"
@@ -28,36 +28,42 @@
             >
               <md-icon>bookmark_border</md-icon>
             </div>
-          </div> -->
+          </div>
 
-          <router-link :to="`/explorer/chart/view/${result.id}`">
-            <md-card-media-cover
-              v-if="resultsTab=='Images' || resultsTab== 'Charts'"
-              md-solid
-            >
-              <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
-                <img
-                  :src="getThumbnailUrl(result)"
-                  :alt="result.label"
-                  v-if="result.thumbnail"
-                >
-              </md-card-media>
-              <md-icon v-else class="md-size-5x"> image </md-icon>
-              <!-- <md-card-area class="u_gridbg">
-                <md-card-header class="u_show_hide">
-                  <span class="md-subheading">
-                    <strong>{{ result.label }}</strong>
-                  </span>
-                  <span class="md-body-1">{{ reduceDescription(result.description) }}</span>
-                </md-card-header>
-              </md-card-area> -->
-            </md-card-media-cover>
-            <div class="results_card-title">{{ result.label }}</div>
-            <div class="results_card-type">Type</div>
-            <div class="md-body-1 results_card-description" v-if="resultsTab !== 'Images' && resultsTab!=='Charts'">
-                {{ reduceDescription(result.description) }}
+          <md-card-media-cover
+            v-if="resultsTab=='Images' || resultsTab== 'Charts'"
+            md-solid
+          >
+            <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
+              <img
+                :src="getThumbnailUrl(result)"
+                :alt="result.label"
+                v-if="result.thumbnail"
+              >
+            </md-card-media>
+            <md-icon v-else class="md-size-5x"> image </md-icon>
+          </md-card-media-cover>
+
+          <md-card-header style="padding:0px">
+            <md-avatar v-if="resultsTab=='Samples' && result.thumbnail">
+              <img
+                :src="getThumbnailUrl(result)"
+                :alt="result.label"
+                v-if="result.thumbnail"
+              >
+            </md-avatar>
+            <router-link :to="`/explorer/chart/view/${result.identifier}`">
+              <div class="results_card-title">{{ result.label }}</div>
+            </router-link>
+            <div v-if="resultsTab !== 'Images' && resultsTab!=='Charts'">
+              <div class="results_card-type">Type</div>
+              <div class="md-body-1 results_card-description" v-if="result.description" >
+                  {{ reduceDescription(result.description) }}
+              </div>
             </div>
-          </router-link>
+          </md-card-header>
+
+
         </div>
       </div>
       <pagination
