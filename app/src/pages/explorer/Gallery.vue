@@ -11,9 +11,7 @@
     >
       <div class="u_content__result">
         <!-- TODO TIME TO RESULT -->
-        <span
-          class="u_color"
-        >
+        <span class="u_color">
           <strong v-if="otherArgs != null">{{ otherArgs }}</strong>
           <span v-if="total === 0">
             No results
@@ -51,10 +49,8 @@
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
-          <router-link :to="`/explorer/chart/view/${result.identifier}`">
-            <md-card-media-cover
-              md-solid
-            >
+          <router-link :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
+            <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
                   :src="getThumbnailUrl(result)"
@@ -91,7 +87,8 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
-import {getViewUrl} from '@/modules/whyis-view'
+import { toChartId } from '@/modules/vega-chart'
+import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
 export default {
@@ -119,7 +116,13 @@ export default {
     spinner
   },
   computed: {
-    ...mapGetters('explorer/gallery', ['items', 'page', 'total', 'totalPages', 'queryTimeMillis'])
+    ...mapGetters('explorer/gallery', [
+      'items',
+      'page',
+      'total',
+      'totalPages',
+      'queryTimeMillis'
+    ])
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
@@ -138,8 +141,11 @@ export default {
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
       this.loading = false
     },
-    getThumbnailUrl(item) {
-      return getViewUrl({uri: item.thumbnail})
+    getThumbnailUrl (item) {
+      return getViewUrl({ uri: item.thumbnail })
+    },
+    getChartId (chart) {
+      return toChartId(chart.identifier)
     }
   },
   async mounted () {

@@ -35,7 +35,7 @@ const explorerRoutes = [
         meta: { requiresAuth: false }
       },
       {
-        path: 'edit/:uri',
+        path: 'edit/:chartId',
         name: 'ChartEdit',
         meta: { requiresAuth: false }
       },
@@ -45,7 +45,7 @@ const explorerRoutes = [
         meta: { requiresAuth: false }
       },
       {
-        path: 'view/:uri',
+        path: 'view/:chartId',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
         meta: { requiresAuth: false }
