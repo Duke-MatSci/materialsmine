@@ -31,6 +31,7 @@ const explorerRoutes = [
       {
         path: '',
         name: 'ChartGallery',
+        component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
       {

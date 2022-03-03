@@ -10,7 +10,7 @@
                 </div>
 
                 <div class="md-toolbar-section-end">
-                    <md-button><span class="metamine_menu">ABOUT</span></md-button>
+                    <router-link to="/mm/teams"><md-button><span class="metamine_menu">ABOUT</span></md-button></router-link>
                     <md-button href="/explorer"><span class="metamine_menu">VISUALIZE</span></md-button>
                     <md-button><span class="metamine_menu">TOOLS</span></md-button>
                     <md-button><span class="metamine_menu">CONTACT</span></md-button>
