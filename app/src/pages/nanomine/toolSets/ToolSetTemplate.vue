@@ -1,6 +1,6 @@
 <template>
   <div :class="`section_${toolSetName}`" :key="toolSetName">
-    <tool-card class="md-layout-item tool-card" v-if="card" v-bind="cardContent" :key="card ? cardContent.name : ''"></tool-card>
+    <tool-card class="md-layout-item tool-card" v-if="card" v-bind="cardContent"></tool-card>
     <div v-else class="wrapper md-layout md-alignment-top-center">
       <div class="team_header md-layout-item md-size-80">
         <h1 class="visualize_header-h1 teams_header">{{ pageContent.title }}</h1>
@@ -9,12 +9,8 @@
         {{ pageContent.text }}
       </div>
 
-      <div class="md-layout-item md-size-80 md-layout md-alignment-top-space-around md-gutter tool-card">
+      <div class="md-layout-item md-size-80 md-layout md-alignment-top-space-around md-gutter">
         <component class="md-layout-item" v-for="tool of toolCards" v-bind:is="tool" :key="tool" card></component>
-      </div>
-
-      <div class="md-layout-item md-size-80 md-layout md-alignment-top-left reference-container" v-if="pageContent.references">
-        <reference-container :references="pageContent.references" :openOnLoad="false"></reference-container>
       </div>
     </div>
   </div>
