@@ -2,6 +2,7 @@ import ReferenceContainer from '@/components/nanomine/ReferenceContainer'
 import Dialog from '@/components/Dialog'
 import ImageUpload from '@/components/nanomine/ImageUpload'
 import { JobMgr } from '@/modules/JobMgr.js'
+import ToolCard from '@/components/nanomine/ToolCard'
 
 import { mapGetters, mapMutations } from 'vuex'
 // import {Auth} from '@/modules/Auth.js'
@@ -10,14 +11,20 @@ import Jszip from 'jszip'
 export default {
   name: 'MCRToolTemplate',
   components: {
+    ToolCard,
     ReferenceContainer,
     ImageUpload,
     dialogbox: Dialog
   },
   props: {
-    toolProp: {
-      type: String,
+    tool: {
+      type: Object,
       required: true
+    },
+    card: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   sockets: {
@@ -41,7 +48,7 @@ export default {
         })
     },
     hello: function (data) {
-      if (data === 'connection received' && this.job.useWebsocket === true) {
+      if (data === 'connection received' && this.tool.useWebsocket === true) {
         this.useWebsocket = true
       }
     }
@@ -95,12 +102,9 @@ export default {
     this.$socket.emit('testConnection')
   },
   computed: {
-    tool: function () {
-      return this.toolProp
-    },
     toolName: function () {
-      if (this.pageContent) {
-        return this.pageContent.name || ''
+      if (this.tool) {
+        return this.tool.name || ''
       } else {
         return this.toolProp
       }
@@ -111,10 +115,7 @@ export default {
   },
   methods: {
     resetContent () {
-      this.job = this.$store.getters[`${this.tool}/jobInfo`]
-      console.log(this.job)
-      this.pageContent = this.$store.getters[`${this.tool}/pageContent`]
-      this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: this.pageContent.title })
+      this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: this.tool.title })
     },
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
@@ -131,14 +132,14 @@ export default {
     },
     successDlg () {
       let contentSockets
-      if (this.job.useWebsocket) {
+      if (this.tool.useWebsocket) {
         contentSockets = 'Please stay on this page. Results may take up to a few minutes to load.'
       } else {
         contentSockets = 'You should receive an email with a link to the job output.'
       }
       this.renderDialog({
-        title: `${this.job.jobTitle} Job Submitted Successfully`,
-        content: `Your ${this.job.jobTitle} job is: ${this.jobId}<br />${contentSockets}`,
+        title: `${this.tool.jobTitle} Job Submitted Successfully`,
+        content: `Your ${this.tool.jobTitle} job is: ${this.toolId}<br />${contentSockets}`,
         reason: 'successDlg'
       })
     },
@@ -228,7 +229,7 @@ export default {
       }
 
       const jm = new JobMgr()
-      jm.setJobType(this.job.submit.submitJobTitle)
+      jm.setJobType(this.tool.submit.submitJobTitle)
 
       var jobParameters = { InputType: this.files.fileType, useWebsocket: this.useWebsocket } // Figure out which file type
       for (var key in this.selectedOptions) {
@@ -240,8 +241,8 @@ export default {
           jobParameters[key] = this.selectedOptions[key]
         }
       }
-      if ('submitJobType' in this.job.submit) {
-        jobParameters.jobtype = this.job.submit.submitJobType
+      if ('submitJobType' in this.tool.submit) {
+        jobParameters.jobtype = this.tool.submit.submitJobType
       }
       jm.setJobParameters(jobParameters)
 
@@ -251,7 +252,7 @@ export default {
         this.$socket.emit('newJob', jobId)
         this.results.submitted = true
         this.results.obtained = false
-        this.jobId = jobId
+        this.toolId = jobId
         this.resetLoading()
         this.successDlg = true
       }, function (errCode, errMsg) {

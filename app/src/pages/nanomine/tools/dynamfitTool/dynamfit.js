@@ -1,12 +1,12 @@
 import { mapMutations, mapGetters } from 'vuex'
 import { JobMgr } from '@/modules/JobMgr.js'
 import Dialog from '@/components/Dialog'
-import ToolTemplate from '../ToolTemplate'
+import MCRToolTemplate from '../MCRToolTemplate/MCRToolTemplate.vue'
 // import { Auth } from '@/modules/Auth.js'
 export default {
   name: 'Dynamfit',
   components: {
-    ToolTemplate,
+    ToolTemplate: MCRToolTemplate,
     dialogbox: Dialog
   },
   props: {

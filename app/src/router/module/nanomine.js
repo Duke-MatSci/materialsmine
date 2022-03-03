@@ -89,6 +89,60 @@ const nanomineRoutes = [
         name: 'ChemPropsAPIToken',
         component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/chemPropsAPIToken/ChemPropsAPIToken.vue'),
         meta: { requiresAuth: false }
+      },
+      {
+        path: 'CorrelationCharacterize',
+        name: 'CorrelationCharacterize',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/CorrelationCharacterize.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'CorrelationReconstruct',
+        name: 'CorrelationReconstruct',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/CorrelationReconstruct.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'DescriptorCharacterize',
+        name: 'DescriptorCharacterize',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/DescriptorCharacterize.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'DescriptorReconstruct',
+        name: 'DescriptorReconstruct',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/DescriptorReconstruct.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'IntelligentCharacterize',
+        name: 'IntelligentCharacterize',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/IntelligentCharacterize.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'Niblack',
+        name: 'Niblack',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/NiblackBinarization.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'Otsu',
+        name: 'Otsu',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/OtsuBinarization.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'SDFCharacterize',
+        name: 'SDFCharacterize',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/SDFCharacterize.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'SDFReconstruct',
+        name: 'SDFReconstruct',
+        component: () => import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/SDFReconstruct.vue'),
+        meta: { requiresAuth: false }
       }
     ]
   },

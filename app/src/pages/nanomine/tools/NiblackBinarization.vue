@@ -3,12 +3,11 @@
 </template>
 
 <script>
-import ToolTemplate from './ToolTemplate'
-
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
 export default {
   name: 'NiblackBinarization',
   components: {
-    ToolTemplate
+    ToolTemplate: MCRToolTemplate
   },
   props: {
     card: {

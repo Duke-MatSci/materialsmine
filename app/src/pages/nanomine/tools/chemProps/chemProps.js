@@ -1,8 +1,8 @@
 import { mapGetters, mapMutations } from 'vuex'
 // import { Auth } from '@/modules/Auth.js'
 import SmilesCanvas from '@/components/nanomine/SmilesCanvas'
-import ToolTemplate from '../ToolTemplate'
 import Dialog from '@/components/Dialog'
+import MCRToolTemplate from '../MCRToolTemplate/MCRToolTemplate'
 const SERVER = `${window.location.origin}/nmr/api`
 // const SERVER = `http://localhost:8000/nmr/api`
 const URL = SERVER
@@ -11,7 +11,7 @@ export default {
   name: 'ChemProps',
   components: {
     SmilesCanvas,
-    ToolTemplate,
+    ToolTemplate: MCRToolTemplate,
     dialogbox: Dialog
   },
   props: {
