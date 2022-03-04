@@ -23,7 +23,10 @@ const toolSetTemplateProps = {
 describe('ToolSetTemplate.vue', () => {
   beforeAll(() => {
     wrapper = createWrapper(ToolSetTemplate, {
-      props: toolSetTemplateProps
+      props: toolSetTemplateProps,
+      mocks: {
+        $socket: { emit: jest.fn() }
+      }
     })
   })
   it('mounts properly', () => {
