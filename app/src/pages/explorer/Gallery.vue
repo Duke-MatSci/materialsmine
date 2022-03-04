@@ -91,7 +91,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
-import {getViewUrl} from '@/modules/whyis-view'
+import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
 export default {
@@ -138,8 +138,8 @@ export default {
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
       this.loading = false
     },
-    getThumbnailUrl(item) {
-      return getViewUrl({uri: item.thumbnail})
+    getThumbnailUrl (item) {
+      return getViewUrl({ uri: item.thumbnail })
     }
   },
   async mounted () {
