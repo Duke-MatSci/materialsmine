@@ -3,11 +3,13 @@ import actions from './actions.js'
 import getters from './getters.js'
 
 import gallery from './gallery'
+import results from './results'
 
 export default {
   namespaced: true,
   modules: {
-    gallery
+    gallery,
+    results
   },
   state () {
     return {

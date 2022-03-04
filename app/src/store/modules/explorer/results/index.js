@@ -6,11 +6,12 @@ export default {
   namespaced: true,
   state () {
     return {
-      allItems: null,
-      items: null,
-      pageSize: 50,
-      page: 1,
-      queryTimeMillis: 0
+      // TODO:
+      articles: null,
+      samples: null,
+      images: null,
+      charts: null,
+      materials: null
     }
   },
   mutations,

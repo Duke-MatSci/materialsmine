@@ -128,6 +128,44 @@
     &-list {
         margin-bottom: 4rem;
     }
+    &-results {
+        margin: 0rem 10rem;
+        .md-card {
+            padding: 1rem;
+            cursor: default;
+        }
+        .results_card{
+            margin: 1rem;
+            position: relative !important;
+            &-title {
+                color: $secondary !important;
+                font-weight: 900;
+                :hover {
+                    color:$primary !important;
+                }
+            }
+            &-type {
+                color: $secondary !important;
+                font-weight: 500;
+                font-size: small;
+                font-style: italic;
+            }
+            &-description {
+                color: $primary !important;
+                padding-left: 2rem;
+                font-style: italic;
+            }
+            .md-avatar {
+                border: none;
+                border-radius:0%;
+                width: 10rem;
+                height: 10rem;
+                img {
+                    object-fit: cover;
+                }
+            }
+        }
+    }
 }
 
 .metamine {

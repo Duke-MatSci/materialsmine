@@ -340,7 +340,6 @@
         @include respond(tab-land){
             right: 2.5rem;
         }
-
         & > div {
             display: inline-block;
 
@@ -349,6 +348,20 @@
                 cursor: pointer;
             }
         }
+
+        &_explorer {
+            position: absolute;
+            right: 0.5rem;
+            z-index: 10000000;
+            & > div {
+                display: inline-block;
+                & > i {
+                    font-size: 2rem !important;
+                    cursor: pointer;
+                }
+            }
+        }
+
 
         &-single{
             position: absolute;
