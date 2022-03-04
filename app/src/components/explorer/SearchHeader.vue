@@ -10,24 +10,25 @@
                 <button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
             </div>
         </div>
-        <div style="text-align:right"> Query "{{searchWord}}" found 12345 results </div>
+        <div style="text-align:right"> Query "{{searchWord}}" found {{totalResults}} results </div>
         </md-card>
         <md-tabs class="btn--primary">
-            <md-tab :md-label="'Articles (' + articles + ')'" @click="setResultsTab('Articles')"></md-tab>
-            <md-tab :md-label="'Samples (' + samples + ')'" @click="setResultsTab('Samples')"></md-tab>
-            <md-tab :md-label="'Images (' + images + ')'" @click="setResultsTab('Images')"></md-tab>
-            <md-tab :md-label="'Charts (' + charts + ')'" @click="setResultsTab('Charts')"></md-tab>
-            <md-tab :md-label="'Materials (' + materials + ')'" @click="setResultsTab('Materials')"></md-tab>
+            <md-tab :md-label="'Articles (' + totalArticles + ')'" @click="setResultsTab('Articles')"></md-tab>
+            <md-tab :md-label="'Samples (' + totalSamples + ')'" @click="setResultsTab('Samples')"></md-tab>
+            <md-tab :md-label="'Images (' + totalImages + ')'" @click="setResultsTab('Images')"></md-tab>
+            <md-tab :md-label="'Charts (' + totalCharts + ')'" @click="setResultsTab('Charts')"></md-tab>
+            <md-tab :md-label="'Materials (' + totalMaterials + ')'" @click="setResultsTab('Materials')"></md-tab>
             <!-- <md-tab :md-label="'Other (' + other + ')'" @click="setResultsTab('Other')"></md-tab> -->
         </md-tabs>
     </div>
 </template>
 <script>
-import { mapMutations } from 'vuex'
+import { mapMutations, mapGetters } from 'vuex'
 export default {
   name: 'SearchHeader',
   props: ['searchEnabled'],
   computed: {
+    ...mapGetters('explorer/results', ['articles', 'samples', 'images', 'charts', 'materials']),
     searchWord: {
       get () {
         return this.$store.getters['explorer/getSearchKeyword']
@@ -36,20 +37,23 @@ export default {
         return this.$store.commit('explorer/setSearchKeyword', payload)
       }
     },
-    images () {
-      return 0
+    totalArticles () {
+      return (this.articles ? this.articles.length : 0)
     },
-    samples () {
-      return 0
+    totalSamples () {
+      return (this.samples ? this.samples.length : 0)
     },
-    articles () {
-      return 0
+    totalImages () {
+      return (this.images ? this.images.length : 0)
     },
-    charts () {
-      return 0
+    totalCharts () {
+      return (this.charts ? this.charts.length : 0)
     },
-    materials () {
-      return 0
+    totalMaterials () {
+      return (this.materials ? this.materials.length : 0)
+    },
+    totalResults () {
+      return (this.totalArticles + this.totalSamples + this.totalImages + this.totalCharts + this.totalMaterials)
     }
     // other () {
     //   return 0

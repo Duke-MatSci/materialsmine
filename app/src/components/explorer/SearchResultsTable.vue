@@ -81,13 +81,7 @@ import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
 export default {
-  name: 'viz-grid',
-  props: {
-    instancetype: {
-      type: String,
-      require: true
-    }
-  },
+  name: 'search-results',
   data () {
     return {
       loading: true,
@@ -106,6 +100,7 @@ export default {
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
+    ...mapActions('explorer/results', ['loadArticles', 'loadSamples', 'loadImages', 'loadCharts', 'loadMaterials']),
     reduceDescription (args) {
       const arr = args.split(' ')
       arr.splice(50)
@@ -113,6 +108,22 @@ export default {
       const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       return `${res}...`
     },
+    async loadAllItems () {
+      this.loading = true
+      // Chain promises together so they don't all load simultaneously
+      this.loadArticles()
+        .then(()=> this.loadSamples())
+        .then(()=> this.loadImages())
+        .then(()=> this.loadCharts())
+        .then(()=> this.loadMaterials())
+        .catch(error => console.error(error))
+
+      // Keeping this here temporarily to load filler data for styling
+      await this.$store.dispatch('explorer/gallery/loadItems', 1)
+      this.loading = false
+    },
+    
+    // TODO: modify this function for results so pagination works specifically on the type of object being browsed
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
@@ -123,7 +134,7 @@ export default {
     }
   },
   async mounted () {
-    await this.loadItems()
+    await this.loadAllItems()
   }
 }
 </script>
