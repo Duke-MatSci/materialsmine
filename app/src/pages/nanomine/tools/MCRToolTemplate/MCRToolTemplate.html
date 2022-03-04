@@ -2,7 +2,7 @@
 <div class="md-layout" v-else>
   <div class="md-layout-item md-size-100">
     <slot>
-      <div :class="`section_${toolName}`" class="md-layout md-alignment-top-center md-gutter" :key="tool">
+      <div :class="`section_${toolName}`" class="md-layout md-alignment-top-center md-gutter" :key="tool.name">
         <div class="wrapper md-layout-item md-size-80 md-layout md-alignment-top-left">
           <div class="team_header md-layout-item md-size-100">
             <h1 class="visualize_header-h1 teams_header">{{ pageContent.title }}</h1>
@@ -30,18 +30,18 @@
           <div class="md-layout-item md-size-100">
             <div>
               <h3>Description</h3>
-              <div v-for='(sentence, index) in job.description' :key='index'>
+              <div v-for='(sentence, index) in tool.description' :key='index'>
                 <p v-html='sentence'>{{ sentence }}</p>
               </div>
             </div>
             <div>
               <h3>Input Options</h3>
               <ol>
-                <li v-for="uploadOption of job.uploadOptions" :key="uploadOption.title">
+                <li v-for="uploadOption of tool.uploadOptions" :key="uploadOption.title">
                   <strong>{{ uploadOption.title }}:</strong> <span v-html="uploadOption.description"></span>
                 </li>
               </ol>
-              <!-- <div v-for='(uploadOption, index) in job.uploadOptions' v-bind:key='uploadOption.title'>
+              <!-- <div v-for='(uploadOption, index) in tool.uploadOptions' v-bind:key='uploadOption.title'>
                 <p><strong>{{ index + 1 }}. {{ uploadOption.title }}:</strong> <span v-html='uploadOption.description'>{{
                     uploadOption.description }}</span></p>
               </div> -->
@@ -51,18 +51,18 @@
           <div v-if='"results" in job'
             class="md-layout-item md-size-100 md-layout md-alignment-top-left result_container">
             <h3>Results</h3>
-            <div v-for='(result, index) in job.results' :key='index' class="md-layout-item md-size-50 result_item">
+            <div v-for='(result, index) in tool.results' :key='index' class="md-layout-item md-size-50 result_item">
               <p v-html='result'></p>
             </div>
           </div>
 
           <h3>Image Upload</h3>
           <ImageUpload class='imageUpload' @setFiles="setFiles" @set-selectors="setSelectors"
-            :aspectRatio="job.aspectRatio" :selects='job.selects' :collectDimensions='job.getImageDimensions'
-            :acceptFileTypes="job.acceptableFileTypes">
+            :aspectRatio="tool.aspectRatio" :selects='tool.selects' :collectDimensions='tool.getImageDimensions'
+            :acceptFileTypes="tool.acceptableFileTypes">
           </ImageUpload>
 
-          <md-button class="md-layout-item md-size-100 md-primary" @click="submit()">{{ job.submit.submitButtonTitle }}
+          <md-button class="md-layout-item md-size-100 md-primary" @click="submit()">{{ tool.submit.submitButtonTitle }}
           </md-button>
 
           <div class="md-layout-item md-size-100" v-if='results.submitted && useWebsocket'>
@@ -87,13 +87,13 @@
                 </div>
               </div>
             </div>
-            <p v-else>Loading...</p>
+            <spinner v-else></spinner>
+          </div>
+          <div class="md-layout-item md-size-80 md-layout md-alignment-top-center reference-container">
+            <reference-container :references="tool.references" :openOnLoad="false"></reference-container>
           </div>
         </div>
       </div>
     </slot>
-  </div>
-  <div class="md-layout-item md-size-80 md-layout md-alignment-top-center reference-container">
-    <reference-container :references="tool.references" :openOnLoad="false"></reference-container>
   </div>
 </div>

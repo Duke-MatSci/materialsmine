@@ -3,6 +3,7 @@ import Dialog from '@/components/Dialog'
 import ImageUpload from '@/components/nanomine/ImageUpload'
 import { JobMgr } from '@/modules/JobMgr.js'
 import ToolCard from '@/components/nanomine/ToolCard'
+import Spinner from '@/components/Spinner.vue'
 
 import { mapGetters, mapMutations } from 'vuex'
 // import {Auth} from '@/modules/Auth.js'
@@ -14,7 +15,8 @@ export default {
     ToolCard,
     ReferenceContainer,
     ImageUpload,
-    dialogbox: Dialog
+    dialogbox: Dialog,
+    Spinner
   },
   props: {
     tool: {
