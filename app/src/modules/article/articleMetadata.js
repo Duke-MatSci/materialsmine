@@ -10,7 +10,7 @@ export default {
    */
   get: async function ({ doi }) {
     // SemanticScholar API fields
-    const articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue']
+    const articleFields = ['title', 'authors', 'year', 'abstract', 'citationCount', 'isOpenAccess', 'venue', 'url']
     const citationFields = ['title', 'authors', 'year', 'paperId']
     const referencesFields = ['title', 'authors', 'year', 'paperId']
 
