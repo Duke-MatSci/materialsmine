@@ -112,17 +112,17 @@ export default {
       this.loading = true
       // Chain promises together so they don't all load simultaneously
       this.loadArticles()
-        .then(()=> this.loadSamples())
-        .then(()=> this.loadImages())
-        .then(()=> this.loadCharts())
-        .then(()=> this.loadMaterials())
+        .then(() => this.loadSamples())
+        .then(() => this.loadImages())
+        .then(() => this.loadCharts())
+        .then(() => this.loadMaterials())
         .catch(error => console.error(error))
 
       // Keeping this here temporarily to load filler data for styling
       await this.$store.dispatch('explorer/gallery/loadItems', 1)
       this.loading = false
     },
-    
+
     // TODO: modify this function for results so pagination works specifically on the type of object being browsed
     async loadItems (page = 1) {
       this.loading = true

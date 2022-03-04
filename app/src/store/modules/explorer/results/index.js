@@ -6,7 +6,7 @@ export default {
   namespaced: true,
   state () {
     return {
-      //TODO:
+      // TODO:
       articles: null,
       samples: null,
       images: null,
