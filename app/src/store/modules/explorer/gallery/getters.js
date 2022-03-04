@@ -17,7 +17,7 @@ export default {
   totalPages (state, getters) {
     return Math.ceil(getters.total / getters.pageSize)
   },
-  queryTimeMillis(state) {
+  queryTimeMillis (state) {
     return state.queryTimeMillis
   }
 }
