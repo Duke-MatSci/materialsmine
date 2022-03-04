@@ -21,7 +21,7 @@ export default {
       tool: {
         name: 'TransferLearning',
         link: 'https://ideal.mech.northwestern.edu/research/software/download/',
-        externalToolLink: true,
+        externalLink: true,
         linkText: 'Request Download',
         title: 'Transfer Learning',
         text: 'Transfer learning captures spatial correlations for microstructure reconstruction by leveraging the superior capabilities ' +

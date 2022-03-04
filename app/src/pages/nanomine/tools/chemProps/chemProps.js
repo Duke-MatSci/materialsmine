@@ -2,7 +2,7 @@ import { mapGetters, mapMutations } from 'vuex'
 // import { Auth } from '@/modules/Auth.js'
 import SmilesCanvas from '@/components/nanomine/SmilesCanvas'
 import Dialog from '@/components/Dialog'
-import MCRToolTemplate from '../MCRToolTemplate/MCRToolTemplate'
+import MCRToolTemplate from '../MCRToolTemplate/MCRToolTemplate.vue'
 const SERVER = `${window.location.origin}/nmr/api`
 // const SERVER = `http://localhost:8000/nmr/api`
 const URL = SERVER
