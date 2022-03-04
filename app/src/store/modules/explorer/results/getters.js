@@ -1,5 +1,5 @@
 export default {
-  //TODO: 
+  // TODO:
   articles (state) {
     return state.articles
   },
@@ -14,5 +14,5 @@ export default {
   },
   materials (state) {
     return state.materials
-  },
+  }
 }

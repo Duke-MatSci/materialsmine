@@ -1,5 +1,5 @@
 export default {
-  //TODO:
+  // TODO:
   setArticles (state, articles) {
     state.articles = articles
   },
