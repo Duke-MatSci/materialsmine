@@ -2,15 +2,6 @@ import createWrapper from '../../../jest/script/wrapper'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer.vue'
 
 var wrapper = null
-// global.console = {
-//   log: jest.fn(), // console.log are ignored in tests
-
-//   // Keep native behavior for other methods
-//   error: console.error,
-//   warn: console.warn,
-//   info: console.info,
-//   debug: console.debug
-// }
 
 const referenceProp = ['10.1073/pnas.1704711114']
 

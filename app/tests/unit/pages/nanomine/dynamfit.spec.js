@@ -2,16 +2,6 @@ import createWrapper from '../../../jest/script/wrapper'
 import Dynamfit from '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'
 
 var wrapper = null
-global.console = {
-  log: jest.fn(), // console.log are ignored in tests
-
-  // Keep native behavior for other methods
-  error: console.error,
-  warn: console.warn,
-  info: console.info,
-  debug: console.debug
-}
-global.fetch = jest.fn()
 
 describe('Dynamfit.vue', () => {
   beforeAll(() => {

@@ -5,15 +5,6 @@ var wrapper = null
 // suppress jsdom alert 'Not implemented window.open'
 window.open = jest.fn()
 window.open.mockClear()
-global.console = {
-  log: jest.fn(), // console.log are ignored in tests
-
-  // Keep native behavior for other methods
-  error: console.error,
-  warn: console.warn,
-  info: console.info,
-  debug: console.debug
-}
 
 describe('HowTo.vue', () => {
   beforeAll(async () => {
