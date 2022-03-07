@@ -9,15 +9,17 @@
   TODO: overrides for theme and computeOnly do not seem to be working and removed from sample
 */
 <script>
+// NOTE: The old repository had a CanvasWrapper.vue to manage the canvas tag.
+// It didn't seem immediately necessary, but if you're coming back to this and
+// think it is, then look in the nanomine repository for that file.
+// -- Rory Schadler, March 2022.
 // import CanvasWrapper from './CanvasWrapper'
+
 // eslint-disable-next-line no-unused-vars
 import * as SmilesDrawer from 'smiles-drawer'
 import _ from 'lodash'
 
 export default {
-  // components: {
-  //   CanvasWrapper
-  // },
   name: 'Smiles',
   props: {
     smilesOptions: {
@@ -71,7 +73,6 @@ export default {
     },
     smilesInput: function (v) {
       const vm = this
-      // console.log('smiles input: ' + v)
       vm.smilesValue = v
       vm.setInput(v)
     },
@@ -88,7 +89,6 @@ export default {
     }
   },
   mounted () {
-    // console.log('canvas-id: ' + this.canvasId)
     this.overrideOptions(this.smilesOptions)
     this.smilesDrawer = new SmilesDrawer.Drawer(this.smilesOptionsAdjusted)
     this.provider.context = this.$refs['wrapped-canvas'].getContext('2d')
@@ -127,8 +127,6 @@ export default {
           }
           if (vm.onErrorHandler) {
             vm.onErrorHandler(err)
-          } else {
-            // console.log('smilesDrawer error: ' + err)
           }
         })
       } else { // clear values on empty input
@@ -163,12 +161,3 @@ export default {
 
 }
 </script>
-
-<style scoped>
-  .smiles {
-  }
-  .canvas-wrapper {
-    padding: 0;
-    margin: 0;
-  }
-</style>
