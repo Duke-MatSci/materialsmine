@@ -1,7 +1,7 @@
 const path = require('path');
 const express = require('express');
 const multer = require('multer');
-const { uniqueNamesGenerator, adjectives, names, animals } = require('unique-names-generator')
+const { uniqueNamesGenerator, adjectives, names, animals } = require('unique-names-generator');
 
 const shortName = uniqueNamesGenerator({
   dictionaries: [adjectives, animals, names],

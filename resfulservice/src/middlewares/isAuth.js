@@ -19,7 +19,7 @@ module.exports = (req, res, next) => {
     throw err;
   }
   if (!decodedToken) {
-    log.error(`isAuth.js(): 401 - decodedToken not found after jwt decode`);
+    log.error('isAuth.js(): 401 - decodedToken not found after jwt decode');
     const error = new Error('Not authenticated.');
     error.statusCode = 401;
     throw error;

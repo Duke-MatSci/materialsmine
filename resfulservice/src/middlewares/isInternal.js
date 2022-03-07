@@ -23,7 +23,7 @@ exports.getInternal = (req, res, next) => {
 
 exports.setInternal = (req, res, next) => {
   const log = req.logger;
-  let signedToken
+  let signedToken;
   try {
     signedToken = signToken(req, {
       isInternal: true
@@ -35,4 +35,4 @@ exports.setInternal = (req, res, next) => {
   }
   req.signedToken = signedToken;
   next();
-}
+};
