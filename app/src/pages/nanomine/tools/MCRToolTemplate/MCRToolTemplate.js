@@ -15,18 +15,31 @@ export default {
     ToolCard,
     ReferenceContainer,
     ImageUpload,
-    dialogbox: Dialog,
+    dialogBox: Dialog,
     Spinner
   },
   props: {
-    tool: {
-      type: Object,
-      required: true
-    },
     card: {
       type: Boolean,
       required: false,
       default: false
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    job: {
+      type: Object,
+      required: false
+    },
+    header: {
+      type: String,
+      required: false
+    },
+    referenceList: {
+      type: Array,
+      required: false,
+      default: () => []
     }
   },
   sockets: {
@@ -50,21 +63,13 @@ export default {
         })
     },
     hello: function (data) {
-      if (data === 'connection received' && this.tool.useWebsocket === true) {
+      if (data === 'connection received' && this.job?.useWebsocket === true) {
         this.useWebsocket = true
       }
     }
   },
   data: function () {
     return {
-      pageContent: {
-        references: []
-      },
-      job: {
-        submit: {
-          submitButtonTitle: ''
-        }
-      },
       jobId: '',
       dialog: {
         title: '',
@@ -86,7 +91,8 @@ export default {
         // AUTH MOCKED because auth is not yet implemented
         isLoggedIn: () => false,
         isTestUser: () => false
-      }
+      },
+      cardSlots: ['image', 'title', 'content', 'actions']
     }
   },
   beforeMount: function () {
@@ -104,20 +110,15 @@ export default {
     this.$socket.emit('testConnection')
   },
   computed: {
-    toolName: function () {
-      if (this.tool) {
-        return this.tool.name || ''
-      } else {
-        return this.toolProp
-      }
-    },
     ...mapGetters({
       dialogBoxActive: 'dialogBox'
     })
   },
   methods: {
     resetContent () {
-      this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: this.tool.title })
+      if (!this.card && this.header) {
+        this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: this.header })
+      }
     },
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
@@ -134,14 +135,14 @@ export default {
     },
     successDlg () {
       let contentSockets
-      if (this.tool.useWebsocket) {
+      if (this.job?.useWebsocket) {
         contentSockets = 'Please stay on this page. Results may take up to a few minutes to load.'
       } else {
         contentSockets = 'You should receive an email with a link to the job output.'
       }
       this.renderDialog({
-        title: `${this.tool.jobTitle} Job Submitted Successfully`,
-        content: `Your ${this.tool.jobTitle} job is: ${this.toolId}<br />${contentSockets}`,
+        title: `${this.job?.jobTitle} Job Submitted Successfully`,
+        content: `Your ${this.job?.submitJobTitle} job is: ${this.toolId}<br />${contentSockets}`,
         reason: 'successDlg'
       })
     },
@@ -218,6 +219,7 @@ export default {
     },
 
     submit: function () {
+      console.log('hello')
       this.setLoading()
 
       if (this.files === undefined) {
@@ -231,7 +233,7 @@ export default {
       }
 
       const jm = new JobMgr()
-      jm.setJobType(this.tool.submit.submitJobTitle)
+      jm.setJobType(this.job?.submitJobTitle)
 
       var jobParameters = { InputType: this.files.fileType, useWebsocket: this.useWebsocket } // Figure out which file type
       for (var key in this.selectedOptions) {
@@ -243,8 +245,8 @@ export default {
           jobParameters[key] = this.selectedOptions[key]
         }
       }
-      if ('submitJobType' in this.tool.submit) {
-        jobParameters.jobtype = this.tool.submit.submitJobType
+      if ('submitJobType' in this.job) {
+        jobParameters.jobtype = this.job?.submitJobType
       }
       jm.setJobParameters(jobParameters)
 
@@ -285,7 +287,6 @@ export default {
         return '1'
       }
       return dimensionObj.ratio.toString()
-      // return dimensionObj['width'] + '*' + dimensionObj['height'] + '*' + dimensionObj['units']
     }
   },
   watch: {
