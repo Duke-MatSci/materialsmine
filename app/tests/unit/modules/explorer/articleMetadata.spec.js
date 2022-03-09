@@ -1,18 +1,6 @@
 import articleMetadata from '@/modules/explorer/article/services/articleMetadata'
 import { rawResponse, cleanResponse } from '@/modules/explorer/article/services/__mocks__/articleMetadata'
 
-global.fetch = jest.fn()
-
-global.console = {
-  log: jest.fn(), // console.log are ignored in tests
-
-  // Keep native behavior for other methods
-  error: console.error,
-  warn: console.warn,
-  info: console.info,
-  debug: console.debug
-}
-
 const doi = { doi: '10.1063/1.5046839' }
 
 describe('articleMetadata.js', () => {

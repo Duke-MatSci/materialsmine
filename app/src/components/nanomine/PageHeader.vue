@@ -80,10 +80,10 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Tools</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/nm/modtools" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
-                                    <router-link to="/nm/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
-                                    <router-link to="/nm/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
-                                    <router-link to="/nm/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
+                                    <router-link to="/nm/tools/module_homepage" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
+                                    <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
+                                    <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
+                                    <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
                                 </div>
                             </div>
                         </li>
