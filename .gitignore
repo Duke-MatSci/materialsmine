@@ -26,3 +26,13 @@ package-lock.json
 # Rest
 **/**/*.log
 
+# Fuseki
+mockDB/fuseki/shiro.ini
+mockDB/fuseki/backups/
+mockDB/fuseki/databases/
+mockDB/fuseki/logs/
+mockDB/fuseki/system/
+mockDB/fuseki/system_files/
+mockDB/fuseki/templates/
+mockDB/fuseki/log4j2.properties
+

@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 function getTkns (req) {
-  return req?.env?.TKNS || '';
+  return req?.env?.TKNS || 'SeCrEtSDefault';
 }
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
       const signed = jwt.sign(
         payload,
         getTkns(req),
-        { expiresIn: '1h' }
+        { expiresIn: '8h' }
       );
       return signed;
     } catch (err) {

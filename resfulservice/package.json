@@ -25,6 +25,7 @@
         "node-schedule": "^2.1.0",
         "nodemailer": "^6.7.2",
         "swagger-ui-express": "^4.2.0",
+        "unique-names-generator": "^4.7.1",
         "winston": "^3.5.1"
     },
     "scripts": {
