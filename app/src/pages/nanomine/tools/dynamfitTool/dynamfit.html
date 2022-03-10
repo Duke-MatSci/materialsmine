@@ -1,246 +1,178 @@
-<tool-template :tool="tool" :card="card">
-  <div class="section_dynamfit wrapper md-layout md-alignment-top-center">
-    <div class="md-layout-item md-layout md-alignment-top-left md-gutter">
-      <div class="team_header md-layout-item md-size-80">
-        <h1 class="visualize_header-h1 teams_header">
-          Dynamfit - Prony Series coefficient fitting
-        </h1>
-      </div>
-      <!-- <md-dialog
-        v-model="loginRequired"
-        type="error"
-        outline
-        >
-        {{loginRequiredMsg}}
-      </md-dialog> -->
-      <div
-        v-if="examplePage === 'exampleInput'"
-        class="md-layout-item md-size-80"
-        key="example-input-header"
-      >
-        <h3>An Example - Part I</h3>
-        <p>
-          Please click <a href="/assets/EXAMPLE.X_T">here</a> to download example
-          data file. This file is a .X_T file with three columns per line
-          (Frequency, X', X'').
-        </p>
-      </div>
-      <div
-        v-else-if="examplePage === 'inputTest'"
-        class="md-layout-item md-size-80"
-        key="input-test-header"
-      >
-        <h3>An Example - Part II</h3>
-        <p class="text-xs-left">
-          In this page, you will learn to use and modify all the parameters
-          available in Dynamfit. An email will be sent to your registered email
-          address once the job is completed. You will then be able to compare the
-          fitting results with the example given in the previous page.
-        </p>
-      </div>
-      <div v-else class="md-layout-item md-size-80" key="no-example">
-        <h3>Description</h3>
-        <p>
-          This program fits a viscoelastic mastercurve (tan &#948; vs. frequency)
-          from DMA experiments with a Prony Series. The Prony Series coefficients
-          can be used as baseline properties for the matrix in a FEA simulation of
-          nanocomposites.
-        </p>
-        <p>
-          If this tool is new to you, please click
-          <md-button class="md-primary" @click="examplePage = 'exampleInput'">
-            Example of Dynamfit
-          </md-button>
-          to get familiar with this tool.
-        </p>
-      </div>
-      <div class="md-layout-item md-size-80">
-        <h3>Instructions</h3>
-      </div>
-      <div class="md-layout-item md-size-60">
-        <ol class="md-layout">
-          <div class="md-layout-item md-size-100">
-            <li>
-              Upload #.X_T file containing three values per line (Frequency X'
-              X''):
-            </li>
-            <div
-              v-if="examplePage === 'noExample' || examplePage === 'inputTest'"
-            >
-              <p v-if="examplePage === 'noExample'">Upload #.X_T file here:</p>
-              <p v-else-if="examplePage === 'inputTest'">
-                Upload "EXAMPLE.X_T" here:
-              </p>
-              <md-button class="md-primary" @click="pickTemplate"
-                >Browse</md-button
-              >
-              <input
-                type="file"
-                style="display: none"
-                accept=".X_T"
-                ref="myTemplate"
-                @change="onTemplatePicked"
-              />
-              <md-list
-                v-model="templateName"
-                subheader="true"
-                v-if="templateUploaded"
-              >
-                <md-list-item :key="templateName">
-                  <md-icon class="md-primary">check_circle_outline</md-icon>
-                  <span class="md-list-item-text" v-text="templateName"></span>
-                </md-list-item>
-              </md-list>
-            </div>
-            <div v-else-if="examplePage === 'exampleInput'">
-              <p>
-                EXAMPLE.X_T is preloaded in this example. For general use, you
-                will need to upload your .X_T file.
-              </p>
-            </div>
+<tool-card class="md-layout-item tool-card" name="Dynamfit" v-if="card">
+  <template #image>
+    <img src="@/assets/img/nanomine/dynamfit.png" alt="Dynamfit">
+  </template>
+  <template #actions>
+    <router-link to="Dynamfit">
+      <md-button class="md-raised md-primary">
+        Launch
+      </md-button>
+    </router-link>
+  </template>
+  <template #title>
+    Dynamfit
+  </template>
+  <template #content>
+    Dynamfit is a sign control algorithm for Prony Series fitting. This program
+    fits a viscoelastic mastercurve from DMA experiments with a Prony Series.
+    The Prony Series coefficients can be used as baseline properties for the
+    matrix in a FEA simulation of nanocomposites.
+  </template>
+</tool-card>
+<div class="md-layout md-alignment-top-center" v-else>
+  <div class="md-layout-item md-size-60 md-layout md-alignment-top-center md-gutter">
+    <dialog-box :active="dialogBoxActive">
+      <template v-slot:title>{{ dialog.title }}</template>
+      <template v-slot:content>{{ dialog.content }}</template>
+      <template v-slot:actions>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialog-box>
+    <div class="team_header">
+      <h1 class="visualize_header-h1 teams_header">
+        Dynamfit - Prony Series coefficient fitting
+      </h1>
+    </div>
+    <div v-if="examplePage === 'exampleInput'" key="example-input-header">
+      <h3>An Example - Part I</h3>
+      <p>
+        Please click <a href="/assets/EXAMPLE.X_T">here</a> to download example
+        data file. This file is a .X_T file with three columns per line
+        (Frequency, X', X'').
+      </p>
+    </div>
+    <div v-else-if="examplePage === 'inputTest'" key="input-test-header">
+      <h3>An Example - Part II</h3>
+      <p class="text-xs-left">
+        In this page, you will learn to use and modify all the parameters
+        available in Dynamfit. An email will be sent to your registered email
+        address once the job is completed. You will then be able to compare the
+        fitting results with the example given in the previous page.
+      </p>
+    </div>
+    <div v-else key="no-example">
+      <h3>Description</h3>
+      <p>
+        This program fits a viscoelastic mastercurve (tan &#948; vs. frequency)
+        from DMA experiments with a Prony Series. The Prony Series coefficients
+        can be used as baseline properties for the matrix in a FEA simulation of
+        nanocomposites.
+      </p>
+      <p>
+        If this tool is new to you, please click
+        <md-button class="md-primary md-raised" @click="examplePage = 'exampleInput'">
+          Example of Dynamfit
+        </md-button>
+        to get familiar with this tool.
+      </p>
+    </div>
+    <div>
+      <h3>Instructions</h3>
+      <ol class="md-layout">
+        <div class="md-layout-item md-size-100">
+          <li>
+            Upload #.X_T file containing three values per line (Frequency X'
+            X''):
+          </li>
+          <div v-if="examplePage === 'noExample' || examplePage === 'inputTest'">
+            <p v-if="examplePage === 'noExample'">Upload #.X_T file here:</p>
+            <p v-else-if="examplePage === 'inputTest'">
+              Upload "EXAMPLE.X_T" here:
+            </p>
+            <md-button class="md-primary md-raised" @click="pickTemplate">Browse</md-button>
+            <input type="file" style="display: none" accept=".X_T" ref="myTemplate" @change="onTemplatePicked" />
+            <md-list v-model="templateName" subheader="true" v-if="templateUploaded">
+              <md-list-item :key="templateName">
+                <md-icon class="md-primary">check_circle_outline</md-icon>
+                <span class="md-list-item-text" v-text="templateName"></span>
+              </md-list-item>
+            </md-list>
           </div>
-          <div class="md-layout-item md-size-100">
-            <li>Factor For Weighting X' and X'' data:</li>
-            <div
-              v-if="examplePage === 'noExample' || examplePage === 'inputTest'"
-            >
-              <p>0.0 Means Consider Only X'' Data</p>
-              <p>2.0 Means Consider Only X' Data</p>
-              <p>1.0 Means Weight Evenly X' and X''</p>
-              <p>All Other Values Represent Uneven Weighting</p>
-            </div>
-            <md-field>
-              <label for="weight"
-                >Enter the weighting parameter you wish to use:</label
-              >
-              <md-input
-                id="weight"
-                v-model="weight"
-                placeholder="1.0"
-                v-bind:disabled="examplePage === 'exampleInput'"
-              ></md-input>
-            </md-field>
+          <div v-else-if="examplePage === 'exampleInput'">
+            <p>
+              EXAMPLE.X_T is preloaded in this example. For general use, you
+              will need to upload your .X_T file.
+            </p>
           </div>
-          <div class="md-layout-item md-size-100">
-            <li>Standard deviation:</li>
-            <div>
-              <md-radio
-                class="md-primary"
-                v-model="stdRadios"
-                value="std1"
-                v-bind:disabled="examplePage === 'exampleInput'"
-                >Data point values</md-radio
-              >
-              <md-radio
-                class="md-primary"
-                v-model="stdRadios"
-                value="std2"
-                v-bind:disabled="examplePage === 'exampleInput'"
-                >Unity</md-radio
-              >
-            </div>
-          </div>
-          <div class="md-layout-item md-size-100">
-            <li>
-              Number of elements (should larger than 2 and should NOT be too
-              large):
-            </li>
-            <md-field>
-              <label for="nEle">Enter the number of elements to use:</label>
-              <md-input
-                id="nEle"
-                v-model="nEle"
-                placeholder="20"
-                v-bind:disabled="examplePage === 'exampleInput'"
-              ></md-input>
-            </md-field>
-          </div>
-          <div class="md-layout-item md-size-100">
-            <li>Data type:</li>
-            <div>
-              <md-radio
-                class="md-primary"
-                v-model="dtRadios"
-                value="dt1"
-                v-bind:disabled="examplePage === 'exampleInput'"
-                >Compliance</md-radio
-              >
-              <md-radio
-                class="md-primary"
-                v-model="dtRadios"
-                value="dt2"
-                v-bind:disabled="examplePage === 'exampleInput'"
-                >Modulus</md-radio
-              >
-            </div>
-          </div>
-        </ol>
-      </div>
-      <div
-        v-if="examplePage === 'exampleInput'"
-        class="md-layout-item md-size-80 md-layout md-alignment-top-center"
-      >
-        <h3 class="md-layout-item md-size-100">
-          The fitting result is shown below:
-        </h3>
-        <div class="md-layout-item md-size-50">
-          <h4>Epsilon Prime</h4>
-          <img src="@/assets/img/nanomine/dynamfit_example_E.png" />
-        </div>
-        <div class="md-layout-item md-size-50">
-          <h4>Epsilon Double Prime</h4>
-          <img src="@/assets/img/nanomine/dynamfit_example_EE.png" />
         </div>
         <div class="md-layout-item md-size-100">
-          <p>
-            Now please click the arrow to advance to the next part of the example,
-            where you can change the parameters of simulation, compare your result
-            with result above and get familiar with the tool.
-          </p>
-          <md-button class="md-primary" @click="examplePage = 'inputTest'">
-            Part II<md-icon>arrow_forward</md-icon>
-          </md-button>
+          <li>Factor For Weighting X' and X'' data:</li>
+          <div v-if="examplePage === 'noExample' || examplePage === 'inputTest'">
+            <p>0.0 Means Consider Only X'' Data</p>
+            <p>2.0 Means Consider Only X' Data</p>
+            <p>1.0 Means Weight Evenly X' and X''</p>
+            <p>All Other Values Represent Uneven Weighting</p>
+          </div>
+          <md-field>
+            <label for="weight">Enter the weighting parameter you wish to use:</label>
+            <md-input id="weight" v-model="weight" placeholder="1.0" v-bind:disabled="examplePage === 'exampleInput'">
+            </md-input>
+          </md-field>
         </div>
-        <
+        <div class="md-layout-item md-size-100">
+          <li>Standard deviation:</li>
+          <div>
+            <md-radio class="md-primary" v-model="stdRadios" value="std1"
+              v-bind:disabled="examplePage === 'exampleInput'">Data point values</md-radio>
+            <md-radio class="md-primary" v-model="stdRadios" value="std2"
+              v-bind:disabled="examplePage === 'exampleInput'">Unity</md-radio>
+          </div>
+        </div>
+        <div class="md-layout-item md-size-100">
+          <li>
+            Number of elements (should larger than 2 and should NOT be too
+            large):
+          </li>
+          <md-field>
+            <label for="nEle">Enter the number of elements to use:</label>
+            <md-input id="nEle" v-model="nEle" placeholder="20" v-bind:disabled="examplePage === 'exampleInput'">
+            </md-input>
+          </md-field>
+        </div>
+        <div class="md-layout-item md-size-100">
+          <li>Data type:</li>
+          <div>
+            <md-radio class="md-primary" v-model="dtRadios" value="dt1"
+              v-bind:disabled="examplePage === 'exampleInput'">
+              Compliance</md-radio>
+            <md-radio class="md-primary" v-model="dtRadios" value="dt2"
+              v-bind:disabled="examplePage === 'exampleInput'">
+              Modulus</md-radio>
+          </div>
+        </div>
+      </ol>
+    </div>
+    <div v-if="examplePage === 'exampleInput'" class=" md-layout md-alignment-top-center">
+      <h3 class="md-layout-item md-size-100">
+        The fitting result is shown below:
+      </h3>
+      <div class="md-layout-item md-size-50">
+        <h4>Epsilon Prime</h4>
+        <img src="@/assets/img/nanomine/dynamfit_example_E.png" />
       </div>
-      <div class="md-layout-item md-size-80">
-        <md-button
-          v-if="examplePage === 'noExample' || examplePage === 'inputTest'"
-          @click="submit()"
-          class="md-primary"
-          >Run Simulation
-        </md-button>
-        <md-button
-          v-if="examplePage === 'inputTest'"
-          @click="examplePage = 'exampleInput'"
-          class="md-primary"
-        >
-          <md-icon>arrow_back</md-icon>Part I
+      <div class="md-layout-item md-size-50">
+        <h4>Epsilon Double Prime</h4>
+        <img src="@/assets/img/nanomine/dynamfit_example_EE.png" />
+      </div>
+      <div class="md-layout-item md-size-100">
+        <p>
+          Now please click the arrow to advance to the next part of the example,
+          where you can change the parameters of simulation, compare your result
+          with result above and get familiar with the tool.
+        </p>
+        <md-button class="md-primary md-raised" @click="examplePage = 'inputTest'">
+          Part II<md-icon>arrow_forward</md-icon>
         </md-button>
       </div>
-      <dialogbox :active="dialogBoxActive">
-        <template v-slot:title>{{ dialog.title }}</template>
-        <template v-slot:content>{{ dialog.content }}</template>
-        <template v-slot:actions>
-          <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
-        </template>
-      </dialogbox>
-      <md-dialog v-model="successDlg" persistent max-width="500px">
-        <md-card>
-          <md-card-header>
-            <div class="md-title">Dynamfit Job Submitted Successfully</div>
-          </md-card-header>
-          <md-card-content>
-            Your uploader job is: {{jobId}} <br />
-            You should receive an email with a link to the job output.
-          </md-card-content>
-          <md-card-actions>
-            <md-button class="md-primary" flat @click="successDlgClicked()"
-              >Close</md-button
-            >
-          </md-card-actions>
-        </md-card>
-      </md-dialog>
+    </div>
+    <div>
+      <md-button v-if="examplePage === 'noExample' || examplePage === 'inputTest'" @click="submit()"
+        class="md-primary md-raised">
+        Run Simulation
+      </md-button>
+      <md-button v-if="examplePage === 'inputTest'" @click="examplePage = 'exampleInput'" class="md-primary md-raised">
+        <md-icon>arrow_back</md-icon>Part I
+      </md-button>
     </div>
   </div>
-</tool-template>
+</div>
