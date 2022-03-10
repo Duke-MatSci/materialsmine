@@ -25,7 +25,7 @@
           ({{(queryTimeMillis/1000).toFixed(2)}} seconds)
         </span>
       </div>
-      <div class="viz-content">
+      <div class="gallery-grid grid grid_col-5">
         <md-card
           v-for="(result, index) in items"
           :key="index"
@@ -153,44 +153,3 @@ export default {
   }
 }
 </script>
-<style lang="scss" scoped>
-@import "@/assets/css/abstract/_mixins.scss";
-.viz-content {
-  display: grid;
-  grid-template-rows: repeat(10);
-  grid-template-columns: repeat(1, 1fr);
-  grid-gap: 0.4rem;
-  cursor: pointer;
-
-  // TODO figure out why respond fn isn't working
-  grid-template-rows: repeat(2, 1fr);
-  grid-template-columns: repeat(5, 1fr);
-  grid-gap: 1rem;
-  grid-row-gap: 5rem;
-
-  @include respond(tab-port) {
-    grid-template-rows: repeat(3, 1fr);
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(tab-land) {
-    grid-template-rows: repeat(1, 1fr);
-    grid-template-columns: repeat(3, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(desktop) {
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(4, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(big-desktop) {
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(5, 1fr);
-    grid-gap: 1rem;
-    grid-row-gap: 5rem;
-  }
-}
-</style>

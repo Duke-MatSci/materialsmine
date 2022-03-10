@@ -13,5 +13,5 @@ export default {
   },
   setQueryTimeMillis (state, queryTimeMillis) {
     state.queryTimeMillis = queryTimeMillis
-  },
+  }
 }

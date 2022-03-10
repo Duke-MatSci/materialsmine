@@ -41,6 +41,14 @@
                 grid-gap: 1.4rem;
             }
         }
+        &-5 {
+            grid-template-columns: repeat(5, 1fr);
+            grid-row-gap: 3rem;
+            @include respond(phone) {
+                grid-template-columns: repeat(1, 1fr);
+                grid-gap: 1.4rem;
+            }
+        }
         &-space-right {
             grid-template-columns: 1fr 2fr;
             @include respond(phone) {

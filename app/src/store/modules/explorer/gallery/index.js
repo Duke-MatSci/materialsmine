@@ -10,7 +10,7 @@ export default {
       items: null,
       pageSize: 50,
       page: 1,
-      queryTimeMillis: 0,
+      queryTimeMillis: 0
     }
   },
   mutations,

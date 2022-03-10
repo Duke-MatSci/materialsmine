@@ -95,14 +95,14 @@ function buildSparqlSpec (baseSpec, sparqlResults) {
 
 const chartUriPrefix = 'http://nanomine.org/viz/'
 
-function toChartId(chartUri) {
+function toChartId (chartUri) {
   if (!chartUri.startsWith(chartUriPrefix)) {
     throw new Error(`Unexpected chart uri "${chartUri}". Was expecting prefix "${chartUriPrefix}"`)
   }
   return chartUri.substring(chartUriPrefix.length)
 }
 
-function toChartUri(chartId) {
+function toChartUri (chartId) {
   return chartUriPrefix + chartId
 }
 
