@@ -12,7 +12,7 @@ export default {
   components: {
     SmilesCanvas,
     ToolTemplate: MCRToolTemplate,
-    dialogbox: Dialog
+    dialogBox: Dialog
   },
   props: {
     card: {
@@ -28,23 +28,23 @@ export default {
         title: ''
       },
       pfRadios: 'pol',
-      quicksearchkeyword: '',
-      chemicalname: '',
+      quickSearchKeyword: '',
+      chemicalName: '',
       abbreviation: '',
       SMILES: '',
       tradename: '',
-      stdname: '',
+      standardName: '',
       density: '',
       uSMILES: '',
-      loginRequired: false,
-      loginRequiredMsg: '',
-      successDlg: false,
+      auth: {
+        // AUTH MOCKED because auth is not yet implemented
+        isLoggedIn: () => false,
+        isTestUser: () => false
+      },
       theme: 'dark',
-      smilesError: false,
-      smilesMessage: '',
       inputStr: '',
       molecularFormula: '',
-      chempropsToken: null,
+      chemPropsToken: null,
       // https://github.com/reymond-group/smilesDrawer#options
       smilesOptions: {
         Padding: 0.0,
@@ -53,16 +53,14 @@ export default {
         terminalCarbons: true,
         debug: false
       },
-      tool: {
-        references: [
-          '10.1186/s13321-021-00502-6',
-          '10.1021/acs.jcim.7b00425'
-        ]
-      }
+      references: [
+        '10.1186/s13321-021-00502-6',
+        '10.1021/acs.jcim.7b00425'
+      ]
     }
   },
   watch: {
-    stdname (newData, oldData) {
+    standardName (newData, oldData) {
       if (newData) {
         this.scrollToResult()
       }
@@ -81,7 +79,7 @@ export default {
     })
     if (result && result.status === 201) {
       result = await result.json()
-      if (result.token) this.chempropsToken = result.token
+      if (result.token) this.chemPropsToken = result.token
     }
   },
   methods: {
@@ -103,39 +101,35 @@ export default {
       this.$store.commit('notLoading')
     },
     resetOutput: function () {
-      this.stdname = ''
+      this.standardName = ''
       this.density = ''
       if (this.dialogBoxActive) {
         this.toggleDialogBox()
       }
     },
-    successDlgClicked: function () {
-      // this.$router.go(-1) // go back to previous page
-      this.successDlg = false
-    },
     search: function () {
       this.resetOutput()
-      if (!this.chempropsToken) {
+      if (!this.chemPropsToken) {
         this.renderDialog(
           'Search Error',
           'System error, contact our system administrator'
         )
         return
       }
-      if (this.pfRadios === 'pol' && this.quicksearchkeyword.trim() !== '') {
-        if (this.quicksearchkeyword === '') {
+      if (this.pfRadios === 'pol' && this.quickSearchKeyword.trim() !== '') {
+        if (this.quickSearchKeyword === '') {
           this.renderDialog(
             'Input Error',
             'Please input the quick search keyword.'
           )
           return
         }
-        this.chemicalname = this.quicksearchkeyword
-        this.abbreviation = this.quicksearchkeyword
-        this.tradename = this.quicksearchkeyword
-        this.SMILES = this.quicksearchkeyword
+        this.chemicalName = this.quickSearchKeyword
+        this.abbreviation = this.quickSearchKeyword
+        this.tradename = this.quickSearchKeyword
+        this.SMILES = this.quickSearchKeyword
       }
-      if (this.chemicalname === '') {
+      if (this.chemicalName === '') {
         this.renderDialog(
           'Input Error',
           'Please input the chemical name.'
@@ -151,22 +145,13 @@ export default {
       }
       // TODO need to configure after nmcp API done
       this.setLoading()
-      // Axios.request({
-      //   url: `${URL}/chemprops?polfil=${this.pfRadios}&nmId=restNmId&chemicalname=${this.chemicalname}&abbreviation=${this.abbreviation}&tradename=${this.tradename}&smiles=${this.SMILES}`,
-      //   method: 'get',
-      //   headers: {
-      //     Accept: 'application/json',
-      //     'Content-Type': 'application/json',
-      //     Authorization: 'Bearer ' + this.chempropsToken
-      //   }
-      // })
-      fetch(new URL(`${URL}/chemprops?polfil=${this.pfRadios}&nmId=restNmId&chemicalname=${this.chemicalname}&abbreviation=${this.abbreviation}&tradename=${this.tradename}&smiles=${this.SMILES}`),
+      fetch(new URL(`${URL}/chemprops?polfil=${this.pfRadios}&nmId=restNmId&chemicalname=${this.chemicalName}&abbreviation=${this.abbreviation}&tradename=${this.tradename}&smiles=${this.SMILES}`),
         {
           method: 'GET',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + this.chempropsToken
+            Authorization: 'Bearer ' + this.chemPropsToken
           }
         }
       )
@@ -174,14 +159,14 @@ export default {
           return res
         })
         .then(function (response) {
-          this.stdname = response.data.data.StandardName
+          this.standardName = response.data.data.StandardName
           this.density = parseFloat(response.data.data.density)
           // show uSMILES if it's polymer search
           if (this.pfRadios === 'pol') {
             this.uSMILES = response.data.data.uSMILES
           }
-          // check if stdname is found
-          if (this.stdname === '') {
+          // check if standardName is found
+          if (this.standardName === '') {
             this.renderDialog(
               'Search Error',
               'No results found. Admin will update the database soon. Please try again in a week.'
@@ -191,7 +176,6 @@ export default {
           this.resetLoading()
         })
         .catch(function (error) {
-          console.log(error)
           this.resetOutput()
           if (error.message.includes('404')) {
             this.renderDialog(
@@ -210,29 +194,25 @@ export default {
         // always executed
           this.inputStr = this.uSMILES
           // reset input if using quick search
-          if (this.quicksearchkeyword.trim() !== '') {
-            this.chemicalname = ''
+          if (this.quickSearchKeyword.trim() !== '') {
+            this.chemicalName = ''
             this.abbreviation = ''
             this.tradename = ''
             this.SMILES = ''
           }
         })
     },
-    onSuccess () {
-      this.smilesError = false
-    },
     formulaUpdated (formula) {
       this.molecularFormula = formula
     },
     onError (err) {
-      console.trace('Error handler called: ')
+      let smilesMessage
       if (err) {
-        this.smilesMessage = err
+        smilesMessage = err
       } else {
-        this.smilesMessage = 'Undefined error'
+        smilesMessage = 'Undefined error'
       }
-      this.smilesError = true
-      console.log('SmilesTest - error: ' + this.smilesMessage)
+      this.renderDialog('SMILES error', smilesMessage)
     },
     renderDialog (title, content, minWidth) {
       this.dialog = {
