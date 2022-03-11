@@ -153,7 +153,7 @@ export default {
 
   props: {
     aspectRatio: String,
-    selects: Object,
+    selects: Array,
     collectDimensions: Boolean,
     acceptFileTypes: String
   },
