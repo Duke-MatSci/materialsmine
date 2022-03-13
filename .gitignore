@@ -36,3 +36,5 @@ mockDB/fuseki/system_files/
 mockDB/fuseki/templates/
 mockDB/fuseki/log4j2.properties
 
+#Sync DB
+mockDB/restore/mongodump/
