@@ -26,3 +26,19 @@ module.exports = config = {
     } 
 };
 
+/**
+ * Article: Elastic search mappings.
+ */
+ module.exports = article = {
+    articles: {
+        properties: {
+            label: {
+                type: "string",
+                analyzer: "autocomplete"
+            }, 
+            identifier: {
+                type:    "string"
+            }
+        }
+    }
+}
