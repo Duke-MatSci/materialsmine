@@ -20,15 +20,11 @@
 </template>
 <script>
 import ToolCard from '@/components/nanomine/ToolCard'
-import ToolComponents from '../tools'
-import ToolSetComponents from '.'
 
 export default {
-  name: 'tool-set-template',
+  name: 'ToolSetTemplate',
   components: {
-    ToolCard,
-    ...ToolComponents,
-    ...ToolSetComponents
+    ToolCard
   },
   props: {
     card: {
