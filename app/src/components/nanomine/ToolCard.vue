@@ -1,11 +1,14 @@
 <template>
   <md-card class="md-layout-item">
-    <md-card-media key="image">
-      <slot name="image"></slot>
-      <!-- <img :src="require(`@/assets/img/${imageFile}`)" :alt="imageFile"/> -->
-    </md-card-media>
     <md-card-header key="tool_title">
-      <slot name="title"></slot>
+      <md-card-header-text>
+        <div class="md-title">
+          <slot name="title"></slot>
+        </div>
+      </md-card-header-text>
+      <md-card-media class="tool_card_image" key="image" md-big>
+        <slot name="image"></slot>
+      </md-card-media>
     </md-card-header>
     <md-card-content>
       <slot name="content"></slot>
@@ -21,3 +24,9 @@ export default {
   name: 'ToolCard'
 }
 </script>
+
+<style scoped>
+.tool_card_image {
+  width: 33%;
+}
+</style>

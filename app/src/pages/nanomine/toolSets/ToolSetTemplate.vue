@@ -1,7 +1,7 @@
 <template>
-  <tool-card class="md-layout-item tool-card" v-if="card" :name="name">
-    <template v-for="(_, slotName) in $scopedSlots" :slot="slotName">
-      <slot :name="slotName" v-if="cardSlots.includes(name)"></slot>
+  <tool-card class="md-layout-item tool-card md-size-50 md-medium-size-100" v-if="card" :name="name">
+    <template v-for="(_, name) in $scopedSlots" :slot="name">
+      <slot :name="name" v-if="cardSlots.includes(name)"></slot>
     </template>
   </tool-card>
   <div v-else :class="`section_${name}`" class="wrapper md-layout md-alignment-top-center">
@@ -13,7 +13,7 @@
     <div class="teams_text md-layout-item md-size-80">
       <slot name="content"></slot>
     </div>
-    <div class="md-layout-item md-size-80 md-layout md-alignment-top-space-around md-gutter">
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-space-between md-gutter">
       <slot name="cards"></slot>
     </div>
   </div>

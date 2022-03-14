@@ -1,4 +1,4 @@
-<tool-card class="md-layout-item md-size-100 tool-card" :name="name" v-if="card">
+<tool-card class="md-layout-item md-size-50 md-medium-size-100 tool-card" :name="name" v-if="card">
   <template v-for="(_, name) in $scopedSlots" :slot="name">
     <slot :name="name" v-if="cardSlots.includes(name)"></slot>
   </template>
