@@ -70,16 +70,18 @@ export default {
     // this.auth = new Auth()
   },
   async mounted () {
-    let result = await fetch(`${URL}/parser`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
+    if (!this.card) {
+      let result = await fetch(`${URL}/parser`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
+      if (result && result.status === 201) {
+        result = await result.json()
+        if (result.token) this.chemPropsToken = result.token
       }
-    })
-    if (result && result.status === 201) {
-      result = await result.json()
-      if (result.token) this.chemPropsToken = result.token
     }
   },
   methods: {
@@ -214,17 +216,18 @@ export default {
       }
       this.renderDialog('SMILES error', smilesMessage)
     },
-    renderDialog (title, content, minWidth) {
+    renderDialog (title, content) {
       this.dialog = {
         title,
-        content,
-        minWidth
+        content
       }
       this.toggleDialogBox()
     }
   },
   created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'ChemProps' })
+    if (!this.card) {
+      this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'ChemProps' })
+    }
   },
   computed: {
     ...mapGetters({

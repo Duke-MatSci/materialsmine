@@ -40,7 +40,7 @@ export default {
   },
   beforeMount: function () {
     // this.auth = new Auth()
-    if (!this.auth.isLoggedIn()) {
+    if (!this.auth.isLoggedIn() && !this.card) {
       this.renderDialog('Authorization Error', 'Please log in.')
     }
   },
@@ -177,10 +177,12 @@ export default {
     }
   },
   created () {
-    this.$store.commit('setAppHeaderInfo', {
-      icon: 'workspaces',
-      name: 'Dynamfit'
-    })
+    if (!this.card) {
+      this.$store.commit('setAppHeaderInfo', {
+        icon: 'workspaces',
+        name: 'Dynamfit'
+      })
+    }
   },
   computed: {
     ...mapGetters({
