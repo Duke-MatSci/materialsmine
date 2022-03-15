@@ -18,24 +18,28 @@ services:
       - ./mockDB/log:/var/log/mongodb
       - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
   es:
-    image: 'elasticsearch:8.1.0'
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
     container_name: es
     restart: always
     environment:
-      - node.name=es01
+      - node.name=es
+      - bootstrap.memory_lock=true
+      - cluster.initial_master_nodes=es
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
     ulimits:
       memlock:
         soft: -1
         hard: -1
     ports:
       - '9200:9200'
+      - '9300:9300'
     volumes:
       - ./mockDB/es:/usr/share/elasticsearch/data
   proxy:
     depends_on:
       - api
-      # - client
+      - client
       - kg
     restart: always
     build:
@@ -45,8 +49,9 @@ services:
       - '80:80'
   api:
     depends_on:
-      - mongo
       - es
+      - mongo
+    restart: always
     build:
       dockerfile: Dockerfile.dev
       context: ./resfulservice
@@ -60,16 +65,17 @@ services:
       - MONGO_ADDRESS=${MONGO_ADDRESS}
       - MONGO_PORT=${MONGO_PORT}
       - TKNS=${TKNS}
-  # client:
-  #   stdin_open: true
-  #   environment:
-  #     - CHOKIDAR_USEPOLLING=true
-  #   build:
-  #     dockerfile: Dockerfile.dev
-  #     context: ./app
-  #   volumes:
-  #     - /app/node_modules
-  #     - ./app:/app
+      - ESADDRESS=${ESADDRESS}
+  client:
+    stdin_open: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./app
+    volumes:
+      - /app/node_modules
+      - ./app:/app
   kg:
     image: 'stain/jena-fuseki:4.0.0'
     restart: always

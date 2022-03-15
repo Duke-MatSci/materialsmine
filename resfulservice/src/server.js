@@ -2,15 +2,20 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { globalMiddleWare, log } = require('./middlewares/globalMiddleware');
 const knowledgeRoutes = require('./routes/kgWrapper');
+const adminRoutes = require('./routes/adminRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const elasticSearch = require('./utils/elasticSearch');
 const env = process.env;
 
 const app = express();
 globalMiddleWare(app);
+elasticSearch.ping(log);
 
 app.use('/knowledge', knowledgeRoutes);
+app.use('/admin', adminRoutes);
+app.use('/search', searchRoutes);
 
 app.use((error, req, res, next) => {
-  console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;

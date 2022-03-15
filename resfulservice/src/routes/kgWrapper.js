@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getKnowledge } = require('../controllers/kgWrapperController');
+const { getKnowledge, getFacetValues } = require('../controllers/kgWrapperController');
 const isAuth = require('../middlewares/isAuth');
 const { getInternal } = require('../middlewares/isInternal');
 /**
  * Internal KG Wrapper Routes
  */
-router.route('/internal')
-  .get(getInternal, getKnowledge)
+router.route('/facets')
+  .get(getFacetValues)
+  // .get(getInternal, getFacetValues)
   .put(isAuth, getInternal, getKnowledge)
   .post(isAuth, getInternal, getKnowledge)
   .delete(isAuth, getInternal, getKnowledge);
