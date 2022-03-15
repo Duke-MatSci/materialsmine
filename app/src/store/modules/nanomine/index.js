@@ -1,7 +1,9 @@
 import howtoModule from './howto/index.js'
+import referenceContainerModule from './referenceContainer/index.js'
 
 export default {
   modules: {
-    howto: howtoModule
+    howto: howtoModule,
+    referenceContainer: referenceContainerModule
   }
 }

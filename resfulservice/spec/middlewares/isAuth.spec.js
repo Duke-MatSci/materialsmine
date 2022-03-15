@@ -2,9 +2,11 @@ const { expect } = require('chai');
 const isAuth = require('../../src/middlewares/isAuth');
 const { signToken } = require('../../src/utils/jwtService');
 
+const logger = require('../logger');
+
 describe('authValidation middleware service', function() {
   it('rejects unauthorized request', async function() {
-    expect(isAuth.bind(this, {}, {}, () => {})).to.throw('Not authenticated.');
+    expect(isAuth.bind(this, { logger }, {}, () => {})).to.throw('Not authenticated.');
   });
 
   it('authorizes request', async function() {

@@ -1,5 +1,91 @@
-<div>
-    <div class="chemprops section_pages">
-        <h1>ChemProps</h1>
+<tool-template :tool="tool" :card="card">
+  <div class="chemprops">
+    <div class="wrapper md-layout md-alignment-top-center md-gutter">
+      <dialogbox :active="dialogBoxActive">
+        <template v-slot:title>{{ dialog.title }}</template>
+        <template v-slot:content>{{ dialog.content }}</template>
+        <template v-slot:actions>
+          <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+        </template>
+      </dialogbox>
+      <div class="team_header md-layout-item md-size-66">
+        <h1 class="visualize_header-h1 teams_header">ChemProps - A growing polymer name and filler name standardization database</h1>
+      </div>
+      <div class="md-layout-item md-size-66">
+        <h3>Description</h3>
+        <p>
+          ChemProps is a growing polymer name and filler name standardization database. Polymer names and filler names can have many alias,
+          impeding the queries to collect all relevant data by a chemical name as the keyword. Chemprops is a useful resource to address
+          this problem. It standardizes the chemical names that belong to the same database such that queries can retrieve all data that
+          is related to a certain chemical name regardless of how they were originally reported. You can find more details in our paper
+          <a href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00502-6" target="_blank">"ChemProps: A RESTful API enabled database for composite polymer name standardization"</a>.
+        </p>
+      </div>
+      <div class="md-layout-item md-size-66">
+        <p>
+          This webapp is designed for one-time search. For batch jobs, please use the ChemProps API. A token is required to use the API.
+          You must be logged in to request the ChemProps API token.
+        </p>
+      </div>
+      <router-link to="/nm/tools/chempropsapitoken"><md-button class="md-layout-item md-size-66 md-primary">Request API Token</md-button></router-link>
+      <div class="md-layout-item md-size-66">
+        <h1>Instructions</h1>
+      </div>
+      <form @submit.prevent="search" id="submit-chemprops-form" class="md-layout-item md-size-66">
+        <ol>
+          <li>Select the collection.</li>
+          <div>
+            <md-radio class="md-primary" v-model="pfRadios" value="pol">Polymer</md-radio>
+            <md-radio class="md-primary" v-model="pfRadios" value="fil">Filler</md-radio>
+          </div>
+          <li v-if="pfRadios === 'pol'">Input the searching terms. For the quick search, you can search by either chemical name, abbreviation, trade name, or SMILES. For the advanced search, you must input a chemical name.</li>
+          <li v-if="pfRadios === 'fil'">Input the searching terms. Note that you must input a chemical name.</li>
+          <div>
+            <label for="keywordSearch" v-if="pfRadios === 'pol'">Quick Search (Filling this textbox will overwrite the advanced search)</label>
+            <md-field>
+              <md-input id="keywordSearch" v-model="quicksearchkeyword" placeholder="Enter the keyword:"></md-input>
+            </md-field>
+            <label for="fullSearch" v-if="pfRadios === 'pol'">Advanced Search</label>
+            <md-field>
+              <md-input id="fullSearch" v-model="chemicalname" placeholder="Enter the chemical name (required):"></md-input>
+            </md-field>
+            <md-field>
+              <md-input id="fullSearch" v-model="abbreviation" placeholder="Enter the abbreviation (optional):"></md-input>
+            </md-field>
+            <md-field>
+              <md-input id="fullSearch" v-if="pfRadios === 'pol'" v-model="SMILES" placeholder="Enter the SMILES (optional):"></md-input>
+            </md-field>
+            <md-field>
+              <md-input id="fullSearch" v-if="pfRadios === 'pol'" v-model="tradename" placeholder="Enter the tradename (optional):"></md-input>
+            </md-field>
+          </div>
+          <md-button type="submit" class="md-primary" form="submit-chemprops-form">Search</md-button>
+        </ol>
+      </form>
+      <div class="md-layout-item md-size-66 md-layout" id="chemprops-displayed-result" v-if="stdname !== ''">
+        <div class="teams_header md-layout-item md-size">
+          <h3>Standardized chemical name and density information:</h3>
+        </div>
+        <div class="md-layout-item md-size-100">
+          <label for="standardName">Standardized Name</label>
+          <md-field>
+            <md-input id="standardName" v-model="stdname" readonly></md-input>
+          </md-field>
+          <label for="density">Density (g/cm3 at 25°C)</label>
+          <md-field>
+            <md-input id="density" v-model="density" readonly></md-input>
+          </md-field>
+          <label for="uSMILES">uSMILES</label>
+          <md-field>
+            <md-input id="uSMILES" v-model="uSMILES" v-if="pfRadios === 'pol'" readonly></md-input>
+          </md-field>
+          <p v-if="pfRadios === 'pol'">Structure
+            <smiles-canvas :smilesOptions="smilesOptions" :smilesInput="inputStr" :formulaHandler="formulaUpdated" :onSuccessHandler="onSuccess" :onErrorHandler="onError" height="100%" width="100%"></smiles-canvas>
+          </p>
+          <p v-if="pfRadios === 'pol'">Formula: {{molecularFormula}}
+          </p>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+</tool-template>
