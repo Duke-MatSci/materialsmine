@@ -87,10 +87,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
-<<<<<<< HEAD
 import { toChartId } from '@/modules/vega-chart'
-=======
->>>>>>> #98: Minor styling and linting fixes
 import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
@@ -146,12 +143,9 @@ export default {
     },
     getThumbnailUrl (item) {
       return getViewUrl({ uri: item.thumbnail })
-<<<<<<< HEAD
     },
     getChartId (chart) {
       return toChartId(chart.identifier)
-=======
->>>>>>> #98: Minor styling and linting fixes
     }
   },
   async mounted () {
