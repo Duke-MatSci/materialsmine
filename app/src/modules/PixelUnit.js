@@ -149,18 +149,18 @@ export default class PixelUnit {
     let err = false
     if (vm.isSymmetric) {
       if (mls.length !== 15) { // not differentiating symmetry types, just sym vs non-sym
-        console.log('invalid symmetric matlab string length! len=' + mls.length)
+        // console.log('invalid symmetric matlab string length! len=' + mls.length)
         err = true
       }
     } else {
       if (mls.length !== (vm.size * vm.size)) { // not differentiating symmetry types, just sym vs non-sym
-        console.log('invalid matlab string length! len=' + mls.length)
+        // console.log('invalid matlab string length! len=' + mls.length)
         err = true
       }
     }
     for (let i = 0; i < mls.length; ++i) {
       if (mls[i] !== '0' && mls[i] !== '1') {
-        console.log('invalid matlab bit: ' + i + ' ' + mls[i])
+        // console.log('invalid matlab bit: ' + i + ' ' + mls[i])
         err = true
       }
     }
