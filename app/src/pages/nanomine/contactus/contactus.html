@@ -8,7 +8,13 @@
         We'd love to help. Please fill out this quick form and we will be in touch.
       </div>
       <div class="contactus">
-        <form class="form">
+        <div v-if="errors.length">
+          <h3>Please correct the following error(s):</h3>
+          <ul>
+            <li v-for="error in errors">{{ error }}</li>
+          </ul>
+        </div>
+        <form class="form" @submit="onSubmit">
           <div class="form__group">
             <input
               type="text"
@@ -16,6 +22,7 @@
               placeholder="Full Name (Required)"
               name="name"
               id="name"
+              v-model="name"
               required
             />
             <label htmlFor="name" class="form__label">Full Name</label>
@@ -26,6 +33,7 @@
               class="form__input"
               placeholder="Email Address (Required)"
               name="email"
+              v-model="email"
               id="email"
               required
             />
@@ -35,7 +43,14 @@
           <ul class="contactus_radios">
             <li>
               <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="question" name="question" />
+                <input
+                  type="radio"
+                  class="form__radio-input"
+                  v-model="contactType"
+                  id="question"
+                  value="question"
+                  required
+                />
                 <label for="question" class="form__radio-label">
                   <span class="form__radio-button"></span>
                   Ask Question
@@ -44,7 +59,13 @@
             </li>
             <li>
               <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="report" name="question" />
+                <input
+                  type="radio"
+                  class="form__radio-input"
+                  v-model="contactType"
+                  id="report"
+                  value="report"
+                />
                 <label for="report" class="form__radio-label">
                   <span class="form__radio-button"></span>
                   Submit A Ticket
@@ -53,7 +74,13 @@
             </li>
             <li>
               <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="suggestion" name="question" />
+                <input
+                  type="radio"
+                  class="form__radio-input"
+                  v-model="contactType"
+                  id="suggestion"
+                  value="suggestion"
+                />
                 <label for="suggestion" class="form__radio-label">
                   <span class="form__radio-button"></span>
                   Make Suggestion
@@ -62,7 +89,13 @@
             </li>
             <li>
               <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="comment" name="question" />
+                <input
+                  type="radio"
+                  class="form__radio-input"
+                  v-model="contactType"
+                  id="comment"
+                  value="comment"
+                />
                 <label for="comment" class="form__radio-label">
                   <span class="form__radio-button"></span>
                   Make Comment
@@ -76,6 +109,7 @@
               class="form__input"
               placeholder="Write your message (Required)"
               name="message"
+              v-model="message"
               id="message"
               required
             ></textarea>
