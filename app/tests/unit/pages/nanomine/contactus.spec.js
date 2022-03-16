@@ -15,4 +15,19 @@ describe('ContactUsPage.vue', () => {
     const form = wrapper.findComponent('form')
     expect(form.exists()).toBeTruthy()
   })
+
+  it('renders the name input', () => {
+    const nameInput = wrapper.findComponent('#name')
+    expect(nameInput.exists()).toBeTruthy()
+  })
+
+  it('renders the email input', () => {
+    const emailInput = wrapper.findComponent('#email')
+    expect(emailInput.exists()).toBeTruthy()
+  })
+
+  it('renders the message input', () => {
+    const messageInput = wrapper.findComponent('#message')
+    expect(messageInput.exists()).toBeTruthy()
+  })
 })
