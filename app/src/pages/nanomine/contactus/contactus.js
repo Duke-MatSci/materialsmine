@@ -55,20 +55,19 @@ export default {
       if (this.errors.length) {
         return
       }
-      /*
-      await fetch("/nmr/contact", {
-        method: "POST",
+
+      await fetch('/nmr/contact', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           contactType: this.contactType,
-          contactText: this.message,
-        }),
+          contactText: this.message
+        })
       }).catch((err) => {
-        console.log(err);
-      );
-      */
+        console.log(err)
+      })
 
       this.resetForm()
     }
