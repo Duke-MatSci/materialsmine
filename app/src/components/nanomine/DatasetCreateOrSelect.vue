@@ -29,7 +29,7 @@
       </md-card>
 
       <md-table v-model="displayDatasets" v-show="!datasetHideSelector" md-sort="seq" md-sort-order="asc" md-card
-        md-fixed-header md-model-id="seq">
+        md-fixed-header>
         <md-table-toolbar>
           <div class="md-toolbar-section-start">
             <h1 v-if="mineOnlyAlways" class="md-title">Datasets you've created</h1>
@@ -46,7 +46,7 @@
           :md-description="`Your search for '${datasetSearch}' returned no results.`"></md-table-empty-state>
 
         <template #md-table-row="{ item }">
-          <md-table-row @click="datasetClick(item)">
+          <md-table-row @click="datasetClick(item)" :key="item.seq">
             <md-table-cell md-label="ID" md-sort-by="seq" md-numeric>{{ item.seq }}</md-table-cell>
             <md-table-cell md-label="DOI" md-sort-by="doi">{{ item.doi }}</md-table-cell>
             <md-table-cell md-label="Title" md-sort-by="title">{{ item.title }}</md-table-cell>
@@ -157,7 +157,10 @@ export default {
       }
     },
     datasetSearch: function () {
-      this.displayDatasets = this.datasetsFiltered()
+      this.datasetsFiltered()
+    },
+    datasetList: function () {
+      this.datasetsFiltered()
     }
   },
   computed: {
@@ -188,7 +191,7 @@ export default {
     // vm.auth = new Auth()
     vm.getDatasets()
     vm.overrideOptions(vm.datasetOptions)
-    this.displayDatasets = this.datasetsFiltered()
+    this.datasetsFiltered()
   },
   methods: {
     overrideOptions (datasetOptions) {
@@ -220,12 +223,10 @@ export default {
           resp.data.data.forEach(function (v) {
             vm.datasetList.push(v)
           })
-          vm.resetLoading()
         })
         .catch(function (err) {
           vm.datasetsError = true
           vm.renderDialog('Datasets Error', `fetching datasets: ${err}`)
-          vm.resetLoading()
         })
     },
     transformDataset (entry) {
@@ -280,7 +281,6 @@ export default {
       this.addDatasetDialogActive = !this.addDatasetDialogActive
     },
     addDatasetSave () {
-      this.setLoading()
       const vm = this
       fetch('/nmr/dataset/create', {
         method: 'POST',
@@ -301,16 +301,8 @@ export default {
         })
         .catch(function (err) {
           vm.datasetsError = true
-          this.renderDialog('Dataset Error', err.message)
-          vm.resetLoading()
+          vm.renderDialog('Dataset Error', err.message)
         })
-    },
-    // utils
-    setLoading () {
-      this.$store.commit('isLoading')
-    },
-    resetLoading () {
-      this.$store.commit('notLoading')
     },
     toggleDialogBox () {
       this.dialogBoxActive = !this.dialogBoxActive
@@ -327,7 +319,7 @@ export default {
       const userID = this.auth.getUserID()
       const runAsUser = this.auth.getRunAsUser()
       const vm = this
-      const myDatasets = this.datasetList.filter((i) => {
+      const filteredDatasets = this.datasetList.filter((i) => {
         if (vm.showMineOnly) {
           return i.userID && (i.userID === userID || i.userID === runAsUser)
         } else {
@@ -335,11 +327,11 @@ export default {
         }
       })
       if (this.datasetSearch) {
-        return myDatasets.filter((i) => {
+        this.displayDatasets = filteredDatasets.filter((i) => {
           return (`${i.seq || ''}${i.doi || ''}${i.title || ''}${i.datasetComment || ''}`.includes(this.datasetSearch))
         })
       } else {
-        return myDatasets
+        this.displayDatasets = filteredDatasets
       }
     }
   }
