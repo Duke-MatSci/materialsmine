@@ -132,16 +132,9 @@ export default {
       datasetsErrorMsg: '',
       datasetTransformed: {},
       datasetHideSelector: true,
-      datasetList: [{ seq: 1, doi: '2', title: 'lol', datasetComment: 'hello', userID: '0' }],
+      datasetList: [],
       datasetSearch: '',
       displayDatasets: [],
-      // datasetHeaders: [
-      //   { text: 'ID', align: 'left', value: 'seq' },
-      //   { text: 'DOI', align: 'left', value: 'doi' },
-      //   { text: 'Title', align: 'left', value: 'title' },
-      //   { text: 'Comment', align: 'left', value: 'datasetComment' }
-      // ],
-
       datasetSelected: null,
       datasetInfoDialogActive: false,
       datasetDialogInfo: {},
