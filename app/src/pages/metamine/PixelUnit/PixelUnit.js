@@ -57,7 +57,7 @@ export default {
 
   mounted: function () {
     const vm = this
-    this.canvas = document.getElementById('unit-cell')
+    this.canvas = this.$refs['unit-cell']
     this.ctx = this.canvas.getContext('2d')
     this.lw = 4 // line width
 
@@ -84,10 +84,7 @@ export default {
         vm.pixelUnit.drawGrid()
         vm.updateFields()
       })
-      .catch(function (err) {
-        const msg = 'error obtaining pixelunit data. Error: ' + err
-        console.trace(msg)
-      })
+      // TODO add a catch to this promise
   },
   methods: {
     onGeometryEntered () {
