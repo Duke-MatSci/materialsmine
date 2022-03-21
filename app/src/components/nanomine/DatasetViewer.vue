@@ -59,7 +59,7 @@
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>{{ dialog.content }}</template>
       <template v-slot:actions>
-        <md-button @click.native.prevent="dialog.closeHandler">Close</md-button>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
       </template>
     </dialog-box>
     <!--
@@ -142,7 +142,7 @@ export default {
       // AUTH MOCKED because auth is not yet implemented
         getUserID: () => '0',
         getRunAsUser: () => false,
-        isLoggedIn: () => true
+        isLoggedIn: () => false
       },
       dialogBoxActive: false,
       dialog: {}
@@ -225,8 +225,10 @@ export default {
           })
         })
         .catch(function (err) {
-          vm.datasetsError = true
-          vm.renderDialog('Datasets Error', `fetching datasets: ${err}`)
+          vm.datasetsError = err
+          if (vm.auth.isLoggedIn()) {
+            vm.renderDialog('Datasets Error', 'Please try again later.')
+          }
         })
     },
     transformDataset (entry) {
@@ -300,8 +302,8 @@ export default {
           vm.getDatasets()
         })
         .catch(function (err) {
-          vm.datasetsError = true
-          vm.renderDialog('Dataset Error', err.message)
+          vm.datasetsError = err
+          vm.renderDialog('Dataset Error', 'Please make sure you are logged in, or try again later.')
         })
     },
     toggleDialogBox () {
@@ -310,8 +312,7 @@ export default {
     renderDialog (title, content, closeHandler) {
       this.dialog = {
         title,
-        content,
-        closeHandler: closeHandler || this.toggleDialogBox
+        content
       }
       this.toggleDialogBox()
     },
