@@ -2,7 +2,7 @@ import { JobMgr } from '@/modules/JobMgr.js'
 // import { Auth } from '@/modules/Auth.js'
 import ReferenceContainer from '@/components/nanomine/ReferenceContainer.vue'
 import Dialog from '@/components/Dialog.vue'
-import DatasetCreateOrSelect from '@/components/nanomine/DatasetCreateOrSelect.vue'
+import DatasetViewer from '@/components/nanomine/DatasetViewer.vue'
 import { mapMutations, mapGetters } from 'vuex'
 
 export default {
@@ -10,7 +10,7 @@ export default {
   components: {
     ReferenceContainer,
     dialogBox: Dialog,
-    DatasetCreateOrSelect
+    DatasetViewer
   },
   data: () => ({
     title: 'File Upload',

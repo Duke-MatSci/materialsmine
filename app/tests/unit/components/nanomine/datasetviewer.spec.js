@@ -1,5 +1,5 @@
 import createWrapper from '../../../jest/script/wrapper'
-import DatasetCreateOrSelect from '@/components/nanomine/DatasetCreateOrSelect.vue'
+import DatasetViewer from '@/components/nanomine/DatasetViewer.vue'
 
 var wrapper = null
 
@@ -24,7 +24,7 @@ global.fetch.mockReturnValueOnce(
 
 describe('DatasetCreateOrSelect.vue', () => {
   beforeAll(() => {
-    wrapper = createWrapper(DatasetCreateOrSelect, {})
+    wrapper = createWrapper(DatasetViewer, {})
   })
 
   it('mounts properly', () => {
