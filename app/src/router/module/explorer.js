@@ -49,6 +49,12 @@ const explorerRoutes = [
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
         meta: { requiresAuth: false }
+      },
+      {
+        path: 'voyager/:uri',
+        name: 'ChartDataVoyager',
+        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        meta: { requiresAuth: false }
       }
     ]
   },

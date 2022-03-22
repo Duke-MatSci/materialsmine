@@ -27,12 +27,12 @@
                 <md-icon>integration_instructions</md-icon>
             </md-button>
         </div>
-        <div>
-        <md-button disabled class="md-icon-button" @click.native.prevent="openVoyager">
-            <md-tooltip> View Data in Voyager </md-tooltip>
-            <md-icon>dynamic_form</md-icon>
-        </md-button>
-        </div>
+        <router-link class="md-icon-button"  :to="{name: 'ChartDataVoyager', params: {uri: this.$route.params.uri} }" v-slot="{navigate, href}" custom>
+            <md-button class="md-icon-button"  :href="href" @click="navigate"> 
+                <md-tooltip> View Data in Voyager </md-tooltip>
+                <md-icon>dynamic_form</md-icon>
+            </md-button>
+        </router-link>
         <div v-if="allowEdit">
         <md-button disabled class="md-icon-button" @click.native.prevent="editChart">
             <md-tooltip> Edit Chart </md-tooltip>
