@@ -1,10 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { globalMiddleWare, log } = require('./middlewares/globalMiddleware');
+const knowledgeRoutes = require('./routes/kgWrapper');
 const env = process.env;
 
 const app = express();
 globalMiddleWare(app);
+
+app.use('/knowledge', knowledgeRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);

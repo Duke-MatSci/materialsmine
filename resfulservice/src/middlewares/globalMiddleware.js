@@ -13,15 +13,15 @@ const log = mmLogger();
  * @param {*} app Express app object
  */
 const globalMiddleWare = (app) => {
+  app.use(
+    (req, res, next) => logParser(log, req, next)
+  );
   app.use(bodyParser.json());
   app.use(fileMgr);
   app.use('/mm_fils', fileServer);
   app.use(acceptedHeaders);
   app.use('/graphql', mmGraphQL);
   app.use(getEnv);
-  app.use(
-    (req, res, next) => logParser(log, req, next)
-  );
 };
 
 /**

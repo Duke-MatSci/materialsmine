@@ -21,13 +21,13 @@
         <md-icon class="utility-navfonticon">groups</md-icon>
         <span class="md-list-item-text utility-navfont">About</span>
         <md-list slot="md-expand">
-          <router-link :to="'/about'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/about'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate" class="md-inset"> About Us </md-list-item>
           </router-link>
-          <router-link :to="'/how'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/how'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">How To</md-list-item>
           </router-link>
-          <router-link :to="'/news'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/news'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Research + News</md-list-item>
           </router-link>
         </md-list>
@@ -57,16 +57,16 @@
         <md-icon class="utility-navfonticon">handyman</md-icon>
         <span class="md-list-item-text utility-navfont">Tools</span>
         <md-list slot="md-expand">
-          <router-link :to="'/nm/modtools'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/tools/modtools'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Module Tools</md-list-item>
           </router-link>
-          <router-link :to="'/nm/simtools'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/tools/simtools'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Simulation Tools</md-list-item>
           </router-link>
-          <router-link :to="'/nm/chemprops'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/tools/chemprops'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">ChemProps</md-list-item>
           </router-link>
-          <router-link :to="'/nm/plot-curation'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/tools/plot-curation'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Easy CSV Plotter</md-list-item>
           </router-link>
         </md-list>

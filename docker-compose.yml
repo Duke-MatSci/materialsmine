@@ -20,6 +20,7 @@ services:
     depends_on:
       - api
       - client
+      - kg
     restart: always
     build:
       dockerfile: Dockerfile.dev
@@ -52,6 +53,7 @@ services:
     volumes:
       - /app/node_modules
       - ./app:/app
+
   redis:
     image: "redis:alpine"
     command: redis-server
@@ -60,7 +62,7 @@ services:
   celery:
     depends_on:
       - redis
-      - fuseki
+      - kg
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
@@ -71,7 +73,7 @@ services:
   celerybeat:
     depends_on:
       - redis
-      - fuseki
+      - kg
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
@@ -79,20 +81,11 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
     build: whyis
-  fuseki:
-    command:  /opt/venv/bin/fuseki-server --mem /ds #/opt/venv/bin/whyis fuseki
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    build: whyis
-#    ports:
-#      - '3030:3030'
-    volumes:
-      - ./materialsmine:/app
-      - ./whyis/materialsmine:/app
+
   whyis:
     depends_on:
       - redis
-      - fuseki
+      - kg
     stdin_open: true
     command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 90 -b :8000
     environment:
@@ -103,5 +96,16 @@ services:
       - ./mockDB/fuseki:/app/run
     ports:
       - '8000:8000'
+
+  kg:
+    image: 'stain/jena-fuseki:4.0.0'
+    restart: always
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - JVM_ARGS=-Xmx3g
+    ports:
+      - '3030:3030'
+    volumes:
+      - ./mockDB/fuseki:/fuseki
 volumes:
   mockDB:
