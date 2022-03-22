@@ -11,7 +11,7 @@ describe('PixelUnit.vue', () => {
   beforeAll(async () => {
     // const configData = await promises.readFile('@/assets/lin-bilal-liu-10x10-c4v-15bit-static-dynamic.txt', { encoding: 'utf-8' })
     global.fetch.mockReturnValueOnce(Promise.resolve({
-      text: () => ''
+      text: () => '' // configData
     }))
     wrapper = createWrapper(PixelUnit, {})
   })
@@ -20,9 +20,10 @@ describe('PixelUnit.vue', () => {
     expect(wrapper.exists()).toBeTruthy()
   })
 
-  it.skip('responds to clicks', () => {
-    const grid = wrapper.find('#unit-cell')
-    grid.trigger('click', { layerX: 15, layerY: 15 })
-    expect(wrapper.vm.geometryItems[0].value).toBe('000000000000001')
-  })
+  // TODO once config file situated, uncomment this test
+  // it('responds to clicks', () => {
+  //   const grid = wrapper.find('#unit-cell')
+  //   grid.trigger('click', { layerX: 15, layerY: 15 })
+  //   expect(wrapper.vm.geometryItems[0].value).toBe('000000000000001')
+  // })
 })
