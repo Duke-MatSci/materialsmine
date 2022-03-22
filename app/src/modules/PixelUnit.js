@@ -26,8 +26,6 @@ export default class PixelUnit {
     vm.borderColor = borderColor
     vm.pixelFgColor = pixelFgColor
     vm.pixelBgColor = pixelBgColor
-    // console.log('canvas width: ' + vm.canvas.width)
-    // console.log('canvas height: ' + vm.canvas.height)
     vm.lw = lineWidth
     if (vm.sz > 10 && vm.lw > 2) {
       vm.lw = 2
@@ -65,7 +63,6 @@ export default class PixelUnit {
     const y1 = Math.floor(y * vm.getHeight() / vm.size) + vm.lw / 2
     const sx = Math.floor(vm.getWidth() / vm.size) - vm.lw
     const sy = Math.floor(vm.getHeight() / vm.size) - vm.lw
-    // console.log('x: ' + x1 + ' y: ' + y1 + ' sx: ' + sx + ' sy: ' + sy)
     return { x: x1, y: y1, sx: sx, sy: sy }
   }
 
@@ -127,7 +124,6 @@ export default class PixelUnit {
       }
     }
     vm.pixels = rv
-    // console.log('pixels length: ' + rv.length)
     return rv
   }
 
@@ -149,18 +145,15 @@ export default class PixelUnit {
     let err = false
     if (vm.isSymmetric) {
       if (mls.length !== 15) { // not differentiating symmetry types, just sym vs non-sym
-        // console.log('invalid symmetric matlab string length! len=' + mls.length)
         err = true
       }
     } else {
       if (mls.length !== (vm.size * vm.size)) { // not differentiating symmetry types, just sym vs non-sym
-        // console.log('invalid matlab string length! len=' + mls.length)
         err = true
       }
     }
     for (let i = 0; i < mls.length; ++i) {
       if (mls[i] !== '0' && mls[i] !== '1') {
-        // console.log('invalid matlab bit: ' + i + ' ' + mls[i])
         err = true
       }
     }
@@ -192,7 +185,6 @@ export default class PixelUnit {
       if (mls[i] === '1') {
         const idx = mls.length - (i + 1)
         if (vm.isSymmetric) {
-          // console.log('idx: ' + idx + ' pixel: ' + JSON.stringify(bitMap[idx]))
           const pos = { x: bitMap[idx][0], y: bitMap[idx][1] }
           vm.setSymmetric(pos, vm.size)
         } else {
@@ -219,7 +211,6 @@ export default class PixelUnit {
         }
       }
     }
-    // console.log('getMatlabString: ' + ml)
     return ml
   }
 
@@ -258,7 +249,6 @@ export default class PixelUnit {
   }
 
   clearCanvas () {
-    // let ctx = canvas.getContext('2d')
     const vm = this
     vm.ctx.fillStyle = vm.pixelBgColor
     vm.ctx.fillRect(0, 0, vm.getWidth(), vm.getHeight())
