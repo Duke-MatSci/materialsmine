@@ -3,6 +3,7 @@ import PixelUnit from '@/modules/PixelUnit'
 export default {
   name: 'PixelUnit',
   data: () => ({
+    errorMsg: '',
     msg: 'C4v 10 x 10 Geometry Explorer',
     canvas: null,
     ctx: null,
@@ -84,7 +85,9 @@ export default {
         vm.pixelUnit.drawGrid()
         vm.updateFields()
       })
-      // TODO add a catch to this promise
+      .catch(err => {
+        this.errorMsg = err.message
+      })
   },
   methods: {
     onGeometryEntered () {
