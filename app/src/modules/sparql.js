@@ -17,12 +17,14 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
       const results = await res.json()
       return results
     })
-    .catch((err) => console.log(err))
+    .catch((err) => {
+      throw new Error('Error retrieving query response', { cause: err })
+    })
 }
 
 function parseSparql (response) {
   const queryResults = []
-  if (response) {
+  try {
     for (const row of response.results.bindings) {
       const rowData = {}
       queryResults.push(rowData)
@@ -34,6 +36,8 @@ function parseSparql (response) {
         rowData[field] = value
       })
     }
+  } catch (err) {
+    throw new Error('Error parsing response', { cause: err })
   }
   return queryResults
 }
