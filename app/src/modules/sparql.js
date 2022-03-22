@@ -42,4 +42,8 @@ function parseSparql (response) {
   return queryResults
 }
 
-export { querySparql, parseSparql }
+async function queryAndParseSparql (query, endpoint = SPARQL_ENDPOINT) {
+  return parseSparql(await querySparql(query, endpoint))
+}
+
+export { querySparql, parseSparql, queryAndParseSparql } // queryAndParseSparql as default ?
