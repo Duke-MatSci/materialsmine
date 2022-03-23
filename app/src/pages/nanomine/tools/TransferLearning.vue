@@ -17,7 +17,7 @@
       optimization algorithm using the pre-trained VGG19 model. It can handle complex microstructures, and has the
       potential of expediting the discovery of new materials. Please refer to the article by
       <a href="https://doi.org/10.1038/s41598-018-31571-7" target="_blank">Li et. al.</a> for more details. The code
-      package may be requested for research purposes by clicking on the link below. You will asked to fill in a form and
+      package may be requested for research purposes by clicking on the link below. You will be asked to fill in a form and
       we will email you following the form completion.
     </template>
   </tool-template>

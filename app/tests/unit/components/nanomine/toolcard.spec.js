@@ -13,7 +13,6 @@ describe('ToolCard.vue', () => {
         actions: 'Actions'
       }
     }, false)
-    // wrapper.vm.$router.push('localhost/nm')
   })
 
   it('mounts properly', () => {

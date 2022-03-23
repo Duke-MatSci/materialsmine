@@ -219,7 +219,6 @@ export default {
     },
 
     submit: function () {
-      console.log('hello')
       this.setLoading()
 
       if (this.files === undefined) {
