@@ -40,11 +40,12 @@
         :selects='job.selects' :collectDimensions='job.getImageDimensions' :acceptFileTypes="job.acceptableFileTypes">
       </ImageUpload>
 
-      <slot name="submit-button" @click="submit()">
-        <md-button class="md-layout-item md-size-100 md-primary" @click="submit()">
+      <md-button class="md-layout-item md-size-100 md-primary md-raised" @click="submit()">
+        <slot name="submit-button">
           Submit
-        </md-button>
-      </slot>
+        </slot>
+      </md-button>
+
 
       <div class="md-layout-item md-size-100" v-if='results.submitted && useWebsocket'>
         <h3>Submission Results</h3>

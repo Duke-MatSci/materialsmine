@@ -41,9 +41,7 @@
       </ol>
     </template>
     <template #submit-button>
-      <md-button class="md-layout-item md-size-100 md-primary md-raised">
-        Binarize
-      </md-button>
+      Binarize
     </template>
   </tool-template>
 </template>

@@ -71,9 +71,7 @@
       </ol>
     </template>
     <template #submit-button>
-      <md-button class="md-layout-item md-size-100 md-primary md-raised">
-        Characterize
-      </md-button>
+      Characterize
     </template>
   </tool-template>
 </template>

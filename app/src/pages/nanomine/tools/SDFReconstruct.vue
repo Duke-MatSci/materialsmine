@@ -52,9 +52,7 @@
       </ol>
     </template>
     <template #submit-button>
-      <md-button class="md-layout-item md-size-100 md-primary md-raised">
-        Reconstruct
-      </md-button>
+      Reconstruct
     </template>
   </tool-template>
 </template>
