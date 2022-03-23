@@ -38,21 +38,338 @@
           the fitted parameters and the goodness of fit value.</li>
       </ol>
       <br>
-      Chi-square fit: <math>y = a * f<sub>k</sub>(b * x, n)</math>, where <math>f<sub>k</sub></math> is the probability
+      Chi-square fit:
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mi>a</mi>
+          <mo>*</mo>
+          <msub>
+            <mrow>
+              <mi>f</mi>
+            </mrow>
+            <mrow>
+              <mi>k</mi>
+            </mrow>
+          </msub>
+          <mo stretchy="false">(</mo>
+          <mi>b</mi>
+          <mo>*</mo>
+          <mi>x</mi>
+          <mo>,</mo>
+          <mi>n</mi>
+          <mo stretchy="false">)</mo>
+        </mrow>
+      </math>,
+      where
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+        <msub>
+          <mrow>
+            <mi>f</mi>
+          </mrow>
+          <mrow>
+            <mi>k</mi>
+          </mrow>
+        </msub>
+      </math>
+      is the probability
       density function of chi-square distribution.
       <br>
-      Gamma fit: <math>y = a * f<sub>g</sub>(x - x<sub>0</sub>, b, c)</math>, where <math>f<sub>g</sub></math> is the
-      probability density function of gamma distribution.
+      Gamma fit:
+       <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mi>a</mi>
+          <mo>*</mo>
+          <msub>
+            <mrow>
+              <mi>f</mi>
+            </mrow>
+            <mrow>
+              <mi>g</mi>
+            </mrow>
+          </msub>
+          <mrow>
+            <mo>(</mo>
+            <mrow>
+              <mi>x</mi>
+              <mo>-</mo>
+              <msub>
+                <mrow>
+                  <mi>x</mi>
+                </mrow>
+                <mrow>
+                  <mn>0</mn>
+                </mrow>
+              </msub>
+              <mo>,</mo>
+              <mi>b</mi>
+              <mo>,</mo>
+              <mi>c</mi>
+            </mrow>
+            <mo>)</mo>
+          </mrow>
+        </mrow>
+      </math>,
+      where
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline">
+        <msub>
+          <mrow>
+            <mi>f</mi>
+          </mrow>
+          <mrow>
+            <mi>g</mi>
+          </mrow>
+        </msub>
+      </math>
+      is the probability density function of gamma distribution.
       <br>
-      Gaussian fit: <math>y = a * exp[-b * (x - x<sub>0</sub>)<sup>2</sup>]</math>
+      Gaussian fit:
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="display">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mi>a</mi>
+          <mo>*</mo>
+          <mo>exp</mo>
+          <mrow>
+            <mo>[</mo>
+            <mrow>
+              <mo>-</mo>
+              <mi>b</mi>
+              <mo>*</mo>
+              <msup>
+                <mrow>
+                  <mrow>
+                    <mo>(</mo>
+                    <mrow>
+                      <mi>x</mi>
+                      <mo>-</mo>
+                      <msub>
+                        <mrow>
+                          <mi>x</mi>
+                        </mrow>
+                        <mrow>
+                          <mn>0</mn>
+                        </mrow>
+                      </msub>
+                    </mrow>
+                    <mo>)</mo>
+                  </mrow>
+                </mrow>
+                <mrow>
+                  <mn>2</mn>
+                </mrow>
+              </msup>
+            </mrow>
+            <mo>]</mo>
+          </mrow>
+        </mrow>
+      </math>
       <br>
-      Step function fit: <math>y = a * [h(x-x<sub>1</sub>) - h(x-x<sub>2</sub>)]</math>, where <math>h</math> is
-      Heaviside function.
+      Step function fit:
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="display">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mi>a</mi>
+          <mo>*</mo>
+          <mrow>
+            <mo>[</mo>
+            <mrow>
+              <mi>h</mi>
+              <mrow>
+                <mo>(</mo>
+                <mrow>
+                  <mi>x</mi>
+                  <mo>-</mo>
+                  <msub>
+                    <mrow>
+                      <mi>x</mi>
+                    </mrow>
+                    <mrow>
+                      <mn>1</mn>
+                    </mrow>
+                  </msub>
+                </mrow>
+                <mo>)</mo>
+              </mrow>
+              <mo>-</mo>
+              <mi>h</mi>
+              <mrow>
+                <mo>(</mo>
+                <mrow>
+                  <mi>x</mi>
+                  <mo>-</mo>
+                  <msub>
+                    <mrow>
+                      <mi>x</mi>
+                    </mrow>
+                    <mrow>
+                      <mn>2</mn>
+                    </mrow>
+                  </msub>
+                </mrow>
+                <mo>)</mo>
+              </mrow>
+            </mrow>
+            <mo>]</mo>
+          </mrow>
+        </mrow>
+      </math>,
+      where
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="display">
+        <mrow>
+          <mi>
+            h
+          </mi>
+        </mrow>
+      </math>
+      is the Heaviside function.
       <br>
-      Exponential fit: <math>y = a * exp[-b * (x - x<sub>0</sub>)]</math>
+      Exponential fit:
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="display">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <mi>a</mi>
+          <mo>*</mo>
+          <mo>exp</mo>
+          <mrow>
+            <mo>[</mo>
+            <mrow>
+              <mo>-</mo>
+              <mi>b</mi>
+              <mo>*</mo>
+              <mrow>
+                <mo>(</mo>
+                <mrow>
+                  <mi>x</mi>
+                  <mo>-</mo>
+                  <msub>
+                    <mrow>
+                      <mi>x</mi>
+                    </mrow>
+                    <mrow>
+                      <mn>0</mn>
+                    </mrow>
+                  </msub>
+                </mrow>
+                <mo>)</mo>
+              </mrow>
+            </mrow>
+            <mo>]</mo>
+          </mrow>
+        </mrow>
+      </math>
       <br>
-      Double peak fit: <math>y = a<sub>1</sub> * exp[-b<sub>1</sub> * (x - x<sub>1</sub>)<sup>2</sup>] + a<sub>2</sub> *
-        exp[-b<sub>2</sub> * (x - x<sub>2</sub>)<sup>2</sup>]</math>
+      Double peak fit:
+      <math xmlns="http://www.w3.org/1998/Math/MathML" display="display">
+        <mrow>
+          <mi>y</mi>
+          <mo>=</mo>
+          <msub>
+            <mrow>
+              <mi>a</mi>
+            </mrow>
+            <mrow>
+              <mn>1</mn>
+            </mrow>
+          </msub>
+          <mo>*</mo>
+          <mo>exp</mo>
+          <mrow>
+            <mo>[</mo>
+            <mrow>
+              <mo>-</mo>
+              <msub>
+                <mrow>
+                  <mi>b</mi>
+                </mrow>
+                <mrow>
+                  <mn>1</mn>
+                </mrow>
+              </msub>
+              <mo>*</mo>
+              <msup>
+                <mrow>
+                  <mrow>
+                    <mo>(</mo>
+                    <mrow>
+                      <mi>x</mi>
+                      <mo>-</mo>
+                      <msub>
+                        <mrow>
+                          <mi>x</mi>
+                        </mrow>
+                        <mrow>
+                          <mn>1</mn>
+                        </mrow>
+                      </msub>
+                    </mrow>
+                    <mo>)</mo>
+                  </mrow>
+                </mrow>
+                <mrow>
+                  <mn>2</mn>
+                </mrow>
+              </msup>
+            </mrow>
+            <mo>]</mo>
+          </mrow>
+          <mo>+</mo>
+          <msub>
+            <mrow>
+              <mi>a</mi>
+            </mrow>
+            <mrow>
+              <mn>2</mn>
+            </mrow>
+          </msub>
+          <mo>*</mo>
+          <mrow>
+            <mo>[</mo>
+            <mrow>
+              <mo>-</mo>
+              <msub>
+                <mrow>
+                  <mi>b</mi>
+                </mrow>
+                <mrow>
+                  <mn>2</mn>
+                </mrow>
+              </msub>
+              <mo>*</mo>
+              <msup>
+                <mrow>
+                  <mrow>
+                    <mo>(</mo>
+                    <mrow>
+                      <mi>x</mi>
+                      <mo>-</mo>
+                      <msub>
+                        <mrow>
+                          <mi>x</mi>
+                        </mrow>
+                        <mrow>
+                          <mn>2</mn>
+                        </mrow>
+                      </msub>
+                    </mrow>
+                    <mo>)</mo>
+                  </mrow>
+                </mrow>
+                <mrow>
+                  <mn>2</mn>
+                </mrow>
+              </msup>
+            </mrow>
+            <mo>]</mo>
+          </mrow>
+        </mrow>
+      </math>
     </template>
     <template #input-options>
       <ol>
