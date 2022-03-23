@@ -10,7 +10,10 @@
         <slot name="title"></slot>
       </h1>
     </div>
-    <div class="teams_text md-layout-item md-size-80">
+    <div class="teams_text md-layout-item md-size-80" v-if="$scopedSlots['description']">
+      <slot name="description"></slot>
+    </div>
+    <div class="teams_text md-layout-item md-size-80" v-else>
       <slot name="content"></slot>
     </div>
     <div class="md-layout-item md-size-80 md-layout md-alignment-top-space-between md-gutter">
