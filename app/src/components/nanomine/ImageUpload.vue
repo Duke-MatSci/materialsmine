@@ -63,7 +63,7 @@
     </div>
 
     <!-- parameters that are specific to job type -->
-    <div v-if="fileUploaded && selects.length > 0" class="md-layout-item md-size-100">
+    <div v-if="fileUploaded && (selects && selects.length > 0)" class="md-layout-item md-size-100">
 
       <h4 class='subheader'>Parameters</h4>
 
@@ -140,7 +140,6 @@
 
 <script>
 
-import {} from 'vuex'
 import EditImage from './EditImage.vue' // image cropping modal
 import Jszip from 'jszip' // for unzipping and rezipping files
 
@@ -239,20 +238,23 @@ export default {
           if (this.displayableFileType(0) === false) { this.filesEditable = false } // set displayable status for image
           this.pushPhase(0)
           this.pushImageDimensions()
+          console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
         }
       })
     },
 
     getInitialDimensions: function (index) {
-      if (this.displayableFileType[index] === false) { return }
+      if (this.displayableFileType(index) === false) { return }
 
       var img = new Image()
       img.src = this.displayedFiles[index].url
+      const vm = this
       img.onload = function () {
-        this.displayedFiles[index].pixelSize = { width: img.width, height: img.height }
-        this.displayedFiles[index].originalSize = { width: img.width, height: img.height }
-        this.updateUserDimensions(index)
-        this.displayedFiles[index].name += ' '
+        vm.displayedFiles[index].pixelSize = { width: img.width, height: img.height }
+        vm.displayedFiles[index].originalSize = { width: img.width, height: img.height }
+        vm.updateUserDimensions(index)
+        vm.displayedFiles[index].name += ' '
+        vm.pushImageDimensions()
       }
     },
 
@@ -319,7 +321,7 @@ export default {
         } else if (this.inputtedDimensions.units === 'millimeters') {
           ratio = ratio / 1000
         }
-
+        console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
         this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: this.displayedFiles[0].size.width, height: this.displayedFiles[0].size.height, ratio: ratio }
       } else {
         this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: parseInt(this.inputtedDimensions.width), height: parseInt(this.inputtedDimensions.height), ratio: null }
@@ -498,147 +500,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-
-  /* Browse files button */
-  .fileButtonWrapper {
-    margin-bottom: 0px;
-  }
-
-  .fileButton {
-    margin-left: 0px;
-    margin-bottom: 20px;
-  }
-
-  h4 {
-    text-align: left;
-    margin-top: 0px;
-    font-size: 15px;
-  }
-
-  /* Subheaders such as 'Image dimensions' and 'Parameters' */
-  .subheader {
-    margin-bottom: 15px;
-    border-bottom: 1px solid gray;
-  }
-
-  .tooltipWrapper {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-  }
-
-  /* info and error alerts */
-  .alert {
-    text-align: left;
-    border: none;
-  }
-
-  /**********
-  image table
-  **********/
-  .imageTable {
-    margin-bottom: 20px;
-  }
-
-  .imageTableHeader {
-    border-bottom: 1px solid gray;
-    margin-bottom: 15px;
-  }
-
-  .imageTableHeader, .imageTableContents {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-  }
-
-  .imageTableContents {
-    margin-bottom: 5px;
-  }
-
-  .imageTableHeader h4, .imageTableContents p, .tooltipWrapper {
-    width: 25%;
-    text-align: left;
-  }
-
-  .tooltipWrapper h4 {
-    width: initial;
-  }
-
-  .imageTableContents p {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 15px;
-  }
-
-  .imageTableButtons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    width: 25%;
-  }
-
-  .imageTableButton {
-    margin-top: 0px;
-    margin-left: 0px;
-  }
-
-  .imageSizeError {
-    font-weight: 700;
-    color: red;
-  }
-
-  /*********
-  parameters
-  *********/
-  .selectDropdownsWrapper {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
-
-  .singleSelectDropdown {
-    width: 49%;
-  }
-
-  /* image dimensions */
-  .imageDimensionsWrapper {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-  }
-
-  /* giant x between width and height for image dimensions */
-  h3 {
-    font-size: 20px;
-    margin-top: -28px;
-  }
-
-  .imgDimWidth {
-    width: 20%;
-    max-width: 225px;
-    margin-right: 15px;
-  }
-
-  .imgDimHeight {
-    width: 20%;
-    max-width: 225px;
-    margin-left: 15px;
-    margin-right: 30px;
-  }
-
-  .imgDimUnits {
-    width: 200px;
-    max-width: 25%;
-  }
-
-  .imgDimButton {
-    margin-left: 30px;
-  }
-
-</style>
