@@ -5,6 +5,7 @@ export default {
       name: null,
       email: null,
       contactType: null,
+      platform: null,
       message: null,
       errors: []
     }
@@ -62,6 +63,7 @@ export default {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          // platform: this.platform,
           contactType: this.contactType,
           contactText: this.message
         })
