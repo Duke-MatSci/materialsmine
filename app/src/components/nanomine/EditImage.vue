@@ -19,7 +19,7 @@
 
       <!-- displayed when user opens image cropper -->
       <div class='imageWrapper' v-if='type === "crop"'>
-        <cropper :src='file.url' :stencil-props='stencil_props' @change='onCropChange'></cropper>
+        <cropper :src='file.url' :stencil-props='stencilProps' @change='onCropChange'></cropper>
       </div>
 
       <!-- instructions (varies based on use case) -->
@@ -62,8 +62,8 @@
       </div>
 
       <div class='image-cropper-container-buttons'>
-        <p v-if='type === "phase"'>x-offset: {{ phase.x_offset }}</p> <!-- only displayed when user opens phase select -->
-        <p v-if='type === "phase"'>y-offset: {{ phase.y_offset }}</p> <!-- only displayed when user opens phase select -->
+        <p v-if='type === "phase"'>x-offset: {{ phase.xOffset }}</p> <!-- only displayed when user opens phase select -->
+        <p v-if='type === "phase"'>y-offset: {{ phase.yOffset }}</p> <!-- only displayed when user opens phase select -->
         <p v-if='type === "calibrate"'>width: {{ calibratedDimensions.width }}</p> <!-- only displayed when user opens phase select -->
         <p v-if='type === "calibrate"'>height: {{ calibratedDimensions.height }}</p> <!-- only displayed when user opens phase select -->
         <md-button class="md-primary" @click='closeModal()'>Cancel</md-button>
@@ -106,20 +106,20 @@ export default {
   mounted () {
     // locks the aspect ratio at which the user can crop an image
     if (this.aspectRatio === 'square') {
-      this.stencil_props.aspectRatio = 1
+      this.stencilProps.aspectRatio = 1
     } else if (this.aspectRatio === 'free') {
-      if ('aspectRatio' in this.stencil_props) {
-        delete this.stencil_props.aspectRatio
+      if ('aspectRatio' in this.stencilProps) {
+        delete this.stencilProps.aspectRatio
       }
     }
   },
   data () {
     return {
       title: '',
-      cropped_url: null,
+      croppedURL: null,
       coordinates: null,
-      stencil_props: {},
-      phase: { x_offset: 0, y_offset: 0 },
+      stencilProps: {},
+      phase: { xOffset: 0, yOffset: 0 },
       phaseDotVisibility: false,
       calibrationLine: {
         width: 0,
@@ -140,8 +140,8 @@ export default {
   methods: {
     onPhaseChange (e) {
       // takes the click offset from top left of image and multiplies that by how much the image is scaled up/down to fit the modal
-      this.phase.x_offset = parseInt(e.offsetX * (this.file.pixelSize.width / e.target.clientWidth))
-      this.phase.y_offset = parseInt(e.offsetY * (this.file.pixelSize.height / e.target.clientHeight))
+      this.phase.xOffset = parseInt(e.offsetX * (this.file.pixelSize.width / e.target.clientWidth))
+      this.phase.yOffset = parseInt(e.offsetY * (this.file.pixelSize.height / e.target.clientHeight))
 
       this.phaseDotVisibility = true
     },
@@ -168,7 +168,7 @@ export default {
       this.calibratedDimensions.height = parseInt(this.scaleBar.width * (this.$refs.calibrationImage.clientHeight / this.calibrationLine.width))
     },
     onCropChange ({ coordinates, canvas }) {
-      this.cropped_url = canvas.toDataURL()
+      this.croppedURL = canvas.toDataURL()
       this.coordinates = coordinates
     },
     closeModal () {
@@ -176,7 +176,7 @@ export default {
     },
     saveImage () {
       if (this.type === 'crop') {
-        this.$emit('setCroppedImage', this.cropped_url, this.file.name, this.coordinates)
+        this.$emit('setCroppedImage', this.croppedURL, this.file.name, this.coordinates)
       } else if (this.type === 'phase') {
         this.$emit('setPhase', this.file.name, this.phase)
       } else if (this.type === 'calibrate') {
@@ -192,17 +192,17 @@ export default {
 
     // gives the y offset of the phase dot
     computedTop: function () {
-      if (this.$refs.phaseImage === undefined) { return this.phase.y_offset * 0 } // refs are not yet rendered on first run
+      if (this.$refs.phaseImage === undefined) { return this.phase.yOffset * 0 } // refs are not yet rendered on first run
       var scaleFactor = this.$refs.phaseImage.clientHeight / this.file.pixelSize.height // image might be scaled up/down to fit the modal.
-      return ((this.phase.y_offset * scaleFactor) - 3) + 'px' // -3 pixels to center dot on where they click
+      return ((this.phase.yOffset * scaleFactor) - 3) + 'px' // -3 pixels to center dot on where they click
     },
 
     // gives the x offset of the phase dot
     computedLeft: function () {
-      if (this.$refs.phaseImage === undefined) { return this.phase.x_offset * 0 } // refs are not yet rendered on first run
+      if (this.$refs.phaseImage === undefined) { return this.phase.xOffset * 0 } // refs are not yet rendered on first run
       var scaleFactor = this.$refs.phaseImage.clientWidth / this.file.pixelSize.width // image might be scaled up/down to fit the modal.
       var extraOffset = (this.$refs.imageWrapperDiv.clientWidth - this.$refs.phaseImage.clientWidth) / 2 // phase dot is anchored to the div that contains img. Div width may be larger than img width.
-      return ((this.phase.x_offset * scaleFactor) + extraOffset - 3) + 'px' // -3 pixels to center dot on where they click
+      return ((this.phase.xOffset * scaleFactor) + extraOffset - 3) + 'px' // -3 pixels to center dot on where they click
     },
 
     // computed background and computed border determine whether phase dot is displayed
