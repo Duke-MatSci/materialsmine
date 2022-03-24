@@ -197,22 +197,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-// Line
-.nm-line {
-  stroke: #3cba54;
-  stroke-width: 2px;
-  fill: none;
-}
-
-.tooltip {
-  fill: white;
-  stroke: #444;
-}
-
-.overlay {
-  fill: none;
-  pointer-events: all;
-}
-</style>

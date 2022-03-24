@@ -45,9 +45,3 @@ export default {
   }
 }
 </script>
-<style scoped lang="scss">
-.reference {
-  padding-left: 36px;
-  text-indent: -36px;
-}
-</style>
