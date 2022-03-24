@@ -41,6 +41,7 @@
     "vue": "^2.6.11",
     "vue-advanced-cropper": "^0.16.8",
     "vue-material": "^1.0.0-beta-15",
+    "vue-mathjax": "^0.0.11",
     "vue-router": "^3.2.0",
     "vue-socket.io": "^3.0.10",
     "vue-splitpane": "^1.0.6",
