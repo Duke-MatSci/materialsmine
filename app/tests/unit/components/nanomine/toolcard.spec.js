@@ -3,17 +3,16 @@ import ToolCard from '@/components/nanomine/ToolCard.vue'
 
 var wrapper = null
 
-const toolProp = {
-  title: 'PropTitle',
-  text: 'PropTest',
-  link: 'testLink',
-  display: true
-}
-
 describe('ToolCard.vue', () => {
   beforeAll(() => {
-    wrapper = createWrapper(ToolCard, { props: toolProp }, false)
-    wrapper.vm.$router.push('localhost/nm')
+    wrapper = createWrapper(ToolCard, {
+      slots: {
+        image: 'Image',
+        title: 'Title',
+        content: 'Content',
+        actions: 'Actions'
+      }
+    }, false)
   })
 
   it('mounts properly', () => {
@@ -21,6 +20,9 @@ describe('ToolCard.vue', () => {
   })
 
   it('displays the provided prop tool', () => {
-    expect(wrapper.text()).toMatch(new RegExp(toolProp.title))
+    expect(wrapper.text()).toContain('Image')
+    expect(wrapper.text()).toContain('Title')
+    expect(wrapper.text()).toContain('Content')
+    expect(wrapper.text()).toContain('Actions')
   })
 })

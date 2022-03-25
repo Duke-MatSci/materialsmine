@@ -19,16 +19,15 @@ function createWrapper (component, overrides, useMount = true) {
   const mountType = !useMount ? shallowMount : mount
   const defaultMountOptions = {
     localVue,
-    // mocks: {
+    mocks: {
     //     $router: _.merge({ push: jest.fn() }, overrides.router || {})
-    // },
+      ...(overrides.mocks || {})
+    },
     router,
     store,
     propsData: _.merge({}, overrides.props),
     slots: _.merge({}, overrides.slots),
-    stubs: {
-      RouterLink: RouterLinkStub
-    }
+    stubs: _.merge({ RouterLink: RouterLinkStub }, overrides.stubs)
   }
   return mountType(component, defaultMountOptions)
 }
