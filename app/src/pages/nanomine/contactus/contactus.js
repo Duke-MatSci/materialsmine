@@ -64,7 +64,7 @@ export default {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          // platform: this.platform,
+          platform: this.platform,
           contactType: this.contactType,
           contactText: this.message
         })
