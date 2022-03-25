@@ -29,6 +29,9 @@ export default {
       if (!this.message || this.message.trim() === '') {
         this.errors.push('Message required')
       }
+      if (!this.platform) {
+        this.errors.push('Please select nanomine or metamine platform')
+      }
 
       if (!this.errors.length) {
         return true
