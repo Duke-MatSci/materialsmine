@@ -1,0 +1,46 @@
+<div class="main pixelunit wrapper">
+  <div class="md-layout md-alignment-top-left md-gutter adjust-padding">
+    <div class="md-layout-item md-size-100">
+      <h2>Data from Caltech and Duke composed of 32K simulated results for static and dynamic analysis.</h2>
+      <p>Click pixels to create a geometry configuration and view the result for the selected geometry.</p>
+      <p>
+        Default material is Stratasys Vero White (Poisson's Ratio 0.33, Young's Modulus 2e9 Pa) and selectable
+        material is Stratasys Tango Black (Poisson's Ratio 0.33, Young's Modulus 2e6 Pa).
+      </p>
+    </div>
+    <div class="md-layout-item md-size-100 md-layout md-alignment-top-left md-gutter">
+      <md-button class="md-layout-item md-size-10 md-primary" @click="handleReset()">Reset</md-button>
+    </div>
+    <div class="md-layout-item md-size-35 md-small-size-100" style="min-width:310px;">
+      <canvas id="unit-cell" ref="unit-cell" width="300" height="300"></canvas>
+    </div>
+
+    <div class="md-layout-item md-size-60 md-small-size-100 md-layout md-gutter">
+      <md-content class="md-primary md-layout-item md-size-100">
+        <h2>Geometry Details</h2>
+      </md-content>
+      <md-card v-for="item of geometryItems" class="md-layout-item" :key="item.name">
+        <md-card-header class="md-subheading">{{ item.name }}</md-card-header>
+        <md-divider></md-divider>
+        <md-card-content>{{ item.value }}</md-card-content>
+      </md-card>
+    </div>
+
+    <div class="md-layout-item md-size-100 md-layout md-gutter">
+      <md-content class="md-primary md-layout-item md-size-100">
+        <h2>Bandgap Values</h2>
+      </md-content>
+      <md-table v-model="bgPairs" md-card>
+        <md-table-row>
+          <md-table-head>SH</md-table-head>
+          <md-table-head>PSV</md-table-head>
+        </md-table-row>
+
+        <md-table-row v-for="(bgPair, index) of bgPairs" :key="index">
+          <md-table-cell>{{ getBgValue(bgPair.sh) }}</md-table-cell>
+          <md-table-cell>{{ getBgValue(bgPair.psv) }}</md-table-cell>
+        </md-table-row>
+      </md-table>
+    </div>
+  </div>
+</div>
