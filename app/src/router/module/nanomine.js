@@ -8,7 +8,7 @@ const nanomineRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/xml-uploader',
+    path: 'xml-uploader',
     name: 'XmlUploader',
     component: () => import(/* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'),
     meta: { requiresAuth: false }
