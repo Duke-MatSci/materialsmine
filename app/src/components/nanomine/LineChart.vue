@@ -1,5 +1,5 @@
 <template>
-<div class="md-layout">
+<div class="md-layout section_LineChart">
   <div
     class="md-layout-item md-size-20 md-alignment-top-left md-layout md-gutter"
   >
@@ -197,22 +197,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-// Line
-.nm-line {
-  stroke: #3cba54;
-  stroke-width: 2px;
-  fill: none;
-}
-
-.tooltip {
-  fill: white;
-  stroke: #444;
-}
-
-.overlay {
-  fill: none;
-  pointer-events: all;
-}
-</style>
