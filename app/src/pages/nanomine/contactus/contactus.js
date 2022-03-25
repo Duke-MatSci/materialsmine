@@ -11,7 +11,7 @@ export default {
     }
   },
   methods: {
-    validateForm: function (e) {
+    validateForm: function () {
       this.errors = []
       if (!this.name) {
         this.errors.push('Name required')
@@ -33,7 +33,6 @@ export default {
       if (!this.errors.length) {
         return true
       }
-      e.preventDefault()
     },
     validEmail: function (email) {
       const re =
@@ -50,9 +49,8 @@ export default {
       this.errors = []
     },
 
-    onSubmit: async function (e) {
-      e.preventDefault()
-      this.validateForm(e)
+    onSubmit: async function () {
+      this.validateForm()
       if (this.errors.length) {
         return
       }
