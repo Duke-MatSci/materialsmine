@@ -38,6 +38,6 @@ describe('Nanomine Homepage', () => {
     const wrapper = await factory()
     const link = wrapper.find('.quicklinks')
     await link.trigger('click')
-    expect(wrapper.vm.$route.path).toEqual('/xml-uploader')
+    expect(wrapper.vm.$route.path).toEqual('/nm/xml-uploader')
   })
 })
