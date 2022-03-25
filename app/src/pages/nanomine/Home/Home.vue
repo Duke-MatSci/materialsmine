@@ -29,7 +29,7 @@
     <div class="section_quicklinks">
       <div class="wrapper">
           <div class="grid grid_col-3 grid_gap-smaller">
-              <div class="quicklinks" @click.prevent="navigateFunction('/xml-uploader')">
+              <div class="quicklinks" @click.prevent="navigateFunction('/nm/xml-uploader')">
                   <div class="quicklinks_content">
                       <h2>Upload your data</h2>
                       <i class="material-icons">vertical_align_top</i>

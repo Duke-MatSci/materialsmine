@@ -1,5 +1,114 @@
-<div>
-    <div class="xmluploader section_pages">
-        <h1>File Upload</h1>
+<div class="main xmluploader wrapper md-layout md-alignment-top-center">
+  <div class="md-layout-item md-size-80 md-layout md-alignment-top-left md-gutter">
+    <dialog-box :active="dialogBoxActive">
+      <template v-slot:title>{{ dialog.title }}</template>
+      <template v-slot:content>{{ dialog.content }}</template>
+      <template v-slot:actions>
+        <md-button @click.native.prevent="dialog.closeHandler">Close</md-button>
+      </template>
+    </dialog-box>
+    <div>
+      <h1 class="header-nm">File Upload</h1>
     </div>
+    <div>
+      <h3>Description</h3>
+      <p>The simplest method to curate your sample into the database is by uploading an MS Excel spreadsheet. For each
+        sample, select or create a dataset for your sample group, upload a completed Excel template file using the
+        first uploading box and other supplementary image and raw data files using the second uploading box. The
+        master Excel template contains all possible fields for nanocomposite sample data and therefore many fields
+        will remain blank for your sample. Fill in only the parameters applicable to your sample. Customized templates
+        are available upon request, please contact <router-link to="/mm/contact">the NanoMine team</router-link> if
+        customization is required.
+      </p>
+    </div>
+    <div>
+      <h3>Steps</h3>
+      <p>
+        NOTE: Filesets for samples are grouped into datasets. The files for a sample (images, auxiliary spreadsheet
+        data, completed Excel template, etc) are uploaded as a set called a fileset. Uploading multiple samples
+        requires multiple fileset uploads.
+      </p>
+      <ol>
+        <li>
+          Create a new dataset for the control sample and its related files, then when uploading each additional
+          sample be sure to select the same dataset that was used for the control sample of the sample group.
+        </li>
+        <li>
+          Click <a
+            href="https://github.com/Duke-MatSci/nanomine-schema/blob/master/xls-input-forms/master_template.xlsx?raw=true"
+            download>here</a> to download the blank MS Excel template (137 kB). (Click <a
+            href="/nmstatic/xmlconv/example.zip" download>here</a> to see an example, 263 kB)
+        </li>
+        <li>
+          Fill in the parameters for all applicable cells in the Excel template file. Prepare the supplementary
+          images and raw data files.
+        </li>
+        <li>
+          Select the completed Excel template file in the first uploading box.
+        </li>
+        <li>
+          Select the supplementary images and other raw data files in the second uploading box (press "Ctrl" or
+          "Command" when selecting multiple files), then click Submit to upload your data.
+        </li>
+        <li>
+          Wait for the feedback message. Please read the message and follow the instructions if an error message is
+          displayed.
+        </li>
+      </ol>
+    </div>
+    <div>
+      <h3>Note</h3>
+      <ol>
+        <li>
+          We recommend you to upload your control sample first and remember its sample ID.
+        </li>
+        <li>
+          Upload one sample data at a time (one template Excel file along with supplementary files).
+        </li>
+        <li>
+          Rows or sections followed by a "#" sign in the template Excel file can be duplicated. Copy them into
+          additional rows if needed.
+        </li>
+        <li>
+          Acceptable image file format: JPG, PNG, TIF(F). Indicate the full image file name including the extensions
+          in the corresponding cells in the Excel template file.
+        </li>
+      </ol>
+    </div>
+    <div class="md-layout-item md-size-100">
+      <h3>Inputs</h3>
+      <div>
+        <dataset-viewer selectHeader="Choose or create a dataset" :selectedHandler="datasetSelectedHandler"
+          :datasetOptions="datasetOptions"></dataset-viewer>
+      </div>
+      <div>
+        <p>Select a completed Excel Template File
+          <md-button class="md-primary md-raised" @click='pickTemplate'>Browse</md-button>
+          <input type="file" style="display: none" accept=".xlsx, .xls" ref="myTemplate" @change="onTemplatePicked">
+        </p>
+        <p v-if="templateUploaded">
+          <md-icon>check_circle_outline</md-icon> {{ templateName }}
+        </p>
+      </div>
+      <div>
+        <p>
+          Select Other Files (including raw data files and image files)
+          <md-button class="md-primary md-raised" @click='pickFile'>Browse</md-button>
+          <input type="file" style="display: none" :multiple="true" ref="myUpload" @change="onFilePicked">
+        </p>
+        <md-list>
+          <md-list-item v-for="file in filesDisplay" :key="file.fileName">
+            <md-icon>check_circle_outline</md-icon>
+            <span class="md-list-item-text">{{ file.fileName }}</span>
+          </md-list-item>
+        </md-list>
+      </div>
+      <md-button v-on:click="submit()" :disabled="templateName.length < 1 || !datasetSelected"
+        class="md-primary md-raised">Submit</md-button>
+      <md-button @click="goBack()" class="md-primary md-raised">Go Back</md-button>
+    </div>
+    <div class="md-layout-item md-size-80 md-layout md-alignment-top-center reference-container">
+      <reference-container :references="references" :openOnLoad="false"></reference-container>
+    </div>
+  </div>
 </div>

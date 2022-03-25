@@ -14,15 +14,20 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
   }
   return await fetch(urlEncodedQuery, requestOptions)
     .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error. Status: ${res.status} ${res.statusText}`)
+      }
       const results = await res.json()
       return results
     })
-    .catch((err) => console.log(err))
+    .catch((err) => {
+      throw new Error(err)
+    })
 }
 
 function parseSparql (response) {
   const queryResults = []
-  if (response) {
+  try {
     for (const row of response.results.bindings) {
       const rowData = {}
       queryResults.push(rowData)
@@ -34,8 +39,14 @@ function parseSparql (response) {
         rowData[field] = value
       })
     }
+  } catch (err) {
+    throw new Error(err)
   }
   return queryResults
 }
 
-export { querySparql, parseSparql }
+async function queryAndParseSparql (query, endpoint = SPARQL_ENDPOINT) {
+  return parseSparql(await querySparql(query, endpoint))
+}
+
+export { querySparql, parseSparql, queryAndParseSparql } // queryAndParseSparql as default ?
