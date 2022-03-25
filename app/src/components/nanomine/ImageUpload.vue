@@ -13,7 +13,7 @@
 -->
 
 <template>
-  <div class="md-layout-item md-size-100 md-layout md-alignment-top-left">
+  <div class="md-layout-item md-size-100 md-layout md-alignment-top-left section_imageUpload">
 
     <!-- file upload button -->
     <div class="md-layout-item fileButtonWrapper">
