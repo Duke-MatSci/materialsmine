@@ -1,5 +1,5 @@
 <template>
-<div class="md-layout">
+<div class="md-layout section_LineChart">
   <div
     class="md-layout-item md-size-20 md-alignment-top-left md-layout md-gutter"
   >

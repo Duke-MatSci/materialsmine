@@ -1,5 +1,5 @@
 <template>
-  <div class="md-layout">
+  <div class="md-layout section_referenceContainer">
     <div class="md-layout-item md-size-100" v-if="references.length">
       <h4 v-if="referenceOpen" @click="refOpen">References <i class="material-icons icon-adjust">keyboard_arrow_up</i></h4>
       <h4 v-else @click="refOpen">References <i class="material-icons icon-adjust">keyboard_arrow_down</i></h4>

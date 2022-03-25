@@ -1,50 +1,60 @@
 // ChemProps.vue
-html {
-  scroll-behavior: smooth;
+.chemprops {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 // CsvPlotter.vue
-.upload {
-  border: 5px dashed #777777;
-  min-height: 400px;
+.section_CSVPlotter {
+  .upload {
+    border: 5px dashed #777777;
+    min-height: 400px;
+  }
 }
 
 // LineChart.vue
-// Line
-.nm-line {
-  stroke: #3cba54;
-  stroke-width: 2px;
-  fill: none;
-}
+.section_LineChart {
+  // Line
+  .nm-line {
+    stroke: #3cba54;
+    stroke-width: 2px;
+    fill: none;
+  }
 
-.tooltip {
-  fill: white;
-  stroke: #444;
-}
+  .tooltip {
+    fill: white;
+    stroke: #444;
+  }
 
-.overlay {
-  fill: none;
-  pointer-events: all;
+  .overlay {
+    fill: none;
+    pointer-events: all;
+  }
 }
 
 // ReferenceContainer.vue
-.reference {
-  padding-left: 36px;
-  text-indent: -36px;
+.section_referenceContainer {
+  .reference {
+    padding-left: 36px;
+    text-indent: -36px;
+  }
 }
 
 // PixelUnit.vue
-#unit-cell {
-  background-color: #c0c0c0;
-  position: relative;
-  margin-left: 0px;
-  margin-top: 0px;
-  min-width: 300px;
-  min-height: 300px;
-  max-width: 300px;
-  max-height: 300px;
-}
+.pixelunit {
+  #unit-cell {
+    background-color: #c0c0c0;
+    position: relative;
+    margin-left: 0px;
+    margin-top: 0px;
+    min-width: 300px;
+    min-height: 300px;
+    max-width: 300px;
+    max-height: 300px;
+  }
 
-.adjust-padding {
-  padding: 3rem !important;
+  .adjust-padding {
+    padding: 3rem !important;
+  }
 }
