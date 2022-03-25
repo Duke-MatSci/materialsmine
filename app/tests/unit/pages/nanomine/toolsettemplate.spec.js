@@ -4,33 +4,42 @@ import ToolSetTemplate from '@/pages/nanomine/toolSets/ToolSetTemplate.vue'
 var wrapper = null
 
 const toolSetTemplateProps = {
-  pageContent: {
-    name: 'ModuleTools',
-    title: 'Statistical Learning and Analysis Module Tools',
-    text: 'Statistical learning and analysis modules include web and downloadable packages that can be used to pre-process ' +
-  'and analyze structure and material property data. Each of the modules will specify the required input format and output data, and provide ' +
-  'a brief introduction behind the mechanism of the algorithm.',
-    link: 'module_homepage',
-    tools: [
-      'Dynamfit'
-    ],
-    toolSets: [
-      'MCRTools'
-    ]
-  }
+  name: 'ModuleTools',
+  header: 'Tools',
+  card: false
 }
 
 describe('ToolSetTemplate.vue', () => {
   beforeAll(() => {
     wrapper = createWrapper(ToolSetTemplate, {
-      props: toolSetTemplateProps
+      props: toolSetTemplateProps,
+      mocks: {
+        $socket: { emit: jest.fn() }
+      },
+      slots: {
+        title: 'Title',
+        content: 'Content',
+        cards: '<div class="tool-card-list">Cards</div>'
+      },
+      stubs: {
+        'tool-card': true
+      }
     })
   })
   it('mounts properly', () => {
     expect(wrapper.exists()).toBeTruthy()
   })
 
-  it('displays tool cards', async () => {
+  it('fills page slots', () => {
+    expect(wrapper.html()).toContain('Title')
+    expect(wrapper.html()).toContain('Content')
+    expect(wrapper.find('.tool-card-list').exists()).toBeTruthy()
+  })
+
+  it('loads a card', async () => {
+    wrapper.setProps({ card: true })
+    await wrapper.vm.$nextTick()
     expect(wrapper.find('.tool-card').exists()).toBeTruthy()
+    expect(wrapper.find('.tool-card-list').exists()).toBeFalsy()
   })
 })
