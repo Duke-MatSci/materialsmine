@@ -21,7 +21,7 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
       return results
     })
     .catch((err) => {
-      throw new Error('Error retrieving query response', { cause: err })
+      throw new Error(err)
     })
 }
 
@@ -40,7 +40,7 @@ function parseSparql (response) {
       })
     }
   } catch (err) {
-    throw new Error('Error parsing response', { cause: err })
+    throw new Error(err)
   }
   return queryResults
 }
