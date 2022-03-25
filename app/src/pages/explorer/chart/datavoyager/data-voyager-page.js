@@ -1,9 +1,7 @@
 import { mapGetters, mapActions, mapMutations } from 'vuex'
-// import { Slug } from "../../../../modules";
 // import {
 //   copyChart,
-//   saveChart,
-//   transformSparqlData
+//   saveChart
 // } from "@/modules/vega-chart";
 import { querySparql, parseSparql } from '@/modules/sparql'
 import DataVoyager from '@/components/explorer/DataVoyager'
@@ -20,6 +18,7 @@ export default {
       }
     }
   },
+  props: ['uri'],
   components: {
     DataVoyager,
     spinner
@@ -27,50 +26,42 @@ export default {
   computed: {
     ...mapGetters('vega', ['chart']),
     isNewChart () {
-    //   return this.pageUri === VIEW_URIS.CHART_EDITOR
+    // TODO: Add ability to create new charts from datavoyager once new chart pipeline is set up
       return false
     }
   },
   methods: {
     ...mapActions('vega', ['loadChart']),
     ...mapMutations('vega', ['setBaseSpec']),
-    // slugify: Slug,
     async loadData () {
       this.loading = true
       if (!this.isNewChart) {
-        await this.loadChart(`http://nanomine.org/viz/${this.$route.params.uri}`)
+        await this.loadChart(`http://nanomine.org/viz/${this.uri}`)
       }
       const sparqlResults = await querySparql(this.chart.query)
       this.data = { values: parseSparql(sparqlResults) }
       this.loading = false
     },
     saveAsChart () {
-    //   this.loading = true;
-    //   const newChart = copyChart(this.chart);
-    //   newChart.title = `DataVoyager Variant: ${newChart.title}`;
-    //   newChart.baseSpec = this.voyagerSpec;
-    //   console.log(newChart);
-    //   delete newChart.depiction;
-    //   saveChart(newChart).then(() =>
-    //     goToView(newChart.uri, DEFAULT_VIEWS.EDIT)
-    //   );
+    // TODO: add once pipeline for creating new charts is set up
     },
     selectSpec () {
+    // //TODO: Will be called from saveAsChart
     //   this.setBaseSpec(this.voyagerSpec)
     //   this.goToChartEditor()
     },
     goToChartView () {
-    //   goToView(this.pageUri, DEFAULT_VIEWS.VIEW);
+      this.$router.push(`/explorer/chart/view/${this.uri}`)
     },
     goToChartEditor () {
-    //   goToView(VIEW_URIS.CHART_EDITOR, DEFAULT_VIEWS.NEW);
+    // TODO: Link to chart editor once exists
     },
-    goBack () {
-    //   if (this.isNewChart) {
-    //     this.goToChartEditor()
-    //   } else {
-    //     this.goToChartView()
-    //   }
+    navBack () {
+      if (this.isNewChart) {
+        this.goToChartEditor()
+      } else {
+        this.goToChartView()
+      }
     }
   },
   mounted () {

@@ -76,3 +76,17 @@
         left: 0rem !important;
     }
 }
+
+.datavoyager {
+    margin: 0rem 2.5rem;
+    &-title {
+        font-weight: 500;
+        color: $primary-grey
+    }
+    #voyager-embed {
+        background: $primary-white;
+        height: 100%;
+        width: calc(100% - 2rem);
+        margin: 2rem 1rem;
+    }
+}

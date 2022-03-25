@@ -37,6 +37,7 @@ const explorerRoutes = [
       {
         path: 'edit/:uri',
         name: 'ChartEdit',
+        props: true,
         meta: { requiresAuth: false }
       },
       {
@@ -48,12 +49,14 @@ const explorerRoutes = [
         path: 'view/:uri',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
+        props: true,
         meta: { requiresAuth: false }
       },
       {
         path: 'voyager/:uri',
         name: 'ChartDataVoyager',
         component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        props: true,
         meta: { requiresAuth: false }
       }
     ]

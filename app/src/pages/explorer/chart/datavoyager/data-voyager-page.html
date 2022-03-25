@@ -1,51 +1,47 @@
-<div>
+<div class="datavoyager">
     <div class="utility-content__result">
       <div
-        class="utility-gridicon-single"
+        class="utility-gridicon"
         v-if="!loading"
       >
-        <div>
-          <md-button
-            class="md-icon-button"
-            @click.native.prevent="saveAsChart"
-            v-if="!isNewChart && voyagerSpec"
-          >
-            <md-tooltip
-              class="utility-bckg"
-              md-direction="bottom"
+        <div> 
+            <md-button
+                class="md-icon-button"
+                @click.native.prevent="navBack"
             >
-              Save current spec as new chart
-            </md-tooltip>
-            <md-icon>save</md-icon>
-          </md-button>
-          <md-button
+                <md-tooltip md-direction="bottom"> 
+                  Return to chart view 
+                </md-tooltip>
+              <md-icon>arrow_back</md-icon>
+            </md-button>
+            <!-- TODO: Enable save button for new chart creation -->
+            <md-button
+                class="md-icon-button"
+                @click.native.prevent="saveAsChart"
+                v-if="!isNewChart && voyagerSpec"
+                disabled="true" 
+            >
+                <md-tooltip md-direction="bottom">
+                  Save current spec as new chart
+                </md-tooltip>
+                <md-icon>save</md-icon>
+            </md-button>
+            <!-- TODO: Enable select button for new chart editing -->
+            <md-button
             class="md-icon-button"
             @click.native.prevent="selectSpec"
             v-if="isNewChart && voyagerSpec"
-          >
-            <md-tooltip
-              class="utility-bckg"
-              md-direction="bottom"
             >
-              Select current spec and return to Viz Editor
-            </md-tooltip>
-            <md-icon>check</md-icon>
-          </md-button>
-          <md-button
-            class="md-icon-button"
-            @click.native.prevent="goToChartView"
-          >
-            <md-tooltip
-              class="utility-bckg"
-              md-direction="bottom"
-            > Return to chart view </md-tooltip>
-            <md-icon>arrow_back</md-icon>
+                <md-tooltip md-direction="bottom">
+                  Select current spec and return to Viz Editor
+                </md-tooltip>
+                <md-icon>check</md-icon>
           </md-button>
         </div>
       </div>
     </div>
     <div class="viz-sample__header viz-u-mgbottom">
-      <span class="dv-title">Data Voyager</span>
+      <span class="datavoyager-title">Data Voyager</span>
       <span v-if="!isNewChart && chart && chart.title">: {{chart.title}}</span>
     </div>
     <div
@@ -62,7 +58,7 @@
     >
       <data-voyager
         :data="data"
-        v-bind:spec.sync="voyagerSpec"
+        :spec.sync="voyagerSpec"
       ></data-voyager>
     </div>
   </div>
