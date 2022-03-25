@@ -1,67 +1,76 @@
-import { toolRoutes, toolSetRoutes } from "./tools";
+import { toolRoutes, toolSetRoutes } from './tools'
 
 const nanomineRoutes = [
   {
-    path: "",
-    name: "HomeNM",
+    path: '',
+    name: 'HomeNM',
     component: () =>
-      import(/* webpackChunkName: "homenm" */ "@/pages/nanomine/Home/Home.vue"),
-    meta: { requiresAuth: false },
+      import(/* webpackChunkName: "homenm" */ '@/pages/nanomine/Home/Home.vue'),
+    meta: { requiresAuth: false }
   },
   {
-    path: "xml-uploader",
-    name: "XmlUploader",
+    path: 'xml-uploader',
+    name: 'XmlUploader',
     component: () =>
       import(
-        /* webpackChunkName: "xmlupload" */ "@/pages/nanomine/xmlUploader/XmlUploader.vue"
+        /* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'
       ),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false }
   },
   {
-    name: "ToolSets",
-    path: "tools",
+    name: 'ToolSets',
+    path: 'tools',
     component: () =>
       import(
-        /* webpackChunkName: "toolsetbase" */ "@/pages/nanomine/toolSets/ToolSetBase.vue"
+        /* webpackChunkName: "toolsetbase" */ '@/pages/nanomine/toolSets/ToolSetBase.vue'
       ),
-    children: [...toolSetRoutes],
+    children: [...toolSetRoutes]
   },
   {
-    name: "Tools",
-    path: "tools",
+    name: 'Tools',
+    path: 'tools',
     component: () =>
       import(
-        /* webpackChunkName: "toolsetbase" */ "@/pages/nanomine/tools/ToolBase.vue"
+        /* webpackChunkName: "toolsetbase" */ '@/pages/nanomine/tools/ToolBase.vue'
       ),
-    children: [...toolRoutes],
+    children: [...toolRoutes]
   },
   {
-    path: "about",
-    name: "About",
+    path: 'about',
+    name: 'About',
     component: () =>
       import(
-        /* webpackChunkName: "about" */ "@/pages/nanomine/teams/Teams.vue"
+        /* webpackChunkName: "about" */ '@/pages/nanomine/teams/Teams.vue'
       ),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false }
   },
   {
-    path: "how",
-    name: "HowTo",
+    path: 'how',
+    name: 'HowTo',
     component: () =>
       import(
-        /* webpackChunkName: "howto" */ "@/pages/nanomine/howTo/HowTo.vue"
+        /* webpackChunkName: "howto" */ '@/pages/nanomine/howTo/HowTo.vue'
       ),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false }
   },
   {
-    path: "news",
-    name: "News",
+    path: 'news',
+    name: 'News',
     component: () =>
       import(
-        /* webpackChunkName: "news" */ "@/pages/nanomine/researchnews/News.vue"
+        /* webpackChunkName: "news" */ '@/pages/nanomine/researchnews/News.vue'
       ),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false }
   },
-];
+  {
+    path: 'contact',
+    name: 'Contact',
+    component: () =>
+      import(
+        /* webpackChunkName: "news" */ '@/pages/nanomine/contactus/ContactUs.vue'
+      ),
+    meta: { requiresAuth: false }
+  }
+]
 
-export default nanomineRoutes;
+export default nanomineRoutes
