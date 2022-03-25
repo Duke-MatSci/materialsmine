@@ -14,6 +14,9 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
   }
   return await fetch(urlEncodedQuery, requestOptions)
     .then(async (res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error. Status: ${res.status} ${res.statusText}`)
+      }
       const results = await res.json()
       return results
     })
