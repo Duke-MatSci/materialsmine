@@ -24,7 +24,7 @@
               <p>Provide a platform for visualizing data, and mechanisms for visualization methods to be shared</p>
             </div>
           </li>
-          <li class="card card-float inline-display" @click.prevent="openLinks('/pixelunit')">
+          <li class="card card-float inline-display" @click.prevent="openLinks('/mm/pixelunit')">
             <div class="card-inside">
               <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">grain</i></div>
               <h2 class="card-heading">Module Tools</h2>

@@ -100,6 +100,18 @@ export default {
           title: 'Smilesdrawer: parsing and drawing SMILES-encoded molecular structures using client-side javascript.',
           venue: 'Journal of chemical information and modeling 58.1 (2018): 1-7.',
           date: '2018'
+        },
+        '10.1063/1.4943679': {
+          authors: 'Zhao, H., Li, X., Zhang, Y., Schadler, L. S., Chen, W., and Brinson, L. C.',
+          title: 'Perspective: NanoMine: A material genome approach for polymer nanocomposites analysis and design',
+          venue: 'APL Materials, 4(5), 053204',
+          date: '2016'
+        },
+        '10.1063/1.5046839': {
+          authors: 'Zhao, H., Wang, Y., Lin, A., Hu, B., Yan, R., McCusker, J., and Brinson, L. C.',
+          title: 'NanoMine schema: An extensible data representation for polymer nanocomposites',
+          venue: 'APL Materials, 6(11), 111108',
+          date: '2018'
         }
       }
     }
