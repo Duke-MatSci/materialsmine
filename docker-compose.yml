@@ -48,10 +48,8 @@ services:
       - ./mockDB/minio:/data
   proxy:
     depends_on:
-      - minio1
       - api
       - client
-      - kg
     restart: always
     build:
       dockerfile: Dockerfile.dev
