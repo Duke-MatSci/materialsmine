@@ -14,7 +14,7 @@ class ElasticSearch {
    * Check if ES is up & running
    * @returns {Boolean} ping
    */
-  async ping (log, waitTime = 30000) {
+  async ping (log, waitTime = 50000) {
     log.info('elasticsearch.ping(): Function entry');
     return new Promise((resolve, reject) => {
       const timer = setTimeout(async () => {
@@ -123,23 +123,29 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
-  async search (searchPhrase) {
+  async search (searchPhrase, autosuggest=false) {
     const phrase = this.searchSanitizer(searchPhrase);
+    let url = `http://${env.ESADDRESS}/_all/_search?size=400`;
+
+    if (autosuggest) {
+      url = `http://${env.ESADDRESS}/_all/_search?size=100&pretty=true`
+    }
+
     return axios({
       method: 'get',
-      url: `http://${env.ESADDRESS}/_all/_search?size=300`,
+      url,
       headers: {
         'Content-Type': 'application/json'
       },
       data: JSON.stringify({
-       query: { 
-        match: { 
-          label: {
-            query: phrase, 
-            analyzer: "standard" 
+        query: { 
+          match: { 
+            label: {
+              query: phrase, 
+              analyzer: "standard" 
+            } 
           } 
         } 
-      } 
       })
     });
   }

@@ -41,3 +41,6 @@ mockDB/restore/mongodump/
 
 #Elastic Search
 mockDB/es/
+
+#Min.io
+mockDB/minio/

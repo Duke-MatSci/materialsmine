@@ -56,3 +56,25 @@ exports.samples = {
     }
   }
 }
+
+/**
+ * Charts: Elastic search mappings.
+ */
+exports.charts = {
+  properties: {
+    label: {
+      type: "text",
+      analyzer: "autocomplete"
+    }, 
+    identifier: {
+      type: "text"
+    },
+    thumbnail: {
+      type: "text"
+    },
+    description: {
+      type: "text",
+      analyzer: "autocomplete"
+    }
+  }
+}

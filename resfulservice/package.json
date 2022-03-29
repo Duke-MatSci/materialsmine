@@ -35,7 +35,8 @@
         "test": "mocha --recursive './spec/**/*.js'",
         "lint": "eslint src",
         "lint:test": "npm-run-all -s lint test",
-        "start:prod": "node src/server.js"
+        "start:prod": "node src/server.js",
+        "transformtiff": "node script/getTiffImage.js"
     },
     "repository": {
         "type": "git",
