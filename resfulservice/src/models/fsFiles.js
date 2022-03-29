@@ -20,5 +20,5 @@ const fsfilesSchema = new Schema(
     }
   }
 );
-  
+
 module.exports = mongoose.model('fs.files', fsfilesSchema);

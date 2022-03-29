@@ -234,10 +234,9 @@
 </template>
 <script>
 import spinner from '@/components/Spinner'
-import pagination from '@/components/explorer/Pagination'
-// import defaultImg from '@/assets/img/rdf_flyer.svg'
+// import pagination from '@/components/explorer/Pagination'
 import { getViewUrl } from '@/modules/whyis-view'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'search-results',
@@ -245,15 +244,15 @@ export default {
     return {
       loadError: false,
       otherArgs: null,
-      defaultImg: '',
+      defaultImg: ''
     }
   },
   components: {
-    pagination,
+    // pagination,
     spinner
   },
   computed: {
-    ...mapGetters({ 
+    ...mapGetters({
       resultsTab: 'explorer/getResultsTab',
       getArticles: 'explorer/results/getArticles',
       getSamples: 'explorer/results/getSamples',
@@ -262,7 +261,7 @@ export default {
       getMaterials: 'explorer/results/getMaterials',
       getTotal: 'explorer/results/getTotal',
       getIsloading: 'explorer/results/getIsloading'
-    }),
+    })
   },
   methods: {
     reduceDescription (args) {
@@ -274,18 +273,17 @@ export default {
     },
     fixUriBeforeRouting (address, prefix) {
       if (address && prefix) {
-        const identifier = address.replace(prefix,'');
-        if(this.resultsTab === 'getArticles') {
-          return this.$router.push(`/explorer/article/${identifier}`);
+        const identifier = address.replace(prefix, '')
+        if (this.resultsTab === 'getArticles') {
+          return this.$router.push(`/explorer/article/${identifier}`)
         } else if (this.resultsTab === 'getSamples') {
-          return this.$router.push(`/explorer/sample/${identifier}`);
+          return this.$router.push(`/explorer/sample/${identifier}`)
         } else if (this.resultsTab === 'getCharts') {
-          return this.$router.push(`/explorer/chart/view/${identifier}`);
+          return this.$router.push(`/explorer/chart/view/${identifier}`)
         } else if (this.resultsTab === 'getImages') {
-          return this.$router.push(`/explorer/images/view/${identifier}`);
+          return this.$router.push(`/explorer/images/view/${identifier}`)
         }
       }
-      return;
     },
     getThumbnailUrl (item) {
       return getViewUrl({ uri: item.thumbnail })

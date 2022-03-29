@@ -28,6 +28,6 @@ mongoose
   })
   .then(() => {
     log.info('Rest server starting up...');
-    app.listen( env.PORT || 3000);
+    app.listen(env.PORT || 3000);
   })
   .catch(err => console.log(err));

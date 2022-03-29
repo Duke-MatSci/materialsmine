@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AdminController = require('../controllers/adminController');
-const { getInternal } = require('../middlewares/isInternal');
+// const { getInternal } = require('../middlewares/isInternal');
 
 router.route('/es')
   // .get(getInternal, AdminController.pingElasticSearch)

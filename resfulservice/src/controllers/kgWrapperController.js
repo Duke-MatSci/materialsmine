@@ -4,20 +4,20 @@ const { SAMPLE, ARTICLE } = require('../../config/constant');
 
 const httpsAgent = {
   rejectUnauthorized: false
-}
+};
 const outboundRequest = async () => {
   const sampleResponse = await axios({
-    'method': 'get',
-    'url': SAMPLE,
-    'httpsAgent': new https.Agent(httpsAgent),
+    method: 'get',
+    url: SAMPLE,
+    httpsAgent: new https.Agent(httpsAgent)
   });
   const articleResponse = await axios({
-    'method': 'get',
-    'url': ARTICLE,
-    'httpsAgent': new https.Agent(httpsAgent),
+    method: 'get',
+    url: ARTICLE,
+    httpsAgent: new https.Agent(httpsAgent)
   });
   return {
-    sampleResponse: sampleResponse?.data, 
+    sampleResponse: sampleResponse?.data,
     articleResponse: articleResponse?.data
   };
 };

@@ -4,7 +4,7 @@ const configPayload = require('../../config/esConfig');
 const env = process.env;
 
 class ElasticSearch {
-  constructor() {
+  constructor () {
     this.client = new Client({ node: `http://${env?.ESADDRESS}` });
     this.initES = this.initES.bind(this);
     this.search = this.search.bind(this);
@@ -20,7 +20,7 @@ class ElasticSearch {
       const timer = setTimeout(async () => {
         const response = await this.client.ping();
         clearTimeout(timer);
-        if(!response) {
+        if (!response) {
           const error = new Error('Elastic Search Service Not Available');
           log.error(`elasticsearch.ping(): 500 - ${error}`);
           reject(error);
@@ -31,8 +31,8 @@ class ElasticSearch {
   }
 
   /**
-   * 
-   * @param {String} type 
+   *
+   * @param {String} type
    * @returns {Object} response
    */
   async createConfig (type) {
@@ -42,7 +42,7 @@ class ElasticSearch {
       headers: {
         'Content-Type': 'application/json'
       },
-      data: JSON.stringify({...configPayload.config})
+      data: JSON.stringify({ ...configPayload.config })
     });
     return configResponse;
   }
@@ -54,18 +54,18 @@ class ElasticSearch {
       body: {
         ...schema
       }
-    })
+    });
   }
 
   async initES (req, type, schema) {
     const log = req.logger;
     log.error('elasticsearch.initES(): Function entry');
 
-    if(!type || !schema) {
-      const error = new Error('Category type is missing')
+    if (!type || !schema) {
+      const error = new Error('Category type is missing');
       error.statusCode = 400;
       log.error(`initializeElasticSearch(): ${error}`);
-      throw(error);
+      throw (error);
     }
 
     try {
@@ -74,43 +74,43 @@ class ElasticSearch {
       return {
         type,
         status: 'Successfully configured!'
-      }
+      };
     } catch (err) {
-      log.error(`elasticsearch.initES(): ${err.status || 500 } - ${err}`);
+      log.error(`elasticsearch.initES(): ${err.status || 500} - ${err}`);
       throw (err);
     }
   }
 
   async indexDocument (req, type, doc) {
     const log = req.logger;
-    if(!type || !doc) {
-      const error = new Error('Category type is missing')
+    if (!type || !doc) {
+      const error = new Error('Category type is missing');
       error.statusCode = 400;
       log.error(`indexDocument(): ${error}`);
-      throw(error);
+      throw (error);
     }
     return this.client.index({
       index: type,
       document: { ...doc }
-    })
+    });
   }
 
   async refreshIndices (req, type) {
     const log = req.logger;
-    if(!type) {
-      const error = new Error('Category type is missing')
+    if (!type) {
+      const error = new Error('Category type is missing');
       error.statusCode = 400;
       log.error(`refreshIndices(): ${error}`);
-      throw(error);
+      throw (error);
     }
     return this.client.indices.refresh({ index: type });
   }
 
   searchSanitizer (search) {
     let sanitizeSearch = search;
-    sanitizeSearch = sanitizeSearch.split(' ').map((word, index) => {
-      if(index < 20) {
-        if(word.length > 50) {
+    sanitizeSearch = sanitizeSearch.split(' ').map((word, index) => { // eslint-disable-line
+      if (index < 20) {
+        if (word.length > 50) {
           return word.substr(0, 75);
         }
         return word;
@@ -123,12 +123,12 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
-  async search (searchPhrase, autosuggest=false) {
+  async search (searchPhrase, autosuggest = false) {
     const phrase = this.searchSanitizer(searchPhrase);
     let url = `http://${env.ESADDRESS}/_all/_search?size=400`;
 
     if (autosuggest) {
-      url = `http://${env.ESADDRESS}/_all/_search?size=100&pretty=true`
+      url = `http://${env.ESADDRESS}/_all/_search?size=100&pretty=true`;
     }
 
     return axios({
@@ -138,14 +138,14 @@ class ElasticSearch {
         'Content-Type': 'application/json'
       },
       data: JSON.stringify({
-        query: { 
-          match: { 
+        query: {
+          match: {
             label: {
-              query: phrase, 
-              analyzer: "standard" 
-            } 
-          } 
-        } 
+              query: phrase,
+              analyzer: 'standard'
+            }
+          }
+        }
       })
     });
   }

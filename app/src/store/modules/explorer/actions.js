@@ -2,39 +2,30 @@ import { querySparql, parseSparql } from '@/modules/sparql'
 import queries from '@/modules/queries/sampleQueries'
 import router from '@/router'
 export default {
-	async facetFilterMaterials (context) {
-        try {
-            const sparqlResponse = await querySparql(queries.facetFilterMaterial());
-            const parsedResponse = parseSparql(sparqlResponse);
-            context.commit('setFacetFilterMaterials', parsedResponse || []);
-        } catch (err) {
-            throw err
-        }
-    },
-	async searchFacetFilterMaterials (context, payload) {
-        try {
-            if(!payload) {
-                return;
-            }
-            
-            context.commit('setSelectedFacetFilterMaterialsValue', payload);
-            router.push(`/explorer/filter/property/${payload}`);
-            const getCount = await querySparql(queries.getSearchFacetFilterMaterialCount(payload.split(" ").join("")));
-            const getDefinition = await querySparql(queries.getSearchFacetFilterMaterialDefinition(payload.split(" ").join("")));
-            const getContent = await querySparql(queries.getSearchFacetFilterMaterial(payload.split(" ").join("")));
+  async facetFilterMaterials (context) {
+    const sparqlResponse = await querySparql(queries.facetFilterMaterial())
+    const parsedResponse = parseSparql(sparqlResponse)
+    context.commit('setFacetFilterMaterials', parsedResponse || [])
+  },
+  async searchFacetFilterMaterials (context, payload) {
+    if (!payload) {
+      return
+    }
 
-            const parsedResponseCount = parseSparql(getCount);
-            const parsedResponseDefinition = parseSparql(getDefinition);
-            const parsedResponseContent = parseSparql(getContent);
+    context.commit('setSelectedFacetFilterMaterialsValue', payload)
+    router.push(`/explorer/filter/property/${payload}`)
+    const getCount = await querySparql(queries.getSearchFacetFilterMaterialCount(payload.split(' ').join('')))
+    const getDefinition = await querySparql(queries.getSearchFacetFilterMaterialDefinition(payload.split(' ').join('')))
+    const getContent = await querySparql(queries.getSearchFacetFilterMaterial(payload.split(' ').join('')))
 
-            context.commit('setSelectedFacetFilterMaterials', {
-                parsedResponseCount,
-                parsedResponseDefinition,
-                parsedResponseContent
-            });
+    const parsedResponseCount = parseSparql(getCount)
+    const parsedResponseDefinition = parseSparql(getDefinition)
+    const parsedResponseContent = parseSparql(getContent)
 
-        } catch (err) {
-            throw err
-        }
-    },
+    context.commit('setSelectedFacetFilterMaterials', {
+      parsedResponseCount,
+      parsedResponseDefinition,
+      parsedResponseContent
+    })
+  }
 }

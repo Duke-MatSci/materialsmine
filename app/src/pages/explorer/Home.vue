@@ -60,7 +60,7 @@ import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
 
 export default {
   name: 'ExplorerHome',
-	mixins: [explorerSearch],
+  mixins: [explorerSearch],
   data () {
     return {
       pageNavLinks: [
@@ -75,8 +75,8 @@ export default {
     SearchHeader,
     SearchResultsTable
   },
-	async mounted(){
-		await this.$store.dispatch('explorer/facetFilterMaterials')
-	}
+  async mounted () {
+    await this.$store.dispatch('explorer/facetFilterMaterials')
+  }
 }
 </script>

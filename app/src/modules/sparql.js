@@ -13,11 +13,11 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
     }
   }
 
-  try {
+  try { // eslint-disable-line
     const res = await fetch(urlEncodedQuery, requestOptions)
     if (!res || !res.ok) {
-      const status = res?.statusText || 'Failed to retrieve data from whyis'
-      throw ({ name: 'Error', status})
+      const error = new Error(`An error occured - ${res?.statusText}`)
+      throw (error)
     }
     const results = await res.json()
     return results
@@ -28,7 +28,7 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
 
 function parseSparql (response) {
   const queryResults = []
-  try {
+  try { // eslint-disable-line
     for (const row of response.results.bindings) {
       const rowData = {}
       queryResults.push(rowData)

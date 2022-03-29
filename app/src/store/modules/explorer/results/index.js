@@ -20,7 +20,7 @@ export default {
         getSamples: 0,
         getImages: 0,
         getCharts: 0,
-        getMaterials: 0,
+        getMaterials: 0
       }
     }
   },

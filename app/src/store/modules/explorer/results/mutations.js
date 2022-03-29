@@ -16,10 +16,10 @@ export default {
     state.materials = materials
   },
   setTotal (state, payload) {
-    state.total = payload;
+    state.total = payload
   },
   setAutosuggest (state, payload) {
-    state.suggestions = payload;
+    state.suggestions = payload
   },
   setIsLoading (state, payload) {
     state.isLoading = payload

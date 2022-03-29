@@ -19,5 +19,5 @@ export default {
   },
   getSelectedFacetFilterMaterialsValue (state) {
     return state.selectedFacetFilterMaterialsValue
-  },
+  }
 }

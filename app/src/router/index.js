@@ -50,9 +50,9 @@ const router = new VueRouter({
       return prevPosition
     }
     if (to.hash) {
-      return { 
+      return {
         el: to.hash,
-        behavior: 'smooth',
+        behavior: 'smooth'
       }
     }
     return { x: 0, y: 0 }

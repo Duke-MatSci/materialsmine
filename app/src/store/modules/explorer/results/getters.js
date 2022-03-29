@@ -16,13 +16,13 @@ export default {
     return state.materials
   },
   getSuggestions (state) {
-    return state.suggestions;
+    return state.suggestions
   },
   getTotal (state) {
-    return state.total;
+    return state.total
   },
   getIsloading (state) {
-    return state.isLoading;
+    return state.isLoading
   },
   getTotalGroupings (state) {
     return state.totalGrouping

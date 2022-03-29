@@ -11,19 +11,19 @@
                     <div class="md-layout-item md-size-50">
                         <div>
                             <h2 class="sample-page_header">Definition (MaterialsMine):</h2>
-                            <p>{{ selectedFacetFilterMaterials.parsedResponseDefinition[0] ? 
+                            <p>{{ selectedFacetFilterMaterials.parsedResponseDefinition[0] ?
                                 selectedFacetFilterMaterials.parsedResponseDefinition[0]['definition'] : 'N/A' }}</p>
                         </div>
                         <div v-if="selectedFacetFilterMaterials" data-test="materialComponents">
                             <h2 class="sample-page_header">Curated Research Articles:</h2>
                             <p>There are currently <strong>{{ selectedFacetFilterMaterials.parsedResponseCount[0] ?
                                 selectedFacetFilterMaterials.parsedResponseCount[0]['SampleCount'] : 0 }}</strong> nanocomposite samples in the MaterialsMine knowledge graph that contain Strain Rate as a reported attribute or property.</p>
-                            <p>These data have been curated from <strong>{{ selectedFacetFilterMaterials.parsedResponseCount[0] ? 
+                            <p>These data have been curated from <strong>{{ selectedFacetFilterMaterials.parsedResponseCount[0] ?
                                 selectedFacetFilterMaterials.parsedResponseCount[0]['DOICount'] : 0 }}</strong> research works, listed below.</p>
                             <div>
                                 <md-table
                                 @md-selected="onSelect"
-                                v-model="selectedFacetFilterMaterials.parsedResponseContent" 
+                                v-model="selectedFacetFilterMaterials.parsedResponseContent"
                                 md-sort="Authors" md-sort-order="asc" md-card style="margin-top:1.2rem">
                                 <md-table-row slot="md-table-row" slot-scope="{ item }" md-selectable="single">
                                     <md-table-cell md-label="Authors" md-sort-by="Authors">{{ item.Authors }}</md-table-cell>
@@ -45,27 +45,27 @@
 import { mapGetters } from 'vuex'
 import Spinner from '@/components/Spinner'
 export default {
-    name: 'FacetFilterView',
-    components: {
-        Spinner
-    },
-    computed: {
-        ...mapGetters({ 
-            selectedFacetFilterMaterials: 'explorer/getSelectedFacetFilterMaterials',
-            selectedFacetFilterMaterialsValue: 'explorer/getSelectedFacetFilterMaterialsValue',
-        }),
-    },
-    beforeMount(){
-        if (this.selectedFacetFilterMaterialsValue === null) {
-            return this.$router.push('/explorer');
-        }
-    },
-    methods: {
-        onSelect (arg) {
-            this.$router.push({
-                path: `/explorer/article/${arg.DOI}`
-            });
-        }
+  name: 'FacetFilterView',
+  components: {
+    Spinner
+  },
+  computed: {
+    ...mapGetters({
+      selectedFacetFilterMaterials: 'explorer/getSelectedFacetFilterMaterials',
+      selectedFacetFilterMaterialsValue: 'explorer/getSelectedFacetFilterMaterialsValue'
+    })
+  },
+  beforeMount () {
+    if (this.selectedFacetFilterMaterialsValue === null) {
+      return this.$router.push('/explorer')
     }
+  },
+  methods: {
+    onSelect (arg) {
+      this.$router.push({
+        path: `/explorer/article/${arg.DOI}`
+      })
+    }
+  }
 }
 </script>

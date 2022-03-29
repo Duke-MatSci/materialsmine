@@ -30,20 +30,20 @@
 </template>
 <script>
 import { mapGetters } from 'vuex'
-import explorerSearch from '@/mixins/explorerSearch';
+import explorerSearch from '@/mixins/explorerSearch'
 export default {
   name: 'SearchHeader',
   mixins: [explorerSearch],
   computed: {
-    ...mapGetters({ 
+    ...mapGetters({
       resultsTab: 'explorer/getResultsTab',
       passTotal: 'explorer/results/getTotalGroupings',
       getTotal: 'explorer/results/getTotal'
-    }),
+    })
   },
   methods: {
     setResultsTabs (payload) {
-      return this.setResultsTab(payload);
+      return this.setResultsTab(payload)
     }
   }
 }

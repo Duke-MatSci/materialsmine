@@ -13,8 +13,8 @@ exports.initializeElasticSearch = async (req, res, next) => {
   try {
     const type = req?.body?.type;
     const schema = esConfig[type];
-    if(!type || !schema) {
-      const error = new Error('Category type is missing')
+    if (!type || !schema) {
+      const error = new Error('Category type is missing');
       error.statusCode = 422;
       log.error(`initializeElasticSearch(): ${error}`);
       return next(error);
@@ -44,8 +44,8 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
   const type = body?.type;
   const data = body?.data;
 
-  if(!type || !data.length) {
-    const error = new Error('Category type or doc array is missing')
+  if (!type || !data.length) {
+    const error = new Error('Category type or doc array is missing');
     error.statusCode = 422;
     log.error(`initializeElasticSearch(): ${error}`);
     return next(error);
@@ -82,12 +82,13 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
  * @returns {*} response
  */
 exports.loadElasticSearch = async (req, res, next) => {
+  const log = req.logger;
   const body = JSON.parse(req?.body);
   const type = body?.type;
   const doc = body?.doc;
 
-  if(!type || !doc) {
-    const error = new Error('Category type or doc is missing')
+  if (!type || !doc) {
+    const error = new Error('Category type or doc is missing');
     error.statusCode = 422;
     log.error(`initializeElasticSearch(): ${error}`);
     return next(error);
