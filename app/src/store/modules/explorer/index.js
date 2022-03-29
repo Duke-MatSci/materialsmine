@@ -14,9 +14,12 @@ export default {
   state () {
     return {
       toggleMenuVisibility: false,
-      resultsTab: '',
+      resultsTab: 'getArticles',
       searchKeyword: '',
-      searching: false
+      searching: false,
+      facetFilterMaterials: [],
+      selectedFacetFilterMaterialsValue: null,
+      selectedFacetFilterMaterials: {},
     }
   },
   mutations,

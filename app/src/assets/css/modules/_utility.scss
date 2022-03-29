@@ -270,6 +270,11 @@
 }
 
 .utility {
+    &-line-height {
+        &-sm {
+            line-height: 1.5 !important;
+        }
+    }
     &-align--right {
         text-align: right;
     }

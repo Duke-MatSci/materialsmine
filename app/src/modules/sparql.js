@@ -12,17 +12,18 @@ async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
       accept: 'application/sparql-results+json'
     }
   }
-  return await fetch(urlEncodedQuery, requestOptions)
-    .then(async (res) => {
-      if (!res.ok) {
-        throw new Error(`HTTP error. Status: ${res.status} ${res.statusText}`)
-      }
-      const results = await res.json()
-      return results
-    })
-    .catch((err) => {
-      throw new Error(err)
-    })
+
+  try {
+    const res = await fetch(urlEncodedQuery, requestOptions)
+    if (!res || !res.ok) {
+      const status = res?.statusText || 'Failed to retrieve data from whyis'
+      throw ({ name: 'Error', status})
+    }
+    const results = await res.json()
+    return results
+  } catch (err) {
+    throw (err)
+  }
 }
 
 function parseSparql (response) {

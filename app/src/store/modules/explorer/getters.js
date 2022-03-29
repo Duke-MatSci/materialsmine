@@ -10,5 +10,14 @@ export default {
   },
   getSearching (state) {
     return state.searching
-  }
+  },
+  getFacetFilterMaterials (state) {
+    return state.facetFilterMaterials
+  },
+  getSelectedFacetFilterMaterials (state) {
+    return state.selectedFacetFilterMaterials
+  },
+  getSelectedFacetFilterMaterialsValue (state) {
+    return state.selectedFacetFilterMaterialsValue
+  },
 }

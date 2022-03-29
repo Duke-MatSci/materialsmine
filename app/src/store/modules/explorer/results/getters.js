@@ -1,18 +1,30 @@
 export default {
   // TODO:
-  articles (state) {
+  getArticles (state) {
     return state.articles
   },
-  samples (state) {
+  getSamples (state) {
     return state.samples
   },
-  images (state) {
+  getImages (state) {
     return state.images
   },
-  charts (state) {
+  getCharts (state) {
     return state.charts
   },
-  materials (state) {
+  getMaterials (state) {
     return state.materials
+  },
+  getSuggestions (state) {
+    return state.suggestions;
+  },
+  getTotal (state) {
+    return state.total;
+  },
+  getIsloading (state) {
+    return state.isLoading;
+  },
+  getTotalGroupings (state) {
+    return state.totalGrouping
   }
 }

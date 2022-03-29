@@ -1,17 +1,18 @@
 <template>
   <div class="gallery">
-    <spinner
-      :loading="loading"
-      text='Loading...'
-      v-if="loading"
-    />
+    <div class="section_loader" v-if="loading">
+      <spinner
+        :loading="loading"
+        text='Loading Charts'
+      />
+    </div>
     <div
       class="utility-roverflow"
       v-else
     >
       <div class="u_content__result">
         <!-- TODO TIME TO RESULT -->
-        <span class="u_color">
+        <span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="otherArgs != null">{{ otherArgs }}</strong>
           <span v-if="total === 0">
             No results

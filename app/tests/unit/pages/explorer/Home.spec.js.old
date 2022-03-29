@@ -10,13 +10,13 @@ describe('ExplorerHome.vue', () => {
 
   enableAutoDestroy(afterEach)
 
-  it('render search div correctly', () => {
-    expect.assertions(4)
-    expect(wrapper.find('.section_teams').exists()).toBe(true)
-    expect(wrapper.find('.search_box_header').exists()).toBe(true)
-    expect(wrapper.find('.form').exists()).toBe(true)
-    expect(wrapper.find('.search_box_text').exists()).toBe(true)
-  })
+  // it('render search div correctly', () => {
+  //   expect.assertions(4)
+  //   expect(wrapper.find('.section_teams').exists()).toBe(true)
+  //   expect(wrapper.find('.search_box_header').exists()).toBe(true)
+  //   expect(wrapper.find('.form').exists()).toBe(true)
+  //   expect(wrapper.find('.search_box_text').exists()).toBe(true)
+  // })
 
   it('render facet div correctly', () => {
     expect.assertions(1)
@@ -28,11 +28,11 @@ describe('ExplorerHome.vue', () => {
     await wrapper.setData({
       pageNavLinks: [
         { icon: 'grid', text: 'test' },
-        { icon: 'grid', text: 'test2' }
+        { icon: 'grid', text: 'test2' },
       ]
     })
     const length = wrapper.vm.pageNavLinks.length
-    const navLinks = wrapper.findAll('.explorer_page-nav-card')
+    const navLinks = wrapper.findAll('.teams_container')
     expect(navLinks.length).toEqual(length)
   })
 

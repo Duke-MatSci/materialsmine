@@ -11,7 +11,17 @@ export default {
       samples: null,
       images: null,
       charts: null,
-      materials: null
+      materials: null,
+      suggestions: [],
+      total: 0,
+      isLoading: false,
+      totalGrouping: {
+        getArticles: 0,
+        getSamples: 0,
+        getImages: 0,
+        getCharts: 0,
+        getMaterials: 0,
+      }
     }
   },
   mutations,
