@@ -11,7 +11,7 @@ services:
       - MONGO_PORT=${MONGO_PORT}
       - MM_DB=${MM_DB}
     ports:
-      - '${MONGO_PORT}:${MONGO_PORT}'
+      - '27017:27017'
     volumes:
       - ./mockDB/db:/data/db
       - ./mockDB/restore:/restore
@@ -32,7 +32,7 @@ services:
         soft: -1
         hard: -1
     ports:
-      - '${ES_PORT}:${ES_PORT}'
+      - '9200:9200'
     volumes:
       - ./mockDB/es:/usr/share/elasticsearch/data
   minio:
@@ -43,7 +43,7 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
-      - "${MINIO_PORT}:${MINIO_PORT}"
+      - "9000:9000"
     volumes:
       - ./mockDB/minio:/data
   proxy:
@@ -57,7 +57,7 @@ services:
       dockerfile: Dockerfile.dev
       context: ./nginx
     ports:
-      - '${PROXY_PORT}:${PROXY_PORT}'
+      - '80:80'
   api:
     depends_on:
       - es
@@ -80,7 +80,7 @@ services:
       - PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
     ports:
-      - '${PORT}:${PORT}'
+      - '3001:3001'
   client:
     stdin_open: true
     environment:
@@ -93,8 +93,6 @@ services:
     volumes:
       - /app/node_modules
       - ./app:/app
-    ports:
-      - '${CLIENT_PORT}:${CLIENT_PORT}'
   kg:
     image: 'stain/jena-fuseki:4.0.0'
     restart: always
@@ -102,7 +100,7 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - JVM_ARGS=-Xmx3g
     ports:
-      - '${KG_PORT}:${KG_PORT}'
+      - '3030:3030'
     volumes:
       - ./mockDB/fuseki:/fuseki
 volumes:
