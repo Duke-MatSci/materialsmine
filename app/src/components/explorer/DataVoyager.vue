@@ -1,12 +1,11 @@
 <template>
   <div>
-    <div :id="containerId"></div>
+    <div :id="containerId" :ref="containerId"></div>
   </div>
 </template>
 
 <script>
 import { CreateVoyager } from 'datavoyager'
-import 'datavoyager/build/style.css'
 
 const voyagerConf = {
   showDataSourceSelector: false,
@@ -36,7 +35,7 @@ export default {
       this.$emit('update:spec', this.voyagerInstance.getSpec())
     },
     createVoyager () {
-      const container = document.getElementById(this.containerId)
+      const container = this.$refs[this.containerId]
       this.voyagerInstance = CreateVoyager(container, voyagerConf, undefined)
       this.voyagerInstance.onStateChange(() => this.updateSpec())
       this.voyagerInstance.updateData(this.data)
@@ -52,3 +51,6 @@ export default {
   }
 }
 </script>
+
+<style css src='datavoyager/build/style.css'>
+</style>
