@@ -18,7 +18,7 @@ export default {
       }
     }
   },
-  props: ['uri'],
+  props: ['chartId'],
   components: {
     DataVoyager,
     spinner
@@ -36,7 +36,7 @@ export default {
     async loadData () {
       this.loading = true
       if (!this.isNewChart) {
-        await this.loadChart(`http://nanomine.org/viz/${this.uri}`)
+        await this.loadChart(`http://nanomine.org/viz/${this.chartId}`) // TODO: Update uri
       }
       const sparqlResults = await querySparql(this.chart.query)
       this.data = { values: parseSparql(sparqlResults) }
@@ -51,7 +51,7 @@ export default {
     //   this.goToChartEditor()
     },
     goToChartView () {
-      this.$router.push(`/explorer/chart/view/${this.uri}`)
+      this.$router.push(`/explorer/chart/view/${this.chartId}`)
     },
     goToChartEditor () {
     // TODO: Link to chart editor once exists

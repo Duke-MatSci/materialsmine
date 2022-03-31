@@ -46,7 +46,7 @@ export default {
       }
     }
   },
-  props: ['uri'],
+  props: ['chartId'],
   computed: {
     ...mapGetters({
       dialogBoxActive: 'dialogBox'
@@ -54,8 +54,8 @@ export default {
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     },
-    fullUri () {
-      return `http://nanomine.org/viz/${this.uri}` // TODO: Change URI to match actual site
+    fullChartUri () {
+      return `http://nanomine.org/viz/${this.chartId}` // TODO: Change URI to match actual site
     }
   },
   methods: {
@@ -64,7 +64,7 @@ export default {
     }),
     async loadVisualization () {
       try {
-        this.chart = await loadChart(`${this.fullUri}`)
+        this.chart = await loadChart(`${this.fullChartUri}`)
         if (this.chart.query) {
           this.results = await querySparql(this.chart.query)
         }
