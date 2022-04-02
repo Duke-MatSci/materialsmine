@@ -14,8 +14,8 @@
 }
 
 #reset_bg {
-    background-color: none !important;
-    background: url('~@/assets/img/random_network.png') no-repeat center !important;
+    background-color: $primary !important;
+    // background: url('~@/assets/img/random_network.png') no-repeat center !important;
     background-size: cover !important;
     z-index: 20;
 }
