@@ -1,7 +1,6 @@
 const fs = require('fs');
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, label, printf, prettyPrint } = format;
-const env = process.env;
 
 const logFormat = printf(({ level, message, label, timestamp }) => {
   return `${timestamp} [${label}] ${level}: ${message}`;
@@ -17,9 +16,9 @@ const transport = {
 };
 
 exports.mmLogger = () => {
-  fs.exists('/app/logs/rest_api.log', (err, exists) => {
-    if(err) {
-      console.log('creating logger')
+  fs.exists('/app/logs/rest_api.log', (err, exists) => { //eslint-disable-line
+    if (err) {
+      console.log('creating logger');
       fs.promises.mkdir('/app/logs/rest_api.log', { recursive: true }).catch(console.error);
     }
   });
