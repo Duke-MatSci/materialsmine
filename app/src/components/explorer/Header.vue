@@ -12,9 +12,9 @@
 
         <div class="md-toolbar-section-end">
           <md-badge id="header-badge" class="md-primary" md-content="12">
-            <md-avatar>
-              <img src="@/assets/img/brinson.jpeg" alt="Avatar">
-            </md-avatar>
+            <md-button class="md-icon-button">
+              <md-icon>person</md-icon>
+            </md-button>
           </md-badge>
         </div>
       </div>

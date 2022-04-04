@@ -85,6 +85,18 @@ jobs:
       MONGO_TEST: ${{secrets.MONGO_TEST}}
       MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
       MM_DB: ${{secrets.MM_DB}}
+      MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
+      MONGO_PORT: ${{secrets.MONGO_PORT}}
+      NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
+      TKNS: ${{secrets.TKNS}}
+      MINIO_ROOT_USER: ${{secrets.MINIO_ROOT_USER}}
+      MINIO_ROOT_PASSWORD: ${{secrets.MINIO_ROOT_PASSWORD}}
+      PROXY_PORT: ${{secrets.PROXY_PORT}}
+      MINIO_PORT: ${{secrets.MINIO}}
+      ES_PORT: ${{secrets.ES_PORT}}
+      PORT: ${{secrets.PORT}}
+      CLIENT_PORT: ${{secrets.CLIENT_PORT}}
+      KG_PORT: ${{secrets.KG_PORT}}
     steps:
       - uses: actions/checkout@v2
       - name: Download and run images

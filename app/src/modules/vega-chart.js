@@ -2,7 +2,7 @@ import { querySparql, parseSparql } from '@/modules/sparql'
 
 const defaultQuery = `
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT ?c (COUNT(?x) AS ?count) (MIN(?class) AS ?class) 
+SELECT DISTINCT ?c (COUNT(?x) AS ?count) (MIN(?class) AS ?class)
 WHERE {
     ?x a ?c.
     ?c rdfs:label ?class.
@@ -93,4 +93,17 @@ function buildSparqlSpec (baseSpec, sparqlResults) {
   return spec
 }
 
-export { getDefaultChart, loadChart, buildSparqlSpec }
+const chartUriPrefix = 'http://nanomine.org/viz/'
+
+function toChartId (chartUri) {
+  if (!chartUri.startsWith(chartUriPrefix)) {
+    throw new Error(`Unexpected chart uri "${chartUri}". Was expecting prefix "${chartUriPrefix}"`)
+  }
+  return chartUri.substring(chartUriPrefix.length)
+}
+
+function toChartUri (chartId) {
+  return chartUriPrefix + chartId
+}
+
+export { getDefaultChart, loadChart, buildSparqlSpec, toChartId, toChartUri, chartUriPrefix }

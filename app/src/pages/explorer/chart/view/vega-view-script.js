@@ -1,6 +1,6 @@
 import VJsoneditor from 'v-jsoneditor'
 import Dialog from '@/components/Dialog.vue'
-import { loadChart, buildSparqlSpec } from '@/modules/vega-chart'
+import { loadChart, buildSparqlSpec, toChartUri } from '@/modules/vega-chart'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
 import yasr from '@/components/explorer/yasr'
@@ -54,7 +54,7 @@ export default {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     },
     pageUri () {
-      return `http://nanomine.org/viz/${this.$route.params.uri}` // TODO: Change URI to match actual site
+      return toChartUri(this.$route.params.chartId)
     }
   },
   methods: {

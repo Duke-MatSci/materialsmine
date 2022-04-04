@@ -120,5 +120,52 @@ export default {
          sio:hasPart ?sample.
     ?ProcessType rdfs:label ?process_label .
     FILTER(REGEX(STR(?ProcessType),"materialsmine"))
-  } VALUES ?sample { <http://materialsmine.org/sample/${sampleId}>}`
+  } VALUES ?sample { <http://materialsmine.org/sample/${sampleId}>}`,
+
+  facetFilterMaterial: () => `PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  PREFIX nm: <http://materialsmine.org/ns/>
+  PREFIX sio: <http://semanticscience.org/resource/>
+  SELECT DISTINCT ?Attribute (MIN(?label) AS ?Label) WHERE {
+    ?sample a nm:PolymerNanocomposite ;
+            sio:hasAttribute ?attr .
+    ?attr a ?Attribute ;
+          sio:hasValue ?value .
+    ?Attribute rdfs:label ?label .
+    FILTER(REGEX(STR(?Attribute),"materialsmine"))
+  } GROUP BY ?Attribute`,
+
+  getSearchFacetFilterMaterialCount: (label) => `PREFIX sio: <http://semanticscience.org/resource/>
+  PREFIX nm: <http://materialsmine.org/ns/>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  SELECT DISTINCT (COUNT(DISTINCT ?sample) AS ?SampleCount) (COUNT(DISTINCT ?doi) AS ?DOICount) WHERE {
+    ?doi a dct:BibliographicResource ;
+         sio:hasPart ?sample .
+    ?sample a nm:PolymerNanocomposite ;
+            sio:hasAttribute [ a nm:${label} ]
+  }`,
+
+  getSearchFacetFilterMaterialDefinition: (label) => `PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX nm: <http://materialsmine.org/ns/>
+  SELECT DISTINCT * WHERE {
+    nm:${label} skos:definition ?definition
+  }`,
+
+  getSearchFacetFilterMaterial: (label) => `PREFIX sio: <http://semanticscience.org/resource/>
+  PREFIX nm: <http://materialsmine.org/ns/>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX bibo: <http://purl.org/ontology/bibo/>
+  PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+  PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+  SELECT DISTINCT (MIN(?AuthorLabel) AS ?Authors) ?Title (REPLACE(STR(?doi),"http://dx.doi.org/","") AS ?DOI) ?Journal WHERE {
+    ?doi a dct:BibliographicResource ;
+         dct:created ?Year ;
+         dct:title ?Title ;
+         dct:isPartOf [ dct:title ?Journal ] ;
+         sio:hasPart ?sample ;
+         bibo:authorList/rdf:rest* [ rdf:first [ foaf:name ?firstAuthor ] ; rdf:rest rdf:nil ] .
+    ?sample a nm:PolymerNanocomposite ;
+            sio:hasAttribute [ a nm:${label} ]
+    BIND(CONCAT("(", STR(?Year), ") ", STR(?firstAuthor), " et al.") AS ?AuthorLabel )
+  } GROUP BY ?doi ?Title ?Journal`
 }
