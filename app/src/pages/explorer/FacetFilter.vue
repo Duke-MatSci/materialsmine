@@ -17,7 +17,7 @@
                         <div v-if="selectedFacetFilterMaterials" data-test="materialComponents">
                             <h2 class="sample-page_header">Curated Research Articles:</h2>
                             <p>There are currently <strong>{{ selectedFacetFilterMaterials.parsedResponseCount[0] ?
-                                selectedFacetFilterMaterials.parsedResponseCount[0]['SampleCount'] : 0 }}</strong> nanocomposite samples in the MaterialsMine knowledge graph that contain Strain Rate as a reported attribute or property.</p>
+                                selectedFacetFilterMaterials.parsedResponseCount[0]['SampleCount'] : 0 }}</strong> nanocomposite samples in the MaterialsMine knowledge graph that contain {{ selectedFacetFilterMaterialsValue }} as a reported attribute or property.</p>
                             <p>These data have been curated from <strong>{{ selectedFacetFilterMaterials.parsedResponseCount[0] ?
                                 selectedFacetFilterMaterials.parsedResponseCount[0]['DOICount'] : 0 }}</strong> research works, listed below.</p>
                             <div>

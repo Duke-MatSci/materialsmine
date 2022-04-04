@@ -23,7 +23,7 @@
                                 <md-icon class="explorer_page-nav-card_icon">grid_view</md-icon>
                                 <span class="explorer_page-nav-card_text">Image</span>
                                 <p class="md-layout-item_para">Visit our Image Gallery to view microstructural images for nanocomposite systems stored
-                                    in the MaterialsMine knowledge graph, and filter by material constituents, nanoparticle geometry, and more..
+                                    in the MaterialsMine knowledge graph, and filter by material constituents, nanoparticle geometry, and more.
                                 </p>
                             </div>
                         </router-link>
