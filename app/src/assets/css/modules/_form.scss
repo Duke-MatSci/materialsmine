@@ -3,6 +3,17 @@
         margin-bottom: 2rem;
     }
 
+    &__select {
+        font-family: inherit;
+        color: $primary;
+        padding: .2rem;
+        background-color: rgba($primary-white, .5);
+        border: .1rem solid $primary-light;
+        width: 98%;
+        display: block;
+        transition: all .3s;
+    }
+
     &__input {
         font-size: 1.5rem;
         font-family: inherit;

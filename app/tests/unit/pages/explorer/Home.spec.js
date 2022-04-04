@@ -4,8 +4,8 @@ import ExplorerHome from '@/pages/explorer/Home.vue'
 
 describe('ExplorerHome.vue', () => {
   let wrapper
-  beforeEach(() => {
-    wrapper = createWrapper(ExplorerHome, {}, false)
+  beforeEach(async () => {
+    wrapper = await createWrapper(ExplorerHome, { }, false)
   })
 
   enableAutoDestroy(afterEach)
@@ -23,18 +23,23 @@ describe('ExplorerHome.vue', () => {
     expect(wrapper.find('.facet_panel').exists()).toBe(true)
   })
 
-  it('renders page navs correctly', async () => {
-    expect.assertions(1)
-    await wrapper.setData({
-      pageNavLinks: [
-        { icon: 'grid', text: 'test' },
-        { icon: 'grid', text: 'test2' }
-      ]
-    })
-    const length = wrapper.vm.pageNavLinks.length
-    const navLinks = wrapper.findAll('.explorer_page-nav-card')
-    expect(navLinks.length).toEqual(length)
-  })
+  /** @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+   * Test no longer applicable. This rendering is now dependent
+   * on if searchEnabled is false in the component.
+   */
+
+  // it('renders page navs correctly', async () => {
+  //   expect.assertions(1)
+  //   await wrapper.setData({
+  //     pageNavLinks: [
+  //       { icon: 'grid', text: 'test', link: '#' },
+  //       { icon: 'grid', text: 'test2' }
+  //     ]
+  //   })
+  //   const length = wrapper.vm.pageNavLinks.length
+  //   const navLinks = wrapper.findAllComponents('.teams_container')
+  //   expect(navLinks.length).toEqual(length)
+  // })
 
   it('renders footer', () => {
     expect.assertions(2)

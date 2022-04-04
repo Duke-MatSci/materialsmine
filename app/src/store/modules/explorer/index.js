@@ -3,18 +3,23 @@ import actions from './actions.js'
 import getters from './getters.js'
 
 import gallery from './gallery'
+import results from './results'
 
 export default {
   namespaced: true,
   modules: {
-    gallery
+    gallery,
+    results
   },
   state () {
     return {
       toggleMenuVisibility: false,
-      resultsTab: '',
+      resultsTab: 'getArticles',
       searchKeyword: '',
-      searching: false
+      searching: false,
+      facetFilterMaterials: [],
+      selectedFacetFilterMaterialsValue: null,
+      selectedFacetFilterMaterials: {}
     }
   },
   mutations,

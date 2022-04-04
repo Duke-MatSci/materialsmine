@@ -14,9 +14,10 @@
 }
 
 #reset_bg {
-    background-color: none !important;
-    background: url('~@/assets/img/random_network.png') no-repeat center !important;
+    background-color: $primary !important;
+    // background: url('~@/assets/img/random_network.png') no-repeat center !important;
     background-size: cover !important;
+    z-index: 20;
 }
 
 
@@ -62,5 +63,81 @@
 .md-toolbar-section-end {
     @include respond(tab-port) {
         display: none !important;
+    }
+}
+
+.md-layout-item {
+    height: 40px;
+
+    &:after {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: md-get-palette-color($error, 200);
+      content: " ";
+    }
+
+    &_para {
+        font-size: 1rem;
+        padding: 1.5rem;
+        text-align: justify;
+        font-weight: 400;
+    }
+    &_card {
+        height: 33rem !important;
+        width: 30rem !important;
+        box-shadow: none !important;
+    }
+}
+
+.search-dropdown-menu {
+    width: 100% !important;
+    display: block;
+    min-height: 20rem;
+    max-height: 35rem;
+    overflow-y: scroll;
+    position: absolute;
+    margin: 0 auto;
+    top: -4rem;
+    box-shadow: rgb(0 0 0 / 16%) 0px 1px 4px;
+    background-color: $primary-white;
+    line-height: 1.6;
+
+    &_parent {
+        position: relative;
+        z-index: 15;
+    }
+
+    & > li {
+        font-size: 1.5rem;
+        padding: .5rem 1rem;
+        overflow: hidden;
+
+        &:hover {
+            background-color: $tertiary;
+            color: $primary;
+            cursor: pointer;
+        }
+
+        & > a {
+            text-decoration: none !important;
+            color: $primary-black !important;
+            font-weight: 500 !important;
+            &:hover {
+                cursor: pointer;
+                color: $primary !important;
+            }
+        }
+
+        &:nth-child(odd) {
+            background-color: rgba($primary-light, .2);
+            border-top: .05rem solid $primary;
+            border-bottom: .05rem solid $primary;
+
+            &:hover {
+                background-color: $tertiary;
+                color: $primary;
+            }
+        }
     }
 }
