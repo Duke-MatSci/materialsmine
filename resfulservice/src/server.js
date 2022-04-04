@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { globalMiddleWare, log } = require('./middlewares/globalMiddleware');
-const knowledgeRoutes = require('./routes/kgWrapper');
+const knowledgeRoutes = require('./routes/kgWrapperRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const searchRoutes = require('./routes/searchRoutes');
 const elasticSearch = require('./utils/elasticSearch');

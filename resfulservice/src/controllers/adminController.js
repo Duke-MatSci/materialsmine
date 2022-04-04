@@ -1,6 +1,5 @@
-const esConfig = require('../../config/esConfig');
 const elasticSearch = require('../utils/elasticSearch');
-
+const { outboundRequest } = require('../controllers/kgWrapperController');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -10,16 +9,9 @@ const elasticSearch = require('../utils/elasticSearch');
  */
 exports.initializeElasticSearch = async (req, res, next) => {
   const log = req.logger;
+  log.info('initializeElasticSearch(): Function entry');
   try {
-    const type = req?.body?.type;
-    const schema = esConfig[type];
-    if (!type || !schema) {
-      const error = new Error('Category type is missing');
-      error.statusCode = 422;
-      log.error(`initializeElasticSearch(): ${error}`);
-      return next(error);
-    }
-    const response = await elasticSearch.initES(req, type, schema);
+    const response = await elasticSearch.initES(req);
     return res.status(200).json({
       data: response
     });
@@ -38,8 +30,9 @@ exports.initializeElasticSearch = async (req, res, next) => {
  * @param {*} next
  * @returns {*} response
  */
-exports.loadBulkElasticSearch = async (req, res, next) => {
+const _loadBulkElasticSearch = async (req, res, next) => {
   const log = req.logger;
+  log.info('_loadBulkElasticSearch(): Function entry');
   const body = JSON.parse(req?.body);
   const type = body?.type;
   const data = body?.data;
@@ -47,7 +40,7 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
   if (!type || !data.length) {
     const error = new Error('Category type or doc array is missing');
     error.statusCode = 422;
-    log.error(`initializeElasticSearch(): ${error}`);
+    log.error(`_loadBulkElasticSearch(): error ${error}`);
     return next(error);
   }
 
@@ -57,7 +50,7 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
     for (const item of data) {
       const response = await elasticSearch.indexDocument(req, type, item);
       if (!response) {
-        log.debug(`loadBulkElasticSearch()::error: rejected - ${response.statusText}`);
+        log.debug(`_loadBulkElasticSearch()::error: rejected - ${response.statusText}`);
         rejected = rejected + 1;
       }
     }
@@ -70,6 +63,7 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
     if (!err.statusCode) {
       err.statusCode = 500;
     }
+    log.error(`_loadBulkElasticSearch(): error ${err}`);
     next(err);
   }
 };
@@ -83,6 +77,7 @@ exports.loadBulkElasticSearch = async (req, res, next) => {
  */
 exports.loadElasticSearch = async (req, res, next) => {
   const log = req.logger;
+  log.info('loadElasticSearch(): Function entry');
   const body = JSON.parse(req?.body);
   const type = body?.type;
   const doc = body?.doc;
@@ -116,8 +111,9 @@ exports.loadElasticSearch = async (req, res, next) => {
  * @returns {*} response
  */
 exports.pingElasticSearch = async (req, res, next) => {
+  const log = req.logger;
+  log.info('pingElasticSearch(): Function entry');
   try {
-    const log = req.logger;
     const response = await elasticSearch.ping(log, 1);
     return res.status(200).json({
       response
@@ -128,4 +124,36 @@ exports.pingElasticSearch = async (req, res, next) => {
     }
     next(err);
   }
+};
+
+/**
+ * Data dump into ES
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.dataDump = async (req, res, next) => {
+  const log = req.logger;
+  log.info('dataDump(): Function entry');
+
+  try {
+    const { type, data } = await outboundRequest(req, next);
+    req.body = JSON.stringify({ type, data });
+
+    return _loadBulkElasticSearch(req, res, next);
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    log.info(`dataDump(): Error: ${err}`);
+    next(err);
+  }
+};
+
+exports.bulkElasticSearchImport = (req, res, next) => {
+  const log = req.logger;
+  log.info('bulkElasticSearchImport(): Function entry');
+
+  return _loadBulkElasticSearch(req, res, next);
 };

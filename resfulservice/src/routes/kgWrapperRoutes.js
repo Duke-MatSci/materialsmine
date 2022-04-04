@@ -6,12 +6,12 @@ const { getInternal } = require('../middlewares/isInternal');
 /**
  * Internal KG Wrapper Routes
  */
+router.route('/')
+  .get(getFacetValues);
+// .get(getInternal, getFacetValues)
+
 router.route('/facets')
-  .get(getFacetValues)
-  // .get(getInternal, getFacetValues)
-  .put(isAuth, getInternal, getKnowledge)
-  .post(isAuth, getInternal, getKnowledge)
-  .delete(isAuth, getInternal, getKnowledge);
+  .put(isAuth, getInternal, getKnowledge);
 
 /**
  * External API KG Wrapper Routes

@@ -39,6 +39,22 @@ exports.articles = {
   }
 }
 
+
+/**
+ * Images: Elastic search mappings.
+ */
+exports.images = {
+  properties: {
+    label: {
+      type: "text",
+      analyzer: "autocomplete"
+    }, 
+    identifier: {
+      type: "text"
+    }
+  }
+}
+
 /**
  * Samples: Elastic search mappings.
  */

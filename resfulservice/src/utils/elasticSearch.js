@@ -35,7 +35,7 @@ class ElasticSearch {
    * @param {String} type
    * @returns {Object} response
    */
-  async createConfig (type) {
+  async _createConfig (type) {
     const configResponse = await axios({
       method: 'put',
       url: `http://${env.ESADDRESS}/${type}`,
@@ -47,7 +47,23 @@ class ElasticSearch {
     return configResponse;
   }
 
-  async putMappings (type, schema) {
+  /**
+   * Deletes a type group and all its docs
+   * @param {String} type
+   * @returns {Object} response
+   */
+  async deleteAType (type) {
+    const configResponse = await axios({
+      method: 'delete',
+      url: `http://${env.ESADDRESS}/${type}`,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return configResponse;
+  }
+
+  async _putMappings (type, schema) {
     return this.client.indices.putMapping({
       index: type,
       // type: 'articles',
@@ -57,23 +73,25 @@ class ElasticSearch {
     });
   }
 
-  async initES (req, type, schema) {
+  async initES (req) {
     const log = req.logger;
-    log.error('elasticsearch.initES(): Function entry');
-
-    if (!type || !schema) {
-      const error = new Error('Category type is missing');
-      error.statusCode = 400;
-      log.error(`initializeElasticSearch(): ${error}`);
-      throw (error);
-    }
+    log.info('elasticsearch.initES(): Function entry');
 
     try {
-      await this.createConfig(type);
-      await this.putMappings(type, schema);
+      const allSchemas = {
+        articles: configPayload.articles,
+        samples: configPayload.samples,
+        charts: configPayload.charts,
+        images: configPayload.images
+      };
+
+      Object.entries(allSchemas).forEach(async ([key, value]) => {
+        await this._createConfig(key);
+        await this._putMappings(key, value);
+      });
+
       return {
-        type,
-        status: 'Successfully configured!'
+        status: 'Successfully configured schemas!'
       };
     } catch (err) {
       log.error(`elasticsearch.initES(): ${err.status || 500} - ${err}`);
