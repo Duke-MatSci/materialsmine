@@ -3,6 +3,7 @@ import { mapGetters, mapActions, mapMutations } from 'vuex'
 //   copyChart,
 //   saveChart
 // } from "@/modules/vega-chart";
+import { toChartUri } from '@/modules/vega-chart'
 import { querySparql, parseSparql } from '@/modules/sparql'
 import DataVoyager from '@/components/explorer/DataVoyager'
 import spinner from '@/components/Spinner'
@@ -36,7 +37,7 @@ export default {
     async loadData () {
       this.loading = true
       if (!this.isNewChart) {
-        await this.loadChart(`http://nanomine.org/viz/${this.chartId}`) // TODO: Update uri
+        await this.loadChart(toChartUri(this.chartId))
       }
       const sparqlResults = await querySparql(this.chart.query)
       this.data = { values: parseSparql(sparqlResults) }
