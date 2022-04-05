@@ -1,0 +1,29 @@
+version: 2
+jobs:
+  build:
+    working_directory: /apps/nanomine-graph
+    docker:
+      - image: tetherlessworld/whyis:latest
+    steps:
+      - checkout
+      - run:
+          name: Set permissions
+          command: chown -R whyis.whyis /apps/nanomine-graph
+      - run:
+          name: Install application
+          command: pip3 install -e .
+      - run:
+          name: Install newer version of SETLr
+          command: |
+            pip3 uninstall --yes setlr
+            pip3 install -q git+https://github.com/tetherless-world/setlr.git#egg=setlr
+      - run:
+          name: Start the whyis entrypoint (assumes cwd /apps/whyis)
+          command: cd /apps/whyis && /docker-entrypoint.sh
+      - run:
+          name: Run tests
+          command: cd /apps/whyis && python3 manage.py test --ci
+      - store_artifacts:
+          path: /apps/whyis/test-results/py/htmlcov
+      - store_test_results:
+          path: /apps/whyis/test-results

@@ -1,6 +1,5 @@
-FROM alpine
-RUN apk update && apk add --no-cache python3 py3-pip
-RUN alias python=python3
+FROM tetherlessworld/whyis:latest
+RUN /opt/venv/bin/pip install whyis-unit-converter==0.0.2
+COPY ./materialsmine /app
 WORKDIR '/app'
-COPY . .
-CMD [ "python3" ]
+CMD [ "/bin/bash" ]

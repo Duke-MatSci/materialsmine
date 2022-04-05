@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang = "en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.1/js/select2.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        
+        <!-- css code -->
+        <style>
+            body { /*pad the body section to avoid overlapping with the navbar*/ 
+                padding-top:70px; 
+            }
+            hr { 
+                display:block;
+                margin-top:0.5em;
+                margin-bottom:0.5em;
+                margin-left:auto;
+                margin-right:auto;
+                border-style:inset;
+                border-width:1px;
+            } 
+            .goog-menu-vertical { /*limit the category filter dropdown list item number*/
+                max-height:100px;
+                overflow-y:auto;
+            }
+            .google-visualization-table-th { /* center the google table chart head */
+                text-align: center;
+            }
+
+            <style>
+        </style>
+        
+        <!-- jQuery code -->
+        <script>
+            $(document).ready(function() {
+                // google charts essentials
+                google.charts.load('current', {'packages':['corechart', 'controls']});
+
+                // necessary variables
+                var databaseURL = "/sparql";
+                var nanoPrefix = "http://nanomine.tw.rpi.edu/ns/";
+                var unitPrefix = "http://nanomine.tw.rpi.edu/ns/unit/";
+                var samplePrefix = "http://nanomine.tw.rpi.edu/sample/";
+                var compoundPrefix = "http://nanomine.tw.rpi.edu/compound/";
+                var sioPrefix = "http://semanticscience.org/resource/";
+                var chartWidth = $(window).width();
+                var chartHeight = $(window).height()/2;
+                var tableWidth = chartWidth*0.9+"px";
+                var tableHeight = chartHeight+"px";
+                var dashboard = $("#dashboard");
+
+                // data cache
+                var materialPropertyList = [];
+                var fillerPropertyList = [];
+                var matrixList = [];
+                var fillerList = [];
+                var materialPropertyMap = new Map();
+                var fillerPropertyMap = new Map();
+                var matrixListMap = new Map();
+                var fillerListMap = new Map();
+
+                // database overview button
+                $("#db").click(function() {
+                    dashboard.html("<h1>Under Construction</h1>");
+                });
+
+                // material property dashboard
+                $("#mp").click(function() {
+                    dashboard.empty();
+                    dashboard.append('<h1>Material Property Dashboard</h1>');
+                    dashboard.append('<table class="table"><thead><tr><th scope="col" class="text-center">choose one material property as x axis: </th><th scope="col" class="text-center">choose one material property as y axis:</th></tr></thead><tbody><tr><td><select id="material-property-select-x" style="width:300px;"><option value="" distabled selected></option></select></td><td><select id="material-property-select-y" style="width:300px;"><option value="" distabled selected></option></select></td><td><button type="button" class="btn btn-primary" id="viz-mp" style="width:300px;">Visualize</button></td></tr></tbody></table>');
+                    dashboard.append('<table class="table"><thead><tr><th class="text-center" id="sampleFilter"></th><th class="text-center" id="matrixFilter"></th><th class="text-center" id="fillerFilter"></th><th class="text-center" id="fillerPropertyFilter"></th></tr></thead></table>');
+                    dashboard.append('<div id="propertyChart"></div>');
+                    dashboard.append('<br>');
+                    dashboard.append('<div id="propertyTable"></div>');        
+                    if(materialPropertyList.length == 0) {
+                        var query = '\n\
+                              prefix sio:<http://semanticscience.org/resource/> \n\
+                              prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                              select distinct ?materialProperty \n\
+                              where { \n\
+                                ?sample sio:hasComponentPart ?filler . \n\
+                                ?sample sio:hasAttribute ?sampleAttribute .\n\
+                                ?sampleAttribute a ?materialProperty .\n\
+                                ?filler sio:hasRole [a ns:Filler].\n\
+                              } order by ?materialProperty';
+                        $.ajax({
+                            url:databaseURL,
+                            async:false,
+                            data:{"query":query},
+                            type:"post",
+                            dataType:"json",
+                            cache:false,
+                            success:function(responseText){
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var mp = responseText.results.bindings[i].materialProperty.value;
+                                    var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    materialPropertyMap.set(key, mp);
+                                    materialPropertyList.push(key);
+                                }
+                            },
+                            error:function(xhr){alert("material property x list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                        });
+                    }
+                    $("#material-property-select-x").select2({data:materialPropertyList});
+                });
+                // populate the y dropdown list for material property accordingly
+                $(document).on('change','#material-property-select-x',function(){
+                    var query = '\n\
+                        prefix sio:<http://semanticscience.org/resource/> \n\
+                        prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                        select distinct ?materialProperty (count(?materialProperty) as ?count) \n\
+                        where { \n\
+                          ?sample sio:hasComponentPart ?filler . \n\
+                          ?sample sio:hasAttribute [ a <' + materialPropertyMap.get($("#material-property-select-x").val()) + '>].\n\
+                          ?sample sio:hasAttribute ?sampleAttribute .\n\
+                          ?sampleAttribute a ?materialProperty .\n\
+                          filter(?materialProperty != <' + materialPropertyMap.get($("#material-property-select-x").val()) + '>) \n\
+                          ?filler sio:hasRole [a ns:Filler].\n\
+                        }\n\
+                        group by ?materialProperty order by desc(?count)';
+                    var materialY = [];
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                var mp = responseText.results.bindings[i].materialProperty.value;
+                                var count = responseText.results.bindings[i].count.value;
+                                var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();}) + ' (' + count + ')';
+                                materialY.push(key);
+                            }
+                        },
+                        error:function(xhr){alert("material property y list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                    $("#material-property-select-y").find('option').remove().end().select2({data:materialY});                    
+                });
+                // material property dashboard visualize button
+                $(document).on('click', '#viz-mp', function() {
+                    var mp_x = $("#material-property-select-x").val(); 
+                    var mp_y = $("#material-property-select-y").val().substring(0, $("#material-property-select-y").val().indexOf('(') - 1);
+                    if(mp_x == "" || mp_y == "") alert("please choose x and y axis");
+                    else if(mp_x == mp_y) alert("please choose different x and y axis for material property");
+                    var chartData = [['sample', mp_x, mp_y, 'control', 'bubble size', mp_x, mp_y, 'matrix-filler', 'matrix', 'filler', 'filler property', 'filler property', 'paper link', 'paper title']];
+                    var mpmpQuery = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            prefix np: <http://www.nanopub.org/nschema#> \n\
+                            prefix dcterms: <http://purl.org/dc/terms/> \n\
+                            select distinct ?sample ?x ?y ?xUnit ?yUnit ?matrixPolymer ?fillerPolymer ?fillerProperty ?fillerPropertyValue ?fillerPropertyUnit ?doi ?title \n\
+                            where { \n\
+                              ?nanopub np:hasAssertion ?ag. \n\
+                              graph ?ag { \n\
+                                ?sample sio:hasAttribute ?sampleAttribute1 . \n\
+                                ?sampleAttribute1 a <' + materialPropertyMap.get(mp_x) + '> .\n\
+                                ?sampleAttribute1 sio:hasValue ?x. \n\
+                                optional{?sampleAttribute1 sio:hasUnit ?xUnit.} \n\
+                                ?sample sio:hasAttribute ?sampleAttribute2 . \n\
+                                ?sampleAttribute2 a <' + materialPropertyMap.get(mp_y) + '>. \n\
+                                ?sampleAttribute2 sio:hasValue ?y. \n\
+                                optional{?sampleAttribute2 sio:hasUnit ?yUnit.} \n\
+                                ?sample sio:hasComponentPart ?matrix . \n\
+                                ?sample sio:hasComponentPart ?filler . \n\
+                                ?matrix a ?matrixPolymer . \n\
+                                ?filler a ?fillerPolymer . \n\
+                                ?matrix sio:hasRole [a ns:Matrix]. \n\
+                                ?filler sio:hasRole [a ns:Filler]. \n\
+                                ?filler sio:hasAttribute ?fillerAttribute . \n\
+                                ?fillerAttribute a ?fillerProperty . \n\
+                                ?fillerAttribute sio:hasValue ?fillerPropertyValue . \n\
+                                optional{?fillerAttribute sio:hasUnit ?fillerPropertyUnit.} \n\
+                              } \n\
+                              ?nanopub np:hasProvenance ?pg. \n\
+                              graph ?pg { \n\
+                                ?doi dcterms:isPartOf ?journal. \n\
+                                ?doi dcterms:title ?title. \n\
+                              } \n\
+                            }';
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":mpmpQuery},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            if(responseText.results.bindings.length == 0) alert("one axis you have selected includes an array of data, which cannot be visualized with this chart. Try to use Material Spectrum instead.");
+                            else {
+                                var xUnit = " ";
+                                var yUnit = " ";
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var sample = responseText.results.bindings[i].sample.value.substring(samplePrefix.length, responseText.results.bindings[i].sample.value.length);
+                                    var x = parseFloat(responseText.results.bindings[i].x.value);
+                                    var y = parseFloat(responseText.results.bindings[i].y.value);
+                                    if(responseText.results.bindings[i].hasOwnProperty('xUnit')) xUnit = responseText.results.bindings[i].xUnit.value.substring(unitPrefix.length, responseText.results.bindings[i].xUnit.value.length);
+                                    if(responseText.results.bindings[i].hasOwnProperty('yUnit')) yUnit = responseText.results.bindings[i].yUnit.value.substring(unitPrefix.length, responseText.results.bindings[i].yUnit.value.length);
+                                    var matrixPolymer = responseText.results.bindings[i].matrixPolymer.value.substring(compoundPrefix.length, responseText.results.bindings[i].matrixPolymer.value.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});;
+                                    var fillerPolymer = responseText.results.bindings[i].fillerPolymer.value.substring(compoundPrefix.length, responseText.results.bindings[i].fillerPolymer.value.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});;
+                                    var fillerProperty = responseText.results.bindings[i].fillerProperty.value.substring(nanoPrefix.length, responseText.results.bindings[i].fillerProperty.value.length);
+                                    var fillerPropertyValue = responseText.results.bindings[i].fillerPropertyValue.value;
+                                    var fillerPropertyUnit = " ";
+                                    if(responseText.results.bindings[i].hasOwnProperty('fillerPropertyUnit')) fillerPropertyUnit += responseText.results.bindings[i].fillerPropertyUnit.value.substring(unitPrefix.length, responseText.results.bindings[i].fillerPropertyUnit.value.length);
+                                    var doi = responseText.results.bindings[i].doi.value;
+                                    var title = responseText.results.bindings[i].title.value;
+                                    chartData.push([sample, x, y, 'control-' + x, 1, x + ' ' + xUnit, y + ' ' + yUnit, matrixPolymer + '(matrix)-' + fillerPolymer + '(filler)', matrixPolymer, fillerPolymer, fillerProperty, fillerProperty + ": " + fillerPropertyValue + fillerPropertyUnit, doi, title]);
+                                }
+                                if(xUnit != "") xUnit = " (" + xUnit + ")";
+                                if(yUnit != "") yUnit = " (" + yUnit + ")";
+                                var sampleCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'sampleFilter', 'options':{'filterColumnIndex':0, 'ui':{'caption':'search/choose a sample', 'selectedValuesLayout':'belowWrapping',},},});
+                                var matrixlCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'matrixFilter', 'options':{'filterColumnIndex':8, 'ui':{'caption':'search/choose a matrix', 'selectedValuesLayout':'belowWrapping',},},});
+                                var fillerCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'fillerFilter', 'options':{'filterColumnIndex':9, 'ui':{'caption':'search/choose a filler', 'selectedValuesLayout':'belowWrapping',},},});
+                                var fillerPropertyCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'fillerPropertyFilter', 'options':{'filterColumnIndex':10, 'ui':{'caption':'search/choose a sample', 'selectedValuesLayout':'belowWrapping',},},});
+                                var bubbleChart = new google.visualization.ChartWrapper({'chartType':'BubbleChart','containerId':'propertyChart','options':{'title': 'Material Property Chart (series by matrix): ' + mp_x + xUnit + ' vs ' + mp_y + yUnit,'titlePosition':'out','titleTextStyle':{'color':'red','fontSize':16,'bold':true,},'hAxis':{'title':mp_x + xUnit},'vAxis':{'title':mp_y + yUnit},'sizeAxis':{'minValue':0,'maxSize':5},'height':chartHeight,'width':chartWidth,'legend':'top','explorer':{'keepInBounds':true,'actions':['dragToZoom', 'rightClickToReset'],'maxZoomIn':0.05,'maxZoomOut':1,},},'view':{'columns':[0, 1, 2, 7]},});
+                                var tableChart= new google.visualization.ChartWrapper({'chartType':'Table','containerId':'propertyTable','options':{'height':tableHeight,'width':tableWidth,},'view':{'columns':[0, 5, 6, 8, 9, 11, 12, 13]},});
+                                new google.visualization.Dashboard(dashboard.get(0)).bind([sampleCategoryFilter, matrixlCategoryFilter, fillerCategoryFilter, fillerPropertyCategoryFilter], [bubbleChart, tableChart]).draw(chartData);
+                                if($('#download').length == 0) dashboard.append('<button id="download" class="btn-primary" style="width:300px;" onClick="exportTableToCSV(\'nanomineData.csv\')">Download Data Table as CSV</button>');
+                            }
+                        },
+                        error:function(xhr){alert("material property list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                });
+
+                // filler property dashboard
+                $("#fp").click(function() {
+                    dashboard.empty();
+                    dashboard.append('<h1>Filler Descriptor vs Material Property</h1>');
+                    dashboard.append('<table class="table"><thead><tr><th scope="col" class="text-center">choose one filler property as x axis: </th><th scope="col" class="text-center">choose one material property as y axis:</th></tr></thead><tbody><tr><td><select id="filler-property-select-x" style="width:300px;"><option value="" distabled selected></option></select></td><td><select id="material-property-select-y" style="width:300px;"><option value="" distabled selected></option></select></td><td><button type="button" class="btn btn-primary" id="viz-fp" style="width:300px;">Visualize</button></td></tr></tbody></table>');
+                    dashboard.append('<table class="table"><thead><tr><th class="text-center" id="sampleFilter"></th><th class="text-center" id="matrixFilter"></th><th class="text-center" id="fillerFilter"></th></tr></thead></table>');
+                    dashboard.append('<div id="propertyChart"></div>');
+                    dashboard.append('<br>');
+                    dashboard.append('<div id="propertyTable"></div>');
+                    if(fillerPropertyList.length == 0) { // get the full filler property list
+                        var query = '\n\
+                              prefix sio:<http://semanticscience.org/resource/> \n\
+                              prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                              select distinct ?fillerProperty \n\
+                              where { \n\
+                                  ?filler sio:hasRole [a ns:Filler]. \n\
+                                  ?filler sio:hasAttribute ?fillerAttribute .\n\
+                                  ?fillerAttribute a ?fillerProperty .\n\
+                              } order by ?fillerProperty';
+                        $.ajax({
+                            url:databaseURL,
+                            async:false,
+                            data:{"query":query},
+                            type:"post",
+                            dataType:"json",
+                            cache:false,
+                            success:function(responseText){
+                                for(var i = 0; i <responseText.results.bindings.length; i++) {
+                                    var fp = responseText.results.bindings[i].fillerProperty.value;
+                                    var key = "";
+                                    if(fp.includes(nanoPrefix)) key = fp.substring(nanoPrefix.length, fp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    else if(fp.includes(sioPrefix)) key = fp.substring(sioPrefix.length, fp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    fillerPropertyMap.set(key, fp);
+                                    fillerPropertyList.push(key);
+                                }
+                            },
+                            error:function(xhr){alert("filler property list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                        });           
+                    }
+                    if(materialPropertyList.length == 0) { // get the full material property list
+                        var query = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            select distinct ?materialProperty \n\
+                            where { \n\
+                              ?sample sio:hasComponentPart ?filler . \n\
+                              ?sample sio:hasAttribute ?sampleAttribute .\n\
+                              ?sampleAttribute a ?materialProperty .\n\
+                              ?filler sio:hasRole [a ns:Filler].\n\
+                            } order by ?materialProperty';
+                        $.ajax({
+                            url:databaseURL,
+                            async:false,
+                            data:{"query":query},
+                            type:"post",
+                            dataType:"json",
+                            cache:false,
+                            success:function(responseText){
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var mp = responseText.results.bindings[i].materialProperty.value;
+                                    var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    materialPropertyMap.set(key, mp);
+                                    materialPropertyList.push(key);
+                                }
+                            },
+                            error:function(xhr){alert("material property list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                        });
+                    }
+                    $("#filler-property-select-x").select2({data:fillerPropertyList});
+                });
+                // populate the y dropdown list for filler property accordingly
+                $(document).on('change','#filler-property-select-x',function(){
+                    var query = '\n\
+                        prefix sio:<http://semanticscience.org/resource/> \n\
+                        prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                        select distinct ?materialProperty (count(?materialProperty) as ?count) \n\
+                        where { \n\
+                          ?sample sio:hasComponentPart ?filler . \n\
+                          ?sample sio:hasAttribute ?sampleAttribute .\n\
+                          ?sampleAttribute a ?materialProperty .\n\
+                          ?filler sio:hasRole [a ns:Filler].\n\
+                          ?filler sio:hasAttribute [a <' + fillerPropertyMap.get($("#filler-property-select-x").val()) + '>]. \n\
+                        }\n\
+                        group by ?materialProperty order by desc(?count)';
+                    var materialY = [];
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                var mp = responseText.results.bindings[i].materialProperty.value;
+                                var count = responseText.results.bindings[i].count.value;
+                                var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();}) + ' (' + count + ')';
+                                materialY.push(key);
+                            }
+                        },
+                        error:function(xhr){alert("material property y list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                    $("#material-property-select-y").find('option').remove().end().select2({data:materialY});                    
+                });
+                // filler property dashboard visualize button
+                $(document).on('click', '#viz-fp', function(){
+                    var fp_x = $("#filler-property-select-x").val();
+                    var mp_y = $("#material-property-select-y").val().substring(0, $("#material-property-select-y").val().indexOf('(') - 1);    
+                    if(mp_y == "" || fp_x == "") alert("please choose x and y axis");    
+                    var chartData = [['sample', fp_x, mp_y, 'control', 'bubble size', fp_x, mp_y, 'matrix-filler', 'matrix', 'filler', 'paper link', 'paper title']];
+                    var fpmpQuery = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            prefix np: <http://www.nanopub.org/nschema#> \n\
+                            prefix dcterms: <http://purl.org/dc/terms/> \n\
+                            select distinct ?sample ?x ?y ?xUnit ?yUnit ?matrixPolymer ?fillerPolymer ?doi ?title \n\
+                            where { \n\
+                              ?nanopub np:hasAssertion ?ag. \n\
+                              graph ?ag { \n\
+                                ?sample sio:hasAttribute ?sampleAttribute .\n\
+                                ?sampleAttribute a <' + materialPropertyMap.get(mp_y) + '> .\n\
+                                ?sampleAttribute sio:hasValue ?y.\n\
+                                optional{?sampleAttribute sio:hasUnit ?yUnit.}\n\
+                                ?sample sio:hasComponentPart ?matrix .\n\
+                                ?sample sio:hasComponentPart ?filler .\n\
+                                ?matrix a ?matrixPolymer .\n\
+                                ?filler a ?fillerPolymer .\n\
+                                ?matrix sio:hasRole [a ns:Matrix].\n\
+                                ?filler sio:hasRole [a ns:Filler].\n\
+                                ?filler sio:hasAttribute ?fillerAttribute .\n\
+                                ?fillerAttribute a <' + fillerPropertyMap.get(fp_x) + '> .\n\
+                                ?fillerAttribute sio:hasValue ?x .\n\
+                                optional{?fillerAttribute sio:hasUnit ?xUnit.}\n\
+                              } \n\
+                              ?nanopub np:hasProvenance ?pg. \n\
+                              graph ?pg { \n\
+                                ?doi dcterms:isPartOf ?journal. \n\
+                                ?doi dcterms:title ?title. \n\
+                              } \n\
+                            }';
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":fpmpQuery},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            if(responseText.results.bindings.length == 0) alert("one axis you have selected includes an array of data, which cannot be visualized with this chart. Try to use Material Spectrum instead.");
+                            else {
+                                var xUnit = "";
+                                var yUnit = "";
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var sample = responseText.results.bindings[i].sample.value.substring(samplePrefix.length, responseText.results.bindings[i].sample.value.length);
+                                    var x = parseFloat(responseText.results.bindings[i].x.value);
+                                    var y = parseFloat(responseText.results.bindings[i].y.value);
+                                    if(responseText.results.bindings[i].hasOwnProperty('xUnit')) xUnit = responseText.results.bindings[i].xUnit.value.substring(unitPrefix.length, responseText.results.bindings[i].xUnit.value.length);
+                                    if(responseText.results.bindings[i].hasOwnProperty('yUnit')) yUnit = responseText.results.bindings[i].yUnit.value.substring(unitPrefix.length, responseText.results.bindings[i].yUnit.value.length);
+                                    var matrixPolymer = responseText.results.bindings[i].matrixPolymer.value.substring(compoundPrefix.length, responseText.results.bindings[i].matrixPolymer.value.length);
+                                    var fillerPolymer = responseText.results.bindings[i].fillerPolymer.value.substring(compoundPrefix.length, responseText.results.bindings[i].fillerPolymer.value.length);
+                                    var doi = responseText.results.bindings[i].doi.value;
+                                    var title = responseText.results.bindings[i].title.value;
+                                    chartData.push([sample, x, y, 'control-'+x, 1, x + ' ' + xUnit, y + ' ' + yUnit, matrixPolymer + '(matrix)-' + fillerPolymer + '(filler)', matrixPolymer, fillerPolymer, doi, title]);
+                                }
+                                if(xUnit != "") xUnit = " (" + xUnit + ")";
+                                if(yUnit != "") yUnit = " (" + yUnit + ")";
+                                var sampleCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'sampleFilter', 'options':{'filterColumnIndex':0, 'ui':{'caption':'search/choose a sample', 'selectedValuesLayout':'belowWrapping',},},});
+                                var matrixlCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'matrixFilter', 'options':{'filterColumnIndex':8, 'ui':{'caption':'search/choose a matrix', 'selectedValuesLayout':'belowWrapping',},},});
+                                var fillerCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'fillerFilter', 'options':{'filterColumnIndex':9, 'ui':{'caption':'search/choose a filler', 'selectedValuesLayout':'belowWrapping',},},});
+                                var bubbleChart = new google.visualization.ChartWrapper({'chartType':'BubbleChart','containerId':'propertyChart','options':{'title': 'Filler Property Chart (series by martix): ' + fp_x + xUnit + ' vs ' + mp_y + yUnit,'titlePosition':'out','titleTextStyle':{'color':'red','fontSize':16,'bold':true,},'hAxis':{'title':fp_x + xUnit},'vAxis':{'title':mp_y + yUnit},'sizeAxis':{'minValue':0,'maxSize':5},'height':chartHeight,'width':chartWidth,'legend':'top','explorer':{'keepInBounds':true,'actions':['dragToZoom', 'rightClickToReset'],'maxZoomIn':0.05,'maxZoomOut':1,},},'view':{'columns':[0, 1, 2, 7]},});
+                                var tableChart= new google.visualization.ChartWrapper({'chartType':'Table','containerId':'propertyTable','options':{'height':tableHeight,'width':tableWidth,},'view':{'columns':[0, 5, 6, 8, 9, 10, 11]},});
+                                new google.visualization.Dashboard(dashboard.get(0)).bind([sampleCategoryFilter, matrixlCategoryFilter, fillerCategoryFilter], [bubbleChart, tableChart]).draw(chartData);
+                                if($('#download').length == 0) dashboard.append('<button id="download" class="btn-primary" style="width:300px;" onClick="exportTableToCSV(\'nanomineData.csv\')">Download Data Table as CSV</button>');
+                            }
+                        },
+                        error:function(xhr){alert("filler property list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                });
+                
+                $("#home").attr("title", "Nanomine HomePage");
+
+                // material spectrum dashboard
+                $("#ms").click(function() {
+                    dashboard.empty();
+                    dashboard.append('<h1>Material Spectrum Dashboard</h1>');
+                    dashboard.append('<table class="table"><thead><tr><th scope="col" class="text-center">choose matrix</th><th scope="col" class="text-center">choose filler</th><th scope="col" class="text-center">choose x axis</th><th scope="col" class="text-center">choose y axis</th><th></th></tr></thead><tbody><tr><td><select id="matrix-select" style="width:300px;"><option value="" distabled selected></option></select></td><td><select id="filler-select" style="width:300px;"><option value="" distabled selected></option></select></td><td><select id="specialization-x" style="width:300px;"><option value="" distabled selected></option></select></td><td><select id="specialization-y" style="width:300px;"><option value="" distabled selected></option></select></td><td><button type="button" class="btn btn-primary" id="viz-ms" style="width:300px;">Visualize</button></td></tr></tbody></table>');
+                    dashboard.append('<table class="table"><thead><tr><th class="text-center" id="sampleFilter"></th></tr></thead></table>');
+                    dashboard.append('<div id="propertyChart"></div>');
+                    dashboard.append('<br>');
+                    dashboard.append('<div id="propertyTable"></div>');
+                    if(matrixList.length == 0) {
+                        var query = '\n\
+                                prefix sio:<http://semanticscience.org/resource/> \n\
+                                prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                                select distinct ?matrixMaterial \n\
+                                where { \n\
+                                  ?sample sio:hasComponentPart ?matrix . \n\
+                                  ?matrix sio:hasRole [a ns:Matrix].\n\
+                                  ?matrix a ?matrixMaterial.\n\
+                                } order by ?matrixMaterial';
+                        $.ajax({
+                            url:databaseURL,
+                            async:false,
+                            data:{"query":query},
+                            type:"post",
+                            dataType:"json",
+                            cache:false,
+                            success:function(responseText) {
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var m = responseText.results.bindings[i].matrixMaterial.value;
+                                    var key = "";
+                                    if(m.includes(compoundPrefix)) key = m.substring(compoundPrefix.length, m.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    matrixListMap.set(key, m);
+                                    matrixList.push(key);
+                                }
+                            },
+                            error:function(xhr){alert("matrix list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                        });
+                    }
+                    $("#matrix-select").select2({data:matrixList});
+                });
+                // populate filler dropdown upon matrix selection
+                $(document).on('change', '#matrix-select', function() {
+                    // clear all following dropdown lists
+                    $('#filler-select').find('option').remove();
+                    $('#specialization-x').find('option').remove();
+                    $('#specialization-y').find('option').remove();
+                    fillerListMap.clear();
+                    fillerList = ['-']; // clear filler list each time for a new matrix selected, fillerList should contain an empty option '-' to work functionally. 
+                    var query = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            select distinct ?fillerMaterial \n\
+                            where { \n\
+                              ?sample sio:hasComponentPart ?matrix . \n\
+                              ?matrix a <' + matrixListMap.get($('#matrix-select').val()) + '> . \n\
+                              ?sample sio:hasComponentPart ?filler. \n\
+                              ?filler sio:hasRole [a ns:Filler].\n\
+                              ?filler a ?fillerMaterial.\n\
+                            } order by ?fillerMaterial';
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                var f = responseText.results.bindings[i].fillerMaterial.value;
+                                var key = f.substring(compoundPrefix.length, f.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                fillerListMap.set(key, f);
+                                fillerList.push(key);
+                            }
+                        },
+                        error:function(xhr){alert("filler list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                    $('#filler-select').select2({data:fillerList});
+                });
+                // populate specification x dropdown according to selected matrix and filler
+                $(document).on('change', '#filler-select', function() {
+                    $('#specialization-x').find('option').remove();
+                    $('#specialization-y').find('option').remove();
+                    var query = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            prefix prov:<http://www.w3.org/ns/prov#> \n\
+                            select distinct ?materialProperty \n\
+                            where { \n\
+                              ?sample sio:hasComponentPart ?matrix . \n\
+                              ?matrix a <' + matrixListMap.get($('#matrix-select').val()) + '> . \n\
+                              ?sample sio:hasComponentPart ?filler. \n\
+                              ?filler a <' + fillerListMap.get($('#filler-select').val()) + '> . \n\
+                              ?sample ^prov:specializationOf [sio:hasAttribute [a ?materialProperty]] . \n\
+                            } order by ?materialProperty';
+                    var xList = ['-'];
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            if(responseText.results.bindings.length == 0) alert("Database do not contain such data");
+                            else {
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var mp = responseText.results.bindings[i].materialProperty.value;
+                                    var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                    materialPropertyMap.set(key, mp);
+                                    xList.push(key);
+                                }
+                                $('#specialization-x').select2({data:xList});
+                            }
+                        },
+                        error:function(xhr){alert("filler list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                });
+                // populate specification y dropdon according to selected matrix, filler, and x
+                $(document).on('change', '#specialization-x', function() {
+                    $('#specialization-y').find('option').remove();
+                    var query = '\n\
+                            prefix sio:<http://semanticscience.org/resource/> \n\
+                            prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                            prefix prov:<http://www.w3.org/ns/prov#> \n\
+                            select distinct ?materialProperty \n\
+                            where { \n\
+                              ?sample sio:hasComponentPart ?matrix . \n\
+                              ?matrix a <' + matrixListMap.get($('#matrix-select').val()) + '> . \n\
+                              ?sample sio:hasComponentPart ?filler. \n\
+                              ?filler a <' + fillerListMap.get($('#filler-select').val()) + '> . \n\
+                              ?sample ^prov:specializationOf [sio:hasAttribute [a <' + materialPropertyMap.get($('#specialization-x').val())+ '>]] . \n\
+                              ?sample ^prov:specializationOf [sio:hasAttribute [a ?materialProperty]] . \n\
+                              filter(?materialProperty != <' + materialPropertyMap.get($('#specialization-x').val())+ '>) \n\
+                            } order by ?materialProperty';
+                    var yList = ['-'];
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                var mp = responseText.results.bindings[i].materialProperty.value;
+                                var key = mp.substring(nanoPrefix.length, mp.length).replace(/([A-Z]+)/g," $1").replace(/^./,function(str){return str.toUpperCase();});
+                                materialPropertyMap.set(key, mp);
+                                yList.push(key);
+                            }
+                        },
+                        error:function(xhr){alert("filler list Ajax error:" + xhr.status + " " + xhr.statusText);},
+                    });
+                    $('#specialization-y').select2({data:yList});
+                });
+                // material spectrum visualization button
+                $(document).on('click', '#viz-ms', function() {
+                    var sx = $('#specialization-x').val();
+                    var sy = $('#specialization-y').val();
+                    var chartData = [['sample', sx, sy, 'sample', 'control', 'bubble size', 'doi', 'title']];
+                    var query = '\n\
+                        prefix sio:<http://semanticscience.org/resource/> \n\
+                        prefix ns:<http://nanomine.tw.rpi.edu/ns/> \n\
+                        prefix np: <http://www.nanopub.org/nschema#> \n\
+                        prefix dcterms: <http://purl.org/dc/terms/> \n\
+                        select distinct ?sample ?control ?x ?y ?doi ?title \n\
+                        where { \n\
+                          ?nanopub np:hasAssertion ?ag. \n\
+                          graph ?ag { \n\
+                              ?ac <http://www.w3.org/ns/prov#specializationOf> ?sample. \n\
+                              ?ac sio:hasAttribute [a <' + materialPropertyMap.get($('#specialization-x').val())+ '>; sio:hasValue ?x]. \n\
+                              ?ac sio:hasAttribute [a <' + materialPropertyMap.get($('#specialization-y').val())+ '>; sio:hasValue ?y]. \n\
+                              ?sample sio:hasComponentPart [a <' + matrixListMap.get($('#matrix-select').val()) + '>] . \n\
+                              optional {?sample sio:hasComponentPart [a <' + fillerListMap.get($('#filler-select').val()) + '>].} \n\
+                              ?control sio:hasRole [a sio:ControlRole; sio:inRelationTo ?sample].\n\
+                          } \n\
+                          ?nanopub np:hasProvenance ?pg. \n\
+                          graph ?pg {\n\
+                             ?doi dcterms:isPartOf ?journal.\n\
+                             ?doi dcterms:title ?title.\n\
+                          }\n\
+                        }';
+                    console.log(query);
+                    $.ajax({
+                        url:databaseURL,
+                        async:false,
+                        data:{"query":query},
+                        type:"post",
+                        dataType:"json",
+                        cache:false,
+                        success:function(responseText){
+                            if(responseText.results.bindings.length == 0) alert("no such data");
+                            else {
+                                for(var i = 0; i < responseText.results.bindings.length; i++) {
+                                    var s = responseText.results.bindings[i].sample.value.substring(samplePrefix.length, responseText.results.bindings[i].sample.value.length);
+                                    var c = responseText.results.bindings[i].control.value.substring(samplePrefix.length, responseText.results.bindings[i].control.value.length)
+                                    var x = parseFloat(responseText.results.bindings[i].x.value);
+                                    var y = parseFloat(responseText.results.bindings[i].y.value);
+                                    var d = responseText.results.bindings[i].doi.value;
+                                    var t = responseText.results.bindings[i].title.value;
+                                    if(s == c) {s += '(control)'; c+='(control)';}
+                                    chartData.push([s, x, y, s, c, 1, d, t]);
+                                }
+                                var bubbleChart = new google.visualization.ChartWrapper({'chartType':'BubbleChart','containerId':'propertyChart','options':{'title': sx + ' vs ' + sy,'titlePosition':'out','titleTextStyle':{'color':'red','fontSize':16,'bold':true,},'hAxis':{'scaletype':'log', 'title':sx},'vAxis':{'scaleType':'log','title':sy},'sizeAxis':{'minValue':0,'maxSize':5},'height':chartHeight,'width':chartWidth,'legend':'top','explorer':{'keepInBounds':true,'actions':['dragToZoom', 'rightClickToReset'],'maxZoomIn':0.05,'maxZoomOut':1,},},'view':{'columns':[0, 1, 2, 3]},});
+                                var tableChart= new google.visualization.ChartWrapper({'chartType':'Table','containerId':'propertyTable','options':{'height':tableHeight,'width':tableWidth,},'view':{'columns':[0, 4, 1, 2, 6, 7]},});
+                                var sampleCategoryFilter = new google.visualization.ControlWrapper({'controlType':'CategoryFilter', 'containerId':'sampleFilter', 'options':{'filterColumnIndex':0, 'ui':{'caption':'search/choose a sample', 'selectedValuesLayout':'belowWrapping',},},});
+                                new google.visualization.Dashboard(dashboard.get(0)).bind([sampleCategoryFilter], [bubbleChart, tableChart]).draw(chartData);
+                                if($('#download').length == 0) dashboard.append('<button id="download" class="btn-primary" style="width:300px;" onClick="exportTableToCSV(\'nanomineData.csv\')">Download Data Table as CSV</button>');
+                            }
+                        },
+                        error:function(xhr){alert("material spectrum Ajax error:" + xhr.status + " " + xhr.statusText);},                        
+                    });
+                })
+            });
+
+        // download csv data
+        function downloadCSV(csv, filename) {
+            var csvFile; 
+            var downloadLink;
+            csvFile = new Blob([csv], {type:"text/csv"});
+            downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+        };
+        // export data table as csv file
+        function exportTableToCSV(filename){
+            var csv = [];
+            var rows = document.querySelectorAll(".google-visualization-table-table tr");
+            for(var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+                for(var j = 0; j < cols.length; j++)
+                    row.push(cols[j].innerText);
+                csv.push(row.join(","));
+            }
+            // download csv file
+            downloadCSV(csv.join("\n"), filename);
+        };
+        </script>
+    </head>
+    
+    <body>
+        <div class="navbar navbar-fixed-top">
+            <nav class="navbar navbar-inverse">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <a href="http://nanomine-vis.oit.duke.edu/viz" class="navbar-brand">Nanomine Data Dashboard</a>
+                    </div>
+                    <!--add option buttons here-->
+                    <ul class="nav navbar-nav"></ul>
+                    <a href="http://nanomine.northwestern.edu:8000/" class="btn navbar-btn btn-info" role="button"><span class = "glyphicon glyphicon-home" title="Nanomine HomePage"></span></a>
+                    <button type="button" class="btn btn-primary navbar-btn" id="fp">Filler Descriptor vs Material Property</button>
+                    <button type="button" class="btn btn-primary navbar-btn" id="mp">Material Property Dashboard</button>
+                    <button type="button" class="btn btn-primary navbar-btn" id="ms">Material Spectrum</button>
+                    <button type="button" class="btn btn-primary navbar-btn" id="db">Database Overview (under construction)</button>
+
+                </div>
+            </nav>
+        </div>
+        <!-- visualization dashboard section -->
+        <div class="text-center" id="dashboard">
+            <div class="jumbotron">
+              <h1 class="display-3">Nanomine Visualization Dashboard</h1>
+              <p class="lead">Welcome! Explore a series of visualization revealing data information by clicking on the buttons in the navigation bar.</p>
+            </div>
+
+            <div class="row">
+              <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2"></div>
+              <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+            <h4 class="text-left">In this prototype data visualizer, data in NanoMine are visualized in various ways. At present, four functions are being developed and preliminary versions are available in the navigation bar:</h4>
+            <p class="text-left"> •   Filler Descriptors vs. Material Property:to see impact of the filler features on the final properties.  </p>               
+            <p class="text-left"> •   Material Property Dashboard:to explore the correlations between two selected properties. </p>
+            <p class="text-left"> •   Material Spectrum:to examine the relationshipsbetween the features and the properties of a specific composite or a certain matrix or filler of interest. </p>
+            <p class="text-left"> •   Database Overview (under construction) will offera visual summary of the data in NanoMine. </p>
+            <a href="https://imgur.com/Thtu5w6"><img src="https://i.imgur.com/Thtu5w6.png" title="source: imgur.com" /></a>
+            <br>
+
+
+            <h4 class="text-left">While many of these functions are under construction, an example illustrating the types of visualizations which will be readily available in the next months is below. </h4>
+            <p class="text-left">To re-createthe sample visualization shown below: </p>
+            <p class="text-left"> •   select the first tab (“filler descriptor vs material property”) </p>
+            <p class="text-left"> •   select“mass fraction”as the x-axis </p>
+            <p class="text-left"> •   select “glass transition temperature” as the y-axis </p>
+            <p class="text-left"> •   Refinement can be obtained by playing with other features on the page </p>
+            <p class="text-left"> •   A table below the graph contains the information of the graph in tabular form and will eventually point to individual records for each sample. </p>
+            <p class="text-left"> •   In a month, there will be control samples labeled as such in NanoMine allowing for difference in property plots.  ????</p> 
+            <a href="https://imgur.com/woeikox"><img src="https://i.imgur.com/woeikox.png" title="source: imgur.com" /></a>        
+              </div>
+              <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2"></div>
+            </div>
+            </div>
+        </div>
+    </body>
+</html>

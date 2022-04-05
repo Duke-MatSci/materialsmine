@@ -1,0 +1,78 @@
+[
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "label": "Nanocomposite Property",
+        "facetId" : "NanocompositeProperty",
+        "predicate": "<http://semanticscience.org/resource/hasAttribute>",
+        "typeProperty" : "rdf:type",
+        "independentVariables" : "<http://semanticscience.org/resource/inRelationTo>",
+        "valuePredicate" : "<http://semanticscience.org/resource/hasValue>",
+        "unitPredicate" : "<http://semanticscience.org/resource/hasUnit>",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "inverse": "http://semanticscience.org/resource/isComponentPartOf",
+        "label": "Filler Material",
+        "multiType": "union",
+        "facetId" : "FillerType",
+        "predicate": "<http://semanticscience.org/resource/hasComponentPart>",
+        "typeProperty" : "rdf:type",
+        "specifier" : "?id <http://semanticscience.org/resource/hasComponentPart> ?fillerPart. ?fillerPart <http://semanticscience.org/resource/hasRole> [ a <http://materialsmine.org/ns/Filler>]. ?fillerPart a ?value.",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "inverse": "http://semanticscience.org/resource/isComponentPartOf",
+        "label": "Matrix Material",
+        "facetId" : "MatrixType",
+        "multiType": "union",
+        "predicate": "<http://semanticscience.org/resource/hasComponentPart>",
+        "typeProperty" : "rdf:type",
+        "specifier" : "?id <http://semanticscience.org/resource/hasComponentPart> ?matrixPart. ?matrixPart <http://semanticscience.org/resource/hasRole> [ a <http://materialsmine.org/ns/Matrix>]. ?matrixPart a ?value.",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "label": "Processing Method",
+        "facetId" : "ProcessingMethod",
+        "multiType": "union",
+        "predicate": "<http://www.w3.org/ns/prov#wasGeneratedBy>/<http://semanticscience.org/resource/hasPart>",
+        "typeProperty" : "rdf:type",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "count": "25",
+        "label": "Filler Property",
+        "facetId" : "FillerProperty",
+        "predicate": "<http://semanticscience.org/resource/hasComponentPart>/<http://semanticscience.org/resource/hasAttribute>",
+        "typeProperty" : "rdf:type",
+        "valuePredicate" : "<http://semanticscience.org/resource/hasValue>",
+        "unitPredicate" : "<http://semanticscience.org/resource/hasUnit>",
+        "specifier" : "?id <http://semanticscience.org/resource/hasComponentPart> ?fillerPart. ?fillerPart <http://semanticscience.org/resource/hasRole> [ a <http://materialsmine.org/ns/Filler>]. ?fillerPart <http://semanticscience.org/resource/hasAttribute>/rdf:type ?value.",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "label": "Matrix Property",
+        "facetId" : "MatrixProperty",
+        "typeProperty" : "rdf:type",
+        "valuePredicate" : "<http://semanticscience.org/resource/hasValue>",
+        "unitPredicate" : "<http://semanticscience.org/resource/hasUnit>",
+        "predicate": "<http://semanticscience.org/resource/hasComponentPart>/<http://semanticscience.org/resource/hasAttribute>",
+        "specifier" : "?id <http://semanticscience.org/resource/hasComponentPart> ?matrixPart. ?matrixPart <http://semanticscience.org/resource/hasRole> [ a <http://materialsmine.org/ns/Matrix>]. ?matrixPart <http://semanticscience.org/resource/hasAttribute>/rdf:type ?value.",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    },
+    {
+        "class": "http://materialsmine.org/ns/PolymerNanocomposite",
+        "inverse": "http://semanticscience.org/resource/isComponentPartOf",
+        "label": "Surface Treatment",
+        "facetId" : "SurfaceTreatment",
+        "multiType": "union",
+        "predicate": "<http://semanticscience.org/resource/hasComponentPart>",
+        "typeProperty" : "rdf:type",
+        "specifier" : "?id <http://semanticscience.org/resource/hasComponentPart>/<http://semanticscience.org/resource/isSurroundedBy> ?surfacePart. ?surfacePart <http://semanticscience.org/resource/hasRole> [ a <http://materialsmine.org/ns/SurfaceTreatment>]. ?surfacePart a ?value.",
+        "propertyType": "http://www.w3.org/2002/07/owl#ObjectProperty"
+    }
+]

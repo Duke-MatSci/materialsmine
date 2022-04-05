@@ -1,0 +1,221 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ03 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>research articles</b> published in or after {?MinYear} that studied {?Filler} as a nanocomposite filler material and {?Matrix} as a matrix material, and list all matrix and filler materials studied in that article.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT DISTINCT ?doi ?Year
+(GROUP_CONCAT(DISTINCT ?Filler ; SEPARATOR=", ") AS ?FillerMaterials)
+(GROUP_CONCAT(DISTINCT ?Matrix ; SEPARATOR=", ") AS ?MatrixMaterials)
+WHERE {
+  ?Sample a mm:PolymerNanocomposite ;
+          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
+                                 a [ rdfs:label ?Filler ] ]  ,
+                               [ sio:hasRole [ a mm:Matrix ] ;
+                                 a [ rdfs:label ?Matrix ] ] .
+  ?doi a dct:BibliographicResource ;
+       dct:created ?Year ;
+       sio:hasPart ?Sample .
+  FILTER (?Year >= ?MinYear)
+}
+GROUP BY ?doi ?Year
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "MinYear";
+    schema:option [
+        rdfs:label "2000";
+        schema:value 2000;
+        schema:position 1
+      ],
+      [
+        rdfs:label "2005";
+        schema:value 2005;
+        schema:position 2
+      ],
+      [
+        rdfs:label "2010";
+        schema:value 2010;
+        schema:position 3
+      ],
+      [
+        rdfs:label "2015";
+        schema:value 2015;
+        schema:position 4
+      ],
+      [
+        rdfs:label "2020";
+        schema:value 2020;
+        schema:position 5
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Filler";
+    schema:option [
+        rdfs:label "any material";
+        schema:position 1
+      ],
+      [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 2
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 3
+      ],
+      [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 4
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 5
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 6
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 7
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 8
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 9
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 10
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 11
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 12
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 13
+      ],
+      [
+        rdfs:label "reduced graphene oxide";
+        schema:value "Reduced graphene oxide";
+        schema:position 14
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 15
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Matrix";
+    schema:option [
+        rdfs:label "any material";
+        schema:position 1
+      ],
+      [
+        rdfs:label "epoxy";
+        schema:value "DGEBA Epoxy Resin";
+        schema:position 2
+      ],
+      [
+        rdfs:label "PMMA";
+        schema:value "Poly(methyl methacrylate)";
+        schema:position 3
+      ],
+      [
+        rdfs:label "polystyrene";
+        schema:value "Polystyrene";
+        schema:position 4
+      ],
+      [
+        rdfs:label "polyethylene";
+        schema:value "Poly(ethylene)";
+        schema:position 5
+      ],
+      [
+        rdfs:label "PEG";
+        schema:value "Poly(ethylene glycol)";
+        schema:position 6
+      ],
+      [
+        rdfs:label "PVDF";
+        schema:value "Poly(vinylidene fluoride)";
+        schema:position 7
+      ],
+      [
+        rdfs:label "poly(bisphenol A carbonate)";
+        schema:value "Poly(bisphenol A carbonate)";
+        schema:position 8
+      ],
+      [
+        rdfs:label "silicone";
+        schema:value "Silicone rubber";
+        schema:position 9
+      ],
+      [
+        rdfs:label "polypropylene";
+        schema:value "Poly(propylene)";
+        schema:position 10
+      ],
+      [
+        rdfs:label "cycloaliphatic epoxy";
+        schema:value "Cycloaliphatic Epoxy Resin";
+        schema:position 11
+      ],
+      [
+        rdfs:label "P2VP";
+        schema:value "Poly(2-vinyl pyridine)";
+        schema:position 12
+      ],
+      [
+        rdfs:label "PVA";
+        schema:value "Poly(vinyl alcohol)";
+        schema:position 13
+      ],
+      [
+        rdfs:label "polyimide";
+        schema:value "Polyimide";
+        schema:position 14
+      ],
+      [
+        rdfs:label "polyurethane";
+        schema:value "Polyurethane";
+        schema:position 15
+      ],
+      [
+        rdfs:label "PLA";
+        schema:value "Polylactic acid";
+        schema:position 16
+      ]
+  ].
