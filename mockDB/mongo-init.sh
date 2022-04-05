@@ -7,4 +7,6 @@ mongo -- "$MM_DB" <<EOF
     var user = '$MONGO_DEVS';
     var passwd = '$MONGO_DEV_PWD';
     db.createUser({user: user, pwd: passwd, roles: ["readWrite"]});
+    db.xmldata.createIndex({datasetId:1})
+    db.datasets.createIndex({seq:1})
 EOF

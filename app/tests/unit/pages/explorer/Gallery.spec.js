@@ -1,16 +1,16 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import ExplorerGallery from '@/pages/explorer/Gallery.vue'
+import { chartUriPrefix, toChartId } from '@/modules/vega-chart'
 
 import { loadJsonView } from '@/modules/whyis-view'
 jest.mock('@/modules/whyis-view')
 loadJsonView.mockImplementation(() => {
-  return [...Array(333).keys()]
-    .map((i) => ({
-      identifier: `http://nanomine-mock.org/gallery_item_${i}`,
-      label: `Gallery Item #${i}: a label`,
-      description: `this text describes Gallery Item #${i}`
-    }))
+  return [...Array(333).keys()].map((i) => ({
+    identifier: `${chartUriPrefix}gallery_item_${i}`,
+    label: `Gallery Item #${i}: a label`,
+    description: `this text describes Gallery Item #${i}`
+  }))
 })
 
 describe('ExplorerHome.vue', () => {
@@ -37,14 +37,14 @@ describe('ExplorerHome.vue', () => {
   it('provides links for each result', () => {
     const items = wrapper.vm.items
     expect.assertions(items.length)
-    for (const item of items) {
+    for (const idx of items.keys()) {
+      const item = items[idx]
       expect(
-        wrapper
-          .findAllComponents(RouterLinkStub)
-          .filter((w) => w.props().to === `/explorer/chart/view/${item.identifier}`)
-          .at(0)
-          .exists()
-      ).toBe(true)
+        wrapper.findAllComponents(RouterLinkStub).at(idx).props().to
+      ).toEqual({
+        name: 'ChartView',
+        params: { chartId: toChartId(item.identifier) }
+      })
     }
   })
 

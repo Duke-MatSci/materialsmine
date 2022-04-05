@@ -1,6 +1,6 @@
 <template>
     <div class="explorer_page_header">
-        <md-card style="padding:2rem; margin:2rem;">
+        <md-card style="padding:2rem; margin:2rem; z-index: 10">
         <div class="search_box_form">
             <div class="form__group search_box_form-item-1">
                 <input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
@@ -10,53 +10,41 @@
                 <button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
             </div>
         </div>
-        <div style="text-align:right"> Query "{{searchWord}}" found 12345 results </div>
+        <div class="search-dropdown-menu_parent" v-if="!!suggestions.length">
+					<ul class="search-dropdown-menu">
+						<li v-for="(suggestion, index) in suggestions" :key="index" class="" @click.prevent="submitSearch(suggestion)">
+							<a href="#">{{ suggestion }}</a>
+						</li>
+					</ul>
+				</div>
+        <div style="text-align:right"> Query "{{searchWord}}" found {{getTotal}} results </div>
         </md-card>
         <md-tabs class="btn--primary">
-            <md-tab :md-label="'Articles (' + articles + ')'" @click="setResultsTab('Articles')"></md-tab>
-            <md-tab :md-label="'Samples (' + samples + ')'" @click="setResultsTab('Samples')"></md-tab>
-            <md-tab :md-label="'Images (' + images + ')'" @click="setResultsTab('Images')"></md-tab>
-            <md-tab :md-label="'Charts (' + charts + ')'" @click="setResultsTab('Charts')"></md-tab>
-            <md-tab :md-label="'Materials (' + materials + ')'" @click="setResultsTab('Materials')"></md-tab>
-            <!-- <md-tab :md-label="'Other (' + other + ')'" @click="setResultsTab('Other')"></md-tab> -->
+            <md-tab :md-label="'Articles (' + passTotal.getArticles + ')'" @click.prevent="setResultsTabs('getArticles')"></md-tab>
+            <md-tab :md-label="'Samples (' + passTotal.getSamples + ')'" @click.prevent="setResultsTabs('getSamples')"></md-tab>
+            <md-tab :md-label="'Images (' + passTotal.getImages + ')'" @click.prevent="setResultsTabs('getImages')"></md-tab>
+            <md-tab :md-label="'Charts (' + passTotal.getCharts + ')'" @click.prevent="setResultsTabs('getCharts')"></md-tab>
+            <md-tab :md-label="'Materials (' + passTotal.getMaterials + ')'" @click.prevent="setResultsTabs('getMaterials')"></md-tab>
         </md-tabs>
     </div>
 </template>
 <script>
-import { mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
+import explorerSearch from '@/mixins/explorerSearch'
 export default {
   name: 'SearchHeader',
-  props: ['searchEnabled'],
+  mixins: [explorerSearch],
   computed: {
-    searchWord: {
-      get () {
-        return this.$store.getters['explorer/getSearchKeyword']
-      },
-      set (payload) {
-        return this.$store.commit('explorer/setSearchKeyword', payload)
-      }
-    },
-    images () {
-      return 0
-    },
-    samples () {
-      return 0
-    },
-    articles () {
-      return 0
-    },
-    charts () {
-      return 0
-    },
-    materials () {
-      return 0
-    }
-    // other () {
-    //   return 0
-    // }
+    ...mapGetters({
+      resultsTab: 'explorer/getResultsTab',
+      passTotal: 'explorer/results/getTotalGroupings',
+      getTotal: 'explorer/results/getTotal'
+    })
   },
   methods: {
-    ...mapMutations('explorer', ['setResultsTab'])
+    setResultsTabs (payload) {
+      return this.setResultsTab(payload)
+    }
   }
 }
 </script>

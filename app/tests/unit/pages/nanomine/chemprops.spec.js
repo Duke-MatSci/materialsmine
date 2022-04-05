@@ -5,7 +5,11 @@ var wrapper = null
 
 describe('ChemProps.vue', () => {
   beforeAll(() => {
-    wrapper = createWrapper(ChemProps, {})
+    wrapper = createWrapper(ChemProps, {
+      mocks: {
+        $socket: { emit: jest.fn() }
+      }
+    })
   })
 
   it('mounts properly', () => {

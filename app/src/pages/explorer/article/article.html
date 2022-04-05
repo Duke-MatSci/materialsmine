@@ -67,8 +67,8 @@
         <div class="article_subtitle article_error">Citations failed to load. Please try again in a moment.</div>
       </div>
     </div>
-    <div v-else-if="loading && !error.article" class="wrapper article_error" key="article_loading">
-      <loading-spinner :loading="loading && !error.article" key="article_loading"></loading-spinner>
+    <div v-else-if="loading && !error.article" class="section_loader wrapper article_error" key="article_loading">
+      <loading-spinner :loading="loading && !error.article" text="Loading Article"></loading-spinner>
     </div>
     <div v-else class="wrapper article_title" key="article_title article_error">
       <h1>Error retrieving this article.</h1>

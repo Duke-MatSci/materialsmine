@@ -1,58 +1,32 @@
 <template>
-  <md-card class="md-layout-item" v-if="display" key="should_display">
-    <md-card-media v-if="imageFile" key="image">
-      <img :src="require(`@/assets/img/${imageFile}`)" :alt="imageFile"/>
-    </md-card-media>
-    <md-card-header v-if="title" key="tool_title">
-        <div class="md-title" v-if="link" key="has_tool_link">
-          <router-link v-if="!externalLink" :to="linkTarget">{{ title }}</router-link>
-          <a v-else :href="linkTarget" target="_blank">{{ title }}</a>
+  <md-card class="md-layout-item">
+    <md-card-header key="tool_title">
+      <md-card-header-text>
+        <div class="md-title">
+          <slot name="title"></slot>
         </div>
-        <div class="md-title" v-else key="no_tool_link">
-          {{ title }}
-        </div>
+      </md-card-header-text>
+      <md-card-media class="tool_card_image" key="image" md-big>
+        <slot name="image"></slot>
+      </md-card-media>
     </md-card-header>
-    <md-card-content v-if="text" key="has_tool_text">
-      {{ text }}
+    <md-card-content>
+      <slot name="content"></slot>
     </md-card-content>
+    <md-card-actions>
+      <slot name="actions"></slot>
+    </md-card-actions>
   </md-card>
 </template>
 
 <script>
 export default {
-  name: 'ToolCard',
-  props: {
-    imageFile: {
-      type: String,
-      required: false
-    },
-    title: {
-      type: String,
-      required: true
-    },
-    link: {
-      type: String,
-      required: false
-    },
-    externalLink: {
-      type: Boolean,
-      required: false,
-      default: false
-    },
-    text: {
-      type: String,
-      required: true
-    },
-    display: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  computed: {
-    linkTarget: function () {
-      return this.externalLink ? this.link : `/nm/tools/${this.link}`
-    }
-  }
+  name: 'ToolCard'
 }
 </script>
+
+<style scoped>
+.tool_card_image {
+  width: 33%;
+}
+</style>
