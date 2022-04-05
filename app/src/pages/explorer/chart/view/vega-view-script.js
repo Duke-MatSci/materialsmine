@@ -46,6 +46,7 @@ export default {
       }
     }
   },
+  props: ['chartId'],
   computed: {
     ...mapGetters({
       dialogBoxActive: 'dialogBox'
@@ -53,8 +54,8 @@ export default {
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
     },
-    pageUri () {
-      return toChartUri(this.$route.params.chartId)
+    fullChartUri () {
+      return toChartUri(this.chartId)
     }
   },
   methods: {
@@ -63,7 +64,7 @@ export default {
     }),
     async loadVisualization () {
       try {
-        this.chart = await loadChart(`${this.pageUri}`)
+        this.chart = await loadChart(`${this.fullChartUri}`)
         if (this.chart.query) {
           this.results = await querySparql(this.chart.query)
         }
@@ -75,8 +76,7 @@ export default {
       }
     },
     navBack (args) {
-    },
-    openVoyager () {
+      this.$router.push('/explorer/chart')
     },
     editChart () {
     },
