@@ -1,0 +1,64 @@
+<div class="datavoyager">
+    <div class="utility-content__result">
+      <div
+        class="utility-gridicon"
+        v-if="!loading"
+      >
+        <div> 
+            <md-button
+                class="md-icon-button"
+                @click.native.prevent="navBack"
+            >
+                <md-tooltip md-direction="bottom"> 
+                  Return to chart view 
+                </md-tooltip>
+              <md-icon>arrow_back</md-icon>
+            </md-button>
+            <!-- TODO: Enable save button for new chart creation -->
+            <md-button
+                class="md-icon-button"
+                @click.native.prevent="saveAsChart"
+                v-if="!isNewChart && voyagerSpec"
+                disabled
+            >
+                <md-tooltip md-direction="bottom">
+                  Save current spec as new chart
+                </md-tooltip>
+                <md-icon>save</md-icon>
+            </md-button>
+            <!-- TODO: Enable select button for new chart editing -->
+            <md-button
+            class="md-icon-button"
+            @click.native.prevent="selectSpec"
+            v-if="isNewChart && voyagerSpec"
+            >
+                <md-tooltip md-direction="bottom">
+                  Select current spec and return to Viz Editor
+                </md-tooltip>
+                <md-icon>check</md-icon>
+          </md-button>
+        </div>
+      </div>
+    </div>
+    <div class="viz-sample__header viz-u-mgbottom">
+      <span class="datavoyager-title">Data Voyager</span>
+      <span v-if="!isNewChart && chart && chart.title">: {{chart.title}}</span>
+    </div>
+    <div
+      class="loading-dialog"
+      style="margin: auto"
+      v-if="loading"
+    >
+      <spinner :loading="loading" />
+    </div>
+    <div
+      class="loading-dialog"
+      style="margin: auto"
+      v-else
+    >
+      <data-voyager
+        :data="data"
+        :spec.sync="voyagerSpec"
+      ></data-voyager>
+    </div>
+  </div>

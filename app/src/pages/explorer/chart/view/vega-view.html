@@ -27,12 +27,12 @@
                 <md-icon>integration_instructions</md-icon>
             </md-button>
         </div>
-        <div>
-        <md-button disabled class="md-icon-button" @click.native.prevent="openVoyager">
-            <md-tooltip> View Data in Voyager </md-tooltip>
-            <md-icon>dynamic_form</md-icon>
-        </md-button>
-        </div>
+        <router-link class="md-icon-button"  :to="{name: 'ChartDataVoyager', params: {chartId: this.chartId} }" v-slot="{navigate, href}" custom>
+            <md-button class="md-icon-button"  :href="href" @click="navigate"> 
+                <md-tooltip> View Data in Voyager </md-tooltip>
+                <md-icon>dynamic_form</md-icon>
+            </md-button>
+        </router-link>
         <div v-if="allowEdit">
         <md-button disabled class="md-icon-button" @click.native.prevent="editChart">
             <md-tooltip> Edit Chart </md-tooltip>
@@ -92,7 +92,7 @@
     <template v-slot:content>
         <div v-if="dialog.type=='share'">
             <md-field> <label>Chart Link</label>
-                <md-textarea disabled v-model="pageUri"></md-textarea>
+                <md-textarea disabled v-model="fullChartUri"></md-textarea>
             </md-field>
             <div>Copy the link above to share this chart</div>
         </div>
