@@ -25,6 +25,7 @@ class ElasticSearch {
           log.error(`elasticsearch.ping(): 500 - ${error}`);
           reject(error);
         }
+        log.debug(`elasticsearch.ping(): response ${response}`);
         resolve(response);
       }, waitTime);
     });
