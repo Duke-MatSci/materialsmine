@@ -91,15 +91,15 @@ services:
     volumes:
       - /app/node_modules
       - ./app:/app
-  kg:
-    image: 'stain/jena-fuseki:4.0.0'
-    restart: always
-    environment:
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JVM_ARGS=-Xmx3g
-    ports:
-      - '3030:3030'
-    volumes:
-      - ./mockDB/fuseki:/fuseki
+  # kg:
+  #   image: 'stain/jena-fuseki:4.0.0'
+  #   restart: always
+  #   environment:
+  #     - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+  #     - JVM_ARGS=-Xmx3g
+  #   ports:
+  #     - '3030:3030'
+  #   volumes:
+  #     - ./mockDB/fuseki:/fuseki
 volumes:
   mockDB:
