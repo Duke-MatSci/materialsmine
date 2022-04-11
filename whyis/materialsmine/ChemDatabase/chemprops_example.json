@@ -1,0 +1,112 @@
+[
+    {
+        "_id": "O(C1=CC=C(C=C1)C(=O)C2=CC=C(OC3=CC=C(C=C3)[*])C=C2)[*]",
+        "_stdname": "Poly(ether ether ketone)",
+        "_abbreviations": [
+            "PEEK"
+        ],
+        "_density": 1.29,
+        "_boc": [
+            "000060020011012102030000100000000000",
+            "000020000010000100000000000000000000"
+        ],
+        "_tradenames": [
+            "Zeniva",
+            "KetaSpire"
+        ],
+        "_synonyms": []
+    },
+    {
+        "_id": " C(C(C1=CC=CC=C1)[*])[*] ",
+        "_stdname": "Polystyrene",
+        "_abbreviations": [
+            "PS"
+        ],
+        "_density": 1.04,
+        "_boc": [
+            "000020000001011101110000200000000000",
+            "000000000000000100100000000000000000",
+            "000040020002021200010000200000000000",
+            "000040020003021200010000300100000000",
+            "010030001002031100000100210000000000"
+        ],
+        "_tradenames": [
+            "Pelaspan",
+            "Afcolene",
+            "Aim",
+            "Amoco",
+            "Bextrene",
+            "Carinex",
+            "Distrene",
+            "Dylene",
+            "Edistir",
+            "Erinoid",
+            "Fina",
+            "Fostarene",
+            "Gedex",
+            "Hostyren",
+            "Huntsman PS",
+            "Lacqrene",
+            "Ladene",
+            "Lorkalene",
+            "Luron",
+            "Lustran",
+            "Lustrex",
+            "Neste PS",
+            "Polystyrol",
+            "Restirolo",
+            "Sicostyrol",
+            "Sternite",
+            "Stiroplasto",
+            "Stymer",
+            "Styrodur",
+            "Styron",
+            "Styvarene",
+            "Vestyron",
+            "Polystyrol",
+            "Polyzote",
+            "Pyrochek 68"
+        ],
+        "_synonyms": [
+            "polyphenylethene",
+            "poly-1-phenylethylene",
+            "polyvinylbenzene"
+        ]
+    },
+    {
+        "_id": "N(CCCCCC(=O)[*])[*]",
+        "_stdname": "Nylon 6",
+        "_abbreviations": [
+            "PA 6",
+            "Nylon 6"
+        ],
+        "_density": 1.08,
+        "_boc": [
+            "000000000001021000000000100000001000",
+            "100000000000000100000000000000001000",
+            "000000000001021000000000100000001000",
+            "302000000002102201010000100000000000",
+            "100110001001101100000000100000001000",
+            "301110002001213201000000100000000000",
+            "303100003001113201000000100000001000",
+            "303100003001113201000000100000000000",
+            "201110001001102201000000100000000000",
+            "302000000002102201010000100000000000",
+            "100040022002224100010002200100000000"
+        ],
+        "_tradenames": [
+            "Perlon",
+            "Plaskon"
+        ],
+        "_synonyms": [
+            "Poly(caprolactam)",
+            "polyamide 6",
+            "poly(ω-aminocaproamide)",
+            "poly(6-aminocaproic acid)",
+            "poly(ε-aminocaproic acid)",
+            "poly(ω-caproamide)",
+            "polycaprolactam",
+            "poly-[imino-(1-oxohexamethylene)]"
+        ]
+    }
+]

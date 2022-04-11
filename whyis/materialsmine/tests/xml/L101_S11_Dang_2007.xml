@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L101_S11_Dang_2007</ID>
+  <Control_ID>L101_S1_Dang_2007</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Composites Science and Technology</Publication>
+        <Title>Study on microstructure and dielectric property of the BaTiO3/epoxy resin composites</Title>
+        <Author>Dang, Zhi-Min</Author>
+        <Author>Yu, Yan-Fei</Author>
+        <Author>Xu, Hai-Ping</Author>
+        <Author>Bai, Jinbo</Author>
+        <Keyword>Dielectric properties</Keyword>
+        <Keyword>Microstructure</Keyword>
+        <Keyword>Silane coupling agent</Keyword>
+        <Keyword>BaTiO3</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2008</PublicationYear>
+        <DOI>10.1016/j.compscitech.2007.05.021</DOI>
+        <Volume>68</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0266353807002199?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Key Laboratory of Beijing City on Preparation and Processing of Novel Polymer Materials and Key Laboratory of the Ministry of Education on Nanomaterials, Beijing University of Chemical Technology, Beijing 100029, PR China</Location>
+        <DateOfCitation>2015-07-24</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0266-3538</ISSN>
+          <Issue>1</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>bisphenol A epoxy resin</ChemicalName>
+        <Abbreviation>EPR</Abbreviation>
+        <ManufacturerOrSourceName>Dow chemical</ManufacturerOrSourceName>
+        <TradeName>DER661</TradeName>
+      </MatrixComponent>
+      <MatrixProcessing>
+        <ChooseParameter>
+          <Mixing>
+            <MixingMethod>dissolving</MixingMethod>
+            <ChemicalUsed>
+              <description>acetone</description>
+            </ChemicalUsed>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Additive>
+            <Description>MeTHPA was chosen as a hardener in 10/4 (EPR/MeTHPA) weight ratio</Description>
+            <Additive>MeTHPA</Additive>
+          </Additive>
+        </ChooseParameter>
+      </MatrixProcessing>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>barium titanate</ChemicalName>
+        <Abbreviation>BaTiO3</Abbreviation>
+        <ManufacturerOrSourceName>Guoteng electronic ceramic company</ManufacturerOrSourceName>
+        <SphericalParticleDiameter>
+          <value>0.7</value>
+          <unit>micrometers</unit>
+        </SphericalParticleDiameter>
+        <SurfaceArea>
+          <specific>
+            <description>value ranges from 9 - 1.3</description>
+            <value>9</value>
+            <unit>m^2/g</unit>
+          </specific>
+        </SurfaceArea>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>phosphated ester</ChemicalName>
+          <Abbreviation>BYK-9010</Abbreviation>
+          <MolecularWeight>
+            <description>The amount of KH550 and BYK-9010 was 1.0 wt% in comparison with the BaTiO3 powders</description>
+          </MolecularWeight>
+        </ParticleSurfaceTreatment>
+      </FillerComponent>
+      <FillerComposition>
+        <Fraction>
+          <volume>0.6</volume>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Other>Suspensions containing BaTiO3 powde and solvent were prepared in a polytetrafluoroethylene (PTFE) bottle</Other>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>Ultrasonic was applied to the suspensions.</Description>
+          <MixingMethod>ultra-sonication</MixingMethod>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>EPR and curing agent were added into the suspensions.</Description>
+          <Additive>EPR</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>Catalyst 2,4-EMI was added into suspensions</Description>
+          <Additive>2-ethyl-4- methyl-imidazole</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <MixingMethod>ball milling</MixingMethod>
+          <Time>
+            <value>24</value>
+            <unit>hours</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Temperature>
+            <value>75</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>1</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>To remove solvent residue</Description>
+          <Temperature>
+            <value>75</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>30</value>
+            <unit>minutes</unit>
+          </Time>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>hot-pressing</MoldingMode>
+          <MoldingInfo>
+            <Description>Samples were cured at temperature range between 150 and 160 degrees celsius</Description>
+            <Temperature>
+              <value>150</value>
+              <unit>Celsius</unit>
+            </Temperature>
+          </MoldingInfo>
+        </Molding>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>Hitachi S-4700</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Differential_Scanning_Calorimetry>
+      <Equipment>Dupont TA 2010</Equipment>
+    </Differential_Scanning_Calorimetry>
+    <Fourier_Transform_Infrared_Spectroscopy>
+      <Equipment>Nexus 670</Equipment>
+    </Fourier_Transform_Infrared_Spectroscopy>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Electrical>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <description>Dielectric Permittivity of 60 vol% BaTiO3/EPR composite without KH550. Taken at room temperature</description>
+          <data>
+            <AxisLabel>
+              <xName>Frequency</xName>
+              <xUnit>Hz</xUnit>
+              <yName>Dielectric Permittivity</yName>
+            </AxisLabel>
+            <data>
+              <headers>
+                <column id="0">Frequency (Hz)</column>
+                <column id="1">Dielectric Permittivity</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">1037.79237</column>
+                  <column id="1">36.81818</column>
+                </row>
+                <row id="1">
+                  <column id="0">1272.6532</column>
+                  <column id="1">36.73295</column>
+                </row>
+                <row id="2">
+                  <column id="0">1530.63225</column>
+                  <column id="1">36.64773</column>
+                </row>
+                <row id="3">
+                  <column id="0">1951.22856</column>
+                  <column id="1">36.13636</column>
+                </row>
+                <row id="4">
+                  <column id="0">2416.25708</column>
+                  <column id="1">36.22159</column>
+                </row>
+                <row id="5">
+                  <column id="0">2963.07568</column>
+                  <column id="1">36.13636</column>
+                </row>
+                <row id="6">
+                  <column id="0">3633.51004</column>
+                  <column id="1">35.88068</column>
+                </row>
+                <row id="7">
+                  <column id="0">4543.23067</column>
+                  <column id="1">35.79545</column>
+                </row>
+                <row id="8">
+                  <column id="0">5680.71772</column>
+                  <column id="1">35.71023</column>
+                </row>
+                <row id="9">
+                  <column id="0">7171.68299</column>
+                  <column id="1">35.19886</column>
+                </row>
+                <row id="10">
+                  <column id="0">9143.53871</column>
+                  <column id="1">35.28409</column>
+                </row>
+                <row id="11">
+                  <column id="0">10680.9252</column>
+                  <column id="1">35.11364</column>
+                </row>
+                <row id="12">
+                  <column id="0">13750.59549</column>
+                  <column id="1">35.19886</column>
+                </row>
+                <row id="13">
+                  <column id="0">16376.87057</column>
+                  <column id="1">34.77273</column>
+                </row>
+                <row id="14">
+                  <column id="0">20677.81907</column>
+                  <column id="1">34.85795</column>
+                </row>
+                <row id="15">
+                  <column id="0">25603.52549</column>
+                  <column id="1">34.51705</column>
+                </row>
+                <row id="16">
+                  <column id="0">31704.34482</column>
+                  <column id="1">34.43182</column>
+                </row>
+                <row id="17">
+                  <column id="0">40029.90925</column>
+                  <column id="1">34.43182</column>
+                </row>
+                <row id="18">
+                  <column id="0">49088.09946</column>
+                  <column id="1">34.26136</column>
+                </row>
+                <row id="19">
+                  <column id="0">60783.71494</column>
+                  <column id="1">34.09091</column>
+                </row>
+                <row id="20">
+                  <column id="0">76742.70088</column>
+                  <column id="1">33.92045</column>
+                </row>
+                <row id="21">
+                  <column id="0">94110.19717</column>
+                  <column id="1">33.83523</column>
+                </row>
+                <row id="22">
+                  <column id="0">115408.09887</column>
+                  <column id="1">33.75</column>
+                </row>
+                <row id="23">
+                  <column id="0">140160.12385</column>
+                  <column id="1">33.75</column>
+                </row>
+                <row id="24">
+                  <column id="0">178674.1632</column>
+                  <column id="1">33.23864</column>
+                </row>
+                <row id="25">
+                  <column id="0">217003.09354</column>
+                  <column id="1">33.40909</column>
+                </row>
+                <row id="26">
+                  <column id="0">268705.74179</column>
+                  <column id="1">33.23864</column>
+                </row>
+                <row id="27">
+                  <column id="0">335987.68558</column>
+                  <column id="1">33.23864</column>
+                </row>
+                <row id="28">
+                  <column id="0">420124.26433</column>
+                  <column id="1">33.32386</column>
+                </row>
+                <row id="29">
+                  <column id="0">535588.2391</column>
+                  <column id="1">32.98295</column>
+                </row>
+                <row id="30">
+                  <column id="0">650457.93715</column>
+                  <column id="1">32.98295</column>
+                </row>
+                <row id="31">
+                  <column id="0">797676.52709</column>
+                  <column id="1">32.98295</column>
+                </row>
+                <row id="32">
+                  <column id="0">978233.20119</column>
+                  <column id="1">33.06818</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <description>Loss Tangent of 60 vol% BaTiO3/EPR composite without KH550. Taken at room temperature</description>
+          <data>
+            <AxisLabel>
+              <xName>Frequency</xName>
+              <xUnit>Hz</xUnit>
+              <yName>Loss Tangent</yName>
+            </AxisLabel>
+            <data>
+              <headers>
+                <column id="0">Frequency (Hz)</column>
+                <column id="1">Loss Tangent</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">1059.93907</column>
+                  <column id="1">0.03011</column>
+                </row>
+                <row id="1">
+                  <column id="0">1262.18669</column>
+                  <column id="1">0.02879</column>
+                </row>
+                <row id="2">
+                  <column id="0">1547.41478</column>
+                  <column id="1">0.0286</column>
+                </row>
+                <row id="3">
+                  <column id="0">1972.1676</column>
+                  <column id="1">0.02784</column>
+                </row>
+                <row id="4">
+                  <column id="0">2348.47811</column>
+                  <column id="1">0.02727</column>
+                </row>
+                <row id="5">
+                  <column id="0">3022.29657</column>
+                  <column id="1">0.02633</column>
+                </row>
+                <row id="6">
+                  <column id="0">3705.27311</column>
+                  <column id="1">0.02652</column>
+                </row>
+                <row id="7">
+                  <column id="0">4498.72957</column>
+                  <column id="1">0.02727</column>
+                </row>
+                <row id="8">
+                  <column id="0">5678.23658</column>
+                  <column id="1">0.02443</column>
+                </row>
+                <row id="9">
+                  <column id="0">6961.40065</column>
+                  <column id="1">0.02576</column>
+                </row>
+                <row id="10">
+                  <column id="0">8786.58723</column>
+                  <column id="1">0.02273</column>
+                </row>
+                <row id="11">
+                  <column id="0">10877.19349</column>
+                  <column id="1">0.025</column>
+                </row>
+                <row id="12">
+                  <column id="0">13206.46294</column>
+                  <column id="1">0.02386</column>
+                </row>
+                <row id="13">
+                  <column id="0">16508.08245</column>
+                  <column id="1">0.02405</column>
+                </row>
+                <row id="14">
+                  <column id="0">20043.16456</column>
+                  <column id="1">0.02292</column>
+                </row>
+                <row id="15">
+                  <column id="0">25298.21549</column>
+                  <column id="1">0.02386</column>
+                </row>
+                <row id="16">
+                  <column id="0">31622.7766</column>
+                  <column id="1">0.02348</column>
+                </row>
+                <row id="17">
+                  <column id="0">39146.83264</column>
+                  <column id="1">0.02424</column>
+                </row>
+                <row id="18">
+                  <column id="0">48461.09895</column>
+                  <column id="1">0.0233</column>
+                </row>
+                <row id="19">
+                  <column id="0">61763.27794</column>
+                  <column id="1">0.02292</column>
+                </row>
+                <row id="20">
+                  <column id="0">72838.25798</column>
+                  <column id="1">0.02292</column>
+                </row>
+                <row id="21">
+                  <column id="0">94650.64885</column>
+                  <column id="1">0.02254</column>
+                </row>
+                <row id="22">
+                  <column id="0">116039.73854</column>
+                  <column id="1">0.02348</column>
+                </row>
+                <row id="23">
+                  <column id="0">138181.35219</column>
+                  <column id="1">0.02311</column>
+                </row>
+                <row id="24">
+                  <column id="0">174410.66328</column>
+                  <column id="1">0.02311</column>
+                </row>
+                <row id="25">
+                  <column id="0">222284.97711</column>
+                  <column id="1">0.02348</column>
+                </row>
+                <row id="26">
+                  <column id="0">277856.28495</column>
+                  <column id="1">0.02348</column>
+                </row>
+                <row id="27">
+                  <column id="0">334099.94527</column>
+                  <column id="1">0.0233</column>
+                </row>
+                <row id="28">
+                  <column id="0">421696.50343</column>
+                  <column id="1">0.0233</column>
+                </row>
+                <row id="29">
+                  <column id="0">507056.29618</column>
+                  <column id="1">0.02424</column>
+                </row>
+                <row id="30">
+                  <column id="0">646239.14082</column>
+                  <column id="1">0.02424</column>
+                </row>
+                <row id="31">
+                  <column id="0">799999.81699</column>
+                  <column id="1">0.025</column>
+                </row>
+                <row id="32">
+                  <column id="0">961935.75439</column>
+                  <column id="1">0.02727</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+    </Electrical>
+    <Thermal>null</Thermal>
+  </PROPERTIES>
+  <MICROSTRUCTURE>
+    <LengthUnit>micrometers</LengthUnit>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5b201f0ae74a1d61fc4405a0</File>
+      <Description>Microstructure of fractured surface of 0.7 micrometers loading nanocomposite without KH550</Description>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+  </MICROSTRUCTURE>
+</PolymerNanocomposite>
