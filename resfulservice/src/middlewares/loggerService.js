@@ -16,12 +16,9 @@ const transport = {
 };
 
 exports.mmLogger = () => {
-  fs.exists('/app/logs/rest_api.log', (err, exists) => { //eslint-disable-line
-    if (err) {
-      console.log('creating logger');
-      fs.promises.mkdir('/app/logs/rest_api.log', { recursive: true }).catch(console.error);
-    }
-  });
+  if (!fs.existsSync('/app/logs')) {
+    fs.promises.mkdir('/app/logs/', { recursive: true }).catch(console.error);
+  }
   const logger = createLogger({
     levels: {
       emerg: 0,
