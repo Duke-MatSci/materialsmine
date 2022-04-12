@@ -1,0 +1,329 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ15 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>research articles</b> published in the journal {?Journal} that studied {?Material} as a constituent material and reported values of {?AttributeType}. ";
+  sp:text """
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?Journal ?Material (GROUP_CONCAT(DISTINCT ?doi; SEPARATOR=", ") AS ?ListOfDOIs) (COUNT(DISTINCT ?doi) AS ?CountOfDOIs) WHERE {
+  ?doi a dct:BibliographicResource ;
+       dct:isPartOf [ dct:title ?Journal ] ;
+      sio:hasPart ?sample .
+      ?sample a mm:PolymerNanocomposite ;
+      sio:hasComponentPart [ sio:hasRole [ a [ rdfs:label ?MaterialRole ] ] ;
+      a [ rdfs:label ?Material ] ] ;
+      sio:hasAttribute [ a ?AttributeType ; sio:hasValue ?value ]
+}
+GROUP BY ?Journal ?Material
+ORDER BY DESC (?CountOfDOIs)
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Journal";
+    schema:option [
+        rdfs:label "Macromolecules";
+        schema:value "Macromolecules";
+        schema:position 1
+      ],
+      [
+        rdfs:label "Polymer";
+        schema:value "Polymer";
+        schema:position 2
+      ],
+      [
+        rdfs:label "Composites Science and Technology";
+        schema:value "Composites Science and Technology";
+        schema:position 3
+      ],
+      [
+        rdfs:label "IEEE Trans. on Dielectrics and Electrical Insulation";
+        schema:value "IEEE Transactions on Dielectrics and Electrical Insulation";
+        schema:position 4
+      ],
+      [
+        rdfs:label "J. Applied Polymer Science";
+        schema:value "Journal of Applied Polymer Science";
+        schema:position 5
+      ],
+      [
+        rdfs:label "Carbon";
+        schema:value "Carbon";
+        schema:position 6
+      ],
+      [
+        rdfs:label "J. Polymer Science B Polymer Physics";
+        schema:value "Journal of Polymer Science Part B: Polymer Physics";
+        schema:position 7
+      ],
+      [
+        rdfs:label "J. Materials Chemistry";
+        schema:value "Journal of Materials Chemistry";
+        schema:position 8
+      ],
+      [
+        rdfs:label "ACS Applied Materials & Interfaces";
+        schema:value "ACS Applied Materials & Interfaces";
+        schema:position 9
+      ],
+      [
+        rdfs:label "Polymer Composites";
+        schema:value "Polymer Composites";
+        schema:position 10
+      ],
+      [
+        rdfs:label "Advanced Materials";
+        schema:value "Advanced Materials";
+        schema:position 11
+      ],
+      [
+        rdfs:label "J. Physical Chemistry C";
+        schema:value "The Journal of Physical Chemistry C";
+        schema:position 12
+      ],
+      [
+        rdfs:label "Polymer Degradation and Stability";
+        schema:value "Polymer Degradation and Stability";
+        schema:position 13
+      ],
+      [
+        rdfs:label "Synthetic Metals";
+        schema:value "Synthetic Metals";
+        schema:position 14
+      ],
+      [
+        rdfs:label "European Polymer Journal";
+        schema:value "European Polymer Journal";
+        schema:position 15
+      ],
+      [
+        rdfs:label "Materials Science and Engineering A";
+        schema:value "Materials Science and Engineering: A";
+        schema:position 16
+      ],
+      [
+        rdfs:label "Polymer International";
+        schema:value "Polymer International";
+        schema:position 17
+      ],
+      [
+        rdfs:label "Polymer Bulletin";
+        schema:value "Polymer Bulletin";
+        schema:position 18
+      ],
+      [
+        rdfs:label "ACS Macro Letters";
+        schema:value "ACS Macro Letters";
+        schema:position 19
+      ],
+      [
+        rdfs:label "J. Materials Science";
+        schema:value "Journal of Materials Science";
+        schema:position 20
+      ],
+      [
+        rdfs:label "Composites Part A Applied Science and Manufacturing";
+        schema:value "Composites Part A: Applied Science and Manufacturing";
+        schema:position 21
+      ],
+      [
+        rdfs:label "Nature Materials";
+        schema:value "Nature Materials";
+        schema:position 22
+      ],
+      [
+        rdfs:label "Applied Physics Letters";
+        schema:value "Applied Physics Letters";
+        schema:position 23
+      ],
+      [
+        rdfs:label "Nano Letters";
+        schema:value "Nano Letters";
+        schema:position 24
+      ],
+      [
+        rdfs:label "ACS Nano";
+        schema:value "ACS Nano";
+        schema:position 25
+      ],
+      [
+        rdfs:label "Materials Letters";
+        schema:value "Materials Letters";
+        schema:position 26
+      ],
+      [
+        rdfs:label "Materials & Design";
+        schema:value "Materials & Design";
+        schema:position 27
+      ],
+      [
+        rdfs:label "Nanotechnology";
+        schema:value "Nanotechnology";
+        schema:position 28
+      ],
+      [
+        rdfs:label "Progress in Organic Coatings";
+        schema:value "Progress in Organic Coatings";
+        schema:position 29
+      ],
+      [
+        rdfs:label "Advanced Functional Materials";
+        schema:value "Advanced Functional Materials";
+        schema:position 30
+      ],
+      [
+        rdfs:label "Chemical Physics Letters";
+        schema:value "Chemical Physics Letters";
+        schema:position 31
+      ],
+      [
+        rdfs:label "Polymers";
+        schema:value "Polymers";
+        schema:position 32
+      ],
+      [
+        rdfs:label "Nature Nanotechnology";
+        schema:value "Nature Nanotechnology";
+        schema:position 33
+      ],
+      [
+        rdfs:label "RSC Advances";
+        schema:value "RSC Advances";
+        schema:position 34
+      ],
+      [
+        rdfs:label "Physical Review Letters";
+        schema:value "Physical Review Letters";
+        schema:position 35
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Material";
+    schema:option [
+        rdfs:label "any material";
+        schema:position 1
+      ],
+      [
+        rdfs:label "PMMA";
+        schema:value "Poly(methyl methacrylate)";
+        schema:position 2
+      ],
+      [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 3
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 4
+      ],
+      [
+        rdfs:label "epoxy";
+        schema:value "DGEBA Epoxy Resin";
+        schema:position 5
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 6
+      ],
+      [
+        rdfs:label "polyethylene";
+        schema:value "Poly(ethylene)";
+        schema:position 7
+      ],
+      [
+        rdfs:label "polystyrene";
+        schema:value "Polystyrene";
+        schema:position 8
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 9
+      ],
+      [
+        rdfs:label "P2VP";
+        schema:value "Poly(2-vinyl pyridine)";
+        schema:position 10
+      ],
+      [
+        rdfs:label "PVDF";
+        schema:value "Poly(vinylidene fluoride)";
+        schema:position 11
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 12
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 13
+      ],
+      [
+        rdfs:label "nylon";
+        schema:value "Nylon 6-6";
+        schema:position 14
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "AttributeType";
+    schema:option [
+        rdfs:label "glass transition temperature";
+        schema:identifier <http://materialsmine.org/ns/GlassTransitionTemperature>;
+        schema:position 1
+      ],
+      [
+        rdfs:label "tensile stress at yield";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtYield>;
+        schema:position 2
+      ],
+      [
+        rdfs:label "tensile stress at break";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtBreak>;
+        schema:position 3
+      ],
+      [
+        rdfs:label "tan delta";
+        schema:identifier <http://materialsmine.org/ns/TanDelta>;
+        schema:position 4
+      ],
+      [
+        rdfs:label "storage modulus";
+        schema:identifier <http://materialsmine.org/ns/StorageModulus>;
+        schema:position 5
+      ],
+      [
+        rdfs:label "loss modulus";
+        schema:identifier <http://materialsmine.org/ns/LossModulus>;
+        schema:position 6
+      ],
+      [
+        rdfs:label "electrical conductivity";
+        schema:identifier <http://materialsmine.org/ns/ElectricalConductivity>;
+        schema:position 7
+      ],
+      [
+        rdfs:label "elastic modulus";
+        schema:identifier <http://materialsmine.org/ns/TensileModulus>;
+        schema:position 8
+      ],
+      [
+        rdfs:label "melting temperature";
+        schema:identifier <http://materialsmine.org/ns/MeltingTemperature>;
+        schema:position 9
+      ]
+  ].

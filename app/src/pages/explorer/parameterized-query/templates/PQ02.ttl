@@ -1,0 +1,69 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ02 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing at least {?MinFiller} constituent material(s) classified as a filler and at least {?MinMatrix} constituent material(s) classified as a matrix.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT * WHERE {
+  {
+    SELECT DISTINCT ?Sample
+    (COUNT(DISTINCT ?Filler) AS ?FillerCount) (GROUP_CONCAT(DISTINCT ?Filler ; SEPARATOR=", ") AS ?FillerMaterials)
+    (COUNT(DISTINCT ?Matrix) AS ?MatrixCount) (GROUP_CONCAT(DISTINCT ?Matrix ; SEPARATOR=", ") AS ?MatrixMaterials)
+    WHERE {
+      ?Sample a mm:PolymerNanocomposite ;
+            sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
+                                   a [ rdfs:label ?Filler ] ] ,
+                                 [ sio:hasRole [ a mm:Matrix ] ;
+                                   a [ rdfs:label ?Matrix] ]
+    }
+    GROUP BY ?Sample
+  }
+  FILTER( (?FillerCount >= ?MinFiller) && (?MatrixCount >= ?MinMatrix) )
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "MinFiller";
+    schema:option [
+        rdfs:label "1";
+        schema:value 1;
+        schema:position 1
+      ],
+      [
+        rdfs:label "2";
+        schema:value 2;
+        schema:position 2
+      ],
+      [
+        rdfs:label "3";
+        schema:value 3;
+        schema:position 3
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "MinMatrix";
+    schema:option [
+        rdfs:label "1";
+        schema:value 1;
+        schema:position 1
+      ],
+      [
+        rdfs:label "2";
+        schema:value 2;
+        schema:position 2
+      ],
+      [
+        rdfs:label "3";
+        schema:value 3;
+        schema:position 3
+      ]
+  ].
