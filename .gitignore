@@ -8,6 +8,7 @@ package-lock.json
 .env
 .env.test
 **/**/envVarFile
+**/**/env
 **/**/secrets.json
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -44,3 +45,7 @@ mockDB/es/
 
 #Min.io
 mockDB/minio/
+
+#Whyis
+**/**/__pycache__/
+**/**/celerybeat-schedule.db
