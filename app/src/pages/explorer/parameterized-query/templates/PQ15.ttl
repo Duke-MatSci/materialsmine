@@ -24,7 +24,6 @@ SELECT ?Journal ?Material (GROUP_CONCAT(DISTINCT ?doi; SEPARATOR=", ") AS ?ListO
 }
 GROUP BY ?Journal ?Material
 ORDER BY DESC (?CountOfDOIs)
-}
 """;
   spin:constraint [
     a spl:Argument ;
