@@ -14,15 +14,14 @@ export default {
   async outboundSearchRequest (context, payload) {
     const { keyPhrase, type } = payload
     let url
+    console.log('tolu', process.env.SERVICE_PORT)
     if (type === 'search') {
-      url = `http://${process.env.SERVICE_PORT}/api/search?search=${keyPhrase}`
+      url = `/api/search?search=${keyPhrase}`
     } else {
-      url = `http://${process.env.SERVICE_PORT}/api/search/autosuggest?search=${keyPhrase}`
+      url = `/api/search/autosuggest?search=${keyPhrase}`
     }
 
-    const response = await fetch(url, {
-      method: 'GET'
-    })
+    const response = await fetch(url)
 
     if (!response || response.statusText !== 'OK') {
       const error = new Error(
