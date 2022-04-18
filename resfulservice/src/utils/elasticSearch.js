@@ -14,7 +14,8 @@ class ElasticSearch {
    * Check if ES is up & running
    * @returns {Boolean} ping
    */
-  async ping (log, waitTime = 50000) {
+  // async ping (log, waitTime = 50000) {
+  async ping (log, waitTime = 1) {
     log.info('elasticsearch.ping(): Function entry');
     return new Promise((resolve, reject) => {
       const timer = setTimeout(async () => {
