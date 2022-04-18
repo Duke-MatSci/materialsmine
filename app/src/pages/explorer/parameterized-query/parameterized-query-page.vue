@@ -81,7 +81,7 @@
         >
           <yasqe
             :value="query"
-            readonly="true"
+            :readOnly="true"
           ></yasqe>
         </accordion>
       </div>
