@@ -178,7 +178,6 @@ export default {
         newIndex += this.totalTemplateCount
       }
       this.selTemplateId = this.templateIds[newIndex]
-      console.log('shifted', newIndex, this.selTemplateId, this.templateIds)
     },
     populateSelections () {
       if (!this.selectedTemplate) {
@@ -232,10 +231,8 @@ export default {
       }
     },
     async execQuery () {
-      console.log('querying....')
       this.results = null
       this.results = await querySparql(this.query)
-      console.log('done', this.results)
     }
   },
   created () {
