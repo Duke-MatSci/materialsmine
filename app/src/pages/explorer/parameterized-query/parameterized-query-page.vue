@@ -298,6 +298,11 @@ export default {
   max-width: 960px;
   margin: auto;
 }
+.button-row {
+  margin: 10px 0;
+  display: flex;
+  justify-content: flex-end;
+}
 .display {
   display: flex;
   flex-direction: row;

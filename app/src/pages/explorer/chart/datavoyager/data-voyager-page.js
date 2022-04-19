@@ -58,11 +58,7 @@ export default {
     // TODO: Link to chart editor once exists
     },
     navBack () {
-      if (this.isNewChart) {
-        this.goToChartEditor()
-      } else {
-        this.goToChartView()
-      }
+      this.$router.back()
     }
   },
   mounted () {

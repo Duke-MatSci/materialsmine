@@ -1,18 +1,20 @@
 <template>
 <div class="accordion">
-  <md-toolbar>
-    <div class="accordion-toolbar-row" @click="toggleOpen">
-      <h3 class="md-title">{{title}}</h3>
-      <div class="accordion-icons">
-        <md-icon v-show="!open">
-          expand_more
-        </md-icon>
-        <md-icon v-show="open">
-          expand_less
-        </md-icon>
+  <div @click="toggleOpen">
+    <md-toolbar>
+      <div class="accordion-toolbar-row">
+        <h3 class="md-title">{{title}}</h3>
+        <div class="accordion-icons">
+          <md-icon v-show="!open">
+            expand_more
+          </md-icon>
+          <md-icon v-show="open">
+            expand_less
+          </md-icon>
+        </div>
       </div>
-    </div>
-  </md-toolbar>
+    </md-toolbar>
+  </div>
   <div class="accordion-content" v-if="open">
     <slot></slot>
   </div>
