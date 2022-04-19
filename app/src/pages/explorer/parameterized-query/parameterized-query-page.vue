@@ -90,15 +90,37 @@
           :startOpen="true"
           title="SPARQL Results"
         >
-          <div v-if="results">
-            <yasr :results="results"></yasr>
+          <div class="results-controls">
+            <button
+              class="btn btn--primary"
+              :disabled="autoRefresh || !newQuery"
+              @click="execQuery"
+            >
+              Refresh Results
+            </button>
+            <md-switch
+              class="md-primary"
+              v-model="autoRefresh"
+            >
+              Auto Refresh
+            </md-switch>
           </div>
-          <md-progress-spinner
-            v-else
-            :md-diameter="30"
-            :md-stroke="3"
-            md-mode="indeterminate"
-          ></md-progress-spinner>
+          <div
+            class="results-progress"
+            v-show="runningQuery"
+          >
+            <md-progress-spinner
+              :md-diameter="100"
+              :md-stroke="6"
+              md-mode="indeterminate"
+            />
+          </div>
+          <div v-show="!runningQuery">
+            <yasr v-if="results" :results="results"/>
+            <p v-else class="no-results-message">
+              No results yet. Press "Refresh Results" to run the query and see results.
+            </p>
+          </div>
         </accordion>
       </div>
     </div>
@@ -128,13 +150,16 @@ export default {
   data () {
     return {
       loadingTemplates: true,
+      runningQuery: false,
       queryTemplates: {},
       TextSegmentType,
       selTemplateId: null,
       query: '',
       varSelections: {},
       results: null,
-      execQueryDebounced: debounce(this.execQuery, 300)
+      autoRefresh: false,
+      lastRunQuery: '',
+      execQueryDebounced: debounce(this.autoExecQuery, 300)
     }
   },
   computed: {
@@ -149,6 +174,9 @@ export default {
     },
     totalTemplateCount () {
       return this.templateIds.length
+    },
+    newQuery () {
+      return this.query !== this.lastRunQuery
     }
   },
   methods: {
@@ -234,7 +262,15 @@ export default {
     },
     async execQuery () {
       this.results = null
+      this.lastRunQuery = this.query
+      this.runningQuery = true
       this.results = await querySparql(this.query)
+      this.runningQuery = false
+    },
+    autoExecQuery () {
+      if (this.autoRefresh) {
+        this.execQuery()
+      }
     }
   },
   created () {
@@ -286,5 +322,23 @@ export default {
 }
 .accordion {
   margin-bottom: 20px;
+}
+.results-controls {
+  margin: 20px 10px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+
+  > * {
+    margin-right: 50px;
+  }
+}
+.results-progress {
+  display: flex;
+  justify-content: center;
+}
+.no-results-message {
+  text-align: center;
+  margin-top: 20px;
 }
 </style>
