@@ -113,7 +113,7 @@ import {
   loadSparqlTemplates,
   TextSegmentType,
   OptValueType
-} from './load-sparql-templates'
+} from './sparql-templates'
 import debounce from '@/modules/debounce'
 import accordion from '@/components/accordion.vue'
 import yasr from '@/components/explorer/yasr'
@@ -196,7 +196,6 @@ export default {
       if (!this.selectedTemplate) {
         return
       }
-      this.query = this.selectedTemplate.SPARQL
 
       // append VALUES clause to query if there are any active selections
       const activeSelections = Object.fromEntries(
@@ -227,7 +226,10 @@ export default {
           })
           .join(' ')
 
-        this.query += `\nVALUES (${varNames}) {\n  (${optVals})\n}\n`
+        const baseQuery = this.selectedTemplate.SPARQL
+        const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`
+
+        this.query = baseQuery.replace(/(?<=where\s*{)/i, valuesBlock)
       }
     },
     async execQuery () {
