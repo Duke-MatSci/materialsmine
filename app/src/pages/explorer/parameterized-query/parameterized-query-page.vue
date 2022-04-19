@@ -268,7 +268,7 @@ export default {
       this.runningQuery = false
     },
     autoExecQuery () {
-      if (this.autoRefresh) {
+      if (this.autoRefresh && this.newQuery) {
         this.execQuery()
       }
     }
@@ -287,6 +287,9 @@ export default {
       deep: true
     },
     query: {
+      handler: 'execQueryDebounced'
+    },
+    autoRefresh: {
       handler: 'execQueryDebounced'
     }
   }
