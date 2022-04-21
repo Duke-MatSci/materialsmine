@@ -28,7 +28,7 @@ export default {
     ...mapGetters('vega', ['chart']),
     isNewChart () {
     // TODO: Add ability to create new charts from datavoyager once new chart pipeline is set up
-      return false
+      return !this.chartId
     }
   },
   methods: {
@@ -48,7 +48,7 @@ export default {
     },
     selectSpec () {
     // //TODO: Will be called from saveAsChart
-    //   this.setBaseSpec(this.voyagerSpec)
+      this.setBaseSpec(this.voyagerSpec)
     //   this.goToChartEditor()
     },
     goToChartView () {
@@ -58,11 +58,7 @@ export default {
     // TODO: Link to chart editor once exists
     },
     navBack () {
-      if (this.isNewChart) {
-        this.goToChartEditor()
-      } else {
-        this.goToChartView()
-      }
+      this.$router.back()
     }
   },
   mounted () {
