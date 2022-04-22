@@ -21,7 +21,9 @@ export default {
       url = `/api/search/autosuggest?search=${keyPhrase}`
     }
 
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      method: 'GET'
+    });
 
     if (!response || response.statusText !== 'OK') {
       const error = new Error(
