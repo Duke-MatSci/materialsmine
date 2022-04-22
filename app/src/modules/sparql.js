@@ -3,13 +3,14 @@ import { fromRdf } from 'rdf-literal'
 
 const SPARQL_ENDPOINT = 'https://materialsmine.org/wi/sparql'
 
-async function querySparql (query, endpoint = SPARQL_ENDPOINT) {
+async function querySparql (query, { endpoint = SPARQL_ENDPOINT, headers = {} } = {}) {
   const urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(
     query
   )}&output=json`
   const requestOptions = {
     headers: {
-      accept: 'application/sparql-results+json'
+      accept: 'application/sparql-results+json',
+      ...headers
     }
   }
 

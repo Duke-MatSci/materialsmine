@@ -1,0 +1,94 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ14 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>characterization devices</b> linked to the method {?CharacterizationMethod}, as well as a list of research article DOIs linked to that characterization device and method.";
+  sp:text """
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT DISTINCT ?DeviceURI (COUNT(DISTINCT ?doi) AS ?ArticleCount) (GROUP_CONCAT(DISTINCT ?doi; SEPARATOR=", ") AS ?ArticleList) WHERE {
+  ?x prov:wasQuotedFrom ?doi, [ a dct:BibliographicResource ] ;
+                                prov:wasGeneratedBy [ a ?CharacterizationMethod ;
+      prov:used [ a sio:Device ; a ?DeviceURI ]  ] .
+      FILTER(!REGEX(STR(?doi), "unpublished"))
+      FILTER(REGEX(STR(?DeviceURI), "materialsmine"))
+}
+GROUP BY ?DeviceURI
+ORDER BY DESC (?ArticleCount)
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "CharacterizationMethod";
+    schema:option [
+        rdfs:label "scanning electron microscopy";
+        schema:identifier <http://materialsmine.org/ns/ScanningElectronMicroscopy>;
+        schema:position 1
+      ],
+      [
+        rdfs:label "dynamic mechanical analysis";
+        schema:identifier <http://materialsmine.org/ns/DynamicMechanicalAnalysis>;
+        schema:position 2
+      ],
+      [
+        rdfs:label "transmission electron microscopy";
+        schema:identifier <http://materialsmine.org/ns/TransmissionElectronMicroscopy>;
+        schema:position 3
+      ],
+      [
+        rdfs:label "thermogravimetric analysis";
+        schema:identifier <http://materialsmine.org/ns/ThermogravimetricAnalysis>;
+        schema:position 4
+      ],
+      [
+        rdfs:label "dielectric and impedance spectroscopy analysis";
+        schema:identifier <http://materialsmine.org/ns/DielectricandImpedanceSpectroscopyAnalysis>;
+        schema:position 5
+      ],
+      [
+        rdfs:label "differential scanning calorimetry";
+        schema:identifier <http://materialsmine.org/ns/DifferentialScanningCalorimetry>;
+        schema:position 6
+      ],
+      [
+        rdfs:label "X-ray diffraction and scattering";
+        schema:identifier <http://materialsmine.org/ns/XRayDiffractionAndScattering>;
+        schema:position 7
+      ],
+      [
+        rdfs:label "Fourier transform infrared spectroscopy";
+        schema:identifier <http://materialsmine.org/ns/FourierTransformInfraredSpectroscopy>;
+        schema:position 8
+      ],
+      [
+        rdfs:label "Raman spectroscopy";
+        schema:identifier <http://materialsmine.org/ns/RamanSpectroscopy>;
+        schema:position 9
+      ],
+      [
+        rdfs:label "X-ray photoelectron spectroscopy";
+        schema:identifier <http://materialsmine.org/ns/XRayPhotoelectronSpectroscopy>;
+        schema:position 10
+      ],
+      [
+        rdfs:label "atomic force microscopy";
+        schema:identifier <http://materialsmine.org/ns/AtomicForceMicroscopy>;
+        schema:position 11
+      ],
+      [
+        rdfs:label "optical microscopy";
+        schema:identifier <http://materialsmine.org/ns/OpticalMicroscopy>;
+        schema:position 12
+      ],
+      [
+        rdfs:label "nuclear magnetic resonance";
+        schema:identifier <http://materialsmine.org/ns/NuclearMagneticResonance>;
+        schema:position 13
+      ]
+  ].
