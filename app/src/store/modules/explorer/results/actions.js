@@ -14,7 +14,6 @@ export default {
   async outboundSearchRequest (context, payload) {
     const { keyPhrase, type } = payload
     let url
-    console.log('tolu', process.env.SERVICE_PORT)
     if (type === 'search') {
       url = `/api/search?search=${keyPhrase}`
     } else {
@@ -23,7 +22,7 @@ export default {
 
     const response = await fetch(url, {
       method: 'GET'
-    });
+    })
 
     if (!response || response.statusText !== 'OK') {
       const error = new Error(
