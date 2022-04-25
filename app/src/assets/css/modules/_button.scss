@@ -18,19 +18,24 @@ a.btn,
         border: none;
         cursor: pointer;
     }
-    
-    &:hover {
+
+    &:hover:not([disabled="disabled"]) {
         box-shadow: 0 1rem 2rem rgba($primary-black,.2);
         transform: scaleX(1.1) scaleY(1.1);
     }
-    
-    &:active,
-    &:focus {
+
+    &[disabled="disabled"] {
+        background-color: #DCDCDC;
+        color:#A5A5A5;
+        cursor: default;
+    }
+
+    &:is(:active, :focus):not([disabled="disabled"]) {
         outline: none;
         transform: translateY(-1px);
         box-shadow: 0 .5rem 1rem rgba($primary-black,.2);
     }
-    
+
     &--white {
         background-color: $primary-white;
         color: $primary-light;
@@ -79,7 +84,7 @@ a.btn,
             font-size: .8rem !important;
         }
     }
-    
+
     &::after {
         content: "";
         display: inline-block;
@@ -92,7 +97,7 @@ a.btn,
         z-index: -1;
         transition: all .4s;
     }
-    
+
     &--animated {
         animation: moveInBottom .5s ease-out .75s;
         animation-fill-mode: backwards;
