@@ -87,6 +87,15 @@
                                 </div>
                             </div>
                         </li>
+                        <li class="u_margin-right-small">
+                            <div class="nav_menu--container">
+                                <a class="u--default-size nav_menu--handler" href="#">MRS2022</a>
+                                <div class="nav_menu--siblings">
+                                    <a href="https://www.mrs.org/meetings-events/spring-meetings-exhibits/2022-mrs-spring-meeting/symposium-sessions/tutorial-sessions-detail/2022_mrs_spring_meeting/sf04/tutorial-sf04-leveraging-data-resources-for-functional" class="nav_menu--siblings-lists">Tutorial Details</a>
+                                    <a href="https://bit.ly/NMTUTORIAL" class="nav_menu--siblings-lists">Tutorial Handout</a>
+                                </div>
+                            </div>
+                        </li>
                         <li class="u_margin-right-small" v-if="$store.getters.isAuthenticated">
                             <div class="nav_menu--container">
                                 <a class="u--default-size" href="/mypage">My Portal</a>
