@@ -1,0 +1,59 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ05 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me interactive <b>charts from the gallery</b> with {?Text} in the chart description.";
+  sp:text """
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX sio: <http://semanticscience.org/resource/>
+SELECT DISTINCT * WHERE {
+  ?doi a sio:Chart ;
+       dct:description ?Description ;
+       dct:title ?Title
+  FILTER (REGEX(LCASE(STR(?Description)), ?Text))
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Text";
+    schema:option [
+        rdfs:label "hover";
+        schema:value "hover";
+        schema:position 1
+      ],
+      [
+        rdfs:label "click";
+        schema:value "click";
+        schema:position 2
+      ],
+      [
+        rdfs:label "tooltip";
+        schema:value "tooltip";
+        schema:position 3
+      ],
+      [
+        rdfs:label "zoom";
+        schema:value "zoom";
+        schema:position 4
+      ],
+      [
+        rdfs:label "select";
+        schema:value "select";
+        schema:position 5
+      ],
+      [
+        rdfs:label "interaction";
+        schema:value "interaction";
+        schema:position 6
+      ],
+      [
+        rdfs:label "mouse";
+        schema:value "mouse";
+        schema:position 7
+      ]
+  ].

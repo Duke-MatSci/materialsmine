@@ -1,0 +1,21 @@
+#!/bin/bash
+
+pushd /apps/nanomine-graph
+
+#setlr setl/dev_nanomine_files.setl.ttl
+setlr setl/ontology.setl.ttl
+
+popd
+
+pushd /apps/whyis
+
+python manage.py load -f xml -i https://github.com/MaastrichtU-IDS/semanticscience/raw/master/ontology/sio/release/sio-subset-labels.owl
+python manage.py load -f turtle -i /apps/nanomine-graph/nanomine.ttl
+python manage.py load -f turtle -i /apps/nanomine-graph/nanomine-files.ttl
+python manage.py load -i /apps/nanomine-graph/setl/xml_ingest.setl.ttl -f turtle
+
+for query_file in /apps/nanomine-graph/data/parameterized_queries/*.ttl ; do
+	python manage.py load -f turtle -i "$query_file"
+done
+
+popd

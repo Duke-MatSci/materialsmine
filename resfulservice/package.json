@@ -9,8 +9,10 @@
     ],
     "private": true,
     "dependencies": {
+        "@elastic/elasticsearch": "^8.1.0",
+        "axios": "^0.26.1",
         "bcryptjs": "^2.4.3",
-        "body-parser": "^1.19.1",
+        "body-parser": "1.19.2",
         "express": "^4.17.1",
         "express-graphql": "^0.10.0",
         "express-validator": "^6.14.0",
@@ -33,7 +35,8 @@
         "test": "mocha --recursive './spec/**/*.js'",
         "lint": "eslint src",
         "lint:test": "npm-run-all -s lint test",
-        "start:prod": "node src/server.js"
+        "start:prod": "node src/server.js",
+        "transformtiff": "node script/getTiffImage.js"
     },
     "repository": {
         "type": "git",

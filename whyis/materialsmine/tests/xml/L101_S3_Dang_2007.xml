@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L101_S3_Dang_2007</ID>
+  <Control_ID>L101_S1_Dang_2007</Control_ID>
+  <SchemaVersion>PNC_schema_010720</SchemaVersion>
+  <SchemaID>5e496fa88aba2cf1302d73e3</SchemaID>
+  <DatasetID>5e4c1081c941bb7a1270dd9d</DatasetID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Composites Science and Technology</Publication>
+        <Title>Study on microstructure and dielectric property of the BaTiO3/epoxy resin composites</Title>
+        <Author>Dang, Zhi-Min</Author>
+        <Author>Yu, Yan-Fei</Author>
+        <Author>Xu, Hai-Ping</Author>
+        <Author>Bai, Jinbo</Author>
+        <Keyword>Dielectric properties</Keyword>
+        <Keyword>Microstructure</Keyword>
+        <Keyword>Silane coupling agent</Keyword>
+        <Keyword>BaTiO3</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2008</PublicationYear>
+        <DOI>10.1016/j.compscitech.2007.05.021</DOI>
+        <Volume>68</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0266353807002199?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Key Laboratory of Beijing City on Preparation and Processing of Novel Polymer Materials and Key Laboratory of the Ministry of Education on Nanomaterials, Beijing University of Chemical Technology, Beijing 100029, PR China</Location>
+        <DateOfCitation>2015-07-24</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0266-3538</ISSN>
+          <Issue>1</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>bisphenol A epoxy resin</ChemicalName>
+        <StdChemicalName>DGEBA Epoxy Resin</StdChemicalName>
+        <uSMILES>CC(C)(C1=CC=C(OCC2CO2)C=C1)C3=CC=C(OCC4CO4)C=C3</uSMILES>
+        <Abbreviation>EPR</Abbreviation>
+        <ManufacturerOrSourceName>Dow chemical</ManufacturerOrSourceName>
+        <TradeName>DER661</TradeName>
+        <Density>
+          <description>inserted from ChemProps, NanoMine</description>
+          <value>1.13</value>
+          <unit>g/cm3</unit>
+        </Density>
+      </MatrixComponent>
+      <MatrixProcessing>
+        <ChooseParameter>
+          <Mixing>
+            <MixingMethod>dissolving</MixingMethod>
+            <ChemicalUsed>
+              <description>acetone</description>
+            </ChemicalUsed>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Additive>
+            <Description>MeTHPA was chosen as a hardener in 10/4 (EPR/MeTHPA) weight ratio</Description>
+            <Additive>MeTHPA</Additive>
+          </Additive>
+        </ChooseParameter>
+      </MatrixProcessing>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>barium titanate</ChemicalName>
+        <StdChemicalName>Barium titanate</StdChemicalName>
+        <Abbreviation>BaTiO3</Abbreviation>
+        <ManufacturerOrSourceName>Guoteng electronic ceramic company</ManufacturerOrSourceName>
+        <Density>
+          <description>inserted from ChemProps, NanoMine</description>
+          <value>6.02</value>
+          <unit>g/cm3</unit>
+        </Density>
+        <SphericalParticleDiameter>
+          <value>0.1</value>
+          <unit>micrometers</unit>
+        </SphericalParticleDiameter>
+        <SurfaceArea>
+          <specific>
+            <description>value ranges from 9 - 1.3</description>
+            <value>9</value>
+            <unit>m^2/g</unit>
+          </specific>
+        </SurfaceArea>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>silane coupling agent</ChemicalName>
+          <Abbreviation>KH550</Abbreviation>
+          <MolecularWeight>
+            <description>The amount of KH550 and BYK-9010 was 1.0 wt% in comparison with the BaTiO3 powders</description>
+          </MolecularWeight>
+        </ParticleSurfaceTreatment>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>phosphated ester</ChemicalName>
+          <Abbreviation>BYK-9010</Abbreviation>
+          <MolecularWeight>
+            <description>The amount of KH550 and BYK-9010 was 1.0 wt% in comparison with the BaTiO3 powders</description>
+          </MolecularWeight>
+        </ParticleSurfaceTreatment>
+      </FillerComponent>
+      <FillerComposition>
+        <Fraction>
+          <mass>
+            <value>0.7802981205443941</value>
+            <source>computed by NanoMine</source>
+          </mass>
+          <volume>
+            <value>0.4</value>
+            <source>reported</source>
+          </volume>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Other>Suspensions containing BaTiO3 powder, KH550 and solvent were prepared in a polytetrafluoroethylene (PTFE) bottle</Other>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>Ultrasonic was applied to the suspensions.</Description>
+          <MixingMethod>ultra-sonication</MixingMethod>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>EPR and curing agent were added into the suspensions.</Description>
+          <Additive>EPR</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Additive>
+          <Description>Catalyst 2,4-EMI was added into suspensions</Description>
+          <Additive>2-ethyl-4- methyl-imidazole</Additive>
+        </Additive>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <MixingMethod>ball milling</MixingMethod>
+          <Time>
+            <value>24</value>
+            <unit>hours</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Temperature>
+            <value>75</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>1</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>To remove solvent residue</Description>
+          <Temperature>
+            <value>75</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>30</value>
+            <unit>minutes</unit>
+          </Time>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>hot-pressing</MoldingMode>
+          <MoldingInfo>
+            <Description>Samples were cured at temperature range between 150 and 160 degrees celsius</Description>
+            <Temperature>
+              <value>150</value>
+              <unit>Celsius</unit>
+            </Temperature>
+          </MoldingInfo>
+        </Molding>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>Hitachi S-4700</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Differential_Scanning_Calorimetry>
+      <Equipment>Dupont TA 2010</Equipment>
+    </Differential_Scanning_Calorimetry>
+    <Fourier_Transform_Infrared_Spectroscopy>
+      <Equipment>Nexus 670</Equipment>
+    </Fourier_Transform_Infrared_Spectroscopy>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Electrical>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <description>Dielectric Permittivity at 10^3 Hz, taken at room temperature</description>
+          <value>16.27129074</value>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <description>Loss Tangent at 10^3 Hz, taken at room temperature</description>
+          <value>0.023529412</value>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <description>Dielectric Permittivity at 10^6 Hz, taken at room temperature</description>
+          <value>15.2407932</value>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <description>Loss Tangent at 10^6 Hz, taken at room temperature</description>
+          <value>0.024242424</value>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+    </Electrical>
+  </PROPERTIES>
+</PolymerNanocomposite>

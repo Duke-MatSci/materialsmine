@@ -17,6 +17,12 @@ const explorerRoutes = [
   {
     path: 'visualization',
     name: 'ExplorerVisualization',
+    component: () => import('@/pages/explorer/Visualization.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'images',
+    name: 'ImageVisualization',
     meta: { requiresAuth: false }
   },
   {
@@ -35,8 +41,9 @@ const explorerRoutes = [
         meta: { requiresAuth: false }
       },
       {
-        path: 'edit/:uri',
+        path: 'edit/:chartId',
         name: 'ChartEdit',
+        props: true,
         meta: { requiresAuth: false }
       },
       {
@@ -45,9 +52,24 @@ const explorerRoutes = [
         meta: { requiresAuth: false }
       },
       {
-        path: 'view/:uri',
+        path: 'view/:chartId',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'voyager/:chartId',
+        name: 'ChartDataVoyager',
+        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'voyager',
+        name: 'NewChartDataVoyager',
+        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        props: true,
         meta: { requiresAuth: false }
       }
     ]
@@ -56,6 +78,21 @@ const explorerRoutes = [
     path: 'sample/:label',
     name: 'SampleView',
     component: () => import('@/pages/explorer/sample/Sample.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'filter/property/:label',
+    name: 'FacetFilterView',
+    component: () => import('@/pages/explorer/FacetFilter.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'parameterized_query',
+    name: 'ParameterizedQuery',
+    component: () =>
+      import(
+        '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
+      ),
     meta: { requiresAuth: false }
   }
 ]

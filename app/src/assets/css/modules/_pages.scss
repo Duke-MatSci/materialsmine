@@ -16,7 +16,11 @@
     &_text {
         font-size: 1.4rem;
         text-align: left;
+    }
+
+    &_link {
         margin-top: -2rem;
+        font-size: 1.4rem;
     }
 
     &_form {
@@ -87,9 +91,9 @@
         }
     }
     &-container {
-        background-size: cover;
-        background-image: linear-gradient(90deg,$primary 25%,$primary-light),url(~@/assets/img/large-mesh.jpg) !important;
-        background-blend-mode: screen;
+        background-size: auto;
+        background-image: linear-gradient(10deg,$primary 5%,$primary-light),url(~@/assets/img/keyword.png) !important;
+        background-blend-mode: exclusion;
         padding: 1rem;
     }
     &-nav {
@@ -103,6 +107,7 @@
 
         &-card {
             height: 25rem;
+            border: 0.1rem solid #08233c;
             // background-color: $primary;
             cursor: pointer;
             margin-right: 5rem;
@@ -127,6 +132,44 @@
     }
     &-list {
         margin-bottom: 4rem;
+    }
+    &-results {
+        margin: 0rem 10rem;
+        .md-card {
+            padding: 1rem;
+            cursor: default;
+        }
+        .results_card{
+            margin: 1rem;
+            position: relative !important;
+            &-title {
+                color: $secondary !important;
+                font-weight: 900;
+                :hover {
+                    color:$primary !important;
+                }
+            }
+            &-type {
+                color: $secondary !important;
+                font-weight: 500;
+                font-size: small;
+                font-style: italic;
+            }
+            &-description {
+                color: $primary !important;
+                padding-left: 2rem;
+                font-style: italic;
+            }
+            .md-avatar {
+                border: none;
+                border-radius:0%;
+                width: 10rem;
+                height: 10rem;
+                img {
+                    object-fit: cover;
+                }
+            }
+        }
     }
 }
 
@@ -216,7 +259,7 @@
         @include respond(phone) {
             font-size: 4rem;
         }
-    
+
         &-adjust {
             @include respond(phone) {
                 font-size: 8rem !important;
@@ -298,9 +341,20 @@
             color: $primary-white !important;
             text-decoration: underline !important;
         }
-    
+
         @include respond(tab-port) {
             padding: 6rem 3rem;
         }
+    }
+}
+
+.sample-page {
+    &_header {
+        font-size: 1.6rem;
+        font-weight: 400;
+        color: $primary;
+        margin: 4rem 0 1.2rem 0;
+        padding-bottom: .5rem;
+        border-bottom: .1rem solid $primary;
     }
 }

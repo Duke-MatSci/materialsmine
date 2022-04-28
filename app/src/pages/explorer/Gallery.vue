@@ -1,19 +1,18 @@
 <template>
   <div class="gallery">
-    <spinner
-      :loading="loading"
-      text='Loading...'
-      v-if="loading"
-    />
+    <div class="section_loader" v-if="loading">
+      <spinner
+        :loading="loading"
+        text='Loading Charts'
+      />
+    </div>
     <div
       class="utility-roverflow"
       v-else
     >
       <div class="u_content__result">
         <!-- TODO TIME TO RESULT -->
-        <span
-          class="u_color"
-        >
+        <span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="otherArgs != null">{{ otherArgs }}</strong>
           <span v-if="total === 0">
             No results
@@ -27,7 +26,7 @@
           ({{(queryTimeMillis/1000).toFixed(2)}} seconds)
         </span>
       </div>
-      <div class="viz-content">
+      <div class="gallery-grid grid grid_col-5">
         <md-card
           v-for="(result, index) in items"
           :key="index"
@@ -51,10 +50,8 @@
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
-          <router-link :to="`/explorer/chart/view/${result.identifier}`">
-            <md-card-media-cover
-              md-solid
-            >
+          <router-link :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
+            <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
                   :src="getThumbnailUrl(result)"
@@ -91,6 +88,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
+import { toChartId } from '@/modules/vega-chart'
 import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 
@@ -119,7 +117,13 @@ export default {
     spinner
   },
   computed: {
-    ...mapGetters('explorer/gallery', ['items', 'page', 'total', 'totalPages', 'queryTimeMillis'])
+    ...mapGetters('explorer/gallery', [
+      'items',
+      'page',
+      'total',
+      'totalPages',
+      'queryTimeMillis'
+    ])
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
@@ -140,6 +144,9 @@ export default {
     },
     getThumbnailUrl (item) {
       return getViewUrl({ uri: item.thumbnail })
+    },
+    getChartId (chart) {
+      return toChartId(chart.identifier)
     }
   },
   async mounted () {
@@ -147,44 +154,3 @@ export default {
   }
 }
 </script>
-<style lang="scss" scoped>
-@import "@/assets/css/abstract/_mixins.scss";
-.viz-content {
-  display: grid;
-  grid-template-rows: repeat(10);
-  grid-template-columns: repeat(1, 1fr);
-  grid-gap: 0.4rem;
-  cursor: pointer;
-
-  // TODO figure out why respond fn isn't working
-  grid-template-rows: repeat(2, 1fr);
-  grid-template-columns: repeat(5, 1fr);
-  grid-gap: 1rem;
-  grid-row-gap: 5rem;
-
-  @include respond(tab-port) {
-    grid-template-rows: repeat(3, 1fr);
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(tab-land) {
-    grid-template-rows: repeat(1, 1fr);
-    grid-template-columns: repeat(3, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(desktop) {
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(4, 1fr);
-    grid-gap: 1rem;
-  }
-
-  @include respond(big-desktop) {
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(5, 1fr);
-    grid-gap: 1rem;
-    grid-row-gap: 5rem;
-  }
-}
-</style>

@@ -1,6 +1,6 @@
+const fs = require('fs');
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, label, printf, prettyPrint } = format;
-const env = process.env;
 
 const logFormat = printf(({ level, message, label, timestamp }) => {
   return `${timestamp} [${label}] ${level}: ${message}`;
@@ -8,7 +8,7 @@ const logFormat = printf(({ level, message, label, timestamp }) => {
 
 const transport = {
   file: new (transports.File)({
-    filename: env?.logfile || 'rest_api.log',
+    filename: '/app/logs/rest_api.log',
     level: 'debug',
     maxfiles: 10,
     maxsize: 52428800
@@ -16,6 +16,9 @@ const transport = {
 };
 
 exports.mmLogger = () => {
+  if (!fs.existsSync('/app/logs')) {
+    fs.promises.mkdir('/app/logs/', { recursive: true }).catch(console.error);
+  }
   const logger = createLogger({
     levels: {
       emerg: 0,

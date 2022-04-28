@@ -1,0 +1,47 @@
+@prefix : <http://materialsmine.org/ns/> .
+@prefix dc: <http://purl.org/dc/terms/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sio: <http://semanticscience.org/resource/> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix auth: <http://vocab.tw.rpi.edu/auth/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix flaskld: <http://vocab.rpi.edu/flaskld/> .
+@base <http://vocab.rpi.edu/whyis/> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+
+
+
+<http://materialsmine.org/ns/PolymerNanocomposite> a <http://nanomine.org/ns/PNCClass>.
+
+<http://nanomine.org/ns/PNCClass> rdfs:subClassOf owl:Class.
+
+<http://nanomine.org/ns/PNCClass> a owl:Class;
+  whyis:hasConstraints "class_constraints.json";
+  whyis:hasOutgoing "outgoing_class.json";
+  whyis:hasIncoming "incoming_class.json";
+  whyis:newInstanceView "new_instance_view.html";
+  whyis:hasView "class_view.html";
+  whyis:hasFacets "pnc_facets.json";
+  whyis:hasFacetValues "facet_values_20210625_HARDCODED.json".
+
+<http://materialsmine.org/gallery> a whyis:ChartVizGallery.
+
+whyis:DatasetClass a owl:Class;
+  rdfs:subClassOf owl:Class;
+  whyis:newInstanceView "dataset_new.html".
+
+:MetamaterialDataset a whyis:DatasetClass.
+:NanomaterialDataset a whyis:DatasetClass.
+
+whyis:ChartVizGallery whyis:hasView "chart_gallery.html".
+
+:NanomaterialChart a whyis:ChartClass.
+:MetamaterialChart a whyis:ChartClass.

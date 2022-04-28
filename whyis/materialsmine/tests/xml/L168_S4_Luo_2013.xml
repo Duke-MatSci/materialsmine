@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L168_S4_Luo_2013</ID>
+  <Control_ID>L168_S1_Luo_2013</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>ACS Applied Materials &#38; Interfaces</Publication>
+        <Title>Nano Ag-Deposited BaTiO3 Hybrid Particles as Fillers for Polymeric Dielectric Composites: Toward High Dielectric Constant and Suppressed Loss</Title>
+        <Author>Luo, Suibin</Author>
+        <Author>Yu, Shuhui</Author>
+        <Author>Sun, Rong</Author>
+        <Author>Wong, Ching-Ping</Author>
+        <Keyword>Ag-deposited BaTiO3</Keyword>
+        <Keyword>hetero-epitaxial interface</Keyword>
+        <Keyword>polymer matrix</Keyword>
+        <Keyword>dielectric composites</Keyword>
+        <Publisher>American Chemical Society</Publisher>
+        <PublicationYear>2014</PublicationYear>
+        <DOI>10.1021/am404556c</DOI>
+        <Volume>6</Volume>
+        <URL>https://pubs.acs.org/doi/10.1021/am404556c</URL>
+        <Language>English</Language>
+        <Location>Center for Advanced Materials, Shenzhen Institutes of Advanced Technology, Chinese Academy of Sciences , Shenzhen, Guangdong 518055, China</Location>
+        <DateOfCitation>2017-07-10</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>1944-8244</ISSN>
+          <Issue>1</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>poly(vinylidene flouride)</ChemicalName>
+        <Abbreviation>PVDF</Abbreviation>
+        <ManufacturerOrSourceName>Shanghai 3F Co.</ManufacturerOrSourceName>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>Silver nitrate</ChemicalName>
+        <Abbreviation>AgNO3</Abbreviation>
+        <ManufacturerOrSourceName>Guoyao Chemical Co. China</ManufacturerOrSourceName>
+      </FillerComponent>
+      <FillerComponent>
+        <ChemicalName>Ethylene glycol</ChemicalName>
+        <ManufacturerOrSourceName>Shanghai Lingfeng Chemical Co. China</ManufacturerOrSourceName>
+      </FillerComponent>
+      <FillerComponent>
+        <ChemicalName>barium titanate</ChemicalName>
+        <Abbreviation>BaTiO3</Abbreviation>
+        <ManufacturerOrSourceName>Shangdong Guoci Functional Materials Co., China</ManufacturerOrSourceName>
+        <TradeName>GC-BT-01</TradeName>
+        <SphericalParticleDiameter>
+          <value>100</value>
+          <unit>nm</unit>
+        </SphericalParticleDiameter>
+      </FillerComponent>
+      <FillerProcessing>
+        <ChooseParameter>
+          <Solvent>
+            <SolventName>ethylene glycol</SolventName>
+          </Solvent>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Mixing>
+            <Description>AgNO3 (5g) was dissolved in 300 mL of ethylene glycol in a 500 mL three-neck flask</Description>
+            <MixingMethod>stirring</MixingMethod>
+            <ChemicalUsed>
+              <description>AgNO3</description>
+            </ChemicalUsed>
+            <ChemicalUsed>
+              <description>ethylene glycol</description>
+            </ChemicalUsed>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Additive>
+            <Description>Followed by the addition of 5 g of BaTiO3 under magnetic stirring</Description>
+            <Additive>BaTiO3</Additive>
+            <Amount>
+              <value>5</value>
+              <unit>g</unit>
+            </Amount>
+          </Additive>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Mixing>
+            <Description>Followed by the addition of 5 g of BaTiO3 under magnetic stirring.  The crystal seeds of Ag formed after about 30 min, and the color of the mixture turned to shallow brown red, at room temperature.</Description>
+            <MixingMethod>stirring</MixingMethod>
+            <Time>
+              <value>2</value>
+              <unit>hours</unit>
+            </Time>
+            <Temperature>
+              <value>23</value>
+              <unit>Celsius</unit>
+            </Temperature>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Heating>
+            <Description>The temperature of the mixture was increased to 140 deg C in the oil base for 25 min.</Description>
+            <Temperature>
+              <value>140</value>
+              <unit>Celsius</unit>
+            </Temperature>
+            <Time>
+              <value>25</value>
+              <unit>minutes</unit>
+            </Time>
+          </Heating>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Centrifugation>Used</Centrifugation>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Drying-Evaporation>
+            <Description>The BT-Ag suspension was obtained which was rinsed and centrifuged three times with ethanol.  At last, the obtained BT-Ag hybrid particles were dried at room temperature for 24 h.</Description>
+            <Temperature>
+              <value>23</value>
+              <unit>Celsius</unit>
+            </Temperature>
+            <Time>
+              <value>24</value>
+              <unit>hours</unit>
+            </Time>
+          </Drying-Evaporation>
+        </ChooseParameter>
+      </FillerProcessing>
+      <FillerComposition>
+        <Fraction>
+          <volume>0.33</volume>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Mixing>
+          <Description>BT-Ag and PVDF powders were mixed in ethanol solution.</Description>
+          <ChemicalUsed>
+            <description>Ethanol</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>poly(vinylidene fluoride)</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>BaTiO3</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>Ag</description>
+          </ChemicalUsed>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>The suspension was stirred under ultrasonic treatment with the frequency and power of 40 kHz and 1kW, respectively, for 1 h.</Description>
+          <MixingMethod>stirring</MixingMethod>
+          <Time>
+            <value>1</value>
+            <unit>hours</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>The suspension was further magnetically stirred for 6 h.</Description>
+          <MixingMethod>stirring</MixingMethod>
+          <Time>
+            <value>6</value>
+            <unit>hours</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>The suspension was dried at 70 deg C in an oven for 12 h. then molded by hot pressing at 180 deg C and 15 MPa for 15 min.</Description>
+          <Temperature>
+            <value>70</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>12</value>
+            <unit>hours</unit>
+          </Time>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>hot-pressing</MoldingMode>
+        </Molding>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>null</Mixing>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Transmission_Electron_Microscopy>
+      <EquipmentUsed>FEI Tecnai Spirit</EquipmentUsed>
+    </Transmission_Electron_Microscopy>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>FEI Nova NanoSEM450</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Dielectric_and_Impedance_Spectroscopy_Analysis>
+      <Equipment>CS9912BX</Equipment>
+      <Description>The measurement of DC breakdown strength was carried out with a dielectric strength tester (CS9912BX, Allwin Instrument Science and Technology co. Ltd, China).</Description>
+    </Dielectric_and_Impedance_Spectroscopy_Analysis>
+    <Dielectric_and_Impedance_Spectroscopy_Analysis>
+      <Equipment>Agilent 4294A impedance analyzer</Equipment>
+      <Description>The dielectric and electrical properties were measured using an Agilent 4294A impedance analyzer impedance analyzer in the frequency range of 100 Hz to 10 MHz.  Effects of temperature on dielectric properties were investigated via Agilent 4294A connected with a THMS 600 Temperature Controlled stage and a T95-Linkpad Temperature programmer (Linkam Scientific Instruments) in a temperature range between -50 and 130 deg C.</Description>
+    </Dielectric_and_Impedance_Spectroscopy_Analysis>
+    <XRay_Diffraction_and_Scattering>
+      <Equipment>XRD, D/max-2500/PC, Rigaku Co.</Equipment>
+    </XRay_Diffraction_and_Scattering>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Electrical>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <data>
+            <description>Dielectric constant on frequency (Hz) at room temp for PVDF with 0.33 vol frac BT-Ag</description>
+            <data>
+              <headers>
+                <column id="0">Frequency (Hz)</column>
+                <column id="1">Dielectric constant, Dk</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">103.43386580610871</column>
+                  <column id="1">59.28838331283703</column>
+                </row>
+                <row id="1">
+                  <column id="0">196.45140173268106</column>
+                  <column id="1">55.79415381704672</column>
+                </row>
+                <row id="2">
+                  <column id="0">385.93153242735247</column>
+                  <column id="1">54.72637404219091</column>
+                </row>
+                <row id="3">
+                  <column id="0">784.2023736308834</column>
+                  <column id="1">53.66568914956014</column>
+                </row>
+                <row id="4">
+                  <column id="0">1540.5765554188256</column>
+                  <column id="1">51.38823195534957</column>
+                </row>
+                <row id="5">
+                  <column id="0">3130.409645257355</column>
+                  <column id="1">50.32754706271879</column>
+                </row>
+                <row id="6">
+                  <column id="0">6360.907228304632</column>
+                  <column id="1">50.47653958944284</column>
+                </row>
+                <row id="7">
+                  <column id="0">12496.091412919868</column>
+                  <column id="1">49.408759814587086</column>
+                </row>
+                <row id="8">
+                  <column id="0">24548.746742478295</column>
+                  <column id="1">49.55065745908615</column>
+                </row>
+                <row id="9">
+                  <column id="0">48226.357083404444</column>
+                  <column id="1">46.063522845520765</column>
+                </row>
+                <row id="10">
+                  <column id="0">101359.65009385569</column>
+                  <column id="1">46.219610254469785</column>
+                </row>
+                <row id="11">
+                  <column id="0">192511.85465114895</column>
+                  <column id="1">45.144735597389115</column>
+                </row>
+                <row id="12">
+                  <column id="0">391178.85087022046</column>
+                  <column id="1">42.874373285403465</column>
+                </row>
+                <row id="13">
+                  <column id="0">794864.7819399758</column>
+                  <column id="1">41.81368839277269</column>
+                </row>
+                <row id="14">
+                  <column id="0">1561523.0060004997</column>
+                  <column id="1">35.90719894049761</column>
+                </row>
+                <row id="15">
+                  <column id="0">3067633.8336662822</column>
+                  <column id="1">36.049096584996676</column>
+                </row>
+                <row id="16">
+                  <column id="0">6233348.487129236</column>
+                  <column id="1">31.35937943430139</column>
+                </row>
+                <row id="17">
+                  <column id="0">9036738.8144</column>
+                  <column id="1">30.227745719421023</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Permittivity>
+          <data>
+            <description>imaginary electric modulus on frequency (Hz) at room temp for PVDF with 0.33 vol frac BT-Ag</description>
+            <data>
+              <headers>
+                <column id="0">Frequency (Hz)</column>
+                <column id="1">Imaginary electric modulus</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">103.483728547</column>
+                  <column id="1">0.00231467679057</column>
+                </row>
+                <row id="1">
+                  <column id="0">142.906736659</column>
+                  <column id="1">0.00198622386672</column>
+                </row>
+                <row id="2">
+                  <column id="0">203.77147212</column>
+                  <column id="1">0.00188671527689</column>
+                </row>
+                <row id="3">
+                  <column id="0">281.14806522</column>
+                  <column id="1">0.00160186539651</column>
+                </row>
+                <row id="4">
+                  <column id="0">402.084588483</column>
+                  <column id="1">0.00153120052655</column>
+                </row>
+                <row id="5">
+                  <column id="0">567.32694168</column>
+                  <column id="1">0.00141781774209</column>
+                </row>
+                <row id="6">
+                  <column id="0">796.102642785</column>
+                  <column id="1">0.00139475331388</column>
+                </row>
+                <row id="7">
+                  <column id="0">1118.18824198</column>
+                  <column id="1">0.00128249257183</column>
+                </row>
+                <row id="8">
+                  <column id="0">1586.83533781</column>
+                  <column id="1">0.00123966355031</column>
+                </row>
+                <row id="9">
+                  <column id="0">2228.83397357</column>
+                  <column id="1">0.00119647102823</column>
+                </row>
+                <row id="10">
+                  <column id="0">3162.96700199</column>
+                  <column id="1">0.00117265055955</column>
+                </row>
+                <row id="11">
+                  <column id="0">4442.63380286</column>
+                  <column id="1">0.0011374905378</column>
+                </row>
+                <row id="12">
+                  <column id="0">6304.59885616</column>
+                  <column id="1">0.00112087345926</column>
+                </row>
+                <row id="13">
+                  <column id="0">8946.93744768</column>
+                  <column id="1">0.00112408268383</column>
+                </row>
+                <row id="14">
+                  <column id="0">12437.9604084</column>
+                  <column id="1">0.00110116870465</column>
+                </row>
+                <row id="15">
+                  <column id="0">17650.8698316</column>
+                  <column id="1">0.00111081011307</column>
+                </row>
+                <row id="16">
+                  <column id="0">27230.0559693</column>
+                  <column id="1">0.00112857696199</column>
+                </row>
+                <row id="17">
+                  <column id="0">37855.0045806</column>
+                  <column id="1">0.00117118595696</column>
+                </row>
+                <row id="18">
+                  <column id="0">50966.8772557</column>
+                  <column id="1">0.00123760451089</column>
+                </row>
+                <row id="19">
+                  <column id="0">70853.7424288</column>
+                  <column id="1">0.00130661577058</column>
+                </row>
+                <row id="20">
+                  <column id="0">99519.6064249</column>
+                  <column id="1">0.00146176845879</column>
+                </row>
+                <row id="21">
+                  <column id="0">139783.047775</column>
+                  <column id="1">0.00164510626463</column>
+                </row>
+                <row id="22">
+                  <column id="0">198367.923673</column>
+                  <column id="1">0.0018964946282</column>
+                </row>
+                <row id="23">
+                  <column id="0">281506.475705</column>
+                  <column id="1">0.00217394937966</column>
+                </row>
+                <row id="24">
+                  <column id="0">395397.797038</column>
+                  <column id="1">0.00252825523007</column>
+                </row>
+                <row id="25">
+                  <column id="0">555367.039109</column>
+                  <column id="1">0.00291851246913</column>
+                </row>
+                <row id="26">
+                  <column id="0">788128.519002</column>
+                  <column id="1">0.00346669819917</column>
+                </row>
+                <row id="27">
+                  <column id="0">1118443.33337</column>
+                  <column id="1">0.00394742079628</column>
+                </row>
+                <row id="28">
+                  <column id="0">1570940.87807</column>
+                  <column id="1">0.00454827119044</column>
+                </row>
+                <row id="29">
+                  <column id="0">2229342.4357</column>
+                  <column id="1">0.00512401522537</column>
+                </row>
+                <row id="30">
+                  <column id="0">3163688.56714</column>
+                  <column id="1">0.00575816440088</column>
+                </row>
+                <row id="31">
+                  <column id="0">4443647.29738</column>
+                  <column id="1">0.00629856238885</column>
+                </row>
+                <row id="32">
+                  <column id="0">6241449.14533</column>
+                  <column id="1">0.00688071250748</column>
+                </row>
+                <row id="33">
+                  <column id="0">8857320.8796</column>
+                  <column id="1">0.00729229336608</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Loss_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <data>
+            <description>Loss tangent on frequency (Hz) at room temp for PVDF with 0.33 vol frac BT-Ag</description>
+            <data>
+              <headers>
+                <column id="0">Frequency (Hz)</column>
+                <column id="1">Loss Tangent</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">104.178419275</column>
+                  <column id="1">0.0871497397247</column>
+                </row>
+                <row id="1">
+                  <column id="0">140.864614981</column>
+                  <column id="1">0.089915770557</column>
+                </row>
+                <row id="2">
+                  <column id="0">197.972521696</column>
+                  <column id="1">0.0931375076183</column>
+                </row>
+                <row id="3">
+                  <column id="0">280.146167417</column>
+                  <column id="1">0.0807910481562</column>
+                </row>
+                <row id="4">
+                  <column id="0">395.145293097</column>
+                  <column id="1">0.0730353713188</column>
+                </row>
+                <row id="5">
+                  <column id="0">557.186112476</column>
+                  <column id="1">0.0703680928935</column>
+                </row>
+                <row id="6">
+                  <column id="0">785.787236565</column>
+                  <column id="1">0.0652796944815</column>
+                </row>
+                <row id="7">
+                  <column id="0">1103.03909993</column>
+                  <column id="1">0.0634106245356</column>
+                </row>
+                <row id="8">
+                  <column id="0">1578.8044445</column>
+                  <column id="1">0.0593145673836</column>
+                </row>
+                <row id="9">
+                  <column id="0">2282.32234504</column>
+                  <column id="1">0.0583872581965</column>
+                </row>
+                <row id="10">
+                  <column id="0">3154.34750644</column>
+                  <column id="1">0.0605447975717</column>
+                </row>
+                <row id="11">
+                  <column id="0">4397.14105848</column>
+                  <column id="1">0.058275981094</column>
+                </row>
+                <row id="12">
+                  <column id="0">6303.80079475</column>
+                  <column id="1">0.0573554159738</column>
+                </row>
+                <row id="13">
+                  <column id="0">8795.32832983</column>
+                  <column id="1">0.0575914583123</column>
+                </row>
+                <row id="14">
+                  <column id="0">12530.7396707</column>
+                  <column id="1">0.0564786872878</column>
+                </row>
+                <row id="15">
+                  <column id="0">17481.7339195</column>
+                  <column id="1">0.058367025996</column>
+                </row>
+                <row id="16">
+                  <column id="0">24902.3473062</column>
+                  <column id="1">0.0599781086241</column>
+                </row>
+                <row id="17">
+                  <column id="0">35471.285653</column>
+                  <column id="1">0.0623460254169</column>
+                </row>
+                <row id="18">
+                  <column id="0">47952.9910203</column>
+                  <column id="1">0.0684887462743</column>
+                </row>
+                <row id="19">
+                  <column id="0">70467.8649812</column>
+                  <column id="1">0.071753998624</column>
+                </row>
+                <row id="20">
+                  <column id="0">98288.468484</column>
+                  <column id="1">0.0774527350827</column>
+                </row>
+                <row id="21">
+                  <column id="0">141414.675957</column>
+                  <column id="1">0.0863549032786</column>
+                </row>
+                <row id="22">
+                  <column id="0">199262.61072</column>
+                  <column id="1">0.0960326391582</column>
+                </row>
+                <row id="23">
+                  <column id="0">280735.255493</column>
+                  <column id="1">0.108091030624</column>
+                </row>
+                <row id="24">
+                  <column id="0">395496.539871</column>
+                  <column id="1">0.121154288044</column>
+                </row>
+                <row id="25">
+                  <column id="0">557078.691012</column>
+                  <column id="1">0.137060169628</column>
+                </row>
+                <row id="26">
+                  <column id="0">784690.543855</column>
+                  <column id="1">0.152649080071</column>
+                </row>
+                <row id="27">
+                  <column id="0">1116745.97525</column>
+                  <column id="1">0.170072376688</column>
+                </row>
+                <row id="28">
+                  <column id="0">1556705.30063</column>
+                  <column id="1">0.186032210805</column>
+                </row>
+                <row id="29">
+                  <column id="0">2216059.87022</column>
+                  <column id="1">0.198744776752</column>
+                </row>
+                <row id="30">
+                  <column id="0">3122115.48285</column>
+                  <column id="1">0.210948165654</column>
+                </row>
+                <row id="31">
+                  <column id="0">4399939.59162</column>
+                  <column id="1">0.217999087509</column>
+                </row>
+                <row id="32">
+                  <column id="0">6266802.85926</column>
+                  <column id="1">0.221843205593</column>
+                </row>
+                <row id="33">
+                  <column id="0">8474508.92767</column>
+                  <column id="1">0.222854815616</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <data>
+            <description>dielectric constant on temperature (C) at 1 kHz for PVDF with 0.33 vol frac BT-Ag</description>
+            <data>
+              <headers>
+                <column id="0">Temperature, C</column>
+                <column id="1">Dielectric Constant, Dk</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">-49.787595582</column>
+                  <column id="1">27.4179231286</column>
+                </row>
+                <row id="1">
+                  <column id="0">-29.940526763</column>
+                  <column id="1">35.3617426884</column>
+                </row>
+                <row id="2">
+                  <column id="0">-10.0934579439</column>
+                  <column id="1">45.0468557806</column>
+                </row>
+                <row id="3">
+                  <column id="0">10.0254885302</column>
+                  <column id="1">51.2508612418</column>
+                </row>
+                <row id="4">
+                  <column id="0">29.8725573492</column>
+                  <column id="1">56.5827405031</column>
+                </row>
+                <row id="5">
+                  <column id="0">50.5352591334</column>
+                  <column id="1">58.436471001</column>
+                </row>
+                <row id="6">
+                  <column id="0">69.8385726423</column>
+                  <column id="1">64.6360381609</column>
+                </row>
+                <row id="7">
+                  <column id="0">89.9575191164</column>
+                  <column id="1">69.0987500898</column>
+                </row>
+                <row id="8">
+                  <column id="0">109.804587935</column>
+                  <column id="1">77.0425696496</column>
+                </row>
+                <row id="9">
+                  <column id="0">129.379779099</column>
+                  <column id="1">89.3381436065</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <data>
+            <description>loss tangent on temperature (C) at 1 kHz for PVDF with 0.33 vol frac BT-Ag</description>
+            <data>
+              <headers>
+                <column id="0">Temperature, C</column>
+                <column id="1">Loss tangent</column>
+              </headers>
+              <rows>
+                <row id="0">
+                  <column id="0">-49.6080483363</column>
+                  <column id="1">0.0932629874823</column>
+                </row>
+                <row id="1">
+                  <column id="0">-29.8651094215</column>
+                  <column id="1">0.119976294412</column>
+                </row>
+                <row id="2">
+                  <column id="0">-10.3992367957</column>
+                  <column id="1">0.0760666069209</column>
+                </row>
+                <row id="3">
+                  <column id="0">9.96629181001</column>
+                  <column id="1">0.063812552398</column>
+                </row>
+                <row id="4">
+                  <column id="0">29.7175565899</column>
+                  <column id="1">0.068608019427</column>
+                </row>
+                <row id="5">
+                  <column id="0">50.0701338498</column>
+                  <column id="1">0.0904483825272</column>
+                </row>
+                <row id="6">
+                  <column id="0">70.4097597641</column>
+                  <column id="1">0.146383163251</column>
+                </row>
+                <row id="7">
+                  <column id="0">90.1383596889</column>
+                  <column id="1">0.21084386112</column>
+                </row>
+                <row id="8">
+                  <column id="0">110.164840565</column>
+                  <column id="1">0.291132953658</column>
+                </row>
+                <row id="9">
+                  <column id="0">130.168194039</column>
+                  <column id="1">0.43230493481</column>
+                </row>
+              </rows>
+            </data>
+          </data>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+      <DielectricBreakdownStrength>
+        <Condition>at 10 V/s</Condition>
+        <Profile>
+          <value>1.68</value>
+          <unit>V/m</unit>
+        </Profile>
+      </DielectricBreakdownStrength>
+      <ElectricConductivity>
+        <data>
+          <description>conductivity on frequency (Hz) at room temp for PVDF with 0.33 vol frac BT-Ag</description>
+          <data>
+            <headers>
+              <column id="0">Frequency (Hz)</column>
+              <column id="1">Conductivity (S/m)</column>
+            </headers>
+            <rows>
+              <row id="0">
+                <column id="0">104.330282686</column>
+                <column id="1">3.25871544443e-07</column>
+              </row>
+              <row id="1">
+                <column id="0">139.134212709</column>
+                <column id="1">4.55581622124e-07</column>
+              </row>
+              <row id="2">
+                <column id="0">197.824989306</column>
+                <column id="1">6.21884798796e-07</column>
+              </row>
+              <row id="3">
+                <column id="0">281.258971543</column>
+                <column id="1">8.95261745874e-07</column>
+              </row>
+              <row id="4">
+                <column id="0">395.654079827</column>
+                <column id="1">1.22894311865e-06</column>
+              </row>
+              <row id="5">
+                <column id="0">550.676244532</column>
+                <column id="1">1.65842001398e-06</column>
+              </row>
+              <row id="6">
+                <column id="0">782.938327814</column>
+                <column id="1">2.35316935959e-06</column>
+              </row>
+              <row id="7">
+                <column id="0">1101.40058504</column>
+                <column id="1">3.16460957547e-06</column>
+              </row>
+              <row id="8">
+                <column id="0">1565.89819328</column>
+                <column id="1">4.63370975611e-06</column>
+              </row>
+              <row id="9">
+                <column id="0">2202.82155454</column>
+                <column id="1">6.26108104215e-06</column>
+              </row>
+              <row id="10">
+                <column id="0">3098.73897251</column>
+                <column id="1">8.66961753663e-06</column>
+              </row>
+              <row id="11">
+                <column id="0">4405.69624143</column>
+                <column id="1">1.23508846849e-05</column>
+              </row>
+              <row id="12">
+                <column id="0">6264.09673017</column>
+                <column id="1">1.69949839343e-05</column>
+              </row>
+              <row id="13">
+                <column id="0">8811.7712105</column>
+                <column id="1">2.35851013105e-05</column>
+              </row>
+              <row id="14">
+                <column id="0">12395.3589111</column>
+                <column id="1">3.3440061423e-05</column>
+              </row>
+              <row id="15">
+                <column id="0">17436.8169392</column>
+                <column id="1">4.60330728579e-05</column>
+              </row>
+              <row id="16">
+                <column id="0">24790.9557047</column>
+                <column id="1">6.61363642062e-05</column>
+              </row>
+              <row id="17">
+                <column id="0">34874.4274424</column>
+                <column id="1">8.97921806362e-05</column>
+              </row>
+              <row id="18">
+                <column id="0">49583.8114933</column>
+                <column id="1">0.000126912973223</column>
+              </row>
+              <row id="19">
+                <column id="0">70497.4368602</column>
+                <column id="1">0.00017912053397</column>
+              </row>
+              <row id="20">
+                <column id="0">98115.8802513</column>
+                <column id="1">0.000250478301461</column>
+              </row>
+              <row id="21">
+                <column id="0">139503.275561</column>
+                <column id="1">0.000343665957728</column>
+              </row>
+              <row id="22">
+                <column id="0">198349.103276</column>
+                <column id="1">0.000470684417141</column>
+              </row>
+              <row id="23">
+                <column id="0">279013.284123</column>
+                <column id="1">0.000669386460468</column>
+              </row>
+              <row id="24">
+                <column id="0">388324.519267</column>
+                <column id="1">0.00092714198719</column>
+              </row>
+              <row id="25">
+                <column id="0">552122.333662</column>
+                <column id="1">0.00128630668019</column>
+              </row>
+              <row id="26">
+                <column id="0">776689.493245</column>
+                <column id="1">0.00175359993085</column>
+              </row>
+              <row id="27">
+                <column id="0">1104330.01758</column>
+                <column id="1">0.00236934849323</column>
+              </row>
+              <row id="28">
+                <column id="0">1537008.46596</column>
+                <column id="1">0.00322307668211</column>
+              </row>
+              <row id="29">
+                <column id="0">2208786.09587</column>
+                <column id="1">0.00445797718727</column>
+              </row>
+              <row id="30">
+                <column id="0">3107251.41351</column>
+                <column id="1">0.00592333926009</column>
+              </row>
+              <row id="31">
+                <column id="0">4417980.49558</column>
+                <column id="1">0.00808196708459</column>
+              </row>
+              <row id="32">
+                <column id="0">6148971.27652</column>
+                <column id="1">0.010959881249</column>
+              </row>
+              <row id="33">
+                <column id="0">8743017.77775</column>
+                <column id="1">0.0145437580673</column>
+              </row>
+            </rows>
+          </data>
+        </data>
+      </ElectricConductivity>
+    </Electrical>
+  </PROPERTIES>
+  <MICROSTRUCTURE>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5963c49ae74a1d5e0d19807c</File>
+      <Description>TEM image of as-synthesized BT-Ag hybrid nanoparticles</Description>
+      <MicroscopyType>TEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5963c4b6e74a1d5e0d198091</File>
+      <Description>TEM image of as-synthesized BT-Ag hybrid nanoparticles after being ultrasonically treated for 30 min in ethanol solution</Description>
+      <MicroscopyType>TEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5963c4d4e74a1d5e0d1980a5</File>
+      <Description>HRTEM image of an individual BT-Ag hybrid nanoparticle</Description>
+      <MicroscopyType>TEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5963c4f0e74a1d5e0d1980ba</File>
+      <Description>SEM image of Ag-deposited BT hybrid particle</Description>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5963c82ce74a1d5e0d198e62</File>
+      <Description>SEM image of fractured cross-section of BT-Ag - PVDF composite with 0.33 vol frac of Bt-Ag</Description>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+  </MICROSTRUCTURE>
+</PolymerNanocomposite>

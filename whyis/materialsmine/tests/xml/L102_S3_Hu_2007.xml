@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L102_S3_Hu_2007</ID>
+  <Control_ID>L102_S1_Hu_2007</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Journal of the European Ceramic Society</Publication>
+        <Title>Dielectric properties of BST/polymer composite</Title>
+        <Author>Hu, Tao</Author>
+        <Author>Juuti, Jari</Author>
+        <Author>Jantunen, Heli</Author>
+        <Author>Vilkman, Taisto</Author>
+        <Keyword>Composites</Keyword>
+        <Keyword>Dielectric properties</Keyword>
+        <Keyword>Microstructure-final</Keyword>
+        <Keyword>BST-COC</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2007</PublicationYear>
+        <DOI>10.1016/j.jeurceramsoc.2007.02.082</DOI>
+        <Volume>27</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0955221907001252?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Microelectronics and Materials Physics Laboratories, EMPART Research Group of Infotech Oulu, P.O. Box 4500, FIN-90014 University of Oulu, Finland</Location>
+        <DateOfCitation>2015-07-24</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0955-2219</ISSN>
+          <Issue>13-15</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>cyclo olefin copolymer</ChemicalName>
+        <Abbreviation>COC</Abbreviation>
+        <PolymerType>copolymer</PolymerType>
+        <ManufacturerOrSourceName>Ticona GmbH, Germany</ManufacturerOrSourceName>
+        <TradeName>Topas 8007S-04</TradeName>
+        <Density>
+          <value>1.02</value>
+          <unit>g/cm^3</unit>
+        </Density>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>barium strontium titanate</ChemicalName>
+        <Abbreviation>BST</Abbreviation>
+        <ManufacturerOrSourceName>Sigma&#8211;Aldrich Chemie GmbH, Germany</ManufacturerOrSourceName>
+        <Density>
+          <value>4.9</value>
+          <unit>g/cm^3</unit>
+        </Density>
+        <SphericalParticleDiameter>
+          <description>less than 200 nm</description>
+          <value>200</value>
+          <unit>nm</unit>
+        </SphericalParticleDiameter>
+      </FillerComponent>
+      <FillerComposition>
+        <Fraction>
+          <volume>0.05</volume>
+        </Fraction>
+      </FillerComposition>
+      <Description>Ba0.5Sr0.5TiO3</Description>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <MeltMixing>
+      <ChooseParameter>
+        <Mixing>
+          <Mixer>Torque Rheometer</Mixer>
+          <RPM>
+            <description>32-64 rpm</description>
+            <value>48</value>
+            <unit>rpm</unit>
+          </RPM>
+          <Time>
+            <value>15</value>
+            <unit>minutes</unit>
+            <uncertainty>
+              <type>absolute</type>
+              <value>5</value>
+            </uncertainty>
+          </Time>
+          <Temperature>
+            <value>230</value>
+            <unit>Celsius</unit>
+          </Temperature>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>hot-pressing</MoldingMode>
+          <MoldingInfo>
+            <Temperature>
+              <value>200</value>
+              <unit>Celsius</unit>
+            </Temperature>
+          </MoldingInfo>
+        </Molding>
+      </ChooseParameter>
+    </MeltMixing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>JEOL JSM-6400</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Dielectric_and_Impedance_Spectroscopy_Analysis>
+      <Equipment>Agilent E4991A</Equipment>
+    </Dielectric_and_Impedance_Spectroscopy_Analysis>
+    <XRay_Diffraction_and_Scattering>
+      <Equipment>Siemens D5000</Equipment>
+    </XRay_Diffraction_and_Scattering>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Electrical>
+      <AC_DielectricDispersion>
+        <Dielectric_Real_Permittivity>
+          <description>Relative permittivity at 1GHz</description>
+          <value>2.9</value>
+        </Dielectric_Real_Permittivity>
+        <Dielectric_Loss_Tangent>
+          <description>Loss Tangent at 1 GHz</description>
+          <value>0.00005</value>
+        </Dielectric_Loss_Tangent>
+      </AC_DielectricDispersion>
+    </Electrical>
+  </PROPERTIES>
+</PolymerNanocomposite>

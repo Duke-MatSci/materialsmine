@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L260_S5_Haggenmueller_2006</ID>
+  <Control_ID>L260_S1_Haggenmueller_2006</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Polymer</Publication>
+        <Title>Interfacial in situ polymerization of single wall carbon nanotube/nylon 6,6 nanocomposites</Title>
+        <Author>Haggenmueller, Reto</Author>
+        <Author>Du, Fangming</Author>
+        <Author>Fischer, John E.</Author>
+        <Author>Winey, Karen I.</Author>
+        <Keyword>Nanocomposite</Keyword>
+        <Keyword>Single wall carbon nanotube</Keyword>
+        <Keyword>In situ polymerization</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2006</PublicationYear>
+        <DOI>10.1016/j.polymer.2006.01.087</DOI>
+        <Volume>47</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0032386106001297?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Department of Materials Science and Engineering, University of Pennsylvania, Philadelphia, PA 19104-6272, USA</Location>
+        <DateOfCitation>2017-07-31</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0032-3861</ISSN>
+          <Issue>7</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>Poly[imino(1,6-dioxo-1,6-hexanediyl)imino-1,6-hexanediyl]</ChemicalName>
+        <Abbreviation>nylon 6,6</Abbreviation>
+        <MolecularWeight>
+          <description>viscosity averaged</description>
+          <value>35000</value>
+          <unit>g/mol</unit>
+        </MolecularWeight>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>single-walled carbon nanotubes</ChemicalName>
+        <Abbreviation>SWNT</Abbreviation>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>dodecylamine</ChemicalName>
+          <Abbreviation>C12H27N</Abbreviation>
+          <ManufacturerOrSourceName>Aldrich</ManufacturerOrSourceName>
+          <GraftDensity>
+            <description>the surface areas per chain are ~0.13 nm^2, which corresponds to a surface coverage of only 2.9%</description>
+            <value>7.69</value>
+            <unit>chains/nm^2</unit>
+          </GraftDensity>
+          <SurfaceChemistryProcessing>
+            <ChooseParameter>
+              <Mixing>
+                <Description>Functionalization was initiated by refluxing the SWNT at 115 &#176;C in 2.6 M nitric acid for 12 or 48 h while stirring to decorate the SWNT with carboxylic acid groups (&#8211;COOH).</Description>
+                <MixingMethod>stirring</MixingMethod>
+                <ChemicalUsed>
+                  <description>SWNT</description>
+                </ChemicalUsed>
+                <ChemicalUsed>
+                  <description>nitric acid</description>
+                  <value>2.6</value>
+                  <unit>M</unit>
+                </ChemicalUsed>
+                <Time>
+                  <value>12</value>
+                  <unit>hours</unit>
+                </Time>
+                <Temperature>
+                  <value>115</value>
+                  <unit>Celsius</unit>
+                </Temperature>
+              </Mixing>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Other>washing in water</Other>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Drying-Evaporation>
+                <Description>SWNT-COOH was dried</Description>
+              </Drying-Evaporation>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Solvent>
+                <SolventName>dimethyl formamide (DMF)</SolventName>
+              </Solvent>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Mixing>
+                <Description>these nanotubes were suspended in dimethyl formamide (DMF) to which thionyl chloride (SOCl2) was subsequently added and stirred at 70 &#176;C for 24 h to transform the &#8211;COOH groups to chloric acid (&#8211;COCl)</Description>
+                <MixingMethod>stirring</MixingMethod>
+                <ChemicalUsed>
+                  <description>SWNT-COOH</description>
+                </ChemicalUsed>
+                <ChemicalUsed>
+                  <description>dimethyl formamide (DMF)</description>
+                </ChemicalUsed>
+                <ChemicalUsed>
+                  <description>thionyl chloride (SOCl2)</description>
+                </ChemicalUsed>
+                <Time>
+                  <value>24</value>
+                  <unit>hours</unit>
+                </Time>
+                <Temperature>
+                  <value>70</value>
+                  <unit>Celsius</unit>
+                </Temperature>
+              </Mixing>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Other>washing with anhydrous THF</Other>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Drying-Evaporation>
+                <Description>SWNT-COCl was dried</Description>
+              </Drying-Evaporation>
+            </ChooseParameter>
+            <ChooseParameter>
+              <Mixing>
+                <Description>the nanotubes were stirred in excess f12 (dodecylamine, C12H27N, Aldrich) at 95 &#176;C for 96 h.</Description>
+                <MixingMethod>stirring</MixingMethod>
+                <ChemicalUsed>
+                  <description>SWNT-COCl</description>
+                </ChemicalUsed>
+                <ChemicalUsed>
+                  <description>dodecylamine (C12H27N)</description>
+                </ChemicalUsed>
+                <Time>
+                  <value>96</value>
+                  <unit>hours</unit>
+                </Time>
+                <Temperature>
+                  <value>95</value>
+                  <unit>Celsius</unit>
+                </Temperature>
+              </Mixing>
+            </ChooseParameter>
+          </SurfaceChemistryProcessing>
+        </ParticleSurfaceTreatment>
+      </FillerComponent>
+      <FillerComposition>
+        <Fraction>
+          <mass>0.02</mass>
+        </Fraction>
+      </FillerComposition>
+      <Description>2wt% SWNT-f12</Description>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <In-SituPolymerization>
+      <ChooseParameter>
+        <Solvent>
+          <SolventName>toluene</SolventName>
+        </Solvent>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>The SWNT were suspended in toluene. The in situ polymerization of nylon 6,6 in the presence of the nanotubes was performed with the same reagent ratios as described in S1 for the neat nylon 6,6.</Description>
+          <Mixer>Waring, model 51BL31</Mixer>
+          <MixingMethod>blending</MixingMethod>
+          <ChemicalUsed>
+            <description>adipoyl chloride</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>toluene</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>1,6-hexamethylene diamine</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>deionized water</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>sodium hydroxide</description>
+          </ChemicalUsed>
+          <Time>
+            <value>5</value>
+            <unit>minutes</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>To adjust the nanotube loading, the SWNT/nylon composites were dissolved in formic acid, along with commercial nylon 6,6 ( Mv = 22000 g/mol, Scientific Polymer Products) and precipitated in water.</Description>
+          <MixingMethod>dissolving</MixingMethod>
+          <ChemicalUsed>
+            <description>SWNT/nylon 6,6 composites</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>commercial nylon 6,6</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>formic acid</description>
+          </ChemicalUsed>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Other>precipitated in water</Other>
+      </ChooseParameter>
+    </In-SituPolymerization>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Differential_Scanning_Calorimetry>
+      <Equipment>Perkin&#8211;Elmer differential scanning calorimeter (DSC 7)</Equipment>
+    </Differential_Scanning_Calorimetry>
+    <Fourier_Transform_Infrared_Spectroscopy>
+      <Equipment>Perkin&#8211;Elmer 2000 FTIR spectrometer</Equipment>
+    </Fourier_Transform_Infrared_Spectroscopy>
+    <Thermogravimetric_Analysis>
+      <Equipment>SDT 2960 DTA/TGA analyzer</Equipment>
+      <Description>TA instruments</Description>
+    </Thermogravimetric_Analysis>
+    <Raman_Spectroscopy>
+      <Equipment>Renishaw micro-Raman spectrometer</Equipment>
+    </Raman_Spectroscopy>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Mechanical>
+      <Tensile>
+        <TensileModulus>
+          <description>on individual melt-spun fiber with diameter of 125&#177;7 &#956;m</description>
+          <value>2.39908256881</value>
+          <unit>GPa</unit>
+        </TensileModulus>
+      </Tensile>
+      <Tensile>
+        <TensileModulus>
+          <description>on individual melt-spun fiber with diameter of 171&#177;9 &#956;m</description>
+          <value>1.58256880734</value>
+          <unit>GPa</unit>
+        </TensileModulus>
+      </Tensile>
+    </Mechanical>
+    <Electrical>
+      <ElectricConductivity>
+        <value>3.55e-7</value>
+        <unit>S/m</unit>
+      </ElectricConductivity>
+    </Electrical>
+    <Thermal>
+      <MeasurementMethod>Perkin&#8211;Elmer differential scanning calorimeter (DSC 7)</MeasurementMethod>
+      <Crystallinity>
+        <DegreeOfCrystallization>
+          <description>tested at a heating rate of 10 &#176;C/min, the total crystallinity (~29%) did not change upon blending</description>
+          <value>0.29</value>
+        </DegreeOfCrystallization>
+      </Crystallinity>
+      <MeltingTemperature>
+        <description>The melting temperature (261 &#176;C) did not change upon blending</description>
+        <value>261</value>
+        <unit>Celsius</unit>
+      </MeltingTemperature>
+    </Thermal>
+  </PROPERTIES>
+</PolymerNanocomposite>
