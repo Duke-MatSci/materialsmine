@@ -37,6 +37,7 @@ export default {
   mounted () {
     const yasqeContext = this
     this.yasqe = new Yasqe(this.$el, {
+      readOnly: this.readOnly,
       sparql: {
         showQueryButton: !this.showBtns,
         endpoint: this.endpoint,

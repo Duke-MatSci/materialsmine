@@ -16,7 +16,11 @@
     &_text {
         font-size: 1.4rem;
         text-align: left;
+    }
+
+    &_link {
         margin-top: -2rem;
+        font-size: 1.4rem;
     }
 
     &_form {
@@ -255,7 +259,7 @@
         @include respond(phone) {
             font-size: 4rem;
         }
-    
+
         &-adjust {
             @include respond(phone) {
                 font-size: 8rem !important;
@@ -337,7 +341,7 @@
             color: $primary-white !important;
             text-decoration: underline !important;
         }
-    
+
         @include respond(tab-port) {
             padding: 6rem 3rem;
         }

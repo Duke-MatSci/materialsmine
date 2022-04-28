@@ -4,13 +4,13 @@
         class="utility-gridicon"
         v-if="!loading"
       >
-        <div> 
+        <div>
             <md-button
                 class="md-icon-button"
                 @click.native.prevent="navBack"
             >
-                <md-tooltip md-direction="bottom"> 
-                  Return to chart view 
+                <md-tooltip md-direction="bottom">
+                  Go Back
                 </md-tooltip>
               <md-icon>arrow_back</md-icon>
             </md-button>
@@ -27,16 +27,18 @@
                 <md-icon>save</md-icon>
             </md-button>
             <!-- TODO: Enable select button for new chart editing -->
-            <md-button
-            class="md-icon-button"
-            @click.native.prevent="selectSpec"
-            v-if="isNewChart && voyagerSpec"
-            >
-                <md-tooltip md-direction="bottom">
-                  Select current spec and return to Viz Editor
-                </md-tooltip>
-                <md-icon>check</md-icon>
-          </md-button>
+            <router-link :to="{ name: 'ChartCreate' }">
+              <md-button
+              class="md-icon-button"
+              @click="selectSpec"
+              v-if="isNewChart && voyagerSpec"
+              >
+                  <md-tooltip md-direction="bottom">
+                    Select current spec and return to Viz Editor
+                  </md-tooltip>
+                  <md-icon>check</md-icon>
+              </md-button>
+            </router-link>
         </div>
       </div>
     </div>
