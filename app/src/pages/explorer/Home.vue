@@ -23,6 +23,7 @@
 						</li>
 					</ul>
 				</div>
+				<router-link class="search_box_link" :to="{name:'ParameterizedQuery'}">Search using a Parameterized Query</router-link>
 				<p class="search_box_text">
 					MM Explorer is a research-focused discovery tool that enables collaboration among scholars of nano and meta materials. Browse or search information on articles, samples, images, charts, etc.
 				</p>

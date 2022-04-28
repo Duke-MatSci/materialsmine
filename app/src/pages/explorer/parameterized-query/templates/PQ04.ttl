@@ -1,0 +1,73 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ04 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>research articles</b> containing the word {?Text} in the article title.";
+  sp:text """
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT DISTINCT * WHERE {
+  ?doi a dct:BibliographicResource ;
+       dct:created ?Year ;
+       dct:title ?Title
+  FILTER (REGEX(LCASE(STR(?Title)), ?Text))
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Text";
+    schema:option [
+        rdfs:label "dielectric";
+        schema:value "dielectric";
+        schema:position 1
+      ],
+      [
+        rdfs:label "mechanical";
+        schema:value "mechanical";
+        schema:position 2
+      ],
+      [
+        rdfs:label "electrical";
+        schema:value "electrical";
+        schema:position 3
+      ],
+      [
+        rdfs:label "thermal";
+        schema:value "thermal";
+        schema:position 4
+      ],
+      [
+        rdfs:label "high";
+        schema:value "high";
+        schema:position 5
+      ],
+      [
+        rdfs:label "low";
+        schema:value "low";
+        schema:position 6
+      ],
+      [
+        rdfs:label "functionalized";
+        schema:value "functionalized";
+        schema:position 7
+      ],
+      [
+        rdfs:label "morphology";
+        schema:value "morphology";
+        schema:position 8
+      ],
+      [
+        rdfs:label "interfacial";
+        schema:value "interfacial";
+        schema:position 9
+      ],
+      [
+        rdfs:label "characterization";
+        schema:value "characterization";
+        schema:position 10
+      ]
+  ].

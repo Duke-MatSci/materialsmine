@@ -64,6 +64,13 @@ const explorerRoutes = [
         component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
         meta: { requiresAuth: false }
+      },
+      {
+        path: 'voyager',
+        name: 'NewChartDataVoyager',
+        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        props: true,
+        meta: { requiresAuth: false }
       }
     ]
   },
@@ -77,6 +84,15 @@ const explorerRoutes = [
     path: 'filter/property/:label',
     name: 'FacetFilterView',
     component: () => import('@/pages/explorer/FacetFilter.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'parameterized_query',
+    name: 'ParameterizedQuery',
+    component: () =>
+      import(
+        '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
+      ),
     meta: { requiresAuth: false }
   }
 ]
