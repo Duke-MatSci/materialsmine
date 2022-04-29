@@ -1,4 +1,5 @@
 import PQ01 from './PQ01.ttl'
+import PQ01A from './PQ01A.ttl'
 import PQ02 from './PQ02.ttl'
 import PQ03 from './PQ03.ttl'
 import PQ04 from './PQ04.ttl'
@@ -16,6 +17,7 @@ import PQ15 from './PQ15.ttl'
 
 export default [
   PQ01,
+  PQ01A,
   PQ02,
   PQ03,
   PQ04,
