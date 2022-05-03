@@ -1,2 +1,2 @@
 #/bin/bash
-gpg --quiet --batch --yes --decrypt --passphrase='$passphrase' --output ./envVarFile envVarFile.gpg
+gpg --quiet --batch --yes --decrypt --passphrase='<paste passphrase here between quote>' --output ../../.env env.gpg

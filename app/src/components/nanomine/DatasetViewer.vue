@@ -218,7 +218,7 @@ export default {
     },
     getDatasets () {
       const vm = this
-      fetch('/nmr/dataset')
+      fetch('/api/dataset')
         .then(function (resp) {
           resp.data.data.forEach(function (v) {
             vm.datasetList.push(v)
@@ -284,7 +284,7 @@ export default {
     },
     addDatasetSave () {
       const vm = this
-      fetch('/nmr/dataset/create', {
+      fetch('/api/dataset/create', {
         method: 'POST',
         body: JSON.stringify({
           dsInfo: {
