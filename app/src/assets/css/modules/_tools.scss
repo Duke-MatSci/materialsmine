@@ -1,3 +1,18 @@
+.tool{
+  &_page{
+    .md-layout-item{
+      height: fit-content;
+      width: fit-content;
+    }
+  }
+  &_set{
+    .md-layout-item{
+      height: fit-content;
+      margin: .5rem;
+    }
+  }
+}
+
 // ChemProps.vue
 .chemprops {
   html {
@@ -10,6 +25,11 @@
   .upload {
     border: 5px dashed #777777;
     min-height: 400px;
+  }
+  .md-layout-item {
+    width: max-content;
+    padding: 1rem 0rem;
+    margin-bottom: 1.5rem;
   }
 }
 
@@ -60,7 +80,7 @@
 }
 
 // EditImage.vue
-.modal {
+.editImage_modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -166,6 +186,9 @@
   .fileButton {
     margin-left: 0px;
     margin-bottom: 20px;
+    .md-button-content {
+      color: $secondary !important;
+    }
   }
 
   h4 {
