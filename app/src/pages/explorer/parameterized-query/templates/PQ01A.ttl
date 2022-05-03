@@ -6,32 +6,26 @@
 @prefix whyis: <http://vocab.rpi.edu/whyis/> .
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
 
-# This is a WIP of Bingyin's query that would compare two properties
-# I think this would require more than basic variable substitution, since different properties are queried in different ways
-
-materialsmine_templates:PQ01 a whyis:SparqlTemplate;
-  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler} filler surrounded by {?Matrix} matrix, along with the {?AmountType} fraction of filler and reported values of {?AttributeType}.";
+materialsmine_templates:PQ01A a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler} filler surrounded by {?Matrix} matrix, along with the {?AmountType} fraction of filler and reported values of {?AttributeType1} and {?AttributeType2}.";
   sp:text """
 PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX mm: <http://materialsmine.org/ns/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX dct: <http://purl.org/dc/terms/>
 SELECT DISTINCT * WHERE {
-    ?sample a mm:PolymerNanocomposite ;
-        sio:hasAttribute [  a mm:GlassTransitionTemperature ;
-                            sio:hasValue ?Tg ;
-                            sio:hasUnit [ rdfs:label "Celsius" ]
-                        ] ;
-        sio:hasComponentPart ?matrix_comp , ?filler_comp .
-    ?matrix_comp sio:hasRole [ a mm:Matrix ] ;
-                 a [ rdfs:label ?Matrix ] .
-    ?filler_comp sio:hasRole [ a mm:Filler ] ;
-                 a [ rdfs:label ?Filler ] ;
-                 sio:hasAttribute [ a mm:VolumeFraction ;
-                                    sio:hasValue ?VolFrac
-                                ] .
-    ?doi a dct:BibliographicResource ;
-         sio:hasPart ?sample .
+  ?Sample a mm:PolymerNanocomposite ;
+          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
+                                 a [ rdfs:label ?Filler ] ;
+                                 sio:hasAttribute [ a ?AmountType ;
+                                                    sio:hasValue ?FillerAmount] ] ,
+                               [ sio:hasRole [ a mm:Matrix ] ;
+                                 a [ rdfs:label ?Matrix ] ] ;
+          sio:hasAttribute [ a ?AttributeType1 ;
+                             sio:hasValue ?AttributeValue1 ;
+                             sio:hasUnit ?UnitOfMeasure1 ] ;
+          sio:hasAttribute [ a ?AttributeType2 ;
+                             sio:hasValue ?AttributeValue2 ;
+                             sio:hasUnit ?UnitOfMeasure2 ] .
 }
 """;
   spin:constraint [
@@ -211,7 +205,86 @@ SELECT DISTINCT * WHERE {
   ],
   [
     a spl:Argument ;
-    sp:varName "AttributeType";
+    sp:varName "AttributeType1";
+    schema:option [
+        rdfs:label "glass transition temperature";
+        schema:identifier <http://materialsmine.org/ns/GlassTransitionTemperature>;
+        schema:position 1
+      ],
+      [
+        rdfs:label "elastic modulus";
+        schema:identifier <http://materialsmine.org/ns/TensileModulus>;
+        schema:position 2
+      ],
+      [
+        rdfs:label "crystallization temperature";
+        schema:identifier <http://materialsmine.org/ns/CrystallizationTemperature>;
+        schema:position 3
+      ],
+      [
+        rdfs:label "elongation at break";
+        schema:identifier <http://materialsmine.org/ns/ElongationAtBreak>;
+        schema:position 4
+      ],
+      [
+        rdfs:label "tensile stress at break";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtBreak>;
+        schema:position 5
+      ],
+      [
+        rdfs:label "electrical conductivity";
+        schema:identifier <http://materialsmine.org/ns/ElectricalConductivity>;
+        schema:position 6
+      ],
+      [
+        rdfs:label "thermal decomposition temperature";
+        schema:identifier <http://materialsmine.org/ns/ThermalDecompositionTemperature>;
+        schema:position 7
+      ],
+      [
+        rdfs:label "melting temperature";
+        schema:identifier <http://materialsmine.org/ns/MeltingTemperature>;
+        schema:position 8
+      ],
+      [
+        rdfs:label "tensile stress at yield";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtYield>;
+        schema:position 9
+      ],
+      [
+        rdfs:label "volume resistivity";
+        schema:identifier <http://materialsmine.org/ns/VolumeResistivity>;
+        schema:position 10
+      ],
+      [
+        rdfs:label "flexural modulus";
+        schema:identifier <http://materialsmine.org/ns/FlexuralModulus>;
+        schema:position 11
+      ],
+      [
+        rdfs:label "thermal conductivity";
+        schema:identifier <http://materialsmine.org/ns/ThermalConductivity>;
+        schema:position 12
+      ],
+      [
+        rdfs:label "elongation at yield";
+        schema:identifier <http://materialsmine.org/ns/ElongationAtYield>;
+        schema:position 13
+      ],
+      [
+        rdfs:label "flexural stress at break";
+        schema:identifier <http://materialsmine.org/ns/FlexuralStressAtBreak>;
+        schema:position 14
+      ],
+      [
+        rdfs:label "surface resistivity";
+        schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
+        schema:position 15
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "AttributeType2";
     schema:option [
         rdfs:label "glass transition temperature";
         schema:identifier <http://materialsmine.org/ns/GlassTransitionTemperature>;
