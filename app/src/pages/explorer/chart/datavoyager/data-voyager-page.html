@@ -14,6 +14,17 @@
                 </md-tooltip>
               <md-icon>arrow_back</md-icon>
             </md-button>
+
+            <md-button
+              class="md-icon-button"
+              @click.native.prevent="toggleInstructions"
+            >
+                <md-tooltip md-direction="bottom">
+                  Toggle Instructions
+                </md-tooltip>
+              <md-icon>help_outline</md-icon>
+            </md-button>
+
             <!-- TODO: Enable save button for new chart creation -->
             <md-button
                 class="md-icon-button"
@@ -46,6 +57,32 @@
       <span class="datavoyager-title">Data Voyager</span>
       <span v-if="!isNewChart && chart && chart.title">: {{chart.title}}</span>
     </div>
+    <div class="viz-sample__content" v-if="showInstructions">
+      <div class="datavoyager">
+        <p>
+          Explore the data by dragging fields from the <b>"Data"</b> panel into 
+          slots in the "Encoding" panel.
+        </p>
+        <p>
+          If no fields are selected, Data Voyager generates 
+          Univariate Summary charts of the data.
+        </p>
+        <p>
+          Clicking on the "Specify" (<md-icon>list</md-icon>) button for an individual chart  
+          in the "Related Views" panel prompts 
+          Data Voyager to generate additional recommended charts based on the selection.
+        </p>
+        <ul>
+          <li>
+            Wildcards: Allow users to include fields without selecting a specific channel (encoding slot). 
+            Data Voyager will suggest appropriate encodings for that field.
+          </li>
+          <li>
+            Filters: Dropping a field in this slot provides filtering options on that field.
+          </li>
+        </ul>
+      </div>
+    </div>
     <div
       class="loading-dialog"
       style="margin: auto"
@@ -62,5 +99,16 @@
         :data="data"
         :spec.sync="voyagerSpec"
       ></data-voyager>
+    </div>
+    <div class="md-layout-item md-size-70">
+      <h4>
+          Voyager 2: Augmenting Visual Analysis with Partial View Specifications    
+      </h4>
+      <p>
+        Kanit Wongsuphasawat, Zening Qu, Dominik Moritz, Riley Chang, Felix Ouk, Anushka Anand, Jock Mackinlay, Bill Howe, Jeffrey Heer
+      </p>
+      <i>
+        ACM Human Factors in Computing Systems (CHI), 2017    
+      </i>
     </div>
   </div>

@@ -16,7 +16,8 @@ export default {
       specJsonEditorOpts: {
         mode: 'code',
         mainMenuBar: false
-      }
+      },
+      showInstructions: false,
     }
   },
   props: ['chartId'],
@@ -59,6 +60,9 @@ export default {
     },
     navBack () {
       this.$router.back()
+    },
+    toggleInstructions () {
+      this.showInstructions = !this.showInstructions
     }
   },
   mounted () {
