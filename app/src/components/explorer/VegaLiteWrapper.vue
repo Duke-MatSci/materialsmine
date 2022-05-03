@@ -92,10 +92,16 @@ export default {
         }
         this.$emit('new-vega-view', result.view)
         this.renderError = false
+        this.alignVegaTooltips()
       } catch (ex) {
         console.error('Error while rendering vega-lite specification', ex)
         this.renderError = true
       }
+    },
+    alignVegaTooltips () {
+      const canvas = document.getElementsByClassName('marks')[0]
+      const vegaBindings = document.getElementsByClassName('vega-bindings')[0]
+      vegaBindings.style.width = canvas.style.width
     },
     validateSpec (versionNum) {
       try {
