@@ -15,9 +15,9 @@ export default {
     const { keyPhrase, type } = payload
     let url
     if (type === 'search') {
-      url = `http://localhost:80/api/search?search=${keyPhrase}`
+      url = `/api/search?search=${keyPhrase}`
     } else {
-      url = `http://localhost:80/api/search/autosuggest?search=${keyPhrase}`
+      url = `/api/search/autosuggest?search=${keyPhrase}`
     }
 
     const response = await fetch(url, {

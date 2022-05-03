@@ -10,6 +10,12 @@ Windows OS:
 - Be sure to run the Docker installer as an administrator
 - If the Docker engine fails to start, install the latest WSL2 Linux kernel update package by following Step 4 [here](https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)
 
+
+
+# :warning ADVISORY :warning
+> Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
+
+
 ```bash
 # Run the following command from the root directory:
 # 1. Install npm @ root directory:

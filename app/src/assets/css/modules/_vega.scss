@@ -1,6 +1,9 @@
 .vega {
     &-view{
-        margin: 2.5rem
+        margin: 2.5rem;
+        .md-layout-item {
+            height: fit-content;
+        }
     }
     &-tabs{
         height:100% !important;
@@ -37,6 +40,9 @@
     &-embed{
         &-chartview{
             margin-top:5rem
+        }
+        .chart-wrapper {
+            width: fit-content;
         }
     }
     
