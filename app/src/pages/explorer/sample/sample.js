@@ -27,21 +27,21 @@ export default {
     parseHeader (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const [sampleData] = parsedData
       return sampleData
     },
     parseOtherSamples (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const links = parsedData.map(({ sample }) => sample.split('/').pop())
       return links
     },
     parseProcessLabel (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const [processLabelObject] = parsedData
       const { process_label: processLabel } = processLabelObject
       return processLabel
@@ -49,7 +49,7 @@ export default {
     parseMaterialData (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const seen = new Set()
       const filteredArr = parsedData
         .filter((item) => {
@@ -88,8 +88,7 @@ export default {
     parseCuratedProperties (data) {
       if (!data) return null
       const parseData = parseSparql(data)
-      if (parseData.length === 0) return null
-      if (!parseData.length) return null
+      if (!parseData || parseData.length === 0) return null
       const curatedProperties = parseData.map((property) => {
         const { AttrType, value, Units: units } = property
         const type = AttrType.split('/')
@@ -107,7 +106,7 @@ export default {
     parseProcessingSteps (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const steps = parsedData.map(
         ({ param_label: parameterLabel, Descr: description }) => {
           return { parameterLabel, description }
@@ -118,7 +117,7 @@ export default {
     parseSampleImages (data) {
       if (!data) return null
       const parsedData = parseSparql(data)
-      if (parsedData.length === 0) return null
+      if (!parsedData || parsedData.length === 0) return null
       const images = parsedData.map((item) => {
         return { src: item.image, alt: item.sample }
       })
