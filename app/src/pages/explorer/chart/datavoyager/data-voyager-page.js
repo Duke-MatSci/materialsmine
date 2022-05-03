@@ -17,7 +17,7 @@ export default {
         mode: 'code',
         mainMenuBar: false
       },
-      showInstructions: false,
+      showInstructions: false
     }
   },
   props: ['chartId'],
