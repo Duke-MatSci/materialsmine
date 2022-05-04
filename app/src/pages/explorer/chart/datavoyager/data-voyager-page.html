@@ -14,17 +14,6 @@
                 </md-tooltip>
               <md-icon>arrow_back</md-icon>
             </md-button>
-
-            <md-button
-              class="md-icon-button"
-              @click.native.prevent="toggleInstructions"
-            >
-                <md-tooltip md-direction="bottom">
-                  Toggle Instructions
-                </md-tooltip>
-              <md-icon>help_outline</md-icon>
-            </md-button>
-
             <!-- TODO: Enable save button for new chart creation -->
             <md-button
                 class="md-icon-button"
@@ -57,31 +46,47 @@
       <span class="datavoyager-title">Data Voyager</span>
       <span v-if="!isNewChart && chart && chart.title">: {{chart.title}}</span>
     </div>
-    <div class="viz-sample__content" v-if="showInstructions">
-      <div class="datavoyager">
-        <p>
-          Explore the data by dragging fields from the <b>"Data"</b> panel into 
-          slots in the "Encoding" panel.
-        </p>
-        <p>
-          If no fields are selected, Data Voyager generates 
-          Univariate Summary charts of the data.
-        </p>
-        <p>
-          Clicking on the "Specify" (<md-icon>list</md-icon>) button for an individual chart  
-          in the "Related Views" panel prompts 
-          Data Voyager to generate additional recommended charts based on the selection.
-        </p>
-        <ul>
-          <li>
-            Wildcards: Allow users to include fields without selecting a specific channel (encoding slot). 
-            Data Voyager will suggest appropriate encodings for that field.
-          </li>
-          <li>
-            Filters: Dropping a field in this slot provides filtering options on that field.
-          </li>
-        </ul>
-      </div>
+    <div class="datavoyager-content">
+      <accordion
+        :startOpen="true"
+        title="Instructions"
+        dense="true"
+        class="datavoyager"
+      >
+          <div class="datavoyager">
+            <p>
+              Explore the data by dragging fields from the "<b>Data</b>" panel into 
+              slots in the "<b>Encoding</b>" panel.
+            </p>
+            <p>
+              If no fields are selected, Data Voyager generates 
+              <b>Univariate Summary</b> charts of the data.
+            </p>
+            <p>
+              Clicking on the "<b>Specify</b>" (<md-icon>list</md-icon>) button for 
+              an individual chart in the "<b>Related Views</b>" panel prompts Data 
+              Voyager to generate additional recommended charts based on the selection.
+            </p>
+            <ul>
+              <li>
+                <b>Wildcards</b>: Allow users to include fields without selecting a 
+                specific channel (encoding slot). 
+                Data Voyager will suggest appropriate encodings for that field.
+              </li>
+              <li>
+                <b>Filters</b>: 
+                Dropping a field in this slot provides filtering options on that field.
+              </li>
+            </ul>
+            <p>
+              For a quick narrated walkthrough, see this 
+              <a href="https://vimeo.com/199084718" target="_blank" rel="noopener noreferrer">
+                preview video
+              </a> 
+              from the original developers.
+            </p>
+          </div> 
+      </accordion>
     </div>
     <div
       class="loading-dialog"
@@ -100,15 +105,19 @@
         :spec.sync="voyagerSpec"
       ></data-voyager>
     </div>
-    <div class="md-layout-item md-size-70">
-      <h4>
-          Voyager 2: Augmenting Visual Analysis with Partial View Specifications    
+
+    <div class="datavoyager">
+      <h4> <a href="https://idl.cs.washington.edu/papers/voyager2"> 
+        Voyager 2: Augmenting Visual Analysis with Partial View Specifications 
+        </a>
       </h4>
       <p>
-        Kanit Wongsuphasawat, Zening Qu, Dominik Moritz, Riley Chang, Felix Ouk, Anushka Anand, Jock Mackinlay, Bill Howe, Jeffrey Heer
+        Kanit Wongsuphasawat, Zening Qu, Dominik Moritz, Riley Chang, Felix Ouk, 
+        Anushka Anand, Jock Mackinlay, Bill Howe, Jeffrey Heer
       </p>
       <i>
         ACM Human Factors in Computing Systems (CHI), 2017    
       </i>
     </div>
   </div>
+</div>
