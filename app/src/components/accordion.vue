@@ -37,7 +37,7 @@ export default Vue.component('accordion', {
     dense: {
       type: Boolean,
       default: () => false
-    },
+    }
   },
   data () {
     return {
