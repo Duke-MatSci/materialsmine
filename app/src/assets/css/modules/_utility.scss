@@ -234,21 +234,24 @@
 .dialog-box {
     .md-dialog-container{
         overflow: scroll !important;
+        @include respond(tab-port) {
+            min-width: 0vh !important;
+        }
     }
     &_size {
         &-sm {
             .md-dialog-container{
-                min-width: 40vh !important;
+                min-width: 40vh;
             }
         }
         &-md {
             .md-dialog-container{
-                min-width: 60vh !important;
+                min-width: 60vh;
             }
         }
         &-lg {
             .md-dialog-container{
-                min-width: 80vh !important;
+                min-width: 80vh;
             }
         }    
     }
@@ -261,6 +264,9 @@
         & > span {
             padding: 0rem !important;
         }
+    }
+    &_content {
+        overflow: scroll;
     }
     &_actions {
         .md-button-content{
