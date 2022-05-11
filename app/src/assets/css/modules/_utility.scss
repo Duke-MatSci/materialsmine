@@ -235,7 +235,7 @@
     .md-dialog-container{
         overflow: scroll !important;
         @include respond(tab-port) {
-            min-width: 0vh !important;
+            min-width: 0 !important;
         }
     }
     &_size {
