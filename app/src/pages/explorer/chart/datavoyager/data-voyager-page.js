@@ -7,6 +7,7 @@ import { toChartUri } from '@/modules/vega-chart'
 import { querySparql, parseSparql } from '@/modules/sparql'
 import DataVoyager from '@/components/explorer/DataVoyager'
 import spinner from '@/components/Spinner'
+import accordion from '@/components/accordion.vue'
 
 export default {
   data () {
@@ -21,6 +22,7 @@ export default {
   },
   props: ['chartId'],
   components: {
+    accordion,
     DataVoyager,
     spinner
   },
