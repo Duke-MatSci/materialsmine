@@ -84,10 +84,13 @@
 }
 
 .datavoyager {
-    margin: 0rem 2.5rem;
+    margin: 1rem 2.5rem;
     &-title {
         font-weight: 500;
-        color: $primary-grey
+        color: $primary-grey;
+    }
+    ul {
+        padding-left: 2.5rem;
     }
     #voyager-embed {
         background: $primary-white;
