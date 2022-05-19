@@ -36,9 +36,15 @@
         <md-icon class="utility-navfonticon">view_comfy</md-icon>
         <span class="md-list-item-text utility-navfont">Visualize</span>
         <md-list slot="md-expand">
-          <md-list-item class="md-inset">Browse Data</md-list-item>
-          <md-list-item class="md-inset">Chart Gallery</md-list-item>
-          <md-list-item class="md-inset">Image Gallery</md-list-item>
+          <router-link to="/explorer" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate" class="md-inset">Browse Data</md-list-item>
+          </router-link>
+          <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate" class="md-inset">Chart Gallery</md-list-item>
+          </router-link>
+          <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate" class="md-inset">Image Gallery</md-list-item>
+          </router-link>
         </md-list>
       </md-list-item>
       <md-list-item md-expand>
@@ -57,7 +63,7 @@
         <md-icon class="utility-navfonticon">handyman</md-icon>
         <span class="md-list-item-text utility-navfont">Tools</span>
         <md-list slot="md-expand">
-          <router-link :to="'/nm/tools/modtools'" v-slot="{navigate, href}" custom>
+          <router-link :to="'/nm/tools/module_homepage'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Module Tools</md-list-item>
           </router-link>
           <router-link :to="'/nm/tools/simtools'" v-slot="{navigate, href}" custom>
