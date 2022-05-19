@@ -63,8 +63,8 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Visualize</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/explorer" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
-                                    <router-link to="/explorer/chart-gallery" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
-                                    <router-link to="/explorer/image-gallery" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
+                                    <router-link to="/explorer/chart" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
+                                    <router-link to="/explorer/images" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
                                 </div>
                             </div>
                         </li>
