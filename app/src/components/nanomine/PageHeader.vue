@@ -1,16 +1,17 @@
 <template>
     <div>
-        <header class="header">
-            <div class="wrapper">
-                <router-link to="/" class="header-logo">
-                    <div class="">
-                        <img src="@/assets/img/materialsmine_logo.png" alt="MaterialsMine Logo">
-                    </div>
-                </router-link>
-                <div class="nav_mobile-icon">
-                    <div class="nav_mobile-icon-menu"></div>
+        <md-app-toolbar class="md-dense md-primary" id="reset_bg">
+            <div class="md-toolbar-row">
+                <div class="md-toolbar-section-start">
+                    <md-button class="md-icon-button" @click="toggler">
+                        <md-icon>menu</md-icon>
+                    </md-button>
+
+                    <router-link to="/" class="header-logo">
+                        <span class="md-title"><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"></span>
+                    </router-link>
                 </div>
-                <div class="header_nav">
+                <div class="md-toolbar-section-end header_nav">
                     <div class="nav nav_menu u--inline">
                         <ul>
                             <li><a href="/nm">NanoMine</a></li>
@@ -32,7 +33,7 @@
                     </div>
                 </div>
             </div>
-        </header>
+        </md-app-toolbar>
         <div :class="['section_banner', info.pagetype=='home' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
                 <div v-if="info.pagetype=='home'" class="section_banner__text-content">
@@ -62,8 +63,8 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Visualize</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/explorer" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
-                                    <router-link to="/explorer/chart-gallery" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
-                                    <router-link to="/explorer/image-gallery" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
+                                    <router-link to="/explorer/chart" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
+                                    <router-link to="/explorer/images" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -111,6 +112,7 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'Header',
+  props: ['toggler'],
   computed: {
     ...mapGetters({
       info: 'appHeaderInfo'

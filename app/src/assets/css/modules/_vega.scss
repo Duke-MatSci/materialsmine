@@ -1,6 +1,9 @@
 .vega {
     &-view{
-        margin: 2.5rem
+        margin: 2.5rem;
+        .md-layout-item {
+            height: fit-content;
+        }
     }
     &-tabs{
         height:100% !important;
@@ -37,6 +40,9 @@
     &-embed{
         &-chartview{
             margin-top:5rem
+        }
+        .chart-wrapper {
+            width: fit-content;
         }
     }
     
@@ -78,10 +84,13 @@
 }
 
 .datavoyager {
-    margin: 0rem 2.5rem;
+    margin: 1rem 2.5rem;
     &-title {
         font-weight: 500;
-        color: $primary-grey
+        color: $primary-grey;
+    }
+    ul {
+        padding-left: 2.5rem;
     }
     #voyager-embed {
         background: $primary-white;

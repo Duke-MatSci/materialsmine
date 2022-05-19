@@ -12,7 +12,7 @@
 -->
 
 <template>
-  <div class='modal' v-if='value'>
+  <div class='editImage_modal' v-if='value'>
     <div class='image-cropper-container'>
 
       <h1>{{ computedTitle }}</h1>
