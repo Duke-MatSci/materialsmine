@@ -16,6 +16,11 @@ module.exports = buildSchema(`
     updateStatus(status: String!): User!
   }
 
+  type SubmittedJob {
+    id: ID!
+    jobName: String
+  }
+
   schema {
     query: RootQuery
     mutation: RootMutation
