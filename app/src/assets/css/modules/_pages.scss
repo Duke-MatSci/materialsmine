@@ -358,3 +358,27 @@
         border-bottom: .1rem solid $primary;
     }
 }
+
+
+.page-not-found {
+    padding: 50px;
+    height: 100vh;
+    text-align: center;
+    &-header {
+        padding: 1.5em 0 .3em;
+        font-size: 6em;
+        color: $primary;
+    }
+
+    p {
+        padding: 0 20em;
+
+        @include respond(tab-port) {
+            padding: 0 5em;
+        }
+
+        @include respond(phone) {
+            padding: 0;
+        }
+    }
+}
