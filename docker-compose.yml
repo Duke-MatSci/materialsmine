@@ -100,7 +100,7 @@ services:
   celery:
     depends_on:
       - redis
-      # - kg
+      - fuseki
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
@@ -111,7 +111,7 @@ services:
   celerybeat:
     depends_on:
       - redis
-      # - kg
+      - fuseki
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
@@ -122,7 +122,7 @@ services:
   whyis:
     depends_on:
       - redis
-      # - kg
+      - fuseki
     stdin_open: true
     command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 90 -b :8000
     environment:
@@ -134,11 +134,16 @@ services:
     ports:
       - '8000:8000'
   fuseki:
-    image: 'stain/jena-fuseki:4.0.0'
+    build: whyis
+    command: /opt/venv/bin/fuseki-server --mem /ds
+# Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
+#    image: 'stain/jena-fuseki:4.0.0
     restart: always
+    mem_limit: 5G
+    mem_reservation: 5G
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JVM_ARGS=-Xmx3g
+      - JVM_ARGS=-Xmx4g
     ports:
       - '3030:3030'
     volumes:
