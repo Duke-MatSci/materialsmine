@@ -1,9 +1,9 @@
-<tool-card class="md-layout-item md-size-50 md-medium-size-100 tool-card" :name="name" v-if="card">
+<tool-card class="md-layout-item md-size-45 md-medium-size-100 tool-card" :name="name" v-if="card">
   <template v-for="(_, name) in $scopedSlots" :slot="name">
     <slot :name="name" v-if="cardSlots.includes(name)"></slot>
   </template>
 </tool-card>
-<div class="md-layout md-alignment-top-center" v-else>
+<div class="tool_page md-layout md-alignment-top-center" v-else>
   <div class="md-layout-item md-size-60 md-layout md-alignment-top-center md-gutter">
     <dialog-box :active="dialogBoxActive">
       <template #title>{{ dialog.title }}</template>

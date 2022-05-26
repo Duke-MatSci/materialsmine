@@ -1,9 +1,10 @@
 <template>
 <div class="accordion">
   <div @click="toggleOpen">
-    <md-toolbar>
+    <md-toolbar :class="dense ? 'md-dense' :''">
       <div class="accordion-toolbar-row">
-        <h3 class="md-title">{{title}}</h3>
+        <h4 v-if="dense" class="md-subheader">{{title}}</h4>
+        <h3 v-else class="md-title">{{title}}</h3>
         <div class="accordion-icons">
           <md-icon v-show="!open">
             expand_more
@@ -32,6 +33,10 @@ export default Vue.component('accordion', {
     },
     title: {
       type: String
+    },
+    dense: {
+      type: Boolean,
+      default: () => false
     }
   },
   data () {

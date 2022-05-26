@@ -206,8 +206,8 @@
 }
 
 .howto_item {
-    cursor: pointer;
     &-header{
+        cursor: pointer;
         display: flex;
         display: -webkit-box;
         display: -ms-flexbox;
