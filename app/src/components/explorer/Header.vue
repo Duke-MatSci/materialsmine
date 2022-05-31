@@ -27,7 +27,7 @@
           <router-link class="tabs" to="/explorer/visualization" v-slot="{navigate, href}" custom>
               <md-tab :href="href" @click="navigate" id="tab-pages" md-label="Visualization"> </md-tab>
           </router-link>
-          <router-link class="tabs" to="/explorer/create" v-slot="{navigate, href}" custom>
+          <router-link class="tabs" to="/explorer/curate" v-slot="{navigate, href}" custom>
               <md-tab :href="href" @click="navigate" id="tab-posts" md-label="Curate"> </md-tab>
           </router-link>
         </md-tabs>

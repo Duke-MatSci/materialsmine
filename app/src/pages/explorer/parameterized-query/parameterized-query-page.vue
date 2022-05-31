@@ -93,7 +93,7 @@
                     class="btn btn--primary"
                     @click="selectQueryForVizEditor()"
                   >
-                    Open in Datavoyer
+                    Open in Datavoyager
                   </button>
                 </router-link>
               </div>
