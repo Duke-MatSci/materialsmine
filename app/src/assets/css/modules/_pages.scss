@@ -361,9 +361,13 @@
 
 
 .page-not-found {
-    padding: 50px;
+    padding: 5rem;
     height: 100vh;
     text-align: center;
+    @include respond(tab-port) {
+        padding: 1rem;
+    }
+
     &-header {
         padding: 1.5em 0 .3em;
         font-size: 6em;
