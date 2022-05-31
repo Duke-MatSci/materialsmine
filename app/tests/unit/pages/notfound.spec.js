@@ -10,6 +10,10 @@ describe('NotFound.vue', () => {
 
   enableAutoDestroy(afterEach)
 
+  it('render header correctly', () => {
+    expect(wrapper.find('header').exists()).toBe(true)
+  })
+
   it('render notfound p correctly', () => {
     expect.assertions(1)
     expect(wrapper.find('.page-not-found').exists()).toBe(true)
