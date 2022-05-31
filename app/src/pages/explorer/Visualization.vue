@@ -3,7 +3,7 @@
 		<div class="section_teams">
 			<div class="search_box">
 				<h2 class="search_box_header u_margin-bottom-big">Gallery Categories:</h2>
-                <div class="md-layout md-gutter">
+                <div class="md-layout md-gutter utility_flex_mobile">
                     <div class="md-layout-item">&nbsp;</div>
                     <div class="md-layout-item">
                         <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>

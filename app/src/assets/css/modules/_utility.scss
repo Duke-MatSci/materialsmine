@@ -61,16 +61,16 @@
         font-size: 5rem;
 
         @include respond(tab-land){
-            top: -23px;
-            font-size: 4.5rem;
+            top: 0px;
+            font-size: 3.5rem;
         }
         @include respond(tab-port){
-            top: -20px;
-            font-size: 4rem;
+            top: 0;
+            font-size: 3rem;
         }
         @include respond(phone){
             top: -10px;
-            font-size: 3rem;
+            font-size: 2.3rem;
         }
         &_subtitle {
             font-size: 2.5rem;
@@ -498,6 +498,12 @@
                     color: $primary-white !important;
                 }
             }
+        }
+    }
+    &_flex_mobile {
+        @include respond(phone) {
+            display: flex !important;
+            flex-direction: column !important;
         }
     }
 }

@@ -32,7 +32,7 @@
 		<div class="explorer_page-container" v-if="!searchEnabled">
 			<div class="explorer_page-nav">
 				<div class="teams_list explorer_page-list">
-					<ul>
+					<ul class="utility_flex_mobile">
 						<li v-for="link in pageNavLinks" :key="link.text">
 							<router-link :to="'/' + link.link" v-slot="{navigate, href}" custom>
 								<div class="teams_container explorer_page-nav-card" :href="href" @click="navigate">
