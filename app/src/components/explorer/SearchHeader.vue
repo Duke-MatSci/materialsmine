@@ -1,15 +1,17 @@
 <template>
     <div class="explorer_page_header">
         <md-card style="padding:2rem; margin:2rem; z-index: 10">
-        <div class="search_box_form">
-            <div class="form__group search_box_form-item-1">
-                <input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
-                <label htmlFor="search" class="form__label search_box_form_label">Search</label>
-            </div>
-            <div class="form__group search_box_form-item-2">
-                <button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
-            </div>
-        </div>
+        <form class="form" @submit.prevent="submitSearch">
+          <div class="search_box_form">
+              <div class="form__group search_box_form-item-1">
+                  <input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
+                  <label htmlFor="search" class="form__label search_box_form_label">Search</label>
+              </div>
+              <div class="form__group search_box_form-item-2">
+                  <button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
+              </div>
+          </div>
+        </form>
         <div class="search-dropdown-menu_parent" v-if="!!suggestions.length">
 					<ul class="search-dropdown-menu">
 						<li v-for="(suggestion, index) in suggestions" :key="index" class="" @click.prevent="submitSearch(suggestion)">
