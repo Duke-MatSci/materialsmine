@@ -66,7 +66,7 @@ export default {
     return {
       pageNavLinks: [
         { icon: 'grid_view', text: 'Gallery', link: 'explorer/visualization' },
-        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/create' },
+        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/curate' },
         { icon: 'help', text: 'Help', link: 'nm/how' }
       ]
     }
