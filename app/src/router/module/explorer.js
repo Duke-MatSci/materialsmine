@@ -26,7 +26,7 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'create',
+    path: 'curate',
     name: 'ExplorerCreate',
     meta: { requiresAuth: false }
   },

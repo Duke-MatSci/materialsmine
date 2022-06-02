@@ -29,7 +29,7 @@ export default {
     }
   },
   methods: {
-    toggleMenuVisibility() {
+    toggleMenuVisibility () {
       this.menuVisible = !this.menuVisible
     }
   }

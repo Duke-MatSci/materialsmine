@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div @click="disableRender">
 		<!-- <facet-panel :searchEnabled="searchEnabled" class="facet_panel" /> -->
 		<facet-panel class="facet_panel" />
 		<div class="section_teams" v-if="!searchEnabled">
@@ -16,7 +16,7 @@
 						</div>
 					</div>
 				</form>
-				<div class="search-dropdown-menu_parent" v-if="!!suggestions.length">
+				<div class="search-dropdown-menu_parent" v-if="!!suggestions.length && enableAutosuggest">
 					<ul class="search-dropdown-menu" style="width:100%">
 						<li v-for="(suggestion, index) in suggestions" :key="index" class="" @click.prevent="submitSearch(suggestion)">
 							<a href="#">{{ suggestion }}</a>
@@ -66,7 +66,7 @@ export default {
     return {
       pageNavLinks: [
         { icon: 'grid_view', text: 'Gallery', link: 'explorer/visualization' },
-        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/create' },
+        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/curate' },
         { icon: 'help', text: 'Help', link: 'nm/how' }
       ]
     }
@@ -78,6 +78,14 @@ export default {
   },
   async mounted () {
     await this.$store.dispatch('explorer/facetFilterMaterials')
+  },
+  methods: {
+    async disableRender (e) {
+      const selected = e.target.closest('.search_box')
+      if (!selected) {
+        this.enableAutosuggest = false
+      }
+    }
   }
 }
 </script>

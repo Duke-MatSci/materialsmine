@@ -6,12 +6,18 @@ import { mapMutations, mapGetters } from 'vuex'
  * Both: 'Keyword Search' & 'Autosuggest'
  */
 export default {
+  data () {
+    return {
+      enableAutosuggest: true
+    }
+  },
   computed: {
     searchWord: {
       get () {
         return this.$store.getters['explorer/getSearchKeyword']
       },
       async set (payload) {
+        this.enableAutosuggest = true
         await this.$store.commit('explorer/setSearchKeyword', payload)
         await this.requestSearch(payload)
       }
