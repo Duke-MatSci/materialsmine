@@ -163,6 +163,18 @@ export default {
     }
   },
 
+  computed: {
+    sampleId () {
+      return this.$route.params.label
+    },
+    sampleYear () {
+      return this.$route.params.label.split('-').pop()
+    },
+    sampleAuthor () {
+      return this.$route.params.label.split('-').slice(0, -1).pop()
+    }
+  },
+
   watch: {
     $route: 'fetchSamplePageData'
   },

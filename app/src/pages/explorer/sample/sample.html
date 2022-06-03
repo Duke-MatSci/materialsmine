@@ -3,59 +3,63 @@
     <spinner :loading="loading" :text="'Loading sample page'" />
   </div>
   <div v-else>
-    <div v-if="header" data-test="header">
-      <h1 class="visualize_header-h1 article_title u_centralize_text">Sample ID: {{ this.$route.params.label.toUpperCase() }}</h1>
-      <div class="u_centralize_text utility-color utility-line-height-sm">
-        <span class="utility-navfonticon">{{ header.sample_label.toUpperCase() }}</span>
-        <span class="utility-navfonticon">{{ header.process_label.toUpperCase() }}</span>
-        <div>DOI: {{ header.DOI }}</div>
-      </div>
-    </div>
-    <div style="max-width: 99%;">
+    <div style="max-width: 99%">
       <div class="md-layout md-gutter" :class="`md-alignment-top-center`">
         <div class="md-layout-item md-size-50">
+          <div v-if="header" data-test="header">
+            <h1 class="md-headline article_title u_centralize_text">
+              {{`${header.sample_label.toUpperCase()} ${header.process_label.toUpperCase()}`}}
+            </h1>
+          </div>
+          <h2 class="sample-page_header">Metadata:</h2>
+          <div class="utility-color utility-line-height-sm">
+            <p style="text-transform: capitalize">Author: {{ sampleAuthor }}</p>
+            <p>Year: {{ sampleYear }}</p>
+            <p>DOI: {{ header.DOI }}</p>
+            <p>{{`Sample ID: ${this.$route.params.label.toUpperCase()}`}}</p>
+          </div>
           <div v-if="materialComponents" data-test="materialComponents">
             <h2 class="sample-page_header">Material Components and Attributes:</h2>
             <ul v-for="(material, index) in materialComponents" :key="index">
               <li>Class: {{ material.class }}</li>
               <li>Role: {{ material.role }}</li>
               <li v-for="(property, index) in material.materialProperties" :key="index">
-                <span>{{ property.type }}</span>:
-                <span>{{ property.value }}</span>
-                <span>{{ property.units }}</span>
+                {{`${property.type}: ${property.value} ${property.units.toLowerCase()}`}}
               </li>
             </ul>
           </div>
-  
+
           <div v-if="sampleImages" data-test="sampleImages">
             <h2 class="sample-page_header">Sample Images</h2>
-            <img v-for="(image,index) in sampleImages" :key="index" :src="image.src" :alt="image.alt" />
+            <img
+              v-for="(image,index) in sampleImages"
+              :key="index"
+              :src="image.src"
+              :alt="image.alt"
+            />
           </div>
-  
+
           <div v-if="curatedProperties" data-test="curatedProperties">
             <h2 class="sample-page_header">Curated Properties of Nanocomposite Sample</h2>
             <div>Scalar attributes:</div>
             <ul>
               <li v-for="(property, index) in curatedProperties" :key="index">
-                <span>{{ property.type }}:</span>
-                <span>{{ property.value }}</span>
-                <span>{{ property.units }}</span>
+                {{`${property.type}: ${property.value} ${property.units.toLowerCase()}` }}
               </li>
             </ul>
           </div>
-  
+
           <div v-if="processingSteps && processLabel">
             <h2 class="sample-page_header">Curated Processing Steps and Parameters</h2>
             <div data-test="processLabel">Class: {{ processLabel }}</div>
             <div>Processing Steps:</div>
             <ul>
               <li v-for="(step, index) in processingSteps" :key="index" data-test="processingSteps">
-                <span>{{ step.parameterLabel }}</span>
-                {{ step.description }}
+                <span class="md-body-2">{{ step.parameterLabel }} </span> | {{ step.description }}
               </li>
             </ul>
           </div>
-  
+
           <div v-if="otherSamples" data-test="otherSamples">
             <h2 class="sample-page_header">Other Samples from this Research Article</h2>
             <div>
