@@ -7,6 +7,7 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle }}</h1>
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>
@@ -171,6 +172,11 @@ export default {
     },
     newQuery () {
       return this.query !== this.lastRunQuery
+    },
+    pageTitle () {
+      const selectionsKeys = Object.keys(this.varSelections)
+      const title = this.varSelections[selectionsKeys[3]]
+      return title[0].toUpperCase() + title.substring(1)
     }
   },
   methods: {

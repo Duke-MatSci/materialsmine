@@ -27,7 +27,8 @@ const explorerRoutes = [
   },
   {
     path: 'curate',
-    name: 'ExplorerCreate',
+    name: 'ExplorerCurate',
+    component: () => import('@/pages/explorer/Curate.vue'),
     meta: { requiresAuth: false }
   },
   {
