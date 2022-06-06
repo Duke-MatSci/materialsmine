@@ -10,7 +10,7 @@ module.exports = {
       const signed = jwt.sign(
         payload,
         getTkns(req),
-        { expiresIn: '8h' }
+        { expiresIn: req.timer || '8h' }
       );
       return signed;
     } catch (err) {
