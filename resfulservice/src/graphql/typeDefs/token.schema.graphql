@@ -1,0 +1,5 @@
+type Token {
+  token: String!
+  createtedAt: String!
+  duration: String!
+}

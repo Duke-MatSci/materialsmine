@@ -1,0 +1,6 @@
+type ApiAccess {
+  _id: ID!
+  user: String!
+  key: String!
+  token: String!
+}

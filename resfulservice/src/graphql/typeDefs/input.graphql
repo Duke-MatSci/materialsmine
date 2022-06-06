@@ -1,0 +1,32 @@
+input userIdInput {
+  _id: ID!
+}
+
+input createAPIAccessInput {
+  key: String!
+}
+input usersQueryInput {
+  pageNumber: Int
+  pageSize: Int
+}
+
+input createUserInput {
+  alias: String!
+  userid: String!
+  givenName: String!
+  surName: String!
+  displayName: String!
+  email: String!
+  key: String!
+}
+
+input updateUserInput {
+  _id: ID!
+  alias: String
+  userid: String
+  givenName: String
+  surName: String
+  displayName: String
+  email: String
+  key: String
+}

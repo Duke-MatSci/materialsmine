@@ -2,7 +2,6 @@ const bodyParser = require('body-parser');
 const acceptedHeaders = require('./accept');
 const getEnv = require('./parseEnv');
 const { fileMgr, fileServer } = require('./fileStorage');
-const mmGraphQL = require('../graphql');
 const { logParser, mmLogger } = require('./loggerService');
 
 const log = mmLogger();
@@ -12,15 +11,12 @@ const log = mmLogger();
  * global middleware services for the REST API
  * @param {*} app Express app object
  */
-const globalMiddleWare = (app) => {
+const globalMiddleWare = async (app) => {
   app.use(bodyParser.json());
-  app.use(
-    (req, res, next) => logParser(log, req, next)
-  );
+  app.use((req, res, next) => logParser(log, req, next));
   app.use(fileMgr);
   app.use('/mm_fils', fileServer);
   app.use(acceptedHeaders);
-  app.use('/graphql', mmGraphQL);
   app.use(getEnv);
 };
 

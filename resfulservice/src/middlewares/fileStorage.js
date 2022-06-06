@@ -30,7 +30,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const fileMgr = multer({ storage: fileStorage, fileFilter: fileFilter }).fields([{ name: 'uploadfile', maxCount: 20 }]);
+const fileMgr = multer({ storage: fileStorage, fileFilter }).fields([{ name: 'uploadfile', maxCount: 20 }]);
 
 const fileServer = express.static(path.join(__dirname, 'filestore'));
 

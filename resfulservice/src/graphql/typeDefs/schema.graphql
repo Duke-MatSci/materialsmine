@@ -1,0 +1,12 @@
+type Query {
+  user(input: userIdInput!): User!
+  users(input: usersQueryInput): Users!
+}
+
+type Mutation {
+  createAPIAccess(input: createAPIAccessInput): ApiAccess!
+  createUser(input: createUserInput): User!
+  updateUser(input: updateUserInput): User!
+  deleteUser(input: userIdInput): User!
+  createToken(input: userIdInput): Token!
+}
