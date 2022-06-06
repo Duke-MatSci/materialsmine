@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 const { expect } = require('chai');
 const graphQlSchema = require('../../../src/graphql/typeDefs');
-const { createUser } = require('../../../src/graphql/resolver/mutation');
+const { createUser } = require('../resolver');
 
 describe('Resolver Unit Tests:', function () {
   it('should have createUser(...) as a Mutation resolver', async function () {
