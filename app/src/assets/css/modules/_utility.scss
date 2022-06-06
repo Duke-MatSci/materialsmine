@@ -45,6 +45,14 @@
         background-color: rgba($primary-grey, .3);
     }
 
+    &-fullspan {
+        height: .5rem;
+        width: 100%;
+        margin: 0 auto;
+        margin-bottom: 1rem;
+        background-color: rgba($primary-black, .9);
+    }
+
     &--inline {
         display: inline-block;
     }

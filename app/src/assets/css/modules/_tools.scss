@@ -13,6 +13,23 @@
   }
 }
 
+.md-layout-responsive{
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  min-height: 35rem;
+  height: fit-content;
+  margin: 0 auto;
+
+  @include respond(phone) {
+    flex-direction: column;
+  }
+
+  @include respond(tab-port) {
+    color: white
+  }
+}
+
 // ChemProps.vue
 .chemprops {
   html {
