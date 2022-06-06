@@ -10,13 +10,18 @@
     "private": true,
     "dependencies": {
         "@elastic/elasticsearch": "^8.1.0",
+        "@graphql-tools/graphql-file-loader": "^7.3.14",
+        "@graphql-tools/load": "^7.5.13",
+        "@graphql-tools/schema": "^8.3.13",
+        "apollo-server-express": "^3.7.0",
         "axios": "^0.26.1",
         "bcryptjs": "^2.4.3",
         "body-parser": "1.19.2",
         "express": "^4.17.1",
         "express-graphql": "^0.10.0",
         "express-validator": "^6.14.0",
-        "graphql": "^14.0.2",
+        "graphql": "^15.3.0",
+        "graphql-ws": "^5.8.2",
         "helmet": "^4.6.0",
         "jsonwebtoken": "^8.5.1",
         "luxon": "^2.2.0",
@@ -33,7 +38,7 @@
     "scripts": {
         "start": "nodemon src/server.js",
         "test": "mocha --recursive './spec/**/*.js'",
-        "lint": "eslint src",
+        "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
         "start:prod": "node src/server.js",
         "transformtiff": "node script/getTiffImage.js"
@@ -56,5 +61,6 @@
         "eslint-plugin-promise": "^5.2.0",
         "mocha": "^9.2.0",
         "nodemon": "^2.0.15"
-    }
+    },
+    "eslintIgnore": ["*.spec.js"]
 }
