@@ -1,6 +1,6 @@
 const ApiAccess = require('../../models/apiAccess');
 const User = require('../../models/user');
-const isEmail = require('../../utils/isEmail');
+const isEmail = () => {};
 const errorFormater = require('../../utils/graphQlErrorFormatter');
 const { signToken } = require('../../utils/jwtService');
 
