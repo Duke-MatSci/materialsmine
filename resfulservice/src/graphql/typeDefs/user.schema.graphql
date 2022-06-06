@@ -1,0 +1,20 @@
+type User {
+  _id: ID
+  alias: String
+  userid: String
+  givenName: String
+  surName: String
+  displayName: String
+  email: String
+  apiAccess: String
+}
+
+type Users implements IPaginator {
+  totalItems: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  data: [User!]!
+}
