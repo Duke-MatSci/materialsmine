@@ -251,7 +251,7 @@ export default {
         const baseQuery = this.selectedTemplate.SPARQL
         const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`
 
-        this.query = baseQuery.replace(/(?<=where\s*{)/i, valuesBlock)
+        this.query = baseQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
       }
     },
     async execQuery () {
