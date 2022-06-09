@@ -7,24 +7,6 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <div class="button-row">
-        <div>
-          <router-link :to="{ name: 'NewChartDataVoyager' }">
-            <md-button
-              class="md-icon-button"
-              @click="selectQueryForVizEditor()"
-            >
-              <md-tooltip
-                class="utility-bckg"
-                md-direction="bottom"
-              >
-                Open Current Query in DataVoyager
-              </md-tooltip>
-              <md-icon>check</md-icon>
-            </md-button>
-          </router-link>
-        </div>
-      </div>
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>
@@ -96,7 +78,7 @@
               :disabled="autoRefresh || !newQuery"
               @click="execQuery"
             >
-              Refresh Results
+              Search Query
             </button>
             <md-switch
               class="md-primary"
@@ -104,6 +86,18 @@
             >
               Auto Refresh
             </md-switch>
+            <div class="button-row">
+              <div>
+                <router-link :to="{ name: 'NewChartDataVoyager' }" target="_blank">
+                  <button
+                    class="btn btn--primary"
+                    @click="selectQueryForVizEditor()"
+                  >
+                    Open in Datavoyager
+                  </button>
+                </router-link>
+              </div>
+            </div>
           </div>
           <div
             class="results-progress"
@@ -256,7 +250,7 @@ export default {
           .join(' ')
         const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`
 
-        tempQuery = tempQuery.replace(/(?<=where\s*{)/i, valuesBlock)
+        tempQuery = tempQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
       }
 
       // find any replaceable variable names
@@ -358,7 +352,7 @@ export default {
 .results-controls {
   margin: 20px 10px;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
 
   > * {
