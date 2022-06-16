@@ -82,11 +82,20 @@
         padding: 1.5rem;
         text-align: justify;
         font-weight: 400;
+
+        &_fl {
+            font-size: 1.5rem;
+        }
     }
     &_card {
         height: 33rem !important;
         width: 30rem !important;
         box-shadow: none !important;
+
+        &::after {
+            display: none !important;
+            visibility: hidden !important;
+        }
     }
 }
 
