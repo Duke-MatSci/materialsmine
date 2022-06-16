@@ -323,5 +323,35 @@ SELECT DISTINCT * WHERE {
         rdfs:label "surface resistivity";
         schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
         schema:position 15
+      ],
+      [
+        rdfs:label "dielectric constant";
+        schema:identifier <http://materialsmine.org/ns/DielectricConstant>;
+        schema:position 16
+      ],
+      [
+        rdfs:label "breakdown strength";
+        schema:identifier <http://materialsmine.org/ns/BreakdownStrength>;
+        schema:position 17
+      ],
+      [
+        rdfs:label "conductivity";
+        schema:identifier <http://materialsmine.org/ns/Conductivity>;
+        schema:position 18
+      ],
+      [
+        rdfs:label "halflife of crystallization";
+        schema:identifier <http://materialsmine.org/ns/HalflifeOfCrystallization>;
+        schema:position 19
+      ],
+      [
+        rdfs:label "loss modulus";
+        schema:identifier <http://materialsmine.org/ns/LossModulus>;
+        schema:position 20
+      ],
+      [
+        rdfs:label "storage modulus";
+        schema:identifier <http://materialsmine.org/ns/StorageModulus>;
+        schema:position 21
       ]
   ].
