@@ -1,4 +1,5 @@
 import ChartBase from '@/pages/explorer/chart/Base.vue'
+import ImageBase from '@/pages/explorer/image/Base.vue'
 const explorerRoutes = [
   {
     path: '',
@@ -18,11 +19,6 @@ const explorerRoutes = [
     path: 'visualization',
     name: 'ExplorerVisualization',
     component: () => import('@/pages/explorer/Visualization.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
-    path: 'images',
-    name: 'ImageVisualization',
     meta: { requiresAuth: false }
   },
   {
@@ -71,6 +67,18 @@ const explorerRoutes = [
         name: 'NewChartDataVoyager',
         component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
+        meta: { requiresAuth: false }
+      }
+    ]
+  },
+  {
+    path: 'images',
+    component: ImageBase,
+    children: [
+      {
+        path: '',
+        name: 'ImageGallery',
+        component: () => import('@/pages/explorer/image/Image.vue'),
         meta: { requiresAuth: false }
       }
     ]

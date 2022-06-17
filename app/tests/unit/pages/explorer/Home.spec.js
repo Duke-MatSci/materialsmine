@@ -46,4 +46,12 @@ describe('ExplorerHome.vue', () => {
     expect(wrapper.find('.explorer_page_footer').exists()).toBe(true)
     expect(wrapper.find('.explorer_page_footer-text').exists()).toBe(true)
   })
+
+  it('goes to parameterized query page when clicked', () => {
+    const button = wrapper.find('.p_query')
+    expect(button.exists()).toBe(true)
+    button.trigger('click')
+    expect(wrapper.find('.p_query').exists()).toBe(false)
+    expect(wrapper.find('.md-title').text()).toBe('Query Template')
+  })
 })

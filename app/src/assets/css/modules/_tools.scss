@@ -20,13 +20,17 @@
   min-height: 35rem;
   height: fit-content;
   margin: 0 auto;
+  margin-left: 4rem; //TODO-check 06/16/2022
 
   @include respond(phone) {
     flex-direction: column;
+    min-height: 35rem; //TODO-check 06/16/2022
+    margin-left: 1rem; //TODO-check 06/16/2022
   }
 
   @include respond(tab-port) {
-    color: white
+    // color: white; TODO-check 06/16/2022
+    min-height: 70rem; //TODO-check 06/16/2022
   }
 }
 
