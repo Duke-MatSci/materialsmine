@@ -11,7 +11,7 @@
               {{`${header.sample_label.toUpperCase()} ${header.process_label.toUpperCase()}`}}
             </h1>
           </div>
-          <h2 class="sample-page_header">Metadata:</h2>
+          <h2 v-if="sampleAuthor" class="sample-page_header">Metadata:</h2>
           <div class="utility-color utility-line-height-sm">
             <p style="text-transform: capitalize">Author: {{ sampleAuthor }}</p>
             <p>Year: {{ sampleYear }}</p>
