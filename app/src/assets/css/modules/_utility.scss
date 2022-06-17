@@ -60,6 +60,15 @@
         background-color: rgba($primary-black, .9);
     }
 
+    &--margin {
+        &-neg {
+            margin-top: -1rem !important;
+        }
+        &-pos {
+            margin: 1rem;
+        }
+    }
+
     &--inline {
         display: inline-block;
     }
@@ -108,6 +117,10 @@
         &-med {
             margin-top: 3.2rem !important;
         }
+    }
+
+    &_margin-none {
+        margin: 0 !important;
     }
 
     &_margin-right {
@@ -238,7 +251,11 @@
         padding: .6rem;
     }
     &_color {
-        color: $primary !important
+        color: $primary !important;
+
+        &_white {
+            color: $primary-white !important
+        }
     }
     &_gridbg {
         background-color: rgba($primary-black, 0.7) !important;
