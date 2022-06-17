@@ -5,6 +5,7 @@
 @prefix spl: <http://spinrdf.org/spin#> .
 @prefix whyis: <http://vocab.rpi.edu/whyis/> .
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
+@prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
 
 materialsmine_templates:PQ01A a whyis:SparqlTemplate;
   spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler} filler surrounded by {?Matrix} matrix, along with the {?AmountType} fraction of filler and reported values of {?AttributeType1} and {?AttributeType2}.";
@@ -360,4 +361,20 @@ SELECT DISTINCT * WHERE {
         schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
         schema:position 15
       ]
+  ];
+  mmpq:replacement
+  [
+    sp:varName "FillerAmount";
+    mmpq:subVar "AmountType" ; 
+    mmpq:varFormat "${var}";
+  ],
+  [
+    sp:varName "AttributeValue1";
+    mmpq:subVar "AttributeType1" ;
+    mmpq:varFormat "${var}1";
+  ],
+  [
+    sp:varName "AttributeValue2";
+    mmpq:subVar "AttributeType2" ;
+    mmpq:varFormat "${var}2";
   ].
