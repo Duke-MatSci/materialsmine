@@ -2,7 +2,9 @@
     <div :class="{facet: true, facet_active: searchEnabled}">
         <div class="facet_viewport">
             <md-list>
-                <md-subheader class="md-primary facet-header">Filter Panel</md-subheader>
+                <md-subheader class="md-primary facet-header">
+                  Filter <md-icon class="u_color_white u_margin-none">filter_alt</md-icon>
+                </md-subheader>
                 <md-divider></md-divider>
                 <div class="facet-content_container" v-if="!!facetFilterMaterials.length">
                   <div class="facet-content_label">MaterialsMine Properties:</div>
