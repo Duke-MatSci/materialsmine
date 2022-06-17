@@ -21,8 +21,7 @@ export default {
   },
   methods: {
     async fetchData (query) {
-      const sampleId = this.$route.params.label
-      return await querySparql(query(sampleId))
+      return await querySparql(query(this.sampleId))
     },
     parseHeader (data) {
       if (!data) return null

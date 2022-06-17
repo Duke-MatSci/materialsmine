@@ -11,13 +11,15 @@
               {{`${header.sample_label.toUpperCase()} ${header.process_label.toUpperCase()}`}}
             </h1>
           </div>
-          <h2 v-if="sampleAuthor" class="sample-page_header">Metadata:</h2>
-          <div class="utility-color utility-line-height-sm">
-            <p style="text-transform: capitalize">Author: {{ sampleAuthor }}</p>
-            <p>Year: {{ sampleYear }}</p>
-            <p>DOI: {{ header.DOI }}</p>
-            <p>{{`Sample ID: ${this.$route.params.label.toUpperCase()}`}}</p>
-          </div>
+          <template v-if="header">
+            <h2 class="sample-page_header">Metadata:</h2>
+            <div class="utility-color utility-line-height-sm">
+              <p style="text-transform: capitalize">Author: {{ sampleAuthor }}</p>
+              <p>Year: {{ sampleYear }}</p>
+              <p>DOI: {{ header.DOI }}</p>
+              <p>{{`Sample ID: ${this.sampleId.toUpperCase()}`}}</p>
+            </div>
+          </template>
           <div v-if="materialComponents" data-test="materialComponents">
             <h2 class="sample-page_header">Material Components and Attributes:</h2>
             <ul v-for="(material, index) in materialComponents" :key="index">
