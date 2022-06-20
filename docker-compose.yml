@@ -124,7 +124,7 @@ services:
       - redis
       - fuseki
     stdin_open: true
-    command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 90 -b :8000
+    command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
     build: whyis
@@ -133,6 +133,7 @@ services:
       - ./mockDB/fuseki:/app/run
     ports:
       - '8000:8000'
+      - '5000:5000'
   fuseki:
     build: whyis
     command: /opt/venv/bin/fuseki-server --mem /ds
@@ -142,8 +143,10 @@ services:
     mem_limit: 5G
     mem_reservation: 5G
     environment:
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+#      - ADMIN_USER=admin
+#      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - JVM_ARGS=-Xmx4g
+      - FUSEKI_BASE=/fuseki
     ports:
       - '3030:3030'
     volumes:
