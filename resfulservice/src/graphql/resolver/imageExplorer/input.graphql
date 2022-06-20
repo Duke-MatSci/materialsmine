@@ -1,0 +1,10 @@
+input imageExplorerInput {
+  search: String!
+  pageNumber: Int
+  pageSize: Int
+}
+
+input imageQueryInput {
+  pageNumber: Int
+  pageSize: Int
+}

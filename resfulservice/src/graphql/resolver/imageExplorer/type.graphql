@@ -1,0 +1,45 @@
+type Citation {
+  type: String
+  publication: String
+  title: String
+  authors: [String!]
+  keywords: [String!]
+  publisher: String
+  publicationYear: Int
+  doi: String
+  url: String
+}
+
+type Dimension {
+  width: Float
+  height: Float
+}
+
+type Image {
+  file: String
+  description: String
+  microscopyType: String
+  type: String
+  dimension: Dimension
+}
+
+type Microstructure {
+  lengthUnit: String
+  images: [Image!]
+}
+
+type ImageExplorer {
+  schema: String!
+  citation: Citation
+  sampleImages: Microstructure
+}
+
+type Images {
+  totalItems: Int!
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  images: [Image!]
+}
