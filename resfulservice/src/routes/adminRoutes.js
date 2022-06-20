@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const AdminController = require('../controllers/adminController');
-// const loginController = require('../controllers/loginController');
+const loginController = require('../controllers/loginController');
 const imageController = require('../controllers/imageController');
 const { getInternal } = require('../middlewares/isInternal');
-// const { validateLogin } = require('../middlewares/validateLoginData');
-const { validateImageMigration, validateImageId } = require('../middlewares/validateImageMigration');
+const { validateImageType, validateImageId } = require('../middlewares/validations');
 
 router
   .route('/es/bulkinsert')
@@ -22,7 +21,7 @@ router
   .post(AdminController.initializeElasticSearch)
   .put(getInternal, AdminController.loadElasticSearch);
 
-// router.route('/login').post(validateLogin, loginController.login);
-router.route('/image_migration/:imageType').get(validateImageMigration, imageController.imageMigration);
+router.route('/login').post(loginController.login);
+router.route('/image_migration/:imageType').get(validateImageType, imageController.imageMigration);
 router.route('/image/:imageId').get(validateImageId, imageController.imageContent);
 module.exports = router;
