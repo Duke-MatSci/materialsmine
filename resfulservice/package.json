@@ -18,7 +18,6 @@
         "bcryptjs": "^2.4.3",
         "body-parser": "1.19.2",
         "express": "^4.17.1",
-        "express-graphql": "^0.10.0",
         "express-validator": "^6.14.0",
         "graphql": "^15.3.0",
         "graphql-ws": "^5.8.2",
@@ -38,7 +37,7 @@
     },
     "scripts": {
         "start": "nodemon src/server.js",
-        "test": "mocha --recursive './spec/**/*.js'",
+        "test": "NODE_ENV=test mocha --recursive './spec/**/*.js'",
         "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
         "start:prod": "node src/server.js",
