@@ -1,8 +1,0 @@
-interface IPaginator {
-  totalItems: Int!
-  pageSize: Int!
-  pageNumber: Int!
-  totalPages: Int!
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}

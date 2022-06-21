@@ -2,9 +2,6 @@ input userIdInput {
   _id: ID!
 }
 
-input createAPIAccessInput {
-  key: String!
-}
 input usersQueryInput {
   pageNumber: Int
   pageSize: Int
@@ -12,12 +9,10 @@ input usersQueryInput {
 
 input createUserInput {
   alias: String!
-  userid: String!
   givenName: String!
   surName: String!
   displayName: String!
   email: String!
-  key: String!
 }
 
 input updateUserInput {
@@ -28,5 +23,4 @@ input updateUserInput {
   surName: String
   displayName: String
   email: String
-  key: String
 }

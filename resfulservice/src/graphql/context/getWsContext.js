@@ -7,7 +7,9 @@ async function getWsContext ({ req, connectionParams }) {
     const { userId } = decodeToken(req, token);
     const user = await User.findById(userId).lean();
     if (user) return { userId, req, isAuthenticated: true };
+    return {};
   }
+  return {};
 }
 
 module.exports = getWsContext;

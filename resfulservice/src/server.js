@@ -1,17 +1,18 @@
-const { createServer: createHttpServer } = require('http');
-const { WebSocketServer } = require('ws');
 const express = require('express');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { ApolloServer } = require('apollo-server-express');
 const mongoose = require('mongoose');
-const { globalMiddleWare, log } = require('./middlewares');
-const knowledgeRoutes = require('./routes/kgWrapperRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const searchRoutes = require('./routes/searchRoutes');
-const elasticSearch = require('./utils/elasticSearch');
+const { createServer: createHttpServer } = require('http');
+const { WebSocketServer } = require('ws');
 const { useServer: useWsServer } = require('graphql-ws/lib/use/ws');
+const { globalMiddleWare, log } = require('./middlewares');
+const knowledgeRoutes = require('./routes/kg-wrapper');
+const adminRoutes = require('./routes/admin');
+const searchRoutes = require('./routes/search');
+const fileRoutes = require('./routes/files');
+const elasticSearch = require('./utils/elasticSearch');
 const resolvers = require('./graphql/resolver');
-const typeDefs = require('./graphql/typeDefs');
+const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
 const getWsContext = require('./graphql/context/getWsContext');
 
@@ -24,6 +25,7 @@ elasticSearch.ping(log);
 app.use('/knowledge', knowledgeRoutes);
 app.use('/admin', adminRoutes);
 app.use('/search', searchRoutes);
+app.use('/files', fileRoutes);
 
 const httpServer = createHttpServer(app);
 const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });

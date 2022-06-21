@@ -19,15 +19,15 @@ exports.imageMigration = async (req, res, next) => {
   }
 };
 
-exports.imageContent = async (req, res, next) => {
-  const { imageId } = req.params;
+exports.fileContent = async (req, res, next) => {
+  const { fileId } = req.params;
 
   const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db, {
     bucketName: 'fs'
   });
 
   try {
-    const _id = new mongoose.Types.ObjectId(imageId);
+    const _id = new mongoose.Types.ObjectId(fileId);
     const downloadStream = bucket.openDownloadStream(_id);
     downloadStream.pipe(res);
   } catch (error) {

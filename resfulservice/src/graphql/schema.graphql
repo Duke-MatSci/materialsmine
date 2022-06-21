@@ -1,6 +1,9 @@
 type Query {
   user(input: userIdInput!): User!
   users(input: usersQueryInput): Users!
+  images(input: imageQueryInput): Images!
+  searchImages(input: imageExplorerInput!): Images!
+  getSingleImages(input: singleImageQueryInput!): Images!
 }
 
 type Mutation {
@@ -8,5 +11,4 @@ type Mutation {
   createUser(input: createUserInput): User!
   updateUser(input: updateUserInput): User!
   deleteUser(input: userIdInput): User!
-  createToken(input: userIdInput): Token!
 }
