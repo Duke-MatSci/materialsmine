@@ -45,7 +45,8 @@ exports.imageQuery = async (args) => {
       [`${targetField}.metaData`]: {
         title: `$${commonFields}.Title`,
         id: '$_id',
-        doi: `$${commonFields}.DOI`
+        doi: `$${commonFields}.DOI`,
+        keywords: `$${commonFields}.Keyword`
       }
     }
   });

@@ -13,7 +13,8 @@ type Citation {
 type ImageMetaData {
   title: String
   id: ID
-  doi: String
+  doi: String,
+  keywords: [String!]
 }
 
 type Dimension {

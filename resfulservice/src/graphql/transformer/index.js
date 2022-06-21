@@ -1,4 +1,15 @@
 
+const transformMetaData = (el) => {
+  const metaData = el || {};
+  metaData.keywords = typeof el?.keywords === 'object'
+    ? el.keywords
+    : typeof el?.keywords === 'string'
+      ? el.keywords.split(',')
+      : [];
+
+  return metaData;
+};
+
 exports.imageTransformer = (imageArray) => {
   const getBase = `${process.env?.ROUTER}/api/files/`;
   const images = [];
@@ -9,7 +20,7 @@ exports.imageTransformer = (imageArray) => {
       microscopyType: el?.MicroscopyType || '',
       type: el?.Type || '',
       dimension: el?.Dimension || {},
-      metaData: el?.metaData || {}
+      metaData: transformMetaData(el?.metaData)
     }));
   }
   return images;
