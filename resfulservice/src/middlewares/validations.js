@@ -5,7 +5,7 @@ exports.validateImageType = [
   validationErrorHandler
 ];
 
-exports.validateImageId = [param('imageId').not().isEmpty().withMessage('image ID required').bail().isMongoId().withMessage('invalid image id'), validationErrorHandler];
+exports.validateImageId = [param('fileId').not().isEmpty().withMessage('image ID required').bail().isMongoId().withMessage('invalid file id'), validationErrorHandler];
 
 function validationErrorHandler (req, res, next) {
   const errors = validationResult(req);
