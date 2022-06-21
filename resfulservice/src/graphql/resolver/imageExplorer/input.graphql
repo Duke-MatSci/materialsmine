@@ -8,3 +8,7 @@ input imageQueryInput {
   pageNumber: Int
   pageSize: Int
 }
+
+input singleImageQueryInput {
+  id: ID!
+}

@@ -10,6 +10,12 @@ type Citation {
   url: String
 }
 
+type ImageMetaData {
+  title: String
+  id: ID
+  doi: String
+}
+
 type Dimension {
   width: Float
   height: Float
@@ -20,7 +26,8 @@ type Image {
   description: String
   microscopyType: String
   type: String
-  dimension: Dimension
+  dimension: Dimension,
+  metaData: ImageMetaData
 }
 
 type Microstructure {

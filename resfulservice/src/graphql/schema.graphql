@@ -3,7 +3,7 @@ type Query {
   users(input: usersQueryInput): Users!
   images(input: imageQueryInput): Images!
   searchImages(input: imageExplorerInput!): Images!
-  singleImageLoader: Images!
+  getSingleImages(input: singleImageQueryInput!): Images!
 }
 
 type Mutation {
