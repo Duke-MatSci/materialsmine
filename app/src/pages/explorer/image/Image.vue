@@ -69,10 +69,7 @@
 <script>
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
-import defaultImg from '@/assets/img/rdf_flyer.svg'
-import { toChartId } from '@/modules/vega-chart'
-import { getViewUrl } from '@/modules/whyis-view'
-import { mapGetters, mapActions } from 'vuex'
+import { IMAGES_QUERY } from '@/modules/gql/image-gql'
 export default {
   name: 'ImageGallery',
   props: {
@@ -90,49 +87,28 @@ export default {
       loading: true,
       loadError: false,
       otherArgs: null,
-      defaultImg
+      imagesList: [],
+      pageSize: 20,
+      pageNumber: 1,
     }
   },
   components: {
     pagination,
     spinner
   },
-  computed: {
-    ...mapGetters('explorer/gallery', [
-      'items',
-      'page',
-      'total',
-      'totalPages',
-      'queryTimeMillis'
-    ])
-  },
   methods: {
-    ...mapActions('explorer/gallery', ['loadItems']),
-    reduceDescription (args) {
-      const arr = args.split(' ')
-      arr.splice(15)
-      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '')
-      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      return `${res}...`
-    },
-    deleteChart (chart) {
-      console.log('delete chart', chart)
-    },
-    async loadItems (page = 1) {
-      this.loading = true
-      await this.$store.dispatch('explorer/gallery/loadItems', { page })
-      this.loading = false
-    },
-    getThumbnailUrl (item) {
-      return getViewUrl({ uri: item.thumbnail })
-    },
-    getChartId (chart) {
-      return toChartId(chart.identifier)
-    }
+    
   },
   async mounted () {
-    console.log('mounting images')
     await this.loadItems()
+  },
+  apollo: {
+    imageList: {
+      query: IMAGES_QUERY,
+      varables() {
+        return { pageNumber: this.pageNumber, pageSize: this.pageSize  }
+      }
+    }
   }
 }
 </script>

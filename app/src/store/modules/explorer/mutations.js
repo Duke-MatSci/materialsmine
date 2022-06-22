@@ -23,7 +23,7 @@ export default {
       return
     }
 
-    if (state?.searchKeyword?.length) {
+    if (state.searchKeyword && state.searchKeyword.length) {
       state.searching = true
     }
   }

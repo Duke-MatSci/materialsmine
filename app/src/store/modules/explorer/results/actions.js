@@ -56,36 +56,36 @@ export default {
   },
 
   saveSearch (context, responseData) {
-    const data = responseData?.data?.hits || []
+    const data = responseData.data.hits || []
     const types = Object.create({})
     data.forEach((item) => {
       let categoryExist = Object.keys(types)
 
-      categoryExist = categoryExist.length ? Object.keys(types).find(currKey => currKey === item?._index) : undefined
+      categoryExist = categoryExist.length ? Object.keys(types).find(currKey => currKey === item._index) : undefined
 
       if (categoryExist) {
-        types[categoryExist].push(item?._source)
+        types[categoryExist].push(item._source)
       } else {
-        types[item._index] = new Array(item?._source)
+        types[item._index] = new Array(item._source)
       }
     })
-    context.commit('setArticles', types?.articles || [])
-    context.commit('setSamples', types?.samples || [])
-    context.commit('setImages', types?.images || [])
-    context.commit('setCharts', types?.charts || [])
-    context.commit('setTotal', responseData?.data?.total?.value || 0)
+    context.commit('setArticles', types.articles || [])
+    context.commit('setSamples', types.samples || [])
+    context.commit('setImages', types.images || [])
+    context.commit('setCharts', types.charts || [])
+    context.commit('setTotal', responseData.data.total.value || 0)
     context.commit('setIsLoading', false)
     context.commit('setTotalGrouping', {
-      getArticles: types?.articles?.length || 0,
-      getSamples: types?.samples?.length || 0,
-      getImages: types?.images?.length || 0,
-      getCharts: types?.charts?.length || 0,
+      getArticles: types.articles.length || 0,
+      getSamples: types.samples.length || 0,
+      getImages: types.images.length || 0,
+      getCharts: types.charts.length || 0,
       getMaterials: 0
     })
   },
 
   saveAutosuggest (context, responseData) {
-    const data = responseData?.data?.hits || []
+    const data = responseData.data.hits || []
     const suggestions = data.map(item => {
       return item._source.label
     })
