@@ -26,5 +26,5 @@ export default {
 
     commit('setPage', page)
     commit('setItems', items)
-  }
+  },
 }
