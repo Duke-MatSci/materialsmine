@@ -10,12 +10,15 @@ import store from './store'
 import router from './router'
 
 const BASE = process.env.SERVICE_PORT || 'http://localhost:3001'
-const uri = `${BASE}/api/graphql`;
+const uri = `${BASE}/graphql`;
+
+const apolloClient = new ApolloClient({
+  uri
+})
+
 const apolloProvider = new VueApollo({
-  defaultClient: new ApolloClient({
-    uri
-  })
-});
+  defaultClient: apolloClient,
+})
 
 Vue.use(VueApollo)
 Vue.use(VueMaterial)

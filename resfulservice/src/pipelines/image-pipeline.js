@@ -4,6 +4,7 @@ const errorFormater = require('../utils/errorFormater');
 
 const targetField = 'content.PolymerNanocomposite.MICROSTRUCTURE.ImageFile';
 const commonFields = 'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields';
+const fillerFields = 'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
 
 exports.imageQuery = async (args) => {
   const skip = args?.skip || 0;
@@ -79,10 +80,13 @@ exports.imageQuery = async (args) => {
 exports.validateImageSearchOptions = (input) => {
   const searchQuery = [];
   const search = input?.search;
+  const searchValue = input?.searchValue || '';
+
+  if (!searchValue) throw errorFormater('Search value cannot be empty', 422);
+
   // Search by year
-  const parsedSearch = parseInt(search);
-  if (parsedSearch && typeof parsedSearch === 'number') {
-    if (search.length > 4) throw errorFormater('Year cannot exceed four digit', 422);
+  if (search === 'filterByYear') {
+    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digit', 422);
     searchQuery.push({
       $match: {
         [`${commonFields}.PublicationYear`]: {
@@ -92,14 +96,34 @@ exports.validateImageSearchOptions = (input) => {
     });
     searchQuery.push({
       $match: {
-        [`${commonFields}.PublicationYear`]: parseInt(search)
+        [`${commonFields}.PublicationYear`]: parseInt(searchValue)
+      }
+    });
+    return searchQuery;
+  }
+
+  // Search by filler
+  if (search === 'filterByFiller') {
+    const value = new RegExp(searchValue, 'gi');
+    searchQuery.push({
+      $match: {
+        [fillerFields]: {
+          $exists: true
+        }
+      }
+    });
+    searchQuery.push({
+      $match: {
+        [fillerFields]: {
+          $elemMatch: { ChemicalName: value }
+        }
       }
     });
     return searchQuery;
   }
 
   // Search by sentence
-  const wholeSentence = new RegExp(search, 'gi');
+  const wholeSentence = new RegExp(searchValue, 'gi');
   searchQuery.push({
     $match: {
       [`${commonFields}.Keyword`]: {

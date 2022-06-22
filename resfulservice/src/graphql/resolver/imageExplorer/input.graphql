@@ -1,5 +1,6 @@
 input imageExplorerInput {
   search: String!
+  searchValue: String!
   pageNumber: Int
   pageSize: Int
 }

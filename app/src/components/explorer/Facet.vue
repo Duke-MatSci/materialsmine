@@ -6,12 +6,45 @@
                   Filter <md-icon class="u_color_white u_margin-none">filter_alt</md-icon>
                 </md-subheader>
                 <md-divider></md-divider>
-                <div class="facet-content_container" v-if="!!facetFilterMaterials.length">
+
+                <!-- IMAGE FILTER START HERE -->
+                <div class="facet-content_container" v-if="filterType === 'IMAGE'">
+                  <div class="facet-content_label">Filter by filler Info:</div>
+                  <input
+                    placeholder="Filter by filler"
+                    class="form__select facet-content_item"
+                    name="filterByFiller"
+                    @change.prevent="otherFilters"
+                    title="filter by filler info"
+                  >
+                  <div class="facet-content_label u_margin-top-small">Filter by keyword:</div>
+                  <input
+                    placeholder="Filter by keyword"
+                    class="form__select facet-content_item"
+                    name="filterByKeyword"
+                    @change.prevent="otherFilters"
+                    title="filter by keyword"
+                  >
+                  <div class="facet-content_label u_margin-top-small">Filter by year:</div>
+                  <input
+                    placeholder="Filter by year"
+                    class="form__select facet-content_item"
+                    name="filterByYear"
+                    @change.prevent="otherFilters"
+                    title="filter by published year"
+                  >
+                  <div class="utility-color u_margin-top-small" id="css-adjust-navfont">
+                    Hey there, type & hit enter to search
+                  </div>
+                </div>
+
+                <!-- DEFAULT FILTER STARTS HERE -->
+                <div class="facet-content_container" v-else-if="!filterType && !!facetFilterMaterials.length">
                   <div class="facet-content_label">MaterialsMine Properties:</div>
                   <select
                     class="form__select facet-content_item"
                     name="filtermaterial"
-                    @change.prevent="submitFilter"
+                    @change.prevent="defaultFilter"
                     title="To see how it works, select a property from the drop-down list below."
                   >
                       <option value="">--Please choose a property--</option>
@@ -29,7 +62,7 @@
 import Facet from '@/modules/facet.js'
 export default {
   name: 'FacetPanel',
-  // props: ['searchEnabled'],
+  props: ['filterType'],
   data () {
     return {
       searchEnabled: true
@@ -44,9 +77,12 @@ export default {
     Facet()
   },
   methods: {
-    async submitFilter (arg) {
+    async defaultFilter (arg) {
       const selectedValue = arg.target.value
       await this.$store.dispatch('explorer/searchFacetFilterMaterials', selectedValue)
+    },
+    async otherFilters ({ target }) {
+      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', {type: target.name, value: target.value})
     }
   }
 }
