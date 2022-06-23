@@ -1,0 +1,17 @@
+import createWrapper from '../../../jest/script/wrapper'
+import { enableAutoDestroy } from '@vue/test-utils'
+import ImageGallery from '@/pages/explorer/image/Image.vue'
+
+
+
+describe('Image.vue', () => {
+  let wrapper
+  beforeEach(() => {
+    wrapper = createWrapper(ImageGallery, {}, true)
+  })
+
+  // TODO: TEST 
+  it('loads images page', () => {
+    expect(wrapper.find('.gallery').exists()).toBe(true)
+  })
+})
