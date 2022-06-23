@@ -109,23 +109,23 @@ export default {
     images: {
       query: IMAGES_QUERY,
       variables () {
-        return {
-          input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
-        }
+			return {
+			input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
+			}
     	},
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'cache-and-network'
     },
     searchImages: {
       query: SEARCH_IMAGES_QUERY,
       variables () {
-        return {
-          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
-        }
+			return {
+			input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
+			}
     	},
       skip () {
-      	return this.skipQuery
+      		return this.skipQuery
     	},
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'cache-and-network'
     }
   }
 }
