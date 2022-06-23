@@ -25,7 +25,7 @@
           :key="index"
           class="btn--animated gallery-item"
         >
-          <router-link :to="{ name: 'ImageView', params: { id: image.metaData.id }}">
+          <router-link :to="{ name: '', params: { id: image.metaData.id }}">
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
@@ -95,7 +95,6 @@ export default {
   },
   methods: {
     loadPrevNextImage (event) {
-      console.log(this.imageSearch.value)
       if (!this.searchEnabled) {
         this.pageNumber = event
         this.$apollo.queries.images.refetch()
