@@ -76,10 +76,10 @@ export default {
     context.commit('setTotal', responseData.data.total.value || 0)
     context.commit('setIsLoading', false)
     context.commit('setTotalGrouping', {
-      getArticles: types.articles.length || 0,
-      getSamples: types.samples.length || 0,
-      getImages: types.images.length || 0,
-      getCharts: types.charts.length || 0,
+      getArticles: types.articles ? types.articles.length : 0,
+      getSamples: types.samples ? types.samples.length : 0,
+      getImages: types.images ? types.images.length : 0,
+      getCharts: types.charts ? types.charts.length : 0,
       getMaterials: 0
     })
   },

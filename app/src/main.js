@@ -9,7 +9,7 @@ import './registerServiceWorker'
 import store from './store'
 import router from './router'
 
-const BASE = process.env.SERVICE_PORT || 'http://localhost'
+const BASE = process.env.SERVICE_PORT || 'http://localhost/api'
 const uri = `${BASE}/graphql`
 
 const apolloClient = new ApolloClient({
