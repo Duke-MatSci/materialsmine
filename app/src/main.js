@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import ApolloClient from 'apollo-boost'
-import VueApollo from "vue-apollo";
+import VueApollo from 'vue-apollo'
 import VueMaterial from 'vue-material'
 import 'vue-material/dist/vue-material.min.css'
 import 'vue-material/dist/theme/default.css'
@@ -9,15 +9,15 @@ import './registerServiceWorker'
 import store from './store'
 import router from './router'
 
-const BASE = process.env.SERVICE_PORT || 'http://localhost:3001'
-const uri = `${BASE}/graphql`;
+const BASE = process.env.SERVICE_PORT || 'http://localhost'
+const uri = `${BASE}/graphql`
 
 const apolloClient = new ApolloClient({
   uri
 })
 
 const apolloProvider = new VueApollo({
-  defaultClient: apolloClient,
+  defaultClient: apolloClient
 })
 
 Vue.use(VueApollo)

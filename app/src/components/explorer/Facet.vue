@@ -82,7 +82,7 @@ export default {
       await this.$store.dispatch('explorer/searchFacetFilterMaterials', selectedValue)
     },
     async otherFilters ({ target }) {
-      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', {type: target.name, value: target.value})
+      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', { type: target.name, value: target.value })
     }
   }
 }

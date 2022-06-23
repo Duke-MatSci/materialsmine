@@ -60,72 +60,72 @@ import pagination from '@/components/explorer/Pagination'
 import { IMAGES_QUERY, SEARCH_IMAGES_QUERY } from '@/modules/gql/image-gql'
 import FacetPanel from '@/components/explorer/Facet.vue'
 export default {
-	name: 'ImageGallery',
-	data () {
-		return {
-			renderText: 'Showing all images',
-			images: [],
-			searchImages: [],
-			ImageList: [],
-			pageNumber: 1,
-			pageSize: 20,
-			searchEnabled: false,
-		}
-	},
-	components: {
+  name: 'ImageGallery',
+  data () {
+    return {
+      renderText: 'Showing all images',
+      images: [],
+      searchImages: [],
+      ImageList: [],
+      pageNumber: 1,
+      pageSize: 20,
+      searchEnabled: false
+    }
+  },
+  components: {
     pagination,
     spinner,
-		FacetPanel,
+    FacetPanel
   },
-	computed: {
-		imageSearch () {
+  computed: {
+    imageSearch () {
       return this.$store.getters['explorer/getSelectedFacetFilterMaterialsValue']
-    },
-	},
-	watch: {
-		imageSearch(newValue, oldValues) {
-			if(newValue && newValue.value.length) {
-				this.renderText = `Showing ${newValue.type}: ${newValue.value}`
-				this.searchEnabled = true
-				this.loadPrevNextImage(1)
-			} else {
-				this.$router.go(this.$router.currentRoute)
-			}
-		},
-	},
-	methods: {
-		loadPrevNextImage(event) {
-			console.log(this.imageSearch.value)
-			if(!this.searchEnabled) {
-				this.pageNumber = event
-				this.$apollo.queries.images
-			}
-			this.pageNumber = event
-			this.$apollo.queries.searchImages.skip = false
-			this.$apollo.queries.searchImages
-		},
-	},
-	apollo: {
+    }
+  },
+  watch: {
+    imageSearch (newValue, oldValues) {
+      if (newValue && newValue.value.length) {
+        this.renderText = `Showing ${newValue.type}: ${newValue.value}`
+        this.searchEnabled = true
+        this.loadPrevNextImage(1)
+      } else {
+        this.$router.go(this.$router.currentRoute)
+      }
+    }
+  },
+  methods: {
+    loadPrevNextImage (event) {
+      console.log(this.imageSearch.value)
+      if (!this.searchEnabled) {
+        this.pageNumber = event
+        this.$apollo.queries.images
+      }
+      this.pageNumber = event
+      this.$apollo.queries.searchImages.skip = false
+      this.$apollo.queries.searchImages
+    }
+  },
+  apollo: {
     images: {
       query: IMAGES_QUERY,
       variables () {
-				return {
-					input: { pageNumber: this.pageNumber, pageSize: this.pageSize  }
-				}
-    	},
-			// fetchPolicy: 'cache-and-network',
+        return {
+          input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
+        }
+    	}
+      // fetchPolicy: 'cache-and-network',
     },
     searchImages: {
       query: SEARCH_IMAGES_QUERY,
       variables () {
-				return {
-					input: {search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize  }
-				}
+        return {
+          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
+        }
     	},
-			skip() {
+      skip () {
       	return this.skipQuery
-    	},
-			// fetchPolicy: 'cache-and-network',
+    	}
+      // fetchPolicy: 'cache-and-network',
     }
   }
 }
