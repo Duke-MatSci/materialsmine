@@ -42,7 +42,7 @@ function parseSparql (response) {
    * This if block is irrelevant, it's job is to ensure
    * that test cases relying on this output doesn't fail
    */
-  if (!response.results || !response.results.bindings || !response.results.bindings?.length) {
+  if (!response.results || !response.results.bindings || !response.results.bindings.length) {
     return
   }
 
