@@ -112,8 +112,8 @@ export default {
         return {
           input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
         }
-    	}
-      // fetchPolicy: 'cache-and-network',
+    	},
+      fetchPolicy: 'cache-and-network',
     },
     searchImages: {
       query: SEARCH_IMAGES_QUERY,
@@ -124,8 +124,8 @@ export default {
     	},
       skip () {
       	return this.skipQuery
-    	}
-      // fetchPolicy: 'cache-and-network',
+    	},
+      fetchPolicy: 'cache-and-network',
     }
   }
 }
