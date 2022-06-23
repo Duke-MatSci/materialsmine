@@ -98,33 +98,33 @@ export default {
       console.log(this.imageSearch.value)
       if (!this.searchEnabled) {
         this.pageNumber = event
-        this.$apollo.queries.images
+        this.$apollo.queries.images.refetch()
       }
       this.pageNumber = event
       this.$apollo.queries.searchImages.skip = false
-      this.$apollo.queries.searchImages
+      this.$apollo.queries.searchImages.refetch()
     }
   },
   apollo: {
     images: {
       query: IMAGES_QUERY,
       variables () {
-			return {
-			input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
-			}
-    	},
+        return {
+          input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
+        }
+      },
       fetchPolicy: 'cache-and-network'
     },
     searchImages: {
       query: SEARCH_IMAGES_QUERY,
       variables () {
-			return {
-			input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
-			}
-    	},
+        return {
+          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
+        }
+      },
       skip () {
-      		return this.skipQuery
-    	},
+        return this.skipQuery
+      },
       fetchPolicy: 'cache-and-network'
     }
   }
