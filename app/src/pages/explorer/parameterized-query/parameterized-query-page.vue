@@ -89,7 +89,7 @@
             </md-switch>
             <div class="button-row">
               <div>
-                <router-link :to="{ name: 'NewChartDataVoyager' }" target="_blank">
+                <router-link :to="{ name: 'NewChartDataVoyager' }">
                   <button
                     class="btn btn--primary"
                     @click="selectQueryForVizEditor()"
