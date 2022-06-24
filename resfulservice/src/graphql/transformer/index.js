@@ -11,7 +11,7 @@ const transformMetaData = (el) => {
 };
 
 exports.imageTransformer = (imageArray) => {
-  const getBase = `${process.env?.ROUTER}/api/files/`;
+  const getBase = '/api/files/';
   const images = [];
   if (imageArray.length) {
     imageArray.map(el => images.push({

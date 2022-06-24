@@ -29,7 +29,7 @@
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
-									:src="image.file"
+									:src="baseUrl + image.file"
 									:alt="image.metaData.title"
                 >
               </md-card-media>
@@ -66,6 +66,7 @@ export default {
   name: 'ImageGallery',
   data () {
     return {
+      baseUrl: window.location.origin,
       renderText: 'Showing all images',
       images: [],
       searchImages: [],
