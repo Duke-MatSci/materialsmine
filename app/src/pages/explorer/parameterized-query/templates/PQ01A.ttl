@@ -13,7 +13,7 @@ materialsmine_templates:PQ01A a whyis:SparqlTemplate;
 PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX mm: <http://materialsmine.org/ns/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT * WHERE {
+SELECT DISTINCT ?Sample ?Filler ?FillerAmount ?Matrix ?AttributeValue1 ?UnitOfMeasure1 ?AttributeValue2 ?UnitOfMeasure2 WHERE {
   ?Sample a mm:PolymerNanocomposite ;
           sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
                                  a [ rdfs:label ?Filler ] ;
@@ -21,12 +21,14 @@ SELECT DISTINCT * WHERE {
                                                     sio:hasValue ?FillerAmount] ] ,
                                [ sio:hasRole [ a mm:Matrix ] ;
                                  a [ rdfs:label ?Matrix ] ] ;
-          sio:hasAttribute [ a ?AttributeType1 ;
-                             sio:hasValue ?AttributeValue1 ;
-                             sio:hasUnit ?UnitOfMeasure1 ] ;
-          sio:hasAttribute [ a ?AttributeType2 ;
-                             sio:hasValue ?AttributeValue2 ;
-                             sio:hasUnit ?UnitOfMeasure2 ] .
+          sio:hasAttribute  ?Attr1 ;
+          sio:hasAttribute  ?Attr2 .
+  ?Attr1 a ?AttributeType1 ;
+      sio:hasValue ?AttributeValue1 .
+  ?Attr2 a ?AttributeType2 ;
+      sio:hasValue ?AttributeValue2 .
+  OPTIONAL { ?Attr1 sio:hasUnit ?UnitOfMeasure1 }
+  OPTIONAL { ?Attr2 sio:hasUnit ?UnitOfMeasure2 }
 }
 """;
   spin:constraint [
@@ -426,7 +428,7 @@ SELECT DISTINCT * WHERE {
   [
     sp:varName "FillerAmount";
     mmpq:subVar "AmountType" ; 
-    mmpq:varFormat "${var}";
+    mmpq:varFormat "${var}Fraction";
   ],
   [
     sp:varName "AttributeValue1";
