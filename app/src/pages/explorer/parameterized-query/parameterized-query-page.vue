@@ -10,6 +10,7 @@
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>
+      <h3 class="md-title" style="text-align:center; margin-top:2rem">{{ queryTitle }}</h3>
       <div class="display">
         <md-button
           class="template-back"
@@ -171,6 +172,9 @@ export default {
     },
     newQuery () {
       return this.query !== this.lastRunQuery
+    },
+    queryTitle () {
+      return this.queryTemplates[this.selTemplateId].title
     }
   },
   methods: {

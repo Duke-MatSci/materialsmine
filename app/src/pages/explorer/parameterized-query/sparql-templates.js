@@ -80,7 +80,8 @@ function buildTemplate (store, tNode) {
     displaySegments: parseDisplayText(displayText),
     SPARQL: getSingletonLiteral(store, tNode, `${SP}text`),
     options: buildTemplateParams(store, tNode),
-    replacements: buildTemplateReplacements(store, tNode)
+    replacements: buildTemplateReplacements(store, tNode),
+    title: getSingletonLiteral(store, tNode, `${RDFS}label`),
   }
 }
 

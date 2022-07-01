@@ -8,6 +8,7 @@
 @prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
 
 materialsmine_templates:PQ01 a whyis:SparqlTemplate;
+  rdfs:label "Polymer nanocomposites: Single property";
   spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler} filler surrounded by {?Matrix} matrix, along with the {?AmountType} fraction of filler and reported values of {?AttributeType}.";
   sp:text """
 PREFIX sio: <http://semanticscience.org/resource/>

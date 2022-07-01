@@ -7,6 +7,7 @@
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
 
 materialsmine_templates:PQ11 a whyis:SparqlTemplate;
+  rdfs:label "Knowledge graph attributes: Units";
   spin:labelTemplate "Show me <b>attributes in the knowledge graph</b> that report values with {?UnitOfMeasure} as their unit of measure, as well as the count of distinct polymer nanocomposite samples and count of distinct research articles linked to that attribute and unit combination, in descending order by article count.";
   sp:text """
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>

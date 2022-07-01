@@ -7,6 +7,7 @@
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
 
 materialsmine_templates:PQ03 a whyis:SparqlTemplate;
+  rdfs:label "Research articles: Filler and matrix";
   spin:labelTemplate "Show me <b>research articles</b> published in or after {?MinYear} that studied {?Filler} as a nanocomposite filler material and {?Matrix} as a matrix material, and list all matrix and filler materials studied in that article.";
   sp:text """
 PREFIX sio: <http://semanticscience.org/resource/>

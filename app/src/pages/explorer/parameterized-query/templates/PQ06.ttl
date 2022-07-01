@@ -7,6 +7,7 @@
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
 
 materialsmine_templates:PQ06 a whyis:SparqlTemplate;
+  rdfs:label "Matrix materials with linked articles";
   spin:labelTemplate "Show me distinct <b>matrix materials</b> containing {?Filler} as a filler material, ranked by the count of research articles linked to that material combination, as well as a list of the DOIs of the respective research articles.";
   sp:text """
 PREFIX sio: <http://semanticscience.org/resource/>
