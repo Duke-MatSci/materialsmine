@@ -13,6 +13,8 @@ const SPIN = `${SP}in#`
 const templateType = 'http://vocab.rpi.edu/whyis/SparqlTemplate'
 const typePred = RDF + 'type'
 
+const MMPQ = 'http://materialsmine.org/explorer/parameterized_query/'
+
 export async function loadSparqlTemplates () {
   // TODO: load templates via sparql query once they are present in whyis
   // Currently they are hardcoded as ttl files
@@ -77,8 +79,22 @@ function buildTemplate (store, tNode) {
     display: displayText,
     displaySegments: parseDisplayText(displayText),
     SPARQL: getSingletonLiteral(store, tNode, `${SP}text`),
-    options: buildTemplateParams(store, tNode)
+    options: buildTemplateParams(store, tNode),
+    replacements: buildTemplateReplacements(store, tNode)
   }
+}
+
+function buildTemplateReplacements (store, tNode) {
+  return Object.fromEntries(
+    store.getObjects(tNode, `${MMPQ}replacement`)
+      .map(paramNode =>
+        [getSingletonLiteral(store, paramNode, `${SP}varName`),
+          {
+            subVar: getSingletonLiteral(store, paramNode, `${MMPQ}subVar`),
+            varFormat: getSingletonLiteral(store, paramNode, `${MMPQ}varFormat`)
+          }]
+      )
+  )
 }
 
 function buildTemplateParams (store, tNode) {

@@ -5,6 +5,7 @@
 @prefix spl: <http://spinrdf.org/spin#> .
 @prefix whyis: <http://vocab.rpi.edu/whyis/> .
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
+@prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
 
 materialsmine_templates:PQ09 a whyis:SparqlTemplate;
   spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler1}, {?Filler2}, or {?Filler3} as a filler material, along with the associated matrix materials and the reported value of {?AttributeType}.";
@@ -354,4 +355,10 @@ SELECT DISTINCT * WHERE {
         schema:identifier <http://materialsmine.org/ns/StorageModulus>;
         schema:position 21
       ]
+  ];
+  mmpq:replacement
+  [
+    sp:varName "AttributeValue";
+    mmpq:subVar "AttributeType" ;
+    mmpq:varFormat "${var}";
   ].
