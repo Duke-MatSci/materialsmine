@@ -158,4 +158,53 @@
     &_loader {
         @include absCenter;
     }
+
+    &_tabb-controller {
+        color: $primary-black;
+        border-bottom: 2px solid $primary-black;
+        margin-bottom: -0.1rem;
+    }
+
+    &_text-col {
+        margin: 0 15rem 0 0;
+
+        @include respond(tab-land) {
+            margin: 0 10rem 0 0;
+        }
+        @include respond(tab-port) {
+            margin: 0 5rem 0 0;
+        }
+        @include respond(phone) {
+            margin: 0;
+        }
+    }
+    &_md-header {
+        @include respond(phone) {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        & .flex-item{
+            @include respond(phone) {
+                flex-basis: 90%;
+            }
+        }
+
+        & .img-div {
+            width: 45rem; 
+            height: 30rem;
+            @include respond(phone) {
+                width: 40rem;
+            }
+        }
+
+        & .img {
+            max-height: 33rem;
+        }
+    }
+    &__share {
+        display: flex;
+        justify-content: right;
+        line-height: 50px;
+    }
 }

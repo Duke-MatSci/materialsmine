@@ -168,6 +168,24 @@ class ElasticSearch {
       })
     });
   }
+
+  async loadAllCharts (page, size) {
+    const url = `http://${env.ESADDRESS}/charts/_search`;
+    return axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: ((page - 1) * size),
+        size,
+        query: {
+          match_all: {}
+        }
+      })
+    });
+  }
 }
 
 module.exports = new ElasticSearch();

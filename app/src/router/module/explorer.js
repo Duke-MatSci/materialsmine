@@ -80,6 +80,13 @@ const explorerRoutes = [
         name: 'ImageGallery',
         component: () => import('@/pages/explorer/image/Image.vue'),
         meta: { requiresAuth: false }
+      },
+      {
+        path: ':id/:fileId',
+        name: 'ImageDetailView',
+        component: () => import('@/pages/explorer/image/ImageDetailView.vue'),
+        props: true,
+        meta: { requiresAuth: false }
       }
     ]
   },

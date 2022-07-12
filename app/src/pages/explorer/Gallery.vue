@@ -94,16 +94,6 @@ import { mapGetters, mapActions } from 'vuex'
 
 export default {
   name: 'viz-grid',
-  props: {
-    authenticated: {
-      type: Boolean,
-      require: true
-    },
-    instancetype: {
-      type: String,
-      require: true
-    }
-  },
   data () {
     return {
       loading: true,
@@ -140,7 +130,7 @@ export default {
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
-      this.loading = false
+      return this.loading = false
     },
     getThumbnailUrl (item) {
       return getViewUrl({ uri: item.thumbnail })

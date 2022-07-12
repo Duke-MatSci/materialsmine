@@ -7,7 +7,7 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle }}</h1>
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'Parameterized Query'}}</h1>
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>
@@ -154,7 +154,8 @@ export default {
       results: null,
       autoRefresh: false,
       lastRunQuery: '',
-      execQueryDebounced: debounce(this.autoExecQuery, 300)
+      execQueryDebounced: debounce(this.autoExecQuery, 300),
+      pageTitle: [],
     }
   },
   computed: {
@@ -173,11 +174,6 @@ export default {
     newQuery () {
       return this.query !== this.lastRunQuery
     },
-    pageTitle () {
-      const selectionsKeys = Object.keys(this.varSelections)
-      const title = this.varSelections[selectionsKeys[3]]
-      return title[0].toUpperCase() + title.substring(1)
-    }
   },
   methods: {
     ...mapMutations('vega', ['setQuery']),
@@ -295,6 +291,18 @@ export default {
       if (this.autoRefresh && this.newQuery) {
         this.execQuery()
       }
+    },
+    updatePageTitleArray () {
+      if (this.queryTemplates && Object.keys(this.queryTemplates).length > 0) {
+        this.pageTitle = Object.keys(this.queryTemplates).map(key => {
+          return this.queryTemplates[key]
+            .display
+            .match(/<b>(.*?)<\/b>/g)
+            .map(val => {
+              return val.replace(/<\/?b>/g, '')
+            }).pop()
+        })
+      }
     }
   },
   created () {
@@ -315,6 +323,9 @@ export default {
     },
     autoRefresh: {
       handler: 'execQueryDebounced'
+    },
+    queryTemplates: {
+      handler: 'updatePageTitleArray'
     }
   }
 }

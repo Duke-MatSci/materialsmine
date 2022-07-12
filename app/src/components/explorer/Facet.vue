@@ -14,7 +14,8 @@
                     placeholder="Filter by filler"
                     class="form__select facet-content_item"
                     name="filterByFiller"
-                    @change.prevent="otherFilters"
+                    ref="filterByFiller"
+                    @change.prevent="updateQuery"
                     title="filter by filler info"
                   >
                   <div class="facet-content_label u_margin-top-small">Filter by keyword:</div>
@@ -22,7 +23,8 @@
                     placeholder="Filter by keyword"
                     class="form__select facet-content_item"
                     name="filterByKeyword"
-                    @change.prevent="otherFilters"
+                    ref="filterByKeyword"
+                    @change.prevent="updateQuery"
                     title="filter by keyword"
                   >
                   <div class="facet-content_label u_margin-top-small">Filter by year:</div>
@@ -30,11 +32,12 @@
                     placeholder="Filter by year"
                     class="form__select facet-content_item"
                     name="filterByYear"
-                    @change.prevent="otherFilters"
+                    ref="filterByYear"
+                    @change.prevent="updateQuery"
                     title="filter by published year"
                   >
                   <div class="utility-color u_margin-top-small" id="css-adjust-navfont">
-                    Hey there, type & hit enter to search
+                    <button class="u--bg form__select facet-content_item" @click.prevent="otherFilters">{{ searchButtonText }}</button>
                   </div>
                 </div>
 
@@ -65,12 +68,16 @@ export default {
   props: ['filterType'],
   data () {
     return {
-      searchEnabled: true
+      searchEnabled: true,
+      queryObject: { target: { name: '', value: '' } }
     }
   },
   computed: {
     facetFilterMaterials () {
       return this.$store.getters['explorer/getFacetFilterMaterials']
+    },
+    searchButtonText () {
+      return this.queryObject.target.value.length > 0 ? 'Clear' : 'Search'
     }
   },
   mounted () {
@@ -81,8 +88,14 @@ export default {
       const selectedValue = arg.target.value
       await this.$store.dispatch('explorer/searchFacetFilterMaterials', selectedValue)
     },
-    async otherFilters ({ target }) {
-      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', { type: target.name, value: target.value })
+    updateQuery (event) {
+      if (event.target.value.length) {
+        this.queryObject = event
+      }
+    },
+    async otherFilters () {
+      const { name , value } = this.queryObject.target;
+      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', { type: name, value })
     }
   }
 }

@@ -11,8 +11,8 @@ export default {
   page (state) {
     return state.page
   },
-  total (state, getters) {
-    return (getters.allItems || []).length
+  total (state) {
+    return state.total || 0
   },
   totalPages (state, getters) {
     return Math.ceil(getters.total / getters.pageSize)

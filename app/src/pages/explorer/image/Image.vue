@@ -5,7 +5,7 @@
       <spinner :loading="$apollo.loading" text='Loading Images'/>
     </div>
     <div class="utility-roverflow" v-else-if="searchImages && searchImages.images || images && images.images">
-			<div class="u_content__result">
+			<div class="u_content__result u_margin-top-small">
 				<span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="renderText != null">{{ renderText }}</strong>
           <span v-if="searchImages.totalItems === 0 || images.totalItems === 0">
@@ -17,6 +17,18 @@
           <span v-else>
             About {{searchImages.totalItems || images.totalItems}} results
           </span>
+          <span class="utility-absolute-input ">
+            <label for="pagesize"><strong>Page size:</strong></label>
+            <input
+              placeholder="Enter page size"
+              type="number"
+              id="pagesize"
+              class="u_width--xs utility-navfont"
+              name="pagesize"
+              title="specify number of items per size"
+              v-model="pageSize"
+            >
+          </span>
         </span>
 			</div>
 			<div class="gallery-grid grid grid_col-5">
@@ -25,7 +37,7 @@
           :key="index"
           class="btn--animated gallery-item"
         >
-          <router-link :to="{ name: '', params: { id: image.metaData.id }}">
+          <router-link :to="{ name: 'ImageDetailView', params: { id: image.metaData.id, fileId: image.file }}">
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
@@ -36,9 +48,9 @@
               <md-card-area class="u_gridbg">
                 <md-card-header class="u_show_hide">
                   <span class="md-subheading">
-                    <strong>{{ image.description || 'polymer nanocomposite image' }}</strong>
+                    <strong>{{ reduceDescription(image.description, 2) || 'polymer nanocomposite...' }}</strong>
                   </span>
-                  <span class="md-body-1">{{ image.metaData.title }}</span>
+                 <span class="md-body-1">{{ reduceDescription(image.metaData.title, 15) }}</span>
                 </md-card-header>
               </md-card-area>
             </md-card-media-cover>
@@ -102,10 +114,19 @@ export default {
       if (!this.searchEnabled) {
         this.pageNumber = event
         this.$apollo.queries.images.refetch()
+        return;
       }
       this.pageNumber = event
+      this.$apollo.queries.images.skip = true
       this.$apollo.queries.searchImages.skip = false
       this.$apollo.queries.searchImages.refetch()
+    },
+    reduceDescription (args, size) {
+      if (args) {
+        const arr = args.split(' ')
+        const sliced = arr.slice(0, size).join(' ')
+        return arr.length > size ? `${sliced}...` : sliced
+      }
     }
   },
   apollo: {
@@ -113,7 +134,7 @@ export default {
       query: IMAGES_QUERY,
       variables () {
         return {
-          input: { pageNumber: this.pageNumber, pageSize: this.pageSize }
+          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize) }
         }
       },
       fetchPolicy: 'cache-and-network'
@@ -122,11 +143,11 @@ export default {
       query: SEARCH_IMAGES_QUERY,
       variables () {
         return {
-          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: this.pageSize }
+          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize) }
         }
       },
       skip () {
-        return this.skipQuery
+        if(!this.searchEnabled) return this.skipQuery
       },
       fetchPolicy: 'cache-and-network'
     }

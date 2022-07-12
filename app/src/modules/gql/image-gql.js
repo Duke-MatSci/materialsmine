@@ -55,3 +55,32 @@ export const SEARCH_IMAGES_QUERY = gql`
 		}
 	}
 }`
+
+export const SINGLE_IMAGE_QUERY = gql`
+  query getSingleImage($input: singleImageQueryInput!) {
+    getSingleImages(input: $input) {
+      totalItems
+      pageSize
+      pageNumber
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      images {
+        file
+        description
+        microscopyType
+        type
+        dimension {
+          width
+          height
+        }
+        metaData {
+          title
+          id
+          doi
+          keywords
+        }
+      }
+    }
+  }
+`

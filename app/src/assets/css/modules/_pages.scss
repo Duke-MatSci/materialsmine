@@ -88,7 +88,7 @@
     }
     &_footer {
         color: $primary;
-        margin-top: 5rem;
+        margin-top: 1rem;
         text-align: center;
         &-text {
             font-size: 1.5rem;
@@ -408,4 +408,36 @@
     padding: 0 7rem;
     display: flex;
     flex-direction: column;
+}
+
+.image-detail-page {
+    padding: 2rem 12rem;
+    overflow: hidden;
+
+    @include respond(tab-land) {
+        padding: 0;
+    }
+    @include respond(tab-port) {
+        padding: 0 !important;
+    }
+    &-details {
+        &-flex-item-col {
+
+            @include respond(phone) {
+                flex-direction: column;
+            }
+        }
+    }
+    &-tab {
+        border-bottom: 0.1px solid $secondary-grey;
+    }
+
+    &__relatedImg {
+        display: flex;
+        flex-direction: row;
+        @include respond(phone){
+            flex-direction: row !important;
+        }
+
+    }
 }
