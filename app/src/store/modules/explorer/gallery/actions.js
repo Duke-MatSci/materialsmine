@@ -25,8 +25,8 @@ export default {
     const responseData = await response.json()
     commit('setTotal', responseData.total)
     commit('setPage', page)
-  
-    if(!responseData.data) {
+
+    if (!responseData.data) {
       return commit('setItems', [])
     }
 

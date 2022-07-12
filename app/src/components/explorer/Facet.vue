@@ -94,7 +94,7 @@ export default {
       }
     },
     async otherFilters () {
-      const { name , value } = this.queryObject.target;
+      const { name, value } = this.queryObject.target
       await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue', { type: name, value })
     }
   }

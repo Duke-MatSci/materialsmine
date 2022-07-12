@@ -155,7 +155,7 @@ export default {
       autoRefresh: false,
       lastRunQuery: '',
       execQueryDebounced: debounce(this.autoExecQuery, 300),
-      pageTitle: [],
+      pageTitle: []
     }
   },
   computed: {
@@ -173,7 +173,7 @@ export default {
     },
     newQuery () {
       return this.query !== this.lastRunQuery
-    },
+    }
   },
   methods: {
     ...mapMutations('vega', ['setQuery']),

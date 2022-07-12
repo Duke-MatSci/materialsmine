@@ -114,7 +114,7 @@ export default {
       if (!this.searchEnabled) {
         this.pageNumber = event
         this.$apollo.queries.images.refetch()
-        return;
+        return
       }
       this.pageNumber = event
       this.$apollo.queries.images.skip = true
@@ -147,7 +147,7 @@ export default {
         }
       },
       skip () {
-        if(!this.searchEnabled) return this.skipQuery
+        if (!this.searchEnabled) return this.skipQuery
       },
       fetchPolicy: 'cache-and-network'
     }

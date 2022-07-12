@@ -130,7 +130,7 @@ export default {
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
-      return this.loading = false
+      this.loading = false
     },
     getThumbnailUrl (item) {
       return getViewUrl({ uri: item.thumbnail })

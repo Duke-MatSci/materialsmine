@@ -174,7 +174,7 @@ export default {
     this.resizeHandler()
   },
   mounted () {
-		debugger;
+    debugger
     this.$watch(vm => [vm.relatedImgStart, vm.maxRenderListSize, vm.displayWidth], val => {
       this.relatedImages = this.getSingleImages.images.filter(img => img.file !== this.$route.params.fileId)
         .slice(this.relatedImgStart, this.relatedImgStart + this.maxRenderListSize)
