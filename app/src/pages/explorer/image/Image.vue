@@ -50,7 +50,7 @@
                   <span class="md-subheading">
                     <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
                   </span>
-                 <span class="md-body-1">{{ reduceDescription(image.metaData.title, 15) }}</span>
+                 <span class="md-body-1">{{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 15) }}</span>
                 </md-card-header>
               </md-card-area>
             </md-card-media-cover>

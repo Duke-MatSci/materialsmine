@@ -65,10 +65,10 @@
                       <md-card-area class="u_gridbg">
                         <md-card-header class="u_show_hide">
                           <span class="md-subheading">
-                            <strong>{{ reduceDescription(image.description, 2) || 'polymer nanocomposite image' }}</strong>
+                            <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
                           </span>
                           <span class="md-body-1">
-                            {{ reduceDescription(image.metaData.title, 8) }}
+                            {{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 8) }}
                           </span>
                         </md-card-header>
                       </md-card-area>
