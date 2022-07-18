@@ -44,7 +44,7 @@ export default {
         40: 'dialog-box_size-sm',
         60: 'dialog-box_size-md',
         80: 'dialog-box_size-lg'
-      })[this.minWidth] ?? 'dialog-box_size-md'
+      })[this.minWidth] || 'dialog-box_size-md'
     }
   }
 }

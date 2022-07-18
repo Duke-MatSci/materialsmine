@@ -11,6 +11,10 @@
         text-align: left;
         color: $primary;
         margin-top: 8rem;
+
+        @include respond(tab-port) {
+            font-size: 2.5rem;
+        }
     }
 
     &_text {
@@ -84,7 +88,7 @@
     }
     &_footer {
         color: $primary;
-        margin-top: 5rem;
+        margin-top: 1rem;
         text-align: center;
         &-text {
             font-size: 1.5rem;
@@ -110,16 +114,28 @@
             border: 0.1rem solid #08233c;
             // background-color: $primary;
             cursor: pointer;
-            margin-right: 5rem;
+            // margin-right: 5rem;
+            margin-right: 2.5rem;
+
+            @include respond(phone) {
+                margin-right: 2rem;
+                width: 30rem !important;
+            }
+            
             &_icon {
-                margin-top: 7rem;
+                margin-top: 9rem;
                 font-size: 12rem !important;
                 color: $primary !important;
             }
             &_text {
                 color: $primary;
-                font-size: 3rem;
+                // font-size: 3rem;
+                font-size: 2.8rem;
                 font-weight: 300;
+            }
+
+            &::after {
+                display: inline;
             }
 
             &:hover {
@@ -384,5 +400,44 @@
         @include respond(phone) {
             padding: 0;
         }
+    }
+}
+
+.curate {
+    display: block;
+    padding: 0 7rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.image-detail-page {
+    padding: 2rem 12rem;
+    overflow: hidden;
+
+    @include respond(tab-land) {
+        padding: 0;
+    }
+    @include respond(tab-port) {
+        padding: 0 !important;
+    }
+    &-details {
+        &-flex-item-col {
+
+            @include respond(phone) {
+                flex-direction: column;
+            }
+        }
+    }
+    &-tab {
+        border-bottom: 0.1px solid $secondary-grey;
+    }
+
+    &__relatedImg {
+        display: flex;
+        flex-direction: row;
+        @include respond(phone){
+            flex-direction: row !important;
+        }
+
     }
 }

@@ -2,15 +2,15 @@
   <div>
     <div class="section_visualize">
       <div class="visualize--links">
-          <div class="visualize--link-icons visualize--link-left" @click.prevent="pushChart('prev')"><i class="material-icons">keyboard_arrow_left</i></div>
-          <div class="visualize--link-icons visualize--link-right" @click.prevent="pushChart('next')"><i class="material-icons">keyboard_arrow_right</i></div>
+          <div class="visualize--link-icons visualize--link-left" @click.prevent="reduceAsset('prev')"><i class="material-icons">keyboard_arrow_left</i></div>
+          <div class="visualize--link-icons visualize--link-right" @click.prevent="reduceAsset('next')"><i class="material-icons">keyboard_arrow_right</i></div>
       </div>
       <div class="wrapper">
           <div class="visualize_header">
               <h1 title="Visualization Headline" class="visualize_header-h1">Visualize and Interact with Your Data</h1>
           </div>
           <div class="visualize_accordion" title="Visualization Container">
-            <div class="visualize_chart" :class="`charts-${index + 1}`" v-for="(chart, index) in gifChart" :key="index">
+            <div class="visualize_chart" :class="`charts-${index + 1}`" v-for="(chart, index) in assetItems" :key="index">
               <div class="visualize_chart-content" :class="`charts_content-${index + 1}`" @click.prevent="navigateFunction(chart.url)">
                 <img :src="chart.img" :alt="chart.title" />
                 <span>{{ chart.title }}</span>
@@ -57,73 +57,45 @@
 </template>
 
 <script>
+import reducer from '@/mixins/reduce'
 
 export default {
   name: 'HomeNM',
+  mixins: [reducer],
   data () {
     return {
-      gifChart: [
+      assetItems: [
         {
           img: require('@/assets/img/chartgifs/characterization-radial.gif'),
           title: 'Tooltips',
-          url: 'https://materialsmine.org/wi/viz/16fb67daba5c4c39'
+          url: 'explorer/chart/view/16fb67daba5c4c39'
         },
         {
           img: require('@/assets/img/chartgifs/crossfiltering.gif'),
           title: 'Crossfiltering',
-          url: 'https://materialsmine.org/wi/viz/a66e1f86fe47ef6d'
+          url: 'explorer/chart/view/a66e1f86fe47ef6d'
         },
         {
           img: require('@/assets/img/chartgifs/matrix-filler-combo.gif'),
           title: 'Dynamic Selection',
-          url: 'https://materialsmine.org/wi/viz/598daf9fd610e982'
+          url: 'explorer/chart/view/598daf9fd610e982'
         },
         {
           img: require('@/assets/img/chartgifs/meta-analysis.gif'),
           title: 'Pan & Zoom',
-          url: 'https://materialsmine.org/wi/viz/6675f5b909cf5059'
+          url: 'explorer/chart/view/6675f5b909cf5059'
         },
         {
           img: require('@/assets/img/chartgifs/tensile-chart.gif'),
           title: 'Conditional Highlighting',
-          url: 'https://materialsmine.org/wi/viz/fca5e763f0284284'
+          url: 'explorer/chart/view/fca5e763f0284284'
         }
       ],
-      exploreChart: [],
-      pushedCharts: [],
+      pushedAssetItem: [],
       screen: 0
     }
   },
   methods: {
-    pushChart (args) {
-      let movedChart; const vm = this
-      if (window.matchMedia('(max-width: 40.5em)').matches) {
-        vm.screen = 1
-      } else if (window.matchMedia('(max-width: 56.25em)').matches) {
-        vm.screen = 2
-      } else {
-        vm.screen = 3
-      }
-      if (args === 'prev') {
-        if (!this.pushedCharts.length) {
-          return false
-        } else {
-          movedChart = this.pushedCharts[this.pushedCharts.length - 1]
-          this.gifChart.unshift(movedChart)
-          this.pushedCharts.pop()
-        }
-      } else {
-        if (!this.gifChart.length) {
-          return false
-        } else if (this.gifChart.length <= this.screen) {
-          return false
-        } else {
-          movedChart = this.gifChart[0]
-          this.pushedCharts.push(movedChart)
-          this.gifChart.shift()
-        }
-      }
-    },
     navigateFunction (arg) {
       this.$router.push(arg)
     }

@@ -26,6 +26,9 @@
         width: 100%;
         display: block;
         transition: all .3s;
+        @include respond(phone) {
+            padding: 0.95rem !important;
+        }
 
         &:focus {
             outline: none;

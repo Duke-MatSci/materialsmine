@@ -11,9 +11,9 @@
 							<input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
 							<label htmlFor="search" class="form__label search_box_form_label">Search</label>
 						</div>
-						<div class="form__group search_box_form-item-2">
-							<button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
-						</div>
+					</div>
+					<div class="form__group search_box_form-item-2  explorer_page-nav u--margin-neg">
+						<button type="submit" class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos">Search</button>
 					</div>
 				</form>
 				<div class="search-dropdown-menu_parent" v-if="!!suggestions.length && enableAutosuggest">
@@ -23,7 +23,6 @@
 						</li>
 					</ul>
 				</div>
-				<router-link class="search_box_link" :to="{name:'ParameterizedQuery'}">Search using a Parameterized Query</router-link>
 				<p class="search_box_text">
 					MM Explorer is a research-focused discovery tool that enables collaboration among scholars of nano and meta materials. Browse or search information on articles, samples, images, charts, etc.
 				</p>
@@ -32,7 +31,7 @@
 		<div class="explorer_page-container" v-if="!searchEnabled">
 			<div class="explorer_page-nav">
 				<div class="teams_list explorer_page-list">
-					<ul>
+					<ul class="utility_flex_mobile">
 						<li v-for="link in pageNavLinks" :key="link.text">
 							<router-link :to="'/' + link.link" v-slot="{navigate, href}" custom>
 								<div class="teams_container explorer_page-nav-card" :href="href" @click="navigate">

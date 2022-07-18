@@ -63,7 +63,7 @@ export default {
         })
     },
     hello: function (data) {
-      if (data === 'connection received' && this.job?.useWebsocket === true) {
+      if (data === 'connection received' && this.job.useWebsocket === true) {
         this.useWebsocket = true
       }
     }
@@ -135,14 +135,14 @@ export default {
     },
     successDlg () {
       let contentSockets
-      if (this.job?.useWebsocket) {
+      if (this.job.useWebsocket) {
         contentSockets = 'Please stay on this page. Results may take up to a few minutes to load.'
       } else {
         contentSockets = 'You should receive an email with a link to the job output.'
       }
       this.renderDialog({
-        title: `${this.job?.jobTitle} Job Submitted Successfully`,
-        content: `Your ${this.job?.submitJobTitle} job is: ${this.toolId}<br />${contentSockets}`,
+        title: `${this.job.jobTitle} Job Submitted Successfully`,
+        content: `Your ${this.job.submitJobTitle} job is: ${this.toolId}<br />${contentSockets}`,
         reason: 'successDlg'
       })
     },
@@ -232,7 +232,7 @@ export default {
       }
 
       const jm = new JobMgr()
-      jm.setJobType(this.job?.submitJobTitle)
+      jm.setJobType(this.job.submitJobTitle)
 
       var jobParameters = { InputType: this.files.fileType, useWebsocket: this.useWebsocket } // Figure out which file type
       for (var key in this.selectedOptions) {
@@ -245,7 +245,7 @@ export default {
         }
       }
       if ('submitJobType' in this.job) {
-        jobParameters.jobtype = this.job?.submitJobType
+        jobParameters.jobtype = this.job.submitJobType
       }
       jm.setJobParameters(jobParameters)
 

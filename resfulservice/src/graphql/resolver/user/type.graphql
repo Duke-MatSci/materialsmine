@@ -1,0 +1,25 @@
+type User {
+  _id: ID
+  alias: String
+  givenName: String
+  surName: String
+  displayName: String
+  email: String
+  apiAccess: String
+}
+
+type Users {
+  """
+  total numbers of users
+  """
+  totalItems: Int!
+  """
+  the numbers of users return per page
+  """
+  pageSize: Int!
+  pageNumber: Int!
+  totalPages: Int!
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  data: [User!]!
+}
