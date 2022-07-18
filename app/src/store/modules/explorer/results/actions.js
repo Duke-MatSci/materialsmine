@@ -8,7 +8,56 @@ export default {
     if (!payload) {
       return
     }
-    return context.dispatch('outboundSearchRequest', newPayload)
+    await context.dispatch('outboundSearchRequest', newPayload)
+    return context.dispatch('getMatchedImages', payload)
+  },
+
+  async getMatchedImages (context, payload) {
+    const url = `${window.location.origin}/api/graphql`
+    const graphql = JSON.stringify({
+      query: `query SearchImages($input: imageExplorerInput!){
+        searchImages(input: $input) {
+          totalItems
+          pageSize
+          pageNumber
+          totalPages
+          hasPreviousPage
+          hasNextPage
+          images {
+            file
+            description
+            type
+            metaData{
+              title
+              id
+            }
+          }
+        }
+      }`,
+      variables: { input: { search: 'filterByKeyword', searchValue: payload, pageSize: 100 }}
+    })
+    const requestOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: graphql
+    };
+    const response = await fetch(url, requestOptions)
+    if (!response || response?.statusText !== 'OK') {
+      const error = new Error(
+        response.message || 'Something went wrong!'
+      )
+      throw error
+    }
+
+    const responseData = await response.json()
+    const total = context.getters['getTotal'] + responseData?.data?.searchImages?.totalItems
+    const groupTotals = context.getters['getTotalGroupings']
+    groupTotals['getImages'] = responseData?.data?.searchImages?.totalItems
+    context.commit('setTotal', total || 0)
+    context.commit('setImages', responseData?.data?.searchImages?.images || [])
+    context.commit('setTotalGrouping', groupTotals)
   },
 
   async outboundSearchRequest (context, payload) {
@@ -25,8 +74,9 @@ export default {
     })
 
     if (!response || response.statusText !== 'OK') {
+      context.commit('setIsLoading', false)
       const error = new Error(
-        response.message || 'Something went wrong!'
+        response?.message || 'Something went wrong!'
       )
       throw error
     }
@@ -56,12 +106,10 @@ export default {
   },
 
   saveSearch (context, responseData) {
-    const data = responseData.data.hits || []
+    const data = responseData?.data?.hits || []
     const types = Object.create({})
     data.forEach((item) => {
-      let categoryExist = Object.keys(types)
-
-      categoryExist = categoryExist.length ? Object.keys(types).find(currKey => currKey === item._index) : undefined
+      const categoryExist = Object.keys(types)?.find(currKey => currKey === item?._index) || undefined
 
       if (categoryExist) {
         types[categoryExist].push(item._source)
@@ -69,25 +117,24 @@ export default {
         types[item._index] = new Array(item._source)
       }
     })
-    context.commit('setArticles', types.articles || [])
-    context.commit('setSamples', types.samples || [])
-    context.commit('setImages', types.images || [])
-    context.commit('setCharts', types.charts || [])
-    context.commit('setTotal', responseData.data.total.value || 0)
+    context.commit('setArticles', types?.articles || [])
+    context.commit('setSamples', types?.samples || [])
+    context.commit('setCharts', types?.charts || [])
+    context.commit('setTotal', responseData?.data?.total?.value || 0)
     context.commit('setIsLoading', false)
     context.commit('setTotalGrouping', {
-      getArticles: types.articles ? types.articles.length : 0,
-      getSamples: types.samples ? types.samples.length : 0,
-      getImages: types.images ? types.images.length : 0,
-      getCharts: types.charts ? types.charts.length : 0,
+      getArticles: types?.articles?.length || 0,
+      getSamples: types?.samples?.length || 0,
+      getImages: types?.images?.length || 0,
+      getCharts: types?.charts?.length || 0,
       getMaterials: 0
     })
   },
 
   saveAutosuggest (context, responseData) {
-    const data = responseData.data.hits || []
+    const data = responseData?.data?.hits || []
     const suggestions = data.map(item => {
-      return item._source.label
+      return item?._source?.label
     })
     context.commit('setAutosuggest', suggestions || [])
   }

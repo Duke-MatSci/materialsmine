@@ -4,7 +4,6 @@
 			<div class="curate">
 				<div>
                     <h2 class="visualize_header-h1">Curate</h2>
-                    <div class="u_divider u_divider-fullspan"></div>
                     <div class="md-layout md-layout-responsive">
                         <!-- <div class="md-layout-item">&nbsp;</div> -->
                         <div class="md-layout-item md-layout-item_card">
@@ -45,7 +44,6 @@
                 </div>
                 <div class="u_margin-top-med">
                     <h2 class="visualize_header-h1 metamine_footer-ref-header">Create Visualization</h2>
-                    <div class="u_divider u_divider-fullspan"></div>
                     <div class="md-layout md-layout-responsive">
                         <!-- <div class="md-layout-item">&nbsp;</div> -->
                         <div class="md-layout-item md-layout-item_card">

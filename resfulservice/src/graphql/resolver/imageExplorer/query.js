@@ -11,7 +11,6 @@ const imageExplorerQuery = {
       const pagination = input
         ? paginator((await imageQuery({ search }))?.counts, input.pageNumber, input.pageSize)
         : paginator((await imageQuery({ search }))?.counts);
-      console.log(pagination.skip, pagination.limit, 'test');
       const images = imageTransformer(await (await imageQuery({ search, skip: pagination.skip, limit: pagination.limit })).images);
       return Object.assign(pagination, { images });
     } catch (err) {

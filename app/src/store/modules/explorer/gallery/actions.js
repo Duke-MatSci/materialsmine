@@ -11,7 +11,7 @@ export default {
     const response = await fetch(url, {
       method: 'GET'
     })
-    if (!response || response.statusText !== 'OK') {
+    if (!response || response?.statusText !== 'OK') {
       const error = new Error(
         response.message || 'Something went wrong!'
       )

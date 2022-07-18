@@ -9,7 +9,13 @@ type User {
 }
 
 type Users {
+  """
+  total numbers of users
+  """
   totalItems: Int!
+  """
+  the numbers of users return per page
+  """
   pageSize: Int!
   pageNumber: Int!
   totalPages: Int!

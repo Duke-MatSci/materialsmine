@@ -7,7 +7,7 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'Parameterized Query'}}</h1>
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>

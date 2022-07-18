@@ -48,7 +48,7 @@
               <md-card-area class="u_gridbg">
                 <md-card-header class="u_show_hide">
                   <span class="md-subheading">
-                    <strong>{{ reduceDescription(image.description, 2) || 'polymer nanocomposite...' }}</strong>
+                    <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
                   </span>
                  <span class="md-body-1">{{ reduceDescription(image.metaData.title, 15) }}</span>
                 </md-card-header>
@@ -74,8 +74,10 @@ import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import { IMAGES_QUERY, SEARCH_IMAGES_QUERY } from '@/modules/gql/image-gql'
 import FacetPanel from '@/components/explorer/Facet.vue'
+import reducer from '@/mixins/reduce'
 export default {
   name: 'ImageGallery',
+  mixins: [reducer],
   data () {
     return {
       baseUrl: window.location.origin,
@@ -121,13 +123,6 @@ export default {
       this.$apollo.queries.searchImages.skip = false
       this.$apollo.queries.searchImages.refetch()
     },
-    reduceDescription (args, size) {
-      if (args) {
-        const arr = args.split(' ')
-        const sliced = arr.slice(0, size).join(' ')
-        return arr.length > size ? `${sliced}...` : sliced
-      }
-    }
   },
   apollo: {
     images: {

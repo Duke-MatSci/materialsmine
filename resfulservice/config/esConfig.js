@@ -46,7 +46,7 @@ exports.images = {
     label: {
       type: 'text',
       analyzer: 'autocomplete'
-    }, 
+    },
     identifier: {
       type: 'text'
     }
@@ -60,7 +60,7 @@ exports.samples = {
   properties: {
     label: {
       type: 'text',
-      analyzer: 'autocomplete',
+      analyzer: 'autocomplete'
     },
     identifier: {
       type: 'text'

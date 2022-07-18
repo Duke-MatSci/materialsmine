@@ -46,14 +46,14 @@
           <div>
             <div id="related-images" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.ri_active}">
               <div class="search_box_form howto_item-header">
-                <md-button :class="{'md-icon-button': true, 'u--layout-hide': showPrev}" @click="prev">
+                <md-button :class="{'md-icon-button': true, 'u--layout-hide': hideAssetNavLeft}" @click.prevent="reduceAsset('prev')">
                   <md-tooltip> Show Left </md-tooltip>
                   <md-icon>arrow_back</md-icon>
                 </md-button>
 
                 <div class="section_md-header image-detail-page__relatedImg">
                   <md-card
-                    v-for="(image, index) in relatedImages"
+                    v-for="(image, index) in assetItems"
                     :key="index"
                     class="md-card-class u--margin-none"
                   >
@@ -76,7 +76,7 @@
                   </md-card>
                 </div>
 
-                <md-button id="shareChartBtn"  :class="{'md-icon-button': true, 'u--layout-hide': showNext}" @click.prevent="next" >
+                <md-button id="shareChartBtn"  :class="{'md-icon-button': true }" @click.prevent="reduceAsset('next')" >
                   <md-tooltip> Show Right </md-tooltip>
                   <md-icon>arrow_forward</md-icon>
                 </md-button>
@@ -93,7 +93,7 @@
 
             <div id="metadata" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
                 <div class="u--margin-pos">
-                  <span class="u--font-emph-xl u--color-secondary">
+                  <span class="u--font-emph-xl u--color-black">
                     Microscopy:
                   </span>
                   <span class="u--font-emph-xl u--color-grey-sec">
@@ -101,7 +101,7 @@
                   </span>
                 </div>
                 <div class="u--margin-pos">
-                  <span class="u--font-emph-xl u--color-secondary">
+                  <span class="u--font-emph-xl u--color-black">
                     Dimension:
                   </span>
                   <span class="u--font-emph-xl u--color-grey-sec">
@@ -109,7 +109,7 @@
                   </span>
                 </div>
                 <div class="u--margin-pos">
-                  <span class="u--font-emph-xl u--color-secondary">
+                  <span class="u--font-emph-xl u--color-black">
                     Type:
                   </span>
                   <span class="u--font-emph-xl u--color-grey-sec">
@@ -128,8 +128,10 @@
 <script>
 import spinner from '@/components/Spinner'
 import { SINGLE_IMAGE_QUERY } from '@/modules/gql/image-gql'
+import reducer from '@/mixins/reduce'
 export default {
   name: 'ImageDetailView',
+	mixins: [reducer],
   props: ['id'],
   data () {
     return {
@@ -144,44 +146,13 @@ export default {
       },
       showLink: false,
       currentImage: {},
-      relatedImages: [],
-      relatedImgStart: 0,
-      maxRenderListSize: 3,
-      displayWidth: window.screen.width
+      assetItems: [],
+      pushedAssetItem: [],
+      screen: 0
     }
   },
   components: {
     spinner
-  },
-  computed: {
-    showNext () {
-      if (this.relatedImgStart + 1 > this.getSingleImages.images.length - this.maxRenderListSize - 1) {
-        return true
-      } else {
-        return false
-      }
-    },
-    showPrev () {
-      if (this.relatedImgStart < 1) {
-        return true
-      } else {
-        return false
-      }
-    }
-  },
-  created () {
-    window.addEventListener('resize', this.resizeHandler)
-    this.resizeHandler()
-  },
-  mounted () {
-    debugger
-    this.$watch(vm => [vm.relatedImgStart, vm.maxRenderListSize, vm.displayWidth], val => {
-      this.relatedImages = this.getSingleImages.images.filter(img => img.file !== this.$route.params.fileId)
-        .slice(this.relatedImgStart, this.relatedImgStart + this.maxRenderListSize)
-    })
-  },
-  destroyed () {
-    window.removeEventListener('resize', this.resizeHandler)
   },
   watch: {
     getSingleImages (newValues, oldValues) {
@@ -189,17 +160,11 @@ export default {
         const { images } = newValues
         const [first] = images.filter(img => img.file === this.$route.params.fileId)
         this.currentImage = first
-        this.relatedImages = images.filter(img => img.file !== this.$route.params.fileId)
-          .slice(this.relatedImgStart, this.relatedImgStart + this.maxRenderListSize)
+        this.assetItems = images.filter(img => img.file !== this.$route.params.fileId)
       }
     }
   },
   methods: {
-    reduceDescription (args, size) {
-      const arr = args.split(' ')
-      const sliced = arr.slice(0, size).join(' ')
-      return arr.length > size ? `${sliced}...` : sliced
-    },
     navBack (args) {
       this.$router.push('/explorer/images')
     },
@@ -216,18 +181,6 @@ export default {
     updateCurrentImage (fileId) {
       const [first] = this.getSingleImages.images.filter(img => img.file === fileId)
       this.currentImage = first
-    },
-    next () {
-      if (this.relatedImgStart < this.getSingleImages.images.length - this.maxRenderListSize) {
-        this.relatedImgStart++
-      }
-    },
-    prev () {
-      if (this.relatedImgStart > 0) { this.relatedImgStart-- }
-    },
-    resizeHandler () {
-      const newScreenSize = window.screen.width
-      if (newScreenSize < 601) { this.maxRenderListSize = 1 } else if (newScreenSize < 1180) { this.maxRenderListSize = 2 } else { this.maxRenderListSize = 3 }
     },
     handleShare (imgUrl) {
       navigator.clipboard.writeText(imgUrl)
