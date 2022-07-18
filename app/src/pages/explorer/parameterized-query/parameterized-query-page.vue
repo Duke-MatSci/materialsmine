@@ -268,8 +268,8 @@ export default {
         Object.keys(activeReplacements).map((varName) => {
           // convert to variable names and replace in query
           const replacement = `?${this.camelize(activeReplacements[varName])}`
-          var originalRE = new RegExp('\\?' + varName)
-          tempQuery = tempQuery.replace(originalRE, replacement)
+          var originalRE = new RegExp('\\?' + varName, 'g')
+          tempQuery = tempQuery.replaceAll(originalRE, replacement)
         })
       }
       this.query = tempQuery

@@ -21,8 +21,7 @@ export default {
   },
   methods: {
     async fetchData (query) {
-      const sampleId = this.$route.params.label
-      return await querySparql(query(sampleId))
+      return await querySparql(query(this.sampleId))
     },
     parseHeader (data) {
       if (!data) return null
@@ -68,13 +67,15 @@ export default {
         const materialProperties = parsedData
           .filter((item) => item.std_name === element.class)
           .map((item) => {
-            const { attrUnits, attrValue: value, attrType } = item
-            const units = attrUnits || ''
-            const type = attrType
-              .split('/')
-              .pop()
-              .match(/[A-Z][a-z]+|[0-9]+/g)
-              .join(' ')
+            const { attrUnits, attrValue, attrType } = item
+            const units = attrUnits ?? ''
+            const value = attrValue ?? ''
+            const type =
+              attrType
+                .split('/')
+                .pop()
+                .match(/[A-Z][a-z]+|[0-9]+/g)
+                .join(' ') ?? ''
             return {
               type,
               units,
@@ -90,11 +91,15 @@ export default {
       const parseData = parseSparql(data)
       if (!parseData || parseData.length === 0) return null
       const curatedProperties = parseData.map((property) => {
-        const { AttrType, value, Units: units } = property
-        const type = AttrType.split('/')
-          .pop()
-          .match(/[A-Z][a-z]+|[0-9]+/g)
-          .join(' ')
+        let { AttrType, value, Units: units } = property
+        value = value ?? '' // check for empty values
+        units = units ?? ''
+        const type =
+          AttrType.split('/')
+            .pop()
+            .match(/[A-Z][a-z]+|[0-9]+/g)
+            .join(' ') ?? ''
+
         return {
           type,
           units,
@@ -160,6 +165,18 @@ export default {
           this.loading = false
         })
         .catch((e) => console.error(e))
+    }
+  },
+
+  computed: {
+    sampleId () {
+      return this.$route.params.label ?? ''
+    },
+    sampleYear () {
+      return this.$route.params.label.split('-').pop() ?? ''
+    },
+    sampleAuthor () {
+      return this.$route.params.label.split('-').slice(0, -1).pop() ?? ''
     }
   },
 
