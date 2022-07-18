@@ -1,9 +1,9 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import ExplorerGallery from '@/pages/explorer/Gallery.vue'
-import { chartUriPrefix, toChartId } from '@/modules/vega-chart'
+import { toChartId } from '@/modules/vega-chart'
 
-const itemsPerPage = 1;
+const itemsPerPage = 1
 
 const mockValues = {
   data: [
@@ -11,7 +11,7 @@ const mockValues = {
       _source: {
         description: 'Filler particles may be treated with a particle surface treatment to improve dispersion within the matrix. Here, pie and donut charts serve as an abstract illustration of this concept alongside Glass Transition Temperature (Tg) data. Hover over a region in the pie or donut charts to see a tooltip with the Matrix, Filler, or Particle Surface Treatment. Click and drag in either scatter plot to define a selection window, then click and drag or scroll to adjust the selection window. To pan or zoom in a scatter plot, hold down Shift while dragging or scrolling.',
         identifier: `http://nanomine.org/viz/d0c4446ac8ddd0ed${Math.random()}`,
-        label: 'Kaleidoscopic Nanocomposites',
+        label: 'Kaleidoscopic Nanocomposites'
       }
     }
   ],
@@ -24,12 +24,12 @@ global.fetch = jest.fn(() =>
     statusText: 'OK',
     status: 200
   })
-);
+)
 
 describe('Gallery.vue', () => {
   let wrapper
-  beforeEach(async() => {
-    fetch.mockClear();
+  beforeEach(async () => {
+    fetch.mockClear()
     wrapper = await createWrapper(ExplorerGallery, {}, true)
   })
 

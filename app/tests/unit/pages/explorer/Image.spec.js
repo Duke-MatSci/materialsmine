@@ -2,33 +2,32 @@ import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import ImageGallery from '@/pages/explorer/image/Image.vue'
 
-
-let apollo = {
-  "images": {
-    "totalItems": 1,
-    "pageSize": 1,
-    "pageNumber": 1,
-    "totalPages": 1,
-    "hasPreviousPage": false,
-    "hasNextPage": true,
-    "images": [
+const apollo = {
+  images: {
+    totalItems: 1,
+    pageSize: 1,
+    pageNumber: 1,
+    totalPages: 1,
+    hasPreviousPage: false,
+    hasNextPage: true,
+    images: [
       {
-        "file": "/api/files/583e05cfe74a1d205f4e2177",
-        "description": "height image",
-        "microscopyType": "AFM",
-        "type": "grayscale",
-        "dimension": {
-          "width": 20,
-          "height": 20
+        file: '/api/files/583e05cfe74a1d205f4e2177',
+        description: 'height image',
+        microscopyType: 'AFM',
+        type: 'grayscale',
+        dimension: {
+          width: 20,
+          height: 20
         },
-        "metaData": {
-          "title": "Morphology and electrical resistivity of melt mixed blends of polyethylene and carbon nanotube filled polycarbonate",
-          "doi": "10.1016/j.polymer.2003.10.003",
-          "id": "583e0672e74a1d205f4e21be",
-          "keywords": [
-            "Blends",
-            "Multiwalled carbon nanotube composites",
-            "Electrical resistivity"
+        metaData: {
+          title: 'Morphology and electrical resistivity of melt mixed blends of polyethylene and carbon nanotube filled polycarbonate',
+          doi: '10.1016/j.polymer.2003.10.003',
+          id: '583e0672e74a1d205f4e21be',
+          keywords: [
+            'Blends',
+            'Multiwalled carbon nanotube composites',
+            'Electrical resistivity'
           ]
         }
       }
@@ -37,18 +36,20 @@ let apollo = {
 }
 describe('Image.vue', () => {
   let wrapper
-  beforeEach(async() => {
-    wrapper = await createWrapper(ImageGallery, { mocks: {
-      $apollo: {
-        loading: false,
-      },
-    }}, true)
+  beforeEach(async () => {
+    wrapper = await createWrapper(ImageGallery, {
+      mocks: {
+        $apollo: {
+          loading: false
+        }
+      }
+    }, true)
     await wrapper.setData({ images: apollo.images })
   })
 
   enableAutoDestroy(afterEach)
 
-  // TODO: TEST 
+  // TODO: TEST
   it('loads page', async () => {
     expect.assertions(1)
     expect(await wrapper.find('.gallery').exists()).toBe(true)

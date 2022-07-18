@@ -131,7 +131,7 @@ import { SINGLE_IMAGE_QUERY } from '@/modules/gql/image-gql'
 import reducer from '@/mixins/reduce'
 export default {
   name: 'ImageDetailView',
-	mixins: [reducer],
+  mixins: [reducer],
   props: ['id'],
   data () {
     return {

@@ -122,7 +122,7 @@ export default {
       this.$apollo.queries.images.skip = true
       this.$apollo.queries.searchImages.skip = false
       this.$apollo.queries.searchImages.refetch()
-    },
+    }
   },
   apollo: {
     images: {

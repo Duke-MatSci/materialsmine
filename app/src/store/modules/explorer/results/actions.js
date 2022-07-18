@@ -34,15 +34,15 @@ export default {
           }
         }
       }`,
-      variables: { input: { search: 'filterByKeyword', searchValue: payload, pageSize: 100 }}
+      variables: { input: { search: 'filterByKeyword', searchValue: payload, pageSize: 100 } }
     })
     const requestOptions = {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: graphql
-    };
+    }
     const response = await fetch(url, requestOptions)
     if (!response || response?.statusText !== 'OK') {
       const error = new Error(
@@ -52,9 +52,9 @@ export default {
     }
 
     const responseData = await response.json()
-    const total = context.getters['getTotal'] + responseData?.data?.searchImages?.totalItems
-    const groupTotals = context.getters['getTotalGroupings']
-    groupTotals['getImages'] = responseData?.data?.searchImages?.totalItems
+    const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems
+    const groupTotals = context.getters.getTotalGroupings
+    groupTotals.getImages = responseData?.data?.searchImages?.totalItems
     context.commit('setTotal', total || 0)
     context.commit('setImages', responseData?.data?.searchImages?.images || [])
     context.commit('setTotalGrouping', groupTotals)
