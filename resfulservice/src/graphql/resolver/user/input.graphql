@@ -1,0 +1,26 @@
+input userIdInput {
+  _id: ID!
+}
+
+input usersQueryInput {
+  pageNumber: Int
+  pageSize: Int
+}
+
+input createUserInput {
+  alias: String!
+  givenName: String!
+  surName: String!
+  displayName: String!
+  email: String!
+}
+
+input updateUserInput {
+  _id: ID!
+  alias: String
+  userid: String
+  givenName: String
+  surName: String
+  displayName: String
+  email: String
+}

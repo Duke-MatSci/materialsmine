@@ -19,6 +19,6 @@ describe('Metamine Home page', () => {
   it('run the openLink method', async () => {
     const link = wrapper.find('.card')
     await link.trigger('click')
-    expect(wrapper.vm.$route.path).toEqual('/explorer')
+    expect(wrapper.vm.$route.path).toEqual('/explorer/curate')
   })
 })

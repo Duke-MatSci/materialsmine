@@ -7,24 +7,7 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <div class="button-row">
-        <div>
-          <router-link :to="{ name: 'NewChartDataVoyager' }">
-            <md-button
-              class="md-icon-button"
-              @click="selectQueryForVizEditor()"
-            >
-              <md-tooltip
-                class="utility-bckg"
-                md-direction="bottom"
-              >
-                Open Current Query in DataVoyager
-              </md-tooltip>
-              <md-icon>check</md-icon>
-            </md-button>
-          </router-link>
-        </div>
-      </div>
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
       <md-toolbar>
         <h3 class="md-title">Query Template</h3>
       </md-toolbar>
@@ -96,7 +79,7 @@
               :disabled="autoRefresh || !newQuery"
               @click="execQuery"
             >
-              Refresh Results
+              Search Query
             </button>
             <md-switch
               class="md-primary"
@@ -104,6 +87,18 @@
             >
               Auto Refresh
             </md-switch>
+            <div class="button-row">
+              <div>
+                <router-link :to="{ name: 'NewChartDataVoyager' }">
+                  <button
+                    class="btn btn--primary"
+                    @click="selectQueryForVizEditor()"
+                  >
+                    Open in Datavoyager
+                  </button>
+                </router-link>
+              </div>
+            </div>
           </div>
           <div
             class="results-progress"
@@ -159,7 +154,8 @@ export default {
       results: null,
       autoRefresh: false,
       lastRunQuery: '',
-      execQueryDebounced: debounce(this.autoExecQuery, 300)
+      execQueryDebounced: debounce(this.autoExecQuery, 300),
+      pageTitle: []
     }
   },
   computed: {
@@ -224,6 +220,7 @@ export default {
       if (!this.selectedTemplate) {
         return
       }
+      var tempQuery = this.selectedTemplate.SPARQL
 
       // append VALUES clause to query if there are any active selections
       const activeSelections = Object.fromEntries(
@@ -253,12 +250,35 @@ export default {
             return value
           })
           .join(' ')
-
-        const baseQuery = this.selectedTemplate.SPARQL
         const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`
 
-        this.query = baseQuery.replace(/(?<=where\s*{)/i, valuesBlock)
+        tempQuery = tempQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
       }
+
+      // find any replaceable variable names
+      const activeReplacements = Object.fromEntries(
+        Object.entries(this.selectedTemplate.replacements).map(
+          ([varName, varObj]) => {
+            // find the actively selected option
+            return [varName, varObj.varFormat.replace('${' + 'var}', this.varSelections[varObj.subVar])]
+          }
+        )
+      )
+      if (Object.keys(activeReplacements).length > 0) { // replacements are active
+        Object.keys(activeReplacements).map((varName) => {
+          // convert to variable names and replace in query
+          const replacement = `?${this.camelize(activeReplacements[varName])}`
+          var originalRE = new RegExp('\\?' + varName, 'g')
+          tempQuery = tempQuery.replaceAll(originalRE, replacement)
+        })
+      }
+      this.query = tempQuery
+    },
+    camelize (str) {
+      return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
+        if (+match === 0) return ''
+        return match.toUpperCase()
+      })
     },
     async execQuery () {
       this.results = null
@@ -270,6 +290,18 @@ export default {
     autoExecQuery () {
       if (this.autoRefresh && this.newQuery) {
         this.execQuery()
+      }
+    },
+    updatePageTitleArray () {
+      if (this.queryTemplates && Object.keys(this.queryTemplates).length > 0) {
+        this.pageTitle = Object.keys(this.queryTemplates).map(key => {
+          return this.queryTemplates[key]
+            .display
+            .match(/<b>(.*?)<\/b>/g)
+            .map(val => {
+              return val.replace(/<\/?b>/g, '')
+            }).pop()
+        })
       }
     }
   },
@@ -291,6 +323,9 @@ export default {
     },
     autoRefresh: {
       handler: 'execQueryDebounced'
+    },
+    queryTemplates: {
+      handler: 'updatePageTitleArray'
     }
   }
 }
@@ -334,7 +369,7 @@ export default {
 .results-controls {
   margin: 20px 10px;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
 
   > * {

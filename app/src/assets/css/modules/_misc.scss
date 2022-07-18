@@ -194,13 +194,6 @@
                     }
                 }
             }
-            &_adjust {
-                @include respond(phone){
-                    transform: rotate(-8deg) translateY(105px) !important;
-                    bottom: 10px !important;
-                    right: 15px !important;
-                }
-            }
         }
     }
 }

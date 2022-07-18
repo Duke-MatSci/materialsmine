@@ -324,5 +324,25 @@ ORDER BY DESC (?CountOfDOIs)
         rdfs:label "melting temperature";
         schema:identifier <http://materialsmine.org/ns/MeltingTemperature>;
         schema:position 9
+      ],
+      [
+        rdfs:label "dielectric constant";
+        schema:identifier <http://materialsmine.org/ns/DielectricConstant>;
+        schema:position 10
+      ],
+      [
+        rdfs:label "breakdown strength";
+        schema:identifier <http://materialsmine.org/ns/BreakdownStrength>;
+        schema:position 11
+      ],
+      [
+        rdfs:label "conductivity";
+        schema:identifier <http://materialsmine.org/ns/Conductivity>;
+        schema:position 12
+      ],
+      [
+        rdfs:label "halflife of crystallization";
+        schema:identifier <http://materialsmine.org/ns/HalflifeOfCrystallization>;
+        schema:position 13
       ]
   ].

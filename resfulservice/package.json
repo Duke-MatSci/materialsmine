@@ -10,13 +10,17 @@
     "private": true,
     "dependencies": {
         "@elastic/elasticsearch": "^8.1.0",
+        "@graphql-tools/graphql-file-loader": "^7.3.14",
+        "@graphql-tools/load": "^7.5.13",
+        "@graphql-tools/schema": "^8.3.13",
+        "apollo-server-express": "^3.7.0",
         "axios": "^0.26.1",
         "bcryptjs": "^2.4.3",
         "body-parser": "1.19.2",
         "express": "^4.17.1",
-        "express-graphql": "^0.10.0",
         "express-validator": "^6.14.0",
-        "graphql": "^14.0.2",
+        "graphql": "^15.3.0",
+        "graphql-ws": "^5.8.2",
         "helmet": "^4.6.0",
         "jsonwebtoken": "^8.5.1",
         "luxon": "^2.2.0",
@@ -28,12 +32,13 @@
         "nodemailer": "^6.7.2",
         "swagger-ui-express": "^4.2.0",
         "unique-names-generator": "^4.7.1",
-        "winston": "^3.5.1"
+        "winston": "^3.5.1",
+        "ws": "^8.7.0"
     },
     "scripts": {
         "start": "nodemon src/server.js",
-        "test": "mocha --recursive './spec/**/*.js'",
-        "lint": "eslint src",
+        "test": "NODE_ENV=test mocha --recursive './spec/**/*.js'",
+        "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
         "start:prod": "node src/server.js",
         "transformtiff": "node script/getTiffImage.js"
@@ -46,14 +51,15 @@
         "npm": ">=5.6.x"
     },
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^5.6.0",
-        "@typescript-eslint/parser": "^5.6.0",
+        "@typescript-eslint/eslint-plugin": "^5.27.0",
+        "@typescript-eslint/parser": "^5.27.0",
         "chai": "^4.3.6",
-        "eslint": "^7.32.0",
-        "eslint-config-standard": "^16.0.3",
-        "eslint-plugin-import": "^2.25.3",
+        "eslint": "^8.17.0",
+        "eslint-config-standard": "^17.0.0",
+        "eslint-plugin-import": "^2.26.0",
+        "eslint-plugin-n": "^15.2.1",
         "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-promise": "^5.2.0",
+        "eslint-plugin-promise": "^6.0.0",
         "mocha": "^9.2.0",
         "nodemon": "^2.0.15"
     }

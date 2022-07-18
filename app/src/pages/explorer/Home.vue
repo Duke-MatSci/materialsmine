@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div @click="disableRender">
 		<!-- <facet-panel :searchEnabled="searchEnabled" class="facet_panel" /> -->
 		<facet-panel class="facet_panel" />
 		<div class="section_teams" v-if="!searchEnabled">
@@ -11,19 +11,18 @@
 							<input type="text" ref="search_input" class="form__input form__input--adjust" placeholder="Search" name="search" id="search" required v-model="searchWord" />
 							<label htmlFor="search" class="form__label search_box_form_label">Search</label>
 						</div>
-						<div class="form__group search_box_form-item-2">
-							<button type="submit" class="btn btn--primary btn--noradius search_box_form_btn">Search</button>
-						</div>
+					</div>
+					<div class="form__group search_box_form-item-2  explorer_page-nav u--margin-neg">
+						<button type="submit" class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos">Search</button>
 					</div>
 				</form>
-				<div class="search-dropdown-menu_parent" v-if="!!suggestions.length">
+				<div class="search-dropdown-menu_parent" v-if="!!suggestions.length && enableAutosuggest">
 					<ul class="search-dropdown-menu" style="width:100%">
 						<li v-for="(suggestion, index) in suggestions" :key="index" class="" @click.prevent="submitSearch(suggestion)">
 							<a href="#">{{ suggestion }}</a>
 						</li>
 					</ul>
 				</div>
-				<router-link class="search_box_link" :to="{name:'ParameterizedQuery'}">Search using a Parameterized Query</router-link>
 				<p class="search_box_text">
 					MM Explorer is a research-focused discovery tool that enables collaboration among scholars of nano and meta materials. Browse or search information on articles, samples, images, charts, etc.
 				</p>
@@ -32,7 +31,7 @@
 		<div class="explorer_page-container" v-if="!searchEnabled">
 			<div class="explorer_page-nav">
 				<div class="teams_list explorer_page-list">
-					<ul>
+					<ul class="utility_flex_mobile">
 						<li v-for="link in pageNavLinks" :key="link.text">
 							<router-link :to="'/' + link.link" v-slot="{navigate, href}" custom>
 								<div class="teams_container explorer_page-nav-card" :href="href" @click="navigate">
@@ -66,7 +65,7 @@ export default {
     return {
       pageNavLinks: [
         { icon: 'grid_view', text: 'Gallery', link: 'explorer/visualization' },
-        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/create' },
+        { icon: 'cloud_upload', text: 'Curate', link: 'explorer/curate' },
         { icon: 'help', text: 'Help', link: 'nm/how' }
       ]
     }
@@ -78,6 +77,14 @@ export default {
   },
   async mounted () {
     await this.$store.dispatch('explorer/facetFilterMaterials')
+  },
+  methods: {
+    async disableRender (e) {
+      const selected = e.target.closest('.search_box')
+      if (!selected) {
+        this.enableAutosuggest = false
+      }
+    }
   }
 }
 </script>

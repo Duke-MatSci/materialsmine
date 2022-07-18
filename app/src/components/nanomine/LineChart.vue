@@ -163,7 +163,7 @@ export default {
         .attr('d', this.line())
     },
     init () {
-      if (this.data?.length > 0) {
+      if (this.data.length > 0) {
         const strokeColor = '#000'
         this.setSize()
         this.setScales()

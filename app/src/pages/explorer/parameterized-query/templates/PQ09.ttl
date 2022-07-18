@@ -5,6 +5,7 @@
 @prefix spl: <http://spinrdf.org/spin#> .
 @prefix whyis: <http://vocab.rpi.edu/whyis/> .
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
+@prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
 
 materialsmine_templates:PQ09 a whyis:SparqlTemplate;
   spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler1}, {?Filler2}, or {?Filler3} as a filler material, along with the associated matrix materials and the reported value of {?AttributeType}.";
@@ -12,15 +13,16 @@ materialsmine_templates:PQ09 a whyis:SparqlTemplate;
 PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX mm: <http://materialsmine.org/ns/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT * WHERE {
+SELECT DISTINCT ?Sample ?Filler ?Matrix ?AttributeValue ?UnitOfMeasure WHERE {
   ?Sample a mm:PolymerNanocomposite ;
           sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
                                  a [ rdfs:label ?Filler ] ] ,
                                [ sio:hasRole [ a mm:Matrix ] ;
                                  a [ rdfs:label ?Matrix] ] ;
-          sio:hasAttribute [ a ?AttributeType ;
-                             sio:hasValue ?AttributeValue ;
-                             sio:hasUnit [ rdfs:label ?UnitOfMeasure ] ]
+          sio:hasAttribute ?Attr .
+  ?Attr a ?AttributeType ;
+     sio:hasValue ?AttributeValue .
+  OPTIONAL { ?Attr sio:hasUnit ?UnitOfMeasure }
   FILTER((?Filler = ?Filler1) || (?Filler = ?Filler2) || (?Filler = ?Filler3))
 }
 """;
@@ -323,5 +325,41 @@ SELECT DISTINCT * WHERE {
         rdfs:label "surface resistivity";
         schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
         schema:position 15
+      ],
+      [
+        rdfs:label "dielectric constant";
+        schema:identifier <http://materialsmine.org/ns/DielectricConstant>;
+        schema:position 16
+      ],
+      [
+        rdfs:label "breakdown strength";
+        schema:identifier <http://materialsmine.org/ns/BreakdownStrength>;
+        schema:position 17
+      ],
+      [
+        rdfs:label "conductivity";
+        schema:identifier <http://materialsmine.org/ns/Conductivity>;
+        schema:position 18
+      ],
+      [
+        rdfs:label "halflife of crystallization";
+        schema:identifier <http://materialsmine.org/ns/HalflifeOfCrystallization>;
+        schema:position 19
+      ],
+      [
+        rdfs:label "loss modulus";
+        schema:identifier <http://materialsmine.org/ns/LossModulus>;
+        schema:position 20
+      ],
+      [
+        rdfs:label "storage modulus";
+        schema:identifier <http://materialsmine.org/ns/StorageModulus>;
+        schema:position 21
       ]
+  ];
+  mmpq:replacement
+  [
+    sp:varName "AttributeValue";
+    mmpq:subVar "AttributeType" ;
+    mmpq:varFormat "${var}";
   ].

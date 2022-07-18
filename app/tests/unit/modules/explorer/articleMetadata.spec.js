@@ -4,52 +4,52 @@ import { rawResponse, cleanResponse } from '@/modules/explorer/article/services/
 const doi = { doi: '10.1063/1.5046839' }
 
 describe('articleMetadata.js', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     fetch.mockClear()
   })
 
   it('translates Semantic Scholar data correctly', async () => {
-    global.fetch = response('good', 'all')
+    global.fetch = await response('good', 'all')
     const article = await articleMetadata.get(doi)
     expect(article.title).toBe(cleanResponse.title)
     expect(article.references.data[0].paperId).toBe(cleanResponse.references[0].paperId)
   })
 
   it('handles a bad fetch response to the article request', async () => {
-    global.fetch = response('bad', 'article')
+    global.fetch = await response('bad', 'article')
     const article = await articleMetadata.get(doi)
     expect(article.error).toMatch(/Testing bad response/)
   })
 
   it('handles a bad fetch response to the references request', async () => {
-    global.fetch = response('bad', 'references')
+    global.fetch = await response('bad', 'references')
     const article = await articleMetadata.get(doi)
     expect(article.references.error).toMatch(/Testing bad response/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a bad fetch response to the citations request', async () => {
-    global.fetch = response('bad', 'citations')
+    global.fetch = await response('bad', 'citations')
     const article = await articleMetadata.get(doi)
     expect(article.citations.error).toMatch(/Testing bad response/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a rejected fetch response to the article request', async () => {
-    global.fetch = response('reject', 'article')
+    global.fetch = await response('reject', 'article')
     const article = await articleMetadata.get(doi)
     expect(article.error).toMatch(/Testing rejection/)
   })
 
   it('handles a rejected fetch response to the references request', async () => {
-    global.fetch = response('reject', 'references')
+    global.fetch = await response('reject', 'references')
     const article = await articleMetadata.get(doi)
     expect(article.references.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)
   })
 
   it('handles a rejected fetch response to the citations request', async () => {
-    global.fetch = response('reject', 'citations')
+    global.fetch = await response('reject', 'citations')
     const article = await articleMetadata.get(doi)
     expect(article.citations.error).toMatch(/Testing rejection/)
     expect(article.title).toBe(cleanResponse.title)

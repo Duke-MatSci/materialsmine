@@ -136,7 +136,8 @@ class ElasticSearch {
       }
     }).join(' ');
 
-    if (sanitizeSearch.match(/"|\*|\s|\/|:|\./)) {
+    // if (sanitizeSearch.match(/"|\*|\s|\/|:|\./)) {
+    if (sanitizeSearch.match(/"|\*|\/|:|\./)) {
       sanitizeSearch = `${sanitizeSearch}\\*`;
     }
     return sanitizeSearch;
@@ -158,12 +159,38 @@ class ElasticSearch {
       },
       data: JSON.stringify({
         query: {
-          match: {
-            label: {
-              query: phrase,
-              analyzer: 'standard'
-            }
+          bool: {
+            should: [
+              {
+                match_phrase: {
+                  label: phrase
+                }
+              },
+              {
+                match_phrase: {
+                  description: phrase
+                }
+              }
+            ]
           }
+        }
+      })
+    });
+  }
+
+  async loadAllCharts (page, size) {
+    const url = `http://${env.ESADDRESS}/charts/_search`;
+    return axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: ((page - 1) * size),
+        size,
+        query: {
+          match_all: {}
         }
       })
     });

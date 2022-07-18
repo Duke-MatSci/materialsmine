@@ -2,7 +2,7 @@ const { decodeToken } = require('../utils/jwtService');
 
 module.exports = (req, res, next) => {
   const log = req.logger;
-  const authHeader = req?.Authorization;
+  const authHeader = req?.headers?.authorization;
   if (!authHeader) {
     log.error('isAuth.js(): 401 - authHeader not provided');
     const error = new Error('Not authenticated.');

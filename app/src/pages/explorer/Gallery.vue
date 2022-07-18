@@ -69,7 +69,7 @@
                   <span class="md-subheading">
                     <strong>{{ result.label }}</strong>
                   </span>
-                  <span class="md-body-1">{{ reduceDescription(result.description) }}</span>
+                  <span class="md-body-1">{{ reduceDescription(result.description, 15) }}</span>
                 </md-card-header>
               </md-card-area>
             </md-card-media-cover>
@@ -91,19 +91,11 @@ import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
 import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
+import reducer from '@/mixins/reduce'
 
 export default {
   name: 'viz-grid',
-  props: {
-    authenticated: {
-      type: Boolean,
-      require: true
-    },
-    instancetype: {
-      type: String,
-      require: true
-    }
-  },
+  mixins: [reducer],
   data () {
     return {
       loading: true,
@@ -127,13 +119,6 @@ export default {
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
-    reduceDescription (args) {
-      const arr = args.split(' ')
-      arr.splice(15)
-      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '')
-      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      return `${res}...`
-    },
     deleteChart (chart) {
       console.log('delete chart', chart)
     },

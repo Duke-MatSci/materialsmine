@@ -102,6 +102,30 @@
 
       </div>
 
+      <!-- Images -->
+      <div class="grid_explorer-boxes" v-if="resultsTab === 'getImages'">
+        <div v-for="(result, index) in getImages"
+          :key="index"
+          class="btn--animated md-card gallery-item results_card">
+          <md-card-media-cover md-solid>
+            <md-card-media md-ratio="4:3"  v-if="result.file">
+              <img
+                :src="baseUrl + result.file"
+                :alt="result.label"
+                v-if="result.metaData.title"
+              >
+            </md-card-media>
+            <md-icon v-else class="md-size-5x"> image </md-icon>
+          </md-card-media-cover>
+
+          <md-card-header style="padding:0px">
+            <router-link @click.native="fixUriBeforeRouting(result.metaData.id, result.file)" to="#" class="results_card-title">
+              <div >{{ result.description || 'Image' }}</div>
+            </router-link>
+          </md-card-header>
+        </div>
+      </div>
+
         <!-- Materials -->
       <div class="grid_explorer-fullrow" v-if="resultsTab === 'getMaterials'">
         <div v-for="(result, index) in getMaterials"
@@ -130,31 +154,6 @@
           </md-card-header>
         </div>
       </div>
-
-      <!-- Images -->
-      <!-- <div class="grid_explorer-boxes" v-if="resultsTab === 'getImages'">
-        <div v-for="(result, index) in getImages"
-          :key="index"
-          class="btn--animated md-card gallery-item results_card">
-
-          <md-card-media-cover md-solid>
-            <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
-              <img
-                :src="getThumbnailUrl(result)"
-                :alt="result.label"
-                v-if="result.thumbnail"
-              >
-            </md-card-media>
-            <md-icon v-else class="md-size-5x"> image </md-icon>
-          </md-card-media-cover>
-
-          <md-card-header style="padding:0px">
-            <router-link @click.native="fixUriBeforeRouting(result.identifier, 'http://localhost/nmr/blob?id=')" to="#" class="results_card-title">
-              <div >{{ result.label }}</div>
-            </router-link>
-          </md-card-header>
-        </div>
-      </div> -->
 
       <!-- New -->
       <!-- <div :class="(resultsTab =='getImages' || resultsTab== 'getCharts') ? 'grid_explorer-boxes' : 'grid_explorer-fullrow'">
@@ -234,17 +233,20 @@
 </template>
 <script>
 import spinner from '@/components/Spinner'
+import reducer from '@/mixins/reduce'
 // import pagination from '@/components/explorer/Pagination'
 import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters } from 'vuex'
 
 export default {
   name: 'search-results',
+  mixins: [reducer],
   data () {
     return {
       loadError: false,
       otherArgs: null,
-      defaultImg: ''
+      defaultImg: '',
+      baseUrl: window.location.origin
     }
   },
   components: {
@@ -264,13 +266,6 @@ export default {
     })
   },
   methods: {
-    reduceDescription (args) {
-      const arr = args.split(' ')
-      arr.splice(50)
-      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '')
-      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      return `${res}...`
-    },
     fixUriBeforeRouting (address, prefix) {
       if (address && prefix) {
         const identifier = address.replace(prefix, '')
@@ -281,7 +276,7 @@ export default {
         } else if (this.resultsTab === 'getCharts') {
           return this.$router.push(`/explorer/chart/view/${identifier}`)
         } else if (this.resultsTab === 'getImages') {
-          return this.$router.push(`/explorer/images/view/${identifier}`)
+          return this.$router.push(`/explorer/images/${address}/${encodeURIComponent(prefix)}`)
         }
       }
     },

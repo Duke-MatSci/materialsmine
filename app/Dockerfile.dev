@@ -1,7 +1,8 @@
 FROM node:16.14-alpine
 WORKDIR "/app"
 COPY ./package.json .
-RUN npm install -g npm@8.5.5
+RUN apk add --upgrade --no-cache python3 make g++
 RUN npm install
+RUN apk del python3 make g++
 COPY . .
 CMD ["npm", "run", "serve"]

@@ -25,7 +25,7 @@ async function querySparql (query, { endpoint = SPARQL_ENDPOINT, headers = {} } 
     }
 
     if (!res || !res.ok) {
-      const error = new Error(res?.statusText || 'An error occured, cannot access whyis servers')
+      const error = new Error(res.statusText || 'An error occured, cannot access whyis servers')
       throw (error)
     }
 
@@ -42,12 +42,12 @@ function parseSparql (response) {
    * This if block is irrelevant, it's job is to ensure
    * that test cases relying on this output doesn't fail
    */
-  if (!response || !response?.results?.bindings.length) {
+  if (!response.results || !response.results.bindings || !response.results.bindings.length) {
     return
   }
 
   try { // eslint-disable-line
-    for (const row of response?.results?.bindings) {
+    for (const row of response.results.bindings) {
       const rowData = {}
       queryResults.push(rowData)
       Object.entries(row).forEach(([field, result, t]) => {

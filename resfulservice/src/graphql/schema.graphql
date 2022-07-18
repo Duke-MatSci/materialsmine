@@ -1,0 +1,14 @@
+type Query {
+  user(input: userIdInput!): User!
+  users(input: usersQueryInput): Users!
+  images(input: imageQueryInput): Images!
+  searchImages(input: imageExplorerInput!): Images!
+  getSingleImages(input: singleImageQueryInput!): Images!
+}
+
+type Mutation {
+  createAPIAccess(input: createAPIAccessInput): ApiAccess!
+  createUser(input: createUserInput): User!
+  updateUser(input: updateUserInput): User!
+  deleteUser(input: userIdInput): User!
+}

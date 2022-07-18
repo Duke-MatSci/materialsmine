@@ -7,7 +7,7 @@ const factory = (info = {}) => {
     router,
     data () {
       return {
-        gifChart: []
+        assetItems: []
       }
     },
     mocks: {
@@ -25,7 +25,7 @@ const factory = (info = {}) => {
 describe('Nanomine Homepage', () => {
   it('mount component correctly', async () => {
     const wrapper = await factory()
-    await wrapper.setData({ gifChart: [{}, {}, {}, {}] })
+    await wrapper.setData({ assetItems: [{}, {}, {}, {}] })
 
     expect(wrapper.find('.visualize_header-h1').exists()).toBe(true)
     expect(wrapper.findAll('.visualize_chart').length).toEqual(4)

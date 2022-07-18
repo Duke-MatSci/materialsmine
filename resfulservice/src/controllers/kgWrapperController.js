@@ -1,6 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const constant = require('../../config/constant');
+const elasticSearch = require('../utils/elasticSearch');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -82,6 +83,31 @@ exports.getKnowledge = async (req, res, next) => {
   try {
     return res.status(200).json({
       message: 'Fetched graph successfully!'
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+/**
+ * Load chart gallery from elastic function
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.getAllCharts = async (req, res, next) => {
+  const page = parseInt(req?.query?.page) || 1;
+  const pageSize = parseInt(req?.query?.pageSize) || 10;
+
+  try {
+    const response = await elasticSearch.loadAllCharts(page, pageSize);
+    return res.status(200).json({
+      data: response?.data?.hits?.hits || [],
+      total: response?.data?.hits?.total?.value || 0
     });
   } catch (err) {
     if (!err.statusCode) {
