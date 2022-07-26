@@ -49,13 +49,19 @@
       </md-list-item>
       <md-list-item md-expand>
         <md-icon class="utility-navfonticon">upload</md-icon>
-        <span class="md-list-item-text utility-navfont">Upload</span>
+        <span class="md-list-item-text utility-navfont">Curate</span>
         <md-list slot="md-expand">
-          <router-link :to="'/nm/xml-uploader'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">XML-Based Upload</md-list-item>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a spreadsheet</md-list-item>
           </router-link>
-          <router-link :to="'/mm/dataset-entry-form'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Direct Dataset Entry Form</md-list-item>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
+          </router-link>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Submit SDD</md-list-item>
+          </router-link>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Create new chart</md-list-item>
           </router-link>
         </md-list>
       </md-list-item>
