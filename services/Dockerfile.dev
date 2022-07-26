@@ -1,0 +1,20 @@
+FROM python:3.8-alpine
+
+# The latest alpine images don't have some tools like (`git` and `bash`).
+# Adding git, bash and openssh to the image for dev purpose
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash git openssh
+
+# Make dir app
+RUN mkdir /app
+WORKDIR /app
+
+# install dependencies
+RUN pip install --upgrade pip
+
+COPY ./src/requirements.txt .
+
+RUN python3 -m pip install -r requirements.txt
+
+# Copy the source from the current directory to the Working Directory inside the container
+COPY ./src .

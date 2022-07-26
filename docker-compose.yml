@@ -56,6 +56,16 @@ services:
       context: ./nginx
     ports:
       - '80:80'
+  modules:
+    restart: unless-stopped
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./services
+    environment:
+      - API_PORT=${PORT}
+    command: python app.py runserver 0.0.0.0:9090
+    ports:
+      - '9090:9090'
   api:
     depends_on:
       - es
