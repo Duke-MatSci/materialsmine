@@ -1,8 +1,8 @@
 FROM node:16.14-alpine as builder
 WORKDIR '/app'
-COPY ./package.json .
+COPY ["package.json", "package-lock.json*", "./"]
 RUN apk add --upgrade --no-cache python3 make g++
-RUN npm install
+RUN npm install --production
 RUN apk del python3 make g++
 COPY . .
 RUN npm run build
