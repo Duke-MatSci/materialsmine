@@ -67,7 +67,7 @@ const nanomineRoutes = [
     name: 'Contact',
     component: () =>
       import(
-        /* webpackChunkName: "news" */ '@/pages/nanomine/contactus/ContactUs.vue'
+        /* webpackChunkName: "contactus" */ '@/pages/nanomine/contactus/ContactUs.vue'
       ),
     meta: { requiresAuth: false }
   }
