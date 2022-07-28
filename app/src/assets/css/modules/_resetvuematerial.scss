@@ -5,7 +5,8 @@
 }
 
 .md-app-content {
-    padding: 16px 0;
+    padding: 0 !important;
+    padding-top: 1rem !important;
 }
 
 .md-drawer {
@@ -36,10 +37,6 @@
     font-size: 1.4rem;
     text-transform: capitalize !important;
     color: $secondary-light !important;
-}
-
-.md-tabs.md-theme-default .md-tabs-navigation .md-button { 
-
 }
 
 .md-active {
@@ -82,11 +79,20 @@
         padding: 1.5rem;
         text-align: justify;
         font-weight: 400;
+
+        &_fl {
+            font-size: 1.5rem;
+        }
     }
     &_card {
         height: 33rem !important;
         width: 30rem !important;
         box-shadow: none !important;
+
+        &::after {
+            display: none !important;
+            visibility: hidden !important;
+        }
     }
 }
 
@@ -141,3 +147,27 @@
         }
     }
 }
+
+.md-card-class {
+    width: 320px;
+    margin: 4px;
+    display: inline-block;
+    vertical-align: top;
+
+    @include respond(laptop) {
+        width: 290px;
+    }
+
+    @include respond(tab-land) {
+        width: 280px !important;
+    }
+
+    @include respond(tab-port) {
+        width: 270px !important;
+    }
+
+    @include respond(phone) {
+        width: 250px !important;
+    }
+}
+

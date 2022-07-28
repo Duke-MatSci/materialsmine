@@ -36,9 +36,11 @@ mockDB/fuseki/system/
 mockDB/fuseki/system_files/
 mockDB/fuseki/templates/
 mockDB/fuseki/log4j2.properties
+mockDB/fuseki/files/
 
 #Sync DB
 mockDB/restore/mongodump/
+mockDB/materialsmine_backup/
 
 #Elastic Search
 mockDB/es/

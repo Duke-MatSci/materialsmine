@@ -17,11 +17,14 @@ export default {
   setSelectedFacetFilterMaterialsValue (state, payload) {
     state.selectedFacetFilterMaterialsValue = payload
   },
-  setSearching (state) {
-    if (state?.searchKeyword?.length) {
+  setSearching (state, payload) {
+    if (payload) {
+      state.searching = payload.set
+      return
+    }
+
+    if (state.searchKeyword && state.searchKeyword.length) {
       state.searching = true
-    } else {
-      state.searching = false
     }
   }
 }

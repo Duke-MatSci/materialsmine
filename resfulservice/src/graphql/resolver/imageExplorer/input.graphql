@@ -1,0 +1,15 @@
+input imageExplorerInput {
+  search: String!
+  searchValue: String!
+  pageNumber: Int
+  pageSize: Int
+}
+
+input imageQueryInput {
+  pageNumber: Int
+  pageSize: Int
+}
+
+input singleImageQueryInput {
+  id: ID!
+}
