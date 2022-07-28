@@ -1,3 +1,5 @@
+import { CONTACT_US_QUERY } from '@/modules/gql/contact-gql'
+
 export default {
   name: 'Contact',
   data () {
@@ -48,7 +50,6 @@ export default {
       this.email = null
       this.message = null
       this.contactType = null
-      this.message = null
       this.errors = []
     },
 
@@ -57,21 +58,7 @@ export default {
       if (this.errors.length) {
         return
       }
-
-      await fetch('/nmr/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          platform: this.platform,
-          contactType: this.contactType,
-          contactText: this.message
-        })
-      }).catch((err) => {
-        console.log(err)
-      })
-
+      this.$apollo.queries.form()
       this.resetForm()
     }
   },
@@ -80,5 +67,23 @@ export default {
       icon: 'mail',
       name: 'Contact Us'
     })
+  },
+  apollo: {
+    form: {
+      query: CONTACT_US_QUERY,
+      variables () {
+        return {
+          input: {
+            fullName: this.name,
+            email: this.email,
+            purpose: this.contactType,
+            message: this.message
+          }
+        }
+      }
+    },
+    skip () {
+      return this.skipQuery
+    }
   }
 }
