@@ -157,7 +157,7 @@ export default {
   watch: {
     getSingleImages (newValues, oldValues) {
       if (newValues) {
-        this.setCurrentImage (newValues)
+        this.setCurrentImage(newValues)
       }
     }
   },

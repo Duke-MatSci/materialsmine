@@ -6,7 +6,7 @@
           <div class="search_box_form">
             <div class="form__group search_box_form-item-1">
               <input type="text" ref="search_input" class="form__input form__input--flat"
-              placeholder="Search Microstructure Image" name="search" id="search" 
+              placeholder="Search Microstructure Image" name="search" id="search"
               required v-model.lazy="searchWord" />
               <label htmlFor="search" class="form__label search_box_form_label">Search Microstructure Image</label>
             </div>
@@ -191,11 +191,11 @@ export default {
     },
     async dispatchSearch () {
       await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue',
-      { type: this.filter, value: this.searchWord })
+        { type: this.filter, value: this.searchWord })
     }
   },
   created () {
-    if(this.imageSearch?.value) {
+    if (this.imageSearch?.value) {
       this.searchEnabled = true
       this.filter = this.imageSearch?.type
       this.searchWord = this.imageSearch?.value
@@ -222,7 +222,7 @@ export default {
       skip () {
         if (!this.searchEnabled) return this.skipQuery
       },
-      // fetchPolicy: 'cache-and-network'
+      fetchPolicy: 'cache-and-network'
     }
   }
 }

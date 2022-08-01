@@ -1,4 +1,3 @@
-
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import VisualizationHome from '@/pages/explorer/Visualization.vue'

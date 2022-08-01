@@ -1,5 +1,4 @@
 import createWrapper from '../../../jest/script/wrapper'
-import { enableAutoDestroy } from '@vue/test-utils'
 import ImageDetailView from '@/pages/explorer/image/ImageDetailView.vue'
 
 const apollo = {
@@ -67,14 +66,12 @@ describe('ImageDetailView.vue', () => {
         $apollo: {
           loading: false
         }
-      },
+      }
     }, true)
     await wrapper.setData({ getSingleImages: apollo.images })
     wrapper.vm.$route.params.fileId = fileId
     await wrapper.vm.setCurrentImage(apollo.images)
   })
-
-//   enableAutoDestroy(afterEach)
 
   it('loads page container div', () => {
     expect.assertions(1)
@@ -86,7 +83,7 @@ describe('ImageDetailView.vue', () => {
     expect(wrapper.vm.$route.params.fileId).toEqual(fileId)
   })
 
-  it('loads and call navs', async() => {
+  it('loads and call navs', async () => {
     wrapper.setMethods({ navBack: mockMethods, handleShare: mockMethods })
     expect.assertions(3)
     expect(wrapper.find('.utility-roverflow').exists()).toBe(true)
@@ -118,12 +115,12 @@ describe('ImageDetailView.vue', () => {
     expect(wrapper.find('#microscropy').text()).toBe('AFM')
   })
 
-  it('renders related images', async() => {
+  it('renders related images', async () => {
     expect(wrapper.findAll('.md-card-class').length).toEqual(1)
   })
 
-  it('render error page on empty result', async() => {
-    await wrapper.setData({getSingleImages: undefined})
+  it('render error page on empty result', async () => {
+    await wrapper.setData({ getSingleImages: undefined })
     expect(wrapper.find('.visualize_header-h1').text()).toBe('Cannot Load Images!!!')
   })
 })
