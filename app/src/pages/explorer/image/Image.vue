@@ -1,7 +1,68 @@
 <template>
   <div class="gallery">
-		<facet-panel class="facet_panel" filterType="IMAGE" />
-    <div class="section_loader" v-if="$apollo.loading">
+    <div class="utility-roverflow u--margin-toplg">
+      <div class="search_box card-icon-container u--margin-toplg">
+        <form class="form" @submit.prevent="submitSearch" >
+          <div class="search_box_form">
+            <div class="form__group search_box_form-item-1">
+              <input type="text" ref="search_input" class="form__input form__input--flat"
+              placeholder="Search Microstructure Image" name="search" id="search" 
+              required v-model.lazy="searchWord" />
+              <label htmlFor="search" class="form__label search_box_form_label">Search Microstructure Image</label>
+            </div>
+          </div>
+          <ul class="contactus_radios u--margin-neg u_centralize_text">
+            <li>
+              <div class="form__radio-group">
+                <input type="radio" class="form__radio-input"
+                value="filterByFiller" id="filterByFiller" name="question" v-model="filter">
+                <label for="filterByFiller" class="form__radio-label">
+                  <span class="form__radio-button form__radio-button_less"></span>
+                  Search by filler
+                </label>
+              </div>
+            </li>
+            <li>
+              <div class="form__radio-group">
+                <input type="radio" class="form__radio-input" id="filterByKeyword"
+                value="filterByKeyword" name="question" v-model="filter">
+                <label for="filterByKeyword" class="form__radio-label">
+                  <span class="form__radio-button form__radio-button_less"></span>
+                  Search by keyword
+                </label>
+              </div>
+            </li>
+            <li>
+              <div class="form__radio-group">
+                <input type="radio" class="form__radio-input" id="filterByYear"
+                value="filterByYear" name="question" v-model="filter">
+                <label for="filterByYear" class="form__radio-label">
+                  <span class="form__radio-button form__radio-button_less"></span>
+                  Search by year
+                </label>
+              </div>
+            </li>
+          </ul>
+          <div class="form__group search_box_form-item-2  explorer_page-nav u--margin-neg">
+            <button
+              type="submit"
+              class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+              @click.prevent="submitSearch()"
+            >
+            Search Images
+            </button>
+            <button v-if="searchEnabled"
+              type="submit"
+              class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+              @click.prevent="cancelSearch"
+            >
+            Clear Search
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
       <spinner :loading="$apollo.loading" text='Loading Images'/>
     </div>
     <div class="utility-roverflow" v-else-if="searchImages && searchImages.images || images && images.images">
@@ -26,7 +87,7 @@
               class="u_width--xs utility-navfont"
               name="pagesize"
               title="specify number of items per size"
-              v-model="pageSize"
+              v-model.lazy="pageSize"
             >
           </span>
         </span>
@@ -73,7 +134,6 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import { IMAGES_QUERY, SEARCH_IMAGES_QUERY } from '@/modules/gql/image-gql'
-import FacetPanel from '@/components/explorer/Facet.vue'
 import reducer from '@/mixins/reduce'
 export default {
   name: 'ImageGallery',
@@ -87,13 +147,14 @@ export default {
       ImageList: [],
       pageNumber: 1,
       pageSize: 20,
-      searchEnabled: false
+      searchEnabled: false,
+      filter: '',
+      searchWord: ''
     }
   },
   components: {
     pagination,
-    spinner,
-    FacetPanel
+    spinner
   },
   computed: {
     imageSearch () {
@@ -102,12 +163,10 @@ export default {
   },
   watch: {
     imageSearch (newValue, oldValues) {
-      if (newValue && newValue.value.length) {
+      if (newValue && newValue.value?.length) {
         this.renderText = `Showing ${newValue.type}: ${newValue.value}`
         this.searchEnabled = true
         this.loadPrevNextImage(1)
-      } else {
-        this.$router.go(this.$router.currentRoute)
       }
     }
   },
@@ -122,6 +181,25 @@ export default {
       this.$apollo.queries.images.skip = true
       this.$apollo.queries.searchImages.skip = false
       this.$apollo.queries.searchImages.refetch()
+    },
+    submitSearch () {
+      if (!this.searchWord && !this.filter) return
+      return this.dispatchSearch()
+    },
+    async cancelSearch () {
+      this.$router.go(this.$router.currentRoute)
+    },
+    async dispatchSearch () {
+      await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue',
+      { type: this.filter, value: this.searchWord })
+    }
+  },
+  created () {
+    if(this.imageSearch?.value) {
+      this.searchEnabled = true
+      this.filter = this.imageSearch?.type
+      this.searchWord = this.imageSearch?.value
+      this.loadPrevNextImage(1)
     }
   },
   apollo: {
@@ -144,7 +222,7 @@ export default {
       skip () {
         if (!this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network'
+      // fetchPolicy: 'cache-and-network'
     }
   }
 }
