@@ -1,6 +1,8 @@
 type Query {
   user(input: userIdInput!): User!
   users(input: usersQueryInput): Users!
+  getUserContacts(input: userContactQueryInput!): Contacts!
+  contacts(input: contactsQueryInput): Contacts!
   images(input: imageQueryInput): Images!
   searchImages(input: imageExplorerInput!): Images!
   getSingleImages(input: singleImageQueryInput!): Images!
@@ -11,4 +13,5 @@ type Mutation {
   createUser(input: createUserInput): User!
   updateUser(input: updateUserInput): User!
   deleteUser(input: userIdInput): User!
+  submitContact(input: createContactInput!): Contact!
 }

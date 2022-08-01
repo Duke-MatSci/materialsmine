@@ -7,7 +7,7 @@ const userMutation = {
 
     if (!/\S+@\S+\.\S+/.test(input.email)) return errorFormater('invalid email', 403);
 
-    if ((await User.countDocuments({ email: input.email })) >= 1) return errorFormater('email already exist', 403);
+    if ((await User.countDocuments({ email: input.email })) >= 1) return errorFormater('email already exist', 409);
 
     const user = User(input);
     try {
@@ -20,7 +20,7 @@ const userMutation = {
 
   updateUser: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger.info('updateUser Function Entry:', user._id);
-    if (!isAuthenticated) throw errorFormater('not authentiacted', 401);
+    if (!isAuthenticated) return errorFormater('not authentiacted', 401);
 
     try {
       const oldRecord = await User.findOne({ _id: input._id }).lean();
@@ -37,7 +37,7 @@ const userMutation = {
 
   deleteUser: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger.info('deleteUser Function Entry:', user._id);
-    if (!isAuthenticated) throw errorFormater('not authentiacted', 401);
+    if (!isAuthenticated) return errorFormater('not authentiacted', 401);
     try {
       const oldRecord = await User.findOne({ _id: input._id }).lean();
       if (!oldRecord) {
