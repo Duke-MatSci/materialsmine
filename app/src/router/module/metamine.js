@@ -16,6 +16,18 @@ const metamineRoutes = [
     name: 'PixelUnit',
     component: () => import(/* webpackChunkName: "pixelunit" */ '@/pages/metamine/PixelUnit/PixelUnit.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: 'mockup',
+    name: 'Mockup',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/mockup/Mockup.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'mockup2',
+    name: 'Mockup2',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/mockup2/Mockup.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 

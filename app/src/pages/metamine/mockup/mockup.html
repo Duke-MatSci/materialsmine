@@ -1,0 +1,53 @@
+<div class="main tool_page pixelunit wrapper">
+  <div class="md-layout md-alignment-top-left md-gutter adjust-padding">
+    <div class="md-layout-item md-size-100">
+      <h2>Metamaterial Properties: Interactive Plot</h2>
+      <p>
+        Select properties from the dropdown menus below to graph on the x and y axes.
+      </p>
+      <p>
+        Hovering over data points provides additional information.
+        Scroll to zoom, click and drag to pan, and double-click to reset. 
+      </p>
+    </div>
+    <div class="md-layout-item md-small-size-100">
+      <div class="loading-dialog" style="margin: 5rem" v-if="loading">
+          Loading chart data
+      </div>
+      <div v-else>
+          <div class="viz-u-display__desktop" style="margin-bottom: 2rem"/>
+          <div id="vegaembed" class="btn--animated vega-embed-chartview" style="width: 100%"></div>
+          <div class="md-layout md-gutter">
+            <div class="md-layout-item md-size-30">
+              <div class="facet-content_label">X Axis</div>
+              <select
+                class="form__select facet-content_item"
+                name="xaxis"
+                v-model="xAxis"
+              >
+                <option
+                      v-for="(val, index) in xAxisOpts"
+                      :key="index" :value="val.label"
+                    > {{ val.label }}
+                </option>
+              </select>
+            </div>
+            <div class="md-layout-item md-size-30">
+              <div class="facet-content_label">Y Axis</div>
+              <select
+                class="form__select facet-content_item"
+                name="yaxis"
+                v-model="yAxis"
+              >
+                <option
+                      v-for="(val, index) in yAxisOpts"
+                      :key="index" :value="val.label"
+                    > {{ val.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>
