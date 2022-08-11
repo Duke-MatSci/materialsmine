@@ -523,6 +523,11 @@ export default {
             })
         })
     },
+    alignVegaTooltips () {
+      const canvas = document.getElementsByClassName('marks')[0]
+      const vegaBindings = document.getElementsByClassName('vega-bindings')[0]
+      vegaBindings.style.width = canvas.style.width
+    },
     patchVegaSpec () {
       this.loading = false
       return embed('#vegaembed', this.spec,
@@ -662,6 +667,7 @@ export default {
       .then(() => this.buildVegaSpec())
       .then(async () => {
         this.patchSpec = await this.patchVegaSpec()
+        this.alignVegaTooltips()
       })
   },
   watch: {

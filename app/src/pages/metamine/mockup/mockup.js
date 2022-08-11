@@ -18,7 +18,8 @@ export default {
             zoom: {
               type: 'interval',
               bind: 'scales'
-            }
+            },
+            propbrush: { type: 'point', on: 'mouseover', nearest: true }
           },
           mark: {
             type: 'point',
@@ -26,7 +27,7 @@ export default {
             filled: true,
             size: 200
           },
-          width: 600,
+          width: 550,
           height: 400,
           encoding: {
             x: {
@@ -52,7 +53,10 @@ export default {
             color: {
               field: 'symmetry',
               type: 'nominal',
-              title: 'Symmetry'
+              title: 'Symmetry',
+              legend: {
+                orient: 'top'
+              }
             },
             tooltip: [
               {
@@ -257,7 +261,56 @@ export default {
                 ]
               }
             }
+          ]
+        },
+        {
+          vconcat: [
+            {
+              title: 'Unit cell geometry',
+              width: 200,
+              transform: [
+                { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 10'] } },
+                {
+                  sample: 1
+                },
+                {
+                  calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
+                },
+                {
+                  calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
+                },
+                {
+                  calculate: "split(replace(datum.GS0,/(.{10})/g,'$1$'), '$')", as: 'GS0'
+                }
+              ],
+              mark: { type: 'text', fontSize: 30, font: 'Courier', opacity: 1, lineHeight: 17, dy: 30 },
+              encoding: {
+                text: { field: 'GS0', type: 'nominal' }
+              }
+            },
+            {
+              width: 200,
+              transform: [
+                { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 50'] } },
+                {
+                  sample: 1
+                },
+                {
+                  calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
+                },
+                {
+                  calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
+                },
+                {
+                  calculate: "split(replace(datum.GS0,/(.{50})/g,'$1$'), '$')", as: 'GS0'
+                }
+              ],
+              mark: { type: 'text', fontSize: 6, font: 'Courier', opacity: 1, lineHeight: 3.5, dy: -20 },
+              encoding: {
+                text: { field: 'GS0', type: 'nominal' }
+              }
 
+            }
           ]
         }
       ]
@@ -318,13 +371,18 @@ export default {
             })
         })
     },
+    alignVegaTooltips () {
+      const canvas = document.getElementsByClassName('marks')[0]
+      const vegaBindings = document.getElementsByClassName('vega-bindings')[0]
+      vegaBindings.style.width = canvas.style.width
+    },
     patchVegaSpec () {
       return embed('#vegaembed', this.spec,
         {
           patch:
       [
         {
-          path: '/signals/5',
+          path: '/signals/7',
           op: 'replace',
           value: {
             name: 'zoom',
@@ -332,14 +390,14 @@ export default {
           }
         },
         {
-          path: '/signals/6',
+          path: '/signals/8',
           op: 'replace',
           value: {
             name: `zoom_${this.xAxis}`
           }
         },
         {
-          path: '/signals/7',
+          path: '/signals/9',
           op: 'replace',
           value: {
             name: `zoom_${this.yAxis}`
@@ -455,6 +513,7 @@ export default {
       .then(() => this.loadVisualization())
       .then(async () => {
         this.patchSpec = await this.patchVegaSpec()
+        this.alignVegaTooltips()
       })
   },
   watch: {

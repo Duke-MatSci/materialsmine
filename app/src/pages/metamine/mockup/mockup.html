@@ -10,14 +10,13 @@
         Scroll to zoom, click and drag to pan, and double-click to reset. 
       </p>
     </div>
-    <div class="md-layout-item md-small-size-100">
+    <div class="md-layout-item md-small-size-100" style="margin: 2rem">
       <div class="loading-dialog" style="margin: 5rem" v-if="loading">
           Loading chart data
       </div>
       <div v-else>
-          <div class="viz-u-display__desktop" style="margin-bottom: 2rem"/>
-          <div id="vegaembed" class="btn--animated vega-embed-chartview" style="width: 100%"></div>
-          <div class="md-layout md-gutter">
+          <div class="viz-u-display__desktop" />
+          <span class="md-layout md-gutter">
             <div class="md-layout-item md-size-30">
               <div class="facet-content_label">X Axis</div>
               <select
@@ -46,7 +45,8 @@
                 </option>
               </select>
             </div>
-          </div>
+          </span>
+          <div id="vegaembed" class="btn--animated vega-embed-chartview" style="width: 100%"></div>
       </div>
     </div>
   </div>
