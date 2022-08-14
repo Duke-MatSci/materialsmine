@@ -1,53 +1,117 @@
+"Schema for Citation type"
 type Citation {
+  "Type of selectable citation type"
   type: String
+
+  "Name of publication the image belong to"
   publication: String
+
+  "The title of the citation"
   title: String
+
+  "List of authors involved in the publication"
   authors: [String!]
+
+  "List of keywords(tags) that related to the publication"
   keywords: [String!]
+
+  "Publisher of the publication"
   publisher: String
+
+  "Year of publication"
   publicationYear: Int
+
+  "Digital object identifier for the publication"
   doi: String
+
+  "URL link to the publication"
   url: String
 }
 
+"Image MetaData description"
 type ImageMetaData {
+  "Title of the image"
   title: String
+
+  "The unique id of the paper from which image is selected"
   id: ID
+
+  "The digital object identifier of the image meta data"
   doi: String,
+
+  "List of keywords(tags) related to the image"
   keywords: [String!]
 }
 
+"Image Dimension details"
 type Dimension {
+  "Width of the image"
   width: Float
+
+  "Height of the image"
   height: Float
 }
 
+"Schema for Image type"
 type Image {
   file: String
+
+  "Image description"
   description: String
+
+  "Image Microscopy information"
   microscopyType: String
+
+  "Type of image e.g. jpg | png etc"
   type: String
+
+  "The dimension of the image"
   dimension: Dimension,
+
+  "Image metadata description"
   metaData: ImageMetaData
 }
 
+"Schema for Microstructure type"
 type Microstructure {
+  "Length unit of a microstructure"
   lengthUnit: String
+
+  "list of images"
   images: [Image!]
 }
 
 type ImageExplorer {
+  "The image's schema"
   schema: String!
+
+  "The citation of the image"
   citation: Citation
+
+  "Sample of an image in microstructure"
   sampleImages: Microstructure
 }
 
+"Get list of a image"
 type Images {
+  "Total number of images"
   totalItems: Int!
+
+  "Number of images per page"
   pageSize: Int!
+
+  "Current page"
   pageNumber: Int!
+
+  "Total number of pages of images"
   totalPages: Int!
+
+  "Current page have a previous page"
   hasPreviousPage: Boolean!
+
+  "Current page has a next page"
   hasNextPage: Boolean!
+
+  "List of images"
   images: [Image!]
 }

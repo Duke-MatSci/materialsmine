@@ -1,26 +1,56 @@
+"User ID info for user query resolver"
 input userIdInput {
+ "The user's unique ID"
   _id: ID!
 }
 
+"Page and page size info for users query resolver"
 input usersQueryInput {
+  "Page number of users to find"
   pageNumber: Int
+
+  "Total number of users per page"
   pageSize: Int
 }
 
+"Input schema for createUser Mutation resolver"
 input createUserInput {
+  "User alias from auth service"
   alias: String!
+
+  "User first name info"
   givenName: String!
+
+  "User last name info"
   surName: String!
+
+  "name displayed on user profile like username"
   displayName: String!
+
+  "User email address"
   email: String!
 }
 
+"Update user mutation resolver schema"
 input updateUserInput {
+  "Unique ID of user to update"
   _id: ID!
+
+  "User alias e.g. username"
   alias: String
+
+  "User ID from auth service"
   userid: String
+
+  "User first name info"
   givenName: String
+
+  "User last name info"
   surName: String
+
+  "name displayed on user profile similar to username"
   displayName: String
+
+  "User email"
   email: String
 }

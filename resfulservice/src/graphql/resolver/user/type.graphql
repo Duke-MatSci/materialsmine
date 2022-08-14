@@ -1,25 +1,47 @@
+"Get a user record"
 type User {
+  "User ID"
   _id: ID
+
+  "User alias"
   alias: String
+
+  "User first name"
   givenName: String
+
+  "User's lastname"
   surName: String
+  
+  "User display name"
   displayName: String
+
+  "User email"
   email: String
+
+  "User API access list"
   apiAccess: String
 }
 
+"Get List of users"
 type Users {
-  """
-  total numbers of users
-  """
+  "Total number of user records"
   totalItems: Int!
-  """
-  the numbers of users return per page
-  """
+
+  "Number of user record per page"
   pageSize: Int!
+
+  "Current page number"
   pageNumber: Int!
+
+  "Total number of pages retrieved"
   totalPages: Int!
+
+  "Current page have a previous page"
   hasPreviousPage: Boolean!
+
+  "Current page has a next page"
   hasNextPage: Boolean!
+
+  "List of all users"
   data: [User!]!
 }
