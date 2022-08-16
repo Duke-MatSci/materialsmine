@@ -32,7 +32,7 @@ services:
       dockerfile: Dockerfile.dev
       context: .
   fuseki:
-    command: /opt/venv/bin/whyis fuseki # ; /opt/venv/bin/fuseki-server --mem /ds
+    command: /opt/venv/bin/fuseki-server --mem /ds
     environment:
       - CHOKIDAR_USEPOLLING=true
     build:
