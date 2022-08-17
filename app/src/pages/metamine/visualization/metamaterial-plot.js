@@ -94,10 +94,10 @@ export default {
   },
   watch: {
     async xAxis () {
-      this.patchSpec = await this.patchVegaSpec()
+      await this.patchVegaSpec()
     },
     async yAxis () {
-      this.patchSpec = await this.patchVegaSpec()
+      await this.patchVegaSpec()
     }
 
   }

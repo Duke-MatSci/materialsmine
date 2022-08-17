@@ -18,12 +18,6 @@ const metamineRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'mockup',
-    name: 'Mockup',
-    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/mockup/Mockup.vue'),
-    meta: { requiresAuth: false }
-  },
-  {
     path: 'metamaterial_visualization',
     name: 'MetamaterialPlot',
     component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualization/MetamaterialPlot.vue'),
