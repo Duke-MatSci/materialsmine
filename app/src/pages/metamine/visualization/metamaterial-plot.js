@@ -55,7 +55,7 @@ export default {
         }
       }
       // TODO: Change to Apollo GraphQL
-      return await fetch('../metamaterialdata200.csv', requestOptions)
+      return await fetch('../metamaterialdata400.csv', requestOptions)
         .then(response => response.text())
         .then(data => {
           const titles = data.slice(0, data.indexOf('\n')).split(delimiter).map(str => str.replace(/^"(.*)"$/, '$1'))

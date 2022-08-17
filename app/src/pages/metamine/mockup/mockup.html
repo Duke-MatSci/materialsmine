@@ -14,6 +14,9 @@
       <div class="loading-dialog" style="margin: 5rem" v-if="loading">
           Loading chart data
       </div>
+      <div class="loading-dialog" style="margin: 5rem" v-if="error.status">
+        Error while rendering Vega-Lite specification: {{error.message}}
+      </div>
       <div v-else>
           <div class="viz-u-display__desktop" />
           <span class="md-layout md-gutter">

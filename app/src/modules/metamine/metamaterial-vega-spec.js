@@ -1,0 +1,646 @@
+const baseSpec = {
+  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+  width: 'container',
+  hconcat: [
+    {
+      selection: {
+        zoom: {
+          type: 'interval',
+          bind: 'scales'
+        },
+        propbrush: { type: 'point', on: 'mouseover', nearest: true }
+      },
+      mark: {
+        type: 'point',
+        stroke: 'black',
+        filled: true,
+        size: 100
+      },
+      width: 550,
+      height: 400,
+      encoding: {
+        x: {
+          field: 'C11',
+          type: 'quantitative',
+          title: { signal: 'x_axis' },
+          scale: {
+            zero: false,
+            nice: false,
+            padding: 10
+          },
+          axis: {
+            labelAngle: -90
+          }
+        },
+        y: {
+          field: 'C12',
+          type: 'quantitative',
+          title: { signal: 'y_axis' },
+          scale: {
+            zero: false,
+            nice: false,
+            padding: 10
+          }
+        },
+        color: {
+          field: 'symmetry',
+          type: 'nominal',
+          title: 'Symmetry',
+          legend: {
+            orient: 'top'
+          }
+        },
+        tooltip: [
+          {
+            field: 'symmetry',
+            type: 'nominal'
+          },
+          {
+            field: 'C11',
+            type: 'quantitative'
+          },
+          {
+            field: 'C12',
+            type: 'quantitative'
+          },
+          {
+            field: 'C22',
+            type: 'quantitative'
+          },
+          {
+            field: 'C16',
+            type: 'quantitative'
+          },
+          {
+            field: 'C26',
+            type: 'quantitative'
+          },
+          {
+            field: 'C66',
+            type: 'quantitative'
+          },
+          {
+            field: 'CM0',
+            type: 'nominal'
+          },
+          {
+            field: 'CM1',
+            type: 'nominal'
+          }
+        ]
+      },
+      config: {
+        view: {
+          stroke: 'transparent'
+        }
+      },
+      transform: [
+        {
+          filter: {
+            selection: 'brush_C11'
+          }
+        },
+        {
+          filter: {
+            selection: 'brush_C12'
+          }
+        },
+        {
+          filter: {
+            selection: 'brush_C22'
+          }
+        },
+        {
+          filter: {
+            selection: 'brush_C16'
+          }
+        },
+        {
+          filter: {
+            selection: 'brush_C26'
+          }
+        },
+        {
+          filter: {
+            selection: 'brush_C66'
+          }
+        }
+      ]
+    },
+    {
+      vconcat: [
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C11: {
+              type: 'interval',
+              fields: [
+                'C11'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C11',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C11'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C11',
+                type: 'quantitative'
+              }
+            ]
+          }
+        },
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C12: {
+              type: 'interval',
+              fields: [
+                'C12'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C12',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C12'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C12',
+                type: 'quantitative'
+              }
+            ]
+          }
+        },
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C22: {
+              type: 'interval',
+              fields: [
+                'C22'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C22',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C22'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C22',
+                type: 'quantitative'
+              }
+            ]
+          }
+        },
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C16: {
+              type: 'interval',
+              fields: [
+                'C16'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C16',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C16'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C16',
+                type: 'quantitative'
+              }
+            ]
+          }
+        },
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C26: {
+              type: 'interval',
+              fields: [
+                'C26'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C26',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C26'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C26',
+                type: 'quantitative'
+              }
+            ]
+          }
+        },
+        {
+          mark: {
+            type: 'tick'
+          },
+          selection: {
+            brush_C66: {
+              type: 'interval',
+              fields: [
+                'C66'
+              ],
+              encodings: [
+                'x'
+              ],
+              zoom: false,
+              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+            }
+          },
+          encoding: {
+            x: {
+              field: 'C66',
+              type: 'quantitative',
+              scale: {
+                nice: false
+              },
+              title: 'C66'
+            },
+            color: {
+              field: 'symmetry',
+              type: 'nominal',
+              title: 'Symmetry'
+            },
+            opacity: {
+              condition: {
+                test: {
+                  and: [
+                    { selection: 'brush_C11' },
+                    { selection: 'brush_C12' },
+                    { selection: 'brush_C22' },
+                    { selection: 'brush_C16' },
+                    { selection: 'brush_C26' },
+                    { selection: 'brush_C66' }
+                  ]
+                },
+                value: 1
+              },
+              value: 0.2
+            },
+            tooltip: [
+              {
+                field: 'C66',
+                type: 'quantitative'
+              }
+            ]
+          }
+        }
+
+      ]
+    },
+    {
+      vconcat: [
+        {
+          title: 'Unit cell geometry',
+          width: 200,
+          transform: [
+            { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 10'] } },
+            {
+              sample: 1
+            },
+            {
+              calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
+            },
+            {
+              calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
+            },
+            {
+              calculate: "split(replace(datum.GS0,/(.{10})/g,'$1$'), '$')", as: 'GS0'
+            }
+          ],
+          mark: { type: 'text', fontSize: 30, font: 'Courier', opacity: 1, lineHeight: 17, dy: 30 },
+          encoding: {
+            text: { field: 'GS0', type: 'nominal' }
+          }
+        },
+        {
+          width: 200,
+          transform: [
+            { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 50'] } },
+            {
+              sample: 1
+            },
+            {
+              calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
+            },
+            {
+              calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
+            },
+            {
+              calculate: "split(replace(datum.GS0,/(.{50})/g,'$1$'), '$')", as: 'GS0'
+            }
+          ],
+          mark: { type: 'text', fontSize: 6, font: 'Courier', opacity: 1, lineHeight: 3.5, dy: -20 },
+          encoding: {
+            text: { field: 'GS0', type: 'nominal' }
+          }
+
+        }
+      ]
+    }
+  ]
+}
+
+function createPatch (xAxis, yAxis) {
+  return {
+    patch: [
+      {
+        path: '/signals/7',
+        op: 'replace',
+        value: {
+          name: 'zoom',
+          update: `{"${xAxis}": zoom_${xAxis}, "${yAxis}": zoom_${yAxis}}`
+        }
+      },
+      {
+        path: '/signals/8',
+        op: 'replace',
+        value: {
+          name: `zoom_${xAxis}`
+        }
+      },
+      {
+        path: '/signals/9',
+        op: 'replace',
+        value: {
+          name: `zoom_${yAxis}`
+        }
+      },
+      {
+        path: '/signals/-',
+        op: 'add',
+        value: {
+          name: 'x_axis',
+          value: `${xAxis}`
+        }
+      },
+      {
+        path: '/signals/-',
+        op: 'add',
+        value: {
+          name: 'y_axis',
+          value: `${yAxis}`
+        }
+      },
+      {
+        path: '/scales/1',
+        op: 'replace',
+        value: {
+          domain: {
+            data: 'data_1',
+            field: `${xAxis}`,
+            sort: 'true'
+          },
+          domainRaw: {
+            signal: `zoom["${xAxis}"]`
+          },
+          name: 'concat_0_x',
+          nice: false,
+          padding: 10,
+          range: [
+            0,
+            { signal: 'concat_0_width' }
+          ],
+          type: 'linear',
+          zero: false
+        }
+      },
+      {
+        path: '/scales/2',
+        op: 'replace',
+        value: {
+          domain: {
+            data: 'data_1',
+            field: `${yAxis}`,
+            sort: 'true'
+          },
+          domainRaw: {
+            signal: `zoom["${yAxis}"]`
+          },
+          name: 'concat_0_y',
+          nice: false,
+          padding: 10,
+          range: [
+            { signal: 'concat_0_height' },
+            0
+          ],
+          type: 'linear',
+          zero: false
+        }
+      },
+      {
+        path: '/marks/0/marks/0/encode/update/x/field',
+        op: 'replace',
+        value: `${xAxis}`
+      },
+      {
+        path: '/marks/0/marks/0/encode/update/y/field',
+        op: 'replace',
+        value: `${yAxis}`
+      },
+      {
+        path: '/marks/0/signals/0/name',
+        op: 'replace',
+        value: `zoom_${xAxis}`
+      },
+      {
+        path: '/marks/0/signals/1/name',
+        op: 'replace',
+        value: `zoom_${yAxis}`
+      },
+      {
+        path: '/marks/0/signals/2/on/0',
+        op: 'replace',
+        value: {
+          events: [{ signal: `zoom_${xAxis} || zoom_${yAxis}` }],
+          update: `zoom_${xAxis} && zoom_${yAxis} ? {unit: "concat_0", fields: zoom_tuple_fields, values: [zoom_${xAxis},zoom_${yAxis}]} : null`
+        }
+      },
+      {
+        path: '/marks/0/signals/3/value/0/field',
+        op: 'replace',
+        value: `${xAxis}`
+      },
+      {
+        path: '/marks/0/signals/3/value/1/field',
+        op: 'replace',
+        value: `${yAxis}`
+      }
+    ]
+  }
+}
+export { baseSpec, createPatch }
