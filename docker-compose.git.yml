@@ -36,5 +36,8 @@ services:
     image: 'dukematsci/dev-app:latest'
     depends_on:
       - api
+  kgapp:
+    image: 'dukematsci/dev-kgapp:latest'
+
 volumes:
   mockDB:
