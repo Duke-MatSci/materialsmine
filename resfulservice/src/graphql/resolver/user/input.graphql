@@ -24,7 +24,7 @@ input createUserInput {
   "User last name info"
   surName: String!
 
-  "name displayed on user profile like username"
+  "Name displayed on user profile, e.g. username"
   displayName: String!
 
   "User email address"

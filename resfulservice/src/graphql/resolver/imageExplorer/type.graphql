@@ -12,7 +12,7 @@ type Citation {
   "List of authors involved in the publication"
   authors: [String!]
 
-  "List of keywords(tags) that related to the publication"
+  "List of keywords(tags) related to the publication"
   keywords: [String!]
 
   "Publisher of the publication"
@@ -92,7 +92,7 @@ type ImageExplorer {
   sampleImages: Microstructure
 }
 
-"Get list of a image"
+"Get list of images"
 type Images {
   "Total number of images"
   totalItems: Int!
@@ -106,7 +106,7 @@ type Images {
   "Total number of pages of images"
   totalPages: Int!
 
-  "Current page have a previous page"
+  "Current page has a previous page"
   hasPreviousPage: Boolean!
 
   "Current page has a next page"

@@ -27,7 +27,7 @@ type Users {
   "Total number of user records"
   totalItems: Int!
 
-  "Number of user record per page"
+  "Number of user records per page"
   pageSize: Int!
 
   "Current page number"
@@ -36,7 +36,7 @@ type Users {
   "Total number of pages retrieved"
   totalPages: Int!
 
-  "Current page have a previous page"
+  "Current page has a previous page"
   hasPreviousPage: Boolean!
 
   "Current page has a next page"
