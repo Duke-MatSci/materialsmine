@@ -28,6 +28,12 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'curate/uploadSpreadsheet',
+    name: 'CurateSpreadsheet',
+    component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'chart',
     component: ChartBase,
     children: [
