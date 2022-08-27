@@ -433,7 +433,9 @@ const baseSpec = {
             color: {
               field: 'symmetry',
               type: 'nominal',
-              title: 'Symmetry'
+              title: 'Symmetry',
+              scale: {scheme: "category10"}
+
             },
             opacity: {
               condition: {
@@ -468,9 +470,8 @@ const baseSpec = {
           title: 'Unit cell geometry',
           width: 200,
           transform: [
-            { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 10'] } },
             {
-              sample: 1
+              filter: { selection: 'propbrush' }
             },
             {
               calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
@@ -479,32 +480,23 @@ const baseSpec = {
               calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
             },
             {
-              calculate: "split(replace(datum.GS0,/(.{10})/g,'$1$'), '$')", as: 'GS0'
+              calculate: "regexp('(.{' + datum.unit_cell_x_pixels + '})', 'g')", as: 'regex'
+            },
+            {
+              calculate: "split(replace(datum.GS0,datum.regex,'$1$'), '$')", as: 'GS0'
             }
           ],
-          mark: { type: 'text', fontSize: 30, font: 'Courier', opacity: 1, lineHeight: 17, dy: 30 },
-          encoding: {
-            text: { field: 'GS0', type: 'nominal' }
-          }
-        },
-        {
-          width: 200,
-          transform: [
-            { filter: { and: [{ selection: 'propbrush' }, 'datum.unit_cell_x_pixels == 50'] } },
-            {
-              sample: 1
+          mark: { 
+            type: 'text', 
+            fontSize: {
+              expr: '300/datum.unit_cell_x_pixels'
             },
-            {
-              calculate: "replace(datum.geometry_full,/0/g,'□')", as: 'GS'
-            },
-            {
-              calculate: "replace(datum.GS,/1/g,'■')", as: 'GS0'
-            },
-            {
-              calculate: "split(replace(datum.GS0,/(.{50})/g,'$1$'), '$')", as: 'GS0'
-            }
-          ],
-          mark: { type: 'text', fontSize: 6, font: 'Courier', opacity: 1, lineHeight: 3.5, dy: -20 },
+            font: 'Courier', 
+            lineHeight:{
+              expr: '176.5/datum.unit_cell_x_pixels'
+            }, 
+            dy: {expr: '100/datum.unit_cell_x_pixels + 10'}
+          },
           encoding: {
             text: { field: 'GS0', type: 'nominal' }
           }
