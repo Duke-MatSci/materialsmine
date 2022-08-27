@@ -434,7 +434,7 @@ const baseSpec = {
               field: 'symmetry',
               type: 'nominal',
               title: 'Symmetry',
-              scale: {scheme: "category10"}
+              scale: { scheme: 'category10' }
 
             },
             opacity: {
@@ -486,16 +486,16 @@ const baseSpec = {
               calculate: "split(replace(datum.GS0,datum.regex,'$1$'), '$')", as: 'GS0'
             }
           ],
-          mark: { 
-            type: 'text', 
+          mark: {
+            type: 'text',
             fontSize: {
               expr: '300/datum.unit_cell_x_pixels'
             },
-            font: 'Courier', 
-            lineHeight:{
+            font: 'Courier',
+            lineHeight: {
               expr: '176.5/datum.unit_cell_x_pixels'
-            }, 
-            dy: {expr: '100/datum.unit_cell_x_pixels + 10'}
+            },
+            dy: { expr: '100/datum.unit_cell_x_pixels + 10' }
           },
           encoding: {
             text: { field: 'GS0', type: 'nominal' }
