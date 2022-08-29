@@ -1,0 +1,11 @@
+input filesetQueryInput {
+  "Fileset name requested"
+  filesetName: String
+  "Unique id for a requested dataset - optional"
+  datasetId: String
+}
+
+input datasetStatusInput {
+  "Dataset workflow status"
+  status: STATUS
+} 

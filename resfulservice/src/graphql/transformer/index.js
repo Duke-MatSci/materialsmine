@@ -25,3 +25,8 @@ exports.imageTransformer = (imageArray) => {
   }
   return images;
 };
+
+exports.datasetTransformer = (data) => {
+  console.log(data);
+  return data;
+};

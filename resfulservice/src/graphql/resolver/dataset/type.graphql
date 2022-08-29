@@ -1,0 +1,78 @@
+type Dataset {
+  "Unique id assigned to a given dataset"
+  id: ID
+  "Verified user information"
+  user: VerifiedUser
+  "Dataset workflow status"
+  status: STATUS,
+  "File groupings available in this dataset"
+  filesets: [Fileset!]
+  "Time dataset was created"
+  createdAt: String
+  "Time dataset was last updated"
+  updatedAt: String
+}
+
+type VerifiedUser {
+  "User assigned id string e.g. 583dc006e74a1d205f4e1403"
+  id: String!
+  "User display name"
+  username: String!
+}
+
+type Fileset {
+  "Given name to a group of related files"
+  filesetName: String
+  "List of file names available inside a fileset group"
+  files:  [String!]
+}
+
+type Files {
+  "Given name to a group of related files"
+  filesetName: String
+  "List of files available inside a fileset group"
+  files: [File!]
+}
+
+type File {
+  id: String
+  filename: String
+  contentType: String
+}
+
+type UserDataset {
+  "Total number of datasets match found"
+  totalItems: Int
+  """
+  Number of datasets per page. 
+  Pagination option for specifying how the server should group the contacts.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page to display to return.
+  This defaults to 1 if no value is specified.
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "Boolean value specifying if the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+  
+  "Boolean value specifying if the currently returned page has a next page"
+  hasNextPage: Boolean!
+  "Dataset summary information"
+  data: [Dataset!]
+}
+
+enum STATUS {
+  APPROVED
+  UNDER_REVIEW
+  WORK_IN_PROGRESS
+}
