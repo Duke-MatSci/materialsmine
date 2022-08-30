@@ -53,7 +53,8 @@ const baseSpec = {
         tooltip: [
           {
             field: 'symmetry',
-            type: 'nominal'
+            type: 'nominal',
+            title: 'Symmetry'
           },
           {
             field: 'C11',
@@ -81,11 +82,13 @@ const baseSpec = {
           },
           {
             field: 'CM0',
-            type: 'nominal'
+            type: 'nominal',
+            title: 'Material 0'
           },
           {
             field: 'CM1',
-            type: 'nominal'
+            type: 'nominal',
+            title: 'Material 1'
           }
         ]
       },
@@ -501,6 +504,54 @@ const baseSpec = {
             text: { field: 'GS0', type: 'nominal' }
           }
 
+        },
+        {
+          title: '□ Constituent Material 0 Properties',
+          width: 250,
+          transform: [
+            {
+              filter: { selection: 'propbrush' }
+            },
+            {
+              calculate: "'Type: ' + datum.CM0 + '$C11: ' + datum.CM0_C11 + '$C12: ' + datum.CM0_C12 + '$C22: ' + datum.CM0_C22 + '$C16: ' + datum.CM0_C16 + '$C26: ' + datum.CM0_C26 + '$C66: ' + datum.CM0_C66 + '$'",
+              as: 'annotated_CM0'
+            },
+            {
+              calculate: "split(datum.annotated_CM0, '$')", as: 'annotated_CM0'
+            }
+          ],
+          mark: {
+            type: 'text',
+            align: 'left',
+            dx: -100
+          },
+          encoding: {
+            text: { field: 'annotated_CM0', type: 'nominal' }
+          }
+        },
+        {
+          title: '■ Constituent Material 1 Properties',
+          width: 250,
+          transform: [
+            {
+              filter: { selection: 'propbrush' }
+            },
+            {
+              calculate: "'Type: ' + datum.CM1 + '$C11: ' + datum.CM1_C11 + '$C12: ' + datum.CM1_C12 + '$C22: ' + datum.CM1_C22 + '$C16: ' + datum.CM1_C16 + '$C26: ' + datum.CM1_C26 + '$C66: ' + datum.CM1_C66 + '$'",
+              as: 'annotated_CM1'
+            },
+            {
+              calculate: "split(datum.annotated_CM1, '$')", as: 'annotated_CM1'
+            }
+          ],
+          mark: {
+            type: 'text',
+            align: 'left',
+            dx: -100
+          },
+          encoding: {
+            text: { field: 'annotated_CM1', type: 'nominal' }
+          }
         }
       ]
     }
@@ -511,7 +562,7 @@ function createPatch (xAxis, yAxis) {
   return {
     patch: [
       {
-        path: '/signals/7',
+        path: '/signals/9',
         op: 'replace',
         value: {
           name: 'zoom',
@@ -519,14 +570,14 @@ function createPatch (xAxis, yAxis) {
         }
       },
       {
-        path: '/signals/8',
+        path: '/signals/10',
         op: 'replace',
         value: {
           name: `zoom_${xAxis}`
         }
       },
       {
-        path: '/signals/9',
+        path: '/signals/11',
         op: 'replace',
         value: {
           name: `zoom_${yAxis}`

@@ -1,8 +1,9 @@
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import spinner from '@/components/Spinner'
-import { buildCsvSpec } from '../../../modules/vega-chart'
+import { buildCsvSpec } from '@/modules/vega-chart'
+import Papa from '@/modules/papaparse.min.js'
 import embed from 'vega-embed'
-import { baseSpec, createPatch } from '../../../modules/metamine/metamaterial-vega-spec'
+import { baseSpec, createPatch } from '@/modules/metamine/metamaterial-vega-spec'
 
 export default {
   name: 'Mockup',
@@ -51,6 +52,7 @@ export default {
     },
     // TODO: remove this method. Should happen server side!
     async CSVToJSON (delimiter = ',') {
+      const thisVue = this
       const requestOptions = {
         headers: {
           accept: 'application/sparql-results+json'
@@ -60,16 +62,12 @@ export default {
       return await fetch('../metamaterials_combined_1000.csv', requestOptions)
         .then(response => response.text())
         .then(data => {
-          const titles = data.slice(0, data.indexOf('\n')).split(delimiter).map(str => str.replace(/^"(.*)"$/, '$1'))
-          this.results = data
-            .slice(data.indexOf('\n') + 1)
-            .split('\n')
-            .map(v => {
-              const values = v.split(delimiter).map(str => str.replace(/^"(.*)"$/, '$1'))
-              return titles.reduce(
-                (obj, title, index) => (((obj[title] = values[index]), obj)),
-                {})
-            })
+          Papa.parse(data, {
+            header: true,
+            complete: function (result) {
+              thisVue.results = result.data
+            }
+          })
         })
     },
     // Handle screen resizing
