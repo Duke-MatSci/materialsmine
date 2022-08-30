@@ -7,7 +7,8 @@ import { baseSpec, createPatch } from '../../../modules/metamine/metamaterial-ve
 export default {
   name: 'Mockup',
   components: {
-    VegaLite
+    VegaLite,
+    spinner
   },
   data: () => ({
     spec: null,
@@ -29,9 +30,6 @@ export default {
       { attr: 'C66', label: 'C66' }
     ]
   }),
-  components: {
-    spinner
-  },
   computed: {
     // Don't allow graphing the same property against itself (causes vega-lite errors)
     xAxisOpts () {
