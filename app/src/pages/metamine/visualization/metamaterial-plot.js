@@ -1,4 +1,5 @@
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
+import spinner from '@/components/Spinner'
 import { buildCsvSpec } from '../../../modules/vega-chart'
 import embed from 'vega-embed'
 import { baseSpec, createPatch } from '../../../modules/metamine/metamaterial-vega-spec'
@@ -28,6 +29,9 @@ export default {
       { attr: 'C66', label: 'C66' }
     ]
   }),
+  components: {
+    spinner
+  },
   computed: {
     // Don't allow graphing the same property against itself (causes vega-lite errors)
     xAxisOpts () {
@@ -55,7 +59,7 @@ export default {
         }
       }
       // TODO: Change to Apollo GraphQL
-      return await fetch('../metamaterialdata400.csv', requestOptions)
+      return await fetch('../metamaterials_combined_1000.csv', requestOptions)
         .then(response => response.text())
         .then(data => {
           const titles = data.slice(0, data.indexOf('\n')).split(delimiter).map(str => str.replace(/^"(.*)"$/, '$1'))

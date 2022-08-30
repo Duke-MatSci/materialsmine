@@ -14,10 +14,10 @@ const baseSpec = {
         type: 'point',
         stroke: 'black',
         filled: true,
-        size: 100
+        size: 80
       },
       width: 550,
-      height: 400,
+      height: 600,
       encoding: {
         x: {
           field: 'C11',
@@ -143,7 +143,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -174,7 +174,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {
@@ -198,7 +198,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -229,7 +229,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {
@@ -253,7 +253,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -284,7 +284,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {
@@ -308,7 +308,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -339,7 +339,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {
@@ -363,7 +363,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -394,7 +394,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {
@@ -418,7 +418,7 @@ const baseSpec = {
                 'x'
               ],
               zoom: false,
-              mark: { strokeWidth: 3, stroke: '#000000', fillOpacity: 0 }
+              mark: { strokeWidth: 1, stroke: '#000000', fillOpacity: 0 }
             }
           },
           encoding: {
@@ -451,7 +451,7 @@ const baseSpec = {
                 },
                 value: 1
               },
-              value: 0.2
+              value: 0.01
             },
             tooltip: [
               {

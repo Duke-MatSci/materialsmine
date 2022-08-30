@@ -10,14 +10,17 @@
         Scroll to zoom, click and drag to pan, and double-click to reset. 
       </p>
     </div>
-    <div class="md-layout-item md-small-size-100" style="margin: 2rem">
-      <div class="loading-dialog" style="margin: 5rem" v-if="loading">
-          Loading chart data
-      </div>
-      <div class="loading-dialog" style="margin: 5rem" v-if="error.status">
-        Error while rendering Vega-Lite specification: {{error.message}}
-      </div>
-      <div v-else>
+    <div class="section_loader" v-if="loading">
+      <spinner
+        :loading="loading"
+        text='Loading metamaterial data...'
+      />
+    </div>
+    <div class="section_loader" v-else-if="error.status">
+      Error while rendering Vega-Lite specification: {{error.message}}.
+    </div>
+    <div class="md-layout-item md-small-size-100" style="margin: 2rem" v-else>
+      <div>
           <div class="viz-u-display__desktop" />
           <span class="md-layout md-gutter">
             <div class="md-layout-item md-size-30">
