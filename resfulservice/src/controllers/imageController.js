@@ -31,7 +31,6 @@ exports.fileContent = async (req, res, next) => {
     const downloadStream = bucket.openDownloadStream(_id);
     downloadStream.pipe(res);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ message: 'error with fetching image', statusCode: 500 });
   }
 };

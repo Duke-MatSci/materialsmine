@@ -1,12 +1,12 @@
-type Dataset {
-  "Unique id assigned to a given dataset"
-  id: ID
+type Datasets {
+  "Unique id assigned to a user dataset grouping"
+  datasetGroupId: ID
   "Verified user information"
   user: VerifiedUser
   "Dataset workflow status"
   status: STATUS,
-  "File groupings available in this dataset"
-  filesets: [Fileset!]
+  "General information on user curated datasets"
+  userDatasetInfo: [Dataset!]
   "Time dataset was created"
   createdAt: String
   "Time dataset was last updated"
@@ -20,12 +20,19 @@ type VerifiedUser {
   username: String!
 }
 
-type Fileset {
-  "Given name to a group of related files"
-  filesetName: String
-  "List of file names available inside a fileset group"
-  files:  [String!]
+type Dataset {
+  "Unique id assigned to a given dataset"
+  datasetId: ID!
+  "File groupings available in this dataset"
+  datasets: [Files!]
 }
+
+type Filegroup {
+  "File groupings available in this dataset"
+  filesets: [Files!]
+}
+
+union Filesets = Filegroup | Files
 
 type Files {
   "Given name to a group of related files"
@@ -67,8 +74,9 @@ type UserDataset {
   
   "Boolean value specifying if the currently returned page has a next page"
   hasNextPage: Boolean!
-  "Dataset summary information"
-  data: [Dataset!]
+
+  "User dataset summary information"
+  datasets: Datasets!
 }
 
 enum STATUS {

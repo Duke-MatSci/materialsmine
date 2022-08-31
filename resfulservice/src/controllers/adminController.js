@@ -184,23 +184,14 @@ exports.populateDatasetIds = async (req, res, next) => {
     const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
     const Dataset = await db.collection('datasets');
     const datasets = await Dataset.find({});
-    // const existingDatasets = await Dataset.find({}).lean().limit(2);
-    // const readableStream = Readable.from(existingDatasets);
-    // // eslint-disable-next-line no-debugger
-    // debugger;
-    let counter = 0;
     await iterator.iteration(datasets, async (arg) => {
       const user = await User.findOne({ userid: arg?.userid }).lean();
       const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
       if (userExistInDatasetId?._id) {
-        counter = counter + 1;
         userExistInDatasetId.dataset.push(arg);
         await userExistInDatasetId.save();
         return;
       }
-      counter = counter + 1;
-      console.log('aa:', user);
-      console.log('aa:', counter);
       const datasetId = new DatasetId({ user });
       datasetId.dataset.push(arg._id);
       await datasetId.save();

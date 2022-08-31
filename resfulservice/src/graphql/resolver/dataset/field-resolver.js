@@ -16,7 +16,3 @@ exports.filesets = async (parent) => {
 exports.files = (parent) => {
   return parent.files.map(({ metadata: { filename } }) => filename);
 };
-
-exports.user = ({ user }) => {
-  return { id: user._id, username: user.displayName };
-};
