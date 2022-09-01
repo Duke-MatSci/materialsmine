@@ -7,7 +7,7 @@
                     <div class="md-layout md-layout-responsive">
                         <!-- <div class="md-layout-item">&nbsp;</div> -->
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
+                            <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">upload_file</md-icon>
                                     <span class="explorer_page-nav-card_text">Upload a spreadsheet</span>
@@ -18,7 +18,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
+                            <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">edit_note</md-icon>
                                     <span class="explorer_page-nav-card_text">Fill a form</span>
@@ -29,7 +29,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
+                            <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">done_outline</md-icon>
                                     <span class="explorer_page-nav-card_text">Submit SDD</span>
