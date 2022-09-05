@@ -33,21 +33,31 @@ exports.filesetSearchQuery = async ({ datasetId, filesetName, skip, limit }) => 
         'filesets.fileset': filesetName
       }
     });
+
+    stages.push({
+      $project: {
+        _id: 0,
+        filesets: 1
+      }
+    });
   }
 
-  stages.push({
-    $project: {
-      _id: 0,
-      counts: { $size: '$filesets' },
-      filesets: {
-        $slice: ['$filesets', skipArg, limitArg]
+  if (!filesetName) {
+    stages.push({
+      $project: {
+        _id: 0,
+        counts: { $size: '$filesets' },
+        filesets: {
+          $slice: ['$filesets', skipArg, limitArg]
+        }
       }
-    }
-  });
+    });
+  }
 
   const queryData = await Dataset.aggregate(stages);
   if (queryData.length) {
     const { counts, filesets } = queryData.pop();
+    // console.log(filesets)
     return { counts, filesets };
   }
   return { counts: 0, filesets: [] };
