@@ -20,39 +20,30 @@ type VerifiedUser {
   username: String!
 }
 
+type CreatedDataset {
+  _id: ID
+  title: String
+  filesets: [Fileset]
+  doi: String
+  userid: String
+  datasetId: String
+}
+
 type Dataset {
   "Unique id assigned to a given dataset"
   datasetId: ID!
   "File groupings available in this dataset"
-  datasets: [Files!]
+  datasets: [Fileset!]
 }
 
-type Filegroup {
-  "File groupings available in this dataset"
-  filesets: [Files!]
-}
+union Filesets = FilesetsGroup | Fileset
 
-union Filesets = Filegroup | Files
-
-type Files {
-  "Given name to a group of related files"
-  filesetName: String
-  "List of files available inside a fileset group"
-  files: [File!]
-}
-
-type File {
-  id: String
-  filename: String
-  contentType: String
-}
-
-type UserDataset {
-  "Total number of datasets match found"
+type FilesetsGroup {
+  "Total number of filesets match found"
   totalItems: Int
   """
-  Number of datasets per page. 
-  Pagination option for specifying how the server should group the contacts.
+  Number of filesets per page. 
+  Pagination option for specifying how the server should group the filesets.
   Defaults to 1 if none is specified.
   """
   pageSize: Int!
@@ -71,7 +62,52 @@ type UserDataset {
 
   "Boolean value specifying if the currently returned page has a previous page"
   hasPreviousPage: Boolean!
-  
+
+  "Boolean value specifying if the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  "Filesets groupings with similar fileset name"
+  filesets: [Fileset!]
+}
+
+type Fileset {
+  "Given name to a group of related files"
+  filesetName: String
+  "List of files available inside a fileset group"
+  files: [File!]
+}
+
+type File {
+  id: String
+  filename: String
+  contentType: String
+}
+
+type UserDataset {
+  "Total number of datasets match found"
+  totalItems: Int
+  """
+  Number of datasets per page. 
+  Pagination option for specifying how the server should group the datasets.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page to display to return.
+  This defaults to 1 if no value is specified.
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "Boolean value specifying if the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+
   "Boolean value specifying if the currently returned page has a next page"
   hasNextPage: Boolean!
 

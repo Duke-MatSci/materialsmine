@@ -1,5 +1,5 @@
 exports.filesetsTransform = (filesets) => {
-  return filesets?.map(({ fileset, files }) => {
+  const transformedFilesets = filesets?.map(({ fileset, files }) => {
     return {
       filesetName: fileset ?? null,
       files: files?.map(({ type, id, metadata }) => {
@@ -11,6 +11,7 @@ exports.filesetsTransform = (filesets) => {
       }) ?? []
     };
   }) ?? [];
+  return transformedFilesets;
 };
 
 const filterDataset = (data) => {

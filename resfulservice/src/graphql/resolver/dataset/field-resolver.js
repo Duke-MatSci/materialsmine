@@ -16,3 +16,14 @@ exports.filesets = async (parent) => {
 exports.files = (parent) => {
   return parent.files.map(({ metadata: { filename } }) => filename);
 };
+
+exports.filesetsUnionResolveType = (obj, context, info) => {
+  if (obj.filesets) {
+    return 'FilesetsGroup';
+  }
+
+  if (obj.filesetName) {
+    return 'Fileset';
+  }
+  return null;
+};

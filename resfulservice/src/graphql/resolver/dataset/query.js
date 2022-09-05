@@ -33,19 +33,19 @@ const datasetQuery = {
       return errorFormater('Unauthorized', 401);
     }
     try {
-      // Note: Implement pagination in the schema for this resolver and uncomment the line below
-      // const { counts, filesets } = await filesetSearchQuery({
-      const { filesets } = await filesetSearchQuery({
+      const { counts, filesets } = await filesetSearchQuery({
         userid: user.userid,
         datasetId: input.datasetId,
         filesetName: input?.filesetName,
         skip: input?.pageNumber,
         limit: input?.pageSize
       });
-      // const pagination = paginator(counts, input.pageNumber, input.pageSize);
 
-      if (input?.filesetName) return filesetsTransform(filesets)?.pop();
-      return { filesets: filesetsTransform(filesets) };
+      if (input?.filesetName) {
+        return filesetsTransform([filesets])?.pop();
+      }
+      const pagination = paginator(counts, input.pageNumber, input.pageSize);
+      return Object.assign(pagination, { filesets: filesetsTransform(filesets) });
     } catch (error) {
       return errorFormater(error.message, 500);
     }
