@@ -1,0 +1,60 @@
+"Schema type returned from the getSingleContact query resolver"
+type Contact {
+  "ID of the contact"
+  _id: ID
+  "full name of the user requesting contact"
+  fullName: String!
+
+  "email address of the user requesting contact"
+  email: String!
+
+  """
+  purpose for requesting contact.
+  You can specify only one from the list of enumerable values defined
+  """
+  purpose: Purpose!
+
+  "details of the reason or purpose for requesting contact"
+  message: String!
+
+  "time the contact was created"
+  createdAt: String
+
+  "last time contact was updated"
+  updatedAt: String
+}
+
+"This schema type returns the lists of contacts"
+type Contacts {
+  "Total number of contacts that exists"
+  totalItems: Int!
+
+  """
+  Number of contacts per page. 
+  Pagination option for specifying how the server should group the contacts.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page of contacts to display to return.
+  This defaults to 1 if no value is specified.
+  The contacts are grouped into pages based on the specified pageSize(defaults to 20, if not specified)
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "boolean value specifying If the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+  
+  "boolean value specifying If the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  "list of Contact data returned from the server"
+  data: [Contact!]!
+}

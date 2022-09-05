@@ -1,0 +1,88 @@
+@prefix :       <http://localhost:3030/$/datasets#> .
+@prefix fuseki: <http://jena.apache.org/fuseki#> .
+@prefix ja:     <http://jena.hpl.hp.com/2005/11/Assembler#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix root:   <http://localhost:3030/$/datasets#> .
+@prefix tdb2:   <http://jena.apache.org/2016/tdb#> .
+@prefix text:   <http://jena.apache.org/fulltext#> .
+
+<http://localhost:3030/$/datasets#entMap_/admin>
+        rdf:type           text:EntityMap ;
+        text:defaultField  "text" ;
+        text:entityField   "uri" ;
+        text:map           ( [ text:field      "text" ;
+                               text:predicate  rdfs:label
+                             ]
+                           ) .
+
+tdb2:GraphTDB  rdfs:subClassOf  ja:Model .
+
+ja:ModelRDFS  rdfs:subClassOf  ja:Model .
+
+ja:RDFDatasetSink  rdfs:subClassOf  ja:RDFDataset .
+
+<http://jena.hpl.hp.com/2008/tdb#DatasetTDB>
+        rdfs:subClassOf  ja:RDFDataset .
+
+tdb2:GraphTDB2  rdfs:subClassOf  ja:Model .
+
+text:TextDataset  rdfs:subClassOf  ja:RDFDataset .
+
+<http://jena.apache.org/text#TextDataset>
+        rdfs:subClassOf  ja:RDFDataset .
+
+<http://localhost:3030/$/datasets#tdb_dataset_/admin>
+        rdf:type                tdb2:DatasetTDB2 ;
+        tdb2:location           "/fuseki/databases/admin" ;
+        tdb2:unionDefaultGraph  true ;
+        ja:context              [ ja:cxtName   "arq:queryTimeout" ;
+                                  ja:cxtValue  "100000,600000"
+                                ] .
+
+<http://localhost:3030/$/datasets#indexLucene_/admin>
+        rdf:type        text:TextIndexLucene ;
+        text:directory  <file:///fuseki/databases/admin/lucene> ;
+        text:entityMap  <http://localhost:3030/$/datasets#entMap_/admin> .
+
+ja:RDFDatasetZero  rdfs:subClassOf  ja:RDFDataset .
+
+text:TextIndexLucene  rdfs:subClassOf  text:TextIndex .
+
+tdb2:DatasetTDB  rdfs:subClassOf  ja:RDFDataset .
+
+ja:ViewGraph  rdfs:subClassOf  ja:Model .
+
+ja:GraphRDFS  rdfs:subClassOf  ja:Model .
+
+<http://jena.hpl.hp.com/2008/tdb#GraphTDB>
+        rdfs:subClassOf  ja:Model .
+
+ja:DatasetTxnMem  rdfs:subClassOf  ja:RDFDataset .
+
+<http://localhost:3030/$/datasets#service_/admin>
+        rdf:type                      fuseki:Service ;
+        rdfs:label                    "TDB2 /admin" ;
+        fuseki:dataset                <http://localhost:3030/$/datasets#lucene_dataset_/admin> ;
+        fuseki:name                   "/admin" ;
+        fuseki:serviceQuery           "query" , "" , "sparql" ;
+        fuseki:serviceReadGraphStore  "get" ;
+        fuseki:serviceReadWriteGraphStore
+                "data" , "" ;
+        fuseki:serviceUpdate          "update" , "" ;
+        fuseki:serviceUpload          "upload" .
+
+tdb2:DatasetTDB2  rdfs:subClassOf  ja:RDFDataset .
+
+<http://localhost:3030/$/datasets#lucene_dataset_/admin>
+        rdf:type      text:TextDataset ;
+        text:dataset  <http://localhost:3030/$/datasets#tdb_dataset_/admin> ;
+        text:index    <http://localhost:3030/$/datasets#indexLucene_/admin> .
+
+ja:RDFDatasetOne  rdfs:subClassOf  ja:RDFDataset .
+
+ja:MemoryDataset  rdfs:subClassOf  ja:RDFDataset .
+
+ja:DatasetRDFS  rdfs:subClassOf  ja:RDFDataset .
+
+[ ja:loadClass  "edu.rpi.tw.jena.query.fulltext.TextQuery" ] .

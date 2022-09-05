@@ -31,7 +31,18 @@ exports.fileContent = async (req, res, next) => {
     const downloadStream = bucket.openDownloadStream(_id);
     downloadStream.pipe(res);
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ message: 'error with fetching image', statusCode: 500 });
+  }
+};
+
+exports.uploadFile = async (req, res, next) => {
+  try {
+    console.log(req.files.uploadfile);
+    req.logger.info('datasetIdUpload Function Entry:');
+
+    return res.status(201).json({ files: req.files.uploadfile })
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'error uploading files', statusCode: 500 })
   }
 };

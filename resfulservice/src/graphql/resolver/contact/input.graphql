@@ -1,0 +1,70 @@
+"Input schema for fetching a single contact"
+input userContactQueryInput {
+  """
+  email of user whose contact to fetch. 
+  This field is a required field for fetching all contacts made by a user.
+  """
+  email: String!
+}
+
+input CreatedBetween {
+  from: String!
+  to: String!
+}
+
+"""
+Input schema for for fetching a list of contacts.
+Contains pagination options for how the contacts should be grouped
+"""
+input contactsQueryInput {
+  """
+  Pagination option for the page of contacts to display to return.
+  This defaults to 1 if no value is specified.
+  The contacts are grouped into pages based on the specified pageSize(defaults to 20, if not specified)
+  """
+  pageNumber: Int
+
+  "filter "
+  datetime: CreatedBetween 
+
+  """
+  Number of contacts per page. 
+  Pagination option for specifying how the server should group the contacts.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int
+}
+
+"Input Schema type for creating contact"
+input createContactInput {
+  "full name of the user requesting contact"
+  fullName: String!
+
+  "email address of the user requesting contact"
+  email: String!
+
+  """
+  purpose for requesting contact.
+  You can specify only one from the list of enumerable values defined
+  """
+  purpose: Purpose!
+
+  "details of the reason or purpose for requesting contact"
+  message: String!
+
+}
+
+"list of enumerable value selectable as purpose for requesting contact"
+enum Purpose {
+  "I want to ask a question"
+  QUESTION
+
+  "I want to submit a ticket"
+  TICKET
+
+  "I have to make a suggestion"
+  SUGGESTION
+  
+  "I want to make a comment"
+  COMMENT
+}

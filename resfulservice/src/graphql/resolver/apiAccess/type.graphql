@@ -1,6 +1,14 @@
+"APIAccess return schema"
 type ApiAccess {
+  "API access identity"
   _id: ID!
+
+  "users Api access"
   user: String!
+
+  "Api access key"
   key: String!
+
+  "token Authorization for Api access"
   token: String!
 }
