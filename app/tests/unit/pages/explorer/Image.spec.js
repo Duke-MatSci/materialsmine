@@ -75,4 +75,37 @@ describe('Image.vue', () => {
       })
     }
   })
+
+  it('limits result to page size', async () => {
+    expect.assertions(1)
+    await wrapper.setData({ pageSize: 5 })
+    expect(wrapper.vm.images.images.length).toBeLessThanOrEqual(wrapper.vm.pageSize)
+  })
+
+  it('renders image title and description', () => {
+    expect.assertions(6)
+    const image = wrapper.find('.gallery-item')
+    expect(image.exists()).toBe(true)
+    expect(image.html()).toContain('Morphology and electrical')
+    expect(image.find('.md-subheading').exists()).toBe(true)
+    expect(image.find('.md-subheading').text()).not.toBe('')
+    expect(image.find('.md-body-1').exists()).toBe(true)
+    expect(image.find('.md-body-1').text()).not.toBe('')
+  })
+
+  it('renders pagination', async () => {
+    expect.assertions(3)
+    expect(wrapper.html()).toContain('pagination')
+    const prev = wrapper.findAll('button').at(2)
+    expect(wrapper.html()).toMatchSnapshot()
+    await prev.trigger('click')
+    expect(wrapper.html()).toMatchSnapshot()
+  })
+
+  it('renders searchbox', () => {
+    expect(wrapper.find('.search_box').exists()).toBe(true)
+    expect(wrapper.find('.search_box').html()).toContain('filter')
+    const searchBtn = wrapper.findAll('button').at(0)
+    expect(searchBtn.text()).toBe('Search Images')
+  })
 })

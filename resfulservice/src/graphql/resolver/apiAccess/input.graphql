@@ -1,3 +1,5 @@
+"input schema to create APIAccess"
 input createAPIAccessInput {
+  "API access key"
   key: String!
 }

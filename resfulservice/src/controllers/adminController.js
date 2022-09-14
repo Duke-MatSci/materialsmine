@@ -1,5 +1,8 @@
 const elasticSearch = require('../utils/elasticSearch');
 const { outboundRequest } = require('../controllers/kgWrapperController');
+const iterator = require('../utils/iterator');
+const DatasetId = require('../models/datasetId');
+const User = require('../models/user');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -156,4 +159,47 @@ exports.bulkElasticSearchImport = (req, res, next) => {
   log.info('bulkElasticSearchImport(): Function entry');
 
   return _loadBulkElasticSearch(req, res, next);
+};
+
+/**
+ * Populate datasetId table with existing data from datasets table
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.populateDatasetIds = async (req, res, next) => {
+  const log = req.logger;
+  log.info('populateDatasetIds(): Function entry');
+  if (!req.internal) {
+    const error = new Error('User is unauthorized');
+    error.status = 401;
+    return next(error);
+  }
+
+  const connDB = iterator.generateMongoUrl(req);
+  if (!connDB) return next(new Error('DB error'));
+
+  try {
+    const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
+    const Dataset = await db.collection('datasets');
+    const datasets = await Dataset.find({});
+    await iterator.iteration(datasets, async (arg) => {
+      const user = await User.findOne({ userid: arg?.userid }).lean();
+      const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
+      if (userExistInDatasetId?._id) {
+        userExistInDatasetId.dataset.push(arg);
+        await userExistInDatasetId.save();
+        return;
+      }
+      const datasetId = new DatasetId({ user });
+      datasetId.dataset.push(arg._id);
+      await datasetId.save();
+      return datasetId;
+    }, 2);
+    return res.status(201).json({ message: 'Successfully updated DatasetIds' });
+  } catch (err) {
+    log.error(`populateDatasetIds(): Error: ${err}`);
+    next(err);
+  }
 };
