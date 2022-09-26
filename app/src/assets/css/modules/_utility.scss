@@ -224,6 +224,9 @@
         position: relative;
         top: -26px;
         font-size: 5rem;
+        &-home{
+            font-size: 4rem;
+        }
 
         @include respond(tab-land){
             top: 0px;
