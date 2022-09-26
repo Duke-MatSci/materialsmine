@@ -51,9 +51,9 @@
         <md-icon class="utility-navfonticon">upload</md-icon>
         <span class="md-list-item-text utility-navfont">Curate</span>
         <md-list slot="md-expand">
-          <router-link :to="''" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a spreadsheet</md-list-item>
-          </router-link>
+          <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV" @click="navigate">
+            Upload a Spreadsheet
+          </md-list-item>
           <router-link :to="''" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
           </router-link>
