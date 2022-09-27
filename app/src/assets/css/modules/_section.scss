@@ -27,13 +27,16 @@
             left: 50%;
             transform:translate(-50%, -50%);
             text-align: center;
-            width: 60%;
+            width: 70%;
             letter-spacing: .02rem;
             font-weight: 200;
             font-size: 3rem;
             color: $primary-white;
             line-height: 1.3;
 
+            @include respond(laptop) {
+                width: 60%;
+            }
             @include respond(phone) {
                 top: 72% !important;
             }

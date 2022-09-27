@@ -224,7 +224,8 @@
         position: relative;
         top: -26px;
         font-size: 5rem;
-        &-home{
+
+        @include respond(laptop){
             font-size: 4rem;
         }
 

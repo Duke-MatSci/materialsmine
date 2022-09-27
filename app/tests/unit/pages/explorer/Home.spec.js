@@ -10,7 +10,7 @@ describe('ExplorerHome.vue', () => {
 
   enableAutoDestroy(afterEach)
 
-  it('render search div correctly', () => {
+  it.skip('render search div correctly', () => {
     expect.assertions(4)
     expect(wrapper.find('.section_teams').exists()).toBe(true)
     expect(wrapper.find('.search_box_header').exists()).toBe(true)
@@ -18,7 +18,7 @@ describe('ExplorerHome.vue', () => {
     expect(wrapper.find('.search_box_text').exists()).toBe(true)
   })
 
-  it('render facet div correctly', () => {
+  it.skip('render facet div correctly', () => {
     expect.assertions(1)
     expect(wrapper.find('.facet_panel').exists()).toBe(true)
   })
@@ -41,7 +41,7 @@ describe('ExplorerHome.vue', () => {
   //   expect(navLinks.length).toEqual(length)
   // })
 
-  it('renders footer', () => {
+  it.skip('renders footer', () => {
     expect.assertions(2)
     expect(wrapper.find('.explorer_page_footer').exists()).toBe(true)
     expect(wrapper.find('.explorer_page_footer-text').exists()).toBe(true)
