@@ -1,0 +1,122 @@
+type Datasets {
+  "Unique id assigned to a user dataset grouping"
+  datasetGroupId: ID
+  "Verified user information"
+  user: VerifiedUser
+  "Dataset workflow status"
+  status: STATUS,
+  "General information on user curated datasets"
+  userDatasetInfo: [Dataset!]
+  "Time dataset was created"
+  createdAt: String
+  "Time dataset was last updated"
+  updatedAt: String
+}
+
+type VerifiedUser {
+  "User assigned id string e.g. 583dc006e74a1d205f4e1403"
+  id: String!
+  "User display name"
+  username: String!
+}
+
+type CreatedDataset {
+  _id: ID
+  title: String
+  filesets: [Fileset]
+  doi: String
+  userid: String
+  datasetId: String
+}
+
+type Dataset {
+  "Unique id assigned to a given dataset"
+  datasetId: ID!
+  "File groupings available in this dataset"
+  datasets: [Fileset!]
+}
+
+union Filesets = FilesetsGroup | Fileset
+
+type FilesetsGroup {
+  "Total number of filesets match found"
+  totalItems: Int
+  """
+  Number of filesets per page. 
+  Pagination option for specifying how the server should group the filesets.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page to display to return.
+  This defaults to 1 if no value is specified.
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "Boolean value specifying if the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+
+  "Boolean value specifying if the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  "Filesets groupings with similar fileset name"
+  filesets: [Fileset!]
+}
+
+type Fileset {
+  "Given name to a group of related files"
+  filesetName: String
+  "List of files available inside a fileset group"
+  files: [File!]
+}
+
+type File {
+  id: String
+  filename: String
+  contentType: String
+}
+
+type UserDataset {
+  "Total number of datasets match found"
+  totalItems: Int
+  """
+  Number of datasets per page. 
+  Pagination option for specifying how the server should group the datasets.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page to display to return.
+  This defaults to 1 if no value is specified.
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "Boolean value specifying if the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+
+  "Boolean value specifying if the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  "User dataset summary information"
+  datasets: Datasets!
+}
+
+enum STATUS {
+  APPROVED
+  UNDER_REVIEW
+  WORK_IN_PROGRESS
+}

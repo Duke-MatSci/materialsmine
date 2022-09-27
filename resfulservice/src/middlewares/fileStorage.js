@@ -22,11 +22,14 @@ const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === 'image/png' ||
     file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image/jpeg'
+    file.mimetype === 'image/jpeg' ||
+    file.mimetype === 'text/csv' ||
+    file.mimetype === 'application/vnd.ms-excel' ||
+    file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ) {
     cb(null, true);
   } else {
-    cb(null, false);
+    cb(new Error('Only .png, .jpg, .jpeg, .csv, .xls and .xlsx format allowed!'), false);
   }
 };
 

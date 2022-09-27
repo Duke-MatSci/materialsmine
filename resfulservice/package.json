@@ -37,7 +37,7 @@
         "ws": "^8.7.0"
     },
     "scripts": {
-        "start": "nodemon src/server.js",
+        "start": "nodemon src/server.js --inspect",
         "test": "NODE_ENV=test mocha --recursive './spec/**/*.js'",
         "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
