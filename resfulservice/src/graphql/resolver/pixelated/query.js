@@ -7,12 +7,7 @@ const pixelatedDataExplorerQuery = {
   pixelData: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger?.info('[pixelData]: Function entry');
     try {
-      // const pageNumber = input.pageNumber || 1;
-      // const pageSize = input.pageSize || 20;
-      // const unitCell = { unit_cell_x_pixels: input.unitCell || 10 };
-
       const pagination = paginator(1);
-      // const data = await pixelDataTransformer(await PixelData.find(unitCell));
       const data = await pixelDataTransformer(input.unitCell);
 
       return Object.assign(pagination, { data });
