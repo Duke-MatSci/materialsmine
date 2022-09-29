@@ -52,7 +52,6 @@ export default {
       try {
         response = await fetch(url)
       } catch (err) {
-        console.log(err)
         this.resultsErrorMsg = err
         this.resultsError = true
         this.resetLoading()
@@ -62,13 +61,11 @@ export default {
       try {
         myOutputParams = await response.json()
       } catch (err) {
-        console.log(err)
         this.resultsErrorMsg = 'Error retrieving result.'
         this.resultsError = true
         this.resetLoading()
         return
       }
-      console.log(myOutputParams)
       this.Eimg = myOutputParams.Eimg
       this.EEimg = myOutputParams.EEimg
       this.XPR = myOutputParams.XPR

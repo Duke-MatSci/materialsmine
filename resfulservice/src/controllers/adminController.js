@@ -3,6 +3,9 @@ const { outboundRequest } = require('../controllers/kgWrapperController');
 const iterator = require('../utils/iterator');
 const DatasetId = require('../models/datasetId');
 const User = require('../models/user');
+const URI = require('../../config/uri');
+const DatasetProperty = require('../models/datasetProperty');
+const { default: axios } = require('axios');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -184,23 +187,14 @@ exports.populateDatasetIds = async (req, res, next) => {
     const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
     const Dataset = await db.collection('datasets');
     const datasets = await Dataset.find({});
-    // const existingDatasets = await Dataset.find({}).lean().limit(2);
-    // const readableStream = Readable.from(existingDatasets);
-    // // eslint-disable-next-line no-debugger
-    // debugger;
-    let counter = 0;
     await iterator.iteration(datasets, async (arg) => {
       const user = await User.findOne({ userid: arg?.userid }).lean();
       const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
       if (userExistInDatasetId?._id) {
-        counter = counter + 1;
         userExistInDatasetId.dataset.push(arg);
         await userExistInDatasetId.save();
         return;
       }
-      counter = counter + 1;
-      console.log('aa:', user);
-      console.log('aa:', counter);
       const datasetId = new DatasetId({ user });
       datasetId.dataset.push(arg._id);
       await datasetId.save();
@@ -209,6 +203,60 @@ exports.populateDatasetIds = async (req, res, next) => {
     return res.status(201).json({ message: 'Successfully updated DatasetIds' });
   } catch (err) {
     log.error(`populateDatasetIds(): Error: ${err}`);
+    next(err);
+  }
+};
+
+/**
+ * Populate dataset properties with existing data from the KG
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.populateDatasetProperties = async (req, res, next) => {
+  const log = req.logger;
+  log.info('populateDatasetProperties(): Function entry');
+  try {
+    const datasetPropertyCount = await DatasetProperty.find().countDocuments();
+    if (datasetPropertyCount < 1) {
+      let response = await axios({
+        method: 'GET',
+        url: URI.datasetProperties,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.status === 200) {
+        response = response.data.results.bindings.map(
+          ({ Attribute, Label }) => ({ attribute: Attribute?.value, label: Label?.value })
+        );
+        await DatasetProperty.insertMany(response);
+      }
+    }
+    return res.status(201).json({ message: 'Successfully updated dataset properties' });
+  } catch (err) {
+    log.error(`populateDatasetProperties(): Error: ${err}`);
+    next(err);
+  }
+};
+
+/**
+ * Retrieve dataset properties KG
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.getDatasetProperties = async (req, res, next) => {
+  const log = req.logger;
+  log.info('getDatasetProperties(): Function entry');
+  try {
+    const datasetProperties = await DatasetProperty.find()
+      .select('attribute label -_id');
+    return res.status(200).json({ data: datasetProperties });
+  } catch (err) {
+    log.error(`getDatasetProperties(): Error: ${err}`);
     next(err);
   }
 };

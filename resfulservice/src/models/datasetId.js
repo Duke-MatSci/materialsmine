@@ -14,7 +14,7 @@ const datasetIdSchema = new Schema({
   },
   dataset: [{
     type: Schema.Types.ObjectId,
-    ref: 'Dataset'
+    ref: 'datasets'
   }]
 }, { timestamps: true });
 

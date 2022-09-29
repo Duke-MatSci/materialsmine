@@ -11,6 +11,10 @@ router
   .post(AdminController.bulkElasticSearchImport)
   .put(AdminController.dataDump);
 
+router.route('/populate-datasets-properties')
+  .get(AdminController.getDatasetProperties)
+  .post(AdminController.populateDatasetProperties);
+
 router.route('/populate-datasets')
   .post(getInternal, AdminController.populateDatasetIds);
 

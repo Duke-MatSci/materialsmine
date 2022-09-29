@@ -54,7 +54,7 @@ type VerifiedUserData {
 }
 
 type VerifyUser {
-  "Partial verified user information"
+  "Partially verified user information"
   user: VerifiedUserData!
   "Validates user authentication status"
   isAuth: Boolean!

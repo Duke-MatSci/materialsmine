@@ -17,6 +17,13 @@ exports.files = (parent) => {
   return parent.files.map(({ metadata: { filename } }) => filename);
 };
 
-exports.user = ({ user }) => {
-  return { id: user._id, username: user.displayName };
+exports.filesetsUnionResolveType = (obj, context, info) => {
+  if (obj.filesets) {
+    return 'FilesetsGroup';
+  }
+
+  if (obj.filesetName) {
+    return 'Fileset';
+  }
+  return null;
 };

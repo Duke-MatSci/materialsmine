@@ -1,8 +1,8 @@
 const DatasetId = require('../../../models/datasetId');
-const Dataset = require('../../../models/dataset');
 const errorFormater = require('../../../utils/errorFormater');
 const paginator = require('../../../utils/paginator');
-const { datasetTransformer } = require('../../transformer');
+const { datasetTransformer, filesetsTransform } = require('../../transformer');
+const { filesetSearchQuery } = require('../../../pipelines/dataset-pipeline');
 
 const datasetQuery = {
   getUserDataset: async (_, { input }, { user, req, isAuthenticated }) => {
@@ -15,12 +15,12 @@ const datasetQuery = {
       const filter = {};
       if (user?.roles !== 'admin') filter.userid = user.userid;
       if (input?.status) filter.status = input.status;
-
-      console.log(user);
-      console.log(filter);
       const pagination = paginator(await DatasetId.countDocuments(filter));
-      const data = datasetTransformer(await DatasetId.find(filter).populate('user').lean());
-      return { ...pagination, data };
+      const datasets = await datasetTransformer(await DatasetId.findOne(filter)
+        .populate('user', 'displayName')
+        .populate('dataset', 'filesets')
+        .lean().limit(1));
+      return Object.assign(pagination, { datasets });
     } catch (error) {
       return errorFormater(error.message, 500);
     }
@@ -33,13 +33,19 @@ const datasetQuery = {
       return errorFormater('Unauthorized', 401);
     }
     try {
-      const { filesets } = await Dataset.findOne({
-        userid: user._id,
-        datasetId: input.datasetId
-      }).lean();
-      const { fileset, files } = filesets.find(({ fileset }) => fileset === input.fileset);
-      const formatedFiles = files.map(({ id, metadata: { filename, contentType } }) => ({ id, contentType, filename }));
-      return { filesetName: fileset, files: formatedFiles };
+      const { counts, filesets } = await filesetSearchQuery({
+        userid: user.userid,
+        datasetId: input.datasetId,
+        filesetName: input?.filesetName,
+        skip: input?.pageNumber,
+        limit: input?.pageSize
+      });
+
+      if (input?.filesetName) {
+        return filesetsTransform([filesets])?.pop();
+      }
+      const pagination = paginator(counts, input.pageNumber, input.pageSize);
+      return Object.assign(pagination, { filesets: filesetsTransform(filesets) });
     } catch (error) {
       return errorFormater(error.message, 500);
     }
