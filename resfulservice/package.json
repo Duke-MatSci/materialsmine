@@ -38,7 +38,7 @@
     },
     "scripts": {
         "start": "nodemon src/server.js --inspect",
-        "test": "NODE_ENV=test mocha --recursive './spec/**/*.js'",
+        "test": "mocha --recursive './spec/**/*.js'",
         "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
         "start:prod": "node src/server.js",

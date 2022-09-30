@@ -19,7 +19,7 @@ export default {
 
     if (response.status === 200) {
       const responseData = await response.json()
-      return context.commit('setFacetFilterMaterials', responseData?.data || [])
+      context.commit('setFacetFilterMaterials', responseData?.data || [])
     }
   },
   async searchFacetFilterMaterials (context, payload) {
