@@ -2,7 +2,6 @@ import { mapMutations, mapGetters } from 'vuex'
 import { JobMgr } from '@/modules/JobMgr.js'
 import Dialog from '@/components/Dialog'
 import ToolCard from '@/components/nanomine/ToolCard.vue'
-// import { Auth } from '@/modules/Auth.js'
 export default {
   name: 'Dynamfit',
   components: {

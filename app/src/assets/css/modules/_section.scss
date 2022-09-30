@@ -8,15 +8,17 @@
         z-index: 10;
 
         @include respond(tab-land){
-            height: 26rem;
+            height: 34rem;
         }
 
         @include respond(tab-port) {
             background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-medium.png);
+            height: 30rem;
         }
 
         @include respond(phone) {
             background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-small.png);
+            height: 26rem;
         }
 
         &__text-content {
@@ -25,13 +27,16 @@
             left: 50%;
             transform:translate(-50%, -50%);
             text-align: center;
-            width: 60%;
+            width: 70%;
             letter-spacing: .02rem;
             font-weight: 200;
             font-size: 3rem;
             color: $primary-white;
             line-height: 1.3;
 
+            @include respond(laptop) {
+                width: 60%;
+            }
             @include respond(phone) {
                 top: 72% !important;
             }
@@ -43,7 +48,12 @@
             & > i {
                 color: $tertiary;
                 font-size: 10rem;
+                @include respond(tab-land) {
+                    transform:translate(0, 25%);
+                    font-size: 7rem;
+                }
                 @include respond(phone) {
+                    transform:translate(0, 0);
                     font-size: 5rem;
                 }
 
@@ -80,11 +90,11 @@
         }
 
         &__misc {
-            height: 22rem !important;
+            height: 26rem !important;
             background-position: left;
 
             @include respond(phone){
-                height: 13rem !important;
+                height: 16rem !important;
             }
         }
     }

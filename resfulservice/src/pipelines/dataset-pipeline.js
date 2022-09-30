@@ -57,7 +57,6 @@ exports.filesetSearchQuery = async ({ datasetId, filesetName, skip, limit }) => 
   const queryData = await Dataset.aggregate(stages);
   if (queryData.length) {
     const { counts, filesets } = queryData.pop();
-    // console.log(filesets)
     return { counts, filesets };
   }
   return { counts: 0, filesets: [] };

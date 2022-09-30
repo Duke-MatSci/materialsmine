@@ -1,4 +1,5 @@
-type pixelData {
+type PixelData {
+  _id: ID
   symmetry: String
   unit_cell_x_pixels: String
   unit_cell_y_pixels: String
@@ -8,7 +9,27 @@ type pixelData {
   C11: String
   C12: String
   C22: String
+  C16: String
+  C26: String
+  C66: String
+  CM0: String
+  CM0_C11: String
+  CM0_C12: String
+  CM0_C22: String
+  CM0_C16: String
+  CM0_C26: String
+  CM0_C66: String
+  CM1: String
+  CM1_C11: String
+  CM1_C12: String
+  CM1_C22: String
+  CM1_C16: String
+  CM1_C26: String
+  CM1_C66: String
+  createdAt: String
+  updatedAt: String
 }
+
 
 type PixelatedData {
   "Total number of datasets match found"
@@ -39,5 +60,5 @@ type PixelatedData {
   hasNextPage: Boolean!
 
   "List of selected pixelated data"
-  data: [pixelData]!
+  data: [PixelData!]!
 }

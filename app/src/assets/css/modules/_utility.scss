@@ -225,6 +225,10 @@
         top: -26px;
         font-size: 5rem;
 
+        @include respond(laptop){
+            font-size: 4rem;
+        }
+
         @include respond(tab-land){
             top: 0px;
             font-size: 3.5rem;
