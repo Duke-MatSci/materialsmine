@@ -32,7 +32,7 @@ type PixelData {
 
 
 type PixelatedData {
-  "Total number of datasets match found"
+  "Total number of dataset matches"
   totalItems: Int
   """
   Number of datasets per page. 
