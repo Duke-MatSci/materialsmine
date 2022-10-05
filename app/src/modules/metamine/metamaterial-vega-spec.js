@@ -42,14 +42,14 @@ const baseSpec = {
             padding: 10
           }
         },
-        color: {
-          field: 'symmetry',
-          type: 'nominal',
-          title: 'Symmetry',
-          legend: {
-            orient: 'top'
-          }
-        },
+        // color: {
+        //   field: 'symmetry',
+        //   type: 'nominal',
+        //   title: 'Symmetry',
+        //   legend: {
+        //     orient: 'top'
+        //   }
+        // },
         tooltip: [
           {
             field: 'symmetry',
@@ -158,11 +158,11 @@ const baseSpec = {
               },
               title: 'C11'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry'
-            },
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry'
+            // },
             opacity: {
               condition: {
                 test: {
@@ -213,11 +213,11 @@ const baseSpec = {
               },
               title: 'C12'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry'
-            },
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry'
+            // },
             opacity: {
               condition: {
                 test: {
@@ -268,11 +268,11 @@ const baseSpec = {
               },
               title: 'C22'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry'
-            },
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry'
+            // },
             opacity: {
               condition: {
                 test: {
@@ -323,11 +323,11 @@ const baseSpec = {
               },
               title: 'C16'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry'
-            },
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry'
+            // },
             opacity: {
               condition: {
                 test: {
@@ -378,11 +378,11 @@ const baseSpec = {
               },
               title: 'C26'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry'
-            },
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry'
+            // },
             opacity: {
               condition: {
                 test: {
@@ -433,13 +433,13 @@ const baseSpec = {
               },
               title: 'C66'
             },
-            color: {
-              field: 'symmetry',
-              type: 'nominal',
-              title: 'Symmetry',
-              scale: { scheme: 'category10' }
+            // color: {
+            //   field: 'symmetry',
+            //   type: 'nominal',
+            //   title: 'Symmetry',
+            //   scale: { scheme: 'category10' }
 
-            },
+            // },
             opacity: {
               condition: {
                 test: {
@@ -600,7 +600,7 @@ function createPatch (xAxis, yAxis) {
         }
       },
       {
-        path: '/scales/1',
+        path: '/scales/0',
         op: 'replace',
         value: {
           domain: {
@@ -623,7 +623,7 @@ function createPatch (xAxis, yAxis) {
         }
       },
       {
-        path: '/scales/2',
+        path: '/scales/1',
         op: 'replace',
         value: {
           domain: {

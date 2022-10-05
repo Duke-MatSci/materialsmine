@@ -1,7 +1,7 @@
 <div class="main tool_page pixelunit wrapper">
   <div class="md-layout md-alignment-top-left md-gutter adjust-padding">
     <div class="md-layout-item md-size-100">
-      <h2>Metamaterial Properties: Interactive Plot</h2>
+      <h2>2D Pixelated Static Metamaterial Properties: Interactive Plot</h2>
       <p>
         Select properties from the dropdown menus below to graph on the x and y axes.
       </p>
@@ -10,16 +10,16 @@
         Scroll to zoom, click and drag to pan, and double-click to reset. 
       </p>
     </div>
-    <div class="section_loader" v-if="loading">
+    <div class="section_loader" v-if="$apollo.loading">
       <spinner
-        :loading="loading"
+        :loading="$apollo.loading"
         text='Loading metamaterial data...'
       />
     </div>
     <div class="section_loader" v-else-if="error.status">
       Error while rendering Vega-Lite specification: {{error.message}}.
     </div>
-    <div class="md-layout-item md-small-size-100" style="margin: 2rem" v-else>
+    <div class="md-layout-item md-small-size-100" style="margin: 2rem" v-show="!$apollo.loading && !error.status">
       <div>
           <div class="viz-u-display__desktop" />
           <span class="md-layout md-gutter">
@@ -51,7 +51,27 @@
                 </option>
               </select>
             </div>
+            <div class="md-layout-item md-size-30">
+              <div class="facet-content_label">Unit cell size</div>
+              <select
+                class="form__select facet-content_item"
+                name="pixelDim"
+                v-model="pixelDim"
+              >
+                <option
+                      v-for="(val, index) in pixelDimOpts"
+                      :key="index" :value="val.attr"
+                    > {{ val.label }}
+                </option>
+              </select>
+            </div>
           </span>
+          <div v-if="loading" style="margin-top:1rem">
+            <spinner
+              :loading="loading"
+              text='Updating chart...'
+            />
+          </div>
           <div id="vegaembed" class="btn--animated vega-embed-chartview" style="width: 100%"></div>
       </div>
     </div>

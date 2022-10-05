@@ -1,9 +1,9 @@
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import spinner from '@/components/Spinner'
 import { buildCsvSpec } from '@/modules/vega-chart'
-import Papa from '@/modules/papaparse.min.js'
 import embed from 'vega-embed'
 import { baseSpec, createPatch } from '@/modules/metamine/metamaterial-vega-spec'
+import { METAMATERIAL_QUERY } from '@/modules/gql/metamaterial-gql'
 
 export default {
   name: 'Mockup',
@@ -12,14 +12,14 @@ export default {
     spinner
   },
   data: () => ({
+    loading: false,
     spec: null,
     baseSpec: baseSpec,
-    loading: false,
     error: { status: false, message: null },
-    results: null,
+    pixelDim: 'TEN',
     xAxis: 'C11',
     yAxis: 'C12',
-    patchSpec: {},
+    pixelData: {},
     // Dictionary so we can add more attributes in the future
     // that might have different attr names than labels
     attributes: [
@@ -29,6 +29,10 @@ export default {
       { attr: 'C16', label: 'C16' },
       { attr: 'C26', label: 'C26' },
       { attr: 'C66', label: 'C66' }
+    ],
+    pixelDimOpts: [
+      { attr: 'TEN', label: '10 by 10' },
+      { attr: 'FIFTY', label: '50 by 50' }
     ]
   }),
   computed: {
@@ -41,34 +45,8 @@ export default {
     }
   },
   methods: {
-    async loadVisualization () {
-      try {
-        this.spec = buildCsvSpec(this.baseSpec, this.results)
-      } catch (e) {
-        this.error = { status: true, message: e.message }
-      } finally {
-        this.loading = false
-      }
-    },
-    // TODO: remove this method. Should happen server side!
-    async CSVToJSON (delimiter = ',') {
-      const thisVue = this
-      const requestOptions = {
-        headers: {
-          accept: 'application/sparql-results+json'
-        }
-      }
-      // TODO: Change to Apollo GraphQL
-      return await fetch('../metamaterials_combined_1000.csv', requestOptions)
-        .then(response => response.text())
-        .then(data => {
-          Papa.parse(data, {
-            header: true,
-            complete: function (result) {
-              thisVue.results = result.data
-            }
-          })
-        })
+    buildSpec () {
+      this.spec = buildCsvSpec(this.baseSpec, this.pixelData.data)
     },
     // Handle screen resizing
     alignVegaTooltips () {
@@ -83,22 +61,39 @@ export default {
           .then(() => this.alignVegaTooltips())
       } catch (e) {
         this.error = { status: true, message: e.message }
+      } finally {
+        this.loading = false
       }
     }
   },
-  created () {
-    this.loading = true
-    this.CSVToJSON()
-      .then(() => this.loadVisualization())
-      .then(async () => await this.patchVegaSpec())
-  },
-  watch: {
-    async xAxis () {
-      await this.patchVegaSpec()
+  watch:
+    {
+      async xAxis () {
+        this.loading = true
+        // Pause to allow event to register
+        setTimeout(async () => await this.patchVegaSpec(), 100)
+      },
+      async yAxis () {
+        this.loading = true
+        // Pause to allow event to register
+        setTimeout(async () => await this.patchVegaSpec(), 100)
+      }
     },
-    async yAxis () {
-      await this.patchVegaSpec()
+  apollo: {
+    pixelData: {
+      query: METAMATERIAL_QUERY,
+      variables () {
+        return {
+          input: { unitCell: this.pixelDim }
+        }
+      },
+      fetchPolicy: 'cache-and-network',
+      result () {
+        if (this.pixelData) {
+          this.buildSpec()
+          this.patchVegaSpec()
+        }
+      }
     }
-
   }
 }
