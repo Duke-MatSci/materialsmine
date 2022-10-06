@@ -25,7 +25,7 @@ describe('Visualization.vue', () => {
   it('renders layout items', async () => {
     const layoutItems = wrapper.findAll('.md-layout-item')
     expect(layoutItems.length).toBe(4)
-    expect(layoutItems.at(1).is('div')).toBe(true)
+    expect(layoutItems.at(1).element.tagName).toBe('DIV')
   })
 
   it('routes to chart and image gallery', async () => {

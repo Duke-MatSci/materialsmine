@@ -2,7 +2,7 @@ import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import spinner from '@/components/Spinner'
 import { buildCsvSpec } from '@/modules/vega-chart'
 import embed from 'vega-embed'
-import { baseSpec, createPatch } from '@/modules/metamine/metamaterial-vega-spec'
+import { baseSpec, createPatch } from '@/modules/metamine/metamaterial-vegalite'
 import { METAMATERIAL_QUERY } from '@/modules/gql/metamaterial-gql'
 
 export default {
@@ -70,6 +70,7 @@ export default {
     {
       async xAxis () {
         this.loading = true
+        console.log('testing')
         // Pause to allow event to register
         setTimeout(async () => await this.patchVegaSpec(), 100)
       },
