@@ -70,7 +70,6 @@ export default {
     {
       async xAxis () {
         this.loading = true
-        console.log('testing')
         // Pause to allow event to register
         setTimeout(async () => await this.patchVegaSpec(), 100)
       },
