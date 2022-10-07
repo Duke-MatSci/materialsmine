@@ -93,6 +93,15 @@ function buildSparqlSpec (baseSpec, sparqlResults) {
   return spec
 }
 
+function buildCsvSpec (baseSpec, csvResults) {
+  if (!baseSpec) {
+    return null
+  }
+  const spec = Object.assign({}, baseSpec)
+  spec.data = { values: csvResults }
+  return spec
+}
+
 const chartUriPrefix = 'http://nanomine.org/viz/'
 
 function toChartId (chartUri) {
@@ -106,4 +115,4 @@ function toChartUri (chartId) {
   return chartUriPrefix + chartId
 }
 
-export { getDefaultChart, loadChart, buildSparqlSpec, toChartId, toChartUri, chartUriPrefix }
+export { getDefaultChart, loadChart, buildSparqlSpec, buildCsvSpec, toChartId, toChartUri, chartUriPrefix }
