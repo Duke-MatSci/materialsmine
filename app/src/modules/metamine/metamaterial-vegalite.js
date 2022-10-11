@@ -1,6 +1,5 @@
 const baseSpec = {
   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  width: 'container',
   hconcat: [
     {
       selection: {
