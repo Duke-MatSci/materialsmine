@@ -68,7 +68,7 @@ export default {
      * Pause to allow event to register
      */
     changeAxes () {
-      this.loading = true;
+      this.loading = true
       clearTimeout(this.timeout)
       this.timeout = setTimeout(async () => await this.patchVegaSpec(), 500)
     }
