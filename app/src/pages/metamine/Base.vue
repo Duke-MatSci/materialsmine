@@ -10,7 +10,7 @@
                 </div>
 
                 <div class="md-toolbar-section-end">
-                  <div style="position:absolute">
+                  <div>
                     <nav class="nav_menu nav_menu--lightbg">
                       <ul class="nav_ul">
                         <li>

@@ -51,20 +51,17 @@
         }
 
         &--lightbg {
-            & ul {
-                & > li {
-                    & > a,
-                    & > div > a {
+            & ul > li {
+                & > a,
+                & > div > a {
+                    color: $primary !important;
+                    padding: 2.5rem 1rem;
+                    &:hover{
                         color: $primary !important;
-                        padding: 2.5rem 1rem;
-                        &:hover{
-                            color: $primary !important;
-                            text-decoration: none;
-                            background-color: rgba($primary, 0.1);
-                            border-bottom: 0rem solid rgba($primary, 0.1);
-                        }
+                        text-decoration: none;
+                        background-color: rgba($primary, 0.1);
+                        border-bottom: 0rem solid rgba($primary, 0.1);
                     }
-
                 }
             }
         }
