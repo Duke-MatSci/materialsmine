@@ -16,6 +16,12 @@ const metamineRoutes = [
     name: 'PixelUnit',
     component: () => import(/* webpackChunkName: "pixelunit" */ '@/pages/metamine/PixelUnit/PixelUnit.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: 'metamaterial_visualization',
+    name: 'MetamaterialPlot',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualization/MetamaterialPlot.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
