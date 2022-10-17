@@ -38,8 +38,7 @@ exports.iteration = (arr, iterationFn, batchSize) => new Promise((resolve, rejec
   let pendingPromises = [];
   const pausePromises = async () => {
     try {
-      // eslint-disable-next-line no-extra-boolean-cast
-      if (!!pendingPromises.length) {
+      if (pendingPromises.length) {
         await Promise.all(pendingPromises);
       }
       resolve();
