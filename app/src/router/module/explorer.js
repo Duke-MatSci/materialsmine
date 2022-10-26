@@ -44,7 +44,7 @@ const explorerRoutes = [
         props: true,
         meta: { requiresAuth: false }
       },
-      //Components don't exist yet for these
+      // Components don't exist yet for these
       {
         path: 'dataset/:id/:filesetId',
         name: 'FilesetSingleView',
@@ -68,13 +68,13 @@ const explorerRoutes = [
       {
         path: '',
         name: 'CurateMethod',
-        component: () => import('@/pages/explorer/curate/CurateMethod.vue'),
+        component: () => import('@/pages/explorer/curate/CurateMethod.vue')
       },
       {
         path: 'spreadsheet',
         name: 'CurateSpreadsheet',
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
-      },
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
+      }
       // {
       //   path: 'stepper',
       //   name: 'CurateStepper',

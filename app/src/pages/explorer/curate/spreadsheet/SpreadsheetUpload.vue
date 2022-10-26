@@ -130,7 +130,7 @@ import useFileList from '@/modules/file-list'
 import { VERIFY_AUTH_QUERY, CREATE_DATASET_ID_MUTATION, CREATE_DATASET_MUTATION } from '@/modules/gql/dataset-gql'
 import { mapGetters } from 'vuex'
 
-//Create separate file objects for spreadsheet vs supplementary files
+// Create separate file objects for spreadsheet vs supplementary files
 const spreadsheetFn = useFileList()
 const suppFn = useFileList()
 
@@ -160,7 +160,7 @@ export default {
   computed: {
     ...mapGetters({
       userId: 'auth/userId',
-      isAuthenticated: 'auth/isAuthenticated', 
+      isAuthenticated: 'auth/isAuthenticated'
     })
   },
   methods: {
@@ -170,33 +170,33 @@ export default {
     addSupp: suppFn.addFiles,
     removeSupp: suppFn.removeFile,
     clearAllSupp: suppFn.clearAllFiles,
-    async createDatasetId(){
+    async createDatasetId () {
       await this.$apollo.mutate({
-        mutation: CREATE_DATASET_ID_MUTATION,
+        mutation: CREATE_DATASET_ID_MUTATION
       }).then((data) => {
         this.datasetId = data
       }).catch((error) => {
-        console.error("error:", error)
+        console.error('error:', error)
       })
     },
-    async createDataset(){
+    async createDataset () {
       await this.$apollo.mutate({
         mutation: CREATE_DATASET_MUTATION,
         variables: {
           // TODO: input doesn't currently work
           input: {
-            "datasetId":`${this.datasetId}`,
-            "files": [...this.spreadsheetFiles, ...this.suppFiles],
+            datasetId: `${this.datasetId}`,
+            files: [...this.spreadsheetFiles, ...this.suppFiles]
           }
         }
       }).then((data) => {
-        console.log("data:", data)
+        console.log('data:', data)
       }).catch((error) => {
-        console.error("error:", error)
+        console.error('error:', error)
       })
     },
     onInputChange (e) {
-      if (e.target.id=='file-spreadsheet-input') {
+      if (e.target.id === 'file-spreadsheet-input') {
         this.addSpreadsheet(e.target.files)
       } else {
         this.addSupp(e.target.files)
@@ -217,7 +217,7 @@ export default {
     verifyUser: {
       query: VERIFY_AUTH_QUERY,
       fetchPolicy: 'cache-and-network'
-    },
+    }
   }
 }
 </script>
