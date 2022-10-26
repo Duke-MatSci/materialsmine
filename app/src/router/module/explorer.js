@@ -28,10 +28,64 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'curate/uploadSpreadsheet',
-    name: 'CurateSpreadsheet',
-    component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
-    meta: { requiresAuth: false }
+    path: 'curate/edit',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'UserDatasets',
+        component: () => import('@/pages/explorer/curate/edit/UserDatasets.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dataset/:id',
+        name: 'DatasetSingleView',
+        component: () => import('@/pages/explorer/curate/edit/Dataset.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      },
+      //Components don't exist yet for these
+      {
+        path: 'dataset/:id/:filesetId',
+        name: 'FilesetSingleView',
+        // component: () => import('@/pages/explorer/curate/edit/Fileset.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dataset/:id/:filesetId/:file',
+        name: 'FileSingleView',
+        // component: () => import('@/pages/explorer/curate/edit/File.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      }
+    ]
+  },
+  {
+    path: 'curate/new',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'CurateMethod',
+        component: () => import('@/pages/explorer/curate/CurateMethod.vue'),
+      },
+      {
+        path: 'spreadsheet',
+        name: 'CurateSpreadsheet',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+      },
+      // {
+      //   path: 'stepper',
+      //   name: 'CurateStepper',
+      //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
+      // },
+      // {
+      //   path: 'sdd',
+      //   name: 'CurateSDD',
+      //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+      // }
+    ]
   },
   {
     path: 'chart',
