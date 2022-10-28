@@ -1,0 +1,22 @@
+FROM python:3.6
+
+WORKDIR /app
+
+COPY pyApp/requirements.txt .
+COPY chemprops/requirements.txt ./chemprop-requirements.txt
+COPY requirements/xmlconv-requirements.txt ./xmlconv-requirements.txt
+COPY requirements/dynamfit-requirements.txt ./dynamfit-requirements.txt
+
+COPY script/ ./script
+
+RUN pip install -r requirements.txt
+RUN pip install -r chemprop-requirements.txt
+RUN pip install -r xmlconv-requirements.txt
+RUN pip install python-datauri
+RUN pip install -r dynamfit-requirements.txt
+RUN chmod +x ./script/installer
+
+COPY . /app
+EXPOSE 5050
+CMD [ "/app/script/installer" ]
+
