@@ -49,6 +49,8 @@ mockDB/es/
 #Min.io
 mockDB/minio/
 
-#Whyis
+#Whyis && Managed Services
 **/**/__pycache__/
 **/**/celerybeat-schedule.db
+**/**/gs.config*
+**/**/mongo.config*
