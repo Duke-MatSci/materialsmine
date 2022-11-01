@@ -15,8 +15,8 @@ const datasetMutation = {
       // TODO: Find a way to reduce latency here
       const unusedDatasetId = await DatasetId.findOne({ dataset: [] });
       if (unusedDatasetId?._id) {
-        req.logger.error('[createDatasetId]: Failed to create. User have unused existing dataset Id');
-        const err = { message: `An unused datasetId - ${unusedDatasetId?._id} exist` };
+        req.logger.error('[createDatasetId]: Failed to create. User has unused existing dataset Id');
+        const err = { message: `An unused datasetId - ${unusedDatasetId?._id} exists` };
         return errorFormater(err.message, 409);
       }
       const datasetId = new DatasetId({ user });
