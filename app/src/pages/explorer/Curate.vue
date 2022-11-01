@@ -2,10 +2,11 @@
 	<div>
 		<div class="section_teams">
 			<div class="curate">
-				<div>
-                    <h2 class="visualize_header-h1">Curate</h2>
-                    <div class="md-layout md-layout-responsive">
-                        <div class="md-layout-item md-layout-item_card">
+				<div class="search_box">
+                    <h2 class="visualize_header-h1" style="margin-bottom:8rem">Curate</h2>
+                    <div class="md-layout md-layout-responsive md-gutter">
+                        <div class="md-layout-item">&nbsp;</div>
+                        <div class="md-layout-item">
                             <router-link to="/explorer/curate/new" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">note_add</md-icon>
@@ -16,7 +17,7 @@
                                 </div>
                             </router-link>
                         </div>
-                        <div class="md-layout-item md-layout-item_card">
+                        <div class="md-layout-item md-gutter utility_flex_mobile">
                             <router-link to="/explorer/curate/edit" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">edit_document</md-icon>
@@ -27,14 +28,13 @@
                                 </div>
                             </router-link>
                         </div>
-                         <div class="md-layout-item md-layout-item_card">
-                        </div>
+                        <div class="md-layout-item">&nbsp;</div>
                     </div>
                 </div>
-                <div class="u_margin-top-med">
+                <div class="search_box">
                     <h2 class="visualize_header-h1 metamine_footer-ref-header">Create Visualization</h2>
                     <div class="md-layout md-layout-responsive">
-                        <!-- <div class="md-layout-item">&nbsp;</div> -->
+                        <div class="md-layout-item">&nbsp;</div>
                         <div class="md-layout-item md-layout-item_card">
                             <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">

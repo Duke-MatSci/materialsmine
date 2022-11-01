@@ -42,9 +42,12 @@
         <h2 class="visualize_header-h1">Import spreadsheet data </h2>
         <md-steppers md-vertical md-linear :md-active-step.sync="active" class="form__stepper">
           <md-step id="first" md-label="Download blank template" :md-done.sync="first">
-            <div><a>Click here</a> to download the template spreadsheet, and fill it out with your data.</div>
-            <div>Skip this step if you have already downloaded the template spreadsheet.</div>
-            <a @click="setDone('first', 'second')">Continue</a>
+            <div style="font-size:16px; line-height:3;"><a>Click here</a> to download the template spreadsheet, and fill it out with your data.</div>
+            <div style="font-size:16px;">Skip this step if you have already downloaded the template spreadsheet.</div>
+            <md-button type="submit" class="md-button_next"
+              @click="goToStep('first', 'second')">
+              Next
+            </md-button>
           </md-step>
           <md-step id="second" md-label="Select spreadsheet for upload" :md-done.sync="second">
             <DropZone class="form__drop-area" @files-dropped="addSpreadsheet">
@@ -65,15 +68,14 @@
               </md-list>
             </div>
             <div class="md-layout">
-                  <button type="submit" id="clear-files-btn"
-                    class="md-layout-item md-size-40 btn--tertiary btn btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-                    @click="clearAllSpreadsheet">
-                    Clear Files
-                  </button>
-                  <button type="submit" class="md-layout-item md-size-40 btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-                    @click="setDone('second', 'third')">
-                    Continue
-                  </button>
+                  <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('second', 'first')">
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button type="submit" class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('second', 'third')">
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
                 </div>
           </md-step>
           <md-step id="third" md-label="Select supplementary files for upload" :md-done.sync="third">
@@ -84,7 +86,7 @@
                         <div class="md-layout-item_para md-layout-item_para_fl" style="text-align:center">
                             or click to browse.
                         </div>
-                        <input type="file" id="file-supp-input" multiple @change="onInputChange" accept=".jpg, .png"/>
+                        <input type="file" id="file-supp-input" multiple @change="onInputChange" accept=".jpg, .png, .csv, .tif"/>
                     </div>
                 </label>
             </DropZone>
@@ -95,30 +97,80 @@
               </md-list>
             </div>
             <div class="md-layout">
-                  <button type="submit" id="clear-files-btn"
-                    class="md-layout-item md-size-40 btn--tertiary btn btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-                    @click="clearAllSupp">
-                    Clear Files
-                  </button>
-                  <button type="submit" class="md-layout-item md-size-40 btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-                    @click="setDone('third', 'fourth')">
-                    Continue
-                  </button>
+                  <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('third', 'second')">
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button type="submit" class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('third', 'fifth')">
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
                 </div>
           </md-step>
-          <md-step id="fourth" md-label="Verify data">
-            User verifies data here
-                <a @click="setDone('fourth', 'fifth')">Continue</a>
+          <md-step disabled id="fourth" md-label="Verify data">
+            Verification step - Work in progress
+            <div class="md-layout">
+                  <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('fifth', 'third')">
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button type="submit" class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('third', 'fifth')">
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
+            </div>
           </md-step>
           <md-step id="fifth" md-label="Confirm and submit">
-            User confirms submission
-            <a>Complete</a>
+            <h3>Uploaded files: </h3>
+
+            <h4 style="margin-top:1rem;">Spreadsheet(s)</h4>
+            <ul style="margin-left:1rem;">
+              <div v-for="(ss, index) in spreadsheetFiles" :key="index">
+                {{ss.file.name}}
+              </div>
+            </ul>
+
+            <h4 style="margin-top:1rem;">Supplementary files</h4>
+            <ul style="margin-left:1rem;">
+              <div v-for="(suppl, index) in suppFiles" :key="index">
+                {{suppl.file.name}}
+              </div>
+            </ul>
+            <div class="md-layout">
+                  <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('fifth', 'third')">
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                <md-button type="submit" class="md-layout-item md-button_next md-size-40"
+                  @click="toggleDialogBox()">
+                  Save and Complete
+                </md-button>
+            </div>
           </md-step>
         </md-steppers>
       </div>
     </div>
   </div>
 </div>
+<dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+    <template v-slot:title>Submit files?</template>
+    <template v-slot:content>
+        You are submitting {{spreadsheetFiles.length}}
+        spreadsheet<span v-if="spreadsheetFiles.length!=1">s</span>
+        and {{suppFiles.length}}
+        supplementary file<span v-if="suppFiles.length!=1">s</span>.
+    </template>
+    <template v-slot:actions>
+        <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
+          @click="toggleDialogBox()">
+          No, continue editing
+        </md-button>
+        <md-button type="submit" class="md-layout-item md-button_next md-size-40"
+          @click="toggleDialogBox()">
+          Yes, submit
+        </md-button>
+    </template>
+</dialogbox>
 </div>
 </template>
 
@@ -126,9 +178,10 @@
 import DropZone from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
 import LoginRequired from '@/components/LoginRequired.vue'
+import Dialog from '@/components/Dialog.vue'
 import useFileList from '@/modules/file-list'
 import { VERIFY_AUTH_QUERY, CREATE_DATASET_ID_MUTATION, CREATE_DATASET_MUTATION } from '@/modules/gql/dataset-gql'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 
 // Create separate file objects for spreadsheet vs supplementary files
 const spreadsheetFn = useFileList()
@@ -137,6 +190,7 @@ const suppFn = useFileList()
 export default {
   name: 'SpreadsheetHome',
   components: {
+    dialogbox: Dialog,
     DropZone,
     FilePreview,
     LoginReq: LoginRequired
@@ -154,13 +208,18 @@ export default {
       second: false,
       third: false,
       fourth: false,
-      fifth: false
+      fifth: false,
+      dialog: {
+        title: 'Submit files?',
+        minWidth: 60
+      }
     }
   },
   computed: {
     ...mapGetters({
       userId: 'auth/userId',
-      isAuthenticated: 'auth/isAuthenticated'
+      isAuthenticated: 'auth/isAuthenticated',
+      dialogBoxActive: 'dialogBox'
     })
   },
   methods: {
@@ -170,23 +229,29 @@ export default {
     addSupp: suppFn.addFiles,
     removeSupp: suppFn.removeFile,
     clearAllSupp: suppFn.clearAllFiles,
-    async createDatasetId () {
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    }),
+    async createNewDatasetId () {
       await this.$apollo.mutate({
         mutation: CREATE_DATASET_ID_MUTATION
-      }).then((data) => {
-        this.datasetId = data
+      }).then((result) => {
+        this.datasetId = result.data.createDatasetId.datasetGroupId
       }).catch((error) => {
         console.error('error:', error)
+        if (error.message.includes('unused')) {
+          this.datasetId = error.message.split('-')[1]?.split(' ')[1]
+        }
       })
     },
     async createDataset () {
+      const fileArray = this.processFiles()
       await this.$apollo.mutate({
         mutation: CREATE_DATASET_MUTATION,
         variables: {
-          // TODO: input doesn't currently work
           input: {
             datasetId: `${this.datasetId}`,
-            files: [...this.spreadsheetFiles, ...this.suppFiles]
+            files: fileArray
           }
         }
       }).then((data) => {
@@ -194,6 +259,13 @@ export default {
       }).catch((error) => {
         console.error('error:', error)
       })
+    },
+    // Format files for submission
+    processFiles () {
+      // TODO: Reformat to match the required input for createDataset
+      // Add the supplementary files
+      var result = this.spreadsheetFiles.map(file => ({ filename: file.file.name, contentType: file.file.type }))
+      return result
     },
     onInputChange (e) {
       if (e.target.id === 'file-spreadsheet-input') {
@@ -203,7 +275,7 @@ export default {
       }
       e.target.value = null // reset so that selecting the same file again will still cause it to fire this change
     },
-    setDone (id, index) {
+    goToStep (id, index) {
       this[id] = true
       if (index) {
         this.active = index
@@ -211,6 +283,11 @@ export default {
     },
     async navBack () {
       this.$router.back()
+    }
+  },
+  mounted () {
+    if (this.isAuthenticated) {
+      this.createNewDatasetId()
     }
   },
   apollo: {

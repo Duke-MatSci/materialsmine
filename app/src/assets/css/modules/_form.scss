@@ -147,16 +147,33 @@
     }
 
     &__stepper {
-        .md-active {
+        .md-active, .md-done {
             .md-button-content {
                 color: $primary !important;
                 font-size: 1.8rem;
                 font-weight: 500;
             }
+            .md-stepper-number {
+                background-color: $primary !important;
+            }
         }
         .md-button-content {
             color: $secondary-grey !important;
             font-size: 1.8rem;
+        }
+        .md-button_next {
+            margin-top: 3rem;
+            background: $primary;
+            .md-button-content, .md-icon {
+                color: $primary-white !important;
+            }
+        }
+        .md-button_prev {
+            margin-top: 3rem;
+            background: $tertiary;
+            .md-button-content, .md-icon {
+                color: $primary !important;
+            }
         }
     }
 
