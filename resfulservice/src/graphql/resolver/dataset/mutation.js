@@ -2,7 +2,7 @@ const DatasetId = require('../../../models/datasetId');
 const errorFormater = require('../../../utils/errorFormater');
 const deleteFile = require('../../../utils/fileManager');
 const Dataset = require('../../../models/dataset');
-const { filesetsTransform } = require('../../transformer');
+const { datasetTransformer, filesetsTransform } = require('../../transformer');
 
 const datasetMutation = {
   createDatasetId: async (_, _input, { user, req, isAuthenticated }) => {
@@ -11,10 +11,17 @@ const datasetMutation = {
       req.logger?.error('[createDatasetId]: User unauthorized');
       return errorFormater('Unauthorized', 401);
     }
-    const datasetId = new DatasetId({ user });
     try {
-      await datasetId.save();
-      return datasetId;
+      // TODO: Find a way to reduce latency here
+      const unusedDatasetId = await DatasetId.findOne({ dataset: [] });
+      if (unusedDatasetId?._id) {
+        req.logger.error('[createDatasetId]: Failed to create. User has unused existing dataset Id');
+        const err = { message: `An unused datasetId - ${unusedDatasetId?._id} exists` };
+        return errorFormater(err.message, 409);
+      }
+      const datasetId = new DatasetId({ user });
+      await (await datasetId.save()).populate('user', 'displayName');
+      return datasetTransformer(datasetId);
     } catch (error) {
       req.logger.error(`[createDatasetId]: ${error}`);
       return errorFormater(error.message, 500);

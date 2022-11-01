@@ -30,7 +30,7 @@ exports.transformUser = ({ _id, displayName }) => {
 exports.datasetTransform = async (data) => {
   let datasetAccum = [];
 
-  if (data.dataset.length) {
+  if (data.dataset?.length) {
     datasetAccum = filterDataset(data);
   }
 
