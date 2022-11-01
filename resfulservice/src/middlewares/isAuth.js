@@ -1,9 +1,15 @@
 const { decodeToken } = require('../utils/jwtService');
+const deleteFile = require('../utils/fileManager');
 
 module.exports = (req, res, next) => {
   const log = req.logger;
   const authHeader = req?.headers?.authorization;
   if (!authHeader) {
+    if (req.files?.uploadfile) {
+      req.files.uploadfile.forEach(({ path }) => {
+        deleteFile(path, req);
+      });
+    }
     log.error('isAuth.js(): 401 - authHeader not provided');
     const error = new Error('Not authenticated.');
     error.statusCode = 401;
@@ -26,5 +32,6 @@ module.exports = (req, res, next) => {
   }
 
   req.userId = decodedToken.userId;
+  req.user = decodedToken;
   next();
 };

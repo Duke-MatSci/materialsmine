@@ -1,0 +1,17 @@
+"Input schema for pixelated data resolver"
+input pixelDataQueryInput {
+  "Page number to return"
+  pageNumber: Int
+
+  "Number of pixelated data to return per page"
+  pageSize: Int
+
+  "Unit cell pixel for x and y"
+  unitCell: UNITCELL
+}
+
+enum UNITCELL {
+  TEN
+  FIFTY
+  BOTH
+}

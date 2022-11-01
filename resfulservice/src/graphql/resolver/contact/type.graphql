@@ -24,7 +24,7 @@ type Contact {
   updatedAt: String
 }
 
-"Schema type returned for the fetching lists of contacts"
+"This schema type returns the lists of contacts"
 type Contacts {
   "Total number of contacts that exists"
   totalItems: Int!
