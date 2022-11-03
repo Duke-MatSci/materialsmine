@@ -166,7 +166,7 @@
           No, continue editing
         </md-button>
         <md-button type="submit" class="md-layout-item md-button_next md-size-40"
-          @click="toggleDialogBox()">
+          @click="submitFiles()">
           Yes, submit
         </md-button>
     </template>
@@ -239,7 +239,7 @@ export default {
         this.datasetId = result.data.createDatasetId.datasetGroupId
       }).catch((error) => {
         console.error('error:', error)
-        if (error.message.includes('unused')) {
+        if (error.message.includes('unused datasetId')) {
           this.datasetId = error.message.split('-')[1]?.split(' ')[1]
         }
       })
@@ -263,8 +263,8 @@ export default {
     // Format files for submission
     processFiles () {
       // TODO: Reformat to match the required input for createDataset
-      // Add the supplementary files
-      var result = this.spreadsheetFiles.map(file => ({ filename: file.file.name, contentType: file.file.type }))
+      var result = this.spreadsheetFiles.map(({ file }) => file)
+        .concat(this.suppFiles.map(({ file }) => file))
       return result
     },
     onInputChange (e) {
@@ -273,7 +273,8 @@ export default {
       } else {
         this.addSupp(e.target.files)
       }
-      e.target.value = null // reset so that selecting the same file again will still cause it to fire this change
+      // reset so that selecting the same file again will still cause it to fire this change
+      e.target.value = null
     },
     goToStep (id, index) {
       this[id] = true
@@ -281,7 +282,11 @@ export default {
         this.active = index
       }
     },
-    async navBack () {
+    submitFiles () {
+      this.toggleDialogBox()
+      this.createDataset()
+    },
+    navBack () {
       this.$router.back()
     }
   },
