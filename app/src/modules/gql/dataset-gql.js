@@ -34,7 +34,6 @@ export const FILESET_QUERY = gql`
   getFilesets(input: $input) {
     ... on FilesetsGroup {
       totalItems
-    #   doi
       filesets {
         files {
           id
@@ -57,9 +56,6 @@ export const CREATE_DATASET_ID_MUTATION = gql`
 mutation CreateDatasetId{
   createDatasetId {
     datasetGroupId
-    user {
-      id
-    }
     status
     createdAt
     updatedAt
