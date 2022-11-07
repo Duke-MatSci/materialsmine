@@ -5,6 +5,11 @@ exports.validateImageType = [
   validationErrorHandler
 ];
 
+exports.validateAcceptableUploadType = [
+  param('imageType').not().isEmpty().withMessage('image type required').bail().isIn(['tiff', 'tif', 'xls', 'xlsx', 'jpg', 'jpeg', 'png']).withMessage('only supports tiff, tif, xls, xlsx, jpg, jpeg, & png migration'),
+  validationErrorHandler
+];
+
 exports.validateImageId = [param('fileId').not().isEmpty().withMessage('image ID required').bail().isMongoId().withMessage('invalid file id'), validationErrorHandler];
 
 function validationErrorHandler (req, res, next) {
