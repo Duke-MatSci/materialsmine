@@ -18,7 +18,7 @@
           </slot>
         </md-dialog-content>
       </div>
-      <div class="dialog-box_actions md-button-transparent">
+      <div class="dialog-box_actions md-button-lightbg">
         <md-dialog-actions>
           <slot name="actions">
           </slot>
