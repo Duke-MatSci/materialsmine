@@ -410,7 +410,6 @@
 
 .dialog-box {
     .md-dialog-container{
-        overflow: scroll !important;
         @include respond(tab-port) {
             min-width: 0 !important;
         }
@@ -433,7 +432,7 @@
         }    
     }
     
-    &_header {
+    &_header, .md-icon{
         background-color: $primary !important;
         color: $primary-white !important;
         padding: 1rem 1.5rem !important;
@@ -443,12 +442,15 @@
         }
     }
     &_content {
-        overflow: scroll;
+        overflow: auto;
     }
-    &_actions {
-        .md-button-content{
-            color: $secondary !important
-        }
+    &_close {
+        position:absolute; 
+        top: 0.5rem; 
+        right: 0;
+        width: 2rem; 
+        height: 2rem;
+        min-width: 2rem;
     }
 }
 

@@ -39,6 +39,12 @@
     color: $secondary-light !important;
 }
 
+.md-button-transparent {
+    .md-button-content {
+        color: $secondary !important;
+    }
+}
+
 .md-active {
     border-bottom-color: $tertiary !important;
 }
