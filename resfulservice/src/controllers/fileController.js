@@ -37,12 +37,11 @@ exports.fileContent = async (req, res, next) => {
 
 exports.uploadFile = async (req, res, next) => {
   try {
-    console.log(req.files.uploadfile);
     req.logger.info('datasetIdUpload Function Entry:');
 
     return res.status(201).json({ files: req.files.uploadfile });
   } catch (error) {
-    console.log(error);
+    req.logger.error(error);
     return res.status(500).json({ message: 'error uploading files', statusCode: 500 });
   }
 };

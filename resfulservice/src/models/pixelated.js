@@ -84,6 +84,6 @@ const pixelDataSchema = new Schema({
   }
 }, { timestamps: true });
 
-pixelDataSchema.index({ geometry_condensed: 1 });
+pixelDataSchema.index({ geometry_full: 1 });
 
 module.exports = mongoose.model('PixelData', pixelDataSchema);

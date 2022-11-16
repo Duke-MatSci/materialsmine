@@ -1,2 +1,2 @@
 #/bin/bash
-gpg --quiet --batch --yes --decrypt --passphrase='QED<$eenKey67' --output ../../.env env.gpg
+gpg --quiet --batch --yes --decrypt --passphrase='enter-passphrase-here' --output ../../.env env.gpg
