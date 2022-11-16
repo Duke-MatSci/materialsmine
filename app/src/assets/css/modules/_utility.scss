@@ -432,7 +432,7 @@
         }    
     }
     
-    &_header, .md-icon{
+    &_header {
         background-color: $primary !important;
         color: $primary-white !important;
         padding: 1rem 1.5rem !important;
@@ -445,6 +445,10 @@
         overflow: auto;
     }
     &_close {
+        .md-icon {
+            background-color: $primary !important;
+            color: $primary-white !important;
+        }
         position:absolute; 
         top: 0.5rem; 
         right: 0;
