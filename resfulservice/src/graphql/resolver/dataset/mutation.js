@@ -36,7 +36,7 @@ const datasetMutation = {
         input.files.forEach(({ path }) => {
           deleteFile(path, req);
         });
-        return errorFormater('not authentiacted', 401);
+        return errorFormater('not authenticated', 401);
       }
       const datasetId = await DatasetId.findOne({ _id: input.datasetId });
       if (!datasetId) {
