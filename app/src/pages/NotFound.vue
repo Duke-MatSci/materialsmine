@@ -10,7 +10,7 @@
                 <div class="nav_mobile-icon">
                     <div class="nav_mobile-icon-menu"></div>
                 </div>
-                <div class="header_nav">
+                <div class="header_nav header_404_nav">
                     <div class="nav nav_menu u--inline">
                         <ul>
                             <li><a href="/nm">NanoMine</a></li>

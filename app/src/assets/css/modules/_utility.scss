@@ -349,14 +349,14 @@
             display: inline-block;
 
             & > i {
-                font-size: 1rem !important;
+                font-size: 1.5rem !important;
                 cursor: pointer;
             }
         }
         & > div:hover{
             background-color: $primary-light;
             & > i {
-                color: $primary !important;
+                color: $secondary-light !important;
             }
         }
 
@@ -411,9 +411,9 @@
 .dialog-box {
     .md-dialog-container{
         overflow: scroll !important;
-        @include respond(tab-port) {
-            min-width: 0 !important;
-        }
+        // @include respond(tab-port) {
+        //     min-width: 0 !important;
+        // }
     }
     &_size {
         &-sm {
@@ -423,7 +423,7 @@
         }
         &-md {
             .md-dialog-container{
-                min-width: 60vh;
+                min-width: 65vw;
             }
         }
         &-lg {
@@ -542,6 +542,9 @@
 
             & > i {
                 font-size: 1rem !important;
+                width: 21px !important;
+                min-width: 21px !important;
+                height: 21px !important; 
                 cursor: pointer;
             }
         }

@@ -28,6 +28,12 @@
     font-size: 1.6rem;
 }
 
+.md-tabs-navigation .md-ripple {
+    @include respond(phone) {
+        padding: 0 5px !important;
+    }
+}
+
 .md-avatar.md-theme-default {
     border: .2rem solid $tertiary;
 }
