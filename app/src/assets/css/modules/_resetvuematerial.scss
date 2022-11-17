@@ -45,6 +45,12 @@
     color: $secondary-light !important;
 }
 
+.md-button-lightbg {
+    .md-button-content {
+        color: $secondary !important;
+    }
+}
+
 .md-active {
     border-bottom-color: $tertiary !important;
 }

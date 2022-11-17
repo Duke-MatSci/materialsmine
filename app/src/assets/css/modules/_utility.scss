@@ -410,10 +410,16 @@
 
 .dialog-box {
     .md-dialog-container{
+<<<<<<< HEAD
         overflow: scroll !important;
         // @include respond(tab-port) {
         //     min-width: 0 !important;
         // }
+=======
+        @include respond(tab-port) {
+            min-width: 0 !important;
+        }
+>>>>>>> 3f3a16bc610b2e4f87f087f89609c3f5e693b023
     }
     &_size {
         &-sm {
@@ -443,12 +449,19 @@
         }
     }
     &_content {
-        overflow: scroll;
+        overflow: auto;
     }
-    &_actions {
-        .md-button-content{
-            color: $secondary !important
+    &_close {
+        .md-icon {
+            background-color: $primary !important;
+            color: $primary-white !important;
         }
+        position:absolute; 
+        top: 0.5rem; 
+        right: 0;
+        width: 2rem; 
+        height: 2rem;
+        min-width: 2rem;
     }
 }
 
