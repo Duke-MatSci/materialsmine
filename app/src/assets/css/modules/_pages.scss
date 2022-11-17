@@ -392,7 +392,12 @@
 
     p {
         padding: 0 20em;
-
+        a{
+            a{
+                color: $tertiary !important;
+                font-weight: 600;
+            }
+        }
         @include respond(tab-port) {
             padding: 0 5em;
         }
