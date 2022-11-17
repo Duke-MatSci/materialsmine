@@ -432,7 +432,7 @@
         }    
     }
     
-    &_header, .md-icon{
+    &_header{
         background-color: $primary !important;
         color: $primary-white !important;
         padding: 1rem 1.5rem !important;
@@ -449,14 +449,6 @@
             background-color: $primary !important;
             color: $primary-white !important;
         }
-        position:absolute; 
-        top: 0.5rem; 
-        right: 0;
-        width: 2rem; 
-        height: 2rem;
-        min-width: 2rem;
-    }
-    &_close {
         position:absolute; 
         top: 0.5rem; 
         right: 0;

@@ -413,6 +413,11 @@
     padding: 0 7rem;
     display: flex;
     flex-direction: column;
+    &-menu {
+        padding: 1rem 1rem 2rem 1rem;
+        align-items: center;
+        display: flex;
+    }
 }
 
 .image-detail-page {

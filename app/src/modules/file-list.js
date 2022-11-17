@@ -23,12 +23,18 @@ export default function () {
     files.value = []
   }
 
-  return { files, addFiles, removeFile, clearAllFiles }
+  function modifyStatus (index, status) {
+    files.value[index].status = status
+    console.log(files.value)
+  }
+
+  return { files, addFiles, removeFile, modifyStatus }
 }
 
 class UploadableFile {
   constructor (file) {
     this.file = file
     this.id = `${file.name}-${file.size}-${file.lastModified}-${file.type}`
+    this.status = 'incomplete'
   }
 }
