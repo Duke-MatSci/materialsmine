@@ -18,7 +18,7 @@
           </slot>
         </md-dialog-content>
       </div>
-      <div class="dialog-box_actions">
+      <div class="dialog-box_actions md-button-lightbg">
         <md-dialog-actions>
           <slot name="actions">
           </slot>
@@ -30,7 +30,6 @@
 
 <script>
 import { mapMutations } from 'vuex'
-
 export default {
   name: 'Dialog',
   props: {

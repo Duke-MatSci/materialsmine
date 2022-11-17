@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache Dependencies
         uses: actions/cache@v1
         with:
@@ -17,9 +17,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Use NodeJS
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: "16.3.0"
+          node-version: "17.9.1"
       - name: Install frontend dependencies & test
         run: |
           cd app

@@ -45,8 +45,7 @@
             >
               <md-icon>bookmark_border</md-icon>
             </div>
-            <!-- TODO show only for admin -->
-            <div @click.prevent="deleteChart(result)">
+            <div v-if="$store.getters.isAuthenticated && !!$store.getters.user.isAdmin" @click.prevent="deleteChart(result)">
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
