@@ -410,16 +410,9 @@
 
 .dialog-box {
     .md-dialog-container{
-<<<<<<< HEAD
-        overflow: scroll !important;
-        // @include respond(tab-port) {
-        //     min-width: 0 !important;
-        // }
-=======
         @include respond(tab-port) {
             min-width: 0 !important;
         }
->>>>>>> 3f3a16bc610b2e4f87f087f89609c3f5e693b023
     }
     &_size {
         &-sm {
