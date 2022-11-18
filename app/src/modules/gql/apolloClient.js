@@ -1,7 +1,5 @@
 import { ApolloClient, ApolloLink, InMemoryCache, HttpLink } from 'apollo-boost'
 
-// NOTE: Putting BASE and uri here instead of in main still works,
-// and removes need for passing as variable
 const BASE = window.location.origin
 const uri = `${BASE}/api/graphql`
 const httpLink = new HttpLink({ uri })

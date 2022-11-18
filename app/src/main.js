@@ -9,10 +9,6 @@ import store from './store'
 import router from './router'
 import apollo from './modules/gql/apolloClient'
 
-// Temporarily commenting out for linting/testing purposes
-// const BASE = window.location.origin
-// const uri = `${BASE}/api/graphql`
-
 const apolloProvider = new VueApollo({
   defaultClient: apollo
 })
