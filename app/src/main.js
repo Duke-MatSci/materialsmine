@@ -9,16 +9,21 @@ import store from './store'
 import router from './router'
 import apollo from './modules/gql/apolloClient'
 
-const BASE = window.location.origin
-const uri = `${BASE}/api/graphql`
+// Temporarily commenting out for linting/testing purposes
+// const BASE = window.location.origin
+// const uri = `${BASE}/api/graphql`
 
 Vue.use(VueApollo)
 Vue.use(VueMaterial)
 Vue.config.productionTip = false
 
+const apolloProvider = new VueApollo({
+  defaultClient: apollo
+})
+
 new Vue({
   store,
   router,
-  apolloProvider: apollo(uri),
+  apolloProvider,
   render: h => h(App)
 }).$mount('#app')
