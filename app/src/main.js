@@ -13,13 +13,13 @@ import apollo from './modules/gql/apolloClient'
 // const BASE = window.location.origin
 // const uri = `${BASE}/api/graphql`
 
-Vue.use(VueApollo)
-Vue.use(VueMaterial)
-Vue.config.productionTip = false
-
 const apolloProvider = new VueApollo({
   defaultClient: apollo
 })
+
+Vue.use(VueApollo)
+Vue.use(VueMaterial)
+Vue.config.productionTip = false
 
 new Vue({
   store,
