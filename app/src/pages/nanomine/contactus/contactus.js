@@ -1,0 +1,89 @@
+import { CONTACT_US_QUERY } from '@/modules/gql/contact-gql'
+
+export default {
+  name: 'Contact',
+  data () {
+    return {
+      name: null,
+      email: null,
+      contactType: null,
+      platform: null,
+      message: null,
+      errors: []
+    }
+  },
+  methods: {
+    validateForm: function () {
+      this.errors = []
+      if (!this.name) {
+        this.errors.push('Name required')
+      }
+      if (!this.email) {
+        this.errors.push('Email required')
+      } else if (!this.validEmail(this.email)) {
+        this.errors.push('Valid email required.')
+      }
+
+      if (!this.contactType) {
+        this.errors.push('Contact type required')
+      }
+
+      if (!this.message || this.message.trim() === '') {
+        this.errors.push('Message required')
+      }
+      if (!this.platform) {
+        this.errors.push('Please select nanomine or metamine platform')
+      }
+
+      if (!this.errors.length) {
+        return true
+      }
+    },
+    validEmail: function (email) {
+      const re =
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      return re.test(email)
+    },
+
+    resetForm: function () {
+      this.name = null
+      this.email = null
+      this.message = null
+      this.contactType = null
+      this.errors = []
+    },
+
+    onSubmit: async function () {
+      this.validateForm()
+      if (this.errors.length) {
+        return
+      }
+      this.$apollo.queries.form()
+      this.resetForm()
+    }
+  },
+  created () {
+    this.$store.commit('setAppHeaderInfo', {
+      icon: 'mail',
+      name: 'Contact Us'
+    })
+  },
+  apollo: {
+    form: {
+      query: CONTACT_US_QUERY,
+      variables () {
+        return {
+          input: {
+            fullName: this.name,
+            email: this.email,
+            purpose: this.contactType,
+            message: this.message
+          }
+        }
+      }
+    },
+    skip () {
+      return this.skipQuery
+    }
+  }
+}
