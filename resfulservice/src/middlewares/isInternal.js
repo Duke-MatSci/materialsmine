@@ -2,7 +2,7 @@ const { decodeToken, signToken } = require('../utils/jwtService');
 
 exports.getInternal = (req, res, next) => {
   const log = req.logger;
-  const isInternal = req?.isInternal;
+  const isInternal = req.get('Authorization')?.split(' ')[1];
   let decodedToken;
   if (!isInternal) {
     log.error('getInternal(): 403 - isInternal not provided. Not authorized');
@@ -17,7 +17,7 @@ exports.getInternal = (req, res, next) => {
     err.statusCode = 500;
     throw err;
   }
-  req.internal = decodedToken?.isInternal;
+  req.internal = decodedToken;
   next();
 };
 

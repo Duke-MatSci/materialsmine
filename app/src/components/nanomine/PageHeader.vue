@@ -37,7 +37,7 @@
         <div :class="['section_banner', info.pagetype=='home' ? '' : 'section_banner__misc']">
             <div class="section_banner__text">
                 <div v-if="info.pagetype=='home'" class="section_banner__text-content">
-                    <span class="u_adjust-banner-text">{{ info.name }}</span>
+                    <span class="u_adjust-banner-text u_adjust-banner-text-home">{{ info.name }}</span>
                     <p class="u_adjust-banner-text_subtitle">{{info.subtitle}}</p>
                 </div>
                 <div v-else class="section_banner__text-content">
@@ -72,7 +72,7 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
-                                    <router-link to="/nm/xml-uploader" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></router-link>
+                                    <a href="https://materialsmine.org/nm#/XMLCONV" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></a>
                                     <router-link to="/explorer/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
                                 </div>
                             </div>

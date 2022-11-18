@@ -6,43 +6,8 @@
                   Filter <md-icon class="u_color_white u_margin-none">filter_alt</md-icon>
                 </md-subheader>
                 <md-divider></md-divider>
-
-                <!-- IMAGE FILTER START HERE -->
-                <div class="facet-content_container" v-if="filterType === 'IMAGE'">
-                  <div class="facet-content_label">Filter by filler Info:</div>
-                  <input
-                    placeholder="Filter by filler"
-                    class="form__select facet-content_item"
-                    name="filterByFiller"
-                    ref="filterByFiller"
-                    @change.prevent="updateQuery"
-                    title="filter by filler info"
-                  >
-                  <div class="facet-content_label u_margin-top-small">Filter by keyword:</div>
-                  <input
-                    placeholder="Filter by keyword"
-                    class="form__select facet-content_item"
-                    name="filterByKeyword"
-                    ref="filterByKeyword"
-                    @change.prevent="updateQuery"
-                    title="filter by keyword"
-                  >
-                  <div class="facet-content_label u_margin-top-small">Filter by year:</div>
-                  <input
-                    placeholder="Filter by year"
-                    class="form__select facet-content_item"
-                    name="filterByYear"
-                    ref="filterByYear"
-                    @change.prevent="updateQuery"
-                    title="filter by published year"
-                  >
-                  <div class="utility-color u_margin-top-small" id="css-adjust-navfont">
-                    <button class="u--bg form__select facet-content_item" @click.prevent="otherFilters">{{ searchButtonText }}</button>
-                  </div>
-                </div>
-
                 <!-- DEFAULT FILTER STARTS HERE -->
-                <div class="facet-content_container" v-else-if="!filterType && !!facetFilterMaterials.length">
+                <div class="facet-content_container" v-if="!!facetFilterMaterials.length">
                   <div class="facet-content_label">MaterialsMine Properties:</div>
                   <select
                     class="form__select facet-content_item"
@@ -52,9 +17,9 @@
                   >
                       <option value="">--Please choose a property--</option>
                       <option
-                        v-for="(val, index) in facetFilterMaterials"
-                        :key="index" :value="val.Label"
-                      > {{ val.Label }}</option>
+                        v-for="({label}, index) in facetFilterMaterials"
+                        :key="index" :value="label"
+                      > {{ label }}</option>
                   </select>
                 </div>
             </md-list>
