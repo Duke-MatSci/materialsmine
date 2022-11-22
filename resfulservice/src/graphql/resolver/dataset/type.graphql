@@ -20,20 +20,11 @@ type VerifiedUser {
   username: String!
 }
 
-type CreatedDataset {
-  _id: ID
-  title: String
-  filesets: [Fileset]
-  doi: String
-  userid: String
-  datasetId: String
-}
-
 type Dataset {
   "Unique id assigned to a given dataset"
   datasetId: ID!
   "File groupings available in this dataset"
-  datasets: [Fileset!]
+  datasets: [Fileset]
 }
 
 union Filesets = FilesetsGroup | Fileset
@@ -83,6 +74,15 @@ type File {
   contentType: String
 }
 
+type CreatedDataset {
+  _id: ID
+  title: String
+  filesets: [Fileset]
+  doi: String
+  userid: String
+  datasetId: String
+}
+
 type UserDataset {
   "Total number of dataset matches"
   totalItems: Int
@@ -112,7 +112,7 @@ type UserDataset {
   hasNextPage: Boolean!
 
   "User dataset summary information"
-  datasets: Datasets!
+  datasets: [Datasets!]
 }
 
 enum STATUS {

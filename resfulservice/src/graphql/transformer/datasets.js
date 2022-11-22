@@ -15,31 +15,44 @@ exports.filesetsTransform = (filesets) => {
 };
 
 const filterDataset = (data) => {
-  return data?.dataset?.map(({ _id, filesets }) => {
-    return {
-      datasetId: _id ?? null,
-      datasets: this.filesetsTransform(filesets)
-    };
-  }) ?? [];
+  if (!data.filesets.length) {
+    return null;
+  }
+  return [{
+    datasetId: data._id ?? null, // Todo: (@tholulomo) deprecate this field
+    datasets: this.filesetsTransform(data.filesets)
+  }];
 };
 
 exports.transformUser = ({ _id, displayName }) => {
   return { id: _id, username: displayName };
 };
 
-exports.datasetTransform = async (data) => {
-  let datasetAccum = [];
+// Todo: (@tholulomo) Remove third arg and refactor schema output
+exports.datasetTransform = async (data, user = {}, userDataset = false) => {
+  let status;
 
-  if (data.dataset?.length) {
-    datasetAccum = filterDataset(data);
+  if (!userDataset) {
+    data.isPublic ? status = 'APPROVED' : status = 'WORK_IN_PROGRESS';
+    return {
+      datasetGroupId: data?._id,
+      user: this.transformUser(user),
+      status,
+      userDatasetInfo: filterDataset(data),
+      createdAt: new Date(parseInt(data?.dttm_created) * 1000),
+      updatedAt: new Date(parseInt(data?.dttm_updated) * 1000)
+    };
   }
 
-  return {
-    datasetGroupId: data?._id,
-    user: this.transformUser(data.user),
-    status: data?.status,
-    userDatasetInfo: datasetAccum,
-    createdAt: data?.createdAt,
-    updatedAt: data?.updatedAt
-  };
+  return data.map(async (item) => {
+    return {
+      datasetGroupId: item._id,
+      user: this.transformUser(user),
+      title: item.title,
+      status: item.isPublic ? 'APPROVED' : 'WORK_IN_PROGRESS',
+      userDatasetInfo: filterDataset(item),
+      createdAt: new Date(parseInt(item?.dttm_created) * 1000),
+      updatedAt: new Date(parseInt(item?.dttm_updated) * 1000)
+    };
+  });
 };

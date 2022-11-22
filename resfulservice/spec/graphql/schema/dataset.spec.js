@@ -52,7 +52,7 @@ describe('Dataset Schema Unit Tests:', function () {
       expect(totalPages.type.toString()).to.equal('Int!');
       expect(hasPreviousPage.type.toString()).to.equal('Boolean!');
       expect(hasNextPage.type.toString()).to.equal('Boolean!');
-      expect(datasets.type.toString()).to.equal('Datasets!');
+      expect(datasets.type.toString()).to.equal('[Datasets!]');
     });
   });
 

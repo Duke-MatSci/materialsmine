@@ -1,4 +1,5 @@
 const elasticSearch = require('../utils/elasticSearch');
+const { successWriter, errorWriter } = require('../utils/logWriter');
 
 /**
  * Search and render function
@@ -12,17 +13,16 @@ exports.explorerSearch = async (req, res, next) => {
   const request = req?.query;
   try {
     if (!request.search) {
+      successWriter(req, 'success', 'explorerSearch');
       return res.status(201).json();
     }
     const response = await elasticSearch.search(request.search);
+    successWriter(req, 'success', 'explorerSearch');
     return res.status(200).json({
       data: response.data?.hits
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'explorerSearch', 500));
   }
 };
 
@@ -38,16 +38,15 @@ exports.autoSuggestSearch = async (req, res, next) => {
   const request = req?.query;
   try {
     if (!request.search) {
+      successWriter(req, 'success', 'autoSuggestSearch');
       return res.status(201).json();
     }
     const response = await elasticSearch.search(request.search, true);
+    successWriter(req, 'success', 'autoSuggestSearch');
     return res.status(200).json({
       data: response.data?.hits
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'autoSuggestSearch', 500));
   }
 };
