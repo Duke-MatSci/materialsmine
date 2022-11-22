@@ -2,11 +2,13 @@ type Datasets {
   "Unique id assigned to a user dataset grouping"
   datasetGroupId: ID
   "Verified user information"
-  user: VerifiedUser
+  user: VerifiedUser @deprecated(reason: "No longer supported!")
   "Dataset workflow status"
-  status: STATUS,
-  "General information on user curated datasets"
-  userDatasetInfo: [Dataset!]
+  status: STATUS
+  "Dataset title at curation"
+  title: String
+  "Filesets groupings with similar fileset name"
+  filesetInfo: [Fileset]
   "Time dataset was created"
   createdAt: String
   "Time dataset was last updated"
@@ -22,9 +24,9 @@ type VerifiedUser {
 
 type Dataset {
   "Unique id assigned to a given dataset"
-  datasetId: ID!
+  datasetId: ID! @deprecated(reason: "No longer supported!")
   "File groupings available in this dataset"
-  datasets: [Fileset]
+  datasets: [Fileset] @deprecated(reason: "No longer supported!")
 }
 
 union Filesets = FilesetsGroup | Fileset
@@ -75,11 +77,17 @@ type File {
 }
 
 type CreatedDataset {
-  _id: ID
+  "Unique id assigned to a user dataset grouping"
+  _id: ID @deprecated(reason: "No longer supported!")
+  "Dataset title at curation"
   title: String
+  "Filesets groupings with similar fileset name"
   filesets: [Fileset]
+  "Paper digital object identifier"
   doi: String
+  "Verified user information"
   userid: String
+  "Unique id assigned to a user dataset grouping"
   datasetId: String
 }
 

@@ -138,7 +138,6 @@ describe('Dataset Resolver Unit Tests:', function () {
     it.skip("should return paginated lists of a user's datasets", async () => {
       sinon.stub(DatasetId, 'aggregate').returns(mockDatasetId);
       const datasets = await getUserDataset({}, { input }, { user, req, isAuthenticated: true });
-      console.log(datasets)
       expect(datasets).to.have.property('datasetId');
       expect(datasets.totalItems).to.equal(1);
     });
