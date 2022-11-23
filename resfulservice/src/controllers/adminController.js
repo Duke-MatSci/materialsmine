@@ -6,6 +6,7 @@ const User = require('../models/user');
 const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
+const { successWriter, errorWriter } = require('../utils/logWriter');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -18,14 +19,12 @@ exports.initializeElasticSearch = async (req, res, next) => {
   log.info('initializeElasticSearch(): Function entry');
   try {
     const response = await elasticSearch.initES(req);
+    successWriter(req, 'success', 'initializeElasticSearch');
     return res.status(200).json({
       data: response
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'initializeElasticSearch', 500));
   }
 };
 
@@ -44,10 +43,7 @@ const _loadBulkElasticSearch = async (req, res, next) => {
   const data = body?.data;
 
   if (!type || !data.length) {
-    const error = new Error('Category type or doc array is missing');
-    error.statusCode = 422;
-    log.error(`_loadBulkElasticSearch(): error ${error}`);
-    return next(error);
+    return next(errorWriter(req, 'Category type or doc array is missing', '_loadBulkElasticSearch', 422));
   }
 
   try {
@@ -61,16 +57,13 @@ const _loadBulkElasticSearch = async (req, res, next) => {
       }
     }
     await elasticSearch.refreshIndices(req, type);
+    successWriter(req, 'success', '_loadBulkElasticSearch');
     return res.status(200).json({
       total,
       rejected
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    log.error(`_loadBulkElasticSearch(): error ${err}`);
-    next(err);
+    next(errorWriter(req, err, '_loadBulkElasticSearch', 500));
   }
 };
 
@@ -89,23 +82,18 @@ exports.loadElasticSearch = async (req, res, next) => {
   const doc = body?.doc;
 
   if (!type || !doc) {
-    const error = new Error('Category type or doc is missing');
-    error.statusCode = 422;
-    log.error(`initializeElasticSearch(): ${error}`);
-    return next(error);
+    return next(errorWriter(req, 'Category type or doc is missing', 'loadElasticSearch', 422));
   }
 
   try {
     const response = await elasticSearch.indexDocument(req, type, doc);
     await elasticSearch.refreshIndices(req, type);
+    successWriter(req, 'success', 'loadElasticSearch');
     return res.status(200).json({
       response
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'loadElasticSearch', 500));
   }
 };
 
@@ -121,14 +109,12 @@ exports.pingElasticSearch = async (req, res, next) => {
   log.info('pingElasticSearch(): Function entry');
   try {
     const response = await elasticSearch.ping(log, 1);
+    successWriter(req, 'success', 'pingElasticSearch');
     return res.status(200).json({
       response
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'pingElasticSearch', 500));
   }
 };
 
@@ -149,11 +135,7 @@ exports.dataDump = async (req, res, next) => {
 
     return _loadBulkElasticSearch(req, res, next);
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    log.info(`dataDump(): Error: ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'dataDump', 500));
   }
 };
 
@@ -175,13 +157,11 @@ exports.populateDatasetIds = async (req, res, next) => {
   const log = req.logger;
   log.info('populateDatasetIds(): Function entry');
   if (!req.internal) {
-    const error = new Error('User is unauthorized');
-    error.status = 401;
-    return next(error);
+    return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
   }
 
   const connDB = iterator.generateMongoUrl(req);
-  if (!connDB) return next(new Error('DB error'));
+  if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
 
   try {
     const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
@@ -200,10 +180,10 @@ exports.populateDatasetIds = async (req, res, next) => {
       await datasetId.save();
       return datasetId;
     }, 2);
+    successWriter(req, { message: 'Successfully updated DatasetIds' }, 'populateDatasetIds');
     return res.status(201).json({ message: 'Successfully updated DatasetIds' });
   } catch (err) {
-    log.error(`populateDatasetIds(): Error: ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'populateDatasetIds', 500));
   }
 };
 
@@ -234,10 +214,10 @@ exports.populateDatasetProperties = async (req, res, next) => {
         await DatasetProperty.insertMany(response);
       }
     }
+    successWriter(req, { message: 'Successfully updated dataset properties' }, 'populateDatasetProperties');
     return res.status(201).json({ message: 'Successfully updated dataset properties' });
   } catch (err) {
-    log.error(`populateDatasetProperties(): Error: ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'populateDatasetProperties'));
   }
 };
 
@@ -256,7 +236,6 @@ exports.getDatasetProperties = async (req, res, next) => {
       .select('attribute label -_id');
     return res.status(200).json({ data: datasetProperties });
   } catch (err) {
-    log.error(`getDatasetProperties(): Error: ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'getDatasetProperties'));
   }
 };
