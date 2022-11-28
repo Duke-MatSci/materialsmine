@@ -1,4 +1,7 @@
 exports.filesetsTransform = (filesets) => {
+  if (!filesets.length) {
+    return [];
+  }
   const transformedFilesets = filesets?.map(({ fileset, files }) => {
     return {
       filesetName: fileset ?? null,
@@ -14,15 +17,16 @@ exports.filesetsTransform = (filesets) => {
   return transformedFilesets;
 };
 
-const filterDataset = (data) => {
-  if (!data.filesets.length) {
-    return null;
-  }
-  return [{
-    datasetId: data._id ?? null, // Todo: (@tholulomo) deprecate this field
-    datasets: this.filesetsTransform(data.filesets)
-  }];
-};
+// Todo: (@tholulomo) Remove this lines of code after reliability test
+// const filterDataset = (data) => {
+//   if (!data.filesets.length) {
+//     return null;
+//   }
+//   return [{
+//     datasetId: data._id ?? null, // Todo: (@tholulomo) deprecate this field
+//     datasets: this.filesetsTransform(data.filesets)
+//   }];
+// };
 
 exports.transformUser = ({ _id, displayName }) => {
   return { id: _id, username: displayName };
@@ -36,9 +40,8 @@ exports.datasetTransform = async (data, user = {}, userDataset = false) => {
     data.isPublic ? status = 'APPROVED' : status = 'WORK_IN_PROGRESS';
     return {
       datasetGroupId: data?._id,
-      user: this.transformUser(user),
       status,
-      userDatasetInfo: filterDataset(data),
+      filesetInfo: this.filesetsTransform(data.filesets),
       createdAt: new Date(parseInt(data?.dttm_created) * 1000),
       updatedAt: new Date(parseInt(data?.dttm_updated) * 1000)
     };
@@ -47,10 +50,9 @@ exports.datasetTransform = async (data, user = {}, userDataset = false) => {
   return data.map(async (item) => {
     return {
       datasetGroupId: item._id,
-      user: this.transformUser(user),
       title: item.title,
       status: item.isPublic ? 'APPROVED' : 'WORK_IN_PROGRESS',
-      userDatasetInfo: filterDataset(item),
+      filesetInfo: this.filesetsTransform(item.filesets),
       createdAt: new Date(parseInt(item?.dttm_created) * 1000),
       updatedAt: new Date(parseInt(item?.dttm_updated) * 1000)
     };

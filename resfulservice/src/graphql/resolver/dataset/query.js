@@ -13,11 +13,11 @@ const datasetQuery = {
       return errorFormater('Unauthorized', 401);
     }
     try {
-      const filter = { };
+      const filter = {};
       // Todo: (@tholulomo) Configure pageSize and pageNumber with config
-      const pageNumber = parseInt(input.pageNumber, 10) ?? 0;
-      const pageSize = parseInt(input.pageSize, 10) ?? 20;
-      const skip = pageNumber * pageSize;
+      const pageNumber = input?.pageNumber ? parseInt(input?.pageNumber, 10) : 1;
+      const pageSize = input?.pageSize ? parseInt(input?.pageSize, 10) : 20;
+      const skip = ((pageNumber - 1) * pageSize);
       if (user?.roles !== 'admin') filter.userid = user.userid;
       if (user?.roles === 'admin' && !input?.showAll) filter.userid = user.userid;
       if (input?.status) {
@@ -25,15 +25,14 @@ const datasetQuery = {
           filter.isPublic = true;
         }
       }
-      const [count, dataset, userDetails] = await Promise.all([
+
+      const [count, userDetails, data] = await Promise.all([
         Dataset.countDocuments(filter),
-        Dataset.find(filter)
-          .skip(skip)
-          .limit(pageSize),
-        User.findOne({ userid: user.userid }, { displayName: 1 })
+        User.findOne({ userid: user.userid }, { displayName: 1 }),
+        Dataset.find(filter).skip(skip).limit(pageSize)
       ]);
-      const pagination = paginator(count, input.pageNumber, input.pageSize);
-      const datasets = await datasetTransformer(dataset, userDetails, true);
+      const pagination = paginator(count, pageNumber, pageSize);
+      const datasets = datasetTransformer(data, userDetails, true);
       return Object.assign(pagination, { datasets });
     } catch (error) {
       return errorFormater(error.message, 500);
@@ -49,7 +48,7 @@ const datasetQuery = {
     try {
       const { counts, filesets } = await filesetSearchQuery({
         userid: user.userid,
-        datasetId: input.datasetId,
+        datasetId: input?.datasetId,
         filesetName: input?.filesetName,
         skip: input?.pageNumber,
         limit: input?.pageSize
