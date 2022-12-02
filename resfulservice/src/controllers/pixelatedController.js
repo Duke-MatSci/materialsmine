@@ -31,8 +31,7 @@ exports.uploadPixelData = async (req, res, next) => {
     successWriter(req, { message: 'success' }, 'uploadPixelData');
     return res.status(201).json({ message: 'success' });
   } catch (error) {
-    req.logger?.error(`[uploadPixelData]: ${error}`);
-    next(error);
+    next(errorWriter(req, error, 'uploadPixelData'));
   }
 };
 
@@ -61,9 +60,7 @@ exports.updatePixelData = async (req, res, next) => {
     successWriter(req, { message: 'success' }, 'updatePixelData');
     return res.status(201).json({ message: 'success' });
   } catch (error) {
-    req.logger?.error(`[updatePixelData]: ${error}`);
-    error.message = 'Internal Server Error';
-    next(error);
+    next(errorWriter(req, error, 'updatePixelData'));
   }
 };
 
@@ -73,4 +70,4 @@ async function insertMany (req, pixelData) {
   } catch (e) {
     errorWriter(req, e, 'insertMany');
   }
-}
+};

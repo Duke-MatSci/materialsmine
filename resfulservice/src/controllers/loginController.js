@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const { signToken } = require('../utils/jwtService');
+const { successWriter, errorWriter } = require('../utils/logWriter');
 
 async function externalService (token) {
   return {
@@ -10,7 +11,7 @@ async function externalService (token) {
   };
 }
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   const { token } = req.body;
   if (!token) return res.status(400).json({ message: 'Not Authenticated' });
 
@@ -27,12 +28,11 @@ exports.login = async (req, res) => {
     await user.save();
 
     const generatedToken = signToken(req, { userId: user._id });
-
+    successWriter(req, { message: 'success' }, 'login');
     return res.status(200).json({
       token: generatedToken
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: 'error login in', statusCode: 500 });
+    next(errorWriter(req, 'error login in', 'login', 500));
   }
 };
