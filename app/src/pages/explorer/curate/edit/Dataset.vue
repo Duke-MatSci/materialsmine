@@ -5,7 +5,7 @@
           <LoginReq/>
       </div>
       <div v-else>
-        <CurateMenu :active="'Dataset ' + id" :routes="routes"/>
+        <CurateNavBar :active="'Dataset ' + id" :routes="routes"/>
 
         <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
           <spinner :loading="$apollo.loading" text='Loading Dataset Info'/>
@@ -66,7 +66,7 @@
 <script>
 import reducer from '@/mixins/reduce'
 import Spinner from '@/components/Spinner'
-import CurateMenu from '@/components/curate/CurateMenu.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import { VERIFY_AUTH_QUERY, FILESET_QUERY } from '@/modules/gql/dataset-gql'
 import LoginRequired from '@/components/LoginRequired.vue'
 export default {
@@ -75,7 +75,7 @@ export default {
   components: {
     LoginReq: LoginRequired,
     Spinner,
-    CurateMenu
+    CurateNavBar
   },
   props: {
     id: {
@@ -104,7 +104,7 @@ export default {
       this.$router.back()
     },
     reroute () {
-      this.$router.push({ name: 'CurateSpreadsheet', params: {datasetId: this.id}})
+      this.$router.push({ name: 'CurateSpreadsheet', params: { datasetId: this.id } })
     }
   },
   apollo: {

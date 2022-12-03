@@ -18,8 +18,8 @@
           </slot>
         </md-dialog-content>
       </div>
-      <div class="dialog-box_actions">
-        <md-dialog-actions class="md-button-lightbg">
+      <div class="dialog-box_actions md-button-lightbg">
+        <md-dialog-actions>
           <slot name="actions">
           </slot>
         </md-dialog-actions>

@@ -1,6 +1,6 @@
 <template>
 <div class="section_teams">
-    <CurateMenu active="Spreadsheet" :routes="routes"/>
+    <CurateNavBar active="Spreadsheet" :routes="routes"/>
     <div class="curate">
         <div>
             <h2 class="visualize_header-h1">Spreadsheet</h2>
@@ -36,13 +36,13 @@
 </template>
 
 <script>
-import CurateMenu from '@/components/curate/CurateMenu.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import { mapActions } from 'vuex'
 
 export default {
   name: 'SpreadsheetBase',
   components: {
-    CurateMenu
+    CurateNavBar
   },
   data () {
     return {

@@ -9,14 +9,13 @@ export default {
     }).then((result) => {
       const datasetId = result.data.createDatasetId.datasetGroupId
       commit('setDatasetId', datasetId)
-      router.push({ name: 'CurateSpreadsheet', params: {datasetId}})
+      router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
     }).catch((error) => {
       if (error.message.includes('unused datasetId')) {
         const datasetId = error.message.split('-')[1]?.split(' ')[1]
         commit('setDatasetId', datasetId)
-        router.push({ name: 'CurateSpreadsheet', params: {datasetId}})
-      }
-      else console.error('error:', error)
+        router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
+      } else console.error('error:', error)
     })
   }
 }
