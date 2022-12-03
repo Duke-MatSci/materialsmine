@@ -1,4 +1,3 @@
-@import '@/assets/css/abstract/_variables.scss';
 .wrapper {
     padding-left: 1.1875rem;
     padding-right: 1.1875rem;
@@ -432,7 +431,7 @@
         }    
     }
     
-    &_header{
+    &_header {
         background-color: $primary !important;
         color: $primary-white !important;
         padding: 1rem 1.5rem !important;

@@ -4,12 +4,14 @@ import getters from './getters.js'
 
 import gallery from './gallery'
 import results from './results'
+import curation from './curation'
 
 export default {
   namespaced: true,
   modules: {
     gallery,
-    results
+    results,
+    curation
   },
   state () {
     return {

@@ -28,7 +28,7 @@ export default function () {
     console.log(files.value)
   }
 
-  return { files, addFiles, removeFile, modifyStatus }
+  return { files, addFiles, removeFile, clearAllFiles, modifyStatus }
 }
 
 class UploadableFile {

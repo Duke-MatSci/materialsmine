@@ -1,60 +1,58 @@
 <template>
 	<div>
-		<div class="section_teams">
-      <div>
-          <div>
-              <md-button
-                  class="md-icon-button"
-                  @click.native.prevent="navBack"
-              >
-                  <md-tooltip md-direction="bottom">
-                  Go Back
-                  </md-tooltip>
-              <md-icon>arrow_back</md-icon>
-              </md-button>
-              <router-link to="/explorer/curate" v-slot="{navigate, href}" custom>
-                <a :href="href" @click="navigate">
-                  <md-tooltip md-direction="bottom">
-                  Curate Home
-                  </md-tooltip>
-                  Curate
-                </a>
-              </router-link>
-              <span class="md-icon-button"> > </span>
-              <span
-                  class="md-icon-button"
-              >
-                  Edit
-              </span>
-          </div>
-      </div>
+		<div>
+      <CurateMenu active="Edit" :routes="routes"/>
       <div v-if="!verifyUser.isAuth">
           <LoginReq/>
       </div>
 
-			<div v-else class="curate">
+			<div v-else>
 				<div>
+          <div class="curate">
             <h2 class="visualize_header-h1">Select a dataset to edit</h2>
             <div class="md-layout md-alignment-bottom-left" style="margin-bottom:2rem">
                 <div class="md-layout-item" style="align-items:end">
                     <span><b>User:</b> {{verifyUser.user.username}}</span>
                 </div>
             </div>
+          </div>
             <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
               <spinner :loading="$apollo.loading" text='Loading Datasets'/>
             </div>
 
             <div v-else-if="getUserDataset.datasets">
-              <div class="grid_explorer-datasets">
+              <div class="u_content__result u_margin-top-small">
+                <span class="u_color utility-navfont" id="css-adjust-navfont">
+                  <span v-if="getUserDataset.totalItems === 0">
+                    No results
+                  </span>
+                  <span v-else-if="getUserDataset.totalItems === 1">
+                    1 result
+                  </span>
+                  <span v-else>
+                    About {{getUserDataset.totalItems}} results
+                  </span>
+                  <span class="utility-absolute-input ">
+                    <label for="pagesize"> Page size: </label>
+                      <select v-model="pageSize" name="pageSize" id="pageSize">
+                        <option value="12">12</option>
+                        <option value="24">24</option>
+                        <option value="60">60</option>
+                        <option value="120">120</option>
+                      </select>
+                  </span>
+                </span>
+              </div>
+              <div class="grid_explorer-datasets curate-grid">
                 <md-card
-                  v-for="(dataset, index) in getUserDataset.datasets.userDatasetInfo"
+                  v-for="(dataset, index) in getUserDataset.datasets"
                   :key="index"
-                  class="btn--animated gallery-item"
+                  class="btn--animated"
                 >
                     <md-card-header>
                       <md-card-header-text>
-                          <router-link :to="{ name: 'DatasetSingleView', params: { id: dataset.datasetId}}">
-                            <div class="md-title" style="font-size:18px"><a>Dataset ID: {{dataset.datasetId}}</a></div>
+                          <router-link :to="{ name: 'DatasetSingleView', params: { id: dataset.datasetGroupId}}">
+                            <div class="md-title"><a>Dataset ID: {{dataset.datasetGroupId}}</a></div>
                           </router-link>
                           <div class="md-subhead">
                             <!-- <div v-if="dataset.doi">DOI: {{dataset.doi}}</div>
@@ -88,24 +86,28 @@
                             </md-menu-content>
                           </md-menu>
                     </md-card-header>
-                    <md-card-content class="grid_explorer-datasets grid_explorer-datasets-icons">
-                        <div v-for="(fileset, index) in dataset.datasets" :key="index">
-                          <router-link :to="{ name: 'FilesetSingleView', params: { id: dataset.datasetId, filesetId: fileset.filesetName}}">
-                            <md-button style="height:10rem;max-width:10rem!important" md-label="test">
+                    <md-card-content class="grid grid_col-3 curate-grid-icons">
+                        <div v-for="(fileset, index) in dataset.filesetInfo" :key="index">
+                          <router-link :to="{ name: 'FilesetSingleView', params: { id: dataset.datasetGroupId, filesetId: fileset.filesetName}}">
+                            <md-button>
                                 <md-icon class="md-size-3x" >folder</md-icon>
-                                <div style="font-size:9px; color:black">{{fileset.filesetName}}</div>
+                                <div class="label">{{fileset.filesetName}}</div>
                             </md-button>
-                            <!-- <md-tooltip>{{fileset.filesetName}}</md-tooltip> -->
                           </router-link>
                         </div>
                     </md-card-content>
                 </md-card>
               </div>
+              <pagination
+                :cpage="getUserDataset.pageNumber || getUserDataset.pageNumber"
+                :tpages="getUserDataset.totalPages || getUserDataset.totalPages"
+                @go-to-page="loadPrevNextImage($event)"
+              />
             </div>
 
             <div v-else>
               No existing datasets for this user.
-              <router-link :to="{ name: 'CurateMethod' }">
+              <router-link :to="{ name: 'Curate' }">
                 <a>Create a new dataset?</a>
               </router-link>
             </div>
@@ -118,6 +120,8 @@
 <script>
 import reducer from '@/mixins/reduce'
 import Spinner from '@/components/Spinner'
+import CurateMenu from '@/components/curate/CurateMenu.vue'
+import pagination from '@/components/explorer/Pagination'
 import { VERIFY_AUTH_QUERY, USER_DATASETS_QUERY } from '@/modules/gql/dataset-gql'
 import LoginRequired from '@/components/LoginRequired.vue'
 export default {
@@ -125,20 +129,40 @@ export default {
   mixins: [reducer],
   components: {
     LoginReq: LoginRequired,
-    spinner: Spinner
+    spinner: Spinner,
+    CurateMenu,
+    pagination
   },
   data () {
     return {
       loading: false,
       radio: false,
       verifyUser: {},
-      getUserDataset: []
+      getUserDataset: [],
+      pageNumber: 1,
+      pageSize: 12,
+      routes: [
+        {
+          label: 'Curate',
+          path: '/explorer/curate'
+        },
+        {
+          label: 'Spreadsheet',
+          path: '/explorer/curate/spreadsheet'
+        }
+      ]
     }
   },
   methods: {
     navBack () {
       this.$router.back()
-    }
+    },
+    loadPrevNextImage (event) {
+      this.pageNumber = event
+      this.$apollo.queries.verifyUser.skip = true
+      this.$apollo.queries.getUserDataset.skip = false
+      this.$apollo.queries.getUserDataset.refetch()
+    },
   },
   apollo: {
     verifyUser: {
@@ -147,9 +171,11 @@ export default {
     },
     getUserDataset: {
       query: USER_DATASETS_QUERY,
-      // skip () {
-      //   if (!this.verifyUser.isAuth) return this.skipQuery
-      // },
+      variables () {
+        return {
+          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize) }
+        }
+      },
       fetchPolicy: 'cache-and-network'
     }
   }

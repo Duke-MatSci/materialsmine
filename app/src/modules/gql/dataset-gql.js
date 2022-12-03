@@ -12,21 +12,43 @@ export const VERIFY_AUTH_QUERY = gql`
 }`
 
 export const USER_DATASETS_QUERY = gql`
-  query userDatasets {
-  getUserDataset {
+query GetUserDataset($input: datasetStatusInput) {
+  getUserDataset(input: $input) {
     totalItems
+    pageSize
+    pageNumber
+    totalPages
+    hasNextPage
+    hasPreviousPage
     datasets {
-    datasetGroupId
-      userDatasetInfo {
-        datasetId
-        datasets {
+      datasetGroupId
+      status
+      title
+      filesetInfo {
         filesetName
+        files {
+          id
+          filename
+          contentType
         }
       }
+      createdAt
+      updatedAt
     }
   }
 }
+`
 
+export const USER_DATASET_IDS_QUERY = gql`
+query userDatasetIds($input: datasetStatusInput) {
+  getUserDataset(input: $input) {
+    datasets {
+      datasetGroupId
+      updatedAt
+      title
+    }
+  }
+}
 `
 
 export const FILESET_QUERY = gql`
@@ -53,22 +75,15 @@ export const FILESET_QUERY = gql`
 `
 
 export const CREATE_DATASET_ID_MUTATION = gql`
-mutation CreateDatasetId{
+mutation CreateDatasetId {
   createDatasetId {
     datasetGroupId
     status
     createdAt
     updatedAt
-    userDatasetInfo {
-      datasetId
-      datasets {
-        filesetName
-        files {
-          id
-          filename
-          contentType
-        }
-      }
+    user {
+      id
+      username
     }
   }
 }`

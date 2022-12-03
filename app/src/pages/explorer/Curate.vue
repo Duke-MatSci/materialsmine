@@ -29,7 +29,7 @@
                             <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">done_outline</md-icon>
-                                    <span class="explorer_page-nav-card_text">Submit SDD</span>
+                                    <span class="explorer_page-nav-card_text">Submit with SDD</span>
                                     <p class="md-layout-item_para md-layout-item_para_fl">Submit files that use a semantic data dictionary (SDD).
                                     </p>
                                 </div>
