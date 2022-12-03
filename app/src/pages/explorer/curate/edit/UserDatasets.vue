@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div>
-      <CurateMenu active="Edit" :routes="routes"/>
+      <CurateNavBar active="Edit" :routes="routes"/>
       <div v-if="!verifyUser.isAuth">
           <LoginReq/>
       </div>
@@ -120,7 +120,7 @@
 <script>
 import reducer from '@/mixins/reduce'
 import Spinner from '@/components/Spinner'
-import CurateMenu from '@/components/curate/CurateMenu.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import pagination from '@/components/explorer/Pagination'
 import { VERIFY_AUTH_QUERY, USER_DATASETS_QUERY } from '@/modules/gql/dataset-gql'
 import LoginRequired from '@/components/LoginRequired.vue'
@@ -130,7 +130,7 @@ export default {
   components: {
     LoginReq: LoginRequired,
     spinner: Spinner,
-    CurateMenu,
+    CurateNavBar,
     pagination
   },
   data () {
@@ -162,7 +162,7 @@ export default {
       this.$apollo.queries.verifyUser.skip = true
       this.$apollo.queries.getUserDataset.skip = false
       this.$apollo.queries.getUserDataset.refetch()
-    },
+    }
   },
   apollo: {
     verifyUser: {

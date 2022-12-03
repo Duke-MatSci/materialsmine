@@ -4,7 +4,7 @@
   <div
       v-if="!loading"
   >
-    <CurateMenu active="New Spreadsheet" :routes="routes"/>
+    <CurateNavBar active="New Spreadsheet" :routes="routes"/>
   </div>
   <div class="curate">
     <div>
@@ -22,7 +22,7 @@
             <md-icon>edit</md-icon>
           </md-button>
         </div>
-        <div v-else> No dataset ID selected. 
+        <div v-else> No dataset ID selected.
           <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">Select an existing ID</a>
           , or return to the <a @click="navBack">previous page?</a>
         </div>
@@ -30,7 +30,7 @@
           <md-step id="first" md-label="Download blank template" :md-done.sync="first">
             <div class="utility-line-height-sm"><a>Click here</a> to download the template spreadsheet, and fill it out with your data.</div>
             <div class="utility-line-height-sm">To curate FEA data, <a>click here</a> instead.</div>
-          
+
             <div style="utility-line-height-sm">Skip this step if you have already downloaded the template spreadsheet.</div>
             <md-button type="submit" class="md-button_next"
               @click="goToStep('first', 'second')">
@@ -109,7 +109,7 @@
                   <md-icon>edit</md-icon>
                 </md-button>
             </div>
-            <div v-else> No dataset ID selected. 
+            <div v-else> No dataset ID selected.
               <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">Select an existing ID</a>
               , or <a @click="navBack">exit the form?</a>
             </div>
@@ -201,16 +201,16 @@
         <div v-if="datasetId"> You are using dataset ID <b>{{datasetId}}</b>.</div>
         <div> To use a pre-existing ID, select from the following: </div>
         <md-autocomplete
-          v-model="selectedDataset.label" 
+          v-model="selectedDataset.label"
           @md-selected="changeSelectedDataset"
-          :md-options="getUserDataset.datasets" 
+          :md-options="getUserDataset.datasets"
           :md-open-on-focus="true">
           <label>Dataset ID</label>
           <template style="max-width: 90%;" slot="md-autocomplete-item" slot-scope="{ item }">
             <div style="width:100%">
-              <div style="width: 90%; 
-                          overflow: hidden; 
-                          -o-text-overflow: ellipsis;  
+              <div style="width: 90%;
+                          overflow: hidden;
+                          -o-text-overflow: ellipsis;
                           text-overflow: ellipsis;">
                 <b>{{ item.title || `${item.datasetGroupId} (Untitled)`}} &nbsp;</b>
               </div>
@@ -262,7 +262,7 @@ import DropZone from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
 import LoginRequired from '@/components/LoginRequired.vue'
 import Dialog from '@/components/Dialog.vue'
-import CurateMenu from '@/components/curate/CurateMenu.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import Spinner from '@/components/Spinner.vue'
 import useFileList from '@/modules/file-list'
 import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY, CREATE_DATASET_MUTATION } from '@/modules/gql/dataset-gql'
@@ -278,7 +278,7 @@ export default {
     dialogbox: Dialog,
     DropZone,
     FilePreview,
-    CurateMenu,
+    CurateNavBar,
     Spinner,
     LoginReq: LoginRequired
   },
@@ -290,7 +290,7 @@ export default {
       uploadInProgress: true,
       selectedDataset: {
         label: '',
-        id: null,
+        id: null
       },
       spreadsheetFiles: spreadsheetFn.files,
       suppFiles: suppFn.files,
@@ -309,7 +309,7 @@ export default {
         title: '',
         type: null,
         size: 60,
-        disableClose: false,
+        disableClose: false
       },
       routes: [
         {
@@ -332,7 +332,7 @@ export default {
     ...mapGetters({
       userId: 'auth/userId',
       isAuthenticated: 'auth/isAuthenticated',
-      dialogBoxActive: 'dialogBox',
+      dialogBoxActive: 'dialogBox'
     })
   },
   methods: {
@@ -394,20 +394,20 @@ export default {
     },
     async submitFiles () {
       this.toggleDialogBox()
-      this.uploadInProgress = 'Uploading files';
-      this.renderDialog ('Submitting dataset', 'loading', 40, true)
+      this.uploadInProgress = 'Uploading files'
+      this.renderDialog('Submitting dataset', 'loading', 40, true)
       await this.uploadFiles()
         .then(() => {
-          this.uploadInProgress = 'Creating dataset';
+          this.uploadInProgress = 'Creating dataset'
           this.createDataset()
           setTimeout(() => {
             this.toggleDialogBox()
-            this.uploadInProgress = false;
+            this.uploadInProgress = false
             this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
           }, 1000)
         })
     },
-    renderDialog (title, type, minWidth, disableClose=false) {
+    renderDialog (title, type, minWidth, disableClose = false) {
       this.dialog = {
         title,
         type,
@@ -434,12 +434,12 @@ export default {
         })
         .catch(error => console.log('error', error))
     },
-    changeSelectedDataset (selection) { 
-      this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`;
-      this.selectedDataset.id = selection.datasetGroupId;
+    changeSelectedDataset (selection) {
+      this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`
+      this.selectedDataset.id = selection.datasetGroupId
     },
-    changeDatasetId () { 
-      this.$router.replace({ name: 'CurateSpreadsheet', params: {datasetId: this.selectedDataset.id}})
+    changeDatasetId () {
+      this.$router.replace({ name: 'CurateSpreadsheet', params: { datasetId: this.selectedDataset.id } })
     }
   },
   apollo: {

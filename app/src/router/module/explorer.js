@@ -41,7 +41,7 @@ const explorerRoutes = [
         name: 'CurateSpreadsheet',
         props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
-      },
+      }
     ]
   },
   {
