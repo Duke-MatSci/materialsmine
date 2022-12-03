@@ -167,6 +167,12 @@
             .md-button-content, .md-icon {
                 color: $primary-white !important;
             }
+            .md-disabled {
+                background: $secondary-grey;
+                .md-button-content, .md-icon {
+                    color: $primary-grey !important;
+                }
+            }
         }
         .md-button_prev {
             margin-top: 3rem;

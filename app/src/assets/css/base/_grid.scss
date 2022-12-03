@@ -27,6 +27,19 @@
             grid-gap: 1rem;
             cursor: pointer;
         }
+        &-datasets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            @include respond(laptop) {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            @include respond(tab-land) {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            @include respond(phone) {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
     }
 
     &_gap {

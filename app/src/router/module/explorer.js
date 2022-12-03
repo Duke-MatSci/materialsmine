@@ -24,8 +24,25 @@ const explorerRoutes = [
   {
     path: 'curate',
     name: 'ExplorerCurate',
-    component: () => import('@/pages/explorer/Curate.vue'),
-    meta: { requiresAuth: false }
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Curate',
+        component: () => import('@/pages/explorer/Curate.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'spreadsheet',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue')
+      },
+      {
+        path: 'spreadsheet/:datasetId',
+        name: 'CurateSpreadsheet',
+        props: true,
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
+      },
+    ]
   },
   {
     path: 'curate/edit',
@@ -61,26 +78,16 @@ const explorerRoutes = [
       }
     ]
   },
-  {
-    path: 'curate/spreadsheet',
-    component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue'),
-  },
-      {
-        path: 'curate/spreadsheet/new',
-        name: 'CurateSpreadsheet',
-        props: true,
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
-      },
-      // {
-      //   path: 'stepper',
-      //   name: 'CurateStepper',
-      //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
-      // },
-      // {
-      //   path: 'sdd',
-      //   name: 'CurateSDD',
-      //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
-      // }
+  // {
+  //   path: 'stepper',
+  //   name: 'CurateStepper',
+  //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
+  // },
+  // {
+  //   path: 'sdd',
+  //   name: 'CurateSDD',
+  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+  // }
   {
     path: 'chart',
     component: ChartBase,

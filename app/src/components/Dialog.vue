@@ -8,7 +8,7 @@
           <slot name="title">
           </slot>
         </md-dialog-title>
-        <md-button class="md-icon-button dialog-box_close" @click="toggleDialogBox()">
+        <md-button v-if="!disableClose" class="md-icon-button dialog-box_close" @click="toggleDialogBox()">
           <md-icon class="utility-navfonticon">close</md-icon>
         </md-button>
       </div>
@@ -40,6 +40,10 @@ export default {
     minWidth: {
       type: Number,
       default: 60
+    },
+    disableClose: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
