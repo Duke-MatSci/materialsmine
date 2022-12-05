@@ -1,13 +1,15 @@
 import gql from 'graphql-tag'
 
 export const CONTACT_US_QUERY = gql`
-  query submitContact($input: createContactInput!) {
+  mutation Mutation($input: createContactInput!) {
+  submitContact(input: $input) {
     _id
-    fullname
+    fullName
     email
     purpose
     message
     createdAt
     updatedAt
   }
+}
 `
