@@ -23,7 +23,6 @@ const explorerRoutes = [
   },
   {
     path: 'curate',
-    name: 'ExplorerCurate',
     component: () => import('@/pages/explorer/curate/CurateBase.vue'),
     children: [
       {
