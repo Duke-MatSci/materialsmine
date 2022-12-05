@@ -51,7 +51,7 @@ export default {
         size: 60,
         disableClose: false
       },
-      routes: [
+      navRoutes: [
         {
           label: 'Curate',
           path: '/explorer/curate'

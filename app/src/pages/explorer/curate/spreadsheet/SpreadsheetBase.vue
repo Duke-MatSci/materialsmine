@@ -1,6 +1,6 @@
 <template>
 <div class="section_teams">
-    <CurateNavBar active="Spreadsheet" :routes="routes"/>
+    <CurateNavBar active="Spreadsheet" :navRoutes="navRoutes"/>
     <div class="curate">
         <div>
             <h2 class="visualize_header-h1">Spreadsheet</h2>
@@ -46,7 +46,7 @@ export default {
   },
   data () {
     return {
-      routes: [
+      navRoutes: [
         {
           label: 'Curate',
           path: '/explorer/curate'
