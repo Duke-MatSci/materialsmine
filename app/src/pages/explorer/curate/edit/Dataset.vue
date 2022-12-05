@@ -5,7 +5,7 @@
           <LoginReq/>
       </div>
       <div v-else>
-        <CurateNavBar :active="'Dataset ' + id" :routes="routes"/>
+        <CurateNavBar :active="'Dataset ' + id" :navRoutes="navRoutes"/>
 
         <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
           <spinner :loading="$apollo.loading" text='Loading Dataset Info'/>
@@ -87,7 +87,7 @@ export default {
       radio: false,
       verifyUser: {},
       getFilesets: {},
-      routes: [
+      navRoutes: [
         {
           label: 'Curate',
           path: '/explorer/curate'

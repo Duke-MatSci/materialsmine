@@ -1,13 +1,12 @@
 <template>
-	<div>
-		<div>
-      <CurateNavBar active="Edit" :routes="routes"/>
+  <div>
+    <div>
+      <CurateNavBar active="Edit" :navRoutes="navRoutes"/>
       <div v-if="!verifyUser.isAuth">
           <LoginReq/>
       </div>
-
-			<div v-else>
-				<div>
+      <div v-else>
+        <div>
           <div class="curate">
             <h2 class="visualize_header-h1">Select a dataset to edit</h2>
             <div class="md-layout md-alignment-bottom-left" style="margin-bottom:2rem">
@@ -112,9 +111,9 @@
               </router-link>
             </div>
         </div>
-			</div>
-		</div>
-	</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -125,7 +124,7 @@ import pagination from '@/components/explorer/Pagination'
 import { VERIFY_AUTH_QUERY, USER_DATASETS_QUERY } from '@/modules/gql/dataset-gql'
 import LoginRequired from '@/components/LoginRequired.vue'
 export default {
-  name: 'CurateHome',
+  name: 'UserDatasets',
   mixins: [reducer],
   components: {
     LoginReq: LoginRequired,
@@ -141,7 +140,7 @@ export default {
       getUserDataset: [],
       pageNumber: 1,
       pageSize: 12,
-      routes: [
+      navRoutes: [
         {
           label: 'Curate',
           path: '/explorer/curate'

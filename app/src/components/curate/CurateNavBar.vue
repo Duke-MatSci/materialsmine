@@ -10,7 +10,7 @@
         </md-tooltip>
       <md-icon>arrow_back</md-icon>
       </md-button>
-        <div v-for="(route, index) in routes"
+        <div v-for="(route, index) in navRoutes"
           :key="index"
           class="curate-menu-routes"
         >
@@ -30,7 +30,7 @@
 export default {
   name: 'CurateNavBar',
   props: {
-    routes: {
+    navRoutes: {
       type: Array,
       required: false,
       default: () => []
