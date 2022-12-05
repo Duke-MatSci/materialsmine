@@ -19,6 +19,10 @@ exports.mmLogger = () => {
   if (!fs.existsSync('/app/logs')) {
     fs.promises.mkdir('/app/logs/', { recursive: true }).catch(console.error);
   }
+  /** Create static resource location simultaneously */
+  if (!fs.existsSync('/app/mm_files')) {
+    fs.promises.mkdir('/app/mm_files/', { recursive: true }).catch(console.error);
+  }
   const logger = createLogger({
     levels: {
       emerg: 0,

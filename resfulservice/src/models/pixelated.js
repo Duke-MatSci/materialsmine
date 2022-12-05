@@ -12,7 +12,9 @@ const pixelDataSchema = new Schema({
     type: String
   },
   geometry_condensed: {
-    type: String
+    type: String,
+    unique: true,
+    dropDups: true
   },
   geometry_full: {
     type: String
@@ -81,5 +83,7 @@ const pixelDataSchema = new Schema({
     type: String
   }
 }, { timestamps: true });
+
+pixelDataSchema.index({ geometry_full: 1 });
 
 module.exports = mongoose.model('PixelData', pixelDataSchema);

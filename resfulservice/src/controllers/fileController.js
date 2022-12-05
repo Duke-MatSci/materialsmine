@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { errorWriter, successWriter } = require('../utils/logWriter');
 
 exports.imageMigration = async (req, res, next) => {
   const { imageType } = req.params;
@@ -12,10 +13,10 @@ exports.imageMigration = async (req, res, next) => {
       .find({ filename: { $regex: imageType } })
       .limit(10)
       .toArray();
-
+    successWriter(req, { message: 'success' }, 'imageMigration');
     return res.status(200).json({ images: files });
   } catch (error) {
-    return res.status(500).json({ message: 'error with fetching image', statusCode: 500 });
+    next(errorWriter(req, 'error with fetching image', 'imageMigration', 500));
   }
 };
 
@@ -31,18 +32,17 @@ exports.fileContent = async (req, res, next) => {
     const downloadStream = bucket.openDownloadStream(_id);
     downloadStream.pipe(res);
   } catch (error) {
-    return res.status(500).json({ message: 'error with fetching image', statusCode: 500 });
+    next(errorWriter(req, 'error with fetching image', 'fileContent', 500));
   }
 };
 
 exports.uploadFile = async (req, res, next) => {
   try {
-    console.log(req.files.uploadfile);
     req.logger.info('datasetIdUpload Function Entry:');
 
+    successWriter(req, { message: 'success' }, 'uploadFile');
     return res.status(201).json({ files: req.files.uploadfile });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: 'error uploading files', statusCode: 500 });
+    next(errorWriter(req, 'error uploading files', 'uploadFile', 500));
   }
 };

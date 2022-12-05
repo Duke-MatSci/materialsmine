@@ -2,6 +2,7 @@ const axios = require('axios');
 const https = require('https');
 const constant = require('../../config/constant');
 const elasticSearch = require('../utils/elasticSearch');
+const { errorWriter, successWriter } = require('../utils/logWriter');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -16,17 +17,11 @@ const _outboundRequest = async (req, next) => {
   const uri = query?.uri || constant[type];
 
   if (!type) {
-    const error = new Error('Category type is missing');
-    error.statusCode = 422;
-    log.error(`_outboundRequest(): ${error}`);
-    return next(error);
+    return next(errorWriter(req, 'Category type is missing', '_outboundRequest', 422));
   }
 
   if (!uri) {
-    const error = new Error('URI is missing in the request body');
-    error.statusCode = 422;
-    log.error(`_outboundRequest(): ${error}`);
-    return next(error);
+    return next(errorWriter(req, 'URI is missing in the request body', '_outboundRequest', 422));
   }
 
   const response = await axios({
@@ -60,15 +55,12 @@ exports.getFacetValues = async (req, res, next) => {
   log.info('getFacetValues(): Function entry');
   try {
     const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'getFacetValues');
     return res.status(200).json({
       response
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    log.error(`getFacetValues(): ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'getFacetValues'));
   }
 };
 
@@ -81,14 +73,12 @@ exports.getFacetValues = async (req, res, next) => {
  */
 exports.getKnowledge = async (req, res, next) => {
   try {
+    successWriter(req, { message: 'Fetched graph successfully!' }, 'getKnowledge');
     return res.status(200).json({
       message: 'Fetched graph successfully!'
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'getKnowledge'));
   }
 };
 
@@ -105,14 +95,12 @@ exports.getAllCharts = async (req, res, next) => {
 
   try {
     const response = await elasticSearch.loadAllCharts(page, pageSize);
+    successWriter(req, { message: 'success' }, 'getAllCharts');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
       total: response?.data?.hits?.total?.value || 0
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'getAllCharts'));
   }
 };

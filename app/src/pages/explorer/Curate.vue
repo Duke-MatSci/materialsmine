@@ -39,7 +39,16 @@
                                 </div>
                             </router-link>
                         </div>
-                        <!-- <div class="md-layout-item">&nbsp;</div> -->
+                        <div class="md-layout-item md-layout-item_card">
+                            <router-link to="" v-slot="{navigate, href}" custom>
+                                <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
+                                    <md-icon class="explorer_page-nav-card_icon">article</md-icon>
+                                    <span class="explorer_page-nav-card_text">Submit FEA Templates</span>
+                                    <p class="md-layout-item_para md-layout-item_para_fl">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor magna aliqua.
+                                    </p>
+                                </div>
+                            </router-link>
+                        </div>
                     </div>
                 </div>
                 <div class="u_margin-top-med">

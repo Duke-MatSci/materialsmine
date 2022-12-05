@@ -8,6 +8,9 @@
           <slot name="title">
           </slot>
         </md-dialog-title>
+        <md-button class="md-icon-button dialog-box_close" @click="toggleDialogBox()">
+          <md-icon class="utility-navfonticon">close</md-icon>
+        </md-button>
       </div>
       <div class="dialog-box_content">
         <md-dialog-content>
@@ -15,7 +18,7 @@
           </slot>
         </md-dialog-content>
       </div>
-      <div class="dialog-box_actions">
+      <div class="dialog-box_actions md-button-lightbg">
         <md-dialog-actions>
           <slot name="actions">
           </slot>
@@ -26,6 +29,7 @@
 </template>
 
 <script>
+import { mapMutations } from 'vuex'
 export default {
   name: 'Dialog',
   props: {
@@ -46,6 +50,11 @@ export default {
         80: 'dialog-box_size-lg'
       })[this.minWidth] || 'dialog-box_size-md'
     }
+  },
+  methods: {
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    })
   }
 }
 </script>

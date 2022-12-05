@@ -1,4 +1,3 @@
-import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import spinner from '@/components/Spinner'
 import { buildCsvSpec } from '@/modules/vega-chart'
 import embed from 'vega-embed'
@@ -8,11 +7,11 @@ import { METAMATERIAL_QUERY } from '@/modules/gql/metamaterial-gql'
 export default {
   name: 'Mockup',
   components: {
-    VegaLite,
     spinner
   },
   data: () => ({
     loading: false,
+    timeout: null,
     spec: null,
     baseSpec: baseSpec,
     error: { status: false, message: null },
@@ -64,19 +63,23 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    /**
+     * Pause to allow event to register
+     */
+    changeAxes () {
+      this.loading = true
+      clearTimeout(this.timeout)
+      this.timeout = setTimeout(async () => await this.patchVegaSpec(), 500)
     }
   },
   watch:
     {
-      async xAxis () {
-        this.loading = true
-        // Pause to allow event to register
-        setTimeout(async () => await this.patchVegaSpec(), 100)
+      xAxis () {
+        this.changeAxes()
       },
-      async yAxis () {
-        this.loading = true
-        // Pause to allow event to register
-        setTimeout(async () => await this.patchVegaSpec(), 100)
+      yAxis () {
+        this.changeAxes()
       }
     },
   apollo: {
