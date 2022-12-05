@@ -28,7 +28,7 @@
 
 <script>
 export default {
-  name: 'CurateMenu',
+  name: 'CurateNavBar',
   props: {
     routes: {
       type: Array,
