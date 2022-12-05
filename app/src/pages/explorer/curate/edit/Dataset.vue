@@ -1,6 +1,6 @@
 <template>
-	<div>
-		<div>
+  <div>
+    <div>
       <div v-if="!verifyUser.isAuth">
           <LoginReq/>
       </div>
@@ -18,7 +18,7 @@
                 <h2 class="visualize_header-h2">Dataset Group ID: {{this.id}}</h2>
               </div>
               <div class="md-layout-item md-size-15 curate-actions_lg">
-                <md-button class="md-button-lightbg" @click="reroute">+ Create new fileset </md-button>
+                <md-button class="md-button-lightbg" @click="goToEdit">+ Create new fileset </md-button>
               </div>
               <div class="md-layout-item md-size-15 curate-actions_lg">
                 <md-button class="md-button-lightbg">+ Edit metadata </md-button>
@@ -26,7 +26,7 @@
             </div>
             <hr>
             <div class="curate-actions_sm" >
-                <md-button class="md-button-lightbg" @click="reroute">+ Create new fileset </md-button>
+                <md-button class="md-button-lightbg" @click="goToEdit">+ Create new fileset </md-button>
                 <md-button class="md-button-lightbg">+ Edit metadata </md-button>
             </div>
             <h2 style="margin-top:2rem;margin-bottom:2rem">Metadata</h2>
@@ -103,7 +103,7 @@ export default {
     navBack () {
       this.$router.back()
     },
-    reroute () {
+    goToEdit () {
       this.$router.push({ name: 'CurateSpreadsheet', params: { datasetId: this.id } })
     }
   },
