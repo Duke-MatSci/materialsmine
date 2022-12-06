@@ -1,9 +1,17 @@
 import { CONTACT_US_QUERY } from '@/modules/gql/contact-gql'
+import dialogBox from '@/components/Dialog.vue'
+import { mapMutations, mapGetters } from 'vuex'
 
 export default {
   name: 'Contact',
+  components: {
+    dialogBox
+  },
   data () {
     return {
+      dialogTitle: '',
+      dialogContent: '',
+      dialogType: '',
       name: null,
       email: null,
       contactType: null,
@@ -11,6 +19,11 @@ export default {
       message: null,
       errors: []
     }
+  },
+  computed: {
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox'
+    })
   },
   methods: {
     validateForm: function () {
@@ -46,20 +59,58 @@ export default {
     },
 
     resetForm: function () {
-      this.name = null
-      this.email = null
-      this.message = null
-      this.contactType = null
+      this.$refs.contactForm.reset()
       this.errors = []
     },
-
+    openDialogBox (element) {
+      this.dialogType = element.type
+      this.dialogTitle = element.header
+      this.dialogContent = element.content
+      this.toggleDialogBox()
+    },
+    closeDialogBox () {
+      this.toggleDialogBox()
+    },
     onSubmit: async function () {
       this.validateForm()
       if (this.errors.length) {
         return
       }
-      this.$apollo.queries.form()
-      this.resetForm()
+      try {
+        await this.$apollo.mutate({
+          mutation: CONTACT_US_QUERY,
+          variables: {
+            input: {
+              fullName: this.name,
+              email: this.email,
+              purpose: this.contactType,
+              message: this.message
+            }
+          }
+        })
+        this.openDialogBox({
+          type: 'Success',
+          header: 'Submitted successfully',
+          content: 'We would get back to you shortly'
+        })
+        this.resetForm()
+      } catch (error) {
+        return this.openDialogBox({
+          type: 'Error',
+          header: 'Submit Error',
+          content: 'Something went wrong!' // Todo: (@tolu) Show specific error message here & try again button!
+        })
+      }
+    },
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    })
+  },
+  watch: {
+    dialogBoxActive (newVal, oldVal) {
+      if (oldVal && !newVal && this.dialogType === 'Success') {
+        this.$router.push('/nm')
+      }
     }
   },
   created () {
@@ -67,23 +118,5 @@ export default {
       icon: 'mail',
       name: 'Contact Us'
     })
-  },
-  apollo: {
-    form: {
-      query: CONTACT_US_QUERY,
-      variables () {
-        return {
-          input: {
-            fullName: this.name,
-            email: this.email,
-            purpose: this.contactType,
-            message: this.message
-          }
-        }
-      }
-    },
-    skip () {
-      return this.skipQuery
-    }
   }
 }

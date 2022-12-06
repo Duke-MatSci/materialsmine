@@ -119,7 +119,8 @@ export default {
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
     deleteChart (chart) {
-      console.log('delete chart', chart)
+      return;
+      // console.log('delete chart', chart)
     },
     async loadItems (page = 1) {
       this.loading = true
