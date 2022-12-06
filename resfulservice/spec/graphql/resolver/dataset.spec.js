@@ -188,7 +188,6 @@ describe('Dataset Resolver Unit Tests:', function () {
       sinon.stub(Dataset, 'aggregate').returns([{filesets: mockDataset.filesets}]);
       sinon.stub(mockDataset, 'lean').returnsThis();
       const fileset = await getFilesets({}, {input: { filesetName: 'E109_S2_Huang_2016' } }, { user, req, isAuthenticated: true });
-
       expect(fileset).to.have.property('filesetName');
       expect(fileset).to.have.property('files');
       expect(fileset.files).to.be.an('array');
