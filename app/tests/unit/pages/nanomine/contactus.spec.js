@@ -44,4 +44,8 @@ describe('ContactUsPage.vue', () => {
     expect(wrapper.findComponent('#email').element.value).toBe('kzunigac@uvm.edu')
     expect(wrapper.findComponent('#nanomine').element.value).toBe('nanomine')
   })
+
+  it('render dialog component properly', async () => {
+    expect(wrapper.findComponent('.dialog-box').exists()).toBeTruthy()
+  })
 })

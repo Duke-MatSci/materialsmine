@@ -42,7 +42,7 @@
                         </li>
                         <li>
                           <div class="nav_menu--container">
-                            <a class="u--default-size nav_menu--handler" href="#">CONTACT US</a>
+                            <a class="u--default-size nav_menu--handler" href="/nm/contact">CONTACT US</a>
                           </div>
                         </li>
                         <li>

@@ -238,7 +238,7 @@ export default {
           if (this.displayableFileType(0) === false) { this.filesEditable = false } // set displayable status for image
           this.pushPhase(0)
           this.pushImageDimensions()
-          console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
+          // console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
         }
       })
     },
@@ -321,7 +321,7 @@ export default {
         } else if (this.inputtedDimensions.units === 'millimeters') {
           ratio = ratio / 1000
         }
-        console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
+        // console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
         this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: this.displayedFiles[0].size.width, height: this.displayedFiles[0].size.height, ratio: ratio }
       } else {
         this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: parseInt(this.inputtedDimensions.width), height: parseInt(this.inputtedDimensions.height), ratio: null }
