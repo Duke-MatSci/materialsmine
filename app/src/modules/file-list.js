@@ -25,7 +25,6 @@ export default function () {
 
   function modifyStatus (index, status) {
     files.value[index].status = status
-    console.log(files.value)
   }
 
   return { files, addFiles, removeFile, clearAllFiles, modifyStatus }

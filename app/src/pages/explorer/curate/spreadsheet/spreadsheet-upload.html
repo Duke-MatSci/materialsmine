@@ -178,7 +178,7 @@
                         @click="goToStep('sixth', 'fourth')">
                         <md-icon>arrow_back</md-icon>Go Back
                         </md-button>
-                    <md-button type="submit" :disabled="(spreadsheetFiles.length < 1) || isInvalidForm" class="md-layout-item md-button_next md-size-40"
+                    <md-button id="submit" type="submit" :disabled="(spreadsheetFiles.length < 1) || isInvalidForm" class="md-layout-item md-button_next md-size-40"
                         @click="renderDialog('Submit files?', 'submit', 40)">
                         Save and Submit
                     </md-button>
