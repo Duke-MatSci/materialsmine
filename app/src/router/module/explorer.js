@@ -28,6 +28,11 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'curate/sdd',
+    name: 'CurateSDD',
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+  },
+  {
     path: 'chart',
     component: ChartBase,
     children: [
