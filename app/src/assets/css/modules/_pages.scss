@@ -411,8 +411,22 @@
 .curate {
     display: block;
     padding: 0 7rem;
+    @include respond(phone) {
+        padding: 0 4rem;
+    }
     display: flex;
     flex-direction: column;
+    &-menu {
+        padding: 1rem 1rem 2rem 1rem;
+        align-items: center;
+        display: flex;
+        &-routes {
+            @include respond(phone) {
+                visibility: hidden;
+                display: none;
+            }
+        }
+    }
 }
 
 .image-detail-page {

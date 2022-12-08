@@ -145,4 +145,27 @@
     &__radio-input:checked ~ &__radio-label &__radio-button::after {
         opacity: 1;
     }
+
+    &__drop-area {
+        max-width: 80%;
+        margin: 2.5rem;
+        padding: 3rem 1rem 0rem 1rem;
+        outline: 4px dashed $secondary-grey;
+        &[data-active=true] {
+            outline: 4px dashed $secondary;
+            color: $secondary;
+        }
+        &_label {
+            width: 100%;
+            margin: 0 auto;
+            padding: 5rem;
+            transition: .2s ease;
+            place-items: center;
+            text-align: center;
+            cursor: pointer;
+            input[type=file] {
+                visibility: hidden;
+            }
+        }
+    }
 }
