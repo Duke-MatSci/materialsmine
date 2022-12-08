@@ -67,7 +67,7 @@ import { VERIFY_AUTH_QUERY, FILESET_QUERY } from '@/modules/gql/dataset-gql'
 export default {
   name: 'CurateHome',
   components: {
-    Spinner,
+    Spinner
   },
   props: {
     id: {
