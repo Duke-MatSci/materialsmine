@@ -85,11 +85,11 @@ export default {
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
-    async navBack () {
+    navBack () {
       this.$router.back()
     },
-    async createDataset () {
-      await this.$apollo.mutate({
+    createDataset () {
+      this.$apollo.mutate({
         mutation: CREATE_DATASET_MUTATION,
         variables: {
           input: {
@@ -107,9 +107,9 @@ export default {
     },
     // Format files for submission
     processFiles () {
-      var incompleteFiles = this.spreadsheetFiles.filter(file => file.status === 'incomplete')
+      return this.spreadsheetFiles.filter(file => file.status === 'incomplete')
         .concat(this.suppFiles.filter(file => file.status === 'incomplete'))
-      return incompleteFiles.map(({ file }) => file)
+        .map(({ file }) => file)
     },
     onInputChange (e) {
       if (e.target.id === 'file-spreadsheet-input') {
@@ -136,16 +136,18 @@ export default {
       this.toggleDialogBox()
       this.uploadInProgress = 'Uploading files'
       this.renderDialog('Submitting dataset', 'loading', 40, true)
-      await this.uploadFiles()
-        .then(() => {
-          this.uploadInProgress = 'Creating dataset'
-          this.createDataset()
-          setTimeout(() => {
-            this.toggleDialogBox()
-            this.uploadInProgress = false
-            this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
-          }, 1000)
-        })
+      try {
+        await this.uploadFiles()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        this.createDataset()
+        setTimeout(() => {
+          this.toggleDialogBox()
+          this.uploadInProgress = false
+          this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
+        }, 1000)
+      }
     },
     renderDialog (title, type, minWidth, disableClose = false) {
       this.dialog = {
@@ -161,18 +163,16 @@ export default {
       const formData = new FormData()
       const files = this.processFiles()
       files.forEach((file) => formData.append('uploadfile', file))
-      await fetch(url, {
+      return fetch(url, {
         method: 'POST',
         body: formData,
         redirect: 'follow'
-      })
-        .then(response => response.json())
-        .then(result => {
+      }).then((response) => response.json())
+        .then((result) => {
           this.uploadedFiles = result
           this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
           this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))
-        })
-        .catch(error => console.log('error', error))
+        }).catch(error => console.log('error', error))
     },
     changeSelectedDataset (selection) {
       this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`
