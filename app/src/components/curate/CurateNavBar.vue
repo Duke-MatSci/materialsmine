@@ -42,7 +42,7 @@ export default {
     }
   },
   methods: {
-    async navBack () {
+    navBack () {
       this.$router.back()
     }
   }
