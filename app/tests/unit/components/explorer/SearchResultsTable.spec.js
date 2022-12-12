@@ -3,11 +3,10 @@ import { articles, samples, charts, images, materials } from '../../../jest/__mo
 import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
 import spinner from '@/components/spinner'
 
-let wrapper = null;
-
+let wrapper = null
 
 describe('SearchResultsTable.vue', () => {
-  /* 
+  /*
   Todo: Monitor changes here - https://github.com/vuejs/vue-test-utils/issues/55#issuecomment-381782711
   */
   beforeEach(async () => {
@@ -15,9 +14,9 @@ describe('SearchResultsTable.vue', () => {
   })
 
   afterEach(() => {
-    wrapper.destroy();
+    wrapper.destroy()
   })
-  
+
   it('Renders Spinner component correctly', async () => {
     expect.assertions(2)
     await wrapper.vm.$store.commit('explorer/results/setIsLoading', true)

@@ -6,32 +6,32 @@ export const articles = [
   {
     identifier: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5',
     label: 'Dynamic mechanical behavior of melt-processed multi-walled carbon nanotube/poly(methyl methacrylate) composites'
-  },
+  }
 ]
 export const samples = [
   {
     identifier: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5',
     label: 'Dynamic mechanical behavior of melt-processed multi-walled carbon nanotube/poly(methyl methacrylate) composites',
-    description: "This is a test",
-    thumbnail: "http: //dx.doi.org/10.1016/S0009-2614(01)00186-5"
+    description: 'This is a test',
+    thumbnail: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5'
   },
   {
     identifier: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5',
     label: 'Dynamic mechanical behavior of melt-processed multi-walled carbon nanotube/poly(methyl methacrylate) composites',
-    description: "This is a test",
-    thumbnail: "http: //dx.doi.org/10.1016/S0009-2614(01)00186-5"
+    description: 'This is a test',
+    thumbnail: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5'
   },
   {
     identifier: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5',
     label: 'Dynamic mechanical behavior of melt-processed multi-walled carbon nanotube/poly(methyl methacrylate) composites',
-    description: "This is a test",
-    thumbnail: "http: //dx.doi.org/10.1016/S0009-2614(01)00186-5"
+    description: 'This is a test',
+    thumbnail: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5'
   },
   {
     identifier: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5',
     label: 'Dynamic mechanical behavior of melt-processed multi-walled carbon nanotube/poly(methyl methacrylate) composites',
-    description: "This is a test",
-    thumbnail: "http: //dx.doi.org/10.1016/S0009-2614(01)00186-5"
+    description: 'This is a test',
+    thumbnail: 'http: //dx.doi.org/10.1016/S0009-2614(01)00186-5'
   }
 ]
 export const charts = [
