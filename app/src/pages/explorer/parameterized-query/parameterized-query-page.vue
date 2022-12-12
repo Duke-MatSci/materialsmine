@@ -89,14 +89,12 @@
             </md-switch>
             <div class="button-row">
               <div>
-                <router-link :to="{ name: 'NewChartDataVoyager' }">
-                  <button
+                <button
                     class="btn btn--primary"
                     @click="selectQueryForVizEditor()"
                   >
                     Open in Datavoyager
-                  </button>
-                </router-link>
+                </button>
               </div>
             </div>
           </div>
@@ -179,6 +177,7 @@ export default {
     ...mapMutations('vega', ['setQuery']),
     selectQueryForVizEditor () {
       this.setQuery(this.query)
+      this.$router.push({ name: 'NewChartDataVoyager' })
     },
     async loadSparqlTemplates () {
       this.loadingTemplates = true
