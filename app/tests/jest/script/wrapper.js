@@ -1,12 +1,15 @@
 import _ from 'lodash'
+import Vuex from 'vuex'
 import VueMaterial from 'vue-material'
 import store from '@/store'
 import router from '@/router'
 import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-utils'
 
 /** Add external plugins as needed */
+// Using localVue to protect polluting global vue instance
 const localVue = createLocalVue()
 localVue.use(VueMaterial)
+localVue.use(Vuex)
 
 /**
  * createWrapper - creates a default mount wrapper for all components
