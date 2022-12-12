@@ -75,9 +75,10 @@ export default {
     SearchHeader,
     SearchResultsTable
   },
-  async mounted () {
-    await this.$store.dispatch('explorer/facetFilterMaterials')
-  },
+// Todo: Remove later! This is not required anymore. It feeds the facet dialog with materials data
+//   async mounted () {
+//     await this.$store.dispatch('explorer/facetFilterMaterials')
+//   },
   methods: {
     async disableRender (e) {
       const selected = e.target.closest('.search_box')
