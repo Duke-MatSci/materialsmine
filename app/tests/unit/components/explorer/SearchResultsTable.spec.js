@@ -1,7 +1,7 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { articles, samples, charts, images, materials } from '../../../jest/__mocks__/searchMock'
 import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
-import spinner from '@/components/spinner'
+import spinner from '@/components/Spinner'
 
 let wrapper = null
 
