@@ -132,7 +132,7 @@
           :key="index"
           class="btn--animated md-card gallery-item results_card">
           <md-card-header style="padding:0px">
-            <router-link @click.native.prevent="loadMaterials(label)" to="#" class="results_card-title">
+            <router-link @click.native.prevent="loadProperties(label)" to="#" class="results_card-title">
               <div >{{ label }}</div>
             </router-link>
             <div>
@@ -253,7 +253,7 @@ export default {
     })
   },
   methods: {
-    async loadMaterials (selectedValue) {
+    async loadProperties (selectedValue) {
       await this.$store.dispatch('explorer/searchFacetFilterMaterials', selectedValue)
     },
     fixUriBeforeRouting (address, prefix) {
