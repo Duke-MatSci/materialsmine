@@ -232,7 +232,23 @@ exports.getDatasetProperties = async (req, res, next) => {
   const log = req.logger;
   log.info('getDatasetProperties(): Function entry');
   try {
-    const datasetProperties = await DatasetProperty.find()
+    const searchQuery = req.query?.search;
+    if (!searchQuery) {
+      return next(errorWriter(req, 'search query params is missing', 'getDatasetProperties', 400));
+    }
+    let filter = {};
+    const searchQueryArr = searchQuery.split(' ');
+    if (searchQueryArr.length >= 2) {
+      filter = {
+        $or: [
+          { label: { $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi') } },
+          { label: { $regex: new RegExp(`^${searchQueryArr[0]}|${searchQueryArr[0]}$`, 'gi') } }
+        ]
+      };
+    } else {
+      filter = { label: { $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi') } };
+    }
+    const datasetProperties = await DatasetProperty.find(filter)
       .select('attribute label -_id');
     return res.status(200).json({ data: datasetProperties });
   } catch (err) {
