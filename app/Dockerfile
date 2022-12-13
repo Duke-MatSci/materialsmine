@@ -1,4 +1,4 @@
-FROM node:18.12.1-alpine as builder
+FROM node:16.18.1-alpine as builder
 WORKDIR '/app'
 COPY ["package.json", "package-lock.json*", "./"]
 RUN npm install
