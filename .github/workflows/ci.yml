@@ -19,7 +19,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: "17.9.1"
+          node-version: lts/-1
       - name: Install frontend dependencies & test
         run: |
           cd app

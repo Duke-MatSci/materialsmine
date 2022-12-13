@@ -1,5 +1,4 @@
 import _ from 'lodash'
-import Vuex from 'vuex'
 import VueMaterial from 'vue-material'
 import store from '@/store'
 import router from '@/router'
@@ -9,7 +8,6 @@ import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-u
 // Using localVue to protect polluting global vue instance
 const localVue = createLocalVue()
 localVue.use(VueMaterial)
-localVue.use(Vuex)
 
 /**
  * createWrapper - creates a default mount wrapper for all components
@@ -23,7 +21,6 @@ function createWrapper (component, overrides, useMount = true) {
   const defaultMountOptions = {
     localVue,
     mocks: {
-    //     $router: _.merge({ push: jest.fn() }, overrides.router || {})
       ...(overrides.mocks || {})
     },
     router,
