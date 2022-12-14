@@ -39,7 +39,8 @@ const explorerRoutes = [
         path: 'spreadsheet/:datasetId',
         name: 'CurateSpreadsheet',
         props: true,
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -51,7 +52,7 @@ const explorerRoutes = [
         path: '',
         name: 'UserDatasets',
         component: () => import('@/pages/explorer/curate/edit/UserDatasets.vue'),
-        meta: { requiresAuth: false }
+        meta: { requiresAuth: true }
       },
       {
         path: 'dataset/:id',
@@ -66,14 +67,14 @@ const explorerRoutes = [
         name: 'FilesetSingleView',
         // component: () => import('@/pages/explorer/curate/edit/Fileset.vue'),
         props: true,
-        meta: { requiresAuth: false }
+        meta: { requiresAuth: true }
       },
       {
         path: 'dataset/:id/:filesetId/:file',
         name: 'FileSingleView',
         // component: () => import('@/pages/explorer/curate/edit/File.vue'),
         props: true,
-        meta: { requiresAuth: false }
+        meta: { requiresAuth: true }
       }
     ]
   },

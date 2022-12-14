@@ -15,7 +15,7 @@ export default {
         const datasetId = error.message.split('-')[1]?.split(' ')[1]
         commit('setDatasetId', datasetId)
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
-      } else console.error('error:', error)
+      } else return error
     })
   }
 }
