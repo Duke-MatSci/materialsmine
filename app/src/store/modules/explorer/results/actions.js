@@ -9,7 +9,8 @@ export default {
       return
     }
     await context.dispatch('outboundSearchRequest', newPayload)
-    return context.dispatch('getMatchedImages', payload)
+    await context.dispatch('getMatchedImages', payload)
+    return context.dispatch('getMatchedMaterials', payload)
   },
 
   async getMatchedImages (context, payload) {
@@ -57,6 +58,31 @@ export default {
     groupTotals.getImages = responseData?.data?.searchImages?.totalItems
     context.commit('setTotal', total || 0)
     context.commit('setImages', responseData?.data?.searchImages?.images || [])
+    context.commit('setTotalGrouping', groupTotals)
+  },
+
+  async getMatchedMaterials (context, payload) {
+    const url = `/api/admin/populate-datasets-properties?search=${payload}`
+    const response = await fetch(url, {
+      method: 'GET'
+    })
+
+    if (!response || response.statusText !== 'OK') {
+      const error = new Error(
+        response?.message || 'Something went wrong!'
+      )
+      throw error
+    }
+
+    const responseData = await response.json()
+    const materialsTotal = responseData?.data?.length || 0
+
+    const total = context.getters.getTotal + materialsTotal
+    const groupTotals = context.getters.getTotalGroupings
+    groupTotals.getMaterials = materialsTotal
+
+    context.commit('setTotal', total || 0)
+    context.commit('setMaterials', responseData?.data || [])
     context.commit('setTotalGrouping', groupTotals)
   },
 
@@ -117,16 +143,21 @@ export default {
         types[item._index] = new Array(item._source)
       }
     })
+    const articlesLength = types?.articles?.length || 0
+    const samplesLength = types?.samples?.length || 0
+    const chartsLength = types?.charts?.length || 0
+    const total = [articlesLength, samplesLength, chartsLength]
+      .reduce((total, value) => total + value)
+
     context.commit('setArticles', types?.articles || [])
     context.commit('setSamples', types?.samples || [])
     context.commit('setCharts', types?.charts || [])
-    context.commit('setTotal', responseData?.data?.total?.value || 0)
+    context.commit('setTotal', total || 0)
     context.commit('setIsLoading', false)
     context.commit('setTotalGrouping', {
-      getArticles: types?.articles?.length || 0,
-      getSamples: types?.samples?.length || 0,
-      getImages: types?.images?.length || 0,
-      getCharts: types?.charts?.length || 0,
+      getArticles: articlesLength,
+      getSamples: samplesLength,
+      getCharts: chartsLength,
       getMaterials: 0
     })
   },
