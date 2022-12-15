@@ -49,6 +49,7 @@ const datasetMutation = {
       }
       const datasetId = await Dataset.findOne({ _id: input.datasetId, userid: user.userid });
       if (!datasetId) {
+        req.logger?.error('[fileUpload]: datasetId not found');
         input.files.forEach(({ path }) => {
           deleteFile(path, req);
         });

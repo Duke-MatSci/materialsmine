@@ -3,8 +3,10 @@
 		<div class="section_teams">
 			<div class="search_box">
 				<h2 class="search_box_header u_margin-bottom-big adjust_metamine-title">Gallery Categories:</h2>
+            </div>
+            <div class="curate">
                 <div class="md-layout md-gutter utility_flex_mobile">
-                    <div class="md-layout-item">&nbsp;</div>
+                    <div class="md-layout-item md-small-hide">&nbsp;</div>
                     <div class="md-layout-item">
                         <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
                             <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
@@ -28,7 +30,7 @@
                             </div>
                         </router-link>
                     </div>
-                    <div class="md-layout-item">&nbsp;</div>
+                    <div class="md-layout-item md-small-hide">&nbsp;</div>
                 </div>
 			</div>
 		</div>

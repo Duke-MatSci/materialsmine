@@ -2,6 +2,7 @@ import { querySparql, parseSparql } from '@/modules/sparql'
 import queries from '@/modules/queries/sampleQueries'
 import router from '@/router'
 export default {
+  // Todo: (@FE) This function should be deprecated.
   async facetFilterMaterials (context) {
     // const sparqlResponse = await querySparql(queries.facetFilterMaterial())
     // const parsedResponse = parseSparql(sparqlResponse)

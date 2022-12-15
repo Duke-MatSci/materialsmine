@@ -10,7 +10,7 @@
       v-else
     >
       <!-- Articles -->
-      <div v-if="resultsTab==='getArticles'" class="grid_explorer-fullrow">
+      <div v-if="resultsTab==='getArticles'" class="grid_explorer-fullrow" ref="articles_ref">
         <div v-for="(result, index) in getArticles"
           :key="index"
           class="btn--animated md-card gallery-item results_card">
@@ -30,10 +30,10 @@
       </div>
 
       <!-- Samples -->
-      <div class="grid_explorer-fullrow" v-if="resultsTab === 'getSamples'">
+      <div class="grid_explorer-fullrow" v-if="resultsTab === 'getSamples'" ref="samples_ref">
         <div v-for="(result, index) in getSamples"
           :key="index"
-          class="btn--animated md-card gallery-item results_card">
+          class="btn--animated md-card gallery-item results_card" ref="sample_ref">
 
           <md-card-header style="padding:0px">
             <md-avatar v-if="result.thumbnail">
@@ -62,7 +62,7 @@
       </div>
 
       <!-- Charts -->
-      <div class="grid_explorer-boxes" v-if="resultsTab === 'getCharts'">
+      <div class="grid_explorer-boxes" v-if="resultsTab === 'getCharts'" ref="charts_ref">
         <div v-for="(result, index) in getCharts"
           :key="index"
           class="btn--animated md-card gallery-item results_card">
@@ -103,7 +103,7 @@
       </div>
 
       <!-- Images -->
-      <div class="grid_explorer-boxes" v-if="resultsTab === 'getImages'">
+      <div class="grid_explorer-boxes" v-if="resultsTab === 'getImages'" ref="images_ref">
         <div v-for="(result, index) in getImages"
           :key="index"
           class="btn--animated md-card gallery-item results_card">
@@ -126,30 +126,17 @@
         </div>
       </div>
 
-        <!-- Materials -->
-      <div class="grid_explorer-fullrow" v-if="resultsTab === 'getMaterials'">
-        <div v-for="(result, index) in getMaterials"
+      <!-- Materials -->
+      <div class="grid_explorer-fullrow" v-if="resultsTab === 'getMaterials'" ref="materials_ref">
+        <div v-for="({label}, index) in getMaterials"
           :key="index"
           class="btn--animated md-card gallery-item results_card">
           <md-card-header style="padding:0px">
-            <md-avatar v-if="resultsTab=='getMaterials' && result.thumbnail">
-              <img
-                :src="getThumbnailUrl(result)"
-                :alt="result.label"
-                v-if="result.thumbnail"
-              >
-            </md-avatar>
-            <router-link :to="`/explorer/chart/view/${result.identifier}`"  class="results_card-title">
-              <div >{{ result.label }}</div>
+            <router-link @click.native.prevent="loadProperties(label)" to="#" class="results_card-title">
+              <div >{{ label }}</div>
             </router-link>
             <div>
               <div class="results_card-type">Materials</div>
-              <div class="md-body-1 results_card-description" v-if="result.description" >
-                  {{ reduceDescription(result.description) }}
-              </div>
-              <div class="md-body-1 results_card-description" v-else-if="result.identifier" >
-                  {{ result.identifier }}
-              </div>
             </div>
           </md-card-header>
         </div>
@@ -266,6 +253,9 @@ export default {
     })
   },
   methods: {
+    async loadProperties (selectedValue) {
+      await this.$store.dispatch('explorer/searchFacetFilterMaterials', selectedValue)
+    },
     fixUriBeforeRouting (address, prefix) {
       if (address && prefix) {
         const identifier = address.replace(prefix, '')
