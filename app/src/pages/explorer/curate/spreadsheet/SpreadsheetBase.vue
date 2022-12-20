@@ -47,8 +47,7 @@
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import SnackbarProps from '@/components/SnackbarPropsSlot.vue'
 import SnackbarVuex from '@/components/SnackbarWatchVuex.vue'
-import { mapActions } from 'vuex'
-import { mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 
 export default {
   name: 'SpreadsheetBase',
@@ -59,7 +58,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      //used for snackbar 1
+      // used for snackbar 1
       snackbarActive: 'snackbar'
     })
   },
@@ -76,9 +75,9 @@ export default {
   methods: {
     ...mapActions('explorer/curation', ['createDatsetIdVuex']),
     ...mapMutations({
-      //used for snackbar 1
+      // used for snackbar 1
       callSnackbar1: 'setSnackbar',
-      //used for snackbar 2
+      // used for snackbar 2
       setSnackMsg: 'setSnackMsg'
     }),
     callSnackbar2 () {

@@ -16,7 +16,7 @@ export default {
       // used for snackbar 1 (props)
       snackbar: false,
       // used for snackbar 2 (watcher)
-      snackMsg: '',
+      snackMsg: ''
     }
   },
   mutations,

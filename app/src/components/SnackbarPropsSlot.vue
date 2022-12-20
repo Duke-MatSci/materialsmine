@@ -10,8 +10,8 @@
 <script>
 /*
 NOTE: There are two snackbar implementations for review
-This version ("Snackbar 1") passes the 'active' attribute as a prop, 
-and uses a slot to fill the content. 
+This version ("Snackbar 1") passes the 'active' attribute as a prop,
+and uses a slot to fill the content.
 It uses almost exactly the same implementation as what we currently
 do for dialog boxes.
 - Pro: We're consistent on implementation for this kind of component,
@@ -30,7 +30,7 @@ export default {
     position: {
       type: String,
       default: 'center'
-    },
+    }
   },
   methods: {
     ...mapMutations({
