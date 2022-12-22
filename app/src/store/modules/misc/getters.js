@@ -5,12 +5,7 @@ export default {
   dialogBox (state) {
     return state.dialogBox
   },
-  // used for snackbar 1 (props)
-  snackbar (state) {
+  getSnackbar (state) {
     return state.snackbar
-  },
-  // used for snackbar 2 (watcher)
-  getSnackMsg (state) {
-    return state.snackMsg
   }
 }

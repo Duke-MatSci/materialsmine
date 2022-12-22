@@ -1,7 +1,5 @@
 <template>
 <div class="section_teams">
-    <md-button class="md-button-lightbg" @click="callSnackbar1">Click here for snackbar 1</md-button>
-    <md-button class="md-button-lightbg" @click="callSnackbar2">Click here for snackbar 2</md-button>
     <CurateNavBar active="Spreadsheet" :navRoutes="navRoutes"/>
     <div class="curate">
         <div>
@@ -34,33 +32,17 @@
             </div>
         </div>
     </div>
-    <snackbar1 :active="snackbarActive">
-      <template v-slot:content>
-        This snackbar passes props and uses slots
-      </template>
-    </snackbar1>
-    <snackbar2/>
 </div>
 </template>
 
 <script>
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import SnackbarProps from '@/components/SnackbarPropsSlot.vue'
-import SnackbarVuex from '@/components/SnackbarWatchVuex.vue'
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions } from 'vuex'
 
 export default {
   name: 'SpreadsheetBase',
   components: {
-    CurateNavBar,
-    snackbar1: SnackbarProps,
-    snackbar2: SnackbarVuex
-  },
-  computed: {
-    ...mapGetters({
-      // used for snackbar 1
-      snackbarActive: 'snackbar'
-    })
+    CurateNavBar
   },
   data () {
     return {
@@ -73,16 +55,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('explorer/curation', ['createDatsetIdVuex']),
-    ...mapMutations({
-      // used for snackbar 1
-      callSnackbar1: 'setSnackbar',
-      // used for snackbar 2
-      setSnackMsg: 'setSnackMsg'
-    }),
-    callSnackbar2 () {
-      this.setSnackMsg('This snackbar uses computed properties and watches Vuex')
-    }
+    ...mapActions('explorer/curation', ['createDatsetIdVuex'])
   }
 }
 </script>

@@ -3,7 +3,7 @@ import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
 
 export default {
-  async createDatsetIdVuex ({ commit }) {
+  async createDatsetIdVuex ({ commit, dispatch }) {
     await apollo.mutate({
       mutation: CREATE_DATASET_ID_MUTATION
     }).then((result) => {
@@ -15,7 +15,13 @@ export default {
         const datasetId = error.message.split('-')[1]?.split(' ')[1]
         commit('setDatasetId', datasetId)
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
-      } else return error
+      } else {
+        // Show error in snackbar and pass current function as callback
+        commit('setSnackbar', {
+          message: error.message,
+          action: () => { dispatch('createDatsetIdVuex') }
+        }, { root: true })
+      }
     })
   }
 }
