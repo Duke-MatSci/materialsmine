@@ -1,12 +1,14 @@
 <template>
-  <md-snackbar :md-position="position" :md-active.sync="show">
-    {{message}}
-    <span>
-      <md-button v-if="action" class="md-primary" @click.native="callAction">Retry</md-button>
-      <md-button v-else class="md-primary" @click.native="refresh">Refresh</md-button>
-      <md-button class="md-primary" @click.native="show = false">Close</md-button>
-    </span>
-  </md-snackbar>
+  <div>
+    <md-snackbar :md-position="position" :md-active.sync="show">
+      {{message}}
+      <span>
+        <md-button v-if="action" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
+        <md-button v-else id="snackbarRefresh" class="md-primary" @click.native="refresh">Refresh</md-button>
+        <md-button id="snackbarClose" class="md-primary" @click.native="show = false">Close</md-button>
+      </span>
+    </md-snackbar>
+  </div>
 </template>
 
 <script>

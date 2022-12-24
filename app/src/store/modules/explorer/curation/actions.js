@@ -3,7 +3,7 @@ import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
 
 export default {
-  async createDatsetIdVuex ({ commit, dispatch }) {
+  async createDatasetIdVuex ({ commit, dispatch }) {
     await apollo.mutate({
       mutation: CREATE_DATASET_ID_MUTATION
     }).then((result) => {
@@ -19,7 +19,7 @@ export default {
         // Show error in snackbar and pass current function as callback
         commit('setSnackbar', {
           message: error.message,
-          action: () => { dispatch('createDatsetIdVuex') }
+          action: () => { dispatch('createDatasetIdVuex') }
         }, { root: true })
       }
     })
