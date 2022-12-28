@@ -145,4 +145,41 @@
     &__radio-input:checked ~ &__radio-label &__radio-button::after {
         opacity: 1;
     }
+
+    &__stepper {
+        .md-active {
+            .md-button-content {
+                color: $primary !important;
+                font-size: 1.8rem;
+                font-weight: 500;
+            }
+        }
+        .md-button-content {
+            color: $secondary-grey !important;
+            font-size: 1.8rem;
+        }
+    }
+
+    &__drop-area {
+        max-width: 80%;
+        margin: 2.5rem;
+        padding: 3rem 1rem 0rem 1rem;
+        outline: 4px dashed $secondary-grey;
+        &[data-active=true] {
+            outline: 4px dashed $secondary;
+            color: $secondary;
+        }
+        &_label {
+            width: 100%;
+            margin: 0 auto;
+            padding: 5rem;
+            transition: .2s ease;
+            place-items: center;
+            text-align: center;
+            cursor: pointer;
+            input[type=file] {
+                visibility: hidden;
+            }
+        }
+    }
 }
