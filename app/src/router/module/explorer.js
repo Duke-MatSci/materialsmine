@@ -62,19 +62,15 @@ const explorerRoutes = [
     ]
   },
   {
-    path: 'curate/new',
-    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
-    children: [
+    path: 'curate/spreadsheet',
+    component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue'),
+  },
       {
-        path: '',
-        name: 'CurateMethod',
-        component: () => import('@/pages/explorer/curate/CurateMethod.vue')
-      },
-      {
-        path: 'spreadsheet',
+        path: 'curate/spreadsheet/new',
         name: 'CurateSpreadsheet',
+        props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue')
-      }
+      },
       // {
       //   path: 'stepper',
       //   name: 'CurateStepper',
@@ -85,8 +81,6 @@ const explorerRoutes = [
       //   name: 'CurateSDD',
       //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
       // }
-    ]
-  },
   {
     path: 'chart',
     component: ChartBase,

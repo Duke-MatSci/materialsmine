@@ -8,21 +8,29 @@
                         <div class="md-layout-item md-layout-item_card">
                             <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
-                                    <md-icon class="explorer_page-nav-card_icon">note_add</md-icon>
-                                    <span class="explorer_page-nav-card_text">Create new</span>
-                                    <p class="md-layout-item_para md-layout-item_para_fl">
-                                        Choose a curation method and create a new dataset from scratch.
+                                    <md-icon class="explorer_page-nav-card_icon">upload_file</md-icon>
+                                    <span class="explorer_page-nav-card_text">Upload a spreadsheet</span>
+                                    <p class="md-layout-item_para md-layout-item_para_fl">Upload filled template spreadsheet for XML conversion.
                                     </p>
                                 </div>
                             </router-link>
                         </div>
-                        <div class="md-layout-item md-gutter utility_flex_mobile">
-                            <router-link to="/explorer/curate/edit" v-slot="{navigate, href}" custom>
+                        <div class="md-layout-item md-layout-item_card">
+                            <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
-                                    <md-icon class="explorer_page-nav-card_icon">edit_document</md-icon>
-                                    <span class="explorer_page-nav-card_text">Edit existing</span>
-                                    <p class="md-layout-item_para md-layout-item_para_fl">
-                                        Select and edit a dataset that has already been curated.
+                                    <md-icon class="explorer_page-nav-card_icon">edit_note</md-icon>
+                                    <span class="explorer_page-nav-card_text">Fill a form</span>
+                                    <p class="md-layout-item_para md-layout-item_para_fl">Follow a stepper model to fill form and validate input.
+                                    </p>
+                                </div>
+                            </router-link>
+                        </div>
+                        <div class="md-layout-item md-layout-item_card">
+                            <router-link to="" v-slot="{navigate, href}" custom>
+                                <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
+                                    <md-icon class="explorer_page-nav-card_icon">done_outline</md-icon>
+                                    <span class="explorer_page-nav-card_text">Submit SDD</span>
+                                    <p class="md-layout-item_para md-layout-item_para_fl">Submit files that use a semantic data dictionary (SDD).
                                     </p>
                                 </div>
                             </router-link>
@@ -41,10 +49,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="search_box">
+                <div class="u_margin-top-med">
                     <h2 class="visualize_header-h1 metamine_footer-ref-header">Create Visualization</h2>
                     <div class="md-layout md-layout-responsive">
-                        <div class="md-layout-item">&nbsp;</div>
+                        <!-- <div class="md-layout-item">&nbsp;</div> -->
                         <div class="md-layout-item md-layout-item_card">
                             <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
