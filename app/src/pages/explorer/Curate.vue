@@ -6,7 +6,7 @@
                     <h2 class="visualize_header-h1">Curate</h2>
                     <div class="md-layout md-layout-responsive">
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/explorer/curate/spreadsheet" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">upload_file</md-icon>
                                     <span class="explorer_page-nav-card_text">Upload a spreadsheet</span>
