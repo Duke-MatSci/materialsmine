@@ -4,5 +4,11 @@ export default {
   },
   setDialogBox (state) {
     state.dialogBox = !state.dialogBox
+  },
+  setSnackbar (state, { message, action = null }) {
+    state.snackbar = {
+      message,
+      action
+    }
   }
 }
