@@ -4,5 +4,8 @@ export default {
   },
   dialogBox (state) {
     return state.dialogBox
+  },
+  getSnackbar (state) {
+    return state.snackbar
   }
 }

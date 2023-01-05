@@ -8,7 +8,7 @@
                 <div class="md-layout md-layout-responsive md-gutter">
                     <div class="md-layout-item md-small-hide">&nbsp;</div>
                     <div class="md-layout-item">
-                        <div class="teams_container explorer_page-nav-card md-layout-item_card" @click="createDatsetIdVuex">
+                        <div class="teams_container explorer_page-nav-card md-layout-item_card" @click="createDatasetIdVuex">
                                 <md-icon class="explorer_page-nav-card_icon">note_add</md-icon>
                                 <span class="explorer_page-nav-card_text">Create new</span>
                                 <p class="md-layout-item_para md-layout-item_para_fl">
@@ -55,7 +55,7 @@ export default {
     }
   },
   methods: {
-    ...mapActions('explorer/curation', ['createDatsetIdVuex'])
+    ...mapActions('explorer/curation', ['createDatasetIdVuex'])
   }
 }
 </script>
