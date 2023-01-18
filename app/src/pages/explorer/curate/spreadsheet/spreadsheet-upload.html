@@ -33,7 +33,7 @@
                 <div class="utility-line-height-sm">To curate FEA data, <a>click here</a> instead.</div>
     
                 <div class="utility-line-height-sm">Skip this step if you have already downloaded the template spreadsheet.</div>
-                <md-button type="submit" class="md-button_next"
+                <md-button type="submit" class="md-button_next u--margin-toplg"
                     @click="goToStep('first', 'second')">
                     Next
                 </md-button>
@@ -126,7 +126,7 @@
                     <md-input v-model="doi"></md-input>
                     <span class="md-helper-text">Enter the DOI of related publication if exists (e.g., 10.1000/000)</span>
                 </md-field>
-                <div class="md-layout">
+                <div class="md-layout u--margin-toplg">
                     <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
                     @click="goToStep('fourth', 'third')">
                     <md-icon>arrow_back</md-icon>Go Back
@@ -139,7 +139,7 @@
                 </md-step>
                 <md-step :md-editable="false" id="fifth" md-label="Verify data">
                 Verification step - Coming soon.
-                <div class="md-layout">
+                <div class="md-layout u--margin-toplg">
                         <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
                         @click="goToStep('third', 'fourth')">
                         <md-icon>arrow_back</md-icon>Go Back
@@ -173,7 +173,7 @@
                 </ul>
     
                 <div style="color: red; margin-top:2rem" v-if="spreadsheetFiles.length < 1 || isInvalidForm">Title and at least one spreadsheet are required for submission.</div>
-                <div class="md-layout">
+                <div class="md-layout u--margin-toplg">
                         <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
                         @click="goToStep('sixth', 'fourth')">
                         <md-icon>arrow_back</md-icon>Go Back
