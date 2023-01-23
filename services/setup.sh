@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Change this 'materialsmine-v2' to the name of the materialsmine apps root directory
+# Notice!!!: Change this 'materialsmine-v2' to the name of the materialsmine apps root directory
 docker exec -it materialsmine-v2-mongo-1 bash -c 'mongo -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin <<EOF
 use admin
 db.dropUser("${CHEMPROPS_USER}")

@@ -97,6 +97,10 @@ services:
       - /app/node_modules
       - ./app:/app
   managedservices:
+    environment:
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
+      - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
+      - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - client
       - mongo
@@ -104,6 +108,10 @@ services:
     build:
       dockerfile: Dockerfile.dev
       context: ./services
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./services:/usr/src/app
     
 #   redis:
 #     image: "redis:alpine"

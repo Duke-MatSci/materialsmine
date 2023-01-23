@@ -54,3 +54,6 @@ mockDB/minio/
 **/**/celerybeat-schedule.db
 **/**/gs.config*
 **/**/mongo.config*
+
+#Test Coverage Report
+app/coverage/
