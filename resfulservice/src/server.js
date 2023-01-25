@@ -12,6 +12,7 @@ const searchRoutes = require('./routes/search');
 const fileRoutes = require('./routes/files');
 const elasticSearch = require('./utils/elasticSearch');
 const pixelatedRoutes = require('./routes/pixelated');
+const invalidRoutes = require('./routes/invalid');
 const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
@@ -28,6 +29,7 @@ app.use('/admin', adminRoutes);
 app.use('/search', searchRoutes);
 app.use('/files', fileRoutes);
 app.use('/pixelated', pixelatedRoutes);
+app.use('/*', invalidRoutes);
 
 const httpServer = createHttpServer(app);
 const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });

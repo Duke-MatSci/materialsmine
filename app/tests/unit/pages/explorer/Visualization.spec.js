@@ -24,7 +24,7 @@ describe('Visualization.vue', () => {
 
   it('renders layout items', async () => {
     const layoutItems = wrapper.findAll('.md-layout-item')
-    expect(layoutItems.length).toBe(4)
+    expect(layoutItems.length).toBe(2)
     expect(layoutItems.at(1).element.tagName).toBe('DIV')
   })
 

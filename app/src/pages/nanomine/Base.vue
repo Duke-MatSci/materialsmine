@@ -1,5 +1,5 @@
 <template>
-	<md-app md-waterfall md-mode="fixed-last">
+	<md-app md-waterfall md-mode="flexible">
     <md-app-toolbar id="header" :toggler="toggleMenuVisibility"/>
 		<md-app-content>
 			<router-view />
