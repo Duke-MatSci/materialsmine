@@ -1,7 +1,7 @@
 "Input schema for searchImages resolver"
 input imageExplorerInput {
   "Image search filter input e.g 'filterByFiller' or 'filterByYear'"
-  search: String!
+  search: imageFilter!
 
   "Search for the value of an input image"
   searchValue: String!
@@ -26,4 +26,19 @@ input imageQueryInput {
 input singleImageQueryInput {
   "Image Identity user to fetch a single image"
   id: ID!
+}
+
+"""
+MaterialsMine image filter options
+"""
+enum imageFilter {
+  """
+  Todo: Change to uppercase/snakecase.
+  For example: FILTER_BY_MICROSCOPY
+  """
+  filterByMicroscopy
+  Keyword
+  filterByFiller
+  filterByYear
+  filterByDOI
 }

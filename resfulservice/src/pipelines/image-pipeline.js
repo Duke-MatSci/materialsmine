@@ -7,14 +7,15 @@ const commonFields = 'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFi
 const fillerFields = 'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
 
 exports.imageQuery = async (args) => {
-  const skip = args?.skip || 0;
-  const limit = args?.limit || 10;
-  const search = args?.search || false;
-  const selectedImg = args?.selectedImg || false;
+  const skip = args?.skip ?? 0;
+  const limit = args?.limit ?? 20;
+  const search = args?.search ?? false;
+  const input = args?.input ?? false;
+  const selectedImg = args?.selectedImg ?? false;
 
   const stages = [];
 
-  if (search) {
+  if (search.length) {
     search.map(stage => stages.push(stage));
   }
 
@@ -47,7 +48,8 @@ exports.imageQuery = async (args) => {
         title: `$${commonFields}.Title`,
         id: '$_id',
         doi: `$${commonFields}.DOI`,
-        keywords: `$${commonFields}.Keyword`
+        keywords: `$${commonFields}.Keyword`,
+        authors: `$${commonFields}.Author`
       }
     }
   });
@@ -60,6 +62,51 @@ exports.imageQuery = async (args) => {
       }
     }
   });
+
+  stages.push({
+    $unwind: {
+      path: '$image',
+      preserveNullAndEmptyArrays: false
+    }
+  });
+
+  if (search.length) {
+    // This removes noise in response by removing items parsed that does not match searchValue
+    if (input?.search === 'filterByMicroscopy') {
+      stages.push({
+        $match: {
+          'image.MicroscopyType': input.searchValue
+        }
+      });
+    } else if (input?.search === 'Keyword') {
+      const wholeSentence = new RegExp(input.searchValue, 'gi');
+      stages.push({
+        $match: {
+          'image.metaData.keywords': {
+            $in: [wholeSentence]
+          }
+        }
+      });
+    }
+  }
+
+  // Removing undefined files from result array
+  stages.push({
+    $match: {
+      'image.File': { $not: /undefined/ }
+    }
+  });
+
+  // Regrouping after removing undefined files
+  stages.push({
+    $group: {
+      _id: 'null',
+      image: {
+        $push: '$image'
+      }
+    }
+  });
+
   stages.push({
     $project: {
       _id: 0,
@@ -69,6 +116,7 @@ exports.imageQuery = async (args) => {
       }
     }
   });
+
   const queryData = await Xmls.aggregate(stages);
   if (queryData.length) {
     const { counts, images } = queryData.pop();
@@ -122,6 +170,40 @@ exports.validateImageSearchOptions = (input) => {
     return searchQuery;
   }
 
+  // Search by microscopy type
+  if (search === 'filterByMicroscopy') {
+    searchQuery.push({
+      $match: {
+        [`${targetField}.MicroscopyType`]: {
+          $exists: true
+        }
+      }
+    });
+    searchQuery.push({
+      $match: {
+        [`${targetField}.MicroscopyType`]: { $regex: searchValue, $options: 'g' }
+      }
+    });
+    return searchQuery;
+  }
+
+  // Search by DOI
+  if (search === 'filterByDOI') {
+    searchQuery.push({
+      $match: {
+        [`${commonFields}.DOI`]: {
+          $exists: true
+        }
+      }
+    });
+    searchQuery.push({
+      $match: {
+        [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'g' }
+      }
+    });
+    return searchQuery;
+  }
+
   // Search by sentence
   const wholeSentence = new RegExp(searchValue, 'gi');
   searchQuery.push({
@@ -138,5 +220,4 @@ exports.validateImageSearchOptions = (input) => {
       }
     }
   });
-  return searchQuery;
 };

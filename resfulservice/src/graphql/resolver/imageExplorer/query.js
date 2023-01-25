@@ -9,9 +9,14 @@ const imageExplorerQuery = {
     try {
       const search = validateImageSearchOptions(input);
       const pagination = input
-        ? paginator((await imageQuery({ search }))?.counts, input.pageNumber, input.pageSize)
-        : paginator((await imageQuery({ search }))?.counts);
-      const images = imageTransformer(await (await imageQuery({ search, skip: pagination.skip, limit: pagination.limit })).images);
+        ? paginator((await imageQuery({ search, input }))?.counts, input.pageNumber, input.pageSize)
+        : paginator((await imageQuery({ search, input }))?.counts);
+      const images = imageTransformer((await imageQuery({
+        search,
+        skip: pagination.skip,
+        limit: pagination.limit,
+        input
+      })).images);
       return Object.assign(pagination, { images });
     } catch (err) {
       req.logger?.error(`[searchImages]: ${err}`);
