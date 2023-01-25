@@ -7,10 +7,10 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
-      <md-toolbar>
+      <h1 class="visualize_header-h1 u_margin-top-med u--margin-leftsm">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
+      <div class="viz-sample__header">
         <h3 class="md-title">Query Template</h3>
-      </md-toolbar>
+      </div>
       <div class="display">
         <md-button
           class="template-back"
