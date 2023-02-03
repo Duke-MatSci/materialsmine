@@ -9,17 +9,17 @@ main = Blueprint("main", __name__)
 def tests():
     return json.dumps({'hello': "Trigger service"})
 
-@main.route("/chemprops", methods=['GET'])
-def chemprops():
-    # polfil = ChemPropsDto.query.get_or_404(polfil)
-    polfil = request.args.get('polfil', None, type=str)
-    ChemicalName = request.args.get('ChemicalName', '', type=str)
-    Abbreviation = request.args.get('Abbreviation', '', type=str)
-    TradeName = request.args.get('TradeName', '', type=str)
-    SMILES = request.args.get('SMILES', '', type=str)
-    nmId = request.args.get('nmId', None, type=str)
-    if polfil==None or nmId==None:
-        return redirect('/404')
+# @main.route("/chemprops", methods=['GET'])
+# def chemprops():
+#     # polfil = ChemPropsDto.query.get_or_404(polfil)
+#     polfil = request.args.get('polfil', None, type=str)
+#     ChemicalName = request.args.get('ChemicalName', '', type=str)
+#     Abbreviation = request.args.get('Abbreviation', '', type=str)
+#     TradeName = request.args.get('TradeName', '', type=str)
+#     SMILES = request.args.get('SMILES', '', type=str)
+#     nmId = request.args.get('nmId', None, type=str)
+#     if polfil==None or nmId==None:
+#         return redirect('/404')
 
 @main.route("/index")
 @main.route("/i")

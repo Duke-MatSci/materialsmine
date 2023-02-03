@@ -36,10 +36,12 @@ def create_app(config_class = Config):
     login_mgr.init_app(app)
     mail.init_app(app)
 
+    from app.chemprops.routes import chemprops
     from app.users.routes import users
     from app.posts.routes import posts
     from app.main.routes import main
 
+    app.register_blueprint(chemprops)
     app.register_blueprint(users)
     app.register_blueprint(posts)
     app.register_blueprint(main)
