@@ -19,6 +19,7 @@ exports.imageQuery = async (args) => {
     search.map(stage => stages.push(stage));
   }
 
+  // This logic is used to select a single image. A Mongoose Object ID must be provided in the request.
   if (selectedImg) {
     stages.push({
       $match: {
@@ -78,22 +79,14 @@ exports.imageQuery = async (args) => {
           'image.MicroscopyType': input.searchValue
         }
       });
-    } else if (input?.search === 'Keyword') {
-      const wholeSentence = new RegExp(input.searchValue, 'gi');
-      stages.push({
-        $match: {
-          'image.metaData.keywords': {
-            $in: [wholeSentence]
-          }
-        }
-      });
     }
   }
 
   // Removing undefined files from result array
   stages.push({
     $match: {
-      'image.File': { $not: /undefined/ }
+      'image.File': { $not: /undefined/ },
+      'image.Description': { $not: /test/ }
     }
   });
 
@@ -205,7 +198,7 @@ exports.validateImageSearchOptions = (input) => {
   }
 
   // Search by sentence
-  const wholeSentence = new RegExp(searchValue, 'gi');
+  // const wholeSentence = new RegExp(searchValue, 'gi');
   searchQuery.push({
     $match: {
       [`${commonFields}.Keyword`]: {
@@ -213,11 +206,11 @@ exports.validateImageSearchOptions = (input) => {
       }
     }
   });
+
   searchQuery.push({
     $match: {
-      [`${commonFields}.Keyword`]: {
-        $in: [wholeSentence]
-      }
+      [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'g' }
     }
   });
+  return searchQuery;
 };
