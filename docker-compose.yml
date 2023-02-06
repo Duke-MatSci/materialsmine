@@ -10,9 +10,6 @@ services:
       - MONGO_DEV_PWD=${MONGO_DEV_PWD}
       - MONGO_PORT=${MONGO_PORT}
       - MM_DB=${MM_DB}
-      - CHEMPROPS_USER=${CHEMPROPS_USER}
-      - CHEMPROPS_PWD=${CHEMPROPS_PWD}
-      - CHEMPROPS_DB=${CHEMPROPS_DB}
     ports:
       - '27017:27017'
     volumes:
@@ -101,6 +98,9 @@ services:
       - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
       - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
       - SECRET_KEY=${SECRET_KEY}
+      - CHEMPROPS_USER=${CHEMPROPS_USER}
+      - CHEMPROPS_PWD=${CHEMPROPS_PWD}
+      - CHEMPROPS_DB=${CHEMPROPS_DB}
     depends_on:
       - client
       - mongo
