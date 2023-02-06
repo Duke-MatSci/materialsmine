@@ -41,6 +41,9 @@ type ImageMetaData {
 
   "List of keywords(tags) related to the image"
   keywords: [String!]
+
+  "List of author for the image"
+  authors: [String!]
 }
 
 "Image Dimension details"

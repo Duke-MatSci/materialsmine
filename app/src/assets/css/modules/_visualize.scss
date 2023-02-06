@@ -502,6 +502,14 @@
                 padding: .4rem 0rem;
                 margin: 0 1.3rem;
             }
+
+            .md-title {
+                font-size: 18px;
+                font-weight: 100;
+                letter-spacing: .005em;
+                line-height: 22px;
+                color: $primary !important;
+            }
         }
 
         &__content {
