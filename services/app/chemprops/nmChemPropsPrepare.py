@@ -17,7 +17,8 @@ class nmChemPropsPrepare():
                             level = logging.INFO
                            )
         self.loadGSconfig()
-        self.loadMGconfig()
+        # self.loadMGconfig()
+        self.env = dict(os.environ) # copy env vars
         # downloadGS
         self.downloadGS()
         # if we changed something in mongo, gsUpdate list will record these changes
@@ -58,6 +59,7 @@ class nmChemPropsPrepare():
             v = kv.split(':')[1].strip()
             self.gids[k] = v
     
+    # **deprecated**
     # load mongo configurations
     def loadMGconfig(self):
         self.env = dict()
