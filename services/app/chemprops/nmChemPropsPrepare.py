@@ -33,12 +33,12 @@ class nmChemPropsPrepare():
         if 'NM_MONGO_CHEMPROPS_URI' in self.env:
             self.client = MongoClient(self.env['NM_MONGO_CHEMPROPS_URI'])
         else:
-            self.client = MongoClient('mongodb://%s:%s@%s:%s/%s'
-                                      %(self.env['NM_MONGO_USER'],
-                                        self.env['NM_MONGO_PWD'],
-                                        self.env['NM_MONGO_HOST'],
-                                        self.env['NM_MONGO_PORT'],
-                                        self.env['NM_MONGO_DB']
+            self.client = MongoClient('mongodb://%s:%s@localhost:%s/%s'
+                                      %(self.env['CHEMPROPS_USER'],
+                                        self.env['CHEMPROPS_PWD'],
+                                        # self.env['NM_MONGO_HOST'],
+                                        self.env['MONGO_PORT'],
+                                        self.env['CHEMPROPS_DB']
                                         )
                                       )
 
