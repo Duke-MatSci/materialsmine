@@ -22,6 +22,7 @@ class nmChemPropsAPI():
                            )
         # self.loadMGconfig()
         self.env = dict(os.environ) # copy env vars
+        logging.info(self.env)
         # mongo init
         # self.client = MongoClient('mongodb://%s:%s@localhost:27017/tracking?authSource=admin'
         if 'NM_MONGO_CHEMPROPS_URI' in self.env:
