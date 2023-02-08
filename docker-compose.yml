@@ -10,9 +10,6 @@ services:
       - MONGO_DEV_PWD=${MONGO_DEV_PWD}
       - MONGO_PORT=${MONGO_PORT}
       - MM_DB=${MM_DB}
-      - CHEMPROPS_USER=${CHEMPROPS_USER}
-      - CHEMPROPS_PWD=${CHEMPROPS_PWD}
-      - CHEMPROPS_DB=${CHEMPROPS_DB}
     ports:
       - '27017:27017'
     volumes:
@@ -20,89 +17,95 @@ services:
       - ./mockDB/restore:/restore
       - ./mockDB/log:/var/log/mongodb
       - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
-  es:
-    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
-    container_name: es
-    restart: always
-    environment:
-      - node.name=es
-      - bootstrap.memory_lock=true
-      - cluster.initial_master_nodes=es
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - xpack.security.enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    ports:
-      - '9200:9200'
-    volumes:
-      - ./mockDB/es:/usr/share/elasticsearch/data
-  minio:
-    image: quay.io/minio/minio:RELEASE.2022-03-17T06-34-49Z
-    command: server /data
-    hostname: minio
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./mockDB/minio:/data
-  proxy:
-    depends_on:
-      - api
-      - client
-    restart: always
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./nginx
-    ports:
-      - '80:80'
-  api:
-    depends_on:
-      - es
-      - mongo
-    restart: always
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./resfulservice
-    volumes:
-      - /app/node_modules
-      - ./resfulservice:/app
-    environment:
-      - DB_USERNAME=${MONGO_DEVS}
-      - DB_PASSWORD=${MONGO_DEV_PWD}
-      - MM_DB=${MM_DB}
-      - MONGO_ADDRESS=${MONGO_ADDRESS}
-      - MONGO_PORT=${MONGO_PORT}
-      - TKNS=${TKNS}
-      - ESADDRESS=${ESADDRESS}
-      - PORT=${PORT}
-      - MINIO_PORT=${MINIO_PORT}
-      - ROUTER=${HOST_PORT}
-    ports:
-      - '3001:3001'
-  client:
-    stdin_open: true
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - API_PORT=${PORT}
-      - MINIO_PORT=${MINIO_PORT}
-      - SERVICE_PORT=${HOST_PORT}
-    build:
-      dockerfile: Dockerfile.dev
-      context: ./app
-    volumes:
-      - /app/node_modules
-      - ./app:/app
+  # es:
+  #   image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
+  #   container_name: es
+  #   restart: always
+  #   environment:
+  #     - node.name=es
+  #     - bootstrap.memory_lock=true
+  #     - cluster.initial_master_nodes=es
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #     - xpack.security.enabled=false
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   ports:
+  #     - '9200:9200'
+  #   volumes:
+  #     - ./mockDB/es:/usr/share/elasticsearch/data
+  # minio:
+  #   image: quay.io/minio/minio:RELEASE.2022-03-17T06-34-49Z
+  #   command: server /data
+  #   hostname: minio
+  #   environment:
+  #     - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+  #     - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+  #   ports:
+  #     - "9000:9000"
+  #   volumes:
+  #     - ./mockDB/minio:/data
+  # proxy:
+  #   depends_on:
+  #     - api
+  #     - client
+  #   restart: always
+  #   build:
+  #     dockerfile: Dockerfile.dev
+  #     context: ./nginx
+  #   ports:
+  #     - '80:80'
+  # api:
+  #   depends_on:
+  #     - es
+  #     - mongo
+  #   restart: always
+  #   build:
+  #     dockerfile: Dockerfile.dev
+  #     context: ./resfulservice
+  #   volumes:
+  #     - /app/node_modules
+  #     - ./resfulservice:/app
+  #   environment:
+  #     - DB_USERNAME=${MONGO_DEVS}
+  #     - DB_PASSWORD=${MONGO_DEV_PWD}
+  #     - MM_DB=${MM_DB}
+  #     - MONGO_ADDRESS=${MONGO_ADDRESS}
+  #     - MONGO_PORT=${MONGO_PORT}
+  #     - TKNS=${TKNS}
+  #     - ESADDRESS=${ESADDRESS}
+  #     - PORT=${PORT}
+  #     - MINIO_PORT=${MINIO_PORT}
+  #     - ROUTER=${HOST_PORT}
+  #   ports:
+  #     - '3001:3001'
+  # client:
+  #   stdin_open: true
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - API_PORT=${PORT}
+  #     - MINIO_PORT=${MINIO_PORT}
+  #     - SERVICE_PORT=${HOST_PORT}
+  #   build:
+  #     dockerfile: Dockerfile.dev
+  #     context: ./app
+  #   volumes:
+  #     - /app/node_modules
+  #     - ./app:/app
   managedservices:
     environment:
       - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-      - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${TKNS}
+      - MM_MONGO_USER=${MM_MONGO_USER}
+      - MM_MONGO_PWD=${MM_MONGO_PWD}
+      - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
+      - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
+      - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
     depends_on:
-      - client
+      # - client
       - mongo
     restart: always
     build:
@@ -112,7 +115,6 @@ services:
       - "5050:5050"
     volumes:
       - ./services:/usr/src/app
-    
 #   redis:
 #     image: "redis:alpine"
 #     command: redis-server
