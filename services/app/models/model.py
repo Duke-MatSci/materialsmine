@@ -2,7 +2,7 @@ import urllib.parse
 import pymongo
 from app.models.constant import CHEMPROPS_COLLECTION
 
-# Creating empty class and passing pass to skip and runtime
+# Grouping Database related functions and instantiation
 class Database_Handler:
     def __init__(self, config):
         # Get config value
@@ -40,4 +40,4 @@ class Database_Handler:
     # to show that we can connect and return a specific collection
     def chemprops_collection(self):
         # TODO (@BINGYIN): provide the table name here. Change name from constant.py!
-        return self.mgs_database['{}'.format(CHEMPROPS_COLLECTION)]
+        return self.mgs_database[CHEMPROPS_COLLECTION]
