@@ -1,65 +1,43 @@
-# app here refers to app.py in main working dir
-from datetime import datetime
-# Use for creating time sensitive tokens
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+import urllib.parse
+import pymongo
+from app.models.constant import CHEMPROPS_COLLECTION
 
-from flask import current_app
-# From app folder import db from __init__.py
-from app import db, login_mgr
-# It allows us to get all of the method e.g. isauthenticated, get_id(), etc from login_mgr
-from flask_login import UserMixin
+# Creating empty class and passing pass to skip and runtime
+class Database_Handler:
+    def __init__(self, config):
+        # Get config value
+        self.db_user = urllib.parse.quote_plus(config.MONGO_USER)
+        self.db_pass = urllib.parse.quote_plus(config.MONGO_PASSWORD)
+        self.db_name = config.MONGO_DATABASE
+        self.db_address = '{}:{}'.format(config.MONGO_URI, config.MONGO_PORT)
+        self.mgs_user = config.MGS_USER
+        self.mgs_pwd = config.MGS_PWD
 
-@login_mgr.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+        self.client = pymongo.MongoClient("mongodb://{}:{}@{}/{}?authSource=admin".format(self.db_user, self.db_pass, self.db_address, self.db_name))
+        existing_databases = self.client.list_database_names()
 
-# DB Models
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(60), nullable=False)
-    image_file = db.Column(db.String(20), nullable=True, default='default.jpg')
-    # the backref allows us to add that column to Post Model
-    posts = db.relationship("Post", backref="author", lazy=True)
+        if self.db_name in existing_databases:
+            self.client = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(self.mgs_user, self.mgs_pwd, self.db_address, self.db_name))
+        else:
+            try:
+                print("Managed services database does not exist, creating...")
+                self.client = pymongo.MongoClient("mongodb://{}:{}@{}/{}?authSource=admin".format(self.db_user, self.db_pass, self.db_address, self.db_name))
+                
+                # Create user for managed services DB
+                self.client[self.db_name].command('createUser', self.mgs_user,  pwd=self.mgs_pwd, roles=[{'role': 'readWrite', 'db': self.db_name}])
+            except pymongo.errors.OperationFailure:
+                # Notice: This is not essential, but this type of failure occurs if the db user exist
+                self.client = pymongo.MongoClient("mongodb://{}:{}@{}/{}".format(self.mgs_user, self.mgs_pwd, self.db_address, self.db_name))
+        
+        # pass created database in mgs_database
+        self.mgs_database = self.client[self.db_name]
 
-    # Generating the token
-    def get_reset_token(self, expiry = 900):
-        s = Serializer(current_app.config['SECRET_KEY'], expiry)
-        return s.dumps({'user_id': self.id}).decode('utf-8')
+    def init_app(self, app):
+        app.db = self.mgs_database
+        return app
 
-    # The @static method, tells python not to expect any other arguement apart from token
-    @staticmethod
-    def verify_reset_token(token):
-        s = Serializer(current_app.config['SECRET_KEY'])
-        try:
-            # get the value of the user id with ['user_id']
-            user_id = s.loads(token)['user_id']
-        except:
-            return None
-        return User.query.get(user_id)
-
-    # Set a magic method, helps to print object out
-    def __repr__(self):
-        return f"User('{self.username}', '{self.email}', '{self.image_file}')"
-
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    # Use lowercase for referencing since it's inside foreignkey
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    title = db.Column(db.String(120), nullable=False)
-    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    content = db.Column(db.Text, nullable=False)
-
-    # Set a magic method, helps to print object out
-    def __repr__(self):
-        return f"Post('{self.title}', '{self.date_posted}')"
-
-class ChemPropsDto:
-    id = db.Column(db.Integer, primary_key=True)
-    StandardName = db.Column(db.Text, nullable=False)
-    density = db.Column(db.Text, nullable=False)
-    uSMILES = db.Column(db.Text, nullable=False)
-    
-    def __repr__(self):
-        return f"ChemPropsDto('{self.id}', '{self.StandardName}', '{self.density}', '{self.uSMILES}')"
+    # TODO (BINGYIN): Remove if not needed. This is an example 
+    # to show that we can connect and return a specific collection
+    def chemprops_collection(self):
+        # TODO (@BINGYIN): provide the table name here. Change name from constant.py!
+        return self.mgs_database['{}'.format(CHEMPROPS_COLLECTION)]

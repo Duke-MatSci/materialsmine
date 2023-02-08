@@ -7,6 +7,7 @@ import os
 import logging
 import re # for query reformat
 import string # for query reformat
+from app import db
 # import fillerDensityModule as fDM # filler density module
 from .SMILEStrans import SMILEStrans # uSMILES translation module
 from .fillerDensityModule import removeNano, getFillerDensityGoogle, removeDescription # remove words like nanoparticles
@@ -22,20 +23,11 @@ class nmChemPropsAPI():
                            )
         self.loadMGconfig()
         # mongo init
+
+        # Notice!!!!: 🔥 Mongo Initialization is no longer needed inside a module. It is now instantiated at start 🔥
         # self.client = MongoClient('mongodb://%s:%s@localhost:27017/tracking?authSource=admin'
-        if 'NM_MONGO_CHEMPROPS_URI' in self.env:
-            self.client = MongoClient(self.env['NM_MONGO_CHEMPROPS_URI'])
-        else:
-            self.client = MongoClient('mongodb://%s:%s@%s:%s/%s'
-                                  %(self.env['NM_MONGO_USER'],
-                                    self.env['NM_MONGO_PWD'],
-                                    self.env['NM_MONGO_HOST'],
-                                    self.env['NM_MONGO_PORT'],
-                                    self.env['NM_MONGO_DB']
-                                   )
-                                 )
-        # access to DBs
-        self.cp = self.client.ChemProps
+        
+        self.cp = db
         self.__reset__()
 
     def __reset__(self):

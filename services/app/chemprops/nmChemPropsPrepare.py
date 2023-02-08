@@ -8,6 +8,7 @@ from pymongo import MongoClient
 import logging
 import string
 import os
+from app import db
 
 class nmChemPropsPrepare():
     def __init__(self):
@@ -29,18 +30,9 @@ class nmChemPropsPrepare():
         self.prepFiller()
         self.prepPolymer()
         # mongo init
+        
+        # Notice!!!!: 🔥 Mongo Initialization is no longer needed inside a module. It is now instantiated at start 🔥
         # self.client = MongoClient('mongodb://%s:%s@%s:%s/tracking?authSource=admin'
-        if 'NM_MONGO_CHEMPROPS_URI' in self.env:
-            self.client = MongoClient(self.env['NM_MONGO_CHEMPROPS_URI'])
-        else:
-            self.client = MongoClient('mongodb://%s:%s@%s:%s/%s'
-                                      %(self.env['NM_MONGO_USER'],
-                                        self.env['NM_MONGO_PWD'],
-                                        self.env['NM_MONGO_HOST'],
-                                        self.env['NM_MONGO_PORT'],
-                                        self.env['NM_MONGO_DB']
-                                        )
-                                      )
 
     # load google spreadsheet configurations
     def loadGSconfig(self):
@@ -168,7 +160,7 @@ class nmChemPropsPrepare():
         #     if 'ChemProps' not in dbnames:
         #         initPolymer = True
         #         initFiller = True
-        cp = self.client.ChemProps
+        cp = db
         clctnames = cp.list_collection_names() # check if collection exists
         if 'polymer' in clctnames:
             cp.polymer.drop()
