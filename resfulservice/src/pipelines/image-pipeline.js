@@ -50,7 +50,8 @@ exports.imageQuery = async (args) => {
         id: '$_id',
         doi: `$${commonFields}.DOI`,
         keywords: `$${commonFields}.Keyword`,
-        authors: `$${commonFields}.Author`
+        authors: `$${commonFields}.Author`,
+        sampleId: '$title'
       }
     }
   });
