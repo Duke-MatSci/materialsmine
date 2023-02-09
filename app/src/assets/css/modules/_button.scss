@@ -49,7 +49,7 @@ a.btn,
         background-color: $primary;
         color: $primary-white;
 
-        &::after {
+        &::after:not([disabled="disabled"]) {
             background-color: $primary;
         }
     }

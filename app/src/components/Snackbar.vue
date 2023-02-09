@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show">
+    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="duration">
       {{message}}
       <span>
         <md-button v-if="action" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
@@ -26,7 +26,8 @@ export default {
     return {
       show: false,
       message: '',
-      action: null
+      action: null,
+      duration: 5000
     }
   },
   computed: {
@@ -49,8 +50,9 @@ export default {
     snackbar (val, oldVal) {
       if (val.message) {
         this.show = true
-        this.message = this.snackbar.message
-        this.action = this.snackbar.action || null
+        this.message = this.snackbar?.message
+        this.action = this.snackbar?.action || null
+        this.duration = this.snackbar?.duration || 5000
         // Reset
         this.$store.commit('setSnackbar', '')
       }

@@ -35,7 +35,7 @@ export default {
           }
         }
       }`,
-      variables: { input: { search: 'filterByKeyword', searchValue: payload, pageSize: 100 } }
+      variables: { input: { search: 'Keyword', searchValue: payload, pageSize: 100 } }
     })
     const requestOptions = {
       method: 'POST',
