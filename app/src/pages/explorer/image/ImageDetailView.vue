@@ -24,19 +24,9 @@
               <div v-if="currentImage.metaData.doi">
                 DOI: <a class=" u--b-rad" @click="nav_to_doi(currentImage.metaData.doi)">{{ currentImage.metaData.doi}}</a>
                 <div class="md-subhead u--margin-header">{{ currentImage.metaData.title}}</div>
-
-                <!-- <a @click="nav_to_doi(currentImage.metaData.doi)">Search for more images from this article</a> -->
-
-                <!-- <button
-                  class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad"
-                  @click="nav_to_doi(currentImage.metaData.doi)"
-                  >
-                  View Article
-                </button> -->
-
                 <button
                   class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad"
-                  @click="nav_to_doi(currentImage.metaData.doi)"
+                  @click="nav_to_doi_images(currentImage.metaData.doi)"
                   >
                   more from this DOI
                 </button>
@@ -99,7 +89,7 @@
               <button
               v-for="word in getSingleImages.images[0].metaData.keywords"
               :key="word"
-              @click="navToKeyword(word)"
+              @click="nav_to_keyword(word)"
               class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad u--margin-pos">{{word}}</button>
           </div>
 
@@ -197,8 +187,11 @@ export default {
     nav_to_doi (doi) {
       this.$router.push(`/explorer/article/${doi}`)
     },
-    navToKeyword (keyword) {
-      this.$router.push('explorer/images')
+    nav_to_keyword (keyword) {
+      this.$router.push(`/explorer/images?page=1&type=Keyword&q=${encodeURIComponent(keyword)}`)
+    },
+    nav_to_doi_images (doi) {
+      this.$router.push(`/explorer/images?page=1&type=filterByDOI&q=${encodeURIComponent(doi)}`)
     },
     updateCurrentImage (fileId) {
       const [first] = this.getSingleImages.images.filter(img => img.file === fileId)
