@@ -381,6 +381,10 @@
             max-width: 100%;
         }
 
+        & > .pagination-field {
+            padding: 3rem 1.5rem 0rem 1.5rem;
+        }
+
         & > .pagination-button {
             display: inline;
             padding:10px 24px !important;
