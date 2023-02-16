@@ -1,11 +1,9 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show">
+    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="isInfinity">
       {{message}}
       <span>
         <md-button v-if="action" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
-        <md-button v-else id="snackbarRefresh" class="md-primary" @click.native="refresh">Refresh</md-button>
-        <md-button id="snackbarClose" class="md-primary" @click.native="show = false">Close</md-button>
       </span>
     </md-snackbar>
   </div>
@@ -26,7 +24,8 @@ export default {
     return {
       show: false,
       message: '',
-      action: null
+      action: null,
+      isInfinity: Infinity
     }
   },
   computed: {
@@ -41,7 +40,10 @@ export default {
     // If an action has been passed through vuex as a callback, call it
     callAction () {
       if (this.action) {
+        // Toggle the snackbar before calling the action to reload it's timer
+        this.show = false
         this.action()
+        this.show = false
       }
     }
   },

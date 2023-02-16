@@ -19,5 +19,8 @@ export default {
   },
   getSelectedFacetFilterMaterialsValue (state) {
     return state.selectedFacetFilterMaterialsValue
+  },
+  getAutosuggest (state) {
+    return state.enableAutosuggest
   }
 }
