@@ -3,6 +3,7 @@ services:
   mongo:
     image: 'mongo:4.4'
     restart: always
+    container_name: mongo
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
       - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
@@ -36,6 +37,7 @@ services:
     volumes:
       - ./mockDB/es:/usr/share/elasticsearch/data
   minio:
+    container_name: minio
     image: quay.io/minio/minio:RELEASE.2022-03-17T06-34-49Z
     command: server /data
     hostname: minio
@@ -47,6 +49,7 @@ services:
     volumes:
       - ./mockDB/minio:/data
   proxy:
+    container_name: proxy
     depends_on:
       - api
       - client
@@ -60,6 +63,7 @@ services:
     depends_on:
       - es
       - mongo
+    container_name: restful
     restart: always
     build:
       dockerfile: Dockerfile.dev
@@ -82,6 +86,7 @@ services:
       - '3001:3001'
   client:
     stdin_open: true
+    container_name: frontend
     environment:
       - CHOKIDAR_USEPOLLING=true
       - API_PORT=${PORT}
