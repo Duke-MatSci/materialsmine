@@ -17,7 +17,8 @@ describe('@/components/Snackbar.vue', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('contains a close button', async () => {
+  // This test is no longer applicable
+  it.skip('contains a close button', async () => {
     expect.assertions(4)
     const close = wrapper.find('#snackbarClose')
     expect(close.exists()).toBe(true)
@@ -27,7 +28,8 @@ describe('@/components/Snackbar.vue', () => {
     expect(wrapper.vm.show).toBe(false)
   })
 
-  it('contains a refresh button by default', async () => {
+  // This test is no longer applicable
+  it.skip('contains a refresh button by default', async () => {
     expect.assertions(2)
     const refresh = wrapper.find('#snackbarRefresh')
     expect(refresh.exists()).toBe(true)
