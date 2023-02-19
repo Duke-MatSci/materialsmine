@@ -16,7 +16,7 @@ export default {
       snackbar: {
         message: '',
         action: null,
-        duration: false,
+        duration: false
       }
     }
   },

@@ -39,7 +39,7 @@ const routes = [
   },
   {
     path: '/auth/:auth',
-    component: () => import('@/auth/auth.vue'),
+    component: () => import('@/auth/auth.vue')
   },
   { path: '/explorer:notFound(.*)', component: NotFound },
   { path: '/mm:notFound(.*)', component: NotFound },
@@ -73,7 +73,7 @@ router.beforeEach(async function (to, _, next) {
       }, { root: true })
 
       await store.dispatch('auth/tryLogin')
-      if(store.getters['auth/isAuthenticated']) {
+      if (store.getters['auth/isAuthenticated']) {
         next()
       }
     }

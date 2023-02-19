@@ -117,7 +117,7 @@ export default {
     ...mapGetters({
       info: 'appHeaderInfo',
       isAuth: 'auth/isAuthenticated',
-      displayName: 'auth/displayName',
+      displayName: 'auth/displayName'
     })
   }
 }

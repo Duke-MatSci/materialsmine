@@ -81,7 +81,7 @@ export default {
   computed: {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
-      displayName: 'auth/displayName',
+      displayName: 'auth/displayName'
     })
   },
   data () {

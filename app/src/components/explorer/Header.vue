@@ -43,13 +43,13 @@ import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
   props: ['toggler'],
-  data() {
+  data () {
     return { showBadge: false }
   },
   computed: {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
-      displayName: 'auth/displayName',
+      displayName: 'auth/displayName'
     }),
     searchTerm: {
       get () {

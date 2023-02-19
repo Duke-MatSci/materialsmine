@@ -9,8 +9,14 @@ const _redirect = ({ _id, email, displayName }, req, res) => {
   successWriter(req, 'success', 'Found/Created user successfully');
   const token = setInternal(req, { _id, email, displayName });
   successWriter(req, 'success', 'Login token generated successfully');
-  // res.status(200).json({ userId: _id, token, displayName });
-  return res.redirect(`${req.env.ROUTER}/auth/${JSON.stringify({ userId: _id, token, displayName })}`);
+
+  return res
+    .redirect(`${req.env.ROUTER}/auth/${JSON
+      .stringify({
+        userId: _id,
+        token,
+        displayName
+        })}`);
 };
 
 // Validate user or create if it does not exists

@@ -23,29 +23,26 @@ export default {
     if (mode === 'signup') {
       url = 'https://server.test'
     }
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({
-          email: payload.email,
-          password: payload.password,
-          returnSecureToken: true
-        })
-      })
-  
-      const responseData = await response.json()
-  
-      if (!response.ok) {
-        const error = new Error(
-          responseData.message || 'Failed to authenticate. Check your login data.'
-        )
-        throw error
-      }
 
-      return context.dispatch('authProcessor', responseData);
-    } catch (err) {
-      throw err
+    const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: payload.email,
+        password: payload.password,
+        returnSecureToken: true
+      })
+    })
+
+    const responseData = await response.json()
+
+    if (!response.ok) {
+      const error = new Error(
+        responseData.message || 'Failed to authenticate. Check your login data.'
+      )
+      throw error
     }
+
+    return context.dispatch('authProcessor', responseData)
   },
 
   async authProcessor (context, payload) {
@@ -70,7 +67,7 @@ export default {
       localStorage.setItem('userId', userId)
       localStorage.setItem('displayName', displayName)
       localStorage.setItem('tokenExpiration', expirationDate)
-  
+
       timer = setTimeout(function () {
         context.dispatch('autoLogout')
       }, expiresIn)
