@@ -15,7 +15,8 @@ export default {
       dialogBox: false,
       snackbar: {
         message: '',
-        action: null
+        action: null,
+        duration: false,
       }
     }
   },

@@ -18,16 +18,17 @@
                         </ul>
                     </div>
                     <div class="u--inline">
-                        <div v-if="$store.getters.isAuthenticated" class="nav_menu--container">
+                        <div v-if="$store.getters['auth/isAuthenticated']" class="nav_menu--container">
                             <a class="u--default-size nav_menu--handler" style="color:#fff; font-size:1.2rem !important;">
                                 <i class="material-icons" style="vertical-align: middle;">perm_identity</i>
+                                {{ $store.getters['auth/displayName'] }}
                             </a>
                             <div class="nav_menu--siblings nav_menu--sibheader">
                                 <span class="nav_menu--siblings-lists" @click="$store.dispatch('logout')"><a>Logout</a></span>
                             </div>
                         </div>
                         <div v-else>
-                            <a class="btn btn--tertiary btn--noradius">Login/Register</a>
+                            <a class="btn btn--tertiary btn--noradius" href="/secure">Login/Register</a>
                         </div>
                     </div>
                 </div>

@@ -47,8 +47,11 @@
                         </li>
                         <li>
                           <div class="nav_menu--container">
-                            <a class="u--default-size nav_menu--handler" href="#">
+                            <a v-if="!isAuth" class="u--default-size nav_menu--handler" href="/secure">
                               <md-icon class="metamine_menu-icon">person</md-icon> LOGIN/REGISTER
+                            </a>
+                            <a v-else class="u--default-size nav_menu--handler" @click="$store.dispatch('logout')">
+                              Hi {{ displayName }}
                             </a>
                           </div>
                         </li>
@@ -68,11 +71,18 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Drawers from '@/components/Drawer.vue'
 export default {
   name: 'MetamineBase',
   components: {
     Drawers
+  },
+  computed: {
+    ...mapGetters({
+      isAuth: 'auth/isAuthenticated',
+      displayName: 'auth/displayName',
+    })
   },
   data () {
     return {

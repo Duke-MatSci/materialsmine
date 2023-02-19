@@ -11,38 +11,46 @@
         </div>
 
         <div class="md-toolbar-section-end">
-          <md-badge id="header-badge" class="md-primary" md-content="12">
+          <md-badge v-if="isAuth && showBadge" id="header-badge" class="md-primary" md-content="12">
             <md-button class="md-icon-button">
-              <md-icon>person</md-icon>
+              Hi {{ displayName }}
             </md-button>
           </md-badge>
+          <md-button v-if="isAuth" class="md-icon-button">
+            Hi {{ displayName }}
+          </md-button>
+          <a v-if="!isAuth" class="md-icon-button large" href="/secure">
+            Login
+          </a>
         </div>
       </div>
       <!-- Toolbar -->
       <div class="md-toolbar-row u_margin-top-med">
-        <md-tabs class="md-primary" id="reset_tab_bg">
-          <router-link  class="tabs" to="/explorer" v-slot="{navigate, href}" custom>
-            <md-tab :href="href" @click="href === '/explorer' ? setSearching : navigate" id="tab-home" md-label="Search"> </md-tab>
-          </router-link>
-          <router-link class="tabs" to="/explorer/visualization" v-slot="{navigate, href}" custom>
-            <md-tab :href="href" @click="navigate" id="tab-visualization" md-label="Visualization"> </md-tab>
-          </router-link>
-          <router-link class="tabs" to="/explorer/curate" v-slot="{navigate, href}" custom>
-            <md-tab :href="href" @click="navigate" id="tab-curate" md-label="Curate"> </md-tab>
-          </router-link>
-          <router-link class="tabs" to="/explorer/parameterized_query" v-slot="{navigate, href}" custom>
-            <md-tab :href="href" @click="navigate" id="tab-query" md-label="Parameterized Query"> </md-tab>
-          </router-link>
+        <md-tabs class="md-primary" id="reset_tab_bg" md-sync-route>
+          <md-tab to="/explorer" id="tab-home" md-label="Search" exact> </md-tab>
+          <md-tab to="/explorer/visualization" id="tab-visualization" md-label="Visualization" exact> </md-tab>
+          <md-tab to="/explorer/curate" id="tab-curate" md-label="Curate" exact> </md-tab>
+          <md-tab to="/explorer/parameterized_query" id="tab-query" md-label="Parameterized Query" exact> </md-tab>
+          <md-tab to="/explorer/sparql" id="tab-sparql" md-label="Sparql Query" exact> </md-tab>
         </md-tabs>
       </div>
     </md-app-toolbar>
   </div>
 </template>
+
 <script>
+import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
   props: ['toggler'],
+  data() {
+    return { showBadge: false }
+  },
   computed: {
+    ...mapGetters({
+      isAuth: 'auth/isAuthenticated',
+      displayName: 'auth/displayName',
+    }),
     searchTerm: {
       get () {
         return this.$store.getters['explorer/getSearchKeyword']
