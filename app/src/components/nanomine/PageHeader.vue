@@ -24,11 +24,11 @@
                                 Hi {{ displayName }}
                             </a>
                             <div class="nav_menu--siblings nav_menu--sibheader">
-                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('logout')"><a>Logout</a></span>
+                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('logout')"><a id="authmenu">Logout</a></span>
                             </div>
                         </div>
                         <div v-else>
-                            <a class="btn btn--tertiary btn--noradius" href="/secure">Login/Register</a>
+                            <a class="btn btn--tertiary btn--noradius" href="/secure" id="authmenu">Login/Register</a>
                         </div>
                     </div>
                 </div>

@@ -27,11 +27,12 @@
       <!-- Toolbar -->
       <div class="md-toolbar-row u_margin-top-med">
         <md-tabs class="md-primary" id="reset_tab_bg" md-sync-route>
-          <md-tab to="/explorer" id="tab-home" md-label="Search" exact> </md-tab>
-          <md-tab to="/explorer/visualization" id="tab-visualization" md-label="Visualization" exact> </md-tab>
-          <md-tab to="/explorer/curate" id="tab-curate" md-label="Curate" exact> </md-tab>
-          <md-tab to="/explorer/parameterized_query" id="tab-query" md-label="Parameterized Query" exact> </md-tab>
-          <md-tab to="/explorer/sparql" id="tab-sparql" md-label="Sparql Query" exact> </md-tab>
+          <!-- Add _ to _menutabs as this is just a class selector for testing purposes only -->
+          <md-tab class="_menutabs" to="/explorer" id="tab-home" md-label="Search" exact> </md-tab>
+          <md-tab class="_menutabs" to="/explorer/visualization" id="tab-visualization" md-label="Visualization" exact> </md-tab>
+          <md-tab class="_menutabs" to="/explorer/curate" id="tab-curate" md-label="Curate" exact> </md-tab>
+          <md-tab class="_menutabs" to="/explorer/parameterized_query" id="tab-query" md-label="Parameterized Query" exact> </md-tab>
+          <md-tab class="_menutabs" to="/explorer/sparql" id="tab-sparql" md-label="Sparql Query" exact> </md-tab>
         </md-tabs>
       </div>
     </md-app-toolbar>
