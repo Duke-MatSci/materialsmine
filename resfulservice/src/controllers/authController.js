@@ -50,7 +50,7 @@ const _validateUser = async (req) => {
  */
 exports.devLoginService = async (req, res, next) => {
   const { logger } = req;
-  logger.info('authenticationService(): Function entry');
+  logger.info('devLoginService(): Function entry');
 
   try {
     const user = await _validateUser(req);
@@ -78,10 +78,12 @@ exports.authenticationService = async (req, res, next) => {
 
   // 1. Check environment & determine Login type
   const currentEnv = req.env.MM_RUNTIME_ENV;
+  logger.info(`authenticationService(): current environment: ${currentEnv}`);
   if (currentEnv === 'dev') return this.devLoginService(req, res, next);
-
+  
   try {
     // 2. Auth service
+    logger.info(`authenticationService(): userEmail: ${req.headers[env.MM_AUTH_EMAIL_HEADER]}`);
     if (req.headers[env.MM_AUTH_EMAIL_HEADER]) {
       const error = new Error('No user info, auth service failure');
       return next(errorWriter(req, error, 'authenticationService', 500));
