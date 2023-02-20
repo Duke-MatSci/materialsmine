@@ -25,11 +25,7 @@ export default {
       show: false,
       message: '',
       action: null,
-<<<<<<< HEAD
       duration: false
-=======
-      isInfinity: Infinity
->>>>>>> 🔥hotfix_frontend_bug_fix
     }
   },
   computed: {
