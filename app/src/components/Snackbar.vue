@@ -4,8 +4,6 @@
       {{message}}
       <span>
         <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
-        <!-- <md-button v-else id="snackbarRefresh" class="md-primary" @click.native="refresh">Refresh</md-button>
-        <md-button id="snackbarClose" class="md-primary" @click.native="show = false">Close</md-button> -->
       </span>
     </md-snackbar>
   </div>
@@ -27,7 +25,11 @@ export default {
       show: false,
       message: '',
       action: null,
+<<<<<<< HEAD
       duration: false
+=======
+      isInfinity: Infinity
+>>>>>>> 🔥hotfix_frontend_bug_fix
     }
   },
   computed: {
@@ -42,7 +44,10 @@ export default {
     // If an action has been passed through vuex as a callback, call it
     callAction () {
       if (this.action) {
+        // Toggle the snackbar before calling the action to reload it's timer
+        this.show = false
         this.action()
+        this.show = false
       }
     }
   },

@@ -1,7 +1,7 @@
 <template>
     <div>
         <md-app-toolbar class="md-dense md-primary" id="reset_bg">
-            <div class="md-toolbar-row">
+            <div class="md-toolbar-row viz-u-postion__rel">
                 <div class="md-toolbar-section-start">
                     <md-button class="md-icon-button" @click="toggler">
                         <md-icon>menu</md-icon>
@@ -47,7 +47,7 @@
             </div>
             <div class="section_banner__nav">
                 <nav class="nav_menu">
-                    <ul class="nav_ul">
+                    <ul>
                         <li class="u_margin-right-small">
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">About</a>
