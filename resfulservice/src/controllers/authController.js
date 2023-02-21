@@ -83,7 +83,6 @@ exports.authenticationService = async (req, res, next) => {
 
   try {
     // 2. Auth service
-    logger.info(`authenticationService(): userEmail: ${req.headers[env.MM_AUTH_EMAIL_HEADER]}`);
     if (req.headers[env.MM_AUTH_EMAIL_HEADER]) {
       const error = new Error('No user info, auth service failure');
       return next(errorWriter(req, error, 'authenticationService', 500));
