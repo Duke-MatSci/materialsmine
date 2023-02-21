@@ -70,7 +70,7 @@
       </div>
       <div class="results">
         <accordion
-          :startOpen="true"
+          :startOpen="false"
           title="SPARQL Results"
         >
           <div class="results-controls">

@@ -5,6 +5,9 @@ export default {
   token (state) {
     return state.token
   },
+  displayName (state) {
+    return state.displayName
+  },
   isAuthenticated (state) {
     return !!state.token
   },

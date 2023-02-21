@@ -26,5 +26,8 @@ export default {
     if (state.searchKeyword && state.searchKeyword.length) {
       state.searching = true
     }
+  },
+  setEnableAutosuggest (state, payload) {
+    state.enableAutosuggest = payload
   }
 }

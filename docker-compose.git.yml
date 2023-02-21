@@ -32,6 +32,7 @@ services:
       - MONGO_ADDRESS=${MONGO_ADDRESS}
       - MONGO_PORT=${MONGO_PORT}
       - TKNS=${TKNS}
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
   client:
     image: 'dukematsci/dev-app:latest'
     depends_on:

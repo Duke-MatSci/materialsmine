@@ -170,7 +170,7 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   }
 ]
 

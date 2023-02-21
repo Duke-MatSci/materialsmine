@@ -16,6 +16,7 @@ export default {
   state () {
     return {
       toggleMenuVisibility: false,
+      enableAutosuggest: true,
       resultsTab: 'getArticles',
       searchKeyword: '',
       searching: false,
