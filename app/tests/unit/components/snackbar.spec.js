@@ -29,14 +29,6 @@ describe('@/components/Snackbar.vue', () => {
     expect(wrapper.vm.show).toBe(false)
   })
 
-  // TODO: @Anya determine if we still need this button. Skipping for now
-  it.skip('contains a refresh button by default', async () => {
-    expect.assertions(2)
-    const refresh = wrapper.find('#snackbarRefresh')
-    expect(refresh.exists()).toBe(true)
-    expect(refresh.text()).toContain('Refresh')
-  })
-
   it('renders snackbar message from Vuex', async () => {
     expect.assertions(1)
     await wrapper.vm.$store.commit('setSnackbar', {
