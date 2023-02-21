@@ -83,7 +83,7 @@
           </router-link>
         </md-list>
       </md-list-item>
-      <md-list-item v-if="isAuth">
+      <md-list-item v-if="isAuth" @click="$store.dispatch('auth/logout')">
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
       </md-list-item>

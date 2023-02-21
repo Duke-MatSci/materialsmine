@@ -24,7 +24,7 @@
                                 Hi {{ displayName }}
                             </a>
                             <div class="nav_menu--siblings nav_menu--sibheader">
-                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('logout')"><a id="authmenu">Logout</a></span>
+                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('auth/logout')"><a id="authmenu">Logout</a></span>
                             </div>
                         </div>
                         <div v-else>
