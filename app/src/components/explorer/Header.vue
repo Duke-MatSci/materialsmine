@@ -16,9 +16,7 @@
               Hi {{ displayName }}
             </md-button>
           </md-badge>
-          <md-button v-if="isAuth" class="md-icon-button">
-            Hi {{ displayName }}
-          </md-button>
+          <md-button v-if="isAuth"> Hi {{ displayName }}</md-button>
           <a v-if="!isAuth" class="md-icon-button large" href="/secure">
             Login
           </a>
