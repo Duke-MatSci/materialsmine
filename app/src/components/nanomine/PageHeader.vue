@@ -1,7 +1,7 @@
 <template>
     <div>
         <md-app-toolbar class="md-dense md-primary" id="reset_bg">
-            <div class="md-toolbar-row">
+            <div class="md-toolbar-row viz-u-postion__rel">
                 <div class="md-toolbar-section-start">
                     <md-button class="md-icon-button" @click="toggler">
                         <md-icon>menu</md-icon>
@@ -14,21 +14,21 @@
                 <div class="md-toolbar-section-end header_nav">
                     <div class="nav nav_menu u--inline">
                         <ul>
-                            <li><a href="/nm">NanoMine</a></li>
-                            <li><a href="/mm">MetaMine</a></li>
+                            <li><router-link to="/nm" v-slot="{navigate, href}" custom><a :href="href" @click="navigate">NanoMine</a></router-link></li>
+                            <li><router-link to="/mm" v-slot="{navigate, href}" custom><a :href="href" @click="navigate">Metamine</a></router-link></li>
                         </ul>
                     </div>
                     <div class="u--inline">
-                        <div v-if="$store.getters.isAuthenticated" class="nav_menu--container">
+                        <div v-if="isAuth" class="nav_menu--container">
                             <a class="u--default-size nav_menu--handler" style="color:#fff; font-size:1.2rem !important;">
-                                <i class="material-icons" style="vertical-align: middle;">perm_identity</i>
+                                Hi {{ displayName }}
                             </a>
                             <div class="nav_menu--siblings nav_menu--sibheader">
-                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('logout')"><a>Logout</a></span>
+                                <span class="nav_menu--siblings-lists" @click="$store.dispatch('auth/logout')"><a id="authmenu">Logout</a></span>
                             </div>
                         </div>
                         <div v-else>
-                            <a class="btn btn--tertiary btn--noradius">Login/Register</a>
+                            <a class="btn btn--tertiary btn--noradius" href="/secure" id="authmenu">Login/Register</a>
                         </div>
                     </div>
                 </div>
@@ -47,7 +47,7 @@
             </div>
             <div class="section_banner__nav">
                 <nav class="nav_menu">
-                    <ul class="nav_ul">
+                    <ul>
                         <li class="u_margin-right-small">
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">About</a>
@@ -97,7 +97,7 @@
                                 </div>
                             </div>
                         </li>
-                        <li class="u_margin-right-small" v-if="$store.getters.isAuthenticated">
+                        <li class="u_margin-right-small" v-if="isAuth">
                             <div class="nav_menu--container">
                                 <a class="u--default-size" href="/mypage">My Portal</a>
                             </div>
@@ -115,7 +115,9 @@ export default {
   props: ['toggler'],
   computed: {
     ...mapGetters({
-      info: 'appHeaderInfo'
+      info: 'appHeaderInfo',
+      isAuth: 'auth/isAuthenticated',
+      displayName: 'auth/displayName'
     })
   }
 }

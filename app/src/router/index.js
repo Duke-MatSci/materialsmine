@@ -37,6 +37,10 @@ const routes = [
       ...explorerRoutes
     ]
   },
+  {
+    path: '/auth/:auth',
+    component: () => import('@/auth/auth.vue')
+  },
   { path: '/explorer:notFound(.*)', component: NotFound },
   { path: '/mm:notFound(.*)', component: NotFound },
   { path: '/nm:notFound(.*)', component: NotFound },
@@ -46,7 +50,7 @@ const routes = [
 const router = new VueRouter({
   mode: 'history',
   routes,
-  scrollBehavior (to, from, prevPosition) {
+  scrollBehavior (to, _, prevPosition) {
     if (prevPosition) {
       return prevPosition
     }
@@ -60,11 +64,22 @@ const router = new VueRouter({
   }
 })
 
-router.beforeEach(function (to, _, next) {
-  if (to.meta.requiresAuth && !store.getters.isAuthenticated) {
-    next('/') // TODO: Develop auth component
-  } else if (to.meta.requiresUnauth && store.getters.isAuthenticated) {
-    next('/')
+router.beforeEach(async function (to, _, next) {
+  if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
+    if (!store.getters['auth/isAuthenticated']) {
+      store.commit('setSnackbar', {
+        message: 'Re-authenticating...',
+        duration: 1500
+      }, { root: true })
+
+      await store.dispatch('auth/tryLogin')
+      if (store.getters['auth/isAuthenticated']) {
+        next()
+      }
+    }
+    next(false)
+  } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
+    next()
   } else {
     next()
   }

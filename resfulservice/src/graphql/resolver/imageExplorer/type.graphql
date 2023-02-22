@@ -36,7 +36,7 @@ type ImageMetaData {
   "The unique id of the paper from which image is selected"
   id: ID
 
-  "The digital object identifier of the image meta data"
+  "The digital object identifier of the image"
   doi: String,
 
   "List of keywords(tags) related to the image"
@@ -44,6 +44,10 @@ type ImageMetaData {
 
   "List of author for the image"
   authors: [String!]
+
+  "The unique ID for a sample"
+  sampleID: String!
+
 }
 
 "Image Dimension details"
