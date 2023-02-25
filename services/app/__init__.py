@@ -21,9 +21,11 @@ def create_app(config_class = Config):
     CORS(app)    
 
     from app.chemprops.routes import chemprops
+    from app.intellicharact.routes import icharact
     from app.main.routes import main
 
     app.register_blueprint(chemprops)
+    app.register_blueprint(icharact)
     app.register_blueprint(main)
 
     return app

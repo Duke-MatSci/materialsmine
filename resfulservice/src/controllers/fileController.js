@@ -46,3 +46,8 @@ exports.uploadFile = async (req, res, next) => {
     return res.status(500).json({ message: 'error uploading files', statusCode: 500 });
   }
 };
+
+exports.jobsDataFiles = (req, res, next) => {
+  // TODO: Serve requested files from mockDB/managedservices folder
+  return res.status(200);
+};

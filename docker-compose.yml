@@ -104,6 +104,9 @@ services:
       - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
       - MONGO_ADDRESS=${MONGO_ADDRESS}
       - MONGO_PORT=${MONGO_PORT}
+      - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
+      - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
+      - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
     depends_on:
       # - client
       - mongo
@@ -115,6 +118,7 @@ services:
       - "5050:5050"
     volumes:
       - ./services:/usr/src/app
+      - ./mockDB/managedservices:/usr/src/files
 #   redis:
 #     image: "redis:alpine"
 #     command: redis-server
