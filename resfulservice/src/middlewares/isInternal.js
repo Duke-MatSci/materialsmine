@@ -1,38 +1,31 @@
 const { decodeToken, signToken } = require('../utils/jwtService');
+const { errorWriter } = require('../utils/logWriter');
 
 exports.getInternal = (req, res, next) => {
-  const log = req.logger;
   const isInternal = req.get('Authorization')?.split(' ')[1];
   let decodedToken;
   if (!isInternal) {
-    log.error('getInternal(): 403 - isInternal not provided. Not authorized');
-    const error = new Error('Not authorized.');
-    error.statusCode = 403;
-    throw error;
+    throw errorWriter(req, 'Not authorized.', 'getInternal()', 403);
   }
   try {
     decodedToken = decodeToken(req, isInternal);
   } catch (err) {
-    log.error(`getInternal(): 500 - ${err}`);
-    err.statusCode = 500;
-    throw err;
+    throw errorWriter(req, err, 'getInternal()', 500);
   }
   req.internal = decodedToken;
   next();
 };
 
-exports.setInternal = (req, res, next) => {
-  const log = req.logger;
+exports.setInternal = (req, payload) => {
   let signedToken;
   try {
     signedToken = signToken(req, {
+      ...payload,
       isInternal: true
     });
+
+    return signedToken;
   } catch (err) {
-    log.error(`getInternal(): 500 - ${err}`);
-    err.statusCode = 500;
-    throw err;
+    throw errorWriter(req, err, 'getInternal()', 500);
   }
-  req.signedToken = signedToken;
-  next();
 };

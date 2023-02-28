@@ -1,11 +1,9 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="duration">
+    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration">
       {{message}}
       <span>
-        <md-button v-if="action" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
-        <md-button v-else id="snackbarRefresh" class="md-primary" @click.native="refresh">Refresh</md-button>
-        <md-button id="snackbarClose" class="md-primary" @click.native="show = false">Close</md-button>
+        <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
       </span>
     </md-snackbar>
   </div>
@@ -27,7 +25,7 @@ export default {
       show: false,
       message: '',
       action: null,
-      duration: 5000
+      duration: false
     }
   },
   computed: {
@@ -42,7 +40,10 @@ export default {
     // If an action has been passed through vuex as a callback, call it
     callAction () {
       if (this.action) {
+        // Toggle the snackbar before calling the action to reload it's timer
+        this.show = false
         this.action()
+        this.show = false
       }
     }
   },
@@ -50,9 +51,9 @@ export default {
     snackbar (val, oldVal) {
       if (val.message) {
         this.show = true
-        this.message = this.snackbar?.message
-        this.action = this.snackbar?.action || null
-        this.duration = this.snackbar?.duration || 5000
+        this.message = this.snackbar.message
+        this.action = this.snackbar.action || null
+        this.duration = val.duration ? val.duration : false
         // Reset
         this.$store.commit('setSnackbar', '')
       }

@@ -6,18 +6,13 @@ import { mapMutations, mapGetters } from 'vuex'
  * Both: 'Keyword Search' & 'Autosuggest'
  */
 export default {
-  data () {
-    return {
-      enableAutosuggest: true
-    }
-  },
   computed: {
     searchWord: {
       get () {
         return this.$store.getters['explorer/getSearchKeyword']
       },
       async set (payload) {
-        this.enableAutosuggest = true
+        await this.$store.commit('explorer/setEnableAutosuggest', true)
         await this.$store.commit('explorer/setSearchKeyword', payload)
         await this.requestSearch(payload)
       }
@@ -25,7 +20,7 @@ export default {
     searchEnabled () {
       return this.$store.getters['explorer/getSearching']
     },
-    ...mapGetters({ suggestions: 'explorer/results/getSuggestions' })
+    ...mapGetters({ suggestions: 'explorer/results/getSuggestions', enableAutosuggest: 'explorer/getAutosuggest' })
   },
   methods: {
     ...mapMutations('explorer', ['setResultsTab', 'setSearching', 'setSearchKeyword']),

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-toolbar class="md-transparent" md-elevation="0">Welcome Stewart</md-toolbar>
+    <md-toolbar class="md-transparent" md-elevation="0">Welcome {{ name }}</md-toolbar>
     <md-list md-expand-single=true class="utility-transparentbg">
       <md-list-item md-expand>
         <md-icon class="utility-navfonticon">home</md-icon>
@@ -83,19 +83,26 @@
           </router-link>
         </md-list>
       </md-list-item>
-      <md-list-item>
+      <md-list-item v-if="isAuth" @click="$store.dispatch('auth/logout')">
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
       </md-list-item>
-      <md-list-item>
+      <md-list-item v-if="!isAuth">
         <md-icon class="utility-navfonticon">login</md-icon>
-        <span class="md-list-item-text utility-navfont">Login</span>
+        <span class="md-list-item-text utility-navfont"><a href="/secure">Login</a></span>
       </md-list-item>
     </md-list>
   </div>
 </template>
 <script>
+import { mapGetters } from 'vuex'
 export default {
-  name: 'Drawers'
+  name: 'Drawers',
+  computed: {
+    ...mapGetters({
+      isAuth: 'auth/isAuthenticated',
+      name: 'auth/displayName'
+    })
+  }
 }
 </script>
