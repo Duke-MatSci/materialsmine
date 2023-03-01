@@ -1,0 +1,41 @@
+input filesetQueryInput {
+  "Fileset name requested"
+  filesetName: String
+  "Unique id for a requested dataset - optional"
+  datasetId: String
+
+  "Filesets page to return"
+  pageNumber: Int
+
+  "Number of filesets to return per page"
+  pageSize: Int
+}
+
+input datasetStatusInput {
+  "Dataset workflow status"
+  status: STATUS,
+  "Filesets page to return"
+  pageNumber: Int
+  "Number of filesets to return per page"
+  pageSize: Int
+  "This flag can only be set by admin users"
+  showAll: Boolean
+}
+
+input datasetInput {
+  title: String
+  doi: String
+  datasetId: String
+  files: [filesInput!]!
+}
+
+input filesInput {
+  fieldname: String!
+  originalname: String!
+  encoding: String!
+  mimetype: String!
+  destination: String!
+  filename: String!
+  path: String!
+  size: Float!
+}

@@ -1,0 +1,77 @@
+<div class="section_pages">
+    <div v-if="!loading && !error.article" class="wrapper" key="article_loaded">
+      <h1 class="visualize_header-h1 article_title">{{ article.title }}</h1>
+      <div class="article_authors">{{ article.authorNames }}</div>
+      <div v-if="article.venue" class="article_metadata article_venue" key="article_venue">
+        <span class="article_metadata_strong">{{ article.venue }}</span> ({{ article.year }})
+      </div>
+      <div v-else class="article_metadata article_year" key="article_no_venue">
+        {{ article.year }}
+      </div>
+      <div class="article_abstract teams_text">
+        <h3>Abstract</h3>
+        <p>{{ article.abstract }}</p>
+      </div>
+      <div class="article_metadata article_doi">
+        DOI: <a :href="doiLink" target="_blank">{{ doi }}</a>
+      </div>
+      <div class="article_metadata article_citation_count">
+        Cited by <span class="article_metadata_strong">{{ article.citationCount }}</span> other works.
+      </div>
+      <div v-if="!error.references" class="article_references" key="references_loaded">
+        <div class="article_subtitle">References</div>
+        <div class="article_table">
+          <table class="article_table">
+            <thead>
+              <tr class="article_table-header">
+                <th scope="col">Year</th>
+                <th scope="col">Author(s)</th>
+                <th scope="col">Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="article_table-row" v-for="(refObject, index) of article.references.data" :key="refObject.paperId">
+                <td>{{ refObject.year }}</td>
+                <td>{{ refObject.authorNames }}</td>
+                <td>{{ refObject.title }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div v-else class="article_references article_error" key="references_error">
+        <div class="article_subtitle">References failed to load. Please try again in a moment.</div>
+      </div>
+      <div v-if="!error.citations" class="article_citations" key="citations_loading">
+        <div class="article_subtitle">Cited By</div>
+        <div class="article_table">
+          <table>
+            <thead>
+              <tr class="article_table-header">
+                <th scope="col">Year</th>
+                <th scope="col">Author(s)</th>
+                <th scope="col">Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="article_table-row" v-for="(refObject, index) of article.citations.data" :key="refObject.paperId">
+                <td>{{ refObject.year }}</td>
+                <td>{{ refObject.authorNames }}</td>
+                <td>{{ refObject.title }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div v-else class="article_citations" key="citations_error">
+        <div class="article_subtitle article_error">Citations failed to load. Please try again in a moment.</div>
+      </div>
+    </div>
+    <div v-else-if="loading && !error.article" class="section_loader wrapper article_error" key="article_loading">
+      <loading-spinner :loading="loading && !error.article" text="Loading Article"></loading-spinner>
+    </div>
+    <div v-else class="wrapper article_title" key="article_title article_error">
+      <h1>Error retrieving this article.</h1>
+      <p>Error: {{ error.article }}</p>
+    </div>
+</div>

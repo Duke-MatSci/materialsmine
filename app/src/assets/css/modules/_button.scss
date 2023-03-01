@@ -1,3 +1,4 @@
+a.btn,
 .btn {
     &,
     &:link,
@@ -11,29 +12,30 @@
         position: relative;
         font-size: $medium-size;
         font-weight: bold;
+        text-decoration: none !important;
 
         //Change for the <button> element
         border: none;
         cursor: pointer;
     }
-    
-    &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 1rem 2rem rgba($primary-black,.2);
 
-        &::after {
-            transform: scaleX(1.4) scaleY(1.6);
-            opacity: 0;
-        }
+    &:hover:not([disabled="disabled"]) {
+        box-shadow: 0 1rem 2rem rgba($primary-black,.2);
+        transform: scaleX(1.1) scaleY(1.1);
     }
-    
-    &:active,
-    &:focus {
+
+    &[disabled="disabled"] {
+        background-color: #DCDCDC;
+        color:#A5A5A5;
+        cursor: default;
+    }
+
+    &:is(:active, :focus):not([disabled="disabled"]) {
         outline: none;
         transform: translateY(-1px);
         box-shadow: 0 .5rem 1rem rgba($primary-black,.2);
     }
-    
+
     &--white {
         background-color: $primary-white;
         color: $primary-light;
@@ -47,14 +49,14 @@
         background-color: $primary;
         color: $primary-white;
 
-        &::after {
+        &::after:not([disabled="disabled"]) {
             background-color: $primary;
         }
     }
 
     &--tertiary {
         background-color: $tertiary;
-        color: $primary;
+        color: $primary !important;
 
         &::after {
             background-color: $tertiary;
@@ -82,7 +84,7 @@
             font-size: .8rem !important;
         }
     }
-    
+
     &::after {
         content: "";
         display: inline-block;
@@ -95,13 +97,14 @@
         z-index: -1;
         transition: all .4s;
     }
-    
+
     &--animated {
         animation: moveInBottom .5s ease-out .75s;
         animation-fill-mode: backwards;
     }
 }
 
+a.btn-text,
 .btn-text {
     &:link,
     &:visited {
@@ -112,11 +115,12 @@
         border-bottom: 1px solid $primary;
         padding: 3px;
         transition: all .2s;
+        text-decoration: none;
     }
 
     &:hover {
         background-color: $primary;
-        color: $primary-white;
+        color: $primary-white !important;
         box-shadow: 0 1rem 2rem rgba($primary-black, .15);
         transform: translateY(-2px);
         border-bottom: 1px solid $primary-light;
@@ -126,5 +130,20 @@
     &:active {
         box-shadow: 0 .5rem 1rem rgba($primary-black, .15);
         transform: translateY(0);
+    }
+}
+
+.md-icon-button.large {
+    width: 140px;
+    min-width: 120px;
+    text-align: right;
+    @include respond(tab-land){
+        width: 120px;
+        min-width: 100px;
+    }
+
+    &:hover {
+        text-decoration: none;
+        cursor: pointer;
     }
 }

@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L199_S1_Duncan_2010</ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Composites Science and Technology</Publication>
+        <Title>Measurement of the critical aspect ratio and interfacial shear strength in MWNT/polymer composites</Title>
+        <Author>Duncan, Ren&#233;e K.</Author>
+        <Author>Chen, Xinyu G.</Author>
+        <Author>Bult, J.B.</Author>
+        <Author>Brinson, L.C.</Author>
+        <Author>Schadler, L.S.</Author>
+        <Keyword>Carbon nanotubes</Keyword>
+        <Keyword>Polymer matrix composites</Keyword>
+        <Keyword>Fragmentation</Keyword>
+        <Keyword>Interfacial strength</Keyword>
+        <Keyword>Mechanical properties</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2010</PublicationYear>
+        <DOI>10.1016/j.compscitech.2009.12.010</DOI>
+        <Volume>70</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0266353809004357?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Rensselaer Polytechnic Institute, Troy, NY 12180, USA</Location>
+        <DateOfCitation>2017-06-21</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0266-3538</ISSN>
+          <Issue>4</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>poly(bisphenol A carbonate)</ChemicalName>
+        <Abbreviation>PC</Abbreviation>
+        <ManufacturerOrSourceName>GE Plastics</ManufacturerOrSourceName>
+        <TradeName>Lexan 124</TradeName>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>multi-walled carbon nanotubes</ChemicalName>
+        <Abbreviation>MWNT</Abbreviation>
+      </FillerComponent>
+      <FillerProcessing>
+        <ChooseParameter>
+          <Heating>
+            <Description>vapor deposition of xylene&#8211;ferrocene in a quartz tube furnace</Description>
+            <Temperature>
+              <value>727</value>
+              <unit>Celsius</unit>
+            </Temperature>
+          </Heating>
+        </ChooseParameter>
+      </FillerProcessing>
+      <FillerComposition>
+        <Fraction>
+          <mass>0.05</mass>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>PC was dried to remove residual moisture</Description>
+          <Temperature>
+            <value>125</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>2</value>
+            <unit>hours</unit>
+          </Time>
+          <AmbientCondition>vacuum</AmbientCondition>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <MixingMethod>ultra-sonication</MixingMethod>
+          <ChemicalUsed>
+            <description>PC</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>tetrahydrofuran</description>
+          </ChemicalUsed>
+          <Time>
+            <value>2</value>
+            <unit>minutes</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <MixingMethod>stirring</MixingMethod>
+          <ChemicalUsed>
+            <description>PC solution</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>MWNT dispersion</description>
+          </ChemicalUsed>
+          <Time>
+            <value>3</value>
+            <unit>minutes</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>Precipitation of the composite</Description>
+          <MixingMethod>dissolving</MixingMethod>
+          <ChemicalUsed>
+            <description>PC solution</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>MWNT dispersion</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>methanol</description>
+          </ChemicalUsed>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>the mixture was dried after filtration</Description>
+          <Temperature>
+            <value>60</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>15</value>
+            <unit>hours</unit>
+          </Time>
+          <AmbientCondition>vacuum</AmbientCondition>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Time>
+            <value>12</value>
+            <unit>hours</unit>
+          </Time>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Temperature>
+            <value>190</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>1</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Transmission_Electron_Microscopy>
+      <EquipmentUsed>Phillips CM12</EquipmentUsed>
+    </Transmission_Electron_Microscopy>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>JEOL 6335</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Mechanical>
+      <Shear>
+        <LoadingProfile>
+          <description>Number of MWNT within grip region dissolved in THF</description>
+          <data>
+            <headers>
+              <column id="0">Aspect ratio (L/d)</column>
+              <column id="1">Number of MWNT within grip region dissolved in THF</column>
+            </headers>
+            <rows>
+              <row id="0">
+                <column id="0">0-199</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="1">
+                <column id="0">200-399</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="2">
+                <column id="0">400-599</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="3">
+                <column id="0">600-799</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="4">
+                <column id="0">800-999</column>
+                <column id="1">18.4393465415</column>
+              </row>
+              <row id="5">
+                <column id="0">1000-1199</column>
+                <column id="1">17.0142509559</column>
+              </row>
+              <row id="6">
+                <column id="0">1200-1399</column>
+                <column id="1">10.4362182829</column>
+              </row>
+              <row id="7">
+                <column id="0">1400-1599</column>
+                <column id="1">16.7014250956</column>
+              </row>
+              <row id="8">
+                <column id="0">1600-1799</column>
+                <column id="1">11.9742787626</column>
+              </row>
+              <row id="9">
+                <column id="0">1800-1999</column>
+                <column id="1">22.540841154</column>
+              </row>
+              <row id="10">
+                <column id="0">&#62;2000</column>
+                <column id="1">21.8456725756</column>
+              </row>
+            </rows>
+          </data>
+        </LoadingProfile>
+        <LoadingProfile>
+          <description>Number of MWNT along the fracture edge dissolved in THF</description>
+          <data>
+            <headers>
+              <column id="0">Aspect ratio (L/d)</column>
+              <column id="1">Number of MWNT along the fracture edge dissolved in THF</column>
+            </headers>
+            <rows>
+              <row id="0">
+                <column id="0">0-49.99</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="1">
+                <column id="0">50-99.99</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="2">
+                <column id="0">100-149.99</column>
+                <column id="1">3.09094256259</column>
+              </row>
+              <row id="3">
+                <column id="0">150-199.99</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="4">
+                <column id="0">200-249.99</column>
+                <column id="1">7.79270986745</column>
+              </row>
+              <row id="5">
+                <column id="0">250-299.99</column>
+                <column id="1">13.9304123711</column>
+              </row>
+              <row id="6">
+                <column id="0">300-349.99</column>
+                <column id="1">34.486377025</column>
+              </row>
+              <row id="7">
+                <column id="0">350-399.99</column>
+                <column id="1">43.1148748159</column>
+              </row>
+              <row id="8">
+                <column id="0">&#62;400</column>
+                <column id="1">11.1800441826</column>
+              </row>
+            </rows>
+          </data>
+        </LoadingProfile>
+        <LoadingProfile>
+          <description>Number of MWNT along the fracture for ARNT/PC</description>
+          <data>
+            <headers>
+              <column id="0">Aspect ratio (L/d)</column>
+              <column id="1">Number of MWNT along the fracture for ARNT/PC</column>
+            </headers>
+            <rows>
+              <row id="0">
+                <column id="0">0-16</column>
+                <column id="1">0.0</column>
+              </row>
+              <row id="1">
+                <column id="0">16-31</column>
+                <column id="1">8.95470779757</column>
+              </row>
+              <row id="2">
+                <column id="0">32-48</column>
+                <column id="1">16.0864952961</column>
+              </row>
+              <row id="3">
+                <column id="0">49-64</column>
+                <column id="1">29.1779569873</column>
+              </row>
+              <row id="4">
+                <column id="0">65-80</column>
+                <column id="1">27.8728191726</column>
+              </row>
+              <row id="5">
+                <column id="0">81-96</column>
+                <column id="1">14.8469887788</column>
+              </row>
+              <row id="6">
+                <column id="0">&#62;97</column>
+                <column id="1">23.6376183327</column>
+              </row>
+            </rows>
+          </data>
+        </LoadingProfile>
+      </Shear>
+    </Mechanical>
+  </PROPERTIES>
+  <MICROSTRUCTURE>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=594ac431e74a1d5e0d156d7e</File>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=594ac43de74a1d5e0d156d8f</File>
+      <Description>magnification: 2500, accelerating voltage: 23 kV</Description>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=594ac4ade74a1d5e0d156da8</File>
+      <Description>magnification: 1300, accelerating voltage: 120 kV</Description>
+      <MicroscopyType>TEM</MicroscopyType>
+    </ImageFile>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=594ac4ede74a1d5e0d156ddc</File>
+      <Description>magnification: 1500, accelerating voltage: 12 kV</Description>
+      <MicroscopyType>SEM</MicroscopyType>
+    </ImageFile>
+  </MICROSTRUCTURE>
+</PolymerNanocomposite>

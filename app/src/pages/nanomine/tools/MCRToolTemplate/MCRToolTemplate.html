@@ -1,0 +1,81 @@
+<tool-card class="md-layout-item md-size-45 md-medium-size-100 tool-card" :name="name" v-if="card">
+  <template v-for="(_, name) in $scopedSlots" :slot="name">
+    <slot :name="name" v-if="cardSlots.includes(name)"></slot>
+  </template>
+</tool-card>
+<div class="tool_page md-layout md-alignment-top-center" v-else>
+  <div class="md-layout-item md-size-60 md-layout md-alignment-top-center md-gutter">
+    <dialog-box :active="dialogBoxActive">
+      <template #title>{{ dialog.title }}</template>
+      <template #content v-html="dialog.content">{{ dialog.content }}</template>
+      <template #actions>
+        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialog-box>
+    <div :class="`section_${name}`" class="" :key="name">
+      <div class="team_header md-layout-item md-size-100">
+        <h1 class="visualize_header-h1 teams_header">
+          <slot name="title"></slot>
+        </h1>
+      </div>
+      <div class="md-layout-item md-size-100">
+        <div v-if="$scopedSlots.description">
+          <h3>Description</h3>
+          <slot name="description"></slot>
+        </div>
+        <div v-if="$scopedSlots['input-options']">
+          <h3>Input Options</h3>
+          <slot name="input-options"></slot>
+        </div>
+      </div>
+
+      <div v-if="$scopedSlots.results"
+        class="md-layout-item md-size-100 md-layout md-alignment-top-left result_container">
+        <h3>Results</h3>
+        <slot name="results"></slot>
+      </div>
+
+      <h3>Image Upload</h3>
+      <ImageUpload class='imageUpload' @setFiles="setFiles" @set-selectors="setSelectors" :aspectRatio="job.aspectRatio"
+        :selects='job.selects' :collectDimensions='job.getImageDimensions' :acceptFileTypes="job.acceptableFileTypes">
+      </ImageUpload>
+
+      <md-button class="md-layout-item md-size-100 md-primary md-raised" @click="submit()">
+        <slot name="submit-button">
+          Submit
+        </slot>
+      </md-button>
+
+
+      <div class="md-layout-item md-size-100" v-if='results.submitted && useWebsocket'>
+        <h3>Submission Results</h3>
+        <div v-if='results.obtained'>
+          <md-button class='resultsButton md-layout-item md-size-100 md-primary' @click="download()">
+            <span v-if='results.downloading'>Creating zipped file...</span>
+            <span v-else>Download results</span>
+          </md-button>
+          <div class='resultsContainer'>
+            <div class='resultsSubcontainer'>
+              <h4 class='resultsSubtitle'>Inputs</h4>
+              <div v-for='(file, index) in results.files' :key='index'>
+                <img class='resultsImage' :src='getResultImage(index, "input")'>
+              </div>
+            </div>
+            <div class='resultsSubcontainer'>
+              <h4 class='resultsSubtitle'>Outputs</h4>
+              <div v-for='(file, index) in results.files' :key='index'>
+                <img class='resultsImage' :src='getResultImage(index, "output")'>
+              </div>
+            </div>
+          </div>
+        </div>
+        <spinner v-else></spinner>
+      </div>
+    </div>
+    <div class="md-layout-item md-layout md-alignment-top-center reference-container">
+      <slot name="references"></slot>
+      <reference-container v-if="!$scopedSlots.references" :references="referenceList" :openOnLoad="false">
+      </reference-container>
+    </div>
+  </div>
+</div>

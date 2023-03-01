@@ -1,25 +1,170 @@
 version: '3'
 services:
+  mongo:
+    image: 'mongo:4.4'
+    restart: always
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
+      - MONGO_DEVS=${MONGO_DEVS}
+      - MONGO_DEV_PWD=${MONGO_DEV_PWD}
+      - MONGO_PORT=${MONGO_PORT}
+      - MM_DB=${MM_DB}
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mockDB/db:/data/db
+      - ./mockDB/restore:/restore
+      - ./mockDB/log:/var/log/mongodb
+      - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+  es:
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
+    container_name: es
+    restart: always
+    environment:
+      - node.name=es
+      - bootstrap.memory_lock=true
+      - cluster.initial_master_nodes=es
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
+    volumes:
+      - ./mockDB/es:/usr/share/elasticsearch/data
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:RELEASE.2022-03-17T06-34-49Z
+    command: server /data
+    hostname: minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./mockDB/minio:/data
+  proxy:
+    container_name: proxy
+    depends_on:
+      - api
+      - client
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '80:80'
   api:
+    depends_on:
+      - es
+      - mongo
+    container_name: restful
+    restart: always
     build:
       dockerfile: Dockerfile.dev
       context: ./resfulservice
-    ports:
-      - '3000:3000'
     volumes:
       - /app/node_modules
-      - ./server:/app
+      - ./resfulservice:/app
+    environment:
+      - DB_USERNAME=${MONGO_DEVS}
+      - DB_PASSWORD=${MONGO_DEV_PWD}
+      - MM_DB=${MM_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - TKNS=${TKNS}
+      - ESADDRESS=${ESADDRESS}
+      - PORT=${PORT}
+      - MINIO_PORT=${MINIO_PORT}
+      - ROUTER=${HOST_PORT}
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
+      - MM_USER=${MM_USER}
+      - MM_USER_EMAIL=${MM_USER_EMAIL}
+      - MM_AUTH_GIVEN_NAME_HEADER=${MM_AUTH_GIVEN_NAME_HEADER}
+      - MM_AUTH_DISPLAYNAME_HEADER=${MM_AUTH_DISPLAYNAME_HEADER}
+      - MM_AUTH_SURNAME_HEADER=${MM_AUTH_SURNAME_HEADER}
+      - MM_AUTH_EMAIL_HEADER=${MM_AUTH_EMAIL_HEADER}
+      - MM_AUTH_USER_HEADER=${MM_AUTH_USER_HEADER}
+    ports:
+      - '3001:3001'
   client:
-    depends_on:
-      - api
     stdin_open: true
+    container_name: frontend
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - API_PORT=${PORT}
+      - MINIO_PORT=${MINIO_PORT}
+      - SERVICE_PORT=${HOST_PORT}
     build:
       dockerfile: Dockerfile.dev
       context: ./app
-    ports:
-      - '4000:8080'
     volumes:
       - /app/node_modules
       - ./app:/app
+#   redis:
+#     image: "redis:alpine"
+#     command: redis-server
+#     volumes:
+#      - ./mockDB/redis-data:/var/lib/redis
+#   celery:
+#     depends_on:
+#       - redis
+#       - fuseki
+#     volumes:
+#       - ./mockDB/fuseki:/app/run
+#       - ./whyis/materialsmine:/app
+#     command: /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
+#     environment:
+#       - CHOKIDAR_USEPOLLING=true
+#     build: whyis
+#   celerybeat:
+#     depends_on:
+#       - redis
+#       - fuseki
+#     volumes:
+#       - ./mockDB/fuseki:/app/run
+#       - ./whyis/materialsmine:/app
+#     command: /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
+#     environment:
+#       - CHOKIDAR_USEPOLLING=true
+#     build: whyis
+#   whyis:
+#     depends_on:
+#       - redis
+#       - fuseki
+#     stdin_open: true
+#     command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000
+#     environment:
+#       - CHOKIDAR_USEPOLLING=true
+#     build: whyis
+#     volumes:
+#       - ./whyis/materialsmine:/app
+#       - ./mockDB/fuseki:/app/run
+#     ports:
+#       - '8000:8000'
+#       - '5000:5000'
+#   fuseki:
+#     build: whyis
+#     command: /opt/venv/bin/fuseki-server --mem /ds
+# # Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
+# #    image: 'stain/jena-fuseki:4.0.0
+#     restart: always
+#     mem_limit: 5G
+#     mem_reservation: 5G
+#     environment:
+# #      - ADMIN_USER=admin
+# #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+#       - JVM_ARGS=-Xmx4g
+#       - FUSEKI_BASE=/fuseki
+#     ports:
+#       - '3030:3030'
+#     volumes:
+#       - ./mockDB/fuseki:/fuseki
+
+volumes:
+  mockDB:

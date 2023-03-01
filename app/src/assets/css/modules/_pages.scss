@@ -1,0 +1,532 @@
+.search_box {
+    margin: 0 auto;
+    width: 70%;
+    font-size: 2rem;
+    font-weight: 200;
+    line-height: 1.5;
+
+    &_header {
+        font-size: 5rem;
+        font-weight: 300;
+        text-align: left;
+        color: $primary;
+        margin-top: 8rem;
+
+        @include respond(tab-port) {
+            font-size: 2.5rem;
+        }
+    }
+
+    &_text {
+        font-size: 1.4rem;
+        text-align: left;
+    }
+
+    &_link {
+        margin-top: -2rem;
+        font-size: 1.4rem;
+    }
+
+    &_form {
+        display: flex;
+        flex-direction: row;
+
+        &-item-1 {
+            flex-grow: 220;
+        }
+        &-item-2 {
+            flex-grow: 1;
+            align-self: flex-start;
+            .md-field {
+                width: 40%;
+                margin: 0;
+                padding-top: 0;
+            }
+        }
+        &_btn {
+            display: block !important;
+            padding: 1.65rem 3.5rem !important;
+            font-size: 1.2rem;
+            &:hover {
+                transform: translateY(0) !important;
+            }
+        }
+
+        &_label {
+            text-align: left;
+            color: $primary;
+        }
+    }
+}
+
+.explorer_page {
+    &_header {
+        margin: 5rem 10rem;
+        .md-tabs-navigation {
+            border-bottom: 1px solid $primary !important;
+        }
+        .md-tabs.md-theme-default .md-tabs-indicator {
+            background-color: $primary-white !important;
+            height: 0.5rem;
+            bottom: -0.25rem;
+        }
+        .md-tab-nav-button {
+            background-color: $primary !important;
+            padding: 0.5rem;
+            transition: background-color 0.2s;
+            border: 1px solid $primary !important;
+            border-radius: 0.7rem 0.7rem 0 0;
+            margin-right: 1rem;
+            height: max-content;
+            .md-button-content{
+                color: $primary-white !important;
+                font-size: 1.4rem;
+            }
+        }
+        .md-active {
+            background-color: transparent !important;
+            border-bottom-color: $primary-white !important;
+            .md-button-content {
+                color: $primary !important;
+            }
+        }
+    }
+    &_footer {
+        color: $primary;
+        margin-top: 1rem;
+        text-align: center;
+        &-text {
+            font-size: 1.5rem;
+        }
+    }
+    &-container {
+        background-size: auto;
+        background-image: linear-gradient(10deg,$primary 5%,$primary-light),url(~@/assets/img/keyword.png) !important;
+        background-blend-mode: exclusion;
+        padding: 1rem;
+    }
+    &-nav {
+        margin: 0 auto;
+        width: 80%;
+        margin-top: 9rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content:center;
+        align-items: center;
+
+        &-card {
+            height: 25rem;
+            border: 0.1rem solid #08233c;
+            // background-color: $primary;
+            cursor: pointer;
+            // margin-right: 5rem;
+            margin-right: 2.5rem;
+
+            @include respond(phone) {
+                margin-right: 2rem;
+                width: 30rem !important;
+            }
+            
+            &_icon {
+                margin-top: 9rem;
+                font-size: 12rem !important;
+                color: $primary !important;
+            }
+            &_text {
+                color: $primary;
+                // font-size: 3rem;
+                font-size: 2.8rem;
+                font-weight: 300;
+            }
+
+            &::after {
+                display: inline;
+            }
+
+            &:hover {
+                background-color: $tertiary;
+                & > .explorer_page-nav-card_icon, & > .explorer_page-nav-card_text{
+                    color: $primary !important;
+                }
+            }
+        }
+    }
+    &-list {
+        margin-bottom: 4rem;
+    }
+    &-results {
+        margin: 0rem 10rem;
+        .md-card {
+            padding: 1rem;
+            cursor: default;
+        }
+        .results_card{
+            margin: 1rem;
+            position: relative !important;
+            &-title {
+                color: $secondary !important;
+                font-weight: 900;
+                :hover {
+                    color:$primary !important;
+                }
+            }
+            &-type {
+                color: $secondary !important;
+                font-weight: 500;
+                font-size: small;
+                font-style: italic;
+            }
+            &-description {
+                color: $primary !important;
+                padding-left: 2rem;
+                font-style: italic;
+            }
+            .md-avatar {
+                border: none;
+                border-radius:0%;
+                width: 10rem;
+                height: 10rem;
+                img {
+                    object-fit: cover;
+                }
+            }
+        }
+    }
+}
+
+.metamine {
+    &_intro {
+        &-banner {
+            background: url('~@/assets/img/random_network.png') no-repeat bottom center !important;
+            background-size: cover !important;
+            margin-top: -2rem;
+            padding: 1.5rem;
+        }
+        &-content {
+            text-align: center;
+            color: $primary-white;
+            padding: 4rem 2rem;
+        }
+        &-header {
+            margin: 2rem 0 2.5rem 0;
+            font-size: 5rem;
+            font-weight: 500;
+
+        }
+        &-span {
+            display: block;
+            font-size: 2.5rem;
+        }
+    }
+    &_sponsor {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1rem;
+        &-content {
+            align-self: center;
+            text-align: center;
+            width: 70%;
+        }
+        &-img {
+            height: 18rem !important;
+        }
+    }
+    &_headline {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    &_menu {
+        color: $primary-white !important;
+        font-weight: 500;
+
+        &-icon {
+            color: $primary !important;
+        }
+    }
+    &_footer {
+        &-text {
+            font-weight: bold;
+            text-align: left;
+            padding-left: 15%;
+            padding-right: 15%;
+        }
+        &-ref {
+            text-align: left;
+            padding-left: 12%;
+            padding-right: 12%;
+
+            &-header {
+                margin-top: 2rem;
+            }
+        }
+    }
+}
+
+.card {
+    background: #fff;
+    border-radius: 2px;
+    display: inline-block;
+    height: 300px;
+    margin: 1rem;
+    position: relative;
+    width: 300px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    cursor: pointer;
+
+    &-icon {
+        font-size: 10rem;
+        @include respond(phone) {
+            font-size: 4rem;
+        }
+
+        &-adjust {
+            @include respond(phone) {
+                font-size: 8rem !important;
+            }
+        }
+        &-container {
+            margin-bottom: 2.5rem;
+            margin-top: 1rem;
+        }
+    }
+
+    &-container {
+        margin: 1.5rem 0;
+        padding: .5rem;
+    }
+    &-heading {
+      font-size: 2.5rem;
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    &-float {
+      text-align: center;
+      padding: .1rem 1rem;
+    }
+}
+
+.inline-display {
+    display: inline-flex !important;
+}
+
+
+
+.mid {
+    &-first {
+        background-color: #08233c;
+        padding: 2.5rem 1rem;
+        margin: 1.5rem 0;
+        margin-bottom: 0;
+        color: $primary-white;
+        @include respond(phone) {
+            padding-bottom: 0.5rem !important
+        }
+
+        &-span {
+            display: block;
+        }
+
+        &-p {
+            line-height: 1.2;
+            margin-top: 0.5rem;
+            font-size: 3.5rem;
+            @include respond(phone) {
+                font-size: 1.14rem;
+            }
+        }
+
+        &-li {
+            margin-right: 5rem;
+            @include respond(phone) {
+                margin-right: 2rem;
+            }
+        }
+
+        &-container {
+            height: 8rem;
+        }
+    }
+
+    &-second {
+        background-color: rgba(0,0,0,.6);
+        padding: 6rem 15rem;
+        margin: 0 0 1.5rem 0;
+        color: $primary-white;
+        font-size: 1.5rem;
+        line-height: 1.6;
+
+        &-link {
+            color: $primary-white !important;
+            text-decoration: underline !important;
+        }
+
+        @include respond(tab-port) {
+            padding: 6rem 3rem;
+        }
+    }
+}
+
+.sample-page {
+    &_header {
+        font-size: 1.6rem;
+        font-weight: 400;
+        color: $primary;
+        margin: 4rem 0 1.2rem 0;
+        padding-bottom: .5rem;
+        border-bottom: .1rem solid $primary;
+    }
+}
+
+
+.page-not-found {
+    padding: 5rem;
+    height: 100vh;
+    text-align: center;
+    @include respond(tab-port) {
+        padding: 1rem;
+    }
+
+    &-header {
+        padding: 1.5em 0 .3em;
+        font-size: 6em;
+        color: $primary;
+    }
+
+    p {
+        padding: 0 20em;
+        a{
+            a{
+                color: $tertiary !important;
+                font-weight: 600;
+            }
+        }
+        @include respond(tab-port) {
+            padding: 0 5em;
+        }
+
+        @include respond(phone) {
+            padding: 0;
+        }
+    }
+}
+
+.curate {
+    display: block;
+    padding: 0 7rem;
+    @include respond(phone) {
+        padding: 0 4rem;
+    }
+    display: flex;
+    flex-direction: column;
+    &-actions {
+        &_lg {
+            @include respond(tab-land) {
+                visibility: hidden;
+                display: none;
+            }
+        }
+        &_sm {
+            visibility: hidden;
+            display: none;
+            @include respond(tab-land) {
+                visibility: visible;
+                display: block;
+            }
+
+        }
+    }
+    &-menu {
+        padding: 1rem 1rem 2rem 1rem;
+        align-items: center;
+        display: flex;
+        &-routes {
+            @include respond(phone) {
+                visibility: hidden;
+                display: none;
+            }
+        }
+    }
+    &-grid {
+        .md-card {
+            .md-title {
+                @include respond(phone) {
+                    font-size: 20px;
+                }
+            }
+            margin: 1.5rem;
+            padding-bottom: 1rem;
+            &-content {
+                overflow: auto;
+            }
+        };
+        &-icons {
+            max-width: 100%;
+            max-height: 28rem;
+            overflow: auto;
+            .md-button {
+                height: 10rem;
+                max-width: 10rem !important;
+                .label {
+                    font-size: 9px;
+                    color: $primary;
+                }
+                @include respond(phone){
+                    .md-ripple {
+                        justify-content: left;
+                    }
+                    height: 6rem;
+                    max-width: 100% !important;
+                    width: 40rem !important;
+                    .label {
+                        font-size: 14px;
+                        top: 2.8rem;
+                        left: 10rem;
+                        position: absolute;
+                    }
+                    .md-icon {
+                        font-size: 7rem !important;
+                        width: 7rem;
+                        height: 7rem;
+                        min-width: 7rem;
+                        max-height: 7rem;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.image-detail-page {
+    padding: 2rem 12rem;
+    overflow: hidden;
+
+    @include respond(tab-land) {
+        padding: 0;
+    }
+    @include respond(tab-port) {
+        padding: 0 !important;
+    }
+    &-details {
+        &-flex-item-col {
+
+            @include respond(phone) {
+                flex-direction: column;
+            }
+        }
+    }
+    &-tab {
+        border-bottom: 0.1px solid $secondary-grey;
+    }
+
+    &__relatedImg {
+        display: flex;
+        flex-direction: row;
+        @include respond(phone){
+            flex-direction: row !important;
+        }
+
+    }
+}

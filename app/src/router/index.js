@@ -1,38 +1,85 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import store from '@/store/index.js'
-import Home from '@/pages/Home.vue'
+import ExplorerBase from '@/pages/explorer/Base.vue'
+import MetamineBase from '@/pages/metamine/Base.vue'
+import NanomineBase from '@/pages/nanomine/Base.vue'
+import NotFound from '@/pages/NotFound.vue'
+import nanomineRoutes from '@/router/module/nanomine'
+import metamineRoutes from '@/router/module/metamine'
+import explorerRoutes from '@/router/module/explorer'
 Vue.use(VueRouter)
 
 const routes = [
   {
-    path: '/',
+    path: '',
     name: 'Home',
-    component: Home
+    redirect: { name: 'HomeNM' }
   },
   {
-    path: '/about',
-    name: 'About',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '@/pages/About.vue'),
-    meta: { requiresAuth: true }
+    path: '/nm',
+    component: NanomineBase,
+    children: [
+      ...nanomineRoutes
+    ]
   },
-  { path: '/:notFound(.*)', component: Home } // TODO: Not found component
+  {
+    path: '/mm',
+    component: MetamineBase,
+    children: [
+      ...metamineRoutes
+    ]
+  },
+  {
+    path: '/explorer',
+    component: ExplorerBase,
+    children: [
+      ...explorerRoutes
+    ]
+  },
+  {
+    path: '/auth/:auth',
+    component: () => import('@/auth/auth.vue')
+  },
+  { path: '/explorer:notFound(.*)', component: NotFound },
+  { path: '/mm:notFound(.*)', component: NotFound },
+  { path: '/nm:notFound(.*)', component: NotFound },
+  { path: '/:notFound(.*)', component: NotFound }
 ]
 
 const router = new VueRouter({
   mode: 'history',
-  base: process.env.BASE_URL,
-  routes
+  routes,
+  scrollBehavior (to, _, prevPosition) {
+    if (prevPosition) {
+      return prevPosition
+    }
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth'
+      }
+    }
+    return { x: 0, y: 0 }
+  }
 })
 
-router.beforeEach(function (to, _, next) {
-  if (to.meta.requiresAuth && !store.getters.isAuthenticated) {
-    next('/') // TODO: Develop auth component
-  } else if (to.meta.requiresUnauth && store.getters.isAuthenticated) {
-    next('/')
+router.beforeEach(async function (to, _, next) {
+  if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
+    if (!store.getters['auth/isAuthenticated']) {
+      store.commit('setSnackbar', {
+        message: 'Re-authenticating...',
+        duration: 1500
+      }, { root: true })
+
+      await store.dispatch('auth/tryLogin')
+      if (store.getters['auth/isAuthenticated']) {
+        next()
+      }
+    }
+    next(false)
+  } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
+    next()
   } else {
     next()
   }

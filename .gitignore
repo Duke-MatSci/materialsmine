@@ -1,5 +1,4 @@
 # project specific
-.github/
 node_modules/
 package-lock.json
 **/package-lock.json
@@ -8,6 +7,9 @@ package-lock.json
 # dotenv environment variables file
 .env
 .env.test
+**/**/envVarFile
+**/**/env
+**/**/secrets.json
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -17,3 +19,41 @@ package-lock.json
 
 # Mac
 .DS_Store
+**/**/.DS_Store
+
+# Local DBs
+**/**/db
+
+# Rest
+**/**/*.log
+
+# Fuseki
+mockDB/fuseki/shiro.ini
+mockDB/fuseki/backups/
+mockDB/fuseki/databases/
+mockDB/fuseki/logs/
+mockDB/fuseki/system/
+mockDB/fuseki/system_files/
+mockDB/fuseki/templates/
+mockDB/fuseki/log4j2.properties
+mockDB/materialsmine_backup/
+mockDB/fuseki/files/
+
+#Sync DB
+mockDB/restore/mongodump/
+mockDB/materialsmine_backup/
+
+#Elastic Search
+mockDB/es/
+
+#Min.io
+mockDB/minio/
+
+#Whyis
+**/**/__pycache__/
+**/**/celerybeat-schedule.db
+
+# Ignore coverage
+app/coverage
+resfulservice/coverage
+resfulservice/.nyc_output

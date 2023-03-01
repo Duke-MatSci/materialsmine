@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L141_S19_Gao_2013</ID>
+  <Control_ID>L141_S1_Gao_2013</Control_ID>
+  <SchemaVersion>PNC_schema_010720</SchemaVersion>
+  <SchemaID>5e496fa88aba2cf1302d73e3</SchemaID>
+  <DatasetID>5e4c12fec941bb7a1270ddbb</DatasetID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Polymer</Publication>
+        <Title>Effect of graft density and molecular weight on mechanical properties of rubbery block copolymer grafted SiO2 nanoparticle toughened epoxy</Title>
+        <Author>Gao, Jianing</Author>
+        <Author>Li, Junting</Author>
+        <Author>Zhao, Su</Author>
+        <Author>Benicewicz, Brian C.</Author>
+        <Author>Hillborg, Henrik</Author>
+        <Author>Schadler, Linda S.</Author>
+        <Keyword>Rubbery copolymer</Keyword>
+        <Keyword>Grafted particle</Keyword>
+        <Keyword>Toughening epoxy</Keyword>
+        <Publisher>Elsevier</Publisher>
+        <PublicationYear>2013</PublicationYear>
+        <DOI>10.1016/j.polymer.2013.05.033</DOI>
+        <Volume>54</Volume>
+        <URL>https://www.sciencedirect.com/science/article/pii/S0032386113004643?via%3Dihub</URL>
+        <Language>English</Language>
+        <Location>Department of Materials Science &amp; Engineering, Rensselaer Polytechnic Institute, Troy, NY 12180, USA</Location>
+        <DateOfCitation>2016-07-12</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>0032-3861</ISSN>
+          <Issue>15</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>BISPHENOL A DIGLYCIDYL ETHER</ChemicalName>
+        <StdChemicalName>DGEBA Epoxy Resin</StdChemicalName>
+        <uSMILES>CC(C)(C1=CC=C(OCC2CO2)C=C1)C3=CC=C(OCC4CO4)C=C3</uSMILES>
+        <PubChemRef>2286</PubChemRef>
+        <Abbreviation>DGEBA</Abbreviation>
+        <ConstitutionalUnit>C2H3OCH2OC6H3C3H6C6H5OCH2C2H3O</ConstitutionalUnit>
+        <PlasticType>thermoset</PlasticType>
+        <PolymerType>homopolymer</PolymerType>
+        <ManufacturerOrSourceName>Huntsman Corporation</ManufacturerOrSourceName>
+        <TradeName>Araldite F</TradeName>
+        <MolecularWeight>
+          <description>molecular weight between crosslinks</description>
+          <value>312</value>
+          <unit>g/mol</unit>
+        </MolecularWeight>
+        <Density>
+          <description>inserted from ChemProps, NanoMine</description>
+          <value>1.13</value>
+          <unit>g/cm3</unit>
+        </Density>
+        <Additive>
+          <description>Aradur HY 90F</description>
+        </Additive>
+        <Additive>
+          <description>benzyldimethylamine</description>
+        </Additive>
+      </MatrixComponent>
+      <MatrixProcessing>
+        <ChooseParameter>
+          <Additive>
+            <Description>Curing Agent</Description>
+            <Additive>Aradur HY 90F</Additive>
+          </Additive>
+        </ChooseParameter>
+      </MatrixProcessing>
+      <MatrixProcessing>
+        <ChooseParameter>
+          <Additive>
+            <Description>Catalyst</Description>
+            <Additive>benzyldimethylamine</Additive>
+          </Additive>
+        </ChooseParameter>
+      </MatrixProcessing>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>Silicon dioxide</ChemicalName>
+        <StdChemicalName>Silicon dioxide</StdChemicalName>
+        <PubChemRef>24261</PubChemRef>
+        <Abbreviation>SiO2</Abbreviation>
+        <ManufacturerOrSourceName>Nissan</ManufacturerOrSourceName>
+        <Density>
+          <description>inserted from ChemProps, NanoMine</description>
+          <value>2.65</value>
+          <unit>g/cm3</unit>
+        </Density>
+        <CrystalPhase>Amorphous</CrystalPhase>
+        <SphericalParticleDiameter>
+          <description>nanoparticle diameter</description>
+          <value>15</value>
+          <unit>nm</unit>
+        </SphericalParticleDiameter>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>polyglycidylmethacrylate</ChemicalName>
+          <Abbreviation>PGMA</Abbreviation>
+          <ConstitutionalUnit>C7H10O13</ConstitutionalUnit>
+          <GraftDensity>
+            <description>0.7</description>
+            <unit>chains/nm2</unit>
+          </GraftDensity>
+          <MolecularWeight>
+            <description>short brush</description>
+            <value>20000</value>
+            <unit>g/mol</unit>
+          </MolecularWeight>
+          <SurfaceChemistryProcessing>
+            <ChooseParameter>
+              <Other>Reversible addition-fragmentation chain-transfer polymerization</Other>
+            </ChooseParameter>
+          </SurfaceChemistryProcessing>
+        </ParticleSurfaceTreatment>
+        <ParticleSurfaceTreatment>
+          <ChemicalName>Polyhexylmethacrylate</ChemicalName>
+          <Abbreviation>PHMA</Abbreviation>
+          <ConstitutionalUnit>C10H18O2</ConstitutionalUnit>
+          <MolecularWeight>
+            <description>Long brush</description>
+            <value>40000</value>
+            <unit>g/mol</unit>
+          </MolecularWeight>
+        </ParticleSurfaceTreatment>
+      </FillerComponent>
+      <FillerComposition>
+        <Constituent>Nanoparticle volume fraction</Constituent>
+        <Fraction>
+          <mass>
+            <value>0.009330328850080982</value>
+            <source>computed by NanoMine</source>
+          </mass>
+          <volume>
+            <value>0.004</value>
+            <source>reported</source>
+          </volume>
+        </Fraction>
+      </FillerComposition>
+      <Description>Silica nanoparticle with grafted PHMA/PGMA</Description>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <ExperimentalProcedure>Mixing and Epoxy Curing</ExperimentalProcedure>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Solvent>
+          <SolventName>CHCl2</SolventName>
+        </Solvent>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>Mixing of nanoparticles and epoxy</Description>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Description>First curing step</Description>
+          <Temperature>
+            <value>80</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>10</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+    </SolutionProcessing>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Heating>
+          <Description>Second curing step</Description>
+          <Temperature>
+            <value>135</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>10</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Transmission_Electron_Microscopy>
+      <EquipmentUsed>JOEL High Resolution TEM</EquipmentUsed>
+    </Transmission_Electron_Microscopy>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Mechanical>
+      <Tensile>
+        <TensileModulus>
+          <description>Modulus</description>
+          <value>3.2</value>
+          <unit>GPa</unit>
+          <uncertainty>
+            <type>absolute</type>
+            <value>0.1</value>
+          </uncertainty>
+        </TensileModulus>
+        <TensileStressAtYield>
+          <description>Yield Stress</description>
+          <value>76</value>
+          <unit>MPa</unit>
+          <uncertainty>
+            <type>absolute</type>
+            <value>0.5</value>
+          </uncertainty>
+        </TensileStressAtYield>
+        <ElongationAtBreak>
+          <description>strain at break</description>
+          <value>0.079</value>
+          <uncertainty>
+            <type>absolute</type>
+            <value>0.02</value>
+          </uncertainty>
+        </ElongationAtBreak>
+        <Conditions>
+          <StrainRate>
+            <description>Tensile test strain rate</description>
+            <value>0.1</value>
+            <unit>mm/min</unit>
+          </StrainRate>
+        </Conditions>
+      </Tensile>
+    </Mechanical>
+  </PROPERTIES>
+  <MICROSTRUCTURE>
+    <ImageFile>
+      <File>http://localhost/nmr/blob?id=5ac63561e74a1d06fd9ada29</File>
+      <Description>TEM micrograph showing particle disperison</Description>
+      <MicroscopyType>TEM</MicroscopyType>
+      <Type>grayscale</Type>
+    </ImageFile>
+    <Experimental_Sample_Info>
+      <SampleThickness>
+        <description>TEM sample thickness</description>
+        <value>100</value>
+        <unit>nm</unit>
+      </SampleThickness>
+    </Experimental_Sample_Info>
+  </MICROSTRUCTURE>
+</PolymerNanocomposite>

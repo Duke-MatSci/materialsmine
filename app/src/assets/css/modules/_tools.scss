@@ -1,0 +1,338 @@
+.tool{
+  &_page{
+    .md-layout-item{
+      height: fit-content;
+      width: fit-content;
+    }
+  }
+  &_set{
+    .md-layout-item{
+      height: fit-content;
+      margin: .5rem;
+    }
+  }
+}
+
+.md-layout-responsive{
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-evenly;
+  min-height: 35rem;
+  height: fit-content;
+  margin: 0 auto;
+  margin-left: 4rem; //TODO-check 06/16/2022
+
+  @include respond(phone) {
+    flex-direction: column;
+    min-height: 35rem; //TODO-check 06/16/2022
+    margin-left: 1rem; //TODO-check 06/16/2022
+  }
+
+  @include respond(tab-port) {
+    // color: white; TODO-check 06/16/2022
+    min-height: 70rem; //TODO-check 06/16/2022
+  }
+}
+
+// ChemProps.vue
+.chemprops {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+// CsvPlotter.vue
+.section_CSVPlotter {
+  .upload {
+    border: 5px dashed #777777;
+    min-height: 400px;
+  }
+  .md-layout-item {
+    width: max-content;
+    padding: 1rem 0rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+// LineChart.vue
+.section_LineChart {
+  // Line
+  .nm-line {
+    stroke: #3cba54;
+    stroke-width: 2px;
+    fill: none;
+  }
+
+  .tooltip {
+    fill: white;
+    stroke: #444;
+  }
+
+  .overlay {
+    fill: none;
+    pointer-events: all;
+  }
+}
+
+// ReferenceContainer.vue
+.section_referenceContainer {
+  .reference {
+    padding-left: 36px;
+    text-indent: -36px;
+  }
+}
+
+// PixelUnit.vue
+.pixelunit {
+  #unit-cell {
+    background-color: #c0c0c0;
+    position: relative;
+    margin-left: 0px;
+    margin-top: 0px;
+    min-width: 300px;
+    min-height: 300px;
+    max-width: 300px;
+    max-height: 300px;
+  }
+
+  .adjust-padding {
+    padding: 3rem !important;
+  }
+}
+
+// EditImage.vue
+.editImage_modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.3); /* dims the entire screen to make the modal stand out */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1; /* ensures that the modal appears on top of other elements */
+
+  h1 {
+    margin-top: 0px;
+    background-color: black;
+    color: white;
+    width: 100%;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+  }
+
+  .image-cropper-container {
+    width: 700px;
+    margin-top: 48px; /* deal with extra heigh from the navigation pane */
+    max-width: 90%;
+    max-height: calc(90% - 48px);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 8px;
+    overflow-y: auto;
+    & img {
+      margin-top: 0px;
+    }
+    &-buttons {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      & p {
+        margin-bottom: 0px;
+        font-weight: 700;
+        margin-left: 8px;
+        margin-right: 8px;
+        background-color: rgba(192, 192, 192, 0.5);
+        padding: 8px 12px;
+        border-radius: 2px;
+      }
+    }
+  }
+
+  .imageWrapper {
+    width: 90%;
+    height: 75%;
+    margin-bottom: 20px;
+  }
+
+  .image {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .relative {
+    position: relative;
+  }
+
+  .phaseDot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .scale-bar-inputs {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 90%;
+    & div {
+      width: 98%;
+    }
+  }
+
+  .calibrationLine {
+    position: absolute;
+    height: 5px;
+    border: 1px solid white;
+    background-color: black;
+  }
+}
+
+// ImageUpload.vue
+.section_imageUpload {
+  /* Browse files button */
+  .fileButtonWrapper {
+    margin-bottom: 0px;
+  }
+
+  .fileButton {
+    margin-left: 0px;
+    margin-bottom: 20px;
+    .md-button-content {
+      color: $secondary !important;
+    }
+  }
+
+  h4 {
+    text-align: left;
+    margin-top: 0px;
+    font-size: 15px;
+  }
+
+  /* Subheaders such as 'Image dimensions' and 'Parameters' */
+  .subheader {
+    margin-bottom: 15px;
+    border-bottom: 1px solid gray;
+  }
+
+  .tooltipWrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  /* info and error alerts */
+  .alert {
+    text-align: left;
+    border: none;
+  }
+
+  /**********
+  image table
+  **********/
+  .imageTable {
+    margin-bottom: 20px;
+  }
+
+  .imageTableHeader {
+    border-bottom: 1px solid gray;
+    margin-bottom: 15px;
+  }
+
+  .imageTableHeader, .imageTableContents {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .imageTableContents {
+    margin-bottom: 5px;
+  }
+
+  .imageTableHeader h4, .imageTableContents p, .tooltipWrapper {
+    width: 25%;
+    text-align: left;
+  }
+
+  .tooltipWrapper h4 {
+    width: initial;
+  }
+
+  .imageTableContents p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 15px;
+  }
+
+  .imageTableButtons {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 25%;
+  }
+
+  .imageTableButton {
+    margin-top: 0px;
+    margin-left: 0px;
+  }
+
+  .imageSizeError {
+    font-weight: 700;
+    color: red;
+  }
+
+  /*********
+  parameters
+  *********/
+  .selectDropdownsWrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .singleSelectDropdown {
+    width: 49%;
+  }
+
+  /* image dimensions */
+  .imageDimensionsWrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .imgDimWidth {
+    width: 20%;
+    max-width: 225px;
+    margin-right: 15px;
+  }
+
+  .imgDimHeight {
+    width: 20%;
+    max-width: 225px;
+    margin-left: 15px;
+    margin-right: 30px;
+  }
+
+  .imgDimUnits {
+    width: 200px;
+    max-width: 25%;
+  }
+
+  .imgDimButton {
+    margin-left: 30px;
+  }
+}

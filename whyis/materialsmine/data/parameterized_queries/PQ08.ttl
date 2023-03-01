@@ -1,0 +1,254 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ08 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>research articles</b> published in or after {?MinYear} that studied {?Material} as a constituent and include an author with the name {?AuthorMatch}.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+SELECT DISTINCT ?doi ?Material ?MaterialRole ?Year ?Author WHERE {
+  ?Sample a mm:PolymerNanocomposite ;
+          sio:hasComponentPart [ sio:hasRole [ a [ rdfs:label ?MaterialRole ] ] ;
+                                 a [ rdfs:label ?Material ] ] .
+  ?doi a dct:BibliographicResource ;
+       dct:creator [ foaf:name ?Author ] ;
+       dct:created ?Year ;
+       sio:hasPart ?Sample .
+  FILTER(!REGEX(STR(?doi), "unpublished"))
+  FILTER((?Year >= ?MinYear) && (REGEX(STR(?Author), ?AuthorMatch)))
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "MinYear";
+    schema:option [
+        rdfs:label "2000";
+        schema:value 2000;
+        schema:position 1
+      ],
+      [
+        rdfs:label "2005";
+        schema:value 2005;
+        schema:position 2
+      ],
+      [
+        rdfs:label "2010";
+        schema:value 2010;
+        schema:position 3
+      ],
+      [
+        rdfs:label "2015";
+        schema:value 2015;
+        schema:position 4
+      ],
+      [
+        rdfs:label "2020";
+        schema:value 2020;
+        schema:position 5
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Material";
+    schema:option [
+        rdfs:label "any material";
+        schema:position 1
+      ],
+      [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 2
+      ],
+      [
+        rdfs:label "epoxy";
+        schema:value "DGEBA Epoxy Resin";
+        schema:position 3
+      ],
+      [
+        rdfs:label "PMMA";
+        schema:value "Poly(methyl methacrylate)";
+        schema:position 4
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 5
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 6
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 7
+      ],
+      [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 8
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 9
+      ],
+      [
+        rdfs:label "polyethylene";
+        schema:value "Poly(ethylene)";
+        schema:position 10
+      ],
+      [
+        rdfs:label "polystyrene";
+        schema:value "Polystyrene";
+        schema:position 11
+      ],
+      [
+        rdfs:label "PVDF";
+        schema:value "Poly(vinylidene fluoride)";
+        schema:position 12
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 13
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 14
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 15
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 16
+      ],
+      [
+        rdfs:label "silicone";
+        schema:value "Silicone rubber";
+        schema:position 17
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 18
+      ],
+      [
+        rdfs:label "PLA";
+        schema:value "Polylactic acid";
+        schema:position 19
+      ],
+      [
+        rdfs:label "polypropylene";
+        schema:value "Poly(propylene)";
+        schema:position 20
+      ],
+      [
+        rdfs:label "poly(bisphenol A carbonate)";
+        schema:value "Poly(bisphenol A carbonate)";
+        schema:position 21
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 22
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 23
+      ],
+      [
+        rdfs:label "cycloaliphatic epoxy";
+        schema:value "Cycloaliphatic Epoxy Resin";
+        schema:position 24
+      ],
+      [
+        rdfs:label "polyurethane";
+        schema:value "Polyurethane";
+        schema:position 25
+      ],
+      [
+        rdfs:label "PVA";
+        schema:value "Poly(vinyl alcohol)";
+        schema:position 26
+      ],
+      [
+        rdfs:label "P2VP";
+        schema:value "Poly(2-vinyl pyridine)";
+        schema:position 27
+      ],
+      [
+        rdfs:label "PEG";
+        schema:value "Poly(ethylene glycol)";
+        schema:position 28
+      ],
+      [
+        rdfs:label "cellulose";
+        schema:value "Cellulose";
+        schema:position 29
+      ],
+      [
+        rdfs:label "polyimide";
+        schema:value "Polyimide";
+        schema:position 30
+      ],
+      [
+        rdfs:label "PVC";
+        schema:value "Poly(vinyl chloride)";
+        schema:position 31
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "AuthorMatch";
+    schema:option [
+        rdfs:label "Schadler";
+        schema:value "Schadler";
+        schema:position 1
+      ],
+      [
+        rdfs:label "Benicewicz";
+        schema:value "Benicewicz";
+        schema:position 2
+      ],
+      [
+        rdfs:label "Kumar";
+        schema:value "Kumar";
+        schema:position 3
+      ],
+      [
+        rdfs:label "Nelson";
+        schema:value "Nelson";
+        schema:position 4
+      ],
+      [
+        rdfs:label "Hillborg";
+        schema:value "Hillborg";
+        schema:position 5
+      ],
+      [
+        rdfs:label "Zhao";
+        schema:value "Zhao";
+        schema:position 6
+      ],
+      [
+        rdfs:label "Bell";
+        schema:value "Bell";
+        schema:position 7
+      ]
+  ].

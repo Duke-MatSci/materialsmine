@@ -1,0 +1,196 @@
+.md-app-internal-drawer, 
+.md-app-side-drawer 
+.md-app-container {
+    height: 100vh !important;
+}
+
+.md-app-content {
+    padding: 0 !important;
+    padding-top: 1rem !important;
+}
+
+.md-drawer {
+    width: 258px;
+    max-width: calc(100vw - 125px);
+}
+
+#reset_bg {
+    background-color: $primary !important;
+    // background: url('~@/assets/img/random_network.png') no-repeat center !important;
+    background-size: cover !important;
+    z-index: 20;
+}
+
+
+#reset_tab_bg.md-tabs.md-theme-default.md-primary .md-tabs-navigation {
+    background-color: transparent !important;
+    font-weight: 400;
+    font-size: 1.6rem;
+}
+
+.md-tabs-navigation .md-ripple {
+    @include respond(phone) {
+        padding: 0 5px !important;
+    }
+}
+
+.md-avatar.md-theme-default {
+    border: .2rem solid $tertiary;
+}
+
+.md-button-content {
+    font-weight: 400;
+    font-size: 1.4rem;
+    text-transform: capitalize !important;
+    color: $secondary-light !important;
+}
+
+.md-button-lightbg {
+    .md-button-content {
+        color: $secondary !important;
+    }
+}
+
+.md-active {
+    border-bottom-color: $tertiary !important;
+}
+
+.adjust {
+    &_metamine {
+        &-toolbar {
+            background-color: #8cb2ca !important;
+            min-height: 60px !important;
+        }
+        &-title {
+            font-weight: 300 !important;
+            color: $primary !important;
+            font-size: 3rem;
+        }
+    }
+}
+
+.md-toolbar {
+    &_adjust{
+        border-radius: 0px !important;
+        box-shadow: unset !important;
+        min-height: unset !important;
+        background-color: unset !important;
+    }
+    &-section-end {
+        @include respond(tab-port) {
+            display: none !important;
+        }
+    }
+}
+
+.md-layout-item {
+    height: 40px;
+
+    &:after {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: md-get-palette-color($error, 200);
+      content: " ";
+    }
+
+    &_para {
+        font-size: 1rem;
+        padding: 1.5rem;
+        text-align: justify;
+        font-weight: 400;
+
+        &_fl {
+            font-size: 1.5rem;
+        }
+    }
+    &_card {
+        height: 33rem !important;
+        width: 30rem !important;
+        box-shadow: none !important;
+
+        &::after {
+            display: none !important;
+            visibility: hidden !important;
+        }
+    }
+}
+.md-menu-content {
+    z-index: 14;
+}
+
+.search-dropdown-menu {
+    width: 100% !important;
+    display: block;
+    min-height: 20rem;
+    max-height: 35rem;
+    overflow-y: scroll;
+    position: absolute;
+    margin: 0 auto;
+    top: -4rem;
+    box-shadow: rgb(0 0 0 / 16%) 0px 1px 4px;
+    background-color: $primary-white;
+    line-height: 1.6;
+
+    &_parent {
+        position: relative;
+        z-index: 15;
+    }
+
+    & > li {
+        font-size: 1.5rem;
+        padding: .5rem 1rem;
+        overflow: hidden;
+
+        &:hover {
+            background-color: $tertiary;
+            color: $primary;
+            cursor: pointer;
+        }
+
+        & > a {
+            text-decoration: none !important;
+            color: $primary-black !important;
+            font-weight: 500 !important;
+            &:hover {
+                cursor: pointer;
+                color: $primary !important;
+            }
+        }
+
+        &:nth-child(odd) {
+            background-color: rgba($primary-light, .2);
+            border-top: .05rem solid $primary;
+            border-bottom: .05rem solid $primary;
+
+            &:hover {
+                background-color: $tertiary;
+                color: $primary;
+            }
+        }
+    }
+}
+
+.md-card-class {
+    width: 320px;
+    margin: 4px;
+    display: inline-block;
+    vertical-align: top;
+
+    @include respond(laptop) {
+        width: 290px;
+    }
+
+    @include respond(tab-land) {
+        width: 280px !important;
+    }
+
+    @include respond(tab-port) {
+        width: 270px !important;
+    }
+
+    @include respond(phone) {
+        width: 250px !important;
+    }
+}
+

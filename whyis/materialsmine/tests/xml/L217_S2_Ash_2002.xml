@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolymerNanocomposite>
+  <ID>L217_S2_Ash_2002</ID>
+  <Control_ID>L217_S1_Ash_2002</Control_ID>
+  <DATA_SOURCE>
+    <Citation>
+      <CommonFields>
+        <CitationType>research article</CitationType>
+        <Publication>Polymer Composites</Publication>
+        <Title>Mechanical properties of Al2O3/polymethylmethacrylate nanocomposites</Title>
+        <Author>Ash, Benjamin J.</Author>
+        <Author>Rogers, Diana F.</Author>
+        <Author>Wiegand, Christopher J.</Author>
+        <Author>Schadler, Linda S.</Author>
+        <Author>Siegel, Richard W.</Author>
+        <Author>Benicewicz, Brian C.</Author>
+        <Author>Apple, Tom</Author>
+        <Publisher>Wiley Subscription Services, Inc., A Wiley Company</Publisher>
+        <PublicationYear>2002</PublicationYear>
+        <DOI>10.1002/pc.10497</DOI>
+        <Volume>23</Volume>
+        <URL>http://onlinelibrary.wiley.com/doi/10.1002/pc.10497/abstract</URL>
+        <Language>English</Language>
+        <Location>Department of Materials Science and Engineering, Rensselaer Nanotechnology Center, Troy, NY 12180&#8208;3590, USA</Location>
+        <DateOfCitation>2017-07-13</DateOfCitation>
+      </CommonFields>
+      <CitationType>
+        <Journal>
+          <ISSN>1548-0569</ISSN>
+          <Issue>6</Issue>
+        </Journal>
+      </CitationType>
+    </Citation>
+  </DATA_SOURCE>
+  <MATERIALS>
+    <Matrix>
+      <MatrixComponent>
+        <ChemicalName>poly(methyl methacrylate)</ChemicalName>
+        <Abbreviation>PMMA</Abbreviation>
+        <ManufacturerOrSourceName>Cambridge Isotope Laboratories</ManufacturerOrSourceName>
+        <MolecularWeight>
+          <value>142000</value>
+          <unit>g/mol</unit>
+        </MolecularWeight>
+        <Polydispersity>1.5</Polydispersity>
+      </MatrixComponent>
+    </Matrix>
+    <Filler>
+      <FillerComponent>
+        <ChemicalName>alumina</ChemicalName>
+        <Abbreviation>gamma-Al2O3</Abbreviation>
+        <ManufacturerOrSourceName>Nanophase Technologies Corporation</ManufacturerOrSourceName>
+        <SphericalParticleDiameter>
+          <value>39</value>
+          <unit>nm</unit>
+        </SphericalParticleDiameter>
+        <SurfaceArea>
+          <specific>
+            <value>43</value>
+            <unit>m^2/gram</unit>
+          </specific>
+        </SurfaceArea>
+      </FillerComponent>
+      <FillerProcessing>
+        <ChooseParameter>
+          <Mixing>
+            <Description>Twenty grams of nanoparticles were suspended in ethanol through 10 minutes of sonication (VCX-400 Sonics Materials Vibracell) at 70% power. The power setting refers to the percentage of maximum sonic power (400 watts) that is directed into the sample.</Description>
+            <Mixer>VCX-400 Sonics Materials Vibracell</Mixer>
+            <MixingMethod>ultra-sonication</MixingMethod>
+            <ChemicalUsed>
+              <description>ethanol</description>
+            </ChemicalUsed>
+            <Time>
+              <value>10</value>
+              <unit>minutes</unit>
+            </Time>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Centrifugation>Used</Centrifugation>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Mixing>
+            <Description>The resulting slurry was centrifuged for 3 minutes at 3000 rpm to remove particles larger than 100 nm. This procedure was used to achieve a narrower particle size distribution than is available from the supplier.</Description>
+            <RPM>
+              <value>3000</value>
+              <unit>RPM</unit>
+            </RPM>
+            <Time>
+              <value>3</value>
+              <unit>minutes</unit>
+            </Time>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Additive>
+            <Description>The silane coupling agent was added to a 95/5 mixture of ethanol and water adjusted to a pH of 4.5 by addition of acetic acid.</Description>
+          </Additive>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Mixing>
+            <Description>This solution was reacted at room temperature for 10 minutes for silanol formation.</Description>
+            <Time>
+              <value>10</value>
+              <unit>minutes</unit>
+            </Time>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Mixing>
+            <Description>The silanol solution was then dropped into the ethanol/nanoparticle sluny at a rate of approximately 20 ml/min while sonicating the mixture at 70% power.</Description>
+            <Mixer>VCX-400 Sonics Materials Vibracell</Mixer>
+            <MixingMethod>ultra-sonication</MixingMethod>
+          </Mixing>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Drying-Evaporation>
+            <Description>The slurry was then evaporated at reduced pressure for 2 hours at 60&#176;C to remove the solvent.</Description>
+            <Temperature>
+              <value>60</value>
+              <unit>Celsius</unit>
+            </Temperature>
+            <Time>
+              <value>2</value>
+              <unit>hours</unit>
+            </Time>
+          </Drying-Evaporation>
+        </ChooseParameter>
+        <ChooseParameter>
+          <Heating>
+            <Description>The particles were cured under vacuum at 60&#176;C for a period of 24 hours.</Description>
+            <Temperature>
+              <value>60</value>
+              <unit>Celsius</unit>
+            </Temperature>
+            <Time>
+              <value>2</value>
+              <unit>hours</unit>
+            </Time>
+          </Heating>
+        </ChooseParameter>
+      </FillerProcessing>
+      <FillerComposition>
+        <Fraction>
+          <mass>0.02</mass>
+        </Fraction>
+      </FillerComposition>
+    </Filler>
+  </MATERIALS>
+  <PROCESSING>
+    <SolutionProcessing>
+      <ChooseParameter>
+        <Mixing>
+          <Description>Coated or uncoated nanoparticles were added to MMA monomer and dispersed via sonication at 70% power for 10 minutes. During the last two minutes of the sonication, the initiator (AIBN) and chain transfer agent (1 - decanethiol) were added.</Description>
+          <Mixer>VCX-400 Sonics Materials Vibracell</Mixer>
+          <MixingMethod>ultra-sonication</MixingMethod>
+          <ChemicalUsed>
+            <description>2,2-azobisisobutyronitrile</description>
+          </ChemicalUsed>
+          <ChemicalUsed>
+            <description>1 - decanethiol</description>
+          </ChemicalUsed>
+          <Time>
+            <value>10</value>
+            <unit>minutes</unit>
+          </Time>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Mixing>
+          <Description>The polymerization was carried out at 55&#176;C under a nitrogen blanket for 21 hours with two additional sonication steps of 40% power at the 1 and 2 hour points.</Description>
+          <Mixer>VCX-400 Sonics Materials Vibracel</Mixer>
+          <MixingMethod>ultra-sonication</MixingMethod>
+          <Time>
+            <value>21</value>
+            <unit>hours</unit>
+          </Time>
+          <Temperature>
+            <value>55</value>
+            <unit>Celsius</unit>
+          </Temperature>
+        </Mixing>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Drying-Evaporation>
+          <Description>The polymer was then broken into small pieces and dried in a vacuum oven for 2 hours at 115&#176;C to drive off water and residual monomer.</Description>
+          <Temperature>
+            <value>115</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>2</value>
+            <unit>hours</unit>
+          </Time>
+          <Pressure>
+            <value>0</value>
+            <unit>Pa</unit>
+          </Pressure>
+        </Drying-Evaporation>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Molding>
+          <MoldingMode>hot-pressing</MoldingMode>
+        </Molding>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Description>The resulting nanocomposite was compression molded into tensile specimens (AS&#34; D638-95 Qpe IV) in a hydraulic press (Carver 12 Ton) at 180&#176;C and 2.5 mTons.</Description>
+          <Temperature>
+            <value>180</value>
+            <unit>Celsius</unit>
+          </Temperature>
+        </Heating>
+      </ChooseParameter>
+      <ChooseParameter>
+        <Heating>
+          <Description>Specimens were allowed to cool to room temperature under pressure for a period of 6 hours and, after removal, were sanded (400 grit) to remove flashing.</Description>
+          <Temperature>
+            <value>23</value>
+            <unit>Celsius</unit>
+          </Temperature>
+          <Time>
+            <value>6</value>
+            <unit>hours</unit>
+          </Time>
+        </Heating>
+      </ChooseParameter>
+    </SolutionProcessing>
+  </PROCESSING>
+  <CHARACTERIZATION>
+    <Transmission_Electron_Microscopy>
+      <Description>The speed and duration requirements were chosen by observing the gross distribution of remaining particles through transmission electron microscope (TEM) measurements.</Description>
+    </Transmission_Electron_Microscopy>
+    <Scanning_Electron_Microscopy>
+      <EquipmentUsed>JEOL</EquipmentUsed>
+    </Scanning_Electron_Microscopy>
+    <Dynamic_Mechanical_Analysis>
+      <Equipment>Rheometric Scientific DMTA V</Equipment>
+      <Description>Dynamic mechanical thermal analysis (DMTA) was carried out on a Rheometric Scientific DMTA V using single cantilever bending mode at 1 Hz with 0.1% strain. Temperature ramps from 15&#176;C to 200&#176;C at 2&#176;C mix1 were conducted to determine the Tg of the materials.</Description>
+    </Dynamic_Mechanical_Analysis>
+    <Differential_Scanning_Calorimetry>
+      <Equipment>Seiko Instruments SSC5200</Equipment>
+      <Description>In specific cases, Tg was also obtained through differential scanning calorimetry (DSC) (Seiko Instruments SSC5200) with a temperature ramp from 25&#176;C to 190&#176;C at 10&#176;C per min.</Description>
+    </Differential_Scanning_Calorimetry>
+    <Nuclear_Magnetic_Resonance>
+      <Equipment>Chemagnetics CMX spectrometer</Equipment>
+      <Description>7.5 mm coil and a quadrupolar echo sequence. An echo delay of 25 ps was used and the 90&#34; pulse width was 3 ps. Eight scans were acquired for each spectrum with a pulse delay of 5 s.</Description>
+    </Nuclear_Magnetic_Resonance>
+  </CHARACTERIZATION>
+  <PROPERTIES>
+    <Mechanical>
+      <Tensile>
+        <TensileModulus>
+          <value>2.500735763</value>
+          <unit>GPA</unit>
+        </TensileModulus>
+        <TensileStressAtBreak>
+          <value>56</value>
+          <unit>MPa</unit>
+        </TensileStressAtBreak>
+      </Tensile>
+    </Mechanical>
+    <Thermal>
+      <MeasurementMethod>Dynamic Mechanical Thermal Analysis (DMTA) in Single Cantilever Bending at 1 Hz, 0.1% Strain, and 2&#176;C per min and Differential Scanning Calorimetry (DSC) at 10&#176;C per min.</MeasurementMethod>
+      <GlassTransitionTemperature>
+        <value>102</value>
+        <unit>Celsius</unit>
+        <uncertainty>
+          <type>absolute</type>
+          <value>1</value>
+        </uncertainty>
+      </GlassTransitionTemperature>
+      <GlassTransitionTemperature>
+        <value>97</value>
+        <unit>Celsius</unit>
+        <uncertainty>
+          <type>absolute</type>
+          <value>3</value>
+        </uncertainty>
+      </GlassTransitionTemperature>
+    </Thermal>
+  </PROPERTIES>
+  <MICROSTRUCTURE>
+    <ImageFile>
+      <File>https://nanomine.org/nmr/blob?id=5967e116e74a1d147250479b</File>
+      <Description>typical nano-alumina particle dispersion-morphology from nanophase technology corporation</Description>
+    </ImageFile>
+  </MICROSTRUCTURE>
+</PolymerNanocomposite>

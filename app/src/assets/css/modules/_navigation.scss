@@ -26,19 +26,20 @@
                 
                 & > a,
                 & > div > a {
-                    text-decoration: none;
-                    font-weight: 400;
-                    color: $primary-white;
+                    text-decoration: none !important;
+                    font-weight: 500;
+                    color: $primary-white !important;
                     padding: 0.1rem 0.2rem;
-                    font-size: 1.05rem;
+                    font-size: 1.4rem !important;
 
                     &:hover{
-                        color: $tertiary;
+                        color: $tertiary !important;
                         border-bottom: .2rem solid #d7df71;
+                        text-decoration: none;
                     }
     
                     @include respond(tab-port){
-                        font-size: .8rem;
+                        font-size: 1.2rem;
                         padding: 0.3rem 0.6rem;
                     }
     
@@ -49,9 +50,27 @@
             }
         }
 
+        &--lightbg {
+            & ul > li {
+                & > a,
+                & > div > a {
+                    color: $primary !important;
+                    padding: 2.5rem 1rem;
+                    &:hover{
+                        color: $primary !important;
+                        text-decoration: none;
+                        background-color: rgba($primary, 0.1);
+                        border-bottom: 0rem solid rgba($primary, 0.1);
+                    }
+                }
+            }
+        }
+
         &--handler {
             &:active + div.nav_menu--siblings,
-            &:hover + div.nav_menu--siblings {
+            &:hover + div.nav_menu--siblings,
+            &:active + div.nav_menu--siblings-mm,
+            &:hover + div.nav_menu--siblings-mm {
                 display: block;
                 visibility: visible;
             }
@@ -59,10 +78,54 @@
 
         &--container {
             position: relative;
+            z-index: 100;
         }
 
         &--sibheader {
             top: 1.8rem !important;
+        }
+        &--siblings-mm {
+            padding: .3rem 0;
+            position: absolute;
+            top: 4.3rem !important;
+            left: 0;
+            line-height: 2.5;
+            min-width: 20rem;
+            background-color: #ffffff;
+            border-bottom-left-radius: .5rem !important;
+            border-bottom-right-radius: .5rem !important;
+            box-shadow: 0 2px 4px -1px rgb($primary-black, 20%), 0 4px 5px 0 rgb($primary-black, 14%); 
+            display: none;
+            visibility: hidden;
+            z-index: 10;
+            &:hover {
+                display: block;
+                visibility: visible;
+            }
+
+            &-lists {
+                display: block;
+                transition: background-color .5s ease-out;
+                text-decoration: none !important;
+                text-align: left;
+                & > a {
+                    color: $primary-light !important;
+                    font-size: 1.4rem;
+                    padding: 0 0.6rem;
+                    &:hover{
+                        color: $primary-white;
+                    }
+                }
+
+                &:hover{
+                    background-color: $primary-grey;
+                    cursor: pointer;
+                    & > a {
+                        color: $primary-white !important;
+                        text-decoration: none !important;
+                    }
+                }
+            }
         }
 
         &--siblings {
@@ -94,11 +157,12 @@
                 display: block;
                 border-bottom: 1px solid rgba($primary-grey, .2);
                 transition: background-color .5s ease-out;
+                text-decoration: none !important;
+                text-align: left;
                 & > a {
-                    color: $primary-light;
+                    color: $primary-light !important;
                     font-size: 1.4rem;
                     padding: 0 0.6rem;
-                    text-decoration: none;
 
                     &:hover{
                         color: $primary-white;
@@ -109,10 +173,15 @@
                     background-color: $primary;
                     cursor: pointer;
                     & > a {
-                        color: $primary-white;
+                        color: $primary-white !important;
+                        text-decoration: none !important;
                     }
                 }
+                &:last-child {
+                    border: none;
+                }
             }
+            
 
             &-lists-removebdr {
                 border: none;
@@ -135,15 +204,17 @@
     &_mobile-icon {
         display: none;
         visibility: hidden;
+        text-align: left;
         @include respond(phone){
-            height: 1.3rem;
-            width: 1.25rem;
+            height: 1.5rem;
+            width: 1.5rem;
             position: absolute;
-            top: .7rem;
-            left: .8rem;
-            z-index: 5;
+            top: 1.5rem;
+            left: 1rem;
+            z-index: 12;
             display: block;
             visibility: visible;
+            cursor: pointer;
         }
 
         &::before {

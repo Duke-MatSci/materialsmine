@@ -1,25 +1,24 @@
 .section {
     &_banner {
         position: relative;
-        // background-image: linear-gradient(0deg,rgba(8,35,60,.1),rgba(14,95,118,.1)),url(/nmstatic/img/random_network.png);
-        background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network.png);
-        height: 30rem;
+        background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network.png);
+        height: 40rem;
         width: 100%;
         background-size: cover;
         z-index: 10;
 
         @include respond(tab-land){
-            height: 24rem;
+            height: 34rem;
         }
 
         @include respond(tab-port) {
-            height: 19rem;
-            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network-medium.png);
+            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-medium.png);
+            height: 30rem;
         }
 
         @include respond(phone) {
-            height: 16rem;
-            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(/nmstatic/img/random_network-small.png);
+            background-image: linear-gradient(0deg,rgba(8,35,60,.2) 25%,rgba(14,95,118,.9)),url(~@/assets/img/random_network-small.png);
+            height: 26rem;
         }
 
         &__text-content {
@@ -28,24 +27,33 @@
             left: 50%;
             transform:translate(-50%, -50%);
             text-align: center;
-            width: 60%;
+            width: 70%;
             letter-spacing: .02rem;
             font-weight: 200;
             font-size: 3rem;
             color: $primary-white;
+            line-height: 1.3;
 
+            @include respond(laptop) {
+                width: 60%;
+            }
             @include respond(phone) {
-                top: 65% !important;
+                top: 72% !important;
             }
 
             & > span {
-                font-weight: 300;
+                font-weight: 400;
             }
 
             & > i {
                 color: $tertiary;
                 font-size: 10rem;
+                @include respond(tab-land) {
+                    transform:translate(0, 25%);
+                    font-size: 7rem;
+                }
                 @include respond(phone) {
+                    transform:translate(0, 0);
                     font-size: 5rem;
                 }
 
@@ -82,17 +90,19 @@
         }
 
         &__misc {
-            height: 22rem !important;
+            height: 26rem !important;
             background-position: left;
 
             @include respond(phone){
-                height: 13rem !important;
+                height: 16rem !important;
             }
         }
     }
 
-    &_teams {
+    &_pages {
         margin: 0 0 4rem 0;
+        padding: 2rem 0;
+        background-color: $primary-white;
 
         @include respond(laptop) {
             margin: 0 0 2.5rem 0;
@@ -103,13 +113,24 @@
         }
     }
 
+    &_teams {
+        margin: 4rem 0 4rem 0;
+        padding: 2rem 0;
+        background-color: $primary-white;
+        @include respond(laptop) {
+            margin: 0 0 2.5rem 0;
+        }
+
+        @include respond(tab-port) {
+            margin: 0;
+        }
+    }
+
     &_quicklinks {
-        // margin: 5.5rem 0;
         padding: 5.5rem 0;
         background-color: $primary-white;
         @include respond(laptop) {
             padding: 3.5rem 0;
-            // margin: 3.5rem 0;
         }
     }
 
@@ -144,8 +165,59 @@
         }
     }
 
-    &_teams {
-        padding: 2rem 0;
-        background-color: $primary-white;
+    &_loader {
+        @include absCenter;
+    }
+
+    &_tabb-controller {
+        color: $primary-black;
+        border-bottom: 2px solid $primary-black;
+        margin-bottom: -0.1rem;
+    }
+
+    &_text-col {
+        margin: 0 15rem 0 0;
+
+        @include respond(tab-land) {
+            margin: 0 10rem 0 0;
+        }
+        @include respond(tab-port) {
+            margin: 0 5rem 0 0;
+        }
+        @include respond(phone) {
+            margin: 0;
+        }
+    }
+    &_md-header {
+        @include respond(phone) {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        & .flex-item{
+            @include respond(phone) {
+                flex-basis: 90%;
+            }
+        }
+
+        & .img-div {
+            width: 45rem; 
+            height: 30rem;
+            @include respond(phone) {
+                width: 40rem;
+            }
+        }
+
+        & .img {
+            max-height: 40rem;
+            @include respond(phone) {
+                max-height: none;
+            }
+        }
+    }
+    &__share {
+        display: flex;
+        justify-content: right;
+        line-height: 50px;
     }
 }

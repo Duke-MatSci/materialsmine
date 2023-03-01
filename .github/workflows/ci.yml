@@ -1,0 +1,114 @@
+name: CI
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Use NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: "17.9.1"
+      - name: Install frontend dependencies & test
+        run: |
+          cd app
+          npm install
+      - name: App Coverage Test
+        if: github.event_name == 'push'
+        run: |
+          cd app
+          npm run test:unit -- --coverage
+        env:
+          CI: true
+      - name: Upload Test Coverage
+        if: github.event.pull_request.merged == true
+        uses: actions/upload-artifact@v1
+        with:
+          name: app-coverage-report
+          path: app/coverage
+      - name: Install restful service dependencies
+        run: |
+          cd resfulservice
+          npm install
+      - run: npm install
+      - run: npm run test
+        env:
+          CI: true
+  BuildFrontend:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: app
+      context: ./app
+      tags: dukematsci/dev-app:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  BuildProxy:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: proxy
+      context: ./nginx
+      tags: dukematsci/dev-proxy:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  BuildRESTFUL:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: restful
+      context: ./resfulservice
+      tags: dukematsci/dev-restful:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  BuildWhyis:
+    if: github.event.pull_request.merged == true
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: kgapp
+      context: ./whyis
+      tags: dukematsci/dev-kgapp:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  TestBuild:
+    runs-on: ubuntu-latest
+    needs: [BuildFrontend,BuildRESTFUL,BuildProxy,BuildWhyis]
+    env:
+      MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
+      MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
+      MONGO_TEST: ${{secrets.MONGO_TEST}}
+      MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
+      MM_DB: ${{secrets.MM_DB}}
+      MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
+      MONGO_PORT: ${{secrets.MONGO_PORT}}
+      NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
+      TKNS: ${{secrets.TKNS}}
+      MINIO_ROOT_USER: ${{secrets.MINIO_ROOT_USER}}
+      MINIO_ROOT_PASSWORD: ${{secrets.MINIO_ROOT_PASSWORD}}
+      PROXY_PORT: ${{secrets.PROXY_PORT}}
+      MINIO_PORT: ${{secrets.MINIO}}
+      ES_PORT: ${{secrets.ES_PORT}}
+      PORT: ${{secrets.PORT}}
+      CLIENT_PORT: ${{secrets.CLIENT_PORT}}
+      KG_PORT: ${{secrets.KG_PORT}}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download and run images
+        run : docker-compose -f docker-compose.git.yml up -d
+      - name: Kill containers
+        run: docker-compose down -v

@@ -1,64 +1,76 @@
-const path = require('path');
-
 const express = require('express');
-const bodyParser = require('body-parser');
-const multer = require('multer');
+const { makeExecutableSchema } = require('@graphql-tools/schema');
+const { ApolloServer } = require('apollo-server-express');
+const mongoose = require('mongoose');
+const { createServer: createHttpServer } = require('http');
+const { WebSocketServer } = require('ws');
+const { useServer: useWsServer } = require('graphql-ws/lib/use/ws');
+const { globalMiddleWare, log } = require('./middlewares');
+const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/authService');
+const elasticSearch = require('./utils/elasticSearch');
+const fileRoutes = require('./routes/files');
+const invalidRoutes = require('./routes/invalid');
+const knowledgeRoutes = require('./routes/kg-wrapper');
+const pixelatedRoutes = require('./routes/pixelated');
+const searchRoutes = require('./routes/search');
+const resolvers = require('./graphql/resolver');
+const typeDefs = require('./graphql');
+const getHttpContext = require('./graphql/context/getHttpContext');
+const getWsContext = require('./graphql/context/getWsContext');
+
+const env = process.env;
 
 const app = express();
+globalMiddleWare(app);
+elasticSearch.ping(log);
 
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'mm_fils');
+app.use('/admin', adminRoutes);
+app.use('/secure', authRoutes);
+app.use('/files', fileRoutes);
+app.use('/knowledge', knowledgeRoutes);
+app.use('/search', searchRoutes);
+app.use('/pixelated', pixelatedRoutes);
+app.use('/*', invalidRoutes);
+
+const httpServer = createHttpServer(app);
+const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });
+
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+useWsServer({ schema, context: getWsContext }, wsServer);
+
+const apolloServer = new ApolloServer({
+  schema,
+  formatError (err) {
+    if (!err.extensions) {
+      return err;
+    }
+    const message = err.extensions.message || 'An error occurred.';
+    const code = err.extensions.code || 500;
+    return { message, status: code };
   },
-  filename: (req, file, cb) => {
-    cb(null, new Date().toISOString() + '-' + file.originalname);
-  }
+  context: getHttpContext
 });
-
-const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === 'image/png' ||
-    file.mimetype === 'image/jpg' ||
-    file.mimetype === 'image/jpeg'
-  ) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
-app.use(bodyParser.json());
-app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).fields([{ name: 'uploadfile', maxCount: 20 }])
-);
-app.use('/mm_fils', express.static(path.join(__dirname, 'mm_files')));
-
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
-  );
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
-
-// app.use('/test', testRoutes);
-// app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
-  console.log(error);
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
-  res.status(status).json({ message: message, data: data });
+  res.status(status).json({ message, data });
 });
 
-app.listen(process.env.PORT || 3000);
-
-// mongoose
-//   .connect(MONGODB_URI)
-//   .then(result => {
-//     app.listen(process.env.PORT || 3000);
-//   })
-//   .catch(err => console.log(err));
+mongoose
+  .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(async () => {
+    log.info('Rest server starting up...');
+    await apolloServer.start();
+    apolloServer.applyMiddleware({ app, path: '/graphql' });
+    httpServer.listen({ port: env.PORT }, () => {
+      log.info(`Server running on port ${env.PORT}`);
+      log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
+    });
+  })
+  .catch((err) => console.log(err));

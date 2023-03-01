@@ -3,11 +3,22 @@
         margin-bottom: 2rem;
     }
 
+    &__select {
+        font-family: inherit;
+        color: $primary;
+        padding: .2rem;
+        background-color: rgba($primary-white, .5);
+        border: .1rem solid $primary-light;
+        width: 98%;
+        display: block;
+        transition: all .3s;
+    }
+
     &__input {
         font-size: 1.5rem;
         font-family: inherit;
         color: $primary;
-        padding: 1.5rem .2rem;
+        padding: 1.5rem 1rem;
         border-radius: 2px;
         background-color: rgba($primary-white, .5);
         border: none;
@@ -15,6 +26,9 @@
         width: 100%;
         display: block;
         transition: all .3s;
+        @include respond(phone) {
+            padding: 0.95rem !important;
+        }
 
         &:focus {
             outline: none;
@@ -28,6 +42,36 @@
 
         &::-webkit-input-placeholder {
             color: $primary-light;
+        }
+
+        &--adjust {
+            border: .15rem solid $primary;
+            padding: 1.2rem;
+
+            &:focus {
+                border: .15rem solid $primary;
+            }
+
+            &:focus:invalid {
+                border: .15rem solid $tertiary;
+            }
+        }
+
+        &--flat {
+            border-radius: 0px !important;
+            border-bottom: 1.4px solid rgba($primary, .6);
+            padding: .5rem;
+            &::-webkit-input-placeholder {
+                color: $primary;
+            }
+            &:focus {
+                outline: none;
+                box-shadow: none;
+                border-bottom: 1.4px solid $primary;
+            }
+            &:focus:invalid {
+                border-bottom: 1.4px solid rgba($primary, .3);
+            }
         }
     }
 
@@ -69,9 +113,9 @@
     }
 
     &__radio-button {
-        height: 2.5rem;
-        width: 2.5rem;
-        border: 5px solid $primary;
+        height: 2rem;
+        width: 2rem;
+        border: 3px solid $primary;
         border-radius: 50%;
         display: inline-block;
         position: absolute;
@@ -81,20 +125,84 @@
         &::after {
             content: "";
             display: block;
-            height: 1.3rem;
-            width: 1.3rem;
+            height: 0.8rem;
+            width: 0.8rem;
             border-radius: 50%;
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 47.38%;
+            left: 53%;
+            transform: translate(-54%, -44%);
             background-color: $primary;
             opacity: 0;
             transition: opacity .2s;
         }
     }
 
+    &__radio-button_less {
+        border: 3px solid $primary;
+    }
+
     &__radio-input:checked ~ &__radio-label &__radio-button::after {
         opacity: 1;
+    }
+
+    &__stepper {
+        .md-active, .md-done {
+            .md-button-content {
+                color: $primary !important;
+                font-size: 1.8rem;
+                font-weight: 500;
+            }
+            .md-stepper-number {
+                background-color: $primary !important;
+            }
+        }
+        .md-button-content {
+            color: $secondary-grey !important;
+            font-size: 1.8rem;
+        }
+        .md-button_next {
+            margin-top: 3rem;
+            background: $primary;
+            .md-button-content, .md-icon {
+                color: $primary-white !important;
+            }
+            .md-disabled {
+                background: $secondary-grey;
+                .md-button-content, .md-icon {
+                    color: $primary-grey !important;
+                }
+            }
+        }
+        .md-button_prev {
+            margin-top: 3rem;
+            background: $tertiary;
+            .md-button-content, .md-icon {
+                color: $primary !important;
+            }
+        }
+    }
+
+    &__drop-area {
+        max-width: 80%;
+        margin: 2.5rem;
+        padding: 3rem 1rem 0rem 1rem;
+        outline: 4px dashed $secondary-grey;
+        &[data-active=true] {
+            outline: 4px dashed $secondary;
+            color: $secondary;
+        }
+        &_label {
+            width: 100%;
+            margin: 0 auto;
+            padding: 5rem;
+            transition: .2s ease;
+            place-items: center;
+            text-align: center;
+            cursor: pointer;
+            input[type=file] {
+                visibility: hidden;
+            }
+        }
     }
 }

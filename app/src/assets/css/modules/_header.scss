@@ -5,10 +5,7 @@
     width: 100%;
     transition: background-color .4s ease-out;
     border-bottom: .1rem solid $primary-white;
-
-    @include respond(tab-port){
-        padding: 0.12rem;
-    }
+    padding: .5rem;
 
     @include respond(phone){
         border-bottom: .01rem solid $primary-white;
@@ -41,14 +38,19 @@
         right: 6.1875rem;
         opacity: 1;
         transition: all 1.2s ease-out;
-        top: 0.8rem;
+        top: 1.5rem;
 
         @include respond(tab-land){
-            top: 0.1rem;
+            top: 1.6rem;
             right: 2.1875rem;
         }
 
+        @media only screen and (max-width: 60em) { 
+            top: 0.9rem;
+         };
+
         @include respond(tab-port){
+            top: 0.1rem;
             right: 3.1875rem;
         }
 
@@ -58,4 +60,11 @@
             opacity: 0;
         }
     }
+    &_404_nav{
+        top: 0.6rem;
+
+        @include respond(tab-land){
+            top: 0.1rem;
+        }
+    } 
 }
