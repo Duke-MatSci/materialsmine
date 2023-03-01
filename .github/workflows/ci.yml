@@ -76,7 +76,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildWhyis:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'push'
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
       myid: kgapp
