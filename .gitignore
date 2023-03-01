@@ -55,3 +55,5 @@ mockDB/minio/
 
 # Ignore coverage
 app/coverage
+resfulservice/coverage
+resfulservice/.nyc_output
