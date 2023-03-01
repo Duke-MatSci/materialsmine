@@ -32,7 +32,7 @@ jobs:
         env:
           CI: true
       - name: Upload Test Coverage
-        if: github.event_name == 'push'
+        if: github.event.pull_request.merged == true
         uses: actions/upload-artifact@v1
         with:
           name: app-coverage-report
@@ -46,6 +46,8 @@ jobs:
         env:
           CI: true
   BuildFrontend:
+    # Added to only build when PR is approved
+    if: github.event.pull_request.merged == true
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
@@ -56,6 +58,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildProxy:
+    if: github.event.pull_request.merged == true
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
@@ -66,6 +69,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildRESTFUL:
+    if: github.event.pull_request.merged == true
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
@@ -76,7 +80,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildWhyis:
-    if: github.event_name == 'push'
+    if: github.event.pull_request.merged == true
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
       myid: kgapp
@@ -86,7 +90,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   TestBuild:
-    # if: github.event_name == 'push'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     needs: [BuildFrontend,BuildRESTFUL,BuildProxy,BuildWhyis]
     env:
