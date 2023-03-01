@@ -14,6 +14,7 @@ on:
         type: string
       next_ver:
         required: true
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
