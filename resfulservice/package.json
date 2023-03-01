@@ -40,7 +40,7 @@
     },
     "scripts": {
         "start": "nodemon src/server.js --inspect",
-        "test": "mocha --recursive './spec/**/*.js'",
+        "test": "nyc --reporter=html --reporter=text --reporter=text-summary mocha --recursive './spec/**/*spec.js'",
         "lint": "eslint --fix src",
         "lint:test": "npm-run-all -s lint test",
         "start:prod": "node src/server.js",
@@ -64,6 +64,7 @@
         "eslint-plugin-node": "^11.1.0",
         "eslint-plugin-promise": "^6.0.0",
         "mocha": "^9.2.0",
-        "nodemon": "^2.0.15"
+        "nodemon": "^2.0.15",
+        "nyc": "^15.1.0"
     }
 }
