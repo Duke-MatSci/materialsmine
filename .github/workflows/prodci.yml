@@ -1,4 +1,4 @@
-name: Prod CI
+name: Prod_CI
 on:
   pull_request:
     branches: [main]
