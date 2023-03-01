@@ -369,10 +369,12 @@
         margin-top: .8rem;
         @include respond(tab-port){
             margin: 0 auto;
-            display: grid;
-            grid-template-rows: repeat(1, 100%);
-            grid-template-columns: repeat(4, 1fr);
-            grid-column-gap: 1rem;
+            &_grid-4 {
+                display: grid;
+                grid-template-rows: repeat(1, 100%);
+                grid-template-columns: repeat(4, 1fr);
+                grid-column-gap: 1rem;
+            }
             margin: 1rem auto;
             max-width: 70%;
         }
@@ -381,8 +383,23 @@
             max-width: 100%;
         }
 
+        & > .pagination-label {
+            padding: 3.5rem 0.5rem 0rem 0.5rem;
+        }
+
         & > .pagination-field {
-            padding: 3rem 1.5rem 0rem 1.5rem;
+            margin-left: 0rem !important;
+            padding-top: 2.5rem;
+            @include respond(tab-land){
+                padding-top: 2.25rem;
+            }
+            .md-input {
+                font-size: 14px !important;
+            }
+            .md-error {
+                transform: translateZ(0) translateX(-2rem);
+                width: 9rem;
+            }
         }
 
         & > .pagination-button {

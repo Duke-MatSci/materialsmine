@@ -11,18 +11,18 @@
               <label htmlFor="search" class="form__label search_box_form_label">Search Microstructure Image</label>
             </div>
           </div>
-          <div class="form__group">
-            <div class="form__label">Filter by</div>
-            <select class="form__select"
-              v-model="filter" name="filter" id="filter">
-              <option value="Keyword">Keyword</option>
-              <option value="filterByFiller">Filler</option>
-              <option value="filterByYear">Year</option>
-              <option value="filterByDOI">DOI</option>
-              <option value="filterByMicroscopy">Microscopy</option>
-            </select>
-          </div>
           <div class="form__group search_box_form-item-2  explorer_page-nav u--margin-neg">
+            <div class="form__field md-field">
+              <select class="form__select"
+                v-model="filter" name="filter" id="filter">
+                <option value="" disabled selected hidden>Filter by...</option>
+                <option value="Keyword">Keyword</option>
+                <option value="filterByFiller">Filler</option>
+                <option value="filterByYear">Year</option>
+                <option value="filterByDOI">DOI</option>
+                <option value="filterByMicroscopy">Microscopy</option>
+              </select>
+            </div>
             <button
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -191,7 +191,8 @@ export default {
     submitSearch () {
       if (!this.searchWord || !this.filter) {
         return this.$store.commit('setSnackbar', {
-          message: 'Enter a search term and select a filter type'
+          message: 'Enter a search term and select a filter type',
+          duration: 10000
         })
       }
       this.pageNumber = 1

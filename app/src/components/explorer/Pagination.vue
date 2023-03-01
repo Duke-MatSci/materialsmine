@@ -1,18 +1,18 @@
 <template>
   <div class="viz-pagination-container">
     <span class="viz-pagination u_centralize_content">
-      <div class="pagination-field">
+      <div class="pagination-label">
          Page
       </div>
-      <md-field :class="pgInputClass" class="u_width--small">
+      <md-field :class="pgInputClass" class="pagination-field u_width--xs">
         <md-input id="pageInput" v-model="pageInput" @change="goToPage($event.target.value)" required></md-input>
         <span class="md-error">Out of range</span>
       </md-field>
-      <div class="pagination-field">
+      <div class="pagination-label">
        of {{ tpages }}
        </div>
     </span>
-    <div class="viz-pagination">
+    <div class="viz-pagination viz-pagination_grid-4">
       <button
         :disabled="cpage <= 1"
         @click.prevent="goToPage(1)"
