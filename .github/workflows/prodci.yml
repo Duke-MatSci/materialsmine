@@ -1,11 +1,11 @@
-name: Prod_CI
+name: Prod CI
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
 jobs:
-  test_app:
+  test-app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
         with:
           name: app-assets
           path: app_asset_artifacts
-  test_restful_service:
+  test-restful-service:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +65,7 @@ jobs:
           name: backend-assets
           path: backend_asset_artifacts
   release:
-    needs: [test_app,test_restful_service]
+    needs: [test-app,test-restful-service]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
