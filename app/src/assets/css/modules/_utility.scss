@@ -307,6 +307,10 @@
         &_text {
             text-align: center;
         }
+        &_content {
+            justify-content: center; 
+            display: flex;
+        }
         &_other {
             margin: 0 auto;
         }

@@ -37,6 +37,11 @@
         &-item-2 {
             flex-grow: 1;
             align-self: flex-start;
+            .md-field {
+                width: 40%;
+                margin: 0;
+                padding-top: 0;
+            }
         }
         &_btn {
             display: block !important;

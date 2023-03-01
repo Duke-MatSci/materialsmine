@@ -79,6 +79,7 @@ export const SINGLE_IMAGE_QUERY = gql`
           id
           doi
           keywords
+          authors
         }
       }
     }
