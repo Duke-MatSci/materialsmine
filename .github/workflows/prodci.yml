@@ -116,7 +116,7 @@ jobs:
       myid: app
       context: ./app
       tags: dukematsci/prod/dev-app
-      nextver: ${{ needs.release.outputs.version_output}}
+      nextver: "1.0"
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
