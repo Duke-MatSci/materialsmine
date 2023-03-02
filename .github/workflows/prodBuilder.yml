@@ -1,4 +1,4 @@
-name: Prod-Builder
+name: Prod Builder
 on:
   workflow_call:
     inputs:
@@ -11,9 +11,9 @@ on:
       tags:
         required: true
         type: string
-      nextver:
-        required: true
-        type: string
+      # nextver:
+      #   required: true
+      #   type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
@@ -48,7 +48,7 @@ jobs:
           push: true
           tags: |
             ${{ inputs.tags }}:latest
-            ${{ inputs.tags }}:${{ inputs.nextver }}
+            ${{ inputs.tags }}:1.0
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
       - name: Move cache
