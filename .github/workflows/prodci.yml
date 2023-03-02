@@ -30,27 +30,49 @@ jobs:
         env:
           CI: true
       - name: Zip Frontend App Assets
-        if: github.event_name == 'push'
+        # if: github.event_name == 'push'
         run: |
           zip -r app-test-coverage-report.zip app/coverage && rm -rf app/coverage && zip -r app-src_code.zip ./app
           mkdir app_asset_artifacts && mv app-src_code.zip app_asset_artifacts && mv app-test-coverage-report.zip app_asset_artifacts
       - name: Upload App Assets
-        if: github.event_name == 'push'
+        # if: github.event_name == 'push'
         uses: actions/upload-artifact@v1
         with:
           name: app-assets
           path: app_asset_artifacts
-      # - name: Upload Test Coverage
-      #   if: github.event.pull_request.merged == true
-      #   uses: actions/upload-artifact@v1
-      #   with:
-      #     name: app-coverage-report
-      #     path: app/coverage
-      # - name: Install restful service dependencies
-      #   run: |
-      #     cd resfulservice
-      #     npm install
-      # - run: npm install
-      # - run: npm run test
-      #   env:
-      #     CI: true
+  restfulServiceTest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Dependencies
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Use NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: "17.9.1"
+      - name: Install frontend dependencies & test
+        run: |
+          cd resfulservice
+          npm ci
+      - name: Backend Coverage Test
+        run: |
+          cd resfulservice
+          npm run test
+        env:
+          CI: true
+      - name: Zip Backend Assets
+        # if: github.event_name == 'push'
+        run: |
+          zip -r backend-test-coverage-report.zip resfulservice/coverage && rm -rf resfulservice/coverage && zip -r backend-src_code.zip ./resfulservice
+          mkdir backend_asset_artifacts && mv backend-src_code.zip backend_asset_artifacts && mv backend-test-coverage-report.zip backend_asset_artifacts
+      - name: Upload Backend Assets
+        # if: github.event_name == 'push'
+        uses: actions/upload-artifact@v1
+        with:
+          name: backend-assets
+          path: backend_asset_artifacts
