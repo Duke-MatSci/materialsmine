@@ -1,16 +1,15 @@
-name: Prod CI
+name: Production CI
 on:
   pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'releases/*'
 jobs:
   appTest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          path: main
+      - uses: actions/checkout@v1
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
