@@ -96,7 +96,7 @@ jobs:
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
-        uses: marcofaggian/action-download-multiple-artifacts@v1
+        uses: marcofaggian/action-download-multiple-artifacts@v4.0.1
         with:
           names: app-assets backend-assets
           paths: app_asset_artifacts backend_asset_artifacts
