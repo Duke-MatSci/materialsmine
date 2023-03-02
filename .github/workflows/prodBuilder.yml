@@ -13,8 +13,8 @@ on:
         required: true
         type: string
       next_ver:
-        type: string
         required: true
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
