@@ -109,17 +109,15 @@ jobs:
     outputs:
       version_output: ${{ steps.version.outputs.nextVer }}
   buildFrontendApp:
-    if: github.event_name == 'push'
     needs: [release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
     with:
       myid: app
       context: ./app
-      tags: dukematsci/prod/dev-app
+      tags: dukematsci/dev-app:latest
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      NEXT_VERSION: ${{ needs.release.outputs.version_output}}
   # buildBackendApp:
   #   if: github.event_name == 'push'
   #   needs: [buildFrontendApp, release]
