@@ -111,7 +111,7 @@ jobs:
   buildFrontendApp:
     if: github.event_name == 'push'
     needs: [release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml
+    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
     with:
       myid: app
       context: ./app
