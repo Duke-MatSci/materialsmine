@@ -110,7 +110,7 @@ jobs:
       version_output: ${{ steps.version.outputs.nextVer }}
   buildFrontendApp:
     needs: [release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
     with:
       myid: app
       context: ./app
