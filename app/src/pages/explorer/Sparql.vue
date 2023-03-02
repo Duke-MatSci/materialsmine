@@ -12,6 +12,6 @@ export default {
   name: 'Sparql',
   components: {
     yasgui
-  },
+  }
 }
 </script>

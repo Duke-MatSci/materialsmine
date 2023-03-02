@@ -16,24 +16,24 @@ export default {
   mounted () {
     this.yasgui = new YASGUI(this.$el, {
 
-        requestConfig: { 
-            endpoint: "/sparql", 
-        },
-        copyEndpointOnNewTab: false,
+      requestConfig: {
+        endpoint: '/sparql'
+      },
+      copyEndpointOnNewTab: false
 
-        ///// NOTE: these aren't required, but were used in the whyis configuration 
-        // yasqe:{
-        //   sparql:{
-        //     endpoint:'/sparql',
-        //     requestMethod: "POST"
-        //   }
-        // },
-        // yasr : {
-        //   table : {
-        //     fetchTitlesFromPrefLabel : true
-        //   }
-        // }
-    });
+      /// // NOTE: these aren't required, but were used in the whyis configuration
+      // yasqe:{
+      //   sparql:{
+      //     endpoint:'/sparql',
+      //     requestMethod: "POST"
+      //   }
+      // },
+      // yasr : {
+      //   table : {
+      //     fetchTitlesFromPrefLabel : true
+      //   }
+      // }
+    })
   }
 }
 </script>

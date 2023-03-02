@@ -178,7 +178,7 @@ const explorerRoutes = [
     component: () =>
       import(
         '@/pages/explorer/Sparql.vue'
-      ),
+      )
     // meta: { requiresAuth: true }
   }
 ]
