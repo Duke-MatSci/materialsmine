@@ -116,10 +116,10 @@ jobs:
       myid: app
       context: ./app
       tags: dukematsci/prod/dev-app
-      nextver: "1.0"
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      NEXT_VERSION: ${{ needs.release.outputs.version_output}}
   # buildBackendApp:
   #   if: github.event_name == 'push'
   #   needs: [buildFrontendApp, release]

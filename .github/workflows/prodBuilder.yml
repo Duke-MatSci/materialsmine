@@ -11,13 +11,12 @@ on:
       tags:
         required: true
         type: string
-      nextver:
-        required: true
-        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
+        required: true
+      NEXT_VERSION:
         required: true
 
 jobs:
@@ -48,7 +47,7 @@ jobs:
           push: true
           tags: |
             ${{ inputs.tags }}:latest
-            ${{ inputs.tags }}:${{ inputs.nextver }}
+            ${{ inputs.tags }}:${{ secrets.NEXT_VERSION }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
       - name: Move cache
