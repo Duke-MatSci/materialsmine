@@ -11,12 +11,13 @@ on:
       tags:
         required: true
         type: string
+      nextver:
+        required: true
+        type: string
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
-        required: true
-      NEXT_VERSION:
         required: true
 jobs:
   Build:
