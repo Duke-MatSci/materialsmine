@@ -24,23 +24,33 @@ jobs:
           cd app
           npm ci
       - name: App Coverage Test
-        if: github.event_name == 'push'
         run: |
           cd app
           npm run test:unit -- --coverage
         env:
           CI: true
-      - name: Upload Test Coverage
-        if: github.event.pull_request.merged == true
+      - name: Zip Frontend App Assets
+        if: github.event_name == 'push'
+        run: |
+          zip -r app-test-coverage-report.zip app/coverage && rm -rf app/coverage && zip -r app-src_code.zip ./app
+          mkdir app_asset_artifacts && mv app-src_code.zip app_asset_artifacts && mv app-test-coverage-report.zip app_asset_artifacts
+      - name: Upload App Assets
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v1
         with:
-          name: app-coverage-report
-          path: app/coverage
-      - name: Install restful service dependencies
-        run: |
-          cd resfulservice
-          npm install
-      - run: npm install
-      - run: npm run test
-        env:
-          CI: true
+          name: app-assets
+          path: app_asset_artifacts
+      # - name: Upload Test Coverage
+      #   if: github.event.pull_request.merged == true
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     name: app-coverage-report
+      #     path: app/coverage
+      # - name: Install restful service dependencies
+      #   run: |
+      #     cd resfulservice
+      #     npm install
+      # - run: npm install
+      # - run: npm run test
+      #   env:
+      #     CI: true
