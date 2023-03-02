@@ -107,16 +107,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         id: version
     outputs:
-      vesion_output: ${{ steps.version.outputs.nextVer }}
+      version_output: ${{ steps.version.outputs.nextVer }}
   buildFrontendApp:
     if: github.event_name == 'push'
     needs: [release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml
     with:
       myid: app
       context: ./app
       tags: dukematsci/prod/dev-app
-      # nextver: ${{ needs.release.outputs.vesion_output}}
+      nextver: ${{ needs.release.outputs.version_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
