@@ -1,21 +1,20 @@
-name: Prod CI
+name: Production CI
 on:
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 jobs:
-  test_app:
+  appTest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v1
         with:
           path: ~/.npm
-          key: ${{ runner.OS }}-npm-cache-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.OS }}-npm-cache-
+            ${{ runner.os }}-node-
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
@@ -41,26 +40,29 @@ jobs:
         with:
           name: app-assets
           path: app_asset_artifacts
-  test_restful_service:
+  restfulServiceTest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v1
         with:
           path: ~/.npm
-          key: ${{ runner.OS }}-npm-cache-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.OS }}-npm-cache-
+            ${{ runner.os }}-node-
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
           node-version: "17.9.1"
-      - name: Install restful service dependencies
+      - name: Install frontend dependencies & test
         run: |
           cd resfulservice
-          npm ci
-      - run: npm run test
+          npm install
+      - name: Backend Coverage Test
+        run: |
+          cd resfulservice
+          npm run test
         env:
           CI: true
       - name: Zip Backend Assets
@@ -75,7 +77,7 @@ jobs:
           name: backend-assets
           path: backend_asset_artifacts
   release:
-    needs: [test_app,test_restful_service]
+    needs: [appTest, restfulServiceTest]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -94,7 +96,7 @@ jobs:
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
-        uses: marcofaggian/action-download-multiple-artifacts@v1
+        uses: marcofaggian/action-download-multiple-artifacts@v4.0.1
         with:
           names: app-assets backend-assets
           paths: app_asset_artifacts backend_asset_artifacts
@@ -105,22 +107,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         id: version
     outputs:
-      vesion_output: ${{ steps.version.outputs.nextVer }}
-  build-frontend:
-    if: github.event_name == 'push'
-    needs: release
+      version_output: ${{ steps.version.outputs.nextVer }}
+  buildFrontendApp:
+    needs: [release]
     uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
     with:
       myid: app
       context: ./app
-      tags: dukematsci/prod/dev-app
+      tags: dukematsci/dev-app:latest
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  build-restful:
+  buildBackendApp:
     if: github.event_name == 'push'
-    needs: [build-frontend,release]
+    needs: [buildFrontendApp, release]
     uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
     with:
       myid: restful
@@ -130,7 +131,7 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  build-Whyis:
+  buildWhyisApp:
     if: github.event_name == 'push'
     needs: release
     uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
@@ -142,10 +143,9 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  test-build:
-    if: github.event_name == 'push'
+  testBuilds:
     runs-on: ubuntu-latest
-    needs: [build-frontend,build-restful,build-Whyis]
+    needs: [buildFrontendApp, buildBackendApp, buildWhyisApp]
     env:
       MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
       MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
@@ -170,5 +170,3 @@ jobs:
         run : docker-compose -f docker-compose.test.git.yml up -d
       - name: Kill containers
         run: docker-compose down -v
-        
-      

@@ -25,14 +25,12 @@ jobs:
           cd app
           npm install
       - name: App Coverage Test
-        if: github.event_name == 'push'
         run: |
           cd app
           npm run test:unit -- --coverage
         env:
           CI: true
       - name: Upload Test Coverage
-        if: github.event.pull_request.merged == true
         uses: actions/upload-artifact@v1
         with:
           name: app-coverage-report
