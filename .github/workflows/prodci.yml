@@ -118,6 +118,7 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      NEXT_VERSION: ${{ needs.release.outputs.vesion_output}}
   # buildBackendApp:
   #   if: github.event_name == 'push'
   #   needs: [buildFrontendApp, release]
