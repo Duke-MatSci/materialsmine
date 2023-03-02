@@ -30,7 +30,7 @@
           <md-tab class="_menutabs" to="/explorer/visualization" id="tab-visualization" md-label="Visualization" exact> </md-tab>
           <md-tab class="_menutabs" to="/explorer/curate" id="tab-curate" md-label="Curate" exact> </md-tab>
           <md-tab class="_menutabs" to="/explorer/parameterized_query" id="tab-query" md-label="Parameterized Query" exact> </md-tab>
-          <!-- <md-tab class="_menutabs" to="/explorer/sparql" id="tab-sparql" md-label="Sparql Query" exact> </md-tab> -->
+          <md-tab class="_menutabs" to="/explorer/sparql" id="tab-sparql" md-label="SPARQL Query" exact> </md-tab>
         </md-tabs>
       </div>
     </md-app-toolbar>
