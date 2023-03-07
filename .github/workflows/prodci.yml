@@ -96,16 +96,12 @@ jobs:
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
-        uses: marcofaggian/action-download-multiple-artifacts@v4.0.1
-        with:
-          names: app-assets backend-assets
-          paths: app_asset_artifacts backend_asset_artifacts
-          workflow: prodci.yml
+        uses: actions/download-artifact@v3
       - name: Create prod release
+        id: version
         run: npx semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        id: version
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       version_output: ${{ steps.version.outputs.nextVer }}
   buildFrontendApp:
@@ -114,7 +110,7 @@ jobs:
     with:
       myid: app
       context: ./app
-      tags: dukematsci/dev-app:latest
+      tags: dukematsci/prod/app
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -126,7 +122,7 @@ jobs:
     with:
       myid: restful
       context: ./resfulservice
-      tags: dukematsci/prod/dev-restful
+      tags: dukematsci/prod/restful
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -138,7 +134,7 @@ jobs:
     with:
       myid: kgapp
       context: ./whyis
-      tags: dukematsci/prod/dev-kgapp
+      tags: dukematsci/prod/kgapp
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
