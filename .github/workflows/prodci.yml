@@ -110,7 +110,7 @@ jobs:
     with:
       myid: app
       context: ./app
-      tags: dukematsci/dev-app:latest
+      tags: dukematsci/prod/app
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -122,7 +122,7 @@ jobs:
     with:
       myid: restful
       context: ./resfulservice
-      tags: dukematsci/prod/dev-restful
+      tags: dukematsci/prod/restful
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -134,7 +134,7 @@ jobs:
     with:
       myid: kgapp
       context: ./whyis
-      tags: dukematsci/prod/dev-kgapp
+      tags: dukematsci/prod/kgapp
       next_ver: ${{ needs.release.outputs.vesion_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
