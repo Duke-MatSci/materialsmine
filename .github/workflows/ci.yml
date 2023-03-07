@@ -85,7 +85,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   TestBuild:
     runs-on: ubuntu-latest
-    needs: [BuildFrontend,BuildRESTFUL,BuildProxy,BuildWhyis]
+    needs: [BuildFrontend, BuildRESTFUL, BuildProxy, BuildWhyis]
     env:
       MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
       MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
