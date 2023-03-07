@@ -97,13 +97,11 @@ jobs:
         run: npm install
       - name: Download Asset Artifacts
         uses: actions/download-artifact@v3
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: Create prod release
+        id: version
         run: npx semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        id: version
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       version_output: ${{ steps.version.outputs.nextVer }}
   buildFrontendApp:
