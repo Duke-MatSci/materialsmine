@@ -96,11 +96,9 @@ jobs:
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
-        uses: marcofaggian/action-download-multiple-artifacts@v4.0.1
-        with:
-          names: app-assets backend-assets
-          paths: app_asset_artifacts backend_asset_artifacts
-          workflow: prodci.yml
+        uses: actions/download-artifact@v3
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Create prod release
         run: npx semantic-release
         env:
