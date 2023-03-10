@@ -1,6 +1,7 @@
 name: Production CI
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
 jobs:
@@ -111,7 +112,7 @@ jobs:
       myid: app
       context: ./app
       tags: dukematsci/prod/app
-      next_ver: ${{ needs.release.outputs.vesion_output}}
+      next_ver: ${{ needs.release.outputs.version_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -135,7 +136,7 @@ jobs:
       myid: kgapp
       context: ./whyis
       tags: dukematsci/prod/kgapp
-      next_ver: ${{ needs.release.outputs.vesion_output}}
+      next_ver: ${{ needs.release.outputs.version_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
