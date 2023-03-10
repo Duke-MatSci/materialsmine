@@ -47,13 +47,16 @@
           </router-link>
         </md-list>
       </md-list-item>
-      <md-list-item md-expand>
+      <md-list-item md-expand v-if="isAuth">
         <md-icon class="utility-navfonticon">upload</md-icon>
         <span class="md-list-item-text utility-navfont">Curate</span>
         <md-list slot="md-expand">
-          <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV">
+          <!-- <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV">
             Upload a Spreadsheet
-          </md-list-item>
+          </md-list-item> -->
+          <router-link :to="'/explorer/curate/spreadsheet'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a Spreadsheet</md-list-item>
+          </router-link>
           <router-link :to="''" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
           </router-link>
@@ -61,7 +64,10 @@
             <md-list-item :href="href" @click="navigate"  class="md-inset">Submit SDD</md-list-item>
           </router-link>
           <router-link :to="''" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Create new chart</md-list-item>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Create New Chart</md-list-item>
+          </router-link>
+          <router-link :to="'/explorer/curate/validlist'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Add Xlsx List Entry</md-list-item>
           </router-link>
         </md-list>
       </md-list-item>
