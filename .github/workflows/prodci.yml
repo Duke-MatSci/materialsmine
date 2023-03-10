@@ -78,7 +78,7 @@ jobs:
           path: backend_asset_artifacts
   release:
     needs: [appTest, restfulServiceTest]
-    if: github.event_name == 'push'
+    # if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -104,65 +104,72 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       version_output: ${{ steps.version.outputs.nextVer }}
-  buildFrontendApp:
-    needs: [release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
-    with:
-      myid: app
-      context: ./app
-      tags: dukematsci/prod/app
-      next_ver: ${{ needs.release.outputs.vesion_output}}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  buildBackendApp:
-    if: github.event_name == 'push'
-    needs: [buildFrontendApp, release]
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
-    with:
-      myid: restful
-      context: ./resfulservice
-      tags: dukematsci/prod/restful
-      next_ver: ${{ needs.release.outputs.vesion_output}}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  buildWhyisApp:
-    if: github.event_name == 'push'
+  print:
     needs: release
-    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
-    with:
-      myid: kgapp
-      context: ./whyis
-      tags: dukematsci/prod/kgapp
-      next_ver: ${{ needs.release.outputs.vesion_output}}
-    secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  testBuilds:
-    runs-on: ubuntu-latest
-    needs: [buildFrontendApp, buildBackendApp, buildWhyisApp]
-    env:
-      MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
-      MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
-      MONGO_TEST: ${{secrets.MONGO_TEST}}
-      MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
-      MM_DB: ${{secrets.MM_DB}}
-      MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
-      MONGO_PORT: ${{secrets.MONGO_PORT}}
-      NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
-      TKNS: ${{secrets.TKNS}}
-      MINIO_ROOT_USER: ${{secrets.MINIO_ROOT_USER}}
-      MINIO_ROOT_PASSWORD: ${{secrets.MINIO_ROOT_PASSWORD}}
-      PROXY_PORT: ${{secrets.PROXY_PORT}}
-      MINIO_PORT: ${{secrets.MINIO}}
-      ES_PORT: ${{secrets.ES_PORT}}
-      PORT: ${{secrets.PORT}}
-      CLIENT_PORT: ${{secrets.CLIENT_PORT}}
-      KG_PORT: ${{secrets.KG_PORT}}
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - name: Download and run images
-        run : docker-compose -f docker-compose.test.git.yml up -d
-      - name: Kill containers
-        run: docker-compose down -v
+      - name: print version
+        run: echo ${{ needs.release.outputs.version_output}}
+      - uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+  # buildFrontendApp:
+  #   needs: [release]
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+  #   with:
+  #     myid: app
+  #     context: ./app
+  #     tags: dukematsci/prod/app
+  #     next_ver: ${{ needs.release.outputs.version_output}}
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # buildBackendApp:
+  #   if: github.event_name == 'push'
+  #   needs: [buildFrontendApp, release]
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+  #   with:
+  #     myid: restful
+  #     context: ./resfulservice
+  #     tags: dukematsci/prod/restful
+  #     next_ver: ${{ needs.release.outputs.vesion_output}}
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # buildWhyisApp:
+  #   if: github.event_name == 'push'
+  #   needs: release
+  #   uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+  #   with:
+  #     myid: kgapp
+  #     context: ./whyis
+  #     tags: dukematsci/prod/kgapp
+  #     next_ver: ${{ needs.release.outputs.version_output}}
+  #   secrets:
+  #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  # testBuilds:
+  #   runs-on: ubuntu-latest
+  #   needs: [buildFrontendApp, buildBackendApp, buildWhyisApp]
+  #   env:
+  #     MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
+  #     MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
+  #     MONGO_TEST: ${{secrets.MONGO_TEST}}
+  #     MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
+  #     MM_DB: ${{secrets.MM_DB}}
+  #     MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
+  #     MONGO_PORT: ${{secrets.MONGO_PORT}}
+  #     NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
+  #     TKNS: ${{secrets.TKNS}}
+  #     MINIO_ROOT_USER: ${{secrets.MINIO_ROOT_USER}}
+  #     MINIO_ROOT_PASSWORD: ${{secrets.MINIO_ROOT_PASSWORD}}
+  #     PROXY_PORT: ${{secrets.PROXY_PORT}}
+  #     MINIO_PORT: ${{secrets.MINIO}}
+  #     ES_PORT: ${{secrets.ES_PORT}}
+  #     PORT: ${{secrets.PORT}}
+  #     CLIENT_PORT: ${{secrets.CLIENT_PORT}}
+  #     KG_PORT: ${{secrets.KG_PORT}}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Download and run images
+  #       run : docker-compose -f docker-compose.test.git.yml up -d
+  #     - name: Kill containers
+  #       run: docker-compose down -v
