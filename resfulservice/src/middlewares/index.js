@@ -15,7 +15,7 @@
 //   app.use(bodyParser.json());
 //   app.use((req, res, next) => logParser(log, req, next));
 //   app.use(fileMgr);
-//   app.use('/mm_fils', fileServer);
+//   app.use('/mm_files', fileServer);
 //   app.use(acceptedHeaders);
 //   app.use(getEnv);
 // };
@@ -29,7 +29,7 @@
 //   globalMiddleWare
 // };
 
-const bodyParser = require('body-parser');
+const express = require('express');
 const acceptedHeaders = require('./accept');
 const getEnv = require('./parseEnv');
 const { fileMgr, fileServer } = require('./fileStorage');
@@ -43,10 +43,11 @@ const log = mmLogger();
  * @param {*} app Express app object
  */
 const globalMiddleWare = async (app) => {
-  app.use(bodyParser.json());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
   app.use((req, res, next) => logParser(log, req, next));
   app.use(fileMgr);
-  app.use('/mm_fils', fileServer);
+  app.use('/mm_files', fileServer);
   app.use(acceptedHeaders);
   app.use(getEnv);
 };

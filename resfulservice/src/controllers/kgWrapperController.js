@@ -83,6 +83,32 @@ exports.getKnowledge = async (req, res, next) => {
 };
 
 /**
+ * getSparql - Retrieves data from the KG via SPARQL query
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response.data
+ */
+exports.getSparql = async (req, res, next) => {
+  try {
+    const query = req?.body?.query ?? req?.query?.query;
+    successWriter(req, { message: 'sending request' }, 'getSparql');
+    const response = await axios({
+      httpsAgent: new https.Agent(httpsAgent),
+      method: 'post',
+      url: constant.sparql,
+      params: {
+        query
+      }
+    });
+    successWriter(req, { message: 'success' }, 'getSparql');
+    return res.status(200).json({ ...response?.data });
+  } catch (err) {
+    next(errorWriter(req, err, 'getSparql'));
+  }
+};
+
+/**
  * Load chart gallery from elastic function
  * @param {*} req
  * @param {*} res

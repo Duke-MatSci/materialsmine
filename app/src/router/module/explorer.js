@@ -188,6 +188,15 @@ const explorerRoutes = [
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
     meta: { requiresAuth: true }
+  },
+  {
+    path: 'sparql',
+    name: 'Sparql',
+    component: () =>
+      import(
+        '@/pages/explorer/Sparql.vue'
+      )
+    // meta: { requiresAuth: true }
   }
 ]
 
