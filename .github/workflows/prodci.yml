@@ -111,7 +111,6 @@ jobs:
     steps:
       - name: print version
         run: echo ${{ needs.release.outputs.version_output}}
-      - uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
   # buildFrontendApp:
   #   needs: [release]
   #   uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
