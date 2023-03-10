@@ -102,111 +102,111 @@
 <script>
 import { CREATEMATERIAL_QUERY } from '@/modules/gql/material-gql.js'
 export default {
-name: 'ExcelSheetForm',
-data () {
-  return {
-    index: 0,
-    tableData: [],
-    uploadedData: [],
-    rejectedData: [],
-    fieldName: '',
-    currValue: '',
-    value: [],
-    isSubmitted: false,
-  }
-},
-methods: {
+  name: 'ExcelSheetForm',
+  data () {
+    return {
+      index: 0,
+      tableData: [],
+      uploadedData: [],
+      rejectedData: [],
+      fieldName: '',
+      currValue: '',
+      value: [],
+      isSubmitted: false
+    }
+  },
+  methods: {
   // Write method to check duplicate field entry
-  insertValue () {
-    if (!this.currValue.trim().length) return
-    if (!this.value.includes(this.currValue.trim())) {
-      this.value.push(this.currValue)
-      this.currValue = ''
-      return
-    }
-    this.$store.commit('setSnackbar', {
-      message: 'Duplicate Value Entered',
-      duration: 3000
-    })
-  },
-  deleteValue (arr, e) {
-    arr.splice(e, 1)
-    if (!arr.length) {
+    insertValue () {
+      if (!this.currValue.trim().length) return
+      if (!this.value.includes(this.currValue.trim())) {
+        this.value.push(this.currValue)
+        this.currValue = ''
+        return
+      }
+      this.$store.commit('setSnackbar', {
+        message: 'Duplicate Value Entered',
+        duration: 3000
+      })
+    },
+    deleteValue (arr, e) {
+      arr.splice(e, 1)
+      if (!arr.length) {
+        this.sanitizeArr()
+      }
+    },
+    sanitizeArr () {
+      this.tableData.forEach((val, index, arr) => {
+        if (!val.values.length) arr.splice(index, 1)
+      })
+    },
+    addMore () {
+      if (!!this.fieldName && !!this.value.length) {
+        const obj = { field: this.fieldName.trim().split(' ').join('_'), values: this.value }
+        this.tableData.push(obj)
+        this.fieldName = ''
+        this.currValue = ''
+        this.value = []
+      }
+    },
+    async submit () {
+      this.isSubmitted = !this.isSubmitted
       this.sanitizeArr()
-    }
-  },
-  sanitizeArr () {
-    this.tableData.forEach((val, index, arr) => {
-      if (!val.values.length) arr.splice(index, 1)
-    })
-  },
-  addMore () {
-    if (!!this.fieldName && !!this.value.length) {
-      const obj = { field: this.fieldName.trim().split(' ').join('_'), values: this.value }
-      this.tableData.push(obj)
-      this.fieldName = ''
-      this.currValue = ''
-      this.value = []
-    }
-  },
-  async submit () {
-    this.isSubmitted = !this.isSubmitted
-    this.sanitizeArr()
-    this.addMore()
-    if (!this.tableData.length) return
-    try {
-      const response = await this.$apollo.mutate({
-        mutation: CREATEMATERIAL_QUERY,
-        variables: {
-          input: {
-            columns: this.tableData
+      this.addMore()
+      if (!this.tableData.length) return
+      try {
+        const response = await this.$apollo.mutate({
+          mutation: CREATEMATERIAL_QUERY,
+          variables: {
+            input: {
+              columns: this.tableData
+            }
           }
+        })
+        if (response.data.createXlsxCurationList.columns.length) {
+          this.uploadedData = [...response.data.createXlsxCurationList.columns]
+          this.tableData = []
+        }
+        return this.$store.commit('setSnackbar', {
+          message: 'Successful entry',
+          duration: 4000
+        })
+      } catch (error) {
+        const objReg = /\{[^}]*\}/gi
+        if (objReg.test(error.message)) {
+          return this.handleDuplicateError(error.message.match(objReg))
+        } else if (error.message.search(/not authenticated/i) !== -1) {
+          return this.$store.commit('setSnackbar', {
+            message: error.message ?? 'Something went wrong',
+            duration: 5000
+          })
+        }
+        if (!objReg.test(error.message)) {
+          return this.$store.commit('setSnackbar', {
+            message: 'Something went wrong',
+            action: () => this.submit()
+          })
+        }
+      }
+    },
+    clearInput () {
+      this.isSubmitted = !this.isSubmitted
+      // Resetting to default values if cleared
+      this.uploadedData = []
+      this.rejectedData = []
+    },
+    handleDuplicateError (arg) {
+      const strReg = /"[^"]*"/i
+      const data = arg.map((val) => JSON.parse(val.match(strReg)[0]))
+      this.tableData.forEach((val, index, arr) => {
+        if (data.includes(val.field)) {
+          this.rejectedData.push(arr[index])
+        } else {
+          this.uploadedData.push(arr[index])
         }
       })
-      if (response.data.createXlsxCurationList.columns.length) {
-        this.uploadedData = [...response.data.createXlsxCurationList.columns]
-        this.tableData = []
-      }
-      return this.$store.commit('setSnackbar', {
-        message: 'Successful entry',
-        duration: 4000
-      })
-    } catch (error) {
-      const objReg = /\{[^}]*\}/gi
-      if (objReg.test(error.message)) {
-        return this.handleDuplicateError(error.message.match(objReg))
-      } else if (error.message.search(/not authenticated/i) !== -1) {
-        return this.$store.commit('setSnackbar', {
-          message: error.message ?? 'Something went wrong',
-          duration: 5000
-        })
-      }
-      if (!objReg.test(error.message)) {
-        return this.$store.commit('setSnackbar', {
-          message: 'Something went wrong',
-          action: () => this.submit()
-        })
-      }
+      this.tableData = []
     }
-  },
-  clearInput () {
-    this.isSubmitted = !this.isSubmitted
-    // Resetting to default values if cleared
-    this.uploadedData = []
-    this.rejectedData = []
-  },
-  handleDuplicateError (arg) {
-    const strReg = /"[^"]*"/i
-    const data = arg.map((val) => JSON.parse(val.match(strReg)[0]))
-    this.tableData.forEach((val, index, arr) => {
-      if (data.includes(val.field)) {
-        this.rejectedData.push(arr[index])
-      } else {
-        this.uploadedData.push(arr[index])
-      }
-    })
-    this.tableData = []
   }
-}
 }
 </script>

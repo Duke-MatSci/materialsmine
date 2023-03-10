@@ -86,7 +86,7 @@ const explorerRoutes = [
       {
         path: '',
         name: 'validList',
-        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue'),
+        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue')
       },
       {
         path: 'update',

@@ -11,7 +11,7 @@ export default {
   components: {
     Snackbar
   },
-  async created() {
+  async created () {
     await this.$store.dispatch('auth/tryLogin')
   }
 }

@@ -92,124 +92,124 @@
 <script>
 import { SEARCH_SPREADSHEETLIST_QUERY, UPDATE_SPREADSHEETLIST } from '@/modules/gql/material-gql.js'
 export default {
-name: 'SpreadsheetUpdate',
-data () {
-  return {
-    loading: false,
-    pageNumber: 1,
-    searchMode: true,
-    editMode: false,
-    spreadsheetList: [],
-    uploadedData: {},
-    fieldName: '',
-    currValue: '',
-    value: []
-  }
-},
-computed: {
-  searchValue () {
-    return this.fieldName.trim().split(' ').join('_')
-  }
-},
-methods: {
-  resetState () {
-    this.spreadsheetList = []
-    this.uploadedData = {}
-    this.value = []
-    this.currValue = ''
-  },
-  onSelect (item) {
-    if (item) {
-      this.fieldName = item.field
-      this.value = item.values
-      this.editMode = true
+  name: 'SpreadsheetUpdate',
+  data () {
+    return {
+      loading: false,
+      pageNumber: 1,
+      searchMode: true,
+      editMode: false,
+      spreadsheetList: [],
+      uploadedData: {},
+      fieldName: '',
+      currValue: '',
+      value: []
     }
   },
-  insertValue () {
-    if (!this.currValue.trim().length) return
-    if (!this.value.includes(this.currValue.trim())) {
-      this.value.push(this.currValue)
-      this.currValue = ''
-      return
+  computed: {
+    searchValue () {
+      return this.fieldName.trim().split(' ').join('_')
     }
-    this.$store.commit('setSnackbar', {
-      message: 'Duplicate Value Entered',
-      duration: 3000
-    })
   },
-  deleteValue (arr, e) {
-    arr.splice(e, 1)
-  },
-  async submitSearch () {
-    if (!this.fieldName.trim()) return
-    const searchValue = this.searchValue
-    this.searchMode = false
-
-    try {
-      const response = await this.$apollo.query({
-        query: SEARCH_SPREADSHEETLIST_QUERY,
-        variables: {
-          input: {
-            field: searchValue,
-            pageNumber: this.pageNumber,
-            pageSize: 20
-          }
-        },
-        fetchPolicy: 'no-cache'
-      })
-      if (!response) {
-        const error = new Error('Something went wrong!')
-        throw error
-      }
-      const result = response?.data?.getXlsxCurationList
-      this.resetState()
-      this.editMode = false
-      this.spreadsheetList = result.columns || []
+  methods: {
+    resetState () {
+      this.spreadsheetList = []
+      this.uploadedData = {}
       this.value = []
-      this.pageNumber = result.pageNumber || 1
-    } catch (error) {
+      this.currValue = ''
+    },
+    onSelect (item) {
+      if (item) {
+        this.fieldName = item.field
+        this.value = item.values
+        this.editMode = true
+      }
+    },
+    insertValue () {
+      if (!this.currValue.trim().length) return
+      if (!this.value.includes(this.currValue.trim())) {
+        this.value.push(this.currValue)
+        this.currValue = ''
+        return
+      }
       this.$store.commit('setSnackbar', {
-        message: 'Something went wrong',
-        action: () => this.submitSearch()
+        message: 'Duplicate Value Entered',
+        duration: 3000
       })
-      this.searchMode = true
-    }
-  },
+    },
+    deleteValue (arr, e) {
+      arr.splice(e, 1)
+    },
+    async submitSearch () {
+      if (!this.fieldName.trim()) return
+      const searchValue = this.searchValue
+      this.searchMode = false
 
-  async update () {
-    if (!!this.fieldName && !this.value.length) {
-      return this.$store.commit('setSnackbar', {
-        message: 'Field Value Required',
-        duration: 2500
-      })
-    }
-
-    try {
-      const response = await this.$apollo.mutate({
-        mutation: UPDATE_SPREADSHEETLIST,
-        variables: {
-          input: { field: this.searchValue, values: this.value }
+      try {
+        const response = await this.$apollo.query({
+          query: SEARCH_SPREADSHEETLIST_QUERY,
+          variables: {
+            input: {
+              field: searchValue,
+              pageNumber: this.pageNumber,
+              pageSize: 20
+            }
+          },
+          fetchPolicy: 'no-cache'
+        })
+        if (!response) {
+          const error = new Error('Something went wrong!')
+          throw error
         }
-      })
-      this.uploadedData = { ...response.data.updateXlsxCurationList }
-      this.$store.commit('setSnackbar', {
-        message: 'Update Successful',
-        duration: 4000
-      })
-    } catch (error) {
-      if (error.message.search(/not authenticated/i) !== -1) {
+        const result = response?.data?.getXlsxCurationList
+        this.resetState()
+        this.editMode = false
+        this.spreadsheetList = result.columns || []
+        this.value = []
+        this.pageNumber = result.pageNumber || 1
+      } catch (error) {
+        this.$store.commit('setSnackbar', {
+          message: 'Something went wrong',
+          action: () => this.submitSearch()
+        })
+        this.searchMode = true
+      }
+    },
+
+    async update () {
+      if (!!this.fieldName && !this.value.length) {
         return this.$store.commit('setSnackbar', {
-          message: error.message ?? 'Something went wrong',
-          duration: 5000
+          message: 'Field Value Required',
+          duration: 2500
         })
       }
-      this.$store.commit('setSnackbar', {
-        message: 'Something went wrong',
-        action: () => this.update()
-      })
-    }
-  }
 
-}
+      try {
+        const response = await this.$apollo.mutate({
+          mutation: UPDATE_SPREADSHEETLIST,
+          variables: {
+            input: { field: this.searchValue, values: this.value }
+          }
+        })
+        this.uploadedData = { ...response.data.updateXlsxCurationList }
+        this.$store.commit('setSnackbar', {
+          message: 'Update Successful',
+          duration: 4000
+        })
+      } catch (error) {
+        if (error.message.search(/not authenticated/i) !== -1) {
+          return this.$store.commit('setSnackbar', {
+            message: error.message ?? 'Something went wrong',
+            duration: 5000
+          })
+        }
+        this.$store.commit('setSnackbar', {
+          message: 'Something went wrong',
+          action: () => this.update()
+        })
+      }
+    }
+
+  }
 }
 </script>
