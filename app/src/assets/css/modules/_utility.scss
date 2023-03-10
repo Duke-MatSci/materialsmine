@@ -185,6 +185,12 @@
         &-black {
             color: $primary-black;
         }
+        &-success {
+            color: green !important;
+        }
+        &-error {
+            color: $error !important;
+        }
     }
     &--font-emph {
         &-xl {
@@ -201,7 +207,7 @@
         }
         &-smm {
             font-size: 1.3rem;
-            font-size: 500;
+            font-size: 500; //Fix this error! Should be fontweight or whatnot
         }
 
     }
