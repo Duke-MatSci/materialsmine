@@ -17,32 +17,21 @@ export default {
     this.yasgui = new YASGUI(this.$el, {
 
       requestConfig: {
-        endpoint: '/sparql'
+        endpoint: '/api/knowledge/sparql'
       },
       copyEndpointOnNewTab: false
-
-      /// // NOTE: these aren't required, but were used in the whyis configuration
-      // yasqe:{
-      //   sparql:{
-      //     endpoint:'/sparql',
-      //     requestMethod: "POST"
-      //   }
-      // },
-      // yasr : {
-      //   table : {
-      //     fetchTitlesFromPrefLabel : true
-      //   }
-      // }
     })
   }
 }
 </script>
 
-<style css src='@triply/yasgui/build/yasgui.min.css'>
+<style css src='@triply/yasgui/build/yasgui.min.css'></style>
+
+<style css>
 .yasgui .endpointText {
-    display:none !important;
-}
-.yasgui .autocompleteWrapper {
     display: none !important;
-  }
+}
+/* .yasgui .autocompleteWrapper {
+    display: none !important;
+  } */
 </style>
