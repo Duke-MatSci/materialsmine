@@ -104,7 +104,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
-      version_output: ${{ steps.version.outputs.nextVer }}
+      version_output: ${{ steps.version.outputs.nextVersion }}
   buildFrontendApp:
     needs: [release]
     uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main

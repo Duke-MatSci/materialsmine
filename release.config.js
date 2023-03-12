@@ -14,7 +14,7 @@ module.exports = {
     }],
     ['@semantic-release/exec',
       {
-        publishCmd: 'echo ::set-output name=nextVer::${nextRelease.version}'
+        publishCmd: 'echo ::set-output name=nextVersion::${nextRelease.version}'
       }
     ]
   ]
