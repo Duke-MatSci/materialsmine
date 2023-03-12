@@ -1,5 +1,9 @@
 const mongoose = require('mongoose');
+const { PassThrough } = require('stream');
+const fsFiles = require('../models/fsFiles');
 const { errorWriter, successWriter } = require('../utils/logWriter');
+
+const _createEmptyStream = () => new PassThrough('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII').end();
 
 exports.imageMigration = async (req, res, next) => {
   const { imageType } = req.params;
@@ -29,6 +33,11 @@ exports.fileContent = async (req, res, next) => {
 
   try {
     const _id = new mongoose.Types.ObjectId(fileId);
+    const exist = await fsFiles.findById(_id).limit(1);
+    if (!exist) {
+      res.setHeader('Content-Type', 'image/png');
+      return _createEmptyStream().pipe(res);
+    }
     const downloadStream = bucket.openDownloadStream(_id);
     downloadStream.pipe(res);
   } catch (error) {

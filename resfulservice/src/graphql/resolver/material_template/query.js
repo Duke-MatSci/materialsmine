@@ -10,7 +10,7 @@ const materialQuery = {
       return errorFormater('not authenticated', 401);
     }
     const { field, pageSize, pageNumber } = input;
-    const filter = { field: { $regex: new RegExp(field.toString(), 'gi') } };
+    const filter = field ? { field: { $regex: new RegExp(field.toString(), 'gi') } } : {};
     try {
       const pagination = pageSize || pageNumber ? paginator(await MaterialTemplate.countDocuments(filter), pageNumber, pageSize) : paginator(await MaterialTemplate.countDocuments(filter));
       const curatedList = await MaterialTemplate.find(filter, null, { lean: true, populate: { path: 'user', select: 'displayName' } });

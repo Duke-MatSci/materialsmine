@@ -3,7 +3,6 @@ const errorFormater = require('../../../utils/errorFormater');
 
 const materialMutation = {
   createXlsxCurationList: async (_, { input }, { user, req, isAuthenticated }) => {
-    console.log('entered function');
     req.logger?.info('[createMaterialColumn] Function Entry:');
     if (!isAuthenticated) {
       req.logger?.error('[createMaterialColumn]: User not authenticated to create Material column');
@@ -11,8 +10,6 @@ const materialMutation = {
     }
     const { columns } = input;
     const curatedList = columns.map(column => ({ ...column, user: user._id }));
-    console.log('columns:', columns);
-    console.log('curatedList:', curatedList);
     const result = await insertMany(curatedList);
     if (result) return errorFormater(result, 409);
     return { columns: curatedList };

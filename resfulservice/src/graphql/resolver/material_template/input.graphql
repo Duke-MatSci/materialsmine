@@ -13,7 +13,7 @@ input materialsInput {
 
 input materialQueryInput {
  "Column field name"
-  field: String!
+  field: String
 
   """
   Pagination option for the page of columns to display to return.
