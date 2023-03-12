@@ -530,3 +530,9 @@
 
     }
 }
+
+.spreadsheet_list_form {
+    .md-chip.md-theme-default .md-icon.md-icon-image svg{
+        fill: $primary;
+    }
+}

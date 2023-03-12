@@ -1,0 +1,53 @@
+type MaterialColumns {
+  "list of Columns data returned from the server"
+  columns: [Column]
+}
+
+type Column {
+  "Column field name"
+  field: String
+
+  "List of possible values for column field"
+  values: [String]
+
+  user: String
+}
+
+type SuccessMessage {
+  "Success message to notify successfully parsing the excel sheet"
+  message: String!
+}
+
+type MaterialTemplates {
+  "Total number of columns that exists"
+  totalItems: Int!
+
+  """
+  Number of columns per page. 
+  Pagination option for specifying how the server should group the columns.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page of columns to display to return.
+  This defaults to 1 if no value is specified.
+  The columns are grouped into pages based on the specified pageSize(defaults to 20, if not specified)
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "boolean value specifying If the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+
+  "boolean value specifying If the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  "list of Columns data returned from the server"
+  columns: [Column!]!
+}

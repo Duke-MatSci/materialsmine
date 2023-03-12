@@ -67,7 +67,7 @@
 
     &--padding {
         &-zero {
-            padding: 0;
+            padding: 0 !important;
         }
         &-zero-mobile {
             @include respond(phone) {
@@ -171,19 +171,32 @@
 
     &--color{
         &-grey {
-            color: $primary-grey;
+            color: $primary-grey !important;
         }
         &-grey-sec {
-            color: $secondary-grey;
+            color: $secondary-grey !important;
         }
         &-primary {
-            color: $primary;
+            color: $primary !important;
         }
         &-secondary {
-            color: $secondary;
+            color: $secondary !important;
         }
         &-black {
             color: $primary-black;
+        }
+        &-tertiary {
+            color: $tertiary !important;
+            & > *,
+            & .md-button-content {
+                color: $tertiary !important;
+            }
+        }
+        &-success {
+            color: green !important;
+        }
+        &-error {
+            color: $error !important;
         }
     }
     &--font-emph {
@@ -201,7 +214,7 @@
         }
         &-smm {
             font-size: 1.3rem;
-            font-size: 500;
+            font-weight: 500;
         }
 
     }
@@ -402,7 +415,10 @@
         color: $primary !important;
 
         &_white {
-            color: $primary-white !important
+            color: $primary-white !important;
+            & .md-button-content {
+                color: $primary-white !important;
+            }
         }
     }
     &_gridbg {

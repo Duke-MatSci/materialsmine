@@ -53,9 +53,11 @@ npm install
 | :open_file_folder: app | Frontend Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/app) |
 | :open_file_folder: nginx | A proxy server | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/router) |
 | :open_file_folder: restfulservice | Backend Server Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/resfulservice) |
+| :open_file_folder: services | Managed Services | WIP |
 | :open_file_folder: whyis | Whyis Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/whyis) |
 
 ## :high_brightness: Access services via:
-- Frontend: http://localhost:80
-- Resful API: http://localhost:80/api
-- Whyis: http://localhost:80/whyis
+- Frontend: http://localhost
+- Resful API: http://localhost/api
+- Managed Services: http://localhost:5050
+- Whyis: http://localhost:8000

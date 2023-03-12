@@ -12,23 +12,47 @@ const _outboundRequest = async (req, next) => {
   const log = req.logger;
   log.info('_outboundRequest(): Function entry');
 
+  if (!req.env.KNOWLEDGE_ADDRESS) {
+    return next(errorWriter(req, 'Knowledge endpoint address missing', '_outboundRequest', 422));
+  }
+
   const query = req?.query;
   const type = query?.type;
-  const uri = query?.uri || constant[type];
+  let url = query?.uri;
+  let altMethod;
 
-  if (!type) {
+  if (!url) {
+    url = `${req.env.KNOWLEDGE_ADDRESS}/${constant[type]}`;
+    altMethod = 'get';
+  }
+
+  if (!query?.uri && !type) {
     return next(errorWriter(req, 'Category type is missing', '_outboundRequest', 422));
   }
 
-  if (!uri) {
+  if (!url) {
     return next(errorWriter(req, 'URI is missing in the request body', '_outboundRequest', 422));
   }
 
-  const response = await axios({
-    method: 'get',
-    url: uri,
-    httpsAgent: new https.Agent(httpsAgent)
-  });
+  const preparedRequest = {
+    method: altMethod ?? req.method,
+    httpsAgent: new https.Agent(httpsAgent),
+    url
+  };
+
+  if (query?.queryString) {
+    preparedRequest.params = {
+      query: query.queryString
+    };
+  }
+
+  if (req.isBackendCall || req.query?.responseType === 'json') {
+    preparedRequest.headers = {
+      accept: 'application/sparql-results+json'
+    };
+  }
+
+  const response = await axios(preparedRequest);
 
   return {
     type,
@@ -79,6 +103,36 @@ exports.getKnowledge = async (req, res, next) => {
     });
   } catch (err) {
     next(errorWriter(req, err, 'getKnowledge'));
+  }
+};
+
+/**
+ * getSparql - Retrieves data from the KG via SPARQL query
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response.data
+ */
+exports.getSparql = async (req, res, next) => {
+  try {
+    if (!req.env.KNOWLEDGE_ADDRESS) {
+      return next(errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422));
+    }
+
+    req.query.queryString = req?.body?.query ?? req?.query?.query;
+    req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
+
+    successWriter(req, { message: 'sending request' }, 'getSparql');
+    const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'getSparql');
+
+    // Needed `isBackendCall` flag to enforce internal calls and return response
+    // through the function that triggers the call.
+    if (req.isBackendCall) return response?.data;
+
+    return res.status(200).json({ ...response?.data });
+  } catch (err) {
+    next(errorWriter(req, err, 'getSparql'));
   }
 };
 

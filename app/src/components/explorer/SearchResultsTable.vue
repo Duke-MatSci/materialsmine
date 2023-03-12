@@ -38,9 +38,9 @@
           <md-card-header style="padding:0px">
             <md-avatar v-if="result.thumbnail">
               <img
-                :src="getThumbnailUrl(result)"
+                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
                 :alt="result.label"
-                v-if="result.thumbnail"
+                v-if="result.thumbnail "
               >
             </md-avatar>
 
@@ -85,7 +85,7 @@
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
               <img
-                :src="getThumbnailUrl(result)"
+                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
                 :alt="result.label"
                 v-if="result.thumbnail"
               >
@@ -221,8 +221,6 @@
 <script>
 import spinner from '@/components/Spinner'
 import reducer from '@/mixins/reduce'
-// import pagination from '@/components/explorer/Pagination'
-import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -237,7 +235,6 @@ export default {
     }
   },
   components: {
-    // pagination,
     spinner
   },
   computed: {
@@ -269,9 +266,6 @@ export default {
           return this.$router.push(`/explorer/images/${address}/${encodeURIComponent(prefix)}`)
         }
       }
-    },
-    getThumbnailUrl (item) {
-      return getViewUrl({ uri: item.thumbnail })
     }
   }
 }

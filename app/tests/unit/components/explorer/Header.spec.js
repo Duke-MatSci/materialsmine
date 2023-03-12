@@ -24,6 +24,6 @@ describe('Header.vue', () => {
   it('renders Menu tabs correctly', async () => {
     expect.assertions(1)
     const menuItems = wrapper.findAll('._menutabs')
-    expect(menuItems.length).toBe(4)
+    expect(menuItems.length).toBe(5)
   })
 })
