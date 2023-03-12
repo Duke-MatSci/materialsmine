@@ -49,15 +49,24 @@ const _loadBulkElasticSearch = async (req, res, next) => {
   try {
     const total = data.length;
     let rejected = 0;
+
+    // Delete existing docs in this index type
+    log.info(`_loadBulkElasticSearch(): Deleting existing ${type} indices`);
+    if (total) await elasticSearch.deleteIndexDocs(type);
+    log.info(`_loadBulkElasticSearch(): Successfully deleted ${type} indices`);
+
     for (const item of data) {
       const response = await elasticSearch.indexDocument(req, type, item);
+
       if (!response) {
         log.debug(`_loadBulkElasticSearch()::error: rejected - ${response.statusText}`);
         rejected = rejected + 1;
       }
     }
+
     await elasticSearch.refreshIndices(req, type);
     successWriter(req, 'success', '_loadBulkElasticSearch');
+
     return res.status(200).json({
       total,
       rejected
@@ -76,19 +85,21 @@ const _loadBulkElasticSearch = async (req, res, next) => {
  */
 exports.loadElasticSearch = async (req, res, next) => {
   const log = req.logger;
-  log.info('loadElasticSearch(): Function entry');
   const body = JSON.parse(req?.body);
   const type = body?.type;
   const doc = body?.doc;
 
+  log.info('loadElasticSearch(): Function entry');
   if (!type || !doc) {
     return next(errorWriter(req, 'Category type or doc is missing', 'loadElasticSearch', 422));
   }
 
   try {
     const response = await elasticSearch.indexDocument(req, type, doc);
+
     await elasticSearch.refreshIndices(req, type);
     successWriter(req, 'success', 'loadElasticSearch');
+
     return res.status(200).json({
       response
     });
@@ -119,7 +130,8 @@ exports.pingElasticSearch = async (req, res, next) => {
 };
 
 /**
- * Data dump into ES
+ * Fetch data from knowledge graph and dump into ES
+ * NOTE: It overwrites the index
  * @param {*} req
  * @param {*} res
  * @param {*} next
@@ -139,6 +151,10 @@ exports.dataDump = async (req, res, next) => {
   }
 };
 
+/** This function allows for upload already fetched data
+ * into ES. It will NOT call the knowledge graph as it assumes
+ * user already have the data. NOTE: It overwrites the index
+ */
 exports.bulkElasticSearchImport = (req, res, next) => {
   const log = req.logger;
   log.info('bulkElasticSearchImport(): Function entry');

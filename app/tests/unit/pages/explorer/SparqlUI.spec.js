@@ -17,6 +17,6 @@ describe('Sparql.vue', () => {
   })
   it('has a header', () => {
     const wrapper = createWrapper(SparqlUI, { }, true)
-    expect(wrapper.text()).toContain('SPARQL Query Interface')
+    expect(wrapper.text()).toContain('Sparql Query')
   })
 })

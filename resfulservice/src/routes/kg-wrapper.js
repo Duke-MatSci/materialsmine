@@ -26,6 +26,7 @@ router.route('/charts')
   .get(getAllCharts);
 
 router.route('/sparql')
-  .post(getSparql);
+  .post(getSparql)
+  .get(getSparql);
 
 module.exports = router;
