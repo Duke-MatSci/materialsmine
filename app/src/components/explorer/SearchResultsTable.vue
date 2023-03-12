@@ -38,9 +38,9 @@
           <md-card-header style="padding:0px">
             <md-avatar v-if="result.thumbnail">
               <img
-                :src="getThumbnailUrl(result)"
+                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
                 :alt="result.label"
-                v-if="result.thumbnail"
+                v-if="result.thumbnail "
               >
             </md-avatar>
 
@@ -271,7 +271,13 @@ export default {
       }
     },
     getThumbnailUrl (item) {
-      return getViewUrl({ uri: item.thumbnail })
+      let blobId = item?.thumbnail?.split('=')[1];
+      console.log(blobId)
+      if (!blobId) {
+        blobId = item.thumbnail;
+      }
+      return `${this.baseUrl}/api/files/${blobId}`
+      // return getViewUrl({ uri: item.thumbnail })
     }
   }
 }

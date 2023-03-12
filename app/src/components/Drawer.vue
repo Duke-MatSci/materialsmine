@@ -87,15 +87,18 @@
           <router-link :to="'/nm/tools/plot-curation'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Easy CSV Plotter</md-list-item>
           </router-link>
+          <router-link :to="'/explorer/sparql'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Sparql Query Tool</md-list-item>
+          </router-link>
         </md-list>
       </md-list-item>
       <md-list-item v-if="isAuth" @click="$store.dispatch('auth/logout')">
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
       </md-list-item>
-      <md-list-item v-if="!isAuth">
+      <md-list-item v-if="!isAuth" @click="login">
         <md-icon class="utility-navfonticon">login</md-icon>
-        <span class="md-list-item-text utility-navfont"><a href="/secure">Login</a></span>
+        <span class="md-list-item-text utility-navfont">Login</span>
       </md-list-item>
     </md-list>
   </div>
@@ -109,6 +112,11 @@ export default {
       isAuth: 'auth/isAuthenticated',
       name: 'auth/displayName'
     })
+  },
+  methods: {
+    login () {
+      window.location.href = '/secure'
+    }
   }
 }
 </script>

@@ -42,7 +42,7 @@
 
                     <md-table v-if="!!rejectedData.length && isSubmitted" v-model="rejectedData" >
                       <md-table-toolbar>
-                        <h1 class="md-title u--color-error">Failed: Already exist.</h1>
+                        <h1 class="md-title u--color-error">Failed: Already exists.</h1>
                         <span><a href="/explorer/curate/validlist/update">Update here</a></span>
                       </md-table-toolbar>
 
@@ -150,10 +150,10 @@ export default {
       }
     },
     async submit () {
-      this.isSubmitted = !this.isSubmitted
       this.sanitizeArr()
       this.addMore()
       if (!this.tableData.length) return
+      this.isSubmitted = !this.isSubmitted
       try {
         const response = await this.$apollo.mutate({
           mutation: CREATEMATERIAL_QUERY,

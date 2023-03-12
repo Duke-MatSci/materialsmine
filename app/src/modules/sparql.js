@@ -1,7 +1,7 @@
 import { literal, namedNode } from '@rdfjs/data-model'
 import { fromRdf } from 'rdf-literal'
 
-const SPARQL_ENDPOINT = 'https://materialsmine.org/wi/sparql'
+const SPARQL_ENDPOINT = '/api/knowledge/sparql'
 
 async function querySparql (query, { endpoint = SPARQL_ENDPOINT, headers = {} } = {}) {
   const urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(

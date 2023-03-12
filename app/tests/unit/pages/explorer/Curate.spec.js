@@ -1,5 +1,5 @@
 import createWrapper from '../../../jest/script/wrapper'
-import { enableAutoDestroy } from '@vue/test-utils'
+import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
 import ExplorerCurate from '@/pages/explorer/Curate.vue'
 
 describe('Curate.vue', () => {
@@ -16,11 +16,33 @@ describe('Curate.vue', () => {
     expect(catHeader.exists()).toBe(true)
   })
 
+  it('renders the right page layout', () => {
+    expect.assertions(4)
+    const sections = wrapper.findAll('div > .section_teams > .curate > div')
+    expect(sections.length).toEqual(3)
+    expect(sections.at(0).attributes().class).toBeUndefined()
+    expect(sections.at(1).attributes().class).toEqual('u_margin-top-med')
+    expect(sections.at(2).attributes().class).toEqual('u_margin-top-med')
+  })
+
   it('renders curate category headers', () => {
-    expect.assertions(3)
+    expect.assertions(4)
     const catHeaders = wrapper.findAll('.visualize_header-h1')
-    expect(catHeaders.length).toEqual(2)
+    expect(catHeaders.length).toEqual(3)
     expect(catHeaders.at(0).text()).toBe('Curate')
     expect(catHeaders.at(1).text()).toBe('Create Visualization')
+    expect(catHeaders.at(2).text()).toBe('Valid Curation List Item')
+  })
+
+  it('renders valid curation list Item', () => {
+    expect.assertions(6)
+    const section = wrapper.findAll('div > .section_teams > .curate > div').at(2)
+    const sectionItem = section.findAll('.md-layout-item.md-layout-item_card')
+    expect(section.find('h2.visualize_header-h1.metamine_footer-ref-header').text()).toEqual('Valid Curation List Item')
+    expect(section.find('.md-layout.md-layout-responsive').exists()).toBeTruthy()
+    expect(sectionItem.length).toBe(2)
+    expect(sectionItem.at(0).attributes().class).toEqual('md-layout-item md-size-30 md-medium-size-50 md-medium-size-100 md-layout-item_card')
+    expect(sectionItem.at(0).findComponent(RouterLinkStub).props().to).toEqual('/explorer/curate/validList')
+    expect(sectionItem.at(1).findComponent(RouterLinkStub).props().to).toEqual('/explorer/curate/validList/update')
   })
 })

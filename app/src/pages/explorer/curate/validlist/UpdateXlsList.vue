@@ -38,7 +38,7 @@
                         <md-table-toolbar ><h1 class="md-title u--color-success">Update Successful</h1></md-table-toolbar>
 
                         <md-table-row>
-                          <md-table-head>FieldName</md-table-head>
+                          <md-table-head>Field Name</md-table-head>
                           <md-table-head>Value</md-table-head>
                           <md-table-head>User</md-table-head>
                         </md-table-row>
@@ -56,7 +56,7 @@
 
                     <div>
                       <md-field style="align-items: baseline;">
-                        <p style="margin-right: 4px;font-weight: bold;">FieldName:</p>
+                        <p style="margin-right: 4px;font-weight: bold;">Field Name:</p>
                         <md-input v-model="fieldName" @keyup.enter="submitSearch" id="fieldName"></md-input>
                       </md-field>
 

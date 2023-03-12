@@ -28,10 +28,20 @@ export default {
 <style css src='@triply/yasgui/build/yasgui.min.css'></style>
 
 <style css>
-.yasgui .endpointText {
+  .yasgui .endpointText {
     display: none !important;
-}
-/* .yasgui .autocompleteWrapper {
+  }
+  .yasgui .autocompleteWrapper,
+  .yasgui .controlbar {
+    visibility: hidden !important;
     display: none !important;
-  } */
+  }
+  .yasqe .CodeMirror {
+    border: 1px solid #afe3f1 !important;
+  }
+  .CodeMirror-gutters {
+    border-right: 1px solid #afe3f1 !important;
+    background-color: #f7f7f7;
+    white-space: nowrap;
+  }
 </style>
