@@ -124,7 +124,7 @@ jobs:
       myid: restful
       context: ./resfulservice
       tags: dukematsci/prod-restful
-      next_ver: ${{ needs.release.outputs.vesion_output}}
+      next_ver: ${{ needs.release.outputs.version_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
