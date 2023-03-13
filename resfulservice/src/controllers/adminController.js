@@ -52,7 +52,12 @@ const _loadBulkElasticSearch = async (req, res, next) => {
 
     // Delete existing docs in this index type
     log.info(`_loadBulkElasticSearch(): Deleting existing ${type} indices`);
-    if (total) await elasticSearch.deleteIndexDocs(type);
+
+    /** Users will always pass limit & offset, if submitting multi bulk entries.
+     * If it's missing in request header delete existing docs
+     * Only clear if it is a one time bulk entry.
+    */
+    if ((!req.query.limit || req.query.offset === 0) && total) await elasticSearch.deleteIndexDocs(type);
     log.info(`_loadBulkElasticSearch(): Successfully deleted ${type} indices`);
 
     for (const item of data) {
