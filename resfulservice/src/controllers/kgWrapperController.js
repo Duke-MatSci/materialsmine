@@ -21,17 +21,21 @@ const _outboundRequest = async (req, next) => {
   let url = query?.uri;
   let altMethod;
 
-  if (!url) {
-    url = `${req.env.KNOWLEDGE_ADDRESS}/${constant[type]}`;
-    altMethod = 'get';
-  }
-
   if (!query?.uri && !type) {
     return next(errorWriter(req, 'Category type is missing', '_outboundRequest', 422));
   }
 
   if (!url) {
-    return next(errorWriter(req, 'URI is missing in the request body', '_outboundRequest', 422));
+    url = `${req.env.KNOWLEDGE_ADDRESS}/${constant[type]}`;
+    altMethod = 'get';
+  }
+
+  if (query?.type && query.limit) {
+    url = `${url}&limit=${query.limit}`;
+  }
+
+  if (query?.type && query.offset) {
+    url = `${url}&offset=${query.offset}`;
   }
 
   const preparedRequest = {

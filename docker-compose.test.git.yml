@@ -14,7 +14,7 @@ services:
     volumes:
       - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
   api:
-    image: 'dukematsci/prod/dev-restful:latest'
+    image: 'dukematsci/prod-restful:latest'
     depends_on:
       - mongo
     environment:
@@ -26,11 +26,11 @@ services:
       - TKNS=${TKNS}
       - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
   client:
-    image: 'dukematsci/prod/dev-app:latest'
+    image: 'dukematsci/prod-app:latest'
     depends_on:
       - api
   kgapp:
-    image: 'dukematsci/prod/dev-kgapp:latest'
+    image: 'dukematsci/prod-kgapp:latest'
 
 volumes:
   mockDB:
