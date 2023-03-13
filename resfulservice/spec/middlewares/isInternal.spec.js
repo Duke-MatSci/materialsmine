@@ -1,6 +1,6 @@
 const { expect, should } = require('chai');
 const { setInternal, getInternal } = require('../../src/middlewares/isInternal');
-const logger = require('../logger');
+const { logger } = require('../common/utils');
 
 should();
 

@@ -78,6 +78,23 @@ const explorerRoutes = [
       }
     ]
   },
+  {
+    path: 'curate/validlist',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'validList',
+        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue')
+      },
+      {
+        path: 'update',
+        name: 'xlsUpdate',
+        component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+      }
+    ]
+  },
   // {
   //   path: 'stepper',
   //   name: 'CurateStepper',
@@ -169,6 +186,15 @@ const explorerRoutes = [
     component: () =>
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
+      ),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: 'sparql',
+    name: 'Sparql',
+    component: () =>
+      import(
+        '@/pages/explorer/Sparql.vue'
       ),
     meta: { requiresAuth: true }
   }

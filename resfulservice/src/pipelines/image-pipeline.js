@@ -77,7 +77,7 @@ exports.imageQuery = async (args) => {
     if (input?.search === 'filterByMicroscopy') {
       stages.push({
         $match: {
-          'image.MicroscopyType': input.searchValue
+          'image.MicroscopyType': { $regex: input.searchValue, $options: 'gi' }
         }
       });
     }
@@ -128,7 +128,7 @@ exports.validateImageSearchOptions = (input) => {
 
   // Search by year
   if (search === 'filterByYear') {
-    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digit', 422);
+    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digits', 422);
     searchQuery.push({
       $match: {
         [`${commonFields}.PublicationYear`]: {
@@ -166,6 +166,7 @@ exports.validateImageSearchOptions = (input) => {
 
   // Search by microscopy type
   if (search === 'filterByMicroscopy') {
+    const value = new RegExp(searchValue, 'gi');
     searchQuery.push({
       $match: {
         [`${targetField}.MicroscopyType`]: {
@@ -175,7 +176,7 @@ exports.validateImageSearchOptions = (input) => {
     });
     searchQuery.push({
       $match: {
-        [`${targetField}.MicroscopyType`]: { $regex: searchValue, $options: 'g' }
+        [`${targetField}.MicroscopyType`]: { $regex: value }
       }
     });
     return searchQuery;
@@ -192,7 +193,7 @@ exports.validateImageSearchOptions = (input) => {
     });
     searchQuery.push({
       $match: {
-        [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'g' }
+        [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'gi' }
       }
     });
     return searchQuery;
@@ -210,7 +211,7 @@ exports.validateImageSearchOptions = (input) => {
 
   searchQuery.push({
     $match: {
-      [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'g' }
+      [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'gi' }
     }
   });
   return searchQuery;

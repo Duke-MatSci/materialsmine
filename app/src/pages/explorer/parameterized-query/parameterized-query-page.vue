@@ -70,7 +70,7 @@
       </div>
       <div class="results">
         <accordion
-          :startOpen="false"
+          :startOpen="true"
           title="SPARQL Results"
         >
           <div class="results-controls">
@@ -102,10 +102,10 @@
             class="results-progress"
             v-show="runningQuery"
           >
-            <md-progress-spinner
-              :md-diameter="100"
-              :md-stroke="6"
-              md-mode="indeterminate"
+            <spinner
+              :loading="getIsloading"
+              text='Loading your request...'
+              v-if="runningQuery"
             />
           </div>
           <div v-show="!runningQuery">
@@ -133,12 +133,14 @@ import debounce from '@/modules/debounce'
 import accordion from '@/components/accordion.vue'
 import yasr from '@/components/explorer/yasr'
 import yasqe from '@/components/explorer/yasqe'
+import spinner from '@/components/Spinner'
 
 export default {
   components: {
     accordion,
     yasqe,
-    yasr
+    yasr,
+    spinner
   },
   data () {
     return {

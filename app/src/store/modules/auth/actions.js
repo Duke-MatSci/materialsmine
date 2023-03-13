@@ -53,13 +53,13 @@ export default {
     router.push('/nm')
     context.commit('setSnackbar', {
       message: 'Authenticating...',
-      duration: 1000
+      duration: 3000
     }, { root: true })
 
     const token = res.token ?? null
     const userId = res.userId ?? null
     const displayName = res.displayName ?? null
-    const expiresIn = 450 * 1000
+    const expiresIn = 9000 * 60 * 60
     const expirationDate = new Date().getTime() + expiresIn
 
     if (token && userId && displayName) {

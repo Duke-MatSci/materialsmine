@@ -10,6 +10,9 @@ import Snackbar from '@/components/Snackbar.vue'
 export default {
   components: {
     Snackbar
+  },
+  async created () {
+    await this.$store.dispatch('auth/tryLogin')
   }
 }
 </script>

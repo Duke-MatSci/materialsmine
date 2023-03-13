@@ -1,8 +1,7 @@
 const {expect} = require('chai');
 const isAuth = require('../../src/middlewares/isAuth');
 const {signToken} = require('../../src/utils/jwtService');
-
-const logger = require('../logger');
+const { logger } = require('../common/utils');
 
 describe('authValidation middleware service', function () {
   it('rejects unauthorized request', async function () {

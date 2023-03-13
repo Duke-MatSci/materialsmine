@@ -101,14 +101,14 @@ describe('ImageDetailView.vue', () => {
 
   it('routes to article when "view article" is clicked', async () => {
     const viewArticle = wrapper.find('.u--b-rad')
-    expect(viewArticle.text()).toContain('View Article')
+    expect(viewArticle.text()).toContain('10.1016/j.polymer.2003.10.003')
     await viewArticle.trigger('click')
     expect(wrapper.vm.$route.path).toBe('/explorer/article/10.1016/j.polymer.2003.10.003')
   })
 
   it('renders three tabs sections', async () => {
     expect.assertions(1)
-    expect(wrapper.findAll('.u--margin-rightmd').length).toEqual(3)
+    expect(wrapper.findAll('.u--margin-rightmd').length).toEqual(4)
   })
 
   it('shows metadata', () => {

@@ -17,21 +17,22 @@
           </div>
         </div>
 
-        <md-card md-theme="green-card" class="md-primary u--shadow-none u--padding-zero-mobile" >
+        <md-card v-if="currentImage" md-theme="green-card" class="md-primary u--shadow-none u--padding-zero-mobile">
           <md-card-header class="section_md-header ">
             <md-card-header-text class="section_text-col flex-item">
               <div class="md-title u--margin-header">{{ currentImage.description || "Polymer nanocomposite image"}}</div>
-              <div class="md-subhead u--margin-header">{{ currentImage.metaData.title}}</div>
-
-              <button
-                class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad"
-                @click="nav_to_doi(currentImage.metaData.doi)"
-                >
-                View Article
-              </button>
+              <div v-if="currentImage.metaData.doi">
+                DOI: <a class=" u--b-rad" @click="nav_to_doi(currentImage.metaData.doi)">{{ currentImage.metaData.doi}}</a>
+                <div class="md-subhead u--margin-header">{{ currentImage.metaData.title}}</div>
+                <button
+                  class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad"
+                  @click="nav_to_doi_images(currentImage.metaData.doi)"
+                  >
+                  more from this DOI
+                </button>
+              </div>
             </md-card-header-text>
-
-            <div class="quicklinks_content flex-item img-div u--padding-zero">
+            <div class="quicklinks_content flex-item u--padding-zero" style="max-width:50rem;">
               <img :src="currentImage.file" :alt="currentImage.metaData.title" class="facet_viewport img">
             </div>
           </md-card-header>
@@ -41,6 +42,7 @@
           <div @click="nav_to_tab" name="ri_active" :class="{'u--margin-rightmd': true, 'section_tabb-controller': !tabbed_content.ri_active, u_pointer: true, 'u--padding-rl-xs': true}">Related Images</div>
           <div @click="nav_to_tab" name="kw_active" :class="{'u--margin-rightmd': true, 'section_tabb-controller': !tabbed_content.kw_active, u_pointer: true, 'u--padding-rl-xs': true}">Keywords</div>
           <div @click="nav_to_tab" name="md_active" :class="{'u--margin-rightmd': true, 'section_tabb-controller': !tabbed_content.md_active, u_pointer: true, 'u--padding-rl-xs': true}">Metadata</div>
+          <div @click="nav_to_tab" name="au_active" :class="{'u--margin-rightmd': true, 'section_tabb-controller': !tabbed_content.au_active, u_pointer: true, 'u--padding-rl-xs': true}">Authors</div>
         </div>
 
         <div>
@@ -87,17 +89,17 @@
               <button
               v-for="word in getSingleImages.images[0].metaData.keywords"
               :key="word"
-              @click="navToKeyword(word)"
+              @click="nav_to_keyword(word)"
               class="btn btn--primary search_box_form_btn mid-first-li display-text u--b-rad u--margin-pos">{{word}}</button>
           </div>
 
-          <div id="metadata" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
+          <div v-if="currentImage" id="metadata" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
             <div class="u--margin-pos">
               <span class="u--font-emph-xl u--color-black">
                 Microscopy:
               </span>
               <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
-                {{ getSingleImages.images[0].microscopyType || 'N/A' }}
+                {{ currentImage.microscopyType || 'N/A' }}
               </span>
             </div>
             <div class="u--margin-pos">
@@ -105,7 +107,7 @@
                 Dimension:
               </span>
               <span class="u--font-emph-xl u--color-grey-sec">
-                width: {{ getSingleImages.images[0].dimension.width || 'N/A' }} | height: {{ getSingleImages.images[0].dimension.height || 'N/A' }}
+                width: {{ currentImage.dimension.width || 'N/A' }} | height: {{ currentImage.dimension.height || 'N/A' }}
               </span>
             </div>
             <div class="u--margin-pos">
@@ -113,8 +115,14 @@
                 Type:
               </span>
               <span class="u--font-emph-xl u--color-grey-sec">
-                {{ getSingleImages.images[0].type || 'N/A' }}
+                {{ currentImage.type || 'N/A' }}
               </span>
+            </div>
+          </div>
+
+          <div v-if="currentImage"  id="authors" :class="{search_box_form: true, 'u--layout-flex-justify-se': false, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.au_active}">
+            <div v-for="(author, index) in currentImage.metaData.authors" :key="index">
+              <span> {{ index==0 ? '' : '; ' }} {{author}} </span>
             </div>
           </div>
         </div>
@@ -142,7 +150,8 @@ export default {
       tabbed_content: {
         ri_active: true,
         kw_active: true,
-        md_active: false
+        md_active: false,
+        au_active: true
       },
       showLink: false,
       currentImage: {},
@@ -169,7 +178,7 @@ export default {
       this.assetItems = images.filter(img => img.file !== this.$route.params.fileId)
     },
     navBack () {
-      this.$router.push('/explorer/images')
+      this.$router.back()
     },
     nav_to_tab (e) {
       Object.keys(this.tabbed_content).forEach(el => { this.tabbed_content[el] = true })
@@ -178,8 +187,11 @@ export default {
     nav_to_doi (doi) {
       this.$router.push(`/explorer/article/${doi}`)
     },
-    navToKeyword (keyword) {
-      this.$router.push('explorer/images')
+    nav_to_keyword (keyword) {
+      this.$router.push(`/explorer/images?page=1&type=Keyword&q=${encodeURIComponent(keyword)}`)
+    },
+    nav_to_doi_images (doi) {
+      this.$router.push(`/explorer/images?page=1&type=filterByDOI&q=${encodeURIComponent(doi)}`)
     },
     updateCurrentImage (fileId) {
       const [first] = this.getSingleImages.images.filter(img => img.file === fileId)

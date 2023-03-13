@@ -6,8 +6,6 @@ const { getInternal } = require('../middlewares/isInternal');
 
 router
   .route('/es/bulkinsert')
-  // .get(getInternal, AdminController.pingElasticSearch)
-  // .post(getInternal, AdminController.initializeElasticSearch);
   .post(AdminController.bulkElasticSearchImport)
   .put(AdminController.dataDump);
 
@@ -20,11 +18,10 @@ router.route('/populate-datasets')
 
 router
   .route('/es')
-  // .get(getInternal, AdminController.pingElasticSearch)
-  // .post(getInternal, AdminController.initializeElasticSearch);
   .get(AdminController.pingElasticSearch)
   .post(AdminController.initializeElasticSearch)
   .put(getInternal, AdminController.loadElasticSearch);
 
+// Note: Not in use. Deprecated for authService.js route.
 router.route('/login').post(loginController.login);
 module.exports = router;

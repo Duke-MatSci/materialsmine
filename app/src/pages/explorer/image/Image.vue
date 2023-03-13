@@ -11,39 +11,18 @@
               <label htmlFor="search" class="form__label search_box_form_label">Search Microstructure Image</label>
             </div>
           </div>
-          <ul class="contactus_radios u--margin-neg u_centralize_text">
-            <li>
-              <div class="form__radio-group">
-                <input type="radio" class="form__radio-input"
-                value="filterByFiller" id="filterByFiller" name="question" v-model="filter">
-                <label for="filterByFiller" class="form__radio-label">
-                  <span class="form__radio-button form__radio-button_less"></span>
-                  Search by filler
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="filterByKeyword"
-                value="filterByKeyword" name="question" v-model="filter">
-                <label for="filterByKeyword" class="form__radio-label">
-                  <span class="form__radio-button form__radio-button_less"></span>
-                  Search by keyword
-                </label>
-              </div>
-            </li>
-            <li>
-              <div class="form__radio-group">
-                <input type="radio" class="form__radio-input" id="filterByYear"
-                value="filterByYear" name="question" v-model="filter">
-                <label for="filterByYear" class="form__radio-label">
-                  <span class="form__radio-button form__radio-button_less"></span>
-                  Search by year
-                </label>
-              </div>
-            </li>
-          </ul>
           <div class="form__group search_box_form-item-2  explorer_page-nav u--margin-neg">
+            <div class="form__field md-field">
+              <select class="form__select"
+                v-model="filter" name="filter" id="filter">
+                <option value="" disabled selected hidden>Filter by...</option>
+                <option value="Keyword">Keyword</option>
+                <option value="filterByFiller">Filler</option>
+                <option value="filterByYear">Year</option>
+                <option value="filterByDOI">DOI</option>
+                <option value="filterByMicroscopy">Microscopy</option>
+              </select>
+            </div>
             <button
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -54,7 +33,7 @@
             <button v-if="searchEnabled"
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-              @click.prevent="cancelSearch"
+              @click.prevent="resetSearch"
             >
             Clear Search
             </button>
@@ -88,6 +67,7 @@
               name="pagesize"
               title="specify number of items per size"
               v-model.lazy="pageSize"
+              min="1" max="20"
             >
           </span>
         </span>
@@ -119,13 +99,13 @@
         </md-card>
       </div>
       <pagination
-        :cpage="searchImages.pageNumber || images.pageNumber"
+        :cpage="pageNumber"
         :tpages="searchImages.totalPages || images.totalPages"
         @go-to-page="loadPrevNextImage($event)"
       />
 		</div>
     <div v-else class="utility-roverflow u_centralize_text u_margin-top-med">
-      <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Images!!!</h1>
+      <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Images</h1>
     </div>
 	</div>
 </template>
@@ -145,11 +125,12 @@ export default {
       images: [],
       searchImages: [],
       ImageList: [],
-      pageNumber: 1,
-      pageSize: 20,
+      pageNumber: parseInt(this.$route.query.page) || 1,
+      pageSize: parseInt(this.$route.query.size) <= 20 ? parseInt(this.$route.query.size) : 20,
       searchEnabled: false,
       filter: '',
-      searchWord: ''
+      searchWord: '',
+      error: null
     }
   },
   components: {
@@ -166,40 +147,102 @@ export default {
       if (newValue && newValue.value?.length) {
         this.renderText = `Showing ${newValue.type}: ${newValue.value}`
         this.searchEnabled = true
-        this.loadPrevNextImage(1)
+        this.pageSize = newValue.pageSize || this.pageSize
+        return this.refetchApollo()
+      } else {
+        this.searchEnabled = false
+        this.pageSize = newValue.pageSize || this.pageSize
+        return this.refetchApollo()
       }
+    },
+    '$route.query' (newValue, oldValues) {
+      this.pageNumber = parseInt(newValue.page) || 1
+      this.pageSize = parseInt(newValue.size) || 20
+      this.filter = newValue.type || ''
+      this.searchWord = newValue.q || ''
+      this.dispatchSearch()
+    },
+    // Limit page size for now
+    pageSize (newValue, oldValue) {
+      this.checkPageSize(newValue)
+      this.loadPrevNextImage(this.pageNumber)
     }
   },
   methods: {
     loadPrevNextImage (event) {
-      if (!this.searchEnabled) {
-        this.pageNumber = event
-        this.$apollo.queries.images.refetch()
-        return
-      }
       this.pageNumber = event
-      this.$apollo.queries.images.skip = true
-      this.$apollo.queries.searchImages.skip = false
-      this.$apollo.queries.searchImages.refetch()
+      if (!this.searchEnabled) {
+        return this.changeRoute(event, this.pageSize)
+      }
+      this.changeRoute(event, this.pageSize, this.filter, this.searchWord)
+    },
+    refetchApollo () {
+      this.error = ''
+      if (this.searchEnabled) {
+        this.$apollo.queries.images.skip = true
+        this.$apollo.queries.searchImages.skip = false
+        this.$apollo.queries.searchImages.refetch()
+      } else {
+        this.$apollo.queries.searchImages.skip = true
+        this.$apollo.queries.images.skip = false
+        this.$apollo.queries.images.refetch()
+      }
     },
     submitSearch () {
-      if (!this.searchWord && !this.filter) return
-      return this.dispatchSearch()
+      if (!this.searchWord || !this.filter) {
+        return this.$store.commit('setSnackbar', {
+          message: 'Enter a search term and select a filter type',
+          duration: 10000
+        })
+      }
+      this.pageNumber = 1
+      this.dispatchSearch()
+      this.changeRoute(this.pageNumber, this.pageSize, this.filter, this.searchWord)
     },
-    async cancelSearch () {
-      this.$router.go(this.$router.currentRoute)
+    async resetSearch () {
+      this.$router.replace({ query: null })
+      this.searchImages = []
+      this.renderText = 'Showing all images'
     },
     async dispatchSearch () {
       await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue',
-        { type: this.filter, value: this.searchWord })
+        { type: this.filter, value: this.searchWord, size: this.pageSize })
+    },
+    changeRoute (page = 1, size = 20, filter = '', query = '') {
+      const curQuery = this.$route.query
+      // Don't push change if same route to avoid error
+      if (curQuery.page === page && curQuery.size === size && curQuery.type === filter && curQuery.q === query) {
+        this.refetchApollo()
+      } else if (filter === '' || query === '') {
+        if (curQuery.page === page && curQuery.size === size) return this.refetchApollo()
+        this.$router.push({ query: { page, size } })
+      } else this.$router.push({ query: { page, size, type: filter, q: query } })
+    },
+    checkPageSize (page) {
+      if (page > 20) {
+        this.pageSize = 20
+      } else if (page < 1) {
+        this.pageSize = 1
+      }
     }
   },
   created () {
-    if (this.imageSearch?.value) {
+    if (this.$route.pageSize) {
+      this.checkPageSize(this.$route.pageSize)
+    }
+    if (this.$route.query.q && this.$route.query.type) {
+      this.searchEnabled = true
+      this.searchWord = this.$route.query.q
+      this.filter = this.$route.query.type
+      this.dispatchSearch()
+    } else if (this.imageSearch?.value) {
       this.searchEnabled = true
       this.filter = this.imageSearch?.type
       this.searchWord = this.imageSearch?.value
-      this.loadPrevNextImage(1)
+      this.refetchApollo()
+    } else {
+      this.searchEnabled = false
+      this.dispatchSearch()
     }
   },
   apollo: {
@@ -207,22 +250,49 @@ export default {
       query: IMAGES_QUERY,
       variables () {
         return {
-          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize) }
+          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.imageSearch.size) }
         }
       },
-      fetchPolicy: 'cache-and-network'
+      skip () {
+        if (this.searchEnabled) return this.skipQuery
+      },
+      fetchPolicy: 'cache-and-network',
+      error (error) {
+        if (error.networkError) {
+          const err = error.networkError
+          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
+        } else if (error.graphQLErrors) {
+          this.error = error.graphQLErrors
+        }
+        this.$store.commit('setSnackbar', {
+          message: this.error,
+          duration: 10000
+        })
+      }
     },
     searchImages: {
       query: SEARCH_IMAGES_QUERY,
       variables () {
         return {
-          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize) }
+          input: { search: this.imageSearch.type, searchValue: this.imageSearch.value, pageNumber: this.pageNumber, pageSize: parseInt(this.imageSearch.size) }
         }
       },
       skip () {
         if (!this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network'
+      fetchPolicy: 'cache-and-network',
+      error (error) {
+        if (error.networkError) {
+          const err = error.networkError
+          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
+        } else if (error.graphQLErrors) {
+          this.error = error.graphQLErrors
+        }
+        this.$store.commit('setSnackbar', {
+          message: this.error,
+          duration: 10000
+        })
+      }
     }
   }
 }
