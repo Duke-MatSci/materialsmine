@@ -92,6 +92,11 @@ const explorerRoutes = [
         path: 'update',
         name: 'xlsUpdate',
         component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+      },
+      {
+        path: 'all',
+        name: 'validListAll',
+        component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue')
       }
     ]
   },
