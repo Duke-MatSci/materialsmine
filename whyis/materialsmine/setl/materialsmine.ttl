@@ -398,16 +398,16 @@ materialsmine:Cooling a owl:Class ;
     rdfs:label "Cooling" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0000146> ],
+            owl:someValuesFrom materialsmine:AmbientCondition ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0001025> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:AmbientCondition ],
+            owl:someValuesFrom <obo:PATO_0000146> ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom sio:TimeInterval ],
         sio:Procedure .
 
 materialsmine:Copolymer a owl:Class ;
@@ -481,6 +481,12 @@ materialsmine:DegreeOfCrystallization a owl:Class ;
     rdfs:subClassOf materialsmine:Crystallinity ;
     skos:definition "The percentage of the crystallized region in a polymer/material. It describes the extent of the crystallization process" .
 
+materialsmine:DegreeOfWetting a owl:Class ;
+    rdfs:label "Degree of Wetting" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/Ratio> ;
+    rdfs:subClassOf materialsmine:WettingAngle ;
+    skos:definition "Cosine of the wetting angle." .
+
 materialsmine:Density a owl:Class ;
     rdfs:label "Density" ;
     materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/kilogramPerCubicmetre> ;
@@ -525,14 +531,14 @@ materialsmine:DifferentialScanningCalorimetry a owl:Class ;
     rdfs:label "Differential Scanning Calorimetry" ;
     materialsmine:hasSelector "//Differential_Scanning_Calorimetry" ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:onProperty prov:generated ;
-            owl:someValuesFrom materialsmine:ThermalProperty ],
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:HeatingRate ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:CoolingRate ],
         [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:HeatingRate ],
+            owl:onProperty prov:generated ;
+            owl:someValuesFrom materialsmine:ThermalProperty ],
         sio:Measuring ;
     skos:definition "Measurement of heat required to increase unit temperature in a material" .
 
@@ -555,6 +561,15 @@ materialsmine:DispersionRelation3D a owl:Class ;
     rdfs:subClassOf materialsmine:DispersionRelation ;
     skos:definition "Frequency-wavevector pairs that represent the propogation of wave modes found in a specific 3D geometry." .
 
+materialsmine:DispersiveSurfaceEnergy a owl:Class ;
+    rdfs:label "Dispersive Surface Energy" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:SurfaceEnergy ;
+    skos:definition "Interaction strength at a phase interface caused by dispersion forces." .
+
 materialsmine:Dissolving a owl:Class ;
     rdfs:label "Dissolving" ;
     rdfs:subClassOf [ a owl:Restriction ;
@@ -567,16 +582,16 @@ materialsmine:Drying-Evaporation a owl:Class ;
     rdfs:label "Drying Evaporation" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0000146> ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0001025> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:AmbientCondition ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom sio:TimeInterval ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom <obo:PATO_0000146> ],
         sio:Procedure ;
     skos:definition "Process for drying and evaporation of liquid solutions" .
 
@@ -949,16 +964,16 @@ materialsmine:Heating a owl:Class ;
     rdfs:label "Heating" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0000146> ],
+            owl:someValuesFrom sio:TimeInterval ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:AmbientCondition ],
+            owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0001025> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
+            owl:someValuesFrom materialsmine:AmbientCondition ],
         sio:Procedure ;
     skos:definition "Process for applying heat" .
 
@@ -1354,10 +1369,10 @@ materialsmine:OpticalMicroscopy a owl:Class ;
     materialsmine:hasSelector "//OpticalMicroscopy" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty prov:generated ;
-            owl:someValuesFrom materialsmine:ViscoelasticProperty ],
+            owl:someValuesFrom materialsmine:MechanicalProperty ],
         [ a owl:Restriction ;
             owl:onProperty prov:generated ;
-            owl:someValuesFrom materialsmine:MechanicalProperty ],
+            owl:someValuesFrom materialsmine:ViscoelasticProperty ],
         sio:Measuring ;
     skos:definition "Magnification of small objects with visible light" .
 
@@ -1490,6 +1505,15 @@ materialsmine:PoissonsRatio a owl:Class ;
     rdfs:label "Poissons Ratio" ;
     rdfs:subClassOf materialsmine:TensileProperty ;
     skos:definition "Negative ratio of traverse to axial strain" .
+
+materialsmine:PolarSurfaceEnergy a owl:Class ;
+    rdfs:label "Polar Surface Energy" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:SurfaceEnergy ;
+    skos:definition "Interaction strength at a phase interface caused by polar forces." .
 
 materialsmine:Polydispersity a owl:Class ;
     rdfs:label "Polydispersity" ;
@@ -1656,22 +1680,22 @@ materialsmine:ScanningElectronMicroscopy a owl:Class ;
     materialsmine:hasSelector "//Scanning_Electron_Microscopy" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:EmissionCurrent ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:WorkingDistance ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:Magnification ],
         [ a owl:Restriction ;
             owl:onProperty prov:generated ;
             owl:someValuesFrom materialsmine:ElectricalProperty ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:Magnification ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:EmissionCurrent ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:ExposureTime ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
         sio:Measuring ;
     skos:definition "Scanning electron microscopy for obtaining microstructure at microscale" .
 
@@ -2043,9 +2067,6 @@ materialsmine:TransmissionElectronMicroscopy a owl:Class ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:EmissionCurrent ],
         [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:Magnification ],
-        [ a owl:Restriction ;
             owl:onProperty prov:generated ;
             owl:someValuesFrom materialsmine:ElectricalProperty ],
         [ a owl:Restriction ;
@@ -2053,10 +2074,13 @@ materialsmine:TransmissionElectronMicroscopy a owl:Class ;
             owl:someValuesFrom materialsmine:ExposureTime ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:WorkingDistance ],
+            owl:someValuesFrom materialsmine:Magnification ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:AcceleratingVoltage ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:WorkingDistance ],
         sio:Measuring ;
     skos:definition "Transmission electron microscopy for obtaining microstructure at nanoscale" .
 
@@ -2187,6 +2211,24 @@ materialsmine:WeightLoss a owl:Class ;
     rdfs:label "Weight Loss" ;
     rdfs:subClassOf materialsmine:VolumetricProperty ;
     skos:definition "The loss of mass of a material under some condition (e.g., increasing temperature during thermogravimetric analysis)" .
+
+materialsmine:WorkOfAdhesion a owl:Class ;
+    rdfs:label "Work of Adhesion" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:PhysicalProperty ;
+    skos:definition "The work required to separate two surfaces or phases that are adhered." .
+
+materialsmine:WorkOfSpreading a owl:Class ;
+    rdfs:label "Work of Spreading" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:PhysicalProperty ;
+    skos:definition "The energy required to spread a liquid over a surface." .
 
 materialsmine:XRayDiffractionAndScattering a owl:Class ;
     rdfs:label "XRay Diffraction and Scattering" ;
@@ -2648,11 +2690,23 @@ materialsmine:Voltage a owl:Class ;
     rdfs:label "Voltage" ;
     rdfs:subClassOf sio:Quantity .
 
+materialsmine:WettingAngle a owl:Class ;
+    rdfs:label "Wetting Angle" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degree> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/degrees> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:PhysicalProperty ;
+    skos:definition "The angle formed between a liquid droplet and a solid surface. It is a measure of the thermodynamic compatablity between the liquid and the solid, and is influenced by factors such as surface energy and surface tension." .
+
 <http://materialsmine.org/ns/unit/1-pa> a sio:UnitOfMeasurement ;
     rdfs:label "1/Pa" .
 
 <http://materialsmine.org/ns/unit/c-m-2> a sio:UnitOfMeasurement ;
     rdfs:label "C/m^2" .
+
+<http://materialsmine.org/ns/unit/degrees> a sio:UnitOfMeasurement ;
+    rdfs:label "degrees" .
 
 <http://materialsmine.org/ns/unit/j-m-3> a sio:UnitOfMeasurement ;
     rdfs:label "J/m^3" .
@@ -2807,6 +2861,15 @@ materialsmine:Strain a owl:Class ;
     rdfs:subClassOf materialsmine:MechanicalProperty ;
     skos:definition "Engineering strain is defined as the amount of deformation in the direction of the applied force divided by the initial length of the material." .
 
+materialsmine:SurfaceEnergy a owl:Class ;
+    rdfs:label "Surface Energy" ;
+    materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+            owl:onProperty sio:hasUnit ],
+        materialsmine:PhysicalProperty ;
+    skos:definition "Interaction strength of two phases at a phase interface." .
+
 materialsmine:WorkingDistance a owl:Class ;
     rdfs:label "Working Distance" ;
     materialsmine:hasSelector "//WorkingDistance" ;
@@ -2865,61 +2928,61 @@ materialsmine:Extruder a owl:Class ;
     rdfs:label "Extruder" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ChannelDepth ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:FlightWidth ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:MeltTemperature ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Torque ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:PressureAtDie ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ExtrusionTemperature ],
+            owl:someValuesFrom materialsmine:Voltage ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:ChannelsPerScrew ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewLength ],
+            owl:someValuesFrom materialsmine:ExtrusionTemperature ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Dimension ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewLead ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:InnerBarrelDiameter ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewChannelWidth ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Amperage ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Throughput ],
+            owl:someValuesFrom materialsmine:PressureAtDie ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:DLRatio ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewDiameter ],
+            owl:someValuesFrom materialsmine:InnerBarrelDiameter ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Voltage ],
+            owl:someValuesFrom materialsmine:Throughput ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:Torque ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:ResidenceTime ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ChannelDepth ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:FlightClearance ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:Dimension ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:FlightWidth ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ScrewLead ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ScrewLength ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:Amperage ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ScrewChannelWidth ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ScrewDiameter ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:MeltTemperature ],
         sio:Device .
 
 materialsmine:FlexuralCreep a owl:Class ;
@@ -2951,11 +3014,11 @@ materialsmine:Rheometery a owl:Class ;
     rdfs:label "Rheometry" ;
     materialsmine:hasSelector "//Rheometery" ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:onProperty prov:generated ;
-            owl:someValuesFrom materialsmine:ViscoelasticProperty ],
-        [ a owl:Restriction ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:CapillarySize ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:generated ;
+            owl:someValuesFrom materialsmine:ViscoelasticProperty ],
         sio:Measuring ;
     skos:definition "Measurement of the quantitative and qualitative relationships between deformations and stresses and their derivatives" .
 
@@ -2986,6 +3049,11 @@ materialsmine:FractureToughnessProperty a owl:Class ;
     rdfs:label "Fracture Toughness Property" ;
     rdfs:subClassOf materialsmine:MechanicalProperty ;
     skos:definition "Ability of material containing a crack to resist fracture" .
+
+materialsmine:PhysicalProperty a owl:Class ;
+    rdfs:label "Physical Property" ;
+    rdfs:subClassOf sio:Quantity ;
+    skos:definition "Physical properties are characteristics of a substance that can be observed or measured without changing the chemical composition of the substance." .
 
 materialsmine:PhysicsModel a owl:Class ;
     rdfs:label "Physics Model" ;
@@ -3039,16 +3107,16 @@ materialsmine:Molding a owl:Class ;
     rdfs:label "Molding" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0001025> ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:AmbientCondition ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom sio:TimeInterval ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0000146> ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom <obo:PATO_0001025> ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:AmbientCondition ],
         sio:Procedure ;
     skos:definition "Methods to shape final composite" .
 
@@ -3064,6 +3132,9 @@ materialsmine:Spectroscopy a owl:Class ;
 
 <http://materialsmine.org/ns/unit/j> a sio:UnitOfMeasurement ;
     rdfs:label "J" .
+
+<http://materialsmine.org/ns/unit/j-m-2> a sio:UnitOfMeasurement ;
+    rdfs:label "J/m^2" .
 
 <http://materialsmine.org/ns/unit/k> a sio:UnitOfMeasurement ;
     rdfs:label "K" .
@@ -3153,10 +3224,10 @@ materialsmine:Mixing a owl:Class ;
             owl:someValuesFrom materialsmine:RotationalFrequency ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
+            owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0000146> ],
+            owl:someValuesFrom sio:TimeInterval ],
         sio:Procedure ;
     skos:definition "Processes for mixing of multiple substances" .
 
