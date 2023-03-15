@@ -80,6 +80,14 @@
         @include respond(tab-port) {
             display: none !important;
         }
+        &_adjust{
+            @include respond(tab-port) {
+                display: flex !important;
+            }
+            @include respond(phone) {
+                display: none !important;
+            }
+        }
     }
 }
 
