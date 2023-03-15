@@ -2,7 +2,7 @@
 	<div @click="disableRender">
 		<div class="section_teams" v-if="!searchEnabled">
 			<div class="search_box">
-				<h2 class="search_box_header">Welcome to MM Explorer</h2>
+				<h2 class="search_box_header teams_header">Welcome to MM Explorer</h2>
 				<form class="form" @submit.prevent="submitSearch">
 					<div class="search_box_form">
 						<div class="form__group search_box_form-item-1">
