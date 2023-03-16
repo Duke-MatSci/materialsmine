@@ -30,7 +30,7 @@ describe('Gallery.vue', () => {
   let wrapper
   beforeEach(async () => {
     fetch.mockClear()
-    wrapper = await createWrapper(ExplorerGallery, {}, true)
+    wrapper = await createWrapper(ExplorerGallery, {}, false)
   })
 
   enableAutoDestroy(afterEach)
@@ -70,3 +70,21 @@ describe('Gallery.vue', () => {
   //   expect(newItemId).not.toEqual(initialItemId)
   // })
 })
+
+// Todo (ticket-xx): Centralize this function
+function setWidth (arg, arg2) {
+  return arg === arg2
+}
+function callWindowObject (arg) {
+  const resp = Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: setWidth(query, arg),
+      media: query,
+      onchange: null
+    }))
+  })
+  return resp
+}
+
+callWindowObject()

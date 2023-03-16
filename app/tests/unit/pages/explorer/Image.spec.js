@@ -51,7 +51,7 @@ describe('Image.vue', () => {
           }
         }
       }
-    }, true)
+    }, false)
     await wrapper.setData({ images: apollo.images })
   })
 
@@ -101,13 +101,14 @@ describe('Image.vue', () => {
     expect(image.find('.md-body-1').text()).not.toBe('')
   })
 
-  it('renders pagination', async () => {
+  it('mounts pagination component with the right parameters and calls the right method', async () => {
     expect.assertions(3)
-    expect(wrapper.html()).toContain('pagination')
-    const prev = wrapper.findAll('button').at(2)
-    expect(wrapper.html()).toMatchSnapshot()
-    await prev.trigger('click')
-    expect(wrapper.html()).toMatchSnapshot()
+    var spy = jest.spyOn(wrapper.vm, 'loadPrevNextImage').mockImplementation(() => {})
+    const pagination = wrapper.findComponent('pagination-stub')
+    expect(pagination.exists()).toBe(true)
+    expect(pagination.props().cpage).toBe(wrapper.vm.pageNumber)
+    await pagination.vm.$emit('go-to-page', 1)
+    expect(spy).toHaveBeenCalledWith(1)
   })
 
   it('renders searchbox', () => {
