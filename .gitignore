@@ -55,5 +55,7 @@ mockDB/minio/
 **/**/gs.config*
 **/**/mongo.config*
 
-#Test Coverage Report
-app/coverage/
+# Ignore coverage
+app/coverage
+resfulservice/coverage
+resfulservice/.nyc_output

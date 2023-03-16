@@ -49,7 +49,7 @@ a.btn,
         background-color: $primary;
         color: $primary-white;
 
-        &::after {
+        &::after:not([disabled="disabled"]) {
             background-color: $primary;
         }
     }
@@ -130,5 +130,20 @@ a.btn-text,
     &:active {
         box-shadow: 0 .5rem 1rem rgba($primary-black, .15);
         transform: translateY(0);
+    }
+}
+
+.md-icon-button.large {
+    width: 140px;
+    min-width: 120px;
+    text-align: right;
+    @include respond(tab-land){
+        width: 120px;
+        min-width: 100px;
+    }
+
+    &:hover {
+        text-decoration: none;
+        cursor: pointer;
     }
 }

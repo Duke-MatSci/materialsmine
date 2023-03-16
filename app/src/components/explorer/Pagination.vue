@@ -1,7 +1,18 @@
 <template>
   <div class="viz-pagination-container">
-    <span>Page {{ cpage }} of {{ tpages }}</span>
-    <div class="viz-pagination">
+    <span class="viz-pagination u_centralize_content">
+      <div class="pagination-label">
+         Page
+      </div>
+      <md-field :class="pgInputClass" class="pagination-field u_width--xs">
+        <md-input id="pageInput" v-model="pageInput" @change="goToPage($event.target.value)" required></md-input>
+        <span class="md-error">Out of range</span>
+      </md-field>
+      <div class="pagination-label">
+       of {{ tpages }}
+       </div>
+    </span>
+    <div class="viz-pagination viz-pagination_grid-4">
       <button
         :disabled="cpage <= 1"
         @click.prevent="goToPage(1)"
@@ -32,10 +43,23 @@ export default {
     cpage: Number,
     tpages: Number
   },
+  data () {
+    return {
+      pageInput: this.cpage
+    }
+  },
+  computed: {
+    pgInputClass () {
+      return {
+        'md-invalid': !this.pageExists(this.pageInput)
+      }
+    }
+  },
   methods: {
     goToPage (page) {
-      if (page !== this.cpage) {
+      if ((page !== this.cpage) && this.pageExists(page)) {
         this.$emit('go-to-page', page)
+        this.pageInput = page
       }
     },
     pageExists (page) {

@@ -7,17 +7,19 @@ const commonFields = 'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFi
 const fillerFields = 'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
 
 exports.imageQuery = async (args) => {
-  const skip = args?.skip || 0;
-  const limit = args?.limit || 10;
-  const search = args?.search || false;
-  const selectedImg = args?.selectedImg || false;
+  const skip = args?.skip ?? 0;
+  const limit = args?.limit ?? 20;
+  const search = args?.search ?? false;
+  const input = args?.input ?? false;
+  const selectedImg = args?.selectedImg ?? false;
 
   const stages = [];
 
-  if (search) {
+  if (search.length) {
     search.map(stage => stages.push(stage));
   }
 
+  // This logic is used to select a single image. A Mongoose Object ID must be provided in the request.
   if (selectedImg) {
     stages.push({
       $match: {
@@ -47,7 +49,9 @@ exports.imageQuery = async (args) => {
         title: `$${commonFields}.Title`,
         id: '$_id',
         doi: `$${commonFields}.DOI`,
-        keywords: `$${commonFields}.Keyword`
+        keywords: `$${commonFields}.Keyword`,
+        authors: `$${commonFields}.Author`,
+        sampleId: '$title'
       }
     }
   });
@@ -60,6 +64,43 @@ exports.imageQuery = async (args) => {
       }
     }
   });
+
+  stages.push({
+    $unwind: {
+      path: '$image',
+      preserveNullAndEmptyArrays: false
+    }
+  });
+
+  if (search.length) {
+    // This removes noise in response by removing items parsed that does not match searchValue
+    if (input?.search === 'filterByMicroscopy') {
+      stages.push({
+        $match: {
+          'image.MicroscopyType': { $regex: input.searchValue, $options: 'gi' }
+        }
+      });
+    }
+  }
+
+  // Removing undefined files from result array
+  stages.push({
+    $match: {
+      'image.File': { $not: /undefined/ },
+      'image.Description': { $not: /test/ }
+    }
+  });
+
+  // Regrouping after removing undefined files
+  stages.push({
+    $group: {
+      _id: 'null',
+      image: {
+        $push: '$image'
+      }
+    }
+  });
+
   stages.push({
     $project: {
       _id: 0,
@@ -69,6 +110,7 @@ exports.imageQuery = async (args) => {
       }
     }
   });
+
   const queryData = await Xmls.aggregate(stages);
   if (queryData.length) {
     const { counts, images } = queryData.pop();
@@ -86,7 +128,7 @@ exports.validateImageSearchOptions = (input) => {
 
   // Search by year
   if (search === 'filterByYear') {
-    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digit', 422);
+    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digits', 422);
     searchQuery.push({
       $match: {
         [`${commonFields}.PublicationYear`]: {
@@ -122,8 +164,43 @@ exports.validateImageSearchOptions = (input) => {
     return searchQuery;
   }
 
+  // Search by microscopy type
+  if (search === 'filterByMicroscopy') {
+    const value = new RegExp(searchValue, 'gi');
+    searchQuery.push({
+      $match: {
+        [`${targetField}.MicroscopyType`]: {
+          $exists: true
+        }
+      }
+    });
+    searchQuery.push({
+      $match: {
+        [`${targetField}.MicroscopyType`]: { $regex: value }
+      }
+    });
+    return searchQuery;
+  }
+
+  // Search by DOI
+  if (search === 'filterByDOI') {
+    searchQuery.push({
+      $match: {
+        [`${commonFields}.DOI`]: {
+          $exists: true
+        }
+      }
+    });
+    searchQuery.push({
+      $match: {
+        [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'gi' }
+      }
+    });
+    return searchQuery;
+  }
+
   // Search by sentence
-  const wholeSentence = new RegExp(searchValue, 'gi');
+  // const wholeSentence = new RegExp(searchValue, 'gi');
   searchQuery.push({
     $match: {
       [`${commonFields}.Keyword`]: {
@@ -131,11 +208,10 @@ exports.validateImageSearchOptions = (input) => {
       }
     }
   });
+
   searchQuery.push({
     $match: {
-      [`${commonFields}.Keyword`]: {
-        $in: [wholeSentence]
-      }
+      [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'gi' }
     }
   });
   return searchQuery;

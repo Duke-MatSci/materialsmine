@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getKnowledge, getFacetValues, getAllCharts } = require('../controllers/kgWrapperController');
+const { getKnowledge, getFacetValues, getAllCharts, getSparql } = require('../controllers/kgWrapperController');
 const isAuth = require('../middlewares/isAuth');
 const { getInternal } = require('../middlewares/isInternal');
 
@@ -24,5 +24,9 @@ router.route('/facets')
 
 router.route('/charts')
   .get(getAllCharts);
+
+router.route('/sparql')
+  .post(getSparql)
+  .get(getSparql);
 
 module.exports = router;

@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache Dependencies
         uses: actions/cache@v1
         with:
@@ -17,22 +17,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Use NodeJS
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: "16.3.0"
+          node-version: "17.9.1"
       - name: Install frontend dependencies & test
         run: |
           cd app
           npm install
       - name: App Coverage Test
-        if: github.event_name == 'push'
         run: |
           cd app
           npm run test:unit -- --coverage
         env:
           CI: true
       - name: Upload Test Coverage
-        if: github.event_name == 'push'
         uses: actions/upload-artifact@v1
         with:
           name: app-coverage-report
@@ -86,9 +84,8 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   TestBuild:
-    # if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: [BuildFrontend,BuildRESTFUL,BuildProxy,BuildWhyis]
+    needs: [BuildFrontend, BuildRESTFUL, BuildProxy, BuildWhyis]
     env:
       MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
       MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}

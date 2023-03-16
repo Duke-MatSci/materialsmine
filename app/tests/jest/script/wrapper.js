@@ -5,6 +5,7 @@ import router from '@/router'
 import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-utils'
 
 /** Add external plugins as needed */
+// Using localVue to protect polluting global vue instance
 const localVue = createLocalVue()
 localVue.use(VueMaterial)
 
@@ -20,7 +21,6 @@ function createWrapper (component, overrides, useMount = true) {
   const defaultMountOptions = {
     localVue,
     mocks: {
-    //     $router: _.merge({ push: jest.fn() }, overrides.router || {})
       ...(overrides.mocks || {})
     },
     router,

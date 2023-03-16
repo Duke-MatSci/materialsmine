@@ -52,7 +52,7 @@ describe('Dataset Schema Unit Tests:', function () {
       expect(totalPages.type.toString()).to.equal('Int!');
       expect(hasPreviousPage.type.toString()).to.equal('Boolean!');
       expect(hasNextPage.type.toString()).to.equal('Boolean!');
-      expect(datasets.type.toString()).to.equal('Datasets!');
+      expect(datasets.type.toString()).to.equal('[Datasets!]');
     });
   });
 
@@ -60,17 +60,18 @@ describe('Dataset Schema Unit Tests:', function () {
     it("should have ['datasetGroupId', 'user', 'status', 'userDatasetInfo', 'createdAt', 'updatedAt']  Datasets schema", async function () {
       const datasets = graphQlSchema.getType('Datasets');
       const keys = Object.keys(datasets.getFields());
-      expect(keys).to.include.members(['datasetGroupId', 'user', 'status', 'userDatasetInfo', 'createdAt', 'updatedAt']);
+      expect(keys).to.include.members(['datasetGroupId', 'title', 'user', 'status', 'filesetInfo', 'createdAt', 'updatedAt']);
     });
 
     it('should have correct datatypes for  Datasets schema', async function () {
       const datasets = graphQlSchema.getType('Datasets');
-      const { datasetGroupId, user, status, userDatasetInfo, createdAt, updatedAt } = datasets.getFields();
+      const { datasetGroupId, title, user, status, filesetInfo, createdAt, updatedAt } = datasets.getFields();
 
       expect(datasetGroupId.type.toString()).to.equal('ID');
+      expect(title.type.toString()).to.equal('String');
       expect(user.type.toString()).to.equal('VerifiedUser');
       expect(status.type.toString()).to.equal('STATUS');
-      expect(userDatasetInfo.type.toString()).to.equal('[Dataset!]');
+      expect(filesetInfo.type.toString()).to.equal('[Fileset]');
       expect(createdAt.type.toString()).to.equal('String');
       expect(updatedAt.type.toString()).to.equal('String');
     });

@@ -8,6 +8,7 @@ const transformMetaData = (el) => {
       ? el.keywords.split(',')
       : [];
 
+  metaData.sampleID = el.sampleId ? el.sampleId.split('.')[0] : undefined;
   return metaData;
 };
 

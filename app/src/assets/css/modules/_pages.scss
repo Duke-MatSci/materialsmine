@@ -37,6 +37,11 @@
         &-item-2 {
             flex-grow: 1;
             align-self: flex-start;
+            .md-field {
+                width: 40%;
+                margin: 0;
+                padding-top: 0;
+            }
         }
         &_btn {
             display: block !important;
@@ -392,7 +397,12 @@
 
     p {
         padding: 0 20em;
-
+        a{
+            a{
+                color: $tertiary !important;
+                font-weight: 600;
+            }
+        }
         @include respond(tab-port) {
             padding: 0 5em;
         }
@@ -406,8 +416,87 @@
 .curate {
     display: block;
     padding: 0 7rem;
+    @include respond(phone) {
+        padding: 0 4rem;
+    }
     display: flex;
     flex-direction: column;
+    &-actions {
+        &_lg {
+            @include respond(tab-land) {
+                visibility: hidden;
+                display: none;
+            }
+        }
+        &_sm {
+            visibility: hidden;
+            display: none;
+            @include respond(tab-land) {
+                visibility: visible;
+                display: block;
+            }
+
+        }
+    }
+    &-menu {
+        padding: 1rem 1rem 2rem 1rem;
+        align-items: center;
+        display: flex;
+        &-routes {
+            @include respond(phone) {
+                visibility: hidden;
+                display: none;
+            }
+        }
+    }
+    &-grid {
+        .md-card {
+            .md-title {
+                @include respond(phone) {
+                    font-size: 20px;
+                }
+            }
+            margin: 1.5rem;
+            padding-bottom: 1rem;
+            &-content {
+                overflow: auto;
+            }
+        };
+        &-icons {
+            max-width: 100%;
+            max-height: 28rem;
+            overflow: auto;
+            .md-button {
+                height: 10rem;
+                max-width: 10rem !important;
+                .label {
+                    font-size: 9px;
+                    color: $primary;
+                }
+                @include respond(phone){
+                    .md-ripple {
+                        justify-content: left;
+                    }
+                    height: 6rem;
+                    max-width: 100% !important;
+                    width: 40rem !important;
+                    .label {
+                        font-size: 14px;
+                        top: 2.8rem;
+                        left: 10rem;
+                        position: absolute;
+                    }
+                    .md-icon {
+                        font-size: 7rem !important;
+                        width: 7rem;
+                        height: 7rem;
+                        min-width: 7rem;
+                        max-height: 7rem;
+                    }
+                }
+            }
+        }
+    }
 }
 
 .image-detail-page {
@@ -439,5 +528,11 @@
             flex-direction: row !important;
         }
 
+    }
+}
+
+.spreadsheet_list_form {
+    .md-chip.md-theme-default .md-icon.md-icon-image svg{
+        fill: $primary;
     }
 }

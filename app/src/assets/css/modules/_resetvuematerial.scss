@@ -28,6 +28,12 @@
     font-size: 1.6rem;
 }
 
+.md-tabs-navigation .md-ripple {
+    @include respond(phone) {
+        padding: 0 5px !important;
+    }
+}
+
 .md-avatar.md-theme-default {
     border: .2rem solid $tertiary;
 }
@@ -37,6 +43,12 @@
     font-size: 1.4rem;
     text-transform: capitalize !important;
     color: $secondary-light !important;
+}
+
+.md-button-lightbg {
+    .md-button-content {
+        color: $secondary !important;
+    }
 }
 
 .md-active {
@@ -57,9 +69,17 @@
     }
 }
 
-.md-toolbar-section-end {
-    @include respond(tab-port) {
-        display: none !important;
+.md-toolbar {
+    &_adjust{
+        border-radius: 0px !important;
+        box-shadow: unset !important;
+        min-height: unset !important;
+        background-color: unset !important;
+    }
+    &-section-end {
+        @include respond(tab-port) {
+            display: none !important;
+        }
     }
 }
 
@@ -94,6 +114,9 @@
             visibility: hidden !important;
         }
     }
+}
+.md-menu-content {
+    z-index: 14;
 }
 
 .search-dropdown-menu {

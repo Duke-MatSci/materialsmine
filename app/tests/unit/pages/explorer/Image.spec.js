@@ -40,7 +40,15 @@ describe('Image.vue', () => {
     wrapper = await createWrapper(ImageGallery, {
       mocks: {
         $apollo: {
-          loading: false
+          loading: false,
+          queries: {
+            images: {
+              refetch: jest.fn()
+            },
+            searchImages: {
+              refetch: jest.fn()
+            }
+          }
         }
       }
     }, true)

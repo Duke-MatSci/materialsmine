@@ -1,8 +1,8 @@
 <template>
 <div class="accordion">
   <div @click="toggleOpen">
-    <md-toolbar :class="dense ? 'md-dense' :''">
-      <div class="accordion-toolbar-row">
+    <md-toolbar :class="dense ? 'md-dense' :'md-toolbar_adjust u--padding-zero'">
+      <div class="accordion-toolbar-row viz-sample__header">
         <h4 v-if="dense" class="md-subheader">{{title}}</h4>
         <h3 v-else class="md-title">{{title}}</h3>
         <div class="accordion-icons">
@@ -55,7 +55,6 @@ export default Vue.component('accordion', {
 
 <style scoped>
 .accordion-content {
-  max-height: 40vh;
   overflow: auto
 }
 .accordion-toolbar-row {
@@ -65,7 +64,7 @@ export default Vue.component('accordion', {
   justify-content: space-between;
   align-items: center;
 }
-.accordion .md-toolbar:hover {
+.accordion .viz-sample__header, .accordion .md-dense {
   cursor: pointer;
 }
 </style>

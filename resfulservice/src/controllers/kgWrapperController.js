@@ -2,6 +2,7 @@ const axios = require('axios');
 const https = require('https');
 const constant = require('../../config/constant');
 const elasticSearch = require('../utils/elasticSearch');
+const { errorWriter, successWriter } = require('../utils/logWriter');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -11,29 +12,51 @@ const _outboundRequest = async (req, next) => {
   const log = req.logger;
   log.info('_outboundRequest(): Function entry');
 
+  if (!req.env.KNOWLEDGE_ADDRESS) {
+    return next(errorWriter(req, 'Knowledge endpoint address missing', '_outboundRequest', 422));
+  }
+
   const query = req?.query;
   const type = query?.type;
-  const uri = query?.uri || constant[type];
+  let url = query?.uri;
+  let altMethod;
 
-  if (!type) {
-    const error = new Error('Category type is missing');
-    error.statusCode = 422;
-    log.error(`_outboundRequest(): ${error}`);
-    return next(error);
+  if (!query?.uri && !type) {
+    return next(errorWriter(req, 'Category type is missing', '_outboundRequest', 422));
   }
 
-  if (!uri) {
-    const error = new Error('URI is missing in the request body');
-    error.statusCode = 422;
-    log.error(`_outboundRequest(): ${error}`);
-    return next(error);
+  if (!url) {
+    url = `${req.env.KNOWLEDGE_ADDRESS}/${constant[type]}`;
+    altMethod = 'get';
   }
 
-  const response = await axios({
-    method: 'get',
-    url: uri,
-    httpsAgent: new https.Agent(httpsAgent)
-  });
+  if (query?.type && query.limit) {
+    url = `${url}&limit=${query.limit}`;
+  }
+
+  if (query?.type && query.offset) {
+    url = `${url}&offset=${query.offset}`;
+  }
+
+  const preparedRequest = {
+    method: altMethod ?? req.method,
+    httpsAgent: new https.Agent(httpsAgent),
+    url
+  };
+
+  if (query?.queryString) {
+    preparedRequest.params = {
+      query: query.queryString
+    };
+  }
+
+  if (req.isBackendCall || req.query?.responseType === 'json') {
+    preparedRequest.headers = {
+      accept: 'application/sparql-results+json'
+    };
+  }
+
+  const response = await axios(preparedRequest);
 
   return {
     type,
@@ -60,15 +83,12 @@ exports.getFacetValues = async (req, res, next) => {
   log.info('getFacetValues(): Function entry');
   try {
     const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'getFacetValues');
     return res.status(200).json({
       response
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    log.error(`getFacetValues(): ${err}`);
-    next(err);
+    next(errorWriter(req, err, 'getFacetValues'));
   }
 };
 
@@ -81,14 +101,42 @@ exports.getFacetValues = async (req, res, next) => {
  */
 exports.getKnowledge = async (req, res, next) => {
   try {
+    successWriter(req, { message: 'Fetched graph successfully!' }, 'getKnowledge');
     return res.status(200).json({
       message: 'Fetched graph successfully!'
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
+    next(errorWriter(req, err, 'getKnowledge'));
+  }
+};
+
+/**
+ * getSparql - Retrieves data from the KG via SPARQL query
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response.data
+ */
+exports.getSparql = async (req, res, next) => {
+  try {
+    if (!req.env.KNOWLEDGE_ADDRESS) {
+      return next(errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422));
     }
-    next(err);
+
+    req.query.queryString = req?.body?.query ?? req?.query?.query;
+    req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
+
+    successWriter(req, { message: 'sending request' }, 'getSparql');
+    const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'getSparql');
+
+    // Needed `isBackendCall` flag to enforce internal calls and return response
+    // through the function that triggers the call.
+    if (req.isBackendCall) return response?.data;
+
+    return res.status(200).json({ ...response?.data });
+  } catch (err) {
+    next(errorWriter(req, err, 'getSparql'));
   }
 };
 
@@ -105,14 +153,12 @@ exports.getAllCharts = async (req, res, next) => {
 
   try {
     const response = await elasticSearch.loadAllCharts(page, pageSize);
+    successWriter(req, { message: 'success' }, 'getAllCharts');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
       total: response?.data?.hits?.total?.value || 0
     });
   } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
+    next(errorWriter(req, err, 'getAllCharts'));
   }
 };

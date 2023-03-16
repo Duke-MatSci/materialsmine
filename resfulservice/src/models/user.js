@@ -5,6 +5,9 @@ const usersSchema = new Schema({
   alias: {
     type: String
   },
+  userid: {
+    type: String
+  },
   givenName: {
     type: String
   },
