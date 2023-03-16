@@ -171,6 +171,7 @@
 
             @include respond(tab-port){
                 transform: rotate(-8deg) translateY(36px);
+                bottom: -20px;
             }
 
             @include respond(phone){
@@ -182,6 +183,10 @@
                 top: 20px;
                 right: 15px;
                 transform: rotate(10deg);
+
+                @include respond(tab-port){
+                    top: 9px;
+                }
 
                 & > a, & span {
                     color: $primary-white;
