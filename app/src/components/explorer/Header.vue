@@ -10,20 +10,20 @@
           <span class="md-title"><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"></span>
         </div>
 
-        <div class="md-toolbar-section-end">
+        <div class="md-toolbar-section-end md-toolbar-section-end_adjust">
           <md-badge v-if="isAuth && showBadge" id="header-badge" class="md-primary" md-content="12">
             <md-button class="md-icon-button u_color_white u--font-emph-m">
               Hi {{ displayName }}
             </md-button>
           </md-badge>
           <md-button v-if="isAuth" class="u_color_white u--font-emph-m"> Hi {{ displayName }}</md-button>
-          <a v-if="!isAuth" class="md-icon-button large u_color_white u--font-emph-m" href="/secure">
+          <a v-if="!isAuth" class="md-icon-button large u_color_white u--font-emph-m u_margin-top-small" href="/secure">
             Login
           </a>
         </div>
       </div>
       <!-- Toolbar -->
-      <div class="md-toolbar-row u_margin-top-med">
+      <div class="md-toolbar-row u_margin-top-med u_toggle-display-off">
         <md-tabs class="md-primary" id="reset_tab_bg" md-sync-route>
           <!-- Add _ to _menutabs as this is just a class selector for testing purposes only -->
           <md-tab class="_menutabs" to="/explorer" id="tab-home" md-label="Search" exact> </md-tab>
