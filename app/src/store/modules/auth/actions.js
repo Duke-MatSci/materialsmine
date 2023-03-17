@@ -103,6 +103,11 @@ export default {
     localStorage.removeItem('displayName')
     localStorage.removeItem('tokenExpiration')
 
+    const meta = router.currentRoute?.meta
+    if (meta?.requiresAuth) {
+      router.push('/nm')
+    }
+
     clearTimeout(timer)
 
     context.commit('setUser', {
