@@ -4,7 +4,7 @@
       <div style="max-width: 99%;">
         <div class="md-layout md-alignment-top-center">
           <div class="md-layout-item md-size-50 md-medium-size-70 md-small-size-85 md-xsmall-size-95">
-            <CurateNavBar active="" :navRoutes="[]"/>
+            <CurateNavBar active=""/>
           </div>
         </div>
       </div>
