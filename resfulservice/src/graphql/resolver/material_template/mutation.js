@@ -47,7 +47,7 @@ const materialMutation = {
       return column;
     } catch (error) {
       req.logger?.error(`[deleteMaterialColumn]: ${error}`);
-      return errorFormater(error, 400);
+      return errorFormater(error, 500);
     }
   }
 };
