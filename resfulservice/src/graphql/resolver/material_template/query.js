@@ -13,7 +13,10 @@ const materialQuery = {
     const filter = field ? { field: { $regex: new RegExp(field.toString(), 'gi') } } : {};
     try {
       const pagination = pageSize || pageNumber ? paginator(await MaterialTemplate.countDocuments(filter), pageNumber, pageSize) : paginator(await MaterialTemplate.countDocuments(filter));
-      const curatedList = await MaterialTemplate.find(filter, null, { lean: true, populate: { path: 'user', select: 'displayName' } });
+      const curatedList = await MaterialTemplate
+        .find(filter, null, { lean: true, populate: { path: 'user', select: 'displayName' } })
+        .limit(pagination.pageSize)
+        .skip(pagination.skip);
       return Object.assign(pagination, { columns: curatedList.map((list) => ({ ...list, user: list?.user?.displayName })) });
     } catch (error) {
       return errorFormater(error.message, 500);

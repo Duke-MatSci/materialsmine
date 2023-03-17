@@ -30,6 +30,24 @@ const materialMutation = {
     } catch (error) {
       return errorFormater(error.message, 500);
     }
+  },
+
+  deleteXlsxCurationList: async (_, { input }, { user, req, isAuthenticated }) => {
+    req.logger.info('deleteMaterialColumn Function Entry:');
+    if (!isAuthenticated) {
+      req.logger?.error('[deleteMaterialColumn]: User not authenticated to remove listing');
+      return errorFormater('not authenticated', 401);
+    }
+    const { field } = input;
+    try {
+      const columnExists = await MaterialTemplate.findOne({ field });
+      req.logger?.info('columnExists: ');
+      req.logger?.info(columnExists);
+      if (!columnExists) return errorFormater('column not found', 404);
+      return MaterialTemplate.findOneAndDelete({ field }).lean();
+    } catch (error) {
+      return errorFormater(error.message, 400);
+    }
   }
 };
 

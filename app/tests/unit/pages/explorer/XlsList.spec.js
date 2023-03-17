@@ -27,7 +27,7 @@ describe('Spreadsheet List Form.vue', () => {
     expect(wrapper.find('.section_teams').exists()).toBe(true)
     expect(wrapper.find('.md-layout.md-gutter.md-alignment-top-center').exists()).toBe(true)
     expect(wrapper.find('.md-layout-item.md-size-50.md-medium-size-70.md-small-size-85.md-xsmall-size-95').exists()).toBe(true)
-    expect(wrapper.findAll('.section_teams > div > div > .md-layout > .md-layout-item').length).toBe(1)
+    expect(wrapper.findAll('.section_teams > div > div > .md-layout > .md-layout-item').length).toBe(2)
   })
 
   it('renders page input properly', () => {

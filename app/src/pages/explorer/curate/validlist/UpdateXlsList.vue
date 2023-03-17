@@ -1,6 +1,13 @@
 <template>
   <div class="spreadsheet_list_form section_teams">
       <div >
+          <div style="max-width: 99%;">
+              <div class="md-layout md-alignment-top-center">
+                  <div class="md-layout-item md-size-50 md-medium-size-70 md-small-size-85 md-xsmall-size-95">
+                    <CurateNavBar active="" :navRoutes="[]"/>
+                  </div>
+              </div>
+          </div>
           <h1 class="visualize_header-h1 article_title u_centralize_text">Update Valid List</h1>
           <div style="max-width: 99%;">
               <div class="md-layout md-gutter md-alignment-top-center">
@@ -91,6 +98,8 @@
 
 <script>
 import { SEARCH_SPREADSHEETLIST_QUERY, UPDATE_SPREADSHEETLIST } from '@/modules/gql/material-gql.js'
+import { mapGetters } from 'vuex'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 export default {
   name: 'SpreadsheetUpdate',
   data () {
@@ -106,10 +115,14 @@ export default {
       value: []
     }
   },
+  components: {
+    CurateNavBar
+  },
   computed: {
     searchValue () {
       return this.fieldName.trim().split(' ').join('_')
-    }
+    },
+    ...mapGetters({ fieldNameSelected: 'explorer/curation/getFieldNameSelected' })
   },
   methods: {
     resetState () {
@@ -210,6 +223,17 @@ export default {
       }
     }
 
+  },
+  async created () {
+    // Check store. Indicates update came from 'all' list
+    if (this.fieldNameSelected) {
+      this.editMode = true
+      this.fieldName = this.fieldNameSelected
+      await this.submitSearch()
+      if (this.spreadsheetList.length) {
+        this.onSelect(this.spreadsheetList[0])
+      }
+    }
   }
 }
 </script>

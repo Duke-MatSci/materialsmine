@@ -163,7 +163,11 @@ describe('Material Template Resolver Unit Tests:', function () {
 
     it("should return paginated lists of columns", async () => {
       sinon.stub(MaterialTemplate, 'countDocuments').returns(2);
-      sinon.stub(MaterialTemplate, 'find').returns(mockColumnsInput.columns);
+      sinon.stub(MaterialTemplate, 'find').returns({
+        limit: sinon.stub().returnsThis(),
+        skip: sinon.stub().returns(mockColumnsInput.columns)
+      });
+
       const result = await  getXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 
       expect(result).to.have.property('columns');
@@ -173,7 +177,10 @@ describe('Material Template Resolver Unit Tests:', function () {
     it("should return paginated lists of columns", async () => {
       const input = { field: mockColumn.field };
       sinon.stub(MaterialTemplate, 'countDocuments').returns(2)
-      sinon.stub(MaterialTemplate, 'find').returns(mockColumnsInput.columns);
+      sinon.stub(MaterialTemplate, 'find').returns({
+        limit: sinon.stub().returnsThis(),
+        skip: sinon.stub().returns(mockColumnsInput.columns)
+      });
 
       const result = await  getXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 
