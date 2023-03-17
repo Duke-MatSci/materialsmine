@@ -23,12 +23,31 @@ const materialMutation = {
     }
     const { field } = input;
     try {
-      const columnExists = await MaterialTemplate.findOne({ field });
-      if (!columnExists) return errorFormater('column not found', 404);
       const column = await MaterialTemplate.findOneAndUpdate({ field }, { $set: { ...input, user: user._id } }, { new: true, lean: true, populate: { path: 'user', select: 'displayName' } });
+      if (!column) return errorFormater('column not found', 404);
+      req.logger?.info(`[updateMaterialColumn]: column successfully updated: ${column.field}`);
       return { ...column, user: column.user.displayName };
     } catch (error) {
+      req.logger?.error(`[updateMaterialColumn]: ${error}`);
       return errorFormater(error.message, 500);
+    }
+  },
+
+  deleteXlsxCurationList: async (_, { input }, { user, req, isAuthenticated }) => {
+    req.logger.info('[deleteMaterialColumn] Function Entry:');
+    if (!isAuthenticated) {
+      req.logger?.error('[deleteMaterialColumn]: User not authenticated to remove listing');
+      return errorFormater('not authenticated', 401);
+    }
+    const { field } = input;
+    try {
+      const column = await MaterialTemplate.findOneAndDelete({ field }).lean();
+      if (!column) return errorFormater('column not found', 404);
+      req.logger?.info(`[deleteMaterialColumn]: column successfully deleted: ${column.field}`);
+      return column;
+    } catch (error) {
+      req.logger?.error(`[deleteMaterialColumn]: ${error}`);
+      return errorFormater(error, 500);
     }
   }
 };

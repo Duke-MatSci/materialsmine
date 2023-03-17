@@ -22,6 +22,7 @@ type Mutation {
   createDataset(input: datasetInput): CreatedDataset!
   createXlsxCurationList(input: materialsInput): MaterialColumns!
   updateXlsxCurationList(input: columnsInput): Column!
+  deleteXlsxCurationList(input: materialFieldInput): Column! 
   parseTemplateSheet: SuccessMessage!
   createDatasetId: Datasets!
 }

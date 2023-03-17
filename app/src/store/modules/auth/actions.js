@@ -110,6 +110,12 @@ export default {
       userId: null,
       displayName: null
     })
+
+    const meta = router.currentRoute?.meta
+    if (meta?.requiresAuth) {
+      router.push('/nm')
+      context.dispatch('notifyUser')
+    }
   },
 
   autoLogout (context) {
