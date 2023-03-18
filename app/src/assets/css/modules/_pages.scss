@@ -522,7 +522,6 @@
     }
 
     &__relatedImg {
-        display: flex;
         flex-direction: row;
         @include respond(phone){
             flex-direction: row !important;

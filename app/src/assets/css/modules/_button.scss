@@ -46,7 +46,7 @@ a.btn,
     }
 
     &--primary {
-        background-color: $primary;
+        background-color: $primary !important;
         color: $primary-white;
 
         &::after:not([disabled="disabled"]) {
@@ -145,5 +145,21 @@ a.btn-text,
     &:hover {
         text-decoration: none;
         cursor: pointer;
+    }
+}
+
+.viz-tab__button {
+    display: inline-flex;
+    padding: 0.8rem 0.8rem 0.4rem;
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: $secondary-grey !important;
+    cursor: pointer;
+
+    &:hover{
+        text-decoration: none !important;
+    }
+    &.active{
+        border-bottom: 0.2rem solid $secondary-grey;
     }
 }
