@@ -124,7 +124,7 @@ export default {
       const vm = this
       querySparql(vm.chart.query)
         .then(this.onQuerySuccess)
-        .then(() => this.loading = false)
+        .then(this.loading = false)
     },
     onQuerySuccess (results) {
       this.results = results
@@ -174,7 +174,7 @@ export default {
           .then(async () => {
             if (this.$route.params.type === 'new') {
               // Save chart to MongoDB
-              return;
+
             }
           })
           .then(() => this.$store.commit('setSnackbar', {

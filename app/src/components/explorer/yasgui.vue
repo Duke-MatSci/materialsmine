@@ -21,7 +21,7 @@ export default {
       requestConfig: {
         endpoint: '/api/knowledge/sparql',
         headers: () => ({
-          'authorization': 'Bearer ' + token,
+          authorization: 'Bearer ' + token
         })
       },
       copyEndpointOnNewTab: false

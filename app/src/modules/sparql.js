@@ -1,13 +1,13 @@
 import { literal, namedNode } from '@rdfjs/data-model'
 import { fromRdf } from 'rdf-literal'
-import store from '@/store';
+import store from '@/store'
 
 const SPARQL_ENDPOINT = '/api/knowledge/sparql'
 const formData = new FormData()
 // Todo (ticket xx): Remove endpoint from function arg and update refactor code everywhere
 async function querySparql (query, {
   endpoint = SPARQL_ENDPOINT,
-  headers = {  },
+  headers = { },
   body = null,
   method = 'GET',
   whyisPath = undefined
@@ -24,7 +24,7 @@ async function querySparql (query, {
       Authorization: 'Bearer ' + token,
       accept: 'application/sparql-results+json',
       ...headers
-    },
+    }
   }
 
   if (whyisPath) {
@@ -38,10 +38,6 @@ async function querySparql (query, {
 
   try {
     const res = await fetch(urlEncodedQuery, requestOptions)
-    if (!res) {
-      return []
-    }
-
     const results = await res.json()
     return results
   } catch (err) {

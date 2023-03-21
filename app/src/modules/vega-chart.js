@@ -83,7 +83,7 @@ function buildChartLd (chart) {
     .forEach(([field, value]) => {
       chartLd[chartFieldPredicates[field]] = [{ '@value': value }]
     })
-    return chartLd
+  return chartLd
 }
 
 function getDefaultChart () {
@@ -143,7 +143,7 @@ const chartQuery = `
     OPTIONAL { ?uri dcat:downloadURL ?downloadUrl } .
   }
   `
-// Todo (ticket xx): Are we still using this @Anya? 
+// Todo (ticket xx): Are we still using this @Anya?
 async function loadChart (chartUri) {
   const singleChartQuery = chartQuery + `\n  VALUES (?uri) { (<${chartUri}>) }`
   const { results } = await querySparql(singleChartQuery)
@@ -172,7 +172,7 @@ function buildSparqlSpec (baseSpec, sparqlResults) {
     return null
   }
   const spec = Object.assign({}, baseSpec)
-  spec.data = { values: parseSparql(sparqlResults)}
+  spec.data = { values: parseSparql(sparqlResults) }
   return spec
 }
 
