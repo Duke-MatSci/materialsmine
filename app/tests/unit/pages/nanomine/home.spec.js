@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import Home from '@/pages/nanomine/Home/Home.vue'
 import router from '@/router/index.js'
 
-const factory = (info = {}) => {
+const factory = async (info = {}) => {
   return mount(Home, {
     router,
     data () {
@@ -16,7 +16,13 @@ const factory = (info = {}) => {
           return {
             setAppHeaderInfo: info
           }
-        }
+        },
+        getters: () => ({
+          countDownDate: new Date('Mar 11, 2023 13:30:00').getTime() // Using past time to ensure test run without triggering countdown
+        })
+      },
+      $router: {
+        push: jest.fn()
       }
     }
   })
