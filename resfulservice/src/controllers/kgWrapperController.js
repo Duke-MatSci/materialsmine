@@ -97,6 +97,8 @@ const _outboundRequest = async (req, next) => {
     }
   }
 
+  console.log('prepped Request:', preparedRequest);
+
   const response = await axios(preparedRequest);
   return {
     type,
@@ -171,7 +173,8 @@ exports.getSparql = async (req, res, next) => {
       req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${req.query.whyisPath}`;
 
       // The request body returns an array
-      req.knowlegeGraphPayloadBody = req.body.payload[0] ?? req.body;
+      req.knowlegeGraphPayloadBody = req.body.payload ?? req.body;
+
       const cookieValue = _createOutboundJwt(req, res, next);
       if (cookieValue) {
         req.outboundCookie = cookieValue;
@@ -187,6 +190,7 @@ exports.getSparql = async (req, res, next) => {
     // Needed `isBackendCall` flag to enforce internal calls and return response
     // through the function that triggers the call.
     if (req.isBackendCall) return response?.data;
+    console.log('response:', response);
     return res.status(200).json({ ...response?.data });
   } catch (err) {
     next(errorWriter(req, err, 'getSparql'));

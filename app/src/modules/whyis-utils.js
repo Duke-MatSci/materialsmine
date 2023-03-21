@@ -1,7 +1,7 @@
 import { querySparql } from './sparql'
 
 // const lodPrefix = 'https://purl.org/whyis/local'
-const lodPrefix = 'http://nanomine.org'
+const lodPrefix = windows.location.hostname
 
 const getAboutUrl = (uri) => `about?uri=${uri}`
 
