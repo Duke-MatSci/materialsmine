@@ -92,6 +92,24 @@
           </router-link>
         </md-list>
       </md-list-item>
+      <md-list-item v-if="isAuth && isAdmin" md-expand>
+        <md-icon class="utility-navfonticon">edit</md-icon>
+        <span class="md-list-item-text utility-navfont">Admin</span>
+        <md-list slot="md-expand">
+          <router-link :to="'/nm/contact-inquiry'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Contact Inquiry</md-list-item>
+          </router-link>
+          <router-link :to="'/deploy'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Deploy</md-list-item>
+          </router-link>
+          <router-link :to="'/nm'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">User Management</md-list-item>
+          </router-link>
+          <router-link :to="'/nm'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Curations</md-list-item>
+          </router-link>
+        </md-list>
+      </md-list-item>
       <md-list-item v-if="isAuth" @click="$store.dispatch('auth/logout')">
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
@@ -110,6 +128,7 @@ export default {
   computed: {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
       name: 'auth/displayName'
     })
   },
