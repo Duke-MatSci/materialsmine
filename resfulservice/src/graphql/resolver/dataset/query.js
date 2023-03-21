@@ -1,4 +1,5 @@
-const DatasetId = require('../../../models/datasetId');
+const Dataset = require('../../../models/dataset');
+const User = require('../../../models/user');
 const errorFormater = require('../../../utils/errorFormater');
 const paginator = require('../../../utils/paginator');
 const { datasetTransformer, filesetsTransform } = require('../../transformer');
@@ -13,13 +14,25 @@ const datasetQuery = {
     }
     try {
       const filter = {};
+      // Todo: (@tholulomo) Configure pageSize and pageNumber with config
+      const pageNumber = input?.pageNumber ? parseInt(input?.pageNumber, 10) : 1;
+      const pageSize = input?.pageSize ? parseInt(input?.pageSize, 10) : 20;
+      const skip = ((pageNumber - 1) * pageSize);
       if (user?.roles !== 'admin') filter.userid = user.userid;
-      if (input?.status) filter.status = input.status;
-      const pagination = paginator(await DatasetId.countDocuments(filter));
-      const datasets = await datasetTransformer(await DatasetId.findOne(filter)
-        .populate('user', 'displayName')
-        .populate('dataset', 'filesets')
-        .lean().limit(1));
+      if (user?.roles === 'admin' && !input?.showAll) filter.userid = user.userid;
+      if (input?.status) {
+        if (input.status === 'APPROVED') {
+          filter.isPublic = true;
+        }
+      }
+
+      const [count, userDetails, data] = await Promise.all([
+        Dataset.countDocuments(filter),
+        User.findOne({ userid: user.userid }, { displayName: 1 }),
+        Dataset.find(filter).skip(skip).limit(pageSize)
+      ]);
+      const pagination = paginator(count, pageNumber, pageSize);
+      const datasets = datasetTransformer(data, userDetails, true);
       return Object.assign(pagination, { datasets });
     } catch (error) {
       return errorFormater(error.message, 500);
@@ -35,7 +48,7 @@ const datasetQuery = {
     try {
       const { counts, filesets } = await filesetSearchQuery({
         userid: user.userid,
-        datasetId: input.datasetId,
+        datasetId: input?.datasetId,
         filesetName: input?.filesetName,
         skip: input?.pageNumber,
         limit: input?.pageSize

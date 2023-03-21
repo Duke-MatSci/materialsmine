@@ -20,7 +20,7 @@ const userMutation = {
 
   updateUser: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger.info('updateUser Function Entry:', user._id);
-    if (!isAuthenticated) return errorFormater('not authentiacted', 401);
+    if (!isAuthenticated) return errorFormater('not authenticated', 401);
 
     try {
       const oldRecord = await User.findOne({ _id: input._id }).lean();
@@ -37,7 +37,7 @@ const userMutation = {
 
   deleteUser: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger.info('deleteUser Function Entry:', user._id);
-    if (!isAuthenticated) return errorFormater('not authentiacted', 401);
+    if (!isAuthenticated) return errorFormater('not authenticated', 401);
     try {
       const oldRecord = await User.findOne({ _id: input._id }).lean();
       if (!oldRecord) {

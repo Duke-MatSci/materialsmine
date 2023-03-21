@@ -6,5 +6,6 @@ const { validateImageType, validateImageId } = require('../middlewares/validatio
 router.route('/:fileId').get(validateImageId, fileController.fileContent);
 router.route('/image_migration/:imageType').get(validateImageType, fileController.imageMigration);
 router.route('/jobs').get(fileController.jobsDataFiles);
+router.route('/upload').post(fileController.uploadFile);
 
 module.exports = router;

@@ -209,7 +209,10 @@
         }
 
         & .img {
-            max-height: 33rem;
+            max-height: 40rem;
+            @include respond(phone) {
+                max-height: none;
+            }
         }
     }
     &__share {

@@ -19,7 +19,7 @@
           </div>
 
           <div class="visualize_btn">
-              <a href="/explorer/gallery" class="btn-text">Explore the chart gallery</a>
+              <a href="/explorer/chart" class="btn-text">Explore the chart gallery</a>
           </div>
           <div class="visualize_text">
               <p>Our chart builder leverages <strong>SPARQL</strong> and <strong>Vega-Lite</strong> for rich, interactive charts of data from the MaterialsMine knowledge graph. Visit our Charts Gallery to view examples, and contact us to get your data integrated.</p>
@@ -68,27 +68,27 @@ export default {
         {
           img: require('@/assets/img/chartgifs/characterization-radial.gif'),
           title: 'Tooltips',
-          url: 'explorer/chart/view/16fb67daba5c4c39'
+          url: '/explorer/chart/view/1eeea9b71ebb10b7'
         },
         {
           img: require('@/assets/img/chartgifs/crossfiltering.gif'),
           title: 'Crossfiltering',
-          url: 'explorer/chart/view/a66e1f86fe47ef6d'
+          url: '/explorer/chart/view/1dfd29527da82466'
         },
         {
           img: require('@/assets/img/chartgifs/matrix-filler-combo.gif'),
           title: 'Dynamic Selection',
-          url: 'explorer/chart/view/598daf9fd610e982'
+          url: '/explorer/chart/view/24b40b6d992fa2f8'
         },
         {
           img: require('@/assets/img/chartgifs/meta-analysis.gif'),
           title: 'Pan & Zoom',
-          url: 'explorer/chart/view/6675f5b909cf5059'
+          url: '/explorer/chart/view/2a774b46a67ff7a6'
         },
         {
           img: require('@/assets/img/chartgifs/tensile-chart.gif'),
           title: 'Conditional Highlighting',
-          url: 'explorer/chart/view/fca5e763f0284284'
+          url: '/explorer/chart/view/6203fc0eade146e8'
         }
       ],
       pushedAssetItem: [],

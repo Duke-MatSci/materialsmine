@@ -23,10 +23,93 @@ const explorerRoutes = [
   },
   {
     path: 'curate',
-    name: 'ExplorerCurate',
-    component: () => import('@/pages/explorer/Curate.vue'),
-    meta: { requiresAuth: false }
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Curate',
+        component: () => import('@/pages/explorer/Curate.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'spreadsheet',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue')
+      },
+      {
+        path: 'spreadsheet/:datasetId',
+        name: 'CurateSpreadsheet',
+        props: true,
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
   },
+  {
+    path: 'curate/edit',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'UserDatasets',
+        component: () => import('@/pages/explorer/curate/edit/UserDatasets.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'dataset/:id',
+        name: 'DatasetSingleView',
+        component: () => import('@/pages/explorer/curate/edit/Dataset.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      },
+      // Components don't exist yet for these
+      {
+        path: 'dataset/:id/:filesetId',
+        name: 'FilesetSingleView',
+        // component: () => import('@/pages/explorer/curate/edit/Fileset.vue'),
+        props: true,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'dataset/:id/:filesetId/:file',
+        name: 'FileSingleView',
+        // component: () => import('@/pages/explorer/curate/edit/File.vue'),
+        props: true,
+        meta: { requiresAuth: true }
+      }
+    ]
+  },
+  {
+    path: 'curate/validlist',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'validList',
+        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue')
+      },
+      {
+        path: 'update',
+        name: 'xlsUpdate',
+        component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+      },
+      {
+        path: 'all',
+        name: 'validListAll',
+        component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue')
+      }
+    ]
+  },
+  // {
+  //   path: 'stepper',
+  //   name: 'CurateStepper',
+  //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
+  // },
+  // {
+  //   path: 'sdd',
+  //   name: 'CurateSDD',
+  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+  // }
   {
     path: 'chart',
     component: ChartBase,
@@ -109,7 +192,16 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
+  },
+  {
+    path: 'sparql',
+    name: 'Sparql',
+    component: () =>
+      import(
+        '@/pages/explorer/Sparql.vue'
+      ),
+    meta: { requiresAuth: true }
   }
 ]
 

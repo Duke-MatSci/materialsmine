@@ -1,10 +1,8 @@
 <template>
 	<div @click="disableRender">
-		<!-- <facet-panel :searchEnabled="searchEnabled" class="facet_panel" /> -->
-		<facet-panel class="facet_panel" />
 		<div class="section_teams" v-if="!searchEnabled">
 			<div class="search_box">
-				<h2 class="search_box_header">Welcome to MM Explorer</h2>
+				<h2 class="search_box_header teams_header">Welcome to MM Explorer</h2>
 				<form class="form" @submit.prevent="submitSearch">
 					<div class="search_box_form">
 						<div class="form__group search_box_form-item-1">
@@ -54,7 +52,6 @@
 
 <script>
 import explorerSearch from '@/mixins/explorerSearch'
-import FacetPanel from '@/components/explorer/Facet.vue'
 import SearchHeader from '@/components/explorer/SearchHeader.vue'
 import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
 
@@ -71,18 +68,14 @@ export default {
     }
   },
   components: {
-    FacetPanel,
     SearchHeader,
     SearchResultsTable
-  },
-  async mounted () {
-    await this.$store.dispatch('explorer/facetFilterMaterials')
   },
   methods: {
     async disableRender (e) {
       const selected = e.target.closest('.search_box')
       if (!selected) {
-        this.enableAutosuggest = false
+        await this.$store.commit('explorer/setEnableAutosuggest', false)
       }
     }
   }

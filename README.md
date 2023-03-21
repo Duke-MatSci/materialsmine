@@ -12,7 +12,7 @@ Windows OS:
 
 
 
-# :warning ADVISORY :warning
+# :warning: ADVISORY :warning:
 > Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
 
 
@@ -38,13 +38,9 @@ docker-compose down
 ```
 
 ## :high_brightness: Testing
-To avoid testing failure
+To avoid testing failure. Copy the command below and run in the project root directory
 ```bash
-# cd into app directory and run
-npm install
-
-# Also cd into restfulservice directory and run
-npm install
+npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
 ```
 
 ## :high_brightness: Folder Structure
@@ -53,9 +49,11 @@ npm install
 | :open_file_folder: app | Frontend Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/app) |
 | :open_file_folder: nginx | A proxy server | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/router) |
 | :open_file_folder: restfulservice | Backend Server Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/resfulservice) |
+| :open_file_folder: services | Managed Services | WIP |
 | :open_file_folder: whyis | Whyis Application | [Link](https://github.com/Duke-MatSci/materialsmine/tree/main/whyis) |
 
 ## :high_brightness: Access services via:
-- Frontend: http://localhost:80
-- Resful API: http://localhost:80/api
-- Whyis: http://localhost:80/whyis
+- Frontend: http://localhost
+- Resful API: http://localhost/api
+- Managed Services: http://localhost:5050
+- Whyis: http://localhost:8000

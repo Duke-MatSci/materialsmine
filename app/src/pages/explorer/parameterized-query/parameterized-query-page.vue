@@ -7,10 +7,10 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
-      <md-toolbar>
+      <h1 class="visualize_header-h1 u_margin-top-med u--margin-leftsm">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
+      <div class="viz-sample__header">
         <h3 class="md-title">Query Template</h3>
-      </md-toolbar>
+      </div>
       <div class="display">
         <md-button
           class="template-back"
@@ -89,14 +89,12 @@
             </md-switch>
             <div class="button-row">
               <div>
-                <router-link :to="{ name: 'NewChartDataVoyager' }">
-                  <button
+                <button
                     class="btn btn--primary"
                     @click="selectQueryForVizEditor()"
                   >
                     Open in Datavoyager
-                  </button>
-                </router-link>
+                </button>
               </div>
             </div>
           </div>
@@ -104,10 +102,10 @@
             class="results-progress"
             v-show="runningQuery"
           >
-            <md-progress-spinner
-              :md-diameter="100"
-              :md-stroke="6"
-              md-mode="indeterminate"
+            <spinner
+              :loading="getIsloading"
+              text='Loading your request...'
+              v-if="runningQuery"
             />
           </div>
           <div v-show="!runningQuery">
@@ -135,12 +133,14 @@ import debounce from '@/modules/debounce'
 import accordion from '@/components/accordion.vue'
 import yasr from '@/components/explorer/yasr'
 import yasqe from '@/components/explorer/yasqe'
+import spinner from '@/components/Spinner'
 
 export default {
   components: {
     accordion,
     yasqe,
-    yasr
+    yasr,
+    spinner
   },
   data () {
     return {
@@ -179,6 +179,7 @@ export default {
     ...mapMutations('vega', ['setQuery']),
     selectQueryForVizEditor () {
       this.setQuery(this.query)
+      this.$router.push({ name: 'NewChartDataVoyager' })
     },
     async loadSparqlTemplates () {
       this.loadingTemplates = true

@@ -35,6 +35,7 @@ exports.generateMongoUrl = (req) => {
  * @returns {Promise}
  */
 exports.iteration = (arr, iterationFn, batchSize) => new Promise((resolve, reject) => {
+  // const chunks: Buffer[] = arr;
   let pendingPromises = [];
   const pausePromises = async () => {
     try {

@@ -20,6 +20,15 @@
     &_active {
         opacity: 0.8;
     }
+
+    &_panel {
+        // TODO: There are duplicates of this styling. Needs refactoring
+        @include respond(big-desktop){
+            visibility: hidden;
+            display: none;
+            opacity: 0;
+        }
+    }
 }
   
   /*Drgable */

@@ -13,7 +13,13 @@ input filesetQueryInput {
 
 input datasetStatusInput {
   "Dataset workflow status"
-  status: STATUS
+  status: STATUS,
+  "Filesets page to return"
+  pageNumber: Int
+  "Number of filesets to return per page"
+  pageSize: Int
+  "This flag can only be set by admin users"
+  showAll: Boolean
 }
 
 input datasetInput {
