@@ -143,6 +143,7 @@ services:
     command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - NM_GRAPH_AUTH_SECRET=${TKNS}
     build: whyis
     volumes:
       - ./whyis/materialsmine:/app

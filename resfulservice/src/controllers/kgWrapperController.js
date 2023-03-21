@@ -1,11 +1,33 @@
 const axios = require('axios');
 const https = require('https');
 const constant = require('../../config/constant');
+const { setInternal } = require('../middlewares/isInternal');
 const elasticSearch = require('../utils/elasticSearch');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 
 const httpsAgent = {
   rejectUnauthorized: false
+};
+
+const _createOutboundJwt = (req, res, next) => {
+  const log = req.logger;
+  if (!req.user) {
+    log.info('_createOutboundJwt(): User is unauthorized');
+    return;
+  }
+
+  const displayName = req.user.displayName;
+  const mail = req.user.email;
+
+  const jwToken = setInternal(req, {
+    givenName: displayName,
+    mail,
+    isAdmin: req.user?.isAdmin ?? false,
+    sub: req.user._id,
+    sn: displayName
+  });
+
+  return `token=${jwToken}`;
 };
 
 const _outboundRequest = async (req, next) => {
@@ -56,8 +78,26 @@ const _outboundRequest = async (req, next) => {
     };
   }
 
-  const response = await axios(preparedRequest);
+  if (!['get'].includes(preparedRequest.method?.toLowerCase())) {
+    // Check if call is not from sparql ui
+    if (!req.query.queryString && req.knowlegeGraphPayloadBody) {
+      preparedRequest.data = req.knowlegeGraphPayloadBody;
+    }
 
+    if (req.outboundCookie) {
+      preparedRequest.headers = {
+        ...preparedRequest.headers,
+        // eslint-disable-next-line quote-props
+        'Cookie': req.outboundCookie,
+        'Content-Type': 'application/ld+json',
+        // eslint-disable-next-line quote-props
+        'accept': 'application/sparql-results+json'
+      };
+      preparedRequest.withCredentials = 'true';
+    }
+  }
+
+  const response = await axios(preparedRequest);
   return {
     type,
     data: response?.data
@@ -123,17 +163,30 @@ exports.getSparql = async (req, res, next) => {
       return next(errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422));
     }
 
-    req.query.queryString = req?.body?.query ?? req?.query?.query;
+    req.query.queryString = req.body.query ?? req.query.query;
     req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
+
+    if (req.query.whyisPath) {
+      // Append whyis paths before making a request call
+      req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${req.query.whyisPath}`;
+
+      // The request body returns an array
+      req.knowlegeGraphPayloadBody = req.body.payload[0] ?? req.body;
+      const cookieValue = _createOutboundJwt(req, res, next);
+      if (cookieValue) {
+        req.outboundCookie = cookieValue;
+      }
+    }
 
     successWriter(req, { message: 'sending request' }, 'getSparql');
     const response = await _outboundRequest(req, next);
+    console.log('response:', response);
+    // const response = { data: { } };
     successWriter(req, { message: 'success' }, 'getSparql');
 
     // Needed `isBackendCall` flag to enforce internal calls and return response
     // through the function that triggers the call.
     if (req.isBackendCall) return response?.data;
-
     return res.status(200).json({ ...response?.data });
   } catch (err) {
     next(errorWriter(req, err, 'getSparql'));

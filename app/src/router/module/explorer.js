@@ -120,17 +120,12 @@ const explorerRoutes = [
         component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
-      {
-        path: 'edit/:chartId',
-        name: 'ChartEdit',
-        props: true,
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'create',
-        name: 'ChartCreate',
-        meta: { requiresAuth: false }
-      },
+      ...['editor/:type', 'editor/:type/:chartId']
+        .map(path => ({
+          path,
+          component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
+          meta: { requiresAuth: true }
+        })),
       {
         path: 'view/:chartId',
         name: 'ChartView',

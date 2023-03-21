@@ -25,8 +25,9 @@ router.route('/facets')
 router.route('/charts')
   .get(getAllCharts);
 
-router.route('/sparql')
-  .post(getSparql)
+router.route(['/sparql', '/sparql/:whyisPath'])
+  .post(isAuth, getSparql)
+  .delete(isAuth, getSparql)
   .get(getSparql);
 
 module.exports = router;

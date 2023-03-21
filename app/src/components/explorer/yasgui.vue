@@ -13,11 +13,16 @@ export default {
       default: () => 'YASGUI'
     }
   },
-  mounted () {
+  async mounted () {
+    const token = await this.$store.getters['auth/token']
+    console.log('token:', token)
     this.yasgui = new YASGUI(this.$el, {
 
       requestConfig: {
-        endpoint: '/api/knowledge/sparql'
+        endpoint: '/api/knowledge/sparql',
+        headers: () => ({
+          'authorization': 'Bearer ' + token,
+        })
       },
       copyEndpointOnNewTab: false
     })

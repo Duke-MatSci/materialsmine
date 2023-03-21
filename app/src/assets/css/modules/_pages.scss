@@ -500,38 +500,88 @@
 }
 
 .image-detail-page {
-    padding: 2rem 12rem;
-    overflow: hidden;
+  padding: 2rem 12rem;
+  overflow: hidden;
 
-    @include respond(tab-land) {
-        padding: 0;
-    }
-    @include respond(tab-port) {
-        padding: 0 !important;
-    }
-    &-details {
-        &-flex-item-col {
+  @include respond(tab-land) {
+    padding: 0;
+  }
+  @include respond(tab-port) {
+    padding: 0 !important;
+  }
 
-            @include respond(phone) {
-                flex-direction: column;
-            }
-        }
+  &-details {
+    &-flex-item-col {
+
+      @include respond(phone) {
+        flex-direction: column;
+      }
     }
-    &-tab {
-        border-bottom: 0.1px solid $secondary-grey;
+  }
+  &-tab {
+    border-bottom: 0.1px solid $secondary-grey;
+  }
+
+  &__relatedImg {
+    flex-direction: row;
+    @include respond(phone){
+      flex-direction: row !important;
     }
 
-    &__relatedImg {
-        flex-direction: row;
-        @include respond(phone){
-            flex-direction: row !important;
-        }
-
-    }
+  }
 }
 
 .spreadsheet_list_form {
-    .md-chip.md-theme-default .md-icon.md-icon-image svg{
-        fill: $primary;
+  .md-chip.md-theme-default .md-icon.md-icon-image svg{
+    fill: $primary;
+  }
+}
+
+.chart_editor {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 75vh;
+    min-height: 450px;
+    box-sizing: content-box;
+    padding: 36px 16px 12px;
+
+    &__left-view, &__right-view{
+      padding: 16px 12px;
+      max-height: 100%;
+    }
+
+    &__right-view {
+      padding-top: unset;
+      padding-left: unset;
+    }
+
+    &-divider {
+      width: 1px;
+      opacity: 0.2;
+    }
+
+    &-tabs {
+      &:active {
+        border-color: $primary;
+      }
+    }
+}
+
+.chart_editor__left-content, .chart_editor__right-content {
+    height: calc(100% - 40px);
+
+    >.jsoneditor-container.min-box{
+        height: 94%;
+    }
+
+    > #YASQE {
+        height: 95%;
+        > .yasqe {
+          height: 100%;
+          > .CodeMirror{
+            height: 100% !important;
+          }
+        }
     }
 }

@@ -103,7 +103,7 @@
             v-show="runningQuery"
           >
             <spinner
-              :loading="getIsloading"
+              :loading="runningQuery"
               text='Loading your request...'
               v-if="runningQuery"
             />

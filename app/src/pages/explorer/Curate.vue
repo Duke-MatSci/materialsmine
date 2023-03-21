@@ -88,9 +88,8 @@
                 <div class="u_margin-top-med">
                     <h2 class="visualize_header-h1 metamine_footer-ref-header">Create Visualization</h2>
                     <div class="md-layout u_display-flex md-layout-responsive">
-                        <!-- <div class="md-layout-item">&nbsp;</div> -->
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="/explorer/chart" v-slot="{navigate, href}" custom>
+                            <router-link to="/explorer/chart/editor/new" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Create new chart</span>

@@ -36,7 +36,7 @@
         background-color: $primary !important;
         color: $primary-white !important;
 
-        &--grey {
+        &-grey {
             background-color: $secondary-grey
         }
     }
@@ -170,6 +170,12 @@
     &--layout {
         &-width {
             width: 99% !important;
+        }
+        &-flex{
+            display: flex;
+            &-column{
+                flex-direction: column;
+            }
         }
         &-flex-justify-se {
             justify-content: space-evenly;
