@@ -1,7 +1,12 @@
 <template>
-  <div>
-    <md-toolbar class="md-transparent" md-elevation="0">Welcome {{ name }}</md-toolbar>
+  <div class="md-app-internal-drawer u--layout-flex u--layout-flex-column u--layout-flex-justify-sb">
     <md-list md-expand-single=true class="utility-transparentbg">
+      <md-toolbar class="md-transparent u--font-emph-l u_toggle-display-off" md-elevation="0"><small>App Navigation</small></md-toolbar>
+      <div class="visualize-pagination-width-mod footer_content-mobile u_margin-none">
+        <md-toolbar class="md-transparent u--font-emph-l" md-elevation="0"><small>Welcome {{ name }}</small></md-toolbar>
+      </div>
+      <md-divider></md-divider>
+
       <md-list-item md-expand>
         <md-icon class="utility-navfonticon">home</md-icon>
         <span class="md-list-item-text utility-navfont">Home</span>
@@ -32,6 +37,10 @@
           </router-link>
         </md-list>
       </md-list-item>
+
+      <md-toolbar class="md-transparent u--font-emph-l u_margin-top-small" md-elevation="0"><small>Explore</small></md-toolbar>
+      <md-divider></md-divider>
+
       <md-list-item md-expand>
         <md-icon class="utility-navfonticon">view_comfy</md-icon>
         <span class="md-list-item-text utility-navfont">Visualize</span>
@@ -44,30 +53,6 @@
           </router-link>
           <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate" class="md-inset">Image Gallery</md-list-item>
-          </router-link>
-        </md-list>
-      </md-list-item>
-      <md-list-item md-expand v-if="isAuth">
-        <md-icon class="utility-navfonticon">upload</md-icon>
-        <span class="md-list-item-text utility-navfont">Curate</span>
-        <md-list slot="md-expand">
-          <!-- <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV">
-            Upload a Spreadsheet
-          </md-list-item> -->
-          <router-link :to="'/explorer/curate/spreadsheet'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a Spreadsheet</md-list-item>
-          </router-link>
-          <router-link :to="''" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
-          </router-link>
-          <router-link :to="''" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Submit SDD</md-list-item>
-          </router-link>
-          <router-link :to="''" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Create New Chart</md-list-item>
-          </router-link>
-          <router-link :to="'/explorer/curate/validlist'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Add Xlsx List Entry</md-list-item>
           </router-link>
         </md-list>
       </md-list-item>
@@ -92,33 +77,46 @@
           </router-link>
         </md-list>
       </md-list-item>
-      <md-list-item v-if="isAuth && isAdmin" md-expand>
-        <md-icon class="utility-navfonticon">edit</md-icon>
-        <span class="md-list-item-text utility-navfont">Admin</span>
+
+      <md-toolbar class="md-transparent u--font-emph-l u_margin-top-small" md-elevation="0" v-if="isAuth" ><small>User Dashboard</small></md-toolbar>
+      <md-divider v-if="isAuth" ></md-divider>
+      <md-list-item md-expand v-if="isAuth">
+        <md-icon class="utility-navfonticon">upload</md-icon>
+        <span class="md-list-item-text utility-navfont">Curate</span>
         <md-list slot="md-expand">
-          <router-link :to="'/nm/contact-inquiry'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Contact Inquiry</md-list-item>
+          <!-- <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV">
+            Upload a Spreadsheet
+          </md-list-item> -->
+          <router-link :to="'/explorer/curate/spreadsheet'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a Spreadsheet</md-list-item>
           </router-link>
-          <router-link :to="'/deploy'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Deploy</md-list-item>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
           </router-link>
-          <router-link :to="'/nm'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">User Management</md-list-item>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Submit SDD</md-list-item>
           </router-link>
-          <router-link :to="'/nm'" v-slot="{navigate, href}" custom>
-            <md-list-item :href="href" @click="navigate"  class="md-inset">Curations</md-list-item>
+          <router-link :to="''" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Create New Chart</md-list-item>
+          </router-link>
+          <router-link :to="'/explorer/curate/validlist'" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate"  class="md-inset">Add Xlsx List Entry</md-list-item>
           </router-link>
         </md-list>
       </md-list-item>
+    </md-list>
+
+    <md-list class="utility-transparentbg">
       <md-list-item v-if="isAuth" @click="$store.dispatch('auth/logout')">
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
       </md-list-item>
-      <md-list-item v-if="!isAuth" @click="login">
+      <md-list-item class="" v-if="!isAuth" @click="login">
         <md-icon class="utility-navfonticon">login</md-icon>
         <span class="md-list-item-text utility-navfont">Login</span>
       </md-list-item>
     </md-list>
+
   </div>
 </template>
 <script>
