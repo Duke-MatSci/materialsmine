@@ -3,7 +3,7 @@
     <div class="section_banner">
       <div class="editImage_modal">
         <div class="metamine_intro-content">
-          <p class="search_box_header u_centralize_text u_color_white u_margin-top-med">We Are Coming Very Soon!</p>
+          <p class="search_box_header u_centralize_text u_color_white u_margin-top-small">We Are Coming Very Soon!</p>
           <br>
           <div class="header-logo u--margin-none u_margin-top-med">
             <span class="md-title"><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"></span>
@@ -11,26 +11,26 @@
 
           <div class="md-layout md-alignment-center-center visualize_accordion u_margin-top-med">
             <div class="clock__box u_margin-right-small">
-              <h1 class="visualize_header-h1 article_title u_centralize_text u_margin-bottom-small">{{days}}</h1>
+              <h1 class="visualize_header-h1 article_title u_centralize_text">{{days}}</h1>
               <p class="u_centralize_text p_mobile_small">DAYS</p>
             </div>
 
             <div class="clock__box u_margin-right-small">
-              <h1 class="visualize_header-h1 article_title u_centralize_text u_margin-bottom-small">{{hours}}</h1>
+              <h1 class="visualize_header-h1 article_title u_centralize_text">{{hours}}</h1>
               <p class="u_centralize_text p_mobile_small">HOURS</p>
             </div>
 
             <div class="clock__box u_margin-right-small">
-              <h1 class="visualize_header-h1 article_title u_centralize_text u_margin-bottom-small">{{minutes}}</h1>
+              <h1 class="visualize_header-h1 article_title u_centralize_text ">{{minutes}}</h1>
               <p class="u_centralize_text p_mobile_small">MINUTES</p>
             </div>
 
             <div class="clock__box u_margin-right-small">
-              <h1 class="visualize_header-h1 article_title u_centralize_text u_margin-bottom-small">{{seconds}}</h1>
+              <h1 class="visualize_header-h1 article_title u_centralize_text ">{{seconds}}</h1>
               <p class="u_centralize_text p_mobile_small">SECONDS</p>
             </div>
           </div>
-          <p class="u_color_white u_margin-top-med u--margin-toplg">Notify me when it's ready</p>
+          <p class="u_color_white u--margin-toplg">Notify me when it's ready</p>
 
           <form class="form" @submit.prevent="onSubmit">
             <div class="search_box_form">
@@ -39,7 +39,7 @@
                     <label htmlFor="email" class="form__label search_box_form_label">Search</label>
                 </div>
                 <div class="form__group search_box_form-item-2">
-                    <button type="submit" class="btn btn--primary btn--tertiary btn--noradius search_box_form_btn">Submit</button>
+                    <button type="submit" class="btn btn--primary btn--tertiary btn--noradius search_box_form_btn submit_button">Submit</button>
                 </div>
             </div>
           </form>
