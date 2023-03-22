@@ -23,14 +23,14 @@
                       <md-table-row v-for="item in tableData" :key="item.field">
                         <md-table-cell>{{ item.field }}</md-table-cell>
                         <md-table-cell>
-                          <md-chip v-for="(element, i) in item['values']" @md-delete="deleteValue(item['values'], i)" md-deletable :key="`B${i}`">{{ element }}</md-chip>
+                          <md-chip class="u_margin-bottom-small" v-for="(element, i) in item['values']" @md-delete="deleteValue(item['values'], i)" md-deletable :key="`B${i}`">{{ element }}</md-chip>
                         </md-table-cell>
                       </md-table-row>
 
                       <md-table-row>
                         <md-table-cell>{{ fieldName.split(" ").join("_")}}</md-table-cell>
                         <md-table-cell>
-                          <md-chip v-for="(item, i) in value" @md-delete="deleteValue(value, i)" md-deletable :key="`C${i}`" class="u--color-primary">{{ item }}</md-chip>
+                          <md-chip v-for="(item, i) in value" @md-delete="deleteValue(value, i)" md-deletable :key="`C${i}`" class="u--color-primary u_margin-bottom-small">{{ item }}</md-chip>
                         </md-table-cell>
                       </md-table-row>
                     </md-table>
@@ -42,7 +42,7 @@
                         <md-table-cell md-label=""><md-icon class="u--color-success">check</md-icon></md-table-cell>
                         <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
                         <md-table-cell md-label="Value">
-                          <md-chip v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
+                          <md-chip class="u_margin-bottom-small" v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
                         </md-table-cell>
                       </md-table-row>
                     </md-table>
@@ -57,7 +57,7 @@
                         <md-table-cell md-label=""><md-icon class="u--color-error">close</md-icon></md-table-cell>
                         <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
                         <md-table-cell md-label="Value">
-                          <md-chip v-for="(element, i) in item['values']" :key="`D${i}`">{{ element }}</md-chip>
+                          <md-chip class="u_margin-bottom-small" v-for="(element, i) in item['values']" :key="`D${i}`">{{ element }}</md-chip>
                         </md-table-cell>
                       </md-table-row>
                     </md-table>
