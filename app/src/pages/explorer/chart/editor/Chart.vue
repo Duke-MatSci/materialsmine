@@ -14,6 +14,7 @@
 
       <div class="chart_editor__left-content">
         <yasqe
+          v-if="chart.query"
           v-model="chart.query"
           v-on:query-success="onQuerySuccess"
           v-show="leftTab === 1" :showBtns='false'>
