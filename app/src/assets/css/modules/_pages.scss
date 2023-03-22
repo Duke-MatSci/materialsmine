@@ -533,8 +533,25 @@
 
 .countdown-page {
     & > .section_banner {
-        width: 100vw;
         height: 100vh;
+    }
+
+    .header-logo {
+        @include respond(tab-land){
+            width: 21rem;
+        }
+    }
+
+    .form__input--adjust{
+        border: 0.15rem solid rgba($primary-white, .5);;
+    }
+
+    .visualize_header-h1 {
+        @include respond(phone){
+            font-size: 3.8rem;
+            font-weight: 400;
+            margin: 1rem 0 0rem 0;
+        }
     }
 
     .clock__box{
@@ -543,6 +560,10 @@
         width: 12rem;
         max-width: 23%;
         border-bottom: .3rem solid #d7df71;
+
+        @include respond(phone){
+            padding: 4px 12px;
+        }
     }
 
         .p{
