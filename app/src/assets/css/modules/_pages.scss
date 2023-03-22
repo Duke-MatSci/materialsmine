@@ -531,6 +531,37 @@
     }
 }
 
+.countdown-page {
+    & > .section_banner {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    .clock__box{
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 12px 16px;
+        width: 12rem;
+        max-width: 23%;
+        border-bottom: .3rem solid #d7df71;
+    }
+
+        .p{
+            &_mobile{
+                &_small{
+                    @include respond(phone){
+                    font-size: 1rem;
+                    }
+                }
+            }
+        }
+    }
+    .deploy-page{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 128px);
+    }
+
 .spreadsheet_list_form {
     .md-chip.md-theme-default .md-icon.md-icon-image svg{
         fill: $primary;

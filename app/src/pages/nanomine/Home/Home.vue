@@ -101,6 +101,11 @@ export default {
     }
   },
   created () {
+    // Trigger count down page if date is still in the future
+    if (this.$store.getters.countDownDate - new Date().getTime() > 0) {
+      return this.$router.push('/countdown')
+    }
+
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       pagetype: 'home',
