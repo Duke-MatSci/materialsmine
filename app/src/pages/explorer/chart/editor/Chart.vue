@@ -17,7 +17,7 @@
           v-if="chart.query"
           v-model="chart.query"
           v-on:query-success="onQuerySuccess"
-          v-show="leftTab === 1" :showBtns='false'>
+          v-show="leftTab === 1" :showBtns='true'>
         </yasqe>
         <v-jsoneditor v-show="leftTab === 2"
           v-model="chart.baseSpec"
