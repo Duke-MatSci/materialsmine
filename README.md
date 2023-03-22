@@ -38,13 +38,9 @@ docker-compose down
 ```
 
 ## :high_brightness: Testing
-To avoid testing failure
+To avoid testing failure. Copy the command below and run in the project root directory
 ```bash
-# cd into app directory and run
-npm install
-
-# Also cd into restfulservice directory and run
-npm install
+npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
 ```
 
 ## :high_brightness: Folder Structure

@@ -6,7 +6,8 @@ export default {
   namespaced: true,
   state () {
     return {
-      datasetId: null
+      datasetId: null,
+      fieldNameSelected: ''
     }
   },
   mutations,

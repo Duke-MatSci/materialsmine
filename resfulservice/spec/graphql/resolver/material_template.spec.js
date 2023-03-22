@@ -2,7 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const MaterialTemplate = require('../../../src/models/xlsxCurationList')
 const graphQlSchema = require('../../../src/graphql');
-const { Mutation: { createXlsxCurationList, updateXlsxCurationList }, Query: { getXlsxCurationList }} = require('../../../src/graphql/resolver');
+const { Mutation: { createXlsxCurationList, updateXlsxCurationList, deleteXlsxCurationList }, Query: { getXlsxCurationList }} = require('../../../src/graphql/resolver');
 
 
 const { expect } = chai;
@@ -126,7 +126,7 @@ describe('Material Template Resolver Unit Tests:', function () {
     });
 
     it("should return a 404 error if column doesn't exist", async () => {
-      sinon.stub(MaterialTemplate, 'findOne').returns(null);
+      sinon.stub(MaterialTemplate, 'findOneAndUpdate').returns(null);
       const error = await  updateXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 
       expect(error).to.have.property('extensions');
@@ -134,7 +134,6 @@ describe('Material Template Resolver Unit Tests:', function () {
     });
 
     it("should update column if column exists", async () => {
-      sinon.stub(MaterialTemplate, 'findOne').returns(mockDBColumn);
       sinon.stub(MaterialTemplate, 'findOneAndUpdate').returns({...mockDBColumn, ...input, user});
 
       const result = await  updateXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
@@ -144,8 +143,38 @@ describe('Material Template Resolver Unit Tests:', function () {
     });
 
     it("should throw a 500, server error", async () => {
-      sinon.stub(MaterialTemplate, 'findOne').throws();
+      sinon.stub(MaterialTemplate, 'findOneAndUpdate').throws();
       const error = await  updateXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
+
+      expect(error).to.have.property('extensions');
+      expect(error.extensions.code).to.be.equal(500);
+    });
+  });
+
+  context('deleteXlsxCurationList', () => {
+    const input = { field: mockColumn.field }
+    it("should throw a 401, not authenticated error", async () => {
+      const error = await deleteXlsxCurationList({}, { input }, { user, req, isAuthenticated: false }); 
+
+      expect(error).to.have.property('extensions');
+      expect(error.extensions.code).to.be.equal(401);
+    });
+
+    it("should return a 404 error if column doesn't exist", async () => {
+      sinon.stub(MaterialTemplate, 'findOneAndDelete').returns({
+        lean: sinon.stub().returns(null),
+      });
+      const error = await deleteXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
+
+      expect(error).to.have.property('extensions');
+      expect(error.extensions.code).to.be.equal(404);
+    });
+
+    it("should throw a 500, server error", async () => {
+      sinon.stub(MaterialTemplate, 'findOneAndDelete').returns({
+        lean: sinon.stub().throws(),
+      });
+      const error = await deleteXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 
       expect(error).to.have.property('extensions');
       expect(error.extensions.code).to.be.equal(500);
@@ -163,7 +192,11 @@ describe('Material Template Resolver Unit Tests:', function () {
 
     it("should return paginated lists of columns", async () => {
       sinon.stub(MaterialTemplate, 'countDocuments').returns(2);
-      sinon.stub(MaterialTemplate, 'find').returns(mockColumnsInput.columns);
+      sinon.stub(MaterialTemplate, 'find').returns({
+        limit: sinon.stub().returnsThis(),
+        skip: sinon.stub().returns(mockColumnsInput.columns)
+      });
+
       const result = await  getXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 
       expect(result).to.have.property('columns');
@@ -173,7 +206,10 @@ describe('Material Template Resolver Unit Tests:', function () {
     it("should return paginated lists of columns", async () => {
       const input = { field: mockColumn.field };
       sinon.stub(MaterialTemplate, 'countDocuments').returns(2)
-      sinon.stub(MaterialTemplate, 'find').returns(mockColumnsInput.columns);
+      sinon.stub(MaterialTemplate, 'find').returns({
+        limit: sinon.stub().returnsThis(),
+        skip: sinon.stub().returns(mockColumnsInput.columns)
+      });
 
       const result = await  getXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
 

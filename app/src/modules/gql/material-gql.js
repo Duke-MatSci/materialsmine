@@ -36,3 +36,12 @@ mutation UpdateXlsxCurationList($input: columnsInput) {
     user
   }
 }`
+
+export const DELETE_SPREADSHEETLIST = gql`
+mutation DeleteXlsxCurationList($input: materialFieldInput) {
+  deleteXlsxCurationList(input: $input) {
+    field
+    values
+    user
+  }
+}`

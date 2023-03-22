@@ -44,4 +44,23 @@ export default {
     background-color: #f7f7f7;
     white-space: nowrap;
   }
+  .yasgui > .tabsList > .tab > a {
+    font-weight: 300;
+    color: #08233c !important;
+  }
+  .yasgui .tabsList .tab:hover > a,
+  .yasgui .tabsList .tab.active > a {
+    text-decoration: none;
+    color: #0e5f76 !important;
+    border: none !important;
+    border-bottom: 2px solid #afe3f1 !important;
+  }
+  .yasgui > .tabsList > .tab > a > div.closeTab {
+    color: #08233c !important;
+    opacity: 0.7 !important;
+  }
+  .yasgui > .tabsList > .tab.active > a > div.closeTab {
+    color: #08233c !important;
+    opacity: 1 !important;
+  }
 </style>
