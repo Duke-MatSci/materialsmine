@@ -8,6 +8,9 @@ export default {
   displayName (state) {
     return state.displayName
   },
+  isAdmin (state) {
+    return state.isAdmin
+  },
   isAuthenticated (state) {
     return !!state.token
   },

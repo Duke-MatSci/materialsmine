@@ -59,6 +59,7 @@ export default {
     const token = res.token ?? null
     const userId = res.userId ?? null
     const displayName = res.displayName ?? null
+    const isAdmin = res.isAdmin ? res.isAdmin : false
     const expiresIn = 9000 * 60 * 60
     const expirationDate = new Date().getTime() + expiresIn
 
@@ -66,6 +67,7 @@ export default {
       localStorage.setItem('token', token)
       localStorage.setItem('userId', userId)
       localStorage.setItem('displayName', displayName)
+      localStorage.setItem('isAdmin', isAdmin)
       localStorage.setItem('tokenExpiration', expirationDate)
 
       timer = setTimeout(function () {
@@ -73,13 +75,14 @@ export default {
       }, expiresIn)
     }
 
-    context.commit('setUser', { token, userId, displayName })
+    context.commit('setUser', { token, userId, displayName, isAdmin })
   },
 
   tryLogin (context) {
     const token = localStorage.getItem('token')
     const userId = localStorage.getItem('userId')
     const displayName = localStorage.getItem('displayName')
+    const isAdmin = localStorage.getItem('isAdmin')
     const tokenExpiration = localStorage.getItem('tokenExpiration')
 
     const expiresIn = +tokenExpiration - new Date().getTime()
@@ -93,7 +96,7 @@ export default {
     }, expiresIn)
 
     if (token && userId && displayName) {
-      context.commit('setUser', { token, userId, displayName })
+      context.commit('setUser', { token, userId, displayName, isAdmin })
     }
   },
 
@@ -101,6 +104,7 @@ export default {
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
     localStorage.removeItem('displayName')
+    localStorage.removeItem('isAdmin')
     localStorage.removeItem('tokenExpiration')
 
     clearTimeout(timer)
@@ -110,6 +114,12 @@ export default {
       userId: null,
       displayName: null
     })
+
+    const meta = router.currentRoute?.meta
+    if (meta?.requiresAuth) {
+      router.push('/nm')
+      context.dispatch('notifyUser')
+    }
   },
 
   autoLogout (context) {

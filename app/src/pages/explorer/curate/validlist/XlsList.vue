@@ -1,6 +1,13 @@
 <template>
   <div class="spreadsheet_list_form section_teams">
       <div>
+          <div style="max-width: 99%;">
+              <div class="md-layout md-alignment-top-center">
+                  <div class="md-layout-item md-size-50 md-medium-size-70 md-small-size-85 md-xsmall-size-95">
+                  <CurateNavBar active=""/>
+                  </div>
+              </div>
+          </div>
           <h1 class="visualize_header-h1 article_title u_centralize_text">Spreadsheet List Form</h1>
 
           <div style="max-width: 99%;">
@@ -101,6 +108,7 @@
 
 <script>
 import { CREATEMATERIAL_QUERY } from '@/modules/gql/material-gql.js'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 export default {
   name: 'ExcelSheetForm',
   data () {
@@ -114,6 +122,9 @@ export default {
       value: [],
       isSubmitted: false
     }
+  },
+  components: {
+    CurateNavBar
   },
   methods: {
   // Write method to check duplicate field entry
