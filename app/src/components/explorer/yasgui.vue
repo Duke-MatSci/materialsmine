@@ -13,9 +13,8 @@ export default {
       default: () => 'YASGUI'
     }
   },
-  async mounted () {
-    const token = await this.$store.getters['auth/token']
-    console.log('token:', token)
+  mounted () {
+    const token = this.$store.getters['auth/token']
     this.yasgui = new YASGUI(this.$el, {
 
       requestConfig: {
