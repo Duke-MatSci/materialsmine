@@ -39,7 +39,7 @@
                     <label htmlFor="email" class="form__label search_box_form_label">Search</label>
                 </div>
                 <div class="form__group search_box_form-item-2">
-                    <button type="submit" class="btn btn--primary btn--tertiary btn--noradius search_box_form_btn">Submit</button>
+                    <button type="submit" class="btn btn--primary btn--tertiary btn--noradius search_box_form_btn submit_button">Submit</button>
                 </div>
             </div>
           </form>
