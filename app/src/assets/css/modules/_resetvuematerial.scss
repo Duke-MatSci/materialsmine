@@ -116,6 +116,12 @@
         height: 33rem !important;
         width: 30rem !important;
         box-shadow: none !important;
+        margin-bottom: 4rem;
+        margin-left: 2rem;
+        @include respond(phone) {
+            margin-left: 0;
+            margin-bottom: 1rem;
+        }
 
         &::after {
             display: none !important;

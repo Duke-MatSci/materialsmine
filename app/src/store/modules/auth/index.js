@@ -9,6 +9,7 @@ export default {
       userId: null,
       token: null,
       displayName: null,
+      isAdmin: false,
       didAutoLogout: false,
       user: {}
     }

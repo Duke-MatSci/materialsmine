@@ -59,7 +59,17 @@
                     <h2 class="visualize_header-h1 metamine_footer-ref-header">Valid Curation List Entry</h2>
 
                     <div class="md-layout md-layout-responsive">
-                        <div class="md-layout-item md-size-30 md-medium-size-50 md-medium-size-100 md-layout-item_card">
+                        <div class="md-layout-item md-layout-item_card">
+                            <router-link to="/explorer/curate/validList/all" v-slot="{navigate, href}" custom>
+                                <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
+                                    <md-icon class="explorer_page-nav-card_icon">manage_search</md-icon>
+                                    <span class="explorer_page-nav-card_text">View all entries</span>
+                                    <p class="md-layout-item_para md-layout-item_para_fl">View and search a list of all valid curation items entered so far.</p>
+                                </div>
+                            </router-link>
+                        </div>
+
+                        <div class="md-layout-item md-layout-item_card">
                             <router-link to="/explorer/curate/validList" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">note_add</md-icon>

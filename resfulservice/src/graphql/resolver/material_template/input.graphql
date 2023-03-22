@@ -29,3 +29,8 @@ input materialQueryInput {
   """
   pageSize: Int
 }
+
+input materialFieldInput {
+   "Column field name"
+  field: String!
+}

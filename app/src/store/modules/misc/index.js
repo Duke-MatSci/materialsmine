@@ -17,7 +17,8 @@ export default {
         message: '',
         action: null,
         duration: false
-      }
+      },
+      countDownDate: new Date('Apr 11, 2023 13:30:00').getTime()
     }
   },
   mutations,
