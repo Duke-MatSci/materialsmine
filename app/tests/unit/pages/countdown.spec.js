@@ -86,7 +86,7 @@ describe('CountDown.vue', () => {
   it('render button properly', () => {
     expect.assertions(2)
     const button = wrapper.find('button')
-    expect(button.attributes().class).toBe('btn btn--primary btn--tertiary btn--noradius search_box_form_btn')
+    expect(button.attributes().class).toBe('btn btn--primary btn--tertiary btn--noradius search_box_form_btn submit_button')
     expect(button.text()).toBe('Submit')
   })
 

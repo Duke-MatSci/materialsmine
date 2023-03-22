@@ -111,7 +111,7 @@
         <md-icon class="utility-navfonticon">logout</md-icon>
         <span class="md-list-item-text utility-navfont">Log out</span>
       </md-list-item>
-      <md-list-item class="" v-if="!isAuth" @click="login">
+      <md-list-item v-if="!isAuth" @click="login">
         <md-icon class="utility-navfonticon">login</md-icon>
         <span class="md-list-item-text utility-navfont">Login</span>
       </md-list-item>
