@@ -146,6 +146,12 @@
         &-width {
             width: 99% !important;
         }
+        &-flex{
+            display: flex;
+            &-column{
+                flex-direction: column;
+            }
+        }
         &-flex-justify-se {
             justify-content: space-evenly;
         }

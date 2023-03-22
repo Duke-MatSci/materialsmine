@@ -19,7 +19,7 @@
                         <md-table-row slot="md-table-row" slot-scope="{ item}" md-selectable="single">
                           <md-table-cell md-label="Field Name">{{ item.field }}</md-table-cell>
                           <md-table-cell md-label="Value">
-                            <md-chip v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
+                            <md-chip class="u_margin-bottom-small" v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
                           </md-table-cell>
                           <md-table-cell md-label="User">{{ item.user ?? ''}}</md-table-cell>
                         </md-table-row>
@@ -35,7 +35,7 @@
                         <md-table-row>
                           <md-table-cell>{{ fieldName }}</md-table-cell>
                           <md-table-cell>
-                            <md-chip v-for="(element, i) in value" @md-delete="deleteValue(value, i)" md-deletable :key="`${i}`">{{ element }}</md-chip>
+                            <md-chip class="u_margin-bottom-small" v-for="(element, i) in value" @md-delete="deleteValue(value, i)" md-deletable :key="`${i}`">{{ element }}</md-chip>
                           </md-table-cell>
                         </md-table-row>
 
@@ -53,7 +53,7 @@
                         <md-table-row>
                           <md-table-cell>{{ uploadedData.field }}</md-table-cell>
                           <md-table-cell>
-                            <md-chip v-for="(element, i) in uploadedData['values']" :key="`${i}`">{{ element }}</md-chip>
+                            <md-chip class="u_margin-bottom-small" v-for="(element, i) in uploadedData['values']" :key="`${i}`">{{ element }}</md-chip>
                           </md-table-cell>
                           <md-table-cell>{{ uploadedData.user ?? '' }}</md-table-cell>
                         </md-table-row>
