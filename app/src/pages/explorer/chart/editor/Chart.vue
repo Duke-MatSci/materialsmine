@@ -171,17 +171,21 @@ export default {
     },
     async saveChart () {
       try {
-        saveChart(this.chart)
-          .then(async () => {
-            if (this.$route.params.type === 'new') {
-              // Save chart to MongoDB
+        console.log('chart:', this.chart)
+        // saveChart(this.chart)
+        //   .then(async () => {
+        //     if (this.$route.params.type === 'new') {
+        //       // Save chart to MongoDB
 
-            }
-          })
-          .then(() => this.$store.commit('setSnackbar', {
-            message: 'Chart saved successfully!',
-            duration: 5000
-          }))
+        //     } else {
+        //       // Find in mongo and update
+
+        //     }
+        //   })
+        //   .then(() => this.$store.commit('setSnackbar', {
+        //     message: 'Chart saved successfully!',
+        //     duration: 5000
+        //   }))
       } catch (err) {
         // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
         return alert(err)

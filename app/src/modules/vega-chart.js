@@ -87,7 +87,6 @@ function buildChartLd (chart) {
 }
 
 function getDefaultChart () {
-  console.log('visualization starts')
   return Object.assign({}, defaultChart)
 }
 

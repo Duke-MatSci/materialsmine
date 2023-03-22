@@ -17,7 +17,7 @@ async function querySparql (query, {
   )}&output=json`
 
   // Get user Token
-  const token = await store.getters['auth/token']
+  const token = store.getters['auth/token']
   const requestOptions = {
     method,
     headers: {
@@ -36,13 +36,12 @@ async function querySparql (query, {
     requestOptions.body = formData
   }
 
-  try {
-    const res = await fetch(urlEncodedQuery, requestOptions)
-    const results = await res.json()
-    return results
-  } catch (err) {
-    throw (err)
-  }
+  const res = await fetch(urlEncodedQuery, requestOptions)
+
+  if (res.status !== 200) throw new Error(res.message || 'Server error, please try again')
+
+  const results = await res.json()
+  return results
 }
 
 function parseSparql (response) {
