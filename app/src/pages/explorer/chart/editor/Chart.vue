@@ -27,12 +27,12 @@
         <form v-show="leftTab === 3">
           <md-field>
             <label>Title</label>
-            <md-input v-model="title"></md-input>
+            <md-input v-model="chart.title"></md-input>
           </md-field>
 
           <md-field>
             <label>Description</label>
-            <md-textarea v-model="desc"></md-textarea>
+            <md-textarea v-model="chart.description"></md-textarea>
           </md-field>
 
           <button class="btn btn--primary" @click.prevent="saveChart"> {{ actionType }}  <md-icon class="u--color-success">check</md-icon> </button>
@@ -81,7 +81,6 @@ import spinner from '@/components/Spinner'
 export default {
   name: 'ChartCreate',
   components: {
-    // yasgui,
     VJsoneditor,
     VegaLite,
     yasqe,
@@ -96,8 +95,6 @@ export default {
       y: 0,
       leftTab: 1,
       rightTab: 1,
-      title: 'Example Bar Chart',
-      desc: 'An example chart that looks up the frequency for each class in the knowledge graph',
       results: null,
       specJsonEditorOpts: {
         mode: 'code',
@@ -109,14 +106,12 @@ export default {
         title: null,
         description: null
       },
-      chartPub: null,
       actionType: 'Save Chart'
     }
   },
   computed: {
     spec () {
       const spec = buildSparqlSpec(this.chart.baseSpec, this.results) ?? {}
-      console.log('specChanges:', spec)
       return spec
     }
   },
@@ -170,22 +165,24 @@ export default {
 
     },
     async saveChart () {
+      // Todo (ticket xx): Move this into vuex
       try {
-        console.log('chart:', this.chart)
-        // saveChart(this.chart)
-        //   .then(async () => {
-        //     if (this.$route.params.type === 'new') {
-        //       // Save chart to MongoDB
+        const chartNanopub = await saveChart(this.chart)
+        await this.$store.dispatch('explorer/curation/cacheNewChartResponse', chartNanopub)
 
-        //     } else {
-        //       // Find in mongo and update
+        if (this.$route.params.type === 'new') {
+          // Save chart to MongoDB - async operation
+        } else {
+          // Find in mongo and update - async operation
+        }
+        this.$store.commit('explorer/curation/setNewChartExist', true)
 
-        //     }
-        //   })
-        //   .then(() => this.$store.commit('setSnackbar', {
-        //     message: 'Chart saved successfully!',
-        //     duration: 5000
-        //   }))
+        // Change button name after submission
+        this.actionType = 'Edit Chart'
+        this.$store.commit('setSnackbar', {
+          message: 'Chart saved successfully!',
+          duration: 5000
+        })
       } catch (err) {
         // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
         return alert(err)

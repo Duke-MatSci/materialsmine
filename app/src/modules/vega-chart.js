@@ -106,20 +106,19 @@ async function deleteChart (chartUri) {
   return listNanopubs(chartUri)
     .then(nanopubs => {
       if (!nanopubs || !nanopubs.length) return
-      return Promise.all(nanopubs.map(nanopub => deleteNanopub(nanopub.np)))
+      return Promise.all(nanopubs.map(async nanopub => await deleteNanopub(nanopub.np)))
     })
 }
 
 async function saveChart (chart) {
-  let deletePromise = Promise.resolve()
   if (chart.uri) {
-    deletePromise = deleteChart(chart.uri)
+    await deleteChart(chart.uri)
   } else {
     chart.uri = generateChartId()
   }
+
   const chartLd = buildChartLd(chart)
-  return deletePromise
-    .then(() => postNewNanopub(chartLd))
+  return await postNewNanopub(chartLd)
 }
 
 const chartQuery = `
@@ -142,14 +141,22 @@ const chartQuery = `
     OPTIONAL { ?uri dcat:downloadURL ?downloadUrl } .
   }
   `
-// Todo (ticket xx): Are we still using this @Anya?
+
 async function loadChart (chartUri) {
-  const singleChartQuery = chartQuery + `\n  VALUES (?uri) { (<${chartUri}>) }`
+  // Check the chart uri before running query
+  let chartUrl = chartUri
+  if (chartUrl.includes('view/')) {
+    chartUrl = decodeURIComponent(chartUri.split('view/')[1])
+  }
+
+  const singleChartQuery = chartQuery + `\n  VALUES (?uri) { (<${chartUrl}>) }`
   const { results } = await querySparql(singleChartQuery)
   const rows = results.bindings
+
   if (rows.length < 1) {
-    throw new Error(`No chart found for uri: ${chartUri}`)
+    throw new Error(`No chart found for uri: ${chartUrl}`)
   }
+
   return await readChartSparqlRow(rows[0])
 }
 
@@ -187,13 +194,18 @@ function buildCsvSpec (baseSpec, csvResults) {
 const chartUriPrefix = 'http://nanomine.org/viz/'
 
 function toChartId (chartUri) {
-  if (!chartUri.startsWith(chartUriPrefix)) {
-    throw new Error(`Unexpected chart uri "${chartUri}". Was expecting prefix "${chartUriPrefix}"`)
+  if (chartUri && !chartUri.startsWith(chartUriPrefix)) {
+    // throw new Error(`Unexpected chart uri "${chartUri}". Was expecting prefix "${chartUriPrefix}"`)
+    return chartUri
   }
+  if (!chartUri) return
   return chartUri.substring(chartUriPrefix.length)
 }
 
 function toChartUri (chartId) {
+  if (chartId.includes('viz')) {
+    return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(chartId)}`
+  }
   return chartUriPrefix + chartId
 }
 

@@ -97,8 +97,6 @@ const _outboundRequest = async (req, next) => {
     }
   }
 
-  console.log('prepped Request:', preparedRequest);
-
   const response = await axios(preparedRequest);
   return {
     type,
@@ -160,6 +158,7 @@ exports.getKnowledge = async (req, res, next) => {
  * @returns {*} response.data
  */
 exports.getSparql = async (req, res, next) => {
+  const whyisPath = req.query.whyisPath;
   try {
     if (!req.env.KNOWLEDGE_ADDRESS) {
       return next(errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422));
@@ -168,12 +167,12 @@ exports.getSparql = async (req, res, next) => {
     req.query.queryString = req.body.query ?? req.query.query;
     req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
 
-    if (req.query.whyisPath) {
+    if (whyisPath) {
       // Append whyis paths before making a request call
-      req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${req.query.whyisPath}`;
+      req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${whyisPath}`;
 
       // The request body returns an array
-      req.knowlegeGraphPayloadBody = req.body.payload ?? req.body;
+      req.knowlegeGraphPayloadBody = req.body;
 
       const cookieValue = _createOutboundJwt(req, res, next);
       if (cookieValue) {
@@ -183,14 +182,13 @@ exports.getSparql = async (req, res, next) => {
 
     successWriter(req, { message: 'sending request' }, 'getSparql');
     const response = await _outboundRequest(req, next);
-    console.log('response:', response);
-    // const response = { data: { } };
+
     successWriter(req, { message: 'success' }, 'getSparql');
 
     // Needed `isBackendCall` flag to enforce internal calls and return response
     // through the function that triggers the call.
     if (req.isBackendCall) return response?.data;
-    console.log('response:', response);
+
     return res.status(200).json({ ...response?.data });
   } catch (err) {
     next(errorWriter(req, err, 'getSparql'));
@@ -215,6 +213,32 @@ exports.getAllCharts = async (req, res, next) => {
       data: response?.data?.hits?.hits || [],
       total: response?.data?.hits?.total?.value || 0
     });
+  } catch (err) {
+    next(errorWriter(req, err, 'getAllCharts'));
+  }
+};
+
+/**
+ * Load images from knowledge graph
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.getImagesFromKnowledgeGraph = async (req, res, next) => {
+  try {
+    const url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
+    return axios
+      .get(url, {
+        responseType: 'arraybuffer'
+      })
+      .then(response => {
+        res.set({
+          'Content-Type': response.headers['content-type'],
+          'Content-Length': response.data.length
+        });
+        res.send(response.data);
+      });
   } catch (err) {
     next(errorWriter(req, err, 'getAllCharts'));
   }

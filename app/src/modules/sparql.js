@@ -3,7 +3,7 @@ import { fromRdf } from 'rdf-literal'
 import store from '@/store'
 
 const SPARQL_ENDPOINT = '/api/knowledge/sparql'
-const formData = new FormData()
+
 // Todo (ticket xx): Remove endpoint from function arg and update refactor code everywhere
 async function querySparql (query, {
   endpoint = SPARQL_ENDPOINT,
@@ -32,8 +32,7 @@ async function querySparql (query, {
   }
 
   if (body) {
-    formData.append('payload', JSON.stringify(body))
-    requestOptions.body = formData
+    requestOptions.body = JSON.stringify({ ...body })
   }
 
   const res = await fetch(urlEncodedQuery, requestOptions)
