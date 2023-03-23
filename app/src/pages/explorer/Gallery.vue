@@ -100,7 +100,7 @@ export default {
       loadError: false,
       otherArgs: null,
       defaultImg,
-      baseUrl: 'http://localhost/api/knowledge/images?uri='
+      baseUrl: `${window.location.origin}/api/knowledge/images?uri=`
     }
   },
   components: {
