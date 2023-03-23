@@ -574,14 +574,163 @@
     >.jsoneditor-container.min-box{
         height: 94%;
     }
+}
+// .countdown-page {
+//     & > .section_banner {
+//         height: 100vh;
+//     }
 
-    > #YASQE {
-        height: 95%;
-        > .yasqe {
-          height: 100%;
-          > .CodeMirror{
-            height: 100% !important;
-          }
+//     .header-logo {
+//         @include respond(tab-land){
+//             width: 21rem;
+//         }
+//     }
+
+//     .form__input--adjust{
+//         border: 0.15rem solid rgba($primary-white, .5);;
+//     }
+
+//     .visualize_header-h1 {
+//         @include respond(phone){
+//             font-size: 3.8rem;
+//             font-weight: 400;
+//             margin: 1rem 0 0rem 0;
+//         }
+//     }
+
+//     button.submit_button {
+//         @include respond(laptop){
+//             padding: 1.6rem 3.5rem !important;
+//             margin-left: -1rem !important;
+//         }
+//         @include respond(tab-land){
+//             padding: 1.85rem 3.5rem !important;
+//             margin-left: -1rem !important;
+//         }
+//         @include respond(tab-port){
+//             padding: 1.86rem 3.5rem !important;
+//         }
+//         @include respond(phone){
+//             padding: 1.65rem 3.5rem !important;
+//         }
+//     }
+
+//     .clock__box{
+//         background-color: rgba(0, 0, 0, 0.3);
+//         padding: 12px 16px;
+//         width: 12rem;
+//         max-width: 23%;
+//         border-bottom: .3rem solid #d7df71;
+
+//         @include respond(phone){
+//             padding: 4px 12px;
+//         }
+//     }
+
+//         .p{
+//             &_mobile{
+//                 &_small{
+//                     @include respond(phone){
+//                     font-size: 1rem;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+//     .deploy-page{
+//         display: flex;
+//         justify-content: center;
+//         align-items: center;
+//         height: calc(100vh - 128px);
+//     }
+
+// .spreadsheet_list_form {
+//     .md-chip.md-theme-default .md-icon.md-icon-image svg{
+//         fill: $primary;
+//     }
+
+//     > #YASQE {
+//         height: 95%;
+//         > .yasqe {
+//           height: 100%;
+//           > .CodeMirror{
+//             height: 100% !important;
+//           }
+//         }
+//     }
+// }
+
+.countdown-page {
+    & > .section_banner {
+        height: 100vh;
+    }
+
+    .header-logo {
+        @include respond(tab-land){
+            width: 21rem;
         }
+    }
+
+    .form__input--adjust{
+        border: 0.15rem solid rgba($primary-white, .5);;
+    }
+
+    .visualize_header-h1 {
+        @include respond(phone){
+            font-size: 3.8rem;
+            font-weight: 400;
+            margin: 1rem 0 0rem 0;
+        }
+    }
+
+    button.submit_button {
+        @include respond(laptop){
+            padding: 1.6rem 3.5rem !important;
+            margin-left: -1rem !important;
+        }
+        @include respond(tab-land){
+            padding: 1.85rem 3.5rem !important;
+            margin-left: -1rem !important;
+        }
+        @include respond(tab-port){
+            padding: 1.86rem 3.5rem !important;
+        }
+        @include respond(phone){
+            padding: 1.65rem 3.5rem !important;
+        }
+    }
+
+    .clock__box{
+        background-color: rgba(0, 0, 0, 0.3);
+        padding: 12px 16px;
+        width: 12rem;
+        max-width: 23%;
+        border-bottom: .3rem solid #d7df71;
+
+        @include respond(phone){
+            padding: 4px 12px;
+        }
+    }
+
+        .p{
+            &_mobile{
+                &_small{
+                    @include respond(phone){
+                    font-size: 1rem;
+                    }
+                }
+            }
+        }
+    }
+    .deploy-page{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 128px);
+    }
+
+.spreadsheet_list_form {
+    .md-chip.md-theme-default .md-icon.md-icon-image svg{
+        fill: $primary;
     }
 }

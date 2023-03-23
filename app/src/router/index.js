@@ -41,6 +41,10 @@ const routes = [
     path: '/auth/:auth',
     component: () => import('@/auth/auth.vue')
   },
+  {
+    path: '/countdown',
+    component: () => import('@/pages/CountDown.vue')
+  },
   { path: '/explorer:notFound(.*)', component: NotFound },
   { path: '/mm:notFound(.*)', component: NotFound },
   { path: '/nm:notFound(.*)', component: NotFound },
