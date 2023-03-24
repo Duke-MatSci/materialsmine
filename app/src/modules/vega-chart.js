@@ -62,7 +62,8 @@ const chartQuery = `
   `
 
 async function loadChart (chartUri) {
-  const singleChartQuery = chartQuery + `\n  VALUES (?uri) { (<${chartUri}>) }`
+  const valuesBlock = `\n  VALUES (?uri) { (<${chartUri}>) }`
+  const singleChartQuery = chartQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
   const { results } = await querySparql(singleChartQuery)
   const rows = results.bindings
   if (rows.length < 1) {
