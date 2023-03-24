@@ -23,5 +23,54 @@ export default {
         }, { root: true })
       }
     })
+  },
+
+  async createChartInstanceObject (_context, nanopubPayload) {
+    const chartObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
+
+    // Return if not able to retrieve chart object
+    if (!chartObject) return new Error('Caching error. Chart object is missing')
+
+    // Build chart instance object
+    return {
+      description: chartObject['http://purl.org/dc/terms/description']?.[0]?.['@value'],
+      identifier: chartObject['@id'],
+      label: chartObject['http://purl.org/dc/terms/title']?.[0]?.['@value'],
+      thumbnail: chartObject['http://xmlns.com/foaf/0.1/depiction']?.['@id']
+      // depiction: chartObject['http://xmlns.com/foaf/0.1/depiction']?.['http://vocab.rpi.edu/whyis/hasContent']
+    }
+  },
+
+  async cacheNewChartResponse ({ commit, dispatch, rootGetters }, nanopubPayload) {
+    const url = '/api/admin/es'
+    const chartInstanceObject = await dispatch('createChartInstanceObject', nanopubPayload)
+    const token = rootGetters['auth/token']
+
+    // 1. Check if a chart with same identifier exist in ES and delete
+    await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({ doc: chartInstanceObject.identifier, type: 'charts' })
+    })
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({ doc: chartInstanceObject, type: 'charts' })
+    })
+
+    if (response.status !== 200) {
+      return new Error(response.message || 'Server error, cannot cache chart')
+    }
+
+    return response
   }
 }

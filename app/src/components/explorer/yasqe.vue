@@ -18,7 +18,7 @@ export default {
     },
     endpoint: {
       type: String,
-      default: () => '/sparql'
+      default: () => '/api/knowledge/sparql'
     },
     showBtns: {
       type: Boolean,
@@ -35,23 +35,17 @@ export default {
     }
   },
   mounted () {
+    const token = this.$store.getters['auth/token']
     const yasqeContext = this
     this.yasqe = new Yasqe(this.$el, {
       readOnly: this.readOnly,
-      sparql: {
-        showQueryButton: !this.showBtns,
+      showQueryButton: this.showBtns,
+      requestConfig: {
         endpoint: this.endpoint,
         method: 'POST',
-        args: [{ name: 'infer', value: false }], // do not infer triples
-        callbacks: {
-          error () {
-            console.error('YASQE query error', arguments)
-            yasqeContext.$emit('query-error', arguments)
-          },
-          success (resp) {
-            yasqeContext.$emit('query-success', resp)
-          }
-        }
+        headers: () => ({
+          authorization: 'Bearer ' + token
+        })
       }
     })
     this.yasqe.setValue(this.value)

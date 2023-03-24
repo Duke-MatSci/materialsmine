@@ -96,7 +96,7 @@
           <router-link :to="''" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Submit SDD</md-list-item>
           </router-link>
-          <router-link :to="''" v-slot="{navigate, href}" custom>
+          <router-link :to="'/explorer/chart/editor/new'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Create New Chart</md-list-item>
           </router-link>
           <router-link :to="'/explorer/curate/validlist'" v-slot="{navigate, href}" custom>

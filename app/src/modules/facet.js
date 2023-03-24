@@ -81,19 +81,19 @@ function initResizeElement () {
     var p = facets[i]
 
     var right = document.createElement('div')
-    right.className = 'resizer-right'
+    right.className = 'resizer resizer-right u_height--max'
     p.appendChild(right)
     right.addEventListener('mousedown', initDrag, false)
     right.parentFacet = p
 
     var bottom = document.createElement('div')
-    bottom.className = 'resizer-bottom'
+    bottom.className = 'resizer resizer-bottom u_width--max'
     p.appendChild(bottom)
     bottom.addEventListener('mousedown', initDrag, false)
     bottom.parentFacet = p
 
     var both = document.createElement('div')
-    both.className = 'resizer-both'
+    both.className = 'resizer resizer-both'
     p.appendChild(both)
     both.addEventListener('mousedown', initDrag, false)
     both.parentFacet = p
