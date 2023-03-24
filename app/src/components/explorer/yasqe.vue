@@ -57,9 +57,6 @@ export default {
     this.yasqe.on('queryResults', function (yasqe, response, duration) {
       yasqeContext.$emit('query-success', response)
     })
-    this.yasqe.on('changes', () => {
-      yasqeContext.$emit('input', yasqeContext.yasqe.getValue())
-    })
   },
   watch: {
     value (value) {

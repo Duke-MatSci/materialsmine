@@ -261,7 +261,7 @@ export default {
         } else if (this.resultsTab === 'getSamples') {
           return this.$router.push(`/explorer/sample/${identifier}`)
         } else if (this.resultsTab === 'getCharts') {
-          return this.$router.push(`/explorer/chart/view/${identifier}`)
+          return this.$router.push(`/explorer/chart/view/${encodeURIComponent(identifier)}`)
         } else if (this.resultsTab === 'getImages') {
           return this.$router.push(`/explorer/images/${address}/${encodeURIComponent(prefix)}`)
         }
