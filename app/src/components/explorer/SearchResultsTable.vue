@@ -85,7 +85,7 @@
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
               <img
-                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
+                :src="baseUrl + '/api/knowledge/images?uri=' + result.thumbnail.split('=')[1]"
                 :alt="result.label"
                 v-if="result.thumbnail"
               >
