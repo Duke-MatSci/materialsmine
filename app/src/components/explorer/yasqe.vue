@@ -55,6 +55,7 @@ export default {
       yasqeContext.$emit('query-error', arguments)
     })
     this.yasqe.on('queryResults', function (yasqe, response, duration) {
+      yasqeContext.$emit('input', yasqeContext.yasqe.getValue())
       yasqeContext.$emit('query-success', response)
     })
   },
