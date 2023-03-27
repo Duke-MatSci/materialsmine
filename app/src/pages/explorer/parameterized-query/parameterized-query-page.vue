@@ -65,6 +65,7 @@
           <yasqe
             :value="query"
             :readOnly="true"
+            :showBtns="false"
           ></yasqe>
         </accordion>
       </div>
