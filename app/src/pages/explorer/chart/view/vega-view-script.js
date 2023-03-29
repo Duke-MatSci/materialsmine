@@ -1,6 +1,6 @@
 import VJsoneditor from 'v-jsoneditor'
 import Dialog from '@/components/Dialog.vue'
-import { loadChart, buildSparqlSpec, toChartUri } from '@/modules/vega-chart'
+import { loadChart, buildSparqlSpec, toChartUri, shareChartUri } from '@/modules/vega-chart'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
 import yasr from '@/components/explorer/yasr'
@@ -56,6 +56,9 @@ export default {
     },
     fullChartUri () {
       return toChartUri(this.chartId)
+    },
+    shareChartUri () {
+      return shareChartUri(this.chartId)
     }
   },
   methods: {
