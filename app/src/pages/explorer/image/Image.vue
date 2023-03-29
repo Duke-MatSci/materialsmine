@@ -41,10 +41,7 @@
         </form>
       </div>
     </div>
-    <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
-      <spinner :loading="$apollo.loading" text='Loading Images'/>
-    </div>
-    <div class="utility-roverflow" v-else-if="searchImages && searchImages.images || images && images.images">
+    <div class="utility-roverflow" v-if="searchImages && searchImages.images || images && images.images">
 			<div class="u_content__result u_margin-top-small">
 				<span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="renderText != null">{{ renderText }}</strong>
@@ -104,7 +101,10 @@
         @go-to-page="loadPrevNextImage($event)"
       />
 		</div>
-    <div v-else class="utility-roverflow u_centralize_text u_margin-top-med">
+    <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
+      <spinner :loading="$apollo.loading" text='Loading Images'/>
+    </div>
+    <div v-else-if="$apollo.error" class="utility-roverflow u_centralize_text u_margin-top-med">
       <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Images</h1>
     </div>
 	</div>

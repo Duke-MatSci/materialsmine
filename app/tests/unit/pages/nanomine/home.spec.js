@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import Home from '@/pages/nanomine/Home/Home.vue'
 import router from '@/router/index.js'
 
-const factory = (info = {}) => {
+const factory = async (info = {}) => {
   return mount(Home, {
     router,
     data () {
@@ -17,6 +17,9 @@ const factory = (info = {}) => {
             setAppHeaderInfo: info
           }
         }
+      },
+      $router: {
+        push: jest.fn()
       }
     }
   })

@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     hasDataObject () {
-      return !!this.spec.data
+      return !!this.spec?.data
     }
   },
   props: {

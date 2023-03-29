@@ -7,7 +7,8 @@ export default {
   state () {
     return {
       datasetId: null,
-      fieldNameSelected: ''
+      fieldNameSelected: '',
+      newChartExist: false
     }
   },
   mutations,

@@ -1,28 +1,34 @@
 import { querySparql, parseSparql } from '@/modules/sparql'
+import { deleteNanopub, listNanopubs, postNewNanopub } from './whyis-utils'
 
 const defaultQuery = `
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX nm: <http://materialsmine.org/ns/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT ?c (COUNT(?x) AS ?count) (MIN(?class) AS ?class)
-WHERE {
-    ?x a ?c.
-    ?c rdfs:label ?class.
+SELECT DISTINCT * WHERE {
+    ?sample a nm:PolymerNanocomposite ;
+            sio:hasAttribute [ a nm:TensileModulus ;
+                               sio:hasValue ?YoungsModGPa ;
+                               sio:hasUnit ?YoungsModUnit ] ,
+                             [ a nm:ElongationAtYield ;
+                               sio:hasValue ?YieldStrainPercent ;
+                               sio:hasUnit ?ElongBreakUnit ] .
+   ?YoungsModUnit rdfs:label "Gigapascal" .
+   ?ElongBreakUnit rdfs:label "Percent" .
 }
-GROUP BY ?c
-ORDER BY DESC(?count)
-LIMIT 10
 `.trim()
 
 const defaultSpec = {
-  $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-  mark: 'bar',
+  $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
+  mark: 'point',
   encoding: {
     x: {
-      field: 'count',
+      field: 'YieldStrainPercent',
       type: 'quantitative'
     },
     y: {
-      field: 'class',
-      type: 'ordinal'
+      field: 'YoungsModGPa',
+      type: 'quantitative'
     }
   }
 }
@@ -83,6 +89,37 @@ function getDefaultChart () {
   return Object.assign({}, defaultChart)
 }
 
+/**
+ * Copies the given chart except for the id field, which is generated from scratch
+ * also the depiction is removed
+ */
+function copyChart (sourceChart) {
+  // Shallow copy is OK for the current chart structure
+  const newChart = Object.assign({}, sourceChart)
+  newChart.uri = generateChartId()
+  delete newChart.depiction
+  return newChart
+}
+
+async function deleteChart (chartUri) {
+  return listNanopubs(chartUri)
+    .then(nanopubs => {
+      if (!nanopubs || !nanopubs.length) return
+      return Promise.all(nanopubs.map(async nanopub => await deleteNanopub(nanopub.np)))
+    })
+}
+
+async function saveChart (chart) {
+  if (chart.uri) {
+    await deleteChart(chart.uri)
+  } else {
+    chart.uri = generateChartId()
+  }
+
+  const chartLd = buildChartLd(chart)
+  return await postNewNanopub(chartLd)
+}
+
 const chartQuery = `
   PREFIX dcterms: <http://purl.org/dc/terms/>
   PREFIX schema: <http://schema.org/>
@@ -114,13 +151,15 @@ async function loadChart (chartUri) {
     chartUrl = decodeURIComponent(chartUri.split('view/')[1])
   }
 
-  const valuesBlock = `\n  VALUES (?uri) { (<${chartUri}>) }`
+  const valuesBlock = `\n  VALUES (?uri) { (<${chartUrl}>) }`
   const singleChartQuery = chartQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
   const { results } = await querySparql(singleChartQuery)
   const rows = results.bindings
+
   if (rows.length < 1) {
-    throw new Error(`No chart found for uri: ${chartUri}`)
+    throw new Error(`No chart found for uri: ${chartUrl}`)
   }
+
   return await readChartSparqlRow(rows[0])
 }
 
@@ -171,7 +210,7 @@ function toChartUri (chartId) {
   if (chartId.includes('viz')) {
     return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(chartId)}`
   }
-  
+
   return chartUriPrefix + chartId
 }
 

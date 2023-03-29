@@ -27,18 +27,31 @@
         margin-left: 1rem;
         padding-left: 1rem;
     }
+
     &_width--small {
         width: 15rem;
     }
+
     &--bg {
         background-color: $primary !important;
-        color: $primary-white !important
+        color: $primary-white !important;
+
+        &-grey {
+            background-color: $secondary-grey
+        }
+    }
+
+    &_display {
+        &-flex {
+            display: flex;
+        }
     }
 
     &--alt-bg {
         background-color: $tertiary !important;
         color: $primary !important
     }
+
     &-clear {
         @include clearfix;
     }
@@ -132,6 +145,18 @@
         }
     }
 
+    &_height {
+        &--max {
+            height: 100% !important;
+        }
+    }
+    
+    &_width {
+        &--max {
+            width: 100% !important;
+        }
+    }
+
     &--padding-lg {
         padding: 0 10rem;
     }
@@ -145,6 +170,12 @@
     &--layout {
         &-width {
             width: 99% !important;
+        }
+        &-flex{
+            display: flex;
+            &-column{
+                flex-direction: column;
+            }
         }
         &-flex-justify-se {
             justify-content: space-evenly;
@@ -313,7 +344,11 @@
     }
 
     &_pointer {
-        cursor: pointer;
+        cursor: pointer !important;
+
+        &--ew {
+            cursor: ew-resize !important;
+        }
     }
 
     &_centralize {
@@ -321,8 +356,8 @@
             text-align: center;
         }
         &_content {
+            // Flex type content
             justify-content: center; 
-            display: flex;
         }
         &_other {
             margin: 0 auto;
@@ -369,7 +404,7 @@
                 cursor: pointer;
             }
         }
-        & > div:hover{
+        & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
             background-color: $primary-light;
             & > i {
                 color: $secondary-light !important;

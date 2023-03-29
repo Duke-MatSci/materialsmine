@@ -32,6 +32,7 @@
         "nodemailer": "^6.7.2",
         "read-excel-file": "^5.6.1",
         "sinon": "^14.0.0",
+        "ssh2": "^1.11.0",
         "swagger-ui-express": "^4.2.0",
         "ua-parser-js": "^1.0.33",
         "unique-names-generator": "^4.7.1",

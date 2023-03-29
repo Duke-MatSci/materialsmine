@@ -1,5 +1,6 @@
 <template>
-  <div class="explorer_page-nav u_margin-top-med viz-pagination-width-mod u_margin-bottom-small">
+  <div>
+    <div v-if="tpages > 1" class="explorer_page-nav u_margin-top-med viz-pagination-width-mod u_margin-bottom-small">
       <button
         @click.prevent="goToBeginning"
         v-if="rowNumber > 1" :disabled="rowNumber < 1"
@@ -18,8 +19,9 @@
         <md-icon class="u--default-size">more_horiz</md-icon>
       </button>
       <button @click.prevent="goToEnd" v-if="rowNumber < factor" class="md-button md-icon-button md-dense md-primary u--color-primary"> {{ tpages }} </button>
-
     </div>
+  </div>
+
 </template>
 <script>
 export default {
