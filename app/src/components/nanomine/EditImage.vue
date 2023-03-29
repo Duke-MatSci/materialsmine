@@ -12,7 +12,7 @@
 -->
 
 <template>
-  <div class='editImage_modal' v-if='value'>
+  <div class='u_display-flex editImage_modal' v-if='value'>
     <div class='image-cropper-container'>
 
       <h1>{{ computedTitle }}</h1>
@@ -24,7 +24,7 @@
 
       <!-- instructions (varies based on use case) -->
       <p v-if='type === "phase"'><strong>Instructions:</strong> click on the phase within the image that you would like to be analyzed.</p>
-      <p v-if='type === "calibrate"'><strong>Instruction:</strong> click and drag over the scale bar within the image to calibrate image size to scale bar.<p>
+      <p v-if='type === "calibrate"'><strong>Instruction:</strong> click and drag over the scale bar within the image to calibrate image size to scale bar.</p>
 
       <!-- displayed when user opens phase select -->
       <div class='relative imageWrapper' v-if='type === "phase"' ref='imageWrapperDiv'>

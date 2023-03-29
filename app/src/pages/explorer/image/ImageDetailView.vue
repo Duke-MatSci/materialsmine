@@ -53,7 +53,7 @@
                 <md-icon>arrow_back</md-icon>
               </md-button>
 
-              <div class="section_md-header image-detail-page__relatedImg">
+              <div class="section_md-header u_display-flex image-detail-page__relatedImg">
                 <md-card
                   v-for="(image, index) in assetItems"
                   :key="index"

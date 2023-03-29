@@ -51,34 +51,28 @@
 }
   
 /*Resizeable*/
-.facet .resizer-right {
-    width: 5px;
-    height: 100%;
+
+.facet .resizer {
     background: transparent;
     position: absolute;
     right: 0;
     bottom: 0;
+}
+
+.facet .resizer-right {
+    width: 5px;
     cursor: e-resize;
 }
   
 .facet .resizer-bottom {
-    width: 100%;
     height: 5px;
-    background: transparent;
-    position: absolute;
-    right: 0;
-    bottom: 0;
     cursor: n-resize;
 }
   
 .facet .resizer-both {
     width: 5px;
     height: 5px;
-    background: transparent;
     z-index: 10;
-    position: absolute;
-    right: 0;
-    bottom: 0;
     cursor: nw-resize;
 }
   

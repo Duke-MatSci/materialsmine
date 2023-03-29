@@ -16,10 +16,7 @@ const factory = async (info = {}) => {
           return {
             setAppHeaderInfo: info
           }
-        },
-        getters: () => ({
-          countDownDate: new Date('Mar 11, 2023 13:30:00').getTime() // Using past time to ensure test run without triggering countdown
-        })
+        }
       },
       $router: {
         push: jest.fn()

@@ -11,7 +11,7 @@
       <div class="viz-sample__header">
         <h3 class="md-title">Query Template</h3>
       </div>
-      <div class="display">
+      <div class="u_display-flex display">
         <md-button
           class="template-back"
           @click="shiftTemplate(-1)"
@@ -65,6 +65,7 @@
           <yasqe
             :value="query"
             :readOnly="true"
+            :showBtns="false"
           ></yasqe>
         </accordion>
       </div>
@@ -73,7 +74,7 @@
           :startOpen="true"
           title="SPARQL Results"
         >
-          <div class="results-controls">
+          <div class="u_display-flex results-controls">
             <button
               class="btn btn--primary"
               :disabled="autoRefresh || !newQuery"
@@ -87,7 +88,7 @@
             >
               Auto Refresh
             </md-switch>
-            <div class="button-row">
+            <div class="u_display-flex button-row">
               <div>
                 <button
                     class="btn btn--primary"
@@ -99,11 +100,11 @@
             </div>
           </div>
           <div
-            class="results-progress"
+            class="u_display-flex results-progress"
             v-show="runningQuery"
           >
             <spinner
-              :loading="getIsloading"
+              :loading="runningQuery"
               text='Loading your request...'
               v-if="runningQuery"
             />
@@ -339,11 +340,9 @@ export default {
 }
 .button-row {
   margin: 10px 0;
-  display: flex;
   justify-content: flex-end;
 }
 .display {
-  display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -369,7 +368,6 @@ export default {
 }
 .results-controls {
   margin: 20px 10px;
-  display: flex;
   justify-content: space-between;
   align-items: center;
 
@@ -378,7 +376,6 @@ export default {
   }
 }
 .results-progress {
-  display: flex;
   justify-content: center;
 }
 .no-results-message {

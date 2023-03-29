@@ -85,7 +85,7 @@
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
               <img
-                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
+                :src="baseUrl + '/api/knowledge/images?uri=' + result.thumbnail"
                 :alt="result.label"
                 v-if="result.thumbnail"
               >
@@ -261,7 +261,7 @@ export default {
         } else if (this.resultsTab === 'getSamples') {
           return this.$router.push(`/explorer/sample/${identifier}`)
         } else if (this.resultsTab === 'getCharts') {
-          return this.$router.push(`/explorer/chart/view/${identifier}`)
+          return this.$router.push(`/explorer/chart/view/${encodeURIComponent(identifier)}`)
         } else if (this.resultsTab === 'getImages') {
           return this.$router.push(`/explorer/images/${address}/${encodeURIComponent(prefix)}`)
         }

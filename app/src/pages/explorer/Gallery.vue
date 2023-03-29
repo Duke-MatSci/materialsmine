@@ -49,11 +49,11 @@
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
-          <router-link :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
+          <router-link v-if="result.identifier" :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
-                  :src="getThumbnailUrl(result)"
+                  :src="baseUrl + result.thumbnail"
                   :alt="result.label"
                   v-if="result.thumbnail"
                 >
@@ -88,7 +88,6 @@ import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
-import { getViewUrl } from '@/modules/whyis-view'
 import { mapGetters, mapActions } from 'vuex'
 import reducer from '@/mixins/reduce'
 
@@ -100,7 +99,8 @@ export default {
       loading: true,
       loadError: false,
       otherArgs: null,
-      defaultImg
+      defaultImg,
+      baseUrl: `${window.location.origin}/api/knowledge/images?uri=`
     }
   },
   components: {
@@ -108,13 +108,14 @@ export default {
     spinner
   },
   computed: {
-    ...mapGetters('explorer/gallery', [
-      'items',
-      'page',
-      'total',
-      'totalPages',
-      'queryTimeMillis'
-    ])
+    ...mapGetters({
+      items: 'explorer/gallery/items',
+      page: 'explorer/gallery/page',
+      total: 'explorer/gallery/total',
+      totalPages: 'explorer/gallery/totalPages',
+      queryTimeMillis: 'explorer/gallery/queryTimeMillis',
+      newChartExist: 'explorer/curation/getNewChartExist'
+    })
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
@@ -127,15 +128,18 @@ export default {
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
       this.loading = false
     },
-    getThumbnailUrl (item) {
-      return getViewUrl({ uri: item.thumbnail })
-    },
     getChartId (chart) {
       return toChartId(chart.identifier)
     }
   },
   async mounted () {
     await this.loadItems()
+  },
+  watch: {
+    newChartExist () {
+      this.$store.commit('explorer/curation/setNewChartExist', false)
+      return this.loadItems()
+    }
   }
 }
 </script>
