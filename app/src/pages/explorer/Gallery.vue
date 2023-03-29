@@ -93,16 +93,16 @@
             with identifier <b>{{dialog.chart.identifier}}</b>.
           </md-content>
         </div>
-        <div v-if="dialogLoading">      
+        <div v-if="dialogLoading">
           <spinner
             :loading="dialogLoading"
             text='Deleting Chart'
           />
         </div>
-      </template> 
+      </template>
       <template v-slot:actions>
         <span v-if="dialog.type=='delete' && dialog.chart">
-          <md-button @click.native.prevent="toggleDialogBox"> 
+          <md-button @click.native.prevent="toggleDialogBox">
             No, cancel
           </md-button>
           <md-button @click.native.prevent="deleteChart(dialog.chart)">
@@ -172,8 +172,8 @@ export default {
     async deleteChart (chart) {
       if (!this.isAdmin) return // temporary safeguard
       this.dialogLoading = true
-      await this.$store.dispatch('explorer/curation/deleteChartNanopub', chart.identifier )
-      await this.$store.dispatch('explorer/curation/deleteChartES', chart.identifier )
+      await this.$store.dispatch('explorer/curation/deleteChartNanopub', chart.identifier)
+      await this.$store.dispatch('explorer/curation/deleteChartES', chart.identifier)
       this.toggleDialogBox()
       this.dialogLoading = false
       await this.loadItems()

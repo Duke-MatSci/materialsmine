@@ -149,7 +149,7 @@ async function loadChart (chartUri) {
     // lodPrefix is now fixed (e.g. http://nanomine.org/viz/chartId instead of http://purl.org/chart/view/chartId)
     // Todo (ticket-xx): Remove this if logic if response is consistent
     chartUrl = decodeURIComponent(chartUri.split('view/')[1])
-  } else if ( !chartUri.startsWith('http') ) {
+  } else if (!chartUri.startsWith('http')) {
     // This is currently needed for editing since gallery only passes ID and not the full uri
     chartUrl = `${chartUriPrefix}${chartUri}`
   }

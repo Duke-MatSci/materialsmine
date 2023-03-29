@@ -52,7 +52,7 @@ export default {
     ...mapGetters({
       dialogBoxActive: 'dialogBox',
       isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin',
+      isAdmin: 'auth/isAdmin'
     }),
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
@@ -87,11 +87,11 @@ export default {
     editChart () {
       return this.$router.push(`/explorer/chart/editor/edit/${this.chartId}`)
     },
-    async deleteChart() {
+    async deleteChart () {
       if (!this.isAdmin) return // temporary safeguard
       this.dialogLoading = true
-      await this.$store.dispatch('explorer/curation/deleteChartNanopub', this.chart.uri )
-      await this.$store.dispatch('explorer/curation/deleteChartES', this.chart.uri )
+      await this.$store.dispatch('explorer/curation/deleteChartNanopub', this.chart.uri)
+      await this.$store.dispatch('explorer/curation/deleteChartES', this.chart.uri)
       this.toggleDialogBox()
       this.dialogLoading = false
       this.$router.push('/explorer/chart')

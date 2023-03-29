@@ -593,20 +593,28 @@
     &-gridicon {
         position: absolute;
         right: 4.5rem;
+        top: 16rem;
         z-index: 10000000;
         @include respond(tab-land){
             right: 2.5rem;
+            top: 19rem;
+        }
+        @include respond(phone) {
+            top: 15rem;
         }
         & > div {
             display: inline-block;
-
-            & > i {
-                font-size: 1rem !important;
-                width: 21px !important;
-                min-width: 21px !important;
-                height: 21px !important; 
-                cursor: pointer;
-            }
+        }
+        .md-icon-button {
+            width: 3rem !important;
+            min-width: 3rem !important
+        }
+        .md-icon {
+            font-size: 2.5rem !important;
+            width: 2.5rem !important;
+            min-width: 2.5rem !important;
+            height: 2.5rem !important; 
+            cursor: pointer;
         }
 
         &_explorer {
