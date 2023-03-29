@@ -1,6 +1,6 @@
 import VJsoneditor from 'v-jsoneditor'
 import Dialog from '@/components/Dialog.vue'
-import { loadChart, buildSparqlSpec, toChartUri, shareChartUri } from '@/modules/vega-chart'
+import { loadChart, buildSparqlSpec, toChartUri, shareableChartUri } from '@/modules/vega-chart'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
 import yasr from '@/components/explorer/yasr'
@@ -43,13 +43,16 @@ export default {
       results: null,
       dialog: {
         title: ''
-      }
+      },
+      dialogLoading: false
     }
   },
   props: ['chartId'],
   computed: {
     ...mapGetters({
-      dialogBoxActive: 'dialogBox'
+      dialogBoxActive: 'dialogBox',
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
     }),
     specViewerSpec () {
       return this.specViewer.includeData ? this.spec : this.chart && this.chart.baseSpec
@@ -57,8 +60,8 @@ export default {
     fullChartUri () {
       return toChartUri(this.chartId)
     },
-    shareChartUri () {
-      return shareChartUri(this.chartId)
+    shareableChartUri () {
+      return shareableChartUri(this.chartId)
     }
   },
   methods: {
@@ -82,6 +85,16 @@ export default {
       this.$router.push('/explorer/chart')
     },
     editChart () {
+      return this.$router.push(`/explorer/chart/editor/edit/${this.chartId}`)
+    },
+    async deleteChart() {
+      if (!this.isAdmin) return // temporary safeguard
+      this.dialogLoading = true
+      await this.$store.dispatch('explorer/curation/deleteChartNanopub', this.chart.uri )
+      await this.$store.dispatch('explorer/curation/deleteChartES', this.chart.uri )
+      this.toggleDialogBox()
+      this.dialogLoading = false
+      this.$router.push('/explorer/chart')
     },
     renderDialog (title, type, minWidth) {
       this.dialog = {

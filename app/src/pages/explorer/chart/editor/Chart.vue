@@ -73,7 +73,7 @@
 
 <script>
 import { querySparql } from '@/modules/sparql'
-import { saveChart, getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
+import { saveChart, getDefaultChart, buildSparqlSpec, loadChart } from '@/modules/vega-chart'
 import VJsoneditor from 'v-jsoneditor'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
@@ -111,6 +111,7 @@ export default {
       sumbmittedIdentifier: undefined
     }
   },
+  props: ['chartId'],
   computed: {
     spec () {
       const spec = buildSparqlSpec(this.chart.baseSpec, this.results) ?? {}
@@ -149,6 +150,7 @@ export default {
       } else if (this.$route.params.type === 'edit') {
         // fetch chart from knowledge graph
         this.actionType = 'Edit Chart'
+        getChartPromise = Promise.resolve(loadChart(this.chartId))
       } else {
         // Get chart from mongo backup
         this.actionType = 'Restore Chart'

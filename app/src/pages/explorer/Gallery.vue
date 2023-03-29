@@ -45,7 +45,10 @@
             >
               <md-icon>bookmark_border</md-icon>
             </div>
-            <div v-if="$store.getters.isAuthenticated && !!$store.getters.user.isAdmin" @click.prevent="deleteChart(result)">
+            <div v-if="isAuth && isAdmin" @click.prevent="editChart(result)">
+              <md-icon>edit</md-icon>
+            </div>
+            <div v-if="isAuth && isAdmin" @click.prevent="renderDialog('Delete Chart?', 'delete', result, 80)">
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
@@ -81,14 +84,43 @@
         @go-to-page="loadItems($event)"
       />
     </div>
+    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+      <template v-slot:title>{{dialog.title}}</template>
+      <template v-slot:content>
+        <div v-if="dialog.type=='delete'">
+          <md-content v-if="dialog.chart">
+            <div> This will permanently remove the chart <b>{{dialog.chart.label}}</b> </div>
+            with identifier <b>{{dialog.chart.identifier}}</b>.
+          </md-content>
+        </div>
+        <div v-if="dialogLoading">      
+          <spinner
+            :loading="dialogLoading"
+            text='Deleting Chart'
+          />
+        </div>
+      </template> 
+      <template v-slot:actions>
+        <span v-if="dialog.type=='delete' && dialog.chart">
+          <md-button @click.native.prevent="toggleDialogBox"> 
+            No, cancel
+          </md-button>
+          <md-button @click.native.prevent="deleteChart(dialog.chart)">
+            Yes, delete.
+          </md-button>
+        </span>
+        <md-button v-else @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialogbox>
   </div>
 </template>
 <script>
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
+import Dialog from '@/components/Dialog.vue'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
 import reducer from '@/mixins/reduce'
 
 export default {
@@ -100,15 +132,23 @@ export default {
       loadError: false,
       otherArgs: null,
       defaultImg,
-      baseUrl: `${window.location.origin}/api/knowledge/images?uri=`
+      baseUrl: `${window.location.origin}/api/knowledge/images?uri=`,
+      dialog: {
+        title: 'Test'
+      },
+      dialogLoading: false
     }
   },
   components: {
     pagination,
-    spinner
+    spinner,
+    dialogbox: Dialog
   },
   computed: {
     ...mapGetters({
+      dialogBoxActive: 'dialogBox',
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
       items: 'explorer/gallery/items',
       page: 'explorer/gallery/page',
       total: 'explorer/gallery/total',
@@ -119,9 +159,30 @@ export default {
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
-    deleteChart (chart) {
-
-      // console.log('delete chart', chart)
+    ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
+    renderDialog (title, type, result, minWidth) {
+      this.dialog = {
+        title,
+        type,
+        minWidth,
+        chart: result
+      }
+      this.toggleDialogBox()
+    },
+    async deleteChart (chart) {
+      if (!this.isAdmin) return // temporary safeguard
+      this.dialogLoading = true
+      await this.$store.dispatch('explorer/curation/deleteChartNanopub', chart.identifier )
+      await this.$store.dispatch('explorer/curation/deleteChartES', chart.identifier )
+      this.toggleDialogBox()
+      this.dialogLoading = false
+      await this.loadItems()
+    },
+    editChart (chart) {
+      return this.$router.push(`/explorer/chart/editor/edit/${this.getChartId(chart)}`)
+    },
+    bookmark () {
+      // TODO
     },
     async loadItems (page = 1) {
       this.loading = true

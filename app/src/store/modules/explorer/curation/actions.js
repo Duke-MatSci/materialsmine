@@ -1,6 +1,7 @@
 import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
+import { deleteChart } from '@/modules/vega-chart'
 
 export default {
   async createDatasetIdVuex ({ commit, dispatch }) {
@@ -41,6 +42,25 @@ export default {
     }
   },
 
+  async deleteChartNanopub (_context, chartUri) {
+    const response = await deleteChart(chartUri)
+    return (response)
+  },
+
+  async deleteChartES ({ _, __, rootGetters }, identifier) {
+    const url = '/api/admin/es'
+    const token = rootGetters['auth/token']
+    await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token
+      },
+      body: JSON.stringify({ doc: identifier, type: 'charts' })
+    })
+  },
+
   async cacheNewChartResponse ({ commit, dispatch, rootGetters }, payload) {
     const { identifier, chartNanopub } = payload
     const url = '/api/admin/es'
@@ -49,15 +69,7 @@ export default {
 
     // 1. Check if a chart with same identifier exist in ES and delete
     if (identifier) {
-      await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        },
-        body: JSON.stringify({ doc: identifier, type: 'charts' })
-      })
+      await dispatch('deleteChartES', identifier)
     }
 
     const fetchResponse = await fetch(url, {
