@@ -177,7 +177,6 @@ export default {
         if (this.$route.params.type === 'new') {
           // Save chart to MongoDB - async operation
         } else {
-          console.log('charturi:', this.chartId)
           await this.$store.dispatch('explorer/curation/deleteChartES', `http://nanomine.org/viz/${this.chartId}`)
           // Find in mongo and update - async operation
         }
