@@ -1,6 +1,7 @@
 import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
+import { deleteChart } from '@/modules/vega-chart'
 
 export default {
   async createDatasetIdVuex ({ commit, dispatch }) {
@@ -41,12 +42,14 @@ export default {
     }
   },
 
-  async cacheNewChartResponse ({ commit, dispatch, rootGetters }, nanopubPayload) {
-    const url = '/api/admin/es'
-    const chartInstanceObject = await dispatch('createChartInstanceObject', nanopubPayload)
-    const token = rootGetters['auth/token']
+  async deleteChartNanopub (_context, chartUri) {
+    const response = await deleteChart(chartUri)
+    return (response)
+  },
 
-    // 1. Check if a chart with same identifier exist in ES and delete
+  async deleteChartES ({ _, __, rootGetters }, identifier) {
+    const url = '/api/admin/es'
+    const token = rootGetters['auth/token']
     await fetch(url, {
       method: 'DELETE',
       headers: {
@@ -54,10 +57,22 @@ export default {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token
       },
-      body: JSON.stringify({ doc: chartInstanceObject.identifier, type: 'charts' })
+      body: JSON.stringify({ doc: identifier, type: 'charts' })
     })
+  },
 
-    const response = await fetch(url, {
+  async cacheNewChartResponse ({ commit, dispatch, rootGetters }, payload) {
+    const { identifier, chartNanopub } = payload
+    const url = '/api/admin/es'
+    const chartInstanceObject = await dispatch('createChartInstanceObject', chartNanopub)
+    const token = rootGetters['auth/token']
+
+    // 1. Check if a chart with same identifier exist in ES and delete
+    if (identifier) {
+      await dispatch('deleteChartES', identifier)
+    }
+
+    const fetchResponse = await fetch(url, {
       method: 'PUT',
       headers: {
         Accept: 'application/json',
@@ -67,10 +82,11 @@ export default {
       body: JSON.stringify({ doc: chartInstanceObject, type: 'charts' })
     })
 
-    if (response.status !== 200) {
-      return new Error(response.message || 'Server error, cannot cache chart')
+    if (fetchResponse.status !== 200) {
+      return new Error(fetchResponse.statusText || 'Server error, cannot cache chart')
     }
 
-    return response
+    const response = await fetchResponse.json()
+    return { response, identifier: chartInstanceObject.identifier }
   }
 }

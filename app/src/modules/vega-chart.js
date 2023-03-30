@@ -43,7 +43,8 @@ const defaultChart = {
 }
 
 const chartType = 'http://semanticscience.org/resource/Chart'
-const lodPrefix = 'http://purl.org/whyis/local'
+// const lodPrefix = window.location.origin
+const chartUriPrefix = 'http://nanomine.org/viz/'
 const foafDepictionUri = 'http://xmlns.com/foaf/0.1/depiction'
 const hasContentUri = 'http://vocab.rpi.edu/whyis/hasContent'
 
@@ -55,8 +56,6 @@ const chartFieldPredicates = {
   dataset: 'http://www.w3.org/ns/prov#used'
 }
 
-// Todo (ticket xx): Do we need this?
-const chartPrefix = 'viz'
 const chartIdLen = 16
 
 function generateChartId () {
@@ -64,7 +63,7 @@ function generateChartId () {
   window.crypto.getRandomValues(intArr)
   const chartId = Array.from(intArr, (dec) => ('0' + dec.toString(16)).substr(-2)).join('')
 
-  return `${lodPrefix}/${chartPrefix}/${chartId}`
+  return `${chartUriPrefix}${chartId}`
 }
 
 function buildChartLd (chart) {
@@ -146,7 +145,13 @@ async function loadChart (chartUri) {
   // Check the chart uri before running query
   let chartUrl = chartUri
   if (chartUrl.includes('view/')) {
+    // We should not get in this if logic. The issue with chart URI using a different
+    // lodPrefix is now fixed (e.g. http://nanomine.org/viz/chartId instead of http://purl.org/chart/view/chartId)
+    // Todo (ticket-xx): Remove this if logic if response is consistent
     chartUrl = decodeURIComponent(chartUri.split('view/')[1])
+  } else if (!chartUri.startsWith('http')) {
+    // This is currently needed for editing since gallery only passes ID and not the full uri
+    chartUrl = `${chartUriPrefix}${chartUri}`
   }
 
   const valuesBlock = `\n  VALUES (?uri) { (<${chartUrl}>) }`
@@ -192,14 +197,15 @@ function buildCsvSpec (baseSpec, csvResults) {
   return spec
 }
 
-const chartUriPrefix = 'http://nanomine.org/viz/'
-
 function toChartId (chartUri) {
   if (chartUri && !chartUri.startsWith(chartUriPrefix)) {
-    // throw new Error(`Unexpected chart uri "${chartUri}". Was expecting prefix "${chartUriPrefix}"`)
+    // We should not get in this if logic. The issue with chart URI using a different
+    // lodPrefix is now fixed (e.g. http://nanomine.org/viz/chartId instead of http://purl.org/chart/view/chartId)
+    // Todo (ticket-xx): Remove this if logic if response is consistent
     return chartUri
   }
   if (!chartUri) return
+
   return chartUri.substring(chartUriPrefix.length)
 }
 
@@ -207,7 +213,12 @@ function toChartUri (chartId) {
   if (chartId.includes('viz')) {
     return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(chartId)}`
   }
+
   return chartUriPrefix + chartId
 }
 
-export { getDefaultChart, saveChart, loadChart, copyChart, buildSparqlSpec, buildCsvSpec, toChartId, toChartUri, chartUriPrefix }
+function shareableChartUri (chartId) {
+  return `${window.location.origin}/explorer/chart/view/${chartId}`
+}
+
+export { getDefaultChart, saveChart, deleteChart, loadChart, copyChart, buildSparqlSpec, buildCsvSpec, toChartId, toChartUri, shareableChartUri, chartUriPrefix }

@@ -161,7 +161,7 @@ services:
     environment:
 #      - ADMIN_USER=admin
 #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JVM_ARGS=-Xmx10g
+      - JVM_ARGS=-Xmx4g
       - FUSEKI_BASE=/fuseki
     ports:
       - '3030:3030'

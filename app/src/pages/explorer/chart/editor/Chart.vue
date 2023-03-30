@@ -73,7 +73,7 @@
 
 <script>
 import { querySparql } from '@/modules/sparql'
-import { saveChart, getDefaultChart, buildSparqlSpec } from '@/modules/vega-chart'
+import { saveChart, getDefaultChart, buildSparqlSpec, loadChart } from '@/modules/vega-chart'
 import VJsoneditor from 'v-jsoneditor'
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
 import yasqe from '@/components/explorer/yasqe'
@@ -107,9 +107,11 @@ export default {
         title: null,
         description: null
       },
-      actionType: 'Save Chart'
+      actionType: 'Save Chart',
+      submittedIdentifier: undefined
     }
   },
+  props: ['chartId'],
   computed: {
     spec () {
       const spec = buildSparqlSpec(this.chart.baseSpec, this.results) ?? {}
@@ -148,6 +150,7 @@ export default {
       } else if (this.$route.params.type === 'edit') {
         // fetch chart from knowledge graph
         this.actionType = 'Edit Chart'
+        getChartPromise = Promise.resolve(loadChart(this.chartId))
       } else {
         // Get chart from mongo backup
         this.actionType = 'Restore Chart'
@@ -166,18 +169,29 @@ export default {
 
     },
     async saveChart () {
+      this.loading = true
       // Todo (ticket xx): Move this into vuex
       try {
         const chartNanopub = await saveChart(this.chart)
-        await this.$store.dispatch('explorer/curation/cacheNewChartResponse', chartNanopub)
 
         if (this.$route.params.type === 'new') {
           // Save chart to MongoDB - async operation
         } else {
+          await this.$store.dispatch('explorer/curation/deleteChartES', `http://nanomine.org/viz/${this.chartId}`)
           // Find in mongo and update - async operation
         }
-        this.$store.commit('explorer/curation/setNewChartExist', true)
 
+        const resp = await this.$store.dispatch('explorer/curation/cacheNewChartResponse', {
+          identifier: this.submittedIdentifier,
+          chartNanopub
+        })
+
+        if (resp.identifier) {
+          this.submittedIdentifier = resp.identifier
+        }
+
+        this.$store.commit('explorer/curation/setNewChartExist', true)
+        this.loading = false
         // Change button name after submission
         this.actionType = 'Edit Chart'
         this.$store.commit('setSnackbar', {

@@ -107,7 +107,9 @@ exports.loadElasticSearch = async (req, res, next) => {
   try {
     let response;
     if (req.method === 'DELETE') {
+      log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
       response = await elasticSearch.deleteSingleDoc(type, doc);
+      log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
     } else {
       response = await elasticSearch.indexDocument(req, type, doc);
     }

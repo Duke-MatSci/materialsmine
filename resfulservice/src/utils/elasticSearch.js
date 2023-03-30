@@ -70,7 +70,7 @@ class ElasticSearch {
       index: type,
       body: {
         query: {
-          match: {
+          match_phrase: {
             identifier
           }
         }
