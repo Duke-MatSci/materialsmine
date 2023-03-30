@@ -2,12 +2,14 @@ const User = require('../models/user');
 const UAParser = require('ua-parser-js');
 const { setInternal } = require('../middlewares/isInternal');
 const { successWriter, errorWriter } = require('../utils/logWriter');
-const { supportedBrowser } = require('../../config/constant');
+const { supportedBrowser, userRoles } = require('../../config/constant');
 
 // Generate and send token info to FE
-const _redirect = ({ _id, email, displayName }, req, res) => {
+const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, res) => {
+  const isAdmin = roles === userRoles.isAdmin;
+
   successWriter(req, 'success', 'Found/Created user successfully');
-  const token = setInternal(req, { _id, email, displayName });
+  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin });
   successWriter(req, 'success', 'Login token generated successfully');
 
   return res
@@ -15,7 +17,8 @@ const _redirect = ({ _id, email, displayName }, req, res) => {
       .stringify({
         userId: _id,
         token,
-        displayName
+        displayName,
+        isAdmin
         })}`);
 };
 

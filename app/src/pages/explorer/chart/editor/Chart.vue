@@ -169,9 +169,18 @@ export default {
 
     },
     async saveChart () {
+      this.loading = true
       // Todo (ticket xx): Move this into vuex
       try {
         const chartNanopub = await saveChart(this.chart)
+
+        if (this.$route.params.type === 'new') {
+          // Save chart to MongoDB - async operation
+        } else {
+          console.log('charturi:', this.chartId)
+          await this.$store.dispatch('explorer/curation/deleteChartES', `http://nanomine.org/viz/${this.chartId}`)
+          // Find in mongo and update - async operation
+        }
 
         const resp = await this.$store.dispatch('explorer/curation/cacheNewChartResponse', {
           identifier: this.submittedIdentifier,
@@ -182,13 +191,8 @@ export default {
           this.submittedIdentifier = resp.identifier
         }
 
-        if (this.$route.params.type === 'new') {
-          // Save chart to MongoDB - async operation
-        } else {
-          // Find in mongo and update - async operation
-        }
         this.$store.commit('explorer/curation/setNewChartExist', true)
-
+        this.loading = false
         // Change button name after submission
         this.actionType = 'Edit Chart'
         this.$store.commit('setSnackbar', {

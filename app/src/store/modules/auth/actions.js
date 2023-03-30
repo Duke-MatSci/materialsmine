@@ -59,7 +59,7 @@ export default {
     const token = res.token ?? null
     const userId = res.userId ?? null
     const displayName = res.displayName ?? null
-    const isAdmin = res.isAdmin ? res.isAdmin : false
+    const isAdmin = res.isAdmin ?? false
     const expiresIn = 9000 * 60 * 60
     const expirationDate = new Date().getTime() + expiresIn
 
@@ -112,7 +112,8 @@ export default {
     context.commit('setUser', {
       token: null,
       userId: null,
-      displayName: null
+      displayName: null,
+      isAdmin: false
     })
 
     const meta = router.currentRoute?.meta
