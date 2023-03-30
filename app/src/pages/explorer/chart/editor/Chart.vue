@@ -108,7 +108,7 @@ export default {
         description: null
       },
       actionType: 'Save Chart',
-      sumbmittedIdentifier: undefined
+      submittedIdentifier: undefined
     }
   },
   props: ['chartId'],
@@ -174,12 +174,12 @@ export default {
         const chartNanopub = await saveChart(this.chart)
 
         const resp = await this.$store.dispatch('explorer/curation/cacheNewChartResponse', {
-          identifier: this.sumbmittedIdentifier,
+          identifier: this.submittedIdentifier,
           chartNanopub
         })
 
         if (resp.identifier) {
-          this.sumbmittedIdentifier = resp.identifier
+          this.submittedIdentifier = resp.identifier
         }
 
         if (this.$route.params.type === 'new') {
