@@ -12,9 +12,6 @@ export default {
     Snackbar
   },
   async created () {
-    if (this.$store.getters.countDownDate - new Date().getTime() > 0) {
-      return this.$router.push('/countdown')
-    }
     await this.$store.dispatch('auth/tryLogin')
   }
 }

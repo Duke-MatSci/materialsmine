@@ -1,5 +1,6 @@
 const defaultWhyIsUrl = 'https://materialsmine.org/wi'
 
+// Todo (ticket xx): Anya can you check if this is still required
 function getViewUrl ({ whyIsUrl = defaultWhyIsUrl, uri, view = null }) {
   if (view != null) {
     return `${whyIsUrl}/about?view=${view || 'view'}&uri=${uri}`

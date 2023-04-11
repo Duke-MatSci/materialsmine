@@ -18,7 +18,7 @@ export default {
         action: null,
         duration: false
       },
-      countDownDate: new Date('Apr 11, 2023 13:30:00').getTime()
+      countDownDate: new Date('March 22, 2023 13:30:00').getTime()
     }
   },
   mutations,

@@ -9,7 +9,7 @@
     <div class="">
       <h3 class="metamine_headline"><span>MetaMine is an open source, data resource for members of the metamaterial community with four key goals:</span></h3>
       <div class="card-container">
-        <ul class="ul_adjust">
+        <ul class="u_display-flex ul_adjust">
           <li class="card card-float inline-display" @click.prevent="openLinks('/explorer/curate')">
             <div class="card-inside">
               <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">people_alt</i></div>
@@ -42,7 +42,7 @@
       </div>
     </div>
     <div class="mid-first">
-      <ul>
+      <ul class="u_display-flex">
         <li class="inline-display mid-first-li mid-first-container"><i class="material-icons card-icon">smart_display</i></li>
         <li class="inline-display mid-first-li mid-first-container">
           <p class="mid-first-p">New to MetaMine? <span class="mid-first-span">View Our step-by-step tutorials!</span></p>
@@ -123,7 +123,6 @@ ul {
   -ms-flex-align: center;
   align-items: center;
   display: -webkit-flex;
-  display: flex;
   margin: 2rem auto;
   justify-content: center;
 }

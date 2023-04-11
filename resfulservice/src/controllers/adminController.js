@@ -94,17 +94,25 @@ const _loadBulkElasticSearch = async (req, res, next) => {
  */
 exports.loadElasticSearch = async (req, res, next) => {
   const log = req.logger;
-  const body = JSON.parse(req?.body);
+  log.info('loadElasticSearch(): Function entry');
+
+  const body = req?.body;
   const type = body?.type;
   const doc = body?.doc;
 
-  log.info('loadElasticSearch(): Function entry');
   if (!type || !doc) {
     return next(errorWriter(req, 'Category type or doc is missing', 'loadElasticSearch', 422));
   }
 
   try {
-    const response = await elasticSearch.indexDocument(req, type, doc);
+    let response;
+    if (req.method === 'DELETE') {
+      log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
+      response = await elasticSearch.deleteSingleDoc(type, doc);
+      log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
+    } else {
+      response = await elasticSearch.indexDocument(req, type, doc);
+    }
 
     await elasticSearch.refreshIndices(req, type);
     successWriter(req, 'success', 'loadElasticSearch');
@@ -151,6 +159,12 @@ exports.dataDump = async (req, res, next) => {
   log.info('dataDump(): Function entry');
 
   try {
+    if (req.method === 'DELETE') {
+      const type = req.query.type;
+      await elasticSearch.deleteIndexDocs(type);
+      return res.status(200);
+    }
+
     const { type, data } = await outboundRequest(req, next);
     req.body = JSON.stringify({ type, data });
 

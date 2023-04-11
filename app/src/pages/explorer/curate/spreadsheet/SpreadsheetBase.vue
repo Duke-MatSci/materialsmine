@@ -5,7 +5,7 @@
         <div>
             <h2 class="visualize_header-h1">Spreadsheet</h2>
             <div class="md-layout md-gutter utility_flex_mobile">
-                <div class="md-layout md-layout-responsive md-gutter">
+                <div class="md-layout u_display-flex md-layout-responsive md-gutter">
                     <div class="md-layout-item md-small-hide">&nbsp;</div>
                     <div class="md-layout-item">
                         <div class="teams_container explorer_page-nav-card md-layout-item_card" @click="createDatasetIdVuex">

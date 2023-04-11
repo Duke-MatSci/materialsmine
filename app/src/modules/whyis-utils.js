@@ -1,14 +1,11 @@
 import { querySparql } from './sparql'
 
-// const lodPrefix = 'https://purl.org/whyis/local'
 const lodPrefix = window.location.hostname
-
-const getAboutUrl = (uri) => `about?uri=${uri}`
 
 const deleteNanopub = async (uri) => {
   return await querySparql('', {
     method: 'DELETE',
-    whyisPath: getAboutUrl(uri)
+    whyisPath: `about?uri=${encodeURIComponent(uri)}`
   })
 }
 
@@ -21,7 +18,7 @@ function makeNanopubId () {
 
 async function listNanopubs (uri) {
   const response = await querySparql('', { whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}` })
-  return response.data
+  return Object.values(response)
 }
 
 const postNewNanopub = async (pubData, context) => {
@@ -31,7 +28,10 @@ const postNewNanopub = async (pubData, context) => {
   }
   nanopub['@graph']['np:hasAssertion']['@graph'].push(pubData)
 
-  return await querySparql('', { body: { ...nanopub }, method: 'POST', whyisPath: 'pub' })
+  // This returns an empty response body from Whyis & Fuseki.
+  // Ignore response as long as its not an error.
+  await querySparql('', { body: nanopub, method: 'POST', whyisPath: 'pub', headers: { 'Content-Type': 'application/json' } })
+  return nanopub
 }
 
 function getNanopubSkeleton () {

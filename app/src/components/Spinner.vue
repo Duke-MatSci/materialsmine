@@ -1,5 +1,5 @@
 <template>
-  <div class="spinner" v-show="loading">
+  <div class="u_display-flex spinner" v-show="loading">
     <div v-if="text" style="font-size:1.5rem; font-weight:200; flex:0 0 auto; margin-bottom: 2rem">{{ text }} <br /></div>
     <div style="flex: 0 0 auto;">
       <span class="sync" :style="[spinnerStyle, spinnerDelay1]"></span>
@@ -70,7 +70,6 @@ export default {
 .spinner {
   width: 100%;
   height: 100%;
-  display: flex;
   align-items: center;
   justify-content: center;
   align-content: center;
