@@ -11,7 +11,7 @@
       <h1 class="visualize_header-h1 article_title u_centralize_text">All Current Valid Entries</h1>
       <div style="max-width: 99%;">
         <div class="md-layout md-gutter md-alignment-top-center">
-          <div class="md-layout-item md-size-50 md-medium-size-70 md-small-size-85 md-xsmall-size-95">
+          <div class="md-layout-item md-size-90">
             <div v-if="!!getXlsxCurationList.columns" >
               <md-field style="align-items: baseline">
                 <p style="margin-right: 4px;font-weight: bold;"><md-icon>search</md-icon></p>
