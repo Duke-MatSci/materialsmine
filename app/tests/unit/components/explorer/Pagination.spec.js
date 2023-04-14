@@ -21,7 +21,7 @@ function callWindowObject (arg) {
   return resp
 }
 
-test('Pagination.vue if tpages is less than or equal 7 on dexktop', () => {
+test('Pagination.vue if tpages is less than or equal 7 on desktop', () => {
   const defaultProps = {
     cpage: 1,
     tpages: 7
@@ -109,11 +109,11 @@ describe('Pagination.vue', () => {
   })
 
   it('calls the right method when the a number is clicked', async () => {
-    const goToPage = jest.spyOn(wrapper.vm, 'goToPage').mockImplementation(() => {})
+    const goToItem = jest.spyOn(wrapper.vm, 'goToItem').mockImplementation(() => {})
     await wrapper.findAll('button').at(3).trigger('click')
     await wrapper.findAll('button').at(4).trigger('click')
-    expect(goToPage).toHaveBeenNthCalledWith(1, 4)
-    expect(goToPage).toHaveBeenNthCalledWith(2, 5)
+    expect(goToItem).toHaveBeenNthCalledWith(1, 4)
+    expect(goToItem).toHaveBeenNthCalledWith(2, 5)
   })
 
   it('calls the right method when the last button is clicked', async () => {
@@ -125,27 +125,27 @@ describe('Pagination.vue', () => {
 
   // functions assertion
   it('returns true if page entered exists', () => {
-    expect(wrapper.vm.pageExists(wrapper.vm.cpage)).toBe(true)
-    expect(wrapper.vm.pageExists(defaultProps.tpages)).toBe(true)
+    expect(wrapper.vm.itemExists(wrapper.vm.cpage)).toBe(true)
+    expect(wrapper.vm.itemExists(defaultProps.tpages)).toBe(true)
   })
 
   it('returns false if page entered does not exists', () => {
-    expect(wrapper.vm.pageExists(wrapper.vm.cpage - 1)).toBe(false)
-    expect(wrapper.vm.pageExists(defaultProps.tpages + 1)).toBe(false)
+    expect(wrapper.vm.itemExists(wrapper.vm.cpage - 1)).toBe(false)
+    expect(wrapper.vm.itemExists(defaultProps.tpages + 1)).toBe(false)
   })
 
   it('returns the right class if method argument equals page entered ', () => {
-    expect(wrapper.vm.pageInput).toEqual(defaultProps.cpage)
+    expect(wrapper.vm.itemInput).toEqual(defaultProps.cpage)
     expect(wrapper.vm.isActiveClass(defaultProps.cpage)).toBe('btn--primary')
   })
 
   it('returns the right class if method argument does not equals page entered ', () => {
-    expect(wrapper.vm.pageInput).not.toEqual(defaultProps.cpage + 1)
+    expect(wrapper.vm.itemInput).not.toEqual(defaultProps.cpage + 1)
     expect(wrapper.vm.isActiveClass(defaultProps.cpage + 1)).toBe('u--color-primary')
   })
 
   it('resets row count and calls the right method', async () => {
-    const spy = jest.spyOn(wrapper.vm, 'goToPage').mockImplementation(() => {})
+    const spy = jest.spyOn(wrapper.vm, 'goToItem').mockImplementation(() => {})
     await wrapper.setData({ offset: 5, rowNumber: 2 })
     await wrapper.vm.goToBeginning()
     expect(wrapper.vm.offset).toBe(0)
@@ -162,20 +162,20 @@ describe('Pagination.vue', () => {
 
   it('goToEnd method calls the right methods with the right arguement ', async () => {
     const goToLastRow = jest.spyOn(wrapper.vm, 'goToLastRow').mockImplementation(() => {})
-    const goToPage = jest.spyOn(wrapper.vm, 'goToPage').mockImplementation(() => {})
+    const goToItem = jest.spyOn(wrapper.vm, 'goToItem').mockImplementation(() => {})
     await wrapper.vm.goToEnd()
     expect(goToLastRow).toHaveBeenCalledTimes(1)
-    expect(goToPage).toHaveBeenCalledWith(wrapper.vm.tpages)
+    expect(goToItem).toHaveBeenCalledWith(wrapper.vm.tpages)
   })
 
-  it('goToPage method does nothing if the arguement given does not exist or equals current page', async () => {
-    await wrapper.vm.goToPage(defaultProps.cpage)
-    await wrapper.vm.goToPage(defaultProps.tpages + 1)
+  it('goToItem method does nothing if the arguement given does not exist or equals current page', async () => {
+    await wrapper.vm.goToItem(defaultProps.cpage)
+    await wrapper.vm.goToItem(defaultProps.tpages + 1)
     expect(wrapper.emitted()).not.toHaveProperty('go-to-page')
   })
 
-  it('goToPage method emits the arguement given ', async () => {
-    await wrapper.vm.goToPage(3)
+  it('goToItem method emits the arguement given ', async () => {
+    await wrapper.vm.goToItem(3)
     expect(wrapper.emitted('go-to-page')[0]).toEqual([3])
   })
 
