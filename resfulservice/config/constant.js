@@ -9,5 +9,6 @@ module.exports = {
   userRoles: {
     isAdmin: 'isAdmin',
     member: 'member'
-  }
+  },
+  commentTypes: ['xml', 'charts', 'images']
 };

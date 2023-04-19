@@ -1,0 +1,15 @@
+input xmlFinderInput {
+  "param value to filter lists of XmlCatalogs"
+  param: String
+
+  "XmlCatalogs page to return"
+  pageNumber: Int
+
+  "Number of XmlCatalogs to return per page"
+  pageSize: Int
+}
+
+input xmlViewerInput {
+  "XmlCatalog ID to find specific xml data"
+  id: ID!
+}

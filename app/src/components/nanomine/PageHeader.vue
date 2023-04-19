@@ -65,6 +65,7 @@
                                     <router-link to="/explorer" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
                                     <router-link to="/explorer/chart" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
                                     <router-link to="/explorer/images" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
+                                    <router-link to="/explorer/xmls" class="nav_menu--siblings-lists"><a>View Xmls</a></router-link>
                                 </div>
                             </div>
                         </li>
