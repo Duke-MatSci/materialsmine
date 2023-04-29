@@ -3,6 +3,7 @@ export default {
     state.token = payload.token
     state.userId = payload.userId
     state.displayName = payload.displayName
+    state.isAdmin = payload.isAdmin
     state.didAutoLogout = false
   },
   setAutoLogout (state) {

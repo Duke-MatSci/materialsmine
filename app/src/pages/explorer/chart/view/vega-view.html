@@ -33,11 +33,15 @@
                 <md-icon>dynamic_form</md-icon>
             </md-button>
         </router-link>
-        <div v-if="allowEdit">
-        <md-button disabled class="md-icon-button" @click.native.prevent="editChart">
-            <md-tooltip> Edit Chart </md-tooltip>
-            <md-icon>edit</md-icon>
-        </md-button>
+        <div v-if="isAuth && isAdmin">
+            <md-button class="md-icon-button" @click.native.prevent="editChart">
+                <md-tooltip> Edit Chart </md-tooltip>
+                <md-icon>edit</md-icon>
+            </md-button>
+            <md-button class="md-icon-button" @click.native.prevent="renderDialog('Delete Chart?', 'delete', 80)">
+                <md-tooltip> Delete Chart </md-tooltip>
+                <md-icon>delete</md-icon>
+            </md-button>
         </div>
     </div>
     </div>
@@ -92,7 +96,7 @@
     <template v-slot:content>
         <div v-if="dialog.type=='share'">
             <md-field> <label>Chart Link</label>
-                <md-textarea disabled v-model="fullChartUri"></md-textarea>
+                <md-textarea disabled v-model="shareableChartUri"></md-textarea>
             </md-field>
             <div>Copy the link above to share this chart</div>
         </div>
@@ -115,9 +119,29 @@
                 <md-checkbox v-model="specViewer.includeData">Include data in spec</md-checkbox>
             </div>
         </div>
+        <div v-if="dialog.type=='delete'">
+            <md-content>
+                <div> This will permanently remove chart <b>{{chart.title}}</b> </div>
+                with identifier <b>{{chart.uri}}</b>.
+            </md-content>
+        </div>
+        <div v-if="dialogLoading">      
+          <spinner
+            :loading="dialogLoading"
+            text='Deleting Chart'
+          />
+        </div>
     </template> 
     <template v-slot:actions>
-        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+        <span v-if="dialog.type=='delete'">
+            <md-button @click.native.prevent="toggleDialogBox"> 
+                No, cancel
+            </md-button>
+            <md-button @click.native.prevent="deleteChart">
+                Yes, delete.
+            </md-button>
+        </span>
+        <md-button v-else @click.native.prevent="toggleDialogBox">Close</md-button>
     </template>
 </dialogbox>
 </div>
