@@ -15,6 +15,12 @@ Windows OS:
 # :warning: ADVISORY :warning:
 > Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
 
+## :high_brightness: Testing
+To avoid testing failure, install nvm & copy the command below and run in the project root directory.
+
+```bash
+npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
+```
 
 ```bash
 # Run the following command from the root directory:
@@ -33,14 +39,8 @@ docker-compose up
 # To start all services after the first or initial build in detachable mode
 docker-compose up -d
 
-# To shutdown/terminate all services
-docker-compose down
-```
-
-## :high_brightness: Testing
-To avoid testing failure, copy the command below and run in the project root directory
-```bash
-npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
+# To shutdown/terminate all services & unmount volumes
+docker-compose down -v
 ```
 
 ## :high_brightness: Folder Structure
