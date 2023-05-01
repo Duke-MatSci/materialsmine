@@ -198,6 +198,18 @@ const explorerRoutes = [
         '@/pages/explorer/Sparql.vue'
       ),
     meta: { requiresAuth: true }
+  },
+  {
+    path: 'xmls',
+    name: 'XmlGallery',
+    component: () => import('@/pages/explorer/xml/Xml.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'xmlvisualizer/:id',
+    name: 'XmlVisualizer',
+    component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 

@@ -1,0 +1,80 @@
+"""
+Enumerated list of resource type values
+"""
+enum CommentTypes {
+  """
+  Xml comment type resource
+  """
+  xml
+
+  """
+  Chart comment type resource
+  """
+  charts
+
+  """
+  Image comment type resource
+  """
+  images
+}
+
+input loadCommentInput {
+  """
+  Enumerated list of resource types
+  """
+  type: CommentTypes!
+
+  """
+  Resource identifier
+  """
+  identifier: String!
+
+  """
+  Comments page to return
+  """
+  pageNumber: Int
+
+  """
+  Number of comments to return per page
+  """
+  pageSize: Int
+}
+
+input editCommentInput {
+  id: ID!
+
+  """
+  Enumerated list of resource type values
+  """
+  type: CommentTypes!
+
+  """
+  Targeted resource identifier
+  """
+  identifier: String!
+
+  """
+  User updated comment text input
+  """
+  comment: String!
+}
+
+"""
+Comment submission input parameters
+"""
+input postCommentInput {
+  """
+  Enumerated list of resource type values
+  """
+  type: CommentTypes!
+
+  """
+  Targeted resource identifier
+  """
+  identifier: String!
+
+  """
+  User comment text input
+  """
+  comment: String!
+}

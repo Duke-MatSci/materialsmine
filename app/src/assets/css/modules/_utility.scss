@@ -14,6 +14,10 @@
         max-width: 80%;
     }
 
+    .md-layout-item{
+        height: fit-content;
+    }
+
     .wrapper {
         padding-left: 0;
         padding-right: 0;
@@ -136,6 +140,9 @@
                     margin-left: 1.2rem !important;
                 }
             }
+            &-auto {
+                margin-left: auto !important;
+            }
         }
         &-header {
             margin: 2rem 0 !important;
@@ -231,6 +238,9 @@
         }
     }
     &--font-emph {
+        &-900{
+            font-weight: 900;
+        }
         &-xl {
             font-size: $x-large-size;
             font-weight: 700;
