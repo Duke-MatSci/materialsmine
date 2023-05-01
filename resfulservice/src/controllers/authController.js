@@ -30,6 +30,10 @@ const _validateUser = async (req) => {
   const email = req.headers[env.MM_AUTH_EMAIL_HEADER] ?? env.MM_USER_EMAIL;
   const userExist = await User.findOne({ email });
 
+  if (env?.MM_RUNTIME_ENV === 'dev') {
+    userExist.roles = userRoles.isAdmin;
+  }
+
   if (userExist) return userExist;
 
   const user = new User({
