@@ -22,24 +22,27 @@ To avoid testing failure, install nvm & copy the command below and run in the pr
 npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
 ```
 
+## :high_brightness: Starting All Application Services
+Run the following command from the root directory:
+
 ```bash
-# Run the following command from the root directory:
-# 1. Install npm @ root directory:
-npm install
-
-# 2. Build all services 
 docker-compose build
+```
+Note: The build might stall at first try. If this occurs, repeat the previous step.
 
-# Note:
-# The build might stall at first try. If this occurs, repeat the previous step.
 
-# To start all services after the first or initial build
+To start all services after the first or initial build
+```bash
 docker-compose up
+```
 
-# To start all services after the first or initial build in detachable mode
+If you prefer to start all services after the first or initial build in detachable mode
+```bash
 docker-compose up -d
+```
 
-# To shutdown/terminate all services & unmount volumes
+To shutdown/terminate all services & unmount volumes
+```bash
 docker-compose down -v
 ```
 
