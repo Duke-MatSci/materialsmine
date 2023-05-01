@@ -37,14 +37,6 @@ export default {
       rowNumber: 1
     }
   },
-  watch: {
-    cpage (val) {
-      console.log('cpage newValue', val)
-    },
-    tpages (val) {
-      console.log('total newValue', val)
-    }
-  },
   mounted () {
     if (this.pageExists(this.cpage)) {
       this.verifyRow()

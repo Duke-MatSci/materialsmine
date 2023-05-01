@@ -19,7 +19,7 @@
       <spinner :loading="$apollo.loading" text='Loading Xml'/>
     </section>
     <section class="section_loader u--margin-toplg" v-else>
-      <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">This xml no longer exist or have been moved</h2>
+      <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">This XML no longer exists or has been moved</h2>
     </section>
   </div>
 </template>

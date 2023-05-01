@@ -6,7 +6,7 @@
           <div class="search_box_form">
             <div class="form__group search_box_form-item-1">
               <input type="text" ref="search_input" class="form__input form__input--flat"
-              placeholder="Search Xml" name="search" id="search"
+              placeholder="Search XML" name="search" id="search"
               required v-model="searchWord" />
               <label htmlFor="search" class="form__label search_box_form_label">Search Xml</label>
             </div>
@@ -107,7 +107,7 @@ export default {
   data () {
     return {
       baseUrl: window.location.origin,
-      renderText: 'Showing all Xml',
+      renderText: 'Showing all XML',
       xmlFinder: [],
       pageNumber: 1,
       pageSize: 20,
@@ -160,7 +160,7 @@ export default {
     async submitSearch () {
       if (!this.searchWord) {
         return this.$store.commit('setSnackbar', {
-          message: 'Enter a xml sample file name',
+          message: 'Enter a XML sample file name',
           duration: 10000
         })
       }
@@ -169,7 +169,7 @@ export default {
       return await this.updateParamsAndCall(true)
     },
     async resetSearch () {
-      this.renderText = 'Showing all Xml'
+      this.renderText = 'Showing all XMLs'
       await this.$router.replace({ query: {} })
       return await this.loadParams({})
     },
