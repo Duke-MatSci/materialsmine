@@ -88,6 +88,7 @@ export default {
     const expiresIn = +tokenExpiration - new Date().getTime()
 
     if (expiresIn < 0) {
+      context.dispatch('autoLogout')
       return context.dispatch('notifyUser')
     }
 
