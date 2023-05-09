@@ -1,6 +1,24 @@
 const chai = require('chai');
 const sinon = require('sinon');
-const { user, correctXlsxFile, wrontXlsxFile, mockCurationList, mockCuratedXlsxObject, fetchecdCuratedXlsxObject, mockSheetData, mockSheetData2, updatedCuratedXlsxObject, mockBaseObject, mockJsonStructure, mockCurationListMap, mockSheetData3, mockSheetData4, mockJsonStructure2, mockJsonStructure4, mockUploadedFiles } = require('../mocks')
+const {
+  user,
+  correctXlsxFile,
+  wrontXlsxFile,
+  mockCurationList,
+  mockCuratedXlsxObject,
+  fetchecdCuratedXlsxObject,
+  mockSheetData,
+  mockSheetData2,
+  updatedCuratedXlsxObject,
+  mockBaseObject,
+  mockJsonStructure,
+  mockCurationListMap,
+  mockSheetData3,
+  mockSheetData4,
+  mockJsonStructure2,
+  mockJsonStructure4,
+  mockUploadedFiles 
+} = require('../mocks')
 const XlsxObject = require('../../src/models/curatedObject');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
 const XlsxFileManager = require('../../src/utils/xlsxFileManager');
