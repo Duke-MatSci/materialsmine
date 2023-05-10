@@ -85,12 +85,22 @@ exports.updateXlsxCurations = async (req, res, next) => {
   }
 };
 
-exports.createMaterialObject = async (path, obj, validListMap, uploadedFiles, errors = {}) => {
+/**
+ * @method createMaterialObject
+ * @description Function to parse and curate xlsx object
+ * @param {String} path - The path to the xlsx spreadsheet to be parsed
+ * @param {Object} BaseObject - The json structure which holds all spreadsheet values and cell location
+ * @param {Object} validListMap - The map of all valid curation lists
+ * @param {Object} uploadedFiles - The list of all uploaded files data
+ * @param {Object} errors - Object created to store errors that occur while parsing the spreadsheets
+ * @returns {Object} - Newly curated object or errors that occur while  proces
+ */
+exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFiles, errors = {}) => {
   const sheetsData = {};
   const filteredObject = {};
 
-  for (const property in obj) {
-    const propertyValue = obj[property];
+  for (const property in BaseObject) {
+    const propertyValue = BaseObject[property];
 
     if (Array.isArray(propertyValue?.values)) {
       const multiples = propertyValue.values;
@@ -156,63 +166,87 @@ exports.createMaterialObject = async (path, obj, validListMap, uploadedFiles, er
   return filteredObject;
 };
 
-const generateCurationListMap = (curationList) => {
-  const obj = {};
+exports.getCurationSchemaObject = async (req, res, next) => {
+  req.logger.info('getCurationSchemaObject Function Entry:');
+  const { sheetName } = req.query;
 
-  for (const list of curationList) {
-    obj[list.field] = list.values;
-  }
-  return obj;
+  const result = jsonStructure[sheetName?.toLowerCase()] ? jsonStructure[sheetName?.toLowerCase()] : jsonStructure;
+  return res.status(200).json(result);
 };
 
-function filterNestedObject (obj) {
-  const newObj = {};
-  for (const prop in obj) {
-    const value = obj[prop];
+/**
+ * @description Function to convert valid curation list to object mapping
+ * @param {Object} validCurationList - The valid array/List of valid validCurationList
+ * @returns {Object} - A valid list object
+ */
+const generateCurationListMap = (validCurationList) => {
+  const validListObject = {};
+
+  for (const validList of validCurationList) {
+    validListObject[validList.field] = validList.values;
+  }
+  return validListObject;
+};
+
+/**
+ * @description Function to filter out all null/undefined values in the object
+ * @param {Object} curatedBaseObject - The curated base object which contains all fields based on the jsonStructure
+ * @returns {Object} The filtered curated base object stripped off all null values
+ */
+function filterNestedObject (curatedBaseObject) {
+  const filteredObject = {};
+  for (const property in curatedBaseObject) {
+    const value = curatedBaseObject[property];
     if (Array.isArray(value)) {
-      const objArr = [];
-      for (const prop of value) {
-        const newObj = filterNestedObject(prop);
+      const objectArray = [];
+      for (const property of value) {
+        const newObj = filterNestedObject(property);
         if (Object.keys(newObj).length > 0) {
-          objArr.push(newObj);
+          objectArray.push(newObj);
         }
       }
-      if (objArr.length > 0) {
-        newObj[prop] = objArr;
+      if (objectArray.length > 0) {
+        filteredObject[property] = objectArray;
       }
     } else if (typeof value === 'object') {
       const nestedObj = filterNestedObject(value);
 
       if (Object.keys(nestedObj).length > 0) {
-        newObj[prop] = nestedObj;
+        filteredObject[property] = nestedObj;
       }
     } else if (value !== null) {
-      newObj[prop] = value;
+      filteredObject[property] = value;
     }
   }
-  return newObj;
+  return filteredObject;
 }
 
-const createBaseObject = (obj, savedObj) => {
-  const newObj = {};
-  for (const prop in obj) {
-    const propVal = obj[prop];
-    if (Array.isArray(propVal?.values)) {
-      const objArr = propVal.values.map((obj, i) => createBaseObject(obj, savedObj?.[prop]?.[i]));
-      newObj[prop] = objArr;
-    } else if (propVal?.value) {
-      if (savedObj?.[prop]) {
-        newObj[prop] = savedObj[prop];
+/**
+ * @description Function to create schema object using the BaseObject
+ * @param {Object} BaseObject - The json structure which holds all spreadsheet values and cell location
+ * @param {Object} storedObject - The stored object retrieved from the database
+ * @returns {Object} - Newly curated base object
+ */
+const createBaseObject = (BaseObject, storedObject) => {
+  const curatedBaseObject = {};
+  for (const property in BaseObject) {
+    const propertyValue = BaseObject[property];
+    if (Array.isArray(propertyValue?.values)) {
+      const objectArray = propertyValue.values.map((BaseObject, i) => createBaseObject(BaseObject, storedObject?.[property]?.[i]));
+      curatedBaseObject[property] = objectArray;
+    } else if (propertyValue?.value) {
+      if (storedObject?.[property]) {
+        curatedBaseObject[property] = storedObject[property];
       } else {
-        newObj[prop] = null;
+        curatedBaseObject[property] = null;
       }
     } else {
-      const nestedObj = createBaseObject(propVal, savedObj?.[prop]);
+      const nestedObj = createBaseObject(propertyValue, storedObject?.[property]);
 
       if (Object.keys(nestedObj).length > 0) {
-        newObj[prop] = nestedObj;
+        curatedBaseObject[property] = nestedObj;
       }
     }
   }
-  return newObj;
+  return curatedBaseObject;
 };
