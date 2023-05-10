@@ -6,7 +6,11 @@ const { supportedBrowser, userRoles } = require('../../config/constant');
 
 // Generate and send token info to FE
 const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, res) => {
-  const isAdmin = roles === userRoles.isAdmin;
+  let isAdmin = roles === userRoles.isAdmin;
+
+  if (req.env?.MM_RUNTIME_ENV === 'dev') {
+    isAdmin = true;
+  }
 
   successWriter(req, 'success', 'Found/Created user successfully');
   const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin });
@@ -29,10 +33,6 @@ const _validateUser = async (req) => {
 
   const email = req.headers[env.MM_AUTH_EMAIL_HEADER] ?? env.MM_USER_EMAIL;
   const userExist = await User.findOne({ email });
-
-  if (env?.MM_RUNTIME_ENV === 'dev') {
-    userExist.roles = userRoles.isAdmin;
-  }
 
   if (userExist) return userExist;
 
