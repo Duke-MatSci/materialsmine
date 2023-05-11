@@ -5,7 +5,7 @@
         <h4 class="md-title">Comments</h4>
       </div>
 
-      <div v-for="(item, i) in optionalChaining(() => loadComment.comments)" :key="i" 
+      <div v-for="(item, i) in optionalChaining(() => loadComment.comments)" :key="i"
         :class="[isUserMessage(optionalChaining(() => item.user.displayName))
           ? 'md-alignment-bottom-right u--margin-left-auto'
           : 'md-alignment-top-left', 'md-layout-item md-size-85 md-layout u_margin-top-med']"

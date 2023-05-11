@@ -53,7 +53,7 @@ describe('@/components/Snackbar.vue', () => {
     expect(mockFn).toHaveBeenCalled()
   })
 
-  t('modifies the left position with a custom class', () => {
+  it('modifies the left position with a custom class', () => {
     expect.assertions(2)
     expect(wrapper.find('.md-snackbar-adjust').exists()).toBe(true)
     expect(wrapper.vm.position).toBe('left')
