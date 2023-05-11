@@ -5,3 +5,6 @@ package-lock.json
 #ignore coverage
 coverage
 .nyc_output
+
+#file upload directory
+mm_files
