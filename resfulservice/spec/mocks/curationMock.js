@@ -465,8 +465,8 @@ const mockSheetData2 = [
   ],
   [null, null, null, null],
   ['Publication', null, null, null],
-  ['Title', 'Backend developer', null, null],
-  ['Author #1', 'gbolahan adeleke', 'copy and paste more rows if needed', null],
+  ['Title', 'Curation Paper', null, null],
+  ['Author #1', 'Akash Prasad', 'copy and paste more rows if needed', null],
   ['Author #2', null, null, null],
   ['Keyword #1', null, null, null],
   ['Keyword #2', null, null, null],
@@ -978,12 +978,12 @@ const createBaseObject = (obj, savedObj) => {
 
 const mockBaseObject = createBaseObject(jsonStructure, mockCuratedXlsxObject);
 
-const fetchecdCuratedXlsxObject = {
+const fetchedCuratedXlsxObject = {
   object: mockCuratedXlsxObject,
   user: {
     _id: '62f119fb28eedaab012d1262',
-    givenName: 'Gbolahan',
-    surName: 'Adeleke'
+    givenName: 'Akash',
+    surName: 'Prasad'
   },
   _id: '642561166202628c4aff8d59',
   createdAt: '2023-03-30T10:14:46.072Z',
@@ -992,7 +992,7 @@ const fetchecdCuratedXlsxObject = {
   populate: sinon.stub().resolvesThis()
 };
 
-const wrontXlsxFile = [
+const wrongXlsxFile = [
   {
     fieldname: 'uploadfile',
     originalname: 'Matester template.xlsx',
@@ -1069,10 +1069,10 @@ const user = {
 module.exports = {
   user,
   correctXlsxFile,
-  wrontXlsxFile,
+  wrongXlsxFile,
   mockCurationList,
   mockCuratedXlsxObject,
-  fetchecdCuratedXlsxObject,
+  fetchedCuratedXlsxObject,
   mockSheetData,
   updatedCuratedXlsxObject,
   mockBaseObject,

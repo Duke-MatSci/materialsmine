@@ -3,10 +3,10 @@ const sinon = require('sinon');
 const {
   user,
   correctXlsxFile,
-  wrontXlsxFile,
+  wrongXlsxFile,
   mockCurationList,
   mockCuratedXlsxObject,
-  fetchecdCuratedXlsxObject,
+  fetchedCuratedXlsxObject,
   mockSheetData,
   mockSheetData2,
   updatedCuratedXlsxObject,
@@ -59,7 +59,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
     });
 
     it('should return a 400 error if material_template.xlsx file is not uploaded', async function() {
-      req.files.uploadfile = wrontXlsxFile
+      req.files.uploadfile = wrongXlsxFile
       const next = function (fn) {
         return fn;
       };
@@ -107,11 +107,11 @@ describe('Xlsx Controllers Unit Tests:', function() {
         return fn;
       };
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
       sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
-      sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchecdCuratedXlsxObject))
+      sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchedCuratedXlsxObject))
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property('object');
@@ -145,8 +145,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
         return fn;
       };
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(fetchecdCuratedXlsxObject);
-      sinon.stub(XlsxObject, 'findOne').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
       
       const result = await XlsxController.getXlsxCurations(req, res, next);
 
@@ -162,8 +162,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
         return fn;
       };
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(fetchecdCuratedXlsxObject);
-      sinon.stub(XlsxObject, 'findOne').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
       
       const result = await XlsxController.getXlsxCurations(req, res, next);
 
@@ -178,8 +178,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
         return fn;
       };
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(Array(3).fill(fetchecdCuratedXlsxObject));
-      sinon.stub(XlsxObject, 'find').returns({ object: Array(3).fill(fetchecdCuratedXlsxObject), select: sinon.stub().returnsThis()});
+      sinon.stub(res, 'json').returns(Array(3).fill(fetchedCuratedXlsxObject));
+      sinon.stub(XlsxObject, 'find').returns({ object: Array(3).fill(fetchedCuratedXlsxObject), select: sinon.stub().returnsThis()});
       
       const result = await XlsxController.getXlsxCurations(req, res, next);
       expect(result).to.be.an('Array');
@@ -214,7 +214,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ message: "No changes"});
-      sinon.stub(XlsxObject, 'findOne').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
 
       const result = await XlsxController.updateXlsxCurations(req, res, next);
 
@@ -226,9 +226,9 @@ describe('Xlsx Controllers Unit Tests:', function() {
       req.body = { payload: updatedCuratedXlsxObject }
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(fetchecdCuratedXlsxObject);
-      sinon.stub(XlsxObject, 'findOne').returns(fetchecdCuratedXlsxObject);
-      sinon.stub(XlsxObject, 'findOneAndUpdate').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'findOneAndUpdate').returns(fetchedCuratedXlsxObject);
 
       const result = await XlsxController.updateXlsxCurations(req, res, next);
       
