@@ -6,8 +6,10 @@ const { errorWriter } = require('../utils/logWriter');
 const XlsxCurationList = require('../models/xlsxCurationList');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
-  req.logger.info('curateXlsxSpreadsheet Function Entry:');
-  const { user } = req;
+  const { user, logger } = req;
+
+  logger.info('curateXlsxSpreadsheet Function Entry:');
+
   if (!req.files?.uploadfile) {
     return next(errorWriter(req, 'Material template files not uploaded', 'curateXlsxSpreadsheet', 400));
   }
@@ -20,7 +22,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   }
 
   try {
-    const [validList, storedObjects] = await Promise.all([
+    const [validList, storedCurations] = await Promise.all([
       XlsxCurationList.find({}, null, { lean: true }),
       XlsxObject.find({ user: user._id }, { object: 1 }, { lean: true })
     ]);
@@ -31,7 +33,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (result?.count) return res.status(400).json({ errors: result.errors });
 
-    const curatedAlready = storedObjects.find(
+    const curatedAlready = storedCurations.find(
       object => object?.['data origin']?.Title === result?.['data origin']?.Title &&
       object?.['data origin']?.['Publication Type'] === result?.['data origin']?.['Publication Type']);
 
