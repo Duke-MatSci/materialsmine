@@ -1,0 +1,139 @@
+<template>
+  <div ref="structurePlot"></div>
+</template>
+
+<script>
+import * as d3 from "d3";
+import { mapState } from "vuex";
+
+const MARGIN = {
+  TOP: 30,
+  RIGHT: 30,
+  BOTTOM: 30,
+  LEFT: 30,
+};
+const SIDE = 230;
+const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT;
+const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM;
+
+export default {
+  name: "structure-plot",
+  computed: {
+    ...mapState("metamineNU", {
+      dataPoint: (state) => state.dataPoint,
+    }),
+  },
+  watch: {
+    dataPoint: {
+      handler: function (val, oldVal) {
+        this.update(val);
+      },
+      deep: true,
+    },
+  },
+  mounted() {
+    this.createSvg(this.dataPoint);
+  },
+  methods: {
+    createSvg(dataPoint) {
+      let height = dataPoint.height ? dataPoint.height : HEIGHT;
+      let width = dataPoint.width ? dataPoint.width : WIDTH;
+      let marginLeft = dataPoint.marginLeft ? dataPoint.marginLeft : MARGIN.LEFT;
+      let marginTop = dataPoint.marginTop ? dataPoint.marginTop : MARGIN.TOP;
+      this.svg = d3
+        .select(this.$refs.structurePlot)
+        .append("svg")
+        .attr("width", width + marginLeft * 2)
+        .attr("height", height + marginTop * 2)
+        .attr("viewBox", [0, 0, width + marginLeft * 2, height + marginTop * 2])
+        .style("z-index", 10)
+        .style("margin-top", "30px")
+        .append("g")
+        .attr("transform", `translate(${marginLeft}, ${marginTop})`);
+
+      this.svg
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", 0 - marginTop / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", dataPoint.fontSize ? dataPoint.fontSize : "16px")
+        .style("font-family", "Arial, sans-serif")
+        .text("Unit Cell Geometry");
+
+      this.svg
+        .append("text")
+        .attr("x", width / 2)
+        .attr("y", height + marginTop)
+        .attr("class", "volumn-ratio")
+        .attr("text-anchor", "middle")
+        .style("font-size", dataPoint.fontSize ? dataPoint.fontSize : "16px")
+        .style("font-family", "Arial, sans-serif");
+
+      this.update(dataPoint);
+    },
+
+    update(dataPoint) {
+      const data = dataPoint.geometry;
+      const color = dataPoint.outline_color;
+      let height = dataPoint.height ? dataPoint.height : HEIGHT;
+      let width = dataPoint.width ? dataPoint.width : WIDTH;
+      let marginLeft = dataPoint.marginLeft ? dataPoint.marginLeft : MARGIN.LEFT;
+      let marginTop = dataPoint.marginTop ? dataPoint.marginTop : MARGIN.TOP;
+
+      let res = [];
+      res = this.pixelate(data, color);
+      const yScale = d3.scaleLinear().domain([0, 50]).range([height, 0]);
+
+      const xScale = d3.scaleLinear().domain([0, 50]).range([0, width]);
+
+      const size = (width + marginLeft * 2) / 50;
+      let ratio = this.calculateRatio(this.data);
+      this.svg.select(".volumn-ratio").text(`Volumn Ratio: ${ratio}`);
+
+      const pixels = this.svg.selectAll("rect").data(res);
+      pixels
+        .enter()
+        .append("rect")
+        .merge(pixels)
+        .attr("x", (d) => xScale(d.x))
+        .attr("y", (d) => yScale(d.y))
+        .attr("width", size)
+        .attr("height", size)
+        .attr("fill", (d) => d.fill);
+
+      pixels.exit().remove();
+    },
+
+    calculateRatio(data) {
+      if (!data) return 0;
+      let count_1 = 0;
+      const xSquares = 50;
+      const ySquares = 50;
+      let d = [];
+      for (let i = 0; i < xSquares; i++) {
+        for (let j = 0; j < ySquares; j++) {
+          if (data[i * xSquares + j] == "1") count_1++;
+        }
+      }
+      return (count_1 / (xSquares * ySquares)).toFixed(2);
+    },
+
+    pixelate(data, color) {
+      if (!data) return [];
+      const xSquares = 50;
+      const ySquares = 50;
+      let d = [];
+      for (let i = 0; i < xSquares; i++) {
+        for (let j = 0; j < ySquares; j++) {
+          d.push({
+            x: i,
+            y: j,
+            fill: data[i * xSquares + j] == "0" ? "white" : color,
+          });
+        }
+      }
+      return d;
+    },
+  },
+};
+</script>

@@ -5,6 +5,7 @@ import explorer from './modules/explorer/index.js'
 import miscModule from './modules/misc/index.js'
 import vegaModule from './modules/vega/index.js'
 import nanomine from './modules/nanomine/index.js'
+import metamineNU from './modules/metamineNU/index.js'
 
 Vue.use(Vuex)
 
@@ -14,6 +15,7 @@ export default new Vuex.Store({
     explorer,
     misc: miscModule,
     vega: vegaModule,
-    nanomine
+    nanomine,
+    metamineNU
   }
 })
