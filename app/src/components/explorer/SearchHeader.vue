@@ -19,7 +19,8 @@
 						</li>
 					</ul>
 				</div>
-        <div style="text-align:right"> Query "{{searchWord}}" found {{getTotal}} results </div>
+        <div style="text-align:right" v-if="getTotal > 1"><strong>{{getTotal}}</strong> results for "{{searchWord}}" </div>
+        <div style="text-align:right" v-else>Found {{getTotal}} result for query "{{searchWord}}" </div>
         </md-card>
         <md-tabs class="btn--primary">
             <md-tab :md-label="'Articles (' + passTotal.getArticles + ')'" @click.prevent="setResultsTabs('getArticles')"></md-tab>
