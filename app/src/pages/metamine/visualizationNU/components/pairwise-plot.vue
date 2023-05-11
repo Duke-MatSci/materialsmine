@@ -3,61 +3,58 @@
 </template>
 
 <script>
-import * as d3 from "d3";
-import { processData } from "@/pages/metamine/visualizationNU/processData";
+import * as d3 from 'd3'
+import { processData } from '@/pages/metamine/visualizationNU/processData'
 
-const link = "https://gist.githubusercontent.com/Cynthia2019/837a01c52c4c17d7b31dbd8ad3045878/raw/703d9fcdefcf28a084709ad6a98f403303aba5bd/ideal_freeform_2d_sample.csv"
+const margin = { top: 10, right: 20, bottom: 50, left: 100 }
+const width = 968
+const height = width
+const padding = 20
 
-const margin = { top: 10, right: 20, bottom: 50, left: 100 };
-const width = 968;
-const height = width;
-const padding = 20;
-
-function expo(x, f) {
-  if (x < 1000 && x > -1000) return x;
-  return Number(x).toExponential(f);
+function expo (x, f) {
+  if (x < 1000 && x > -1000) return x
+  return Number(x).toExponential(f)
 }
 
 export default {
-  name: "pairwise-plot",
+  name: 'pairwise-plot',
   mounted: async function () {
-    const bucket_name = "ideal-dataset-1";
-    const fetchedNamesResponse = await fetch(`/api/aws/${bucket_name}`).then(
+    const bucketName = 'ideal-dataset-1'
+    const fetchedNamesResponse = await fetch(`/api/aws/${bucketName}`).then(
       (response) => {
-        return response.json();
+        return response.json()
       }
-    );
-    this.fetchedNames = fetchedNamesResponse.fetchedNames;
+    )
+    this.fetchedNames = fetchedNamesResponse.fetchedNames
 
     this.fetchedNames.map(async (info, index) => {
-      const fetchedData = await fetch(`/api/aws/${bucket_name}/${info.name}`)
+      const fetchedData = await fetch(`/api/aws/${bucketName}/${info.name}`)
         .then((response) => {
-          return response.json();
+          return response.json()
         })
         .then((data) => {
-          return data.fetchedData;
-        });
+          return data.fetchedData
+        })
       const processedData = fetchedData.map((dataset, index) => {
-        return processData(dataset, index);
-      });
-      processedData.map((p) => (p.name = info.name));
-      processedData.map((p) => (p.color = info.color));
-      this.csvData.push(...processedData);
-      this.activeData.push(...processedData);
-      this.dataPoint = processedData[0];
-    
+        return processData(dataset, index)
+      })
+      processedData.map((p) => (p.name = info.name))
+      processedData.map((p) => (p.color = info.color))
+      this.csvData.push(...processedData)
+      this.activeData.push(...processedData)
+      this.dataPoint = processedData[0]
 
-      this.$store.dispatch("metamineNU/setDatasets", this.csvData,  { root: true });
-      this.$store.dispatch("metamineNU/setActiveData", this.activeData,  { root: true });
-      this.$store.dispatch("metamineNU/setDataPoint", this.dataPoint,  { root: true });
+      this.$store.dispatch('metamineNU/setDatasets', this.csvData, { root: true })
+      this.$store.dispatch('metamineNU/setActiveData', this.activeData, { root: true })
+      this.$store.dispatch('metamineNU/setDataPoint', this.dataPoint, { root: true })
       // this.$store.commit("metamineNU/setDataPoint", this.dataPoint);
       // console.log('dataPoint', this.dataPoint, this.$store.getters, this.$store.state)
-    });
-    this.container = this.$refs.pairwisePlot;
+    })
+    this.container = this.$refs.pairwisePlot
     this.createSvg({
       container: this.container,
-      columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
-    });
+      columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
+    })
 
     // this.csvData = await d3.csv(link).then((data) => {
     //   return data
@@ -65,187 +62,189 @@ export default {
     // console.log(this.csvData)
     // this.csvData.map(p => p.color = 'purple')
 
-    this.$store.dispatch("metamineNU/setFetchedNames", this.fetchedNames, { root: true });
+    this.$store.dispatch('metamineNU/setFetchedNames', this.fetchedNames, { root: true })
 
     if (this.chart && this.csvData.length > 0) {
       this.update(
         {
-          columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
+          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
           container: this.container,
-          max_num_datasets: this.fetchedNames.length
-          
-        },
-      );
+          maxNumDatasets: this.fetchedNames.length
+
+        }
+      )
     }
   },
-  data() {
+  data () {
     return {
       csvData: [],
       activeData: [],
       dataPoint: {},
       fetchedNames: [],
-      chart: false,
-    };
+      chart: false
+    }
   },
   watch: {
     csvData: {
       deep: true,
-      handler(newVal, oldVal) {
+      handler (newVal, oldVal) {
         this.update(
           {
-            columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
+            columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
             container: this.container,
-            max_num_datasets: this.fetchedNames.length
-            
-          },
-        );
-      },
+            maxNumDatasets: this.fetchedNames.length
+
+          }
+        )
+      }
     },
     activeData: {
       deep: true,
-      handler(newVal, oldVal) {
+      handler (newVal, oldVal) {
         this.update(
           {
-            columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
+            columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
             container: this.container,
-            max_num_datasets: this.fetchedNames.length
-            
-          },
-        );
-      },
+            maxNumDatasets: this.fetchedNames.length
+
+          }
+        )
+      }
     },
     fetchedNames: {
-      handler(newVal, oldVal) {
+      handler (newVal, oldVal) {
         this.update(
           {
-            columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
+            columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
             container: this.container,
-            max_num_datasets: this.fetchedNames.length
-            
-          },
-        );
-      },
+            maxNumDatasets: this.fetchedNames.length
+
+          }
+        )
+      }
     },
     dataPoint: {
-        handler(newVal, oldVal) {
-            this.$store.dispatch("metamineNU/setDataPoint", newVal,  { root: true });
-            console.log('data point change pairwise')
-        }
+      handler (newVal, oldVal) {
+        this.$store.dispatch('metamineNU/setDataPoint', newVal, { root: true })
+        console.log('data point change pairwise')
+      }
     }
   },
   methods: {
-    createSvg({ container, columns }) {
-      const data = this.csvData;
-      var x = columns;
-      var y = columns;
-      var z = () => 1;
-      var zDomain = undefined;
-      const fillOpacity = 0.7;
+    createSvg ({ container, columns }) {
+      const data = this.csvData
+      var x = columns
+      var y = columns
+      var z = () => 1
+      var zDomain
+      const fillOpacity = 0.7
 
       // Compute values (and promote column names to accessors).
       const X = d3.map(x, (x) =>
-        d3.map(data, typeof x === "function" ? x : (d) => +d[x])
-      );
+        d3.map(data, typeof x === 'function' ? x : (d) => +d[x])
+      )
       const Y = d3.map(y, (y) =>
-        d3.map(data, typeof y === "function" ? y : (d) => +d[y])
-      );
-      const Z = d3.map(data, z);
+        d3.map(data, typeof y === 'function' ? y : (d) => +d[y])
+      )
+      const Z = d3.map(data, z)
 
       // Compute default z-domain, and unique the z-domain.
-      if (zDomain === undefined) zDomain = Z;
-      zDomain = new d3.InternSet(zDomain);
+      if (zDomain === undefined) zDomain = Z
+      zDomain = new d3.InternSet(zDomain)
 
       const svg = d3
         .select(container)
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .attr("viewBox", [-margin.left, -margin.top, width, height])
-        .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('viewBox', [-margin.left, -margin.top, width, height])
+        .attr('style', 'max-width: 100%; height: auto; height: intrinsic;')
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
         (width - margin.left - margin.right - (X.length - 1) * padding) /
-        X.length;
+        X.length
       const cellHeight =
         (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
-        Y.length;
+        Y.length
 
       const cell = svg
-        .append("g")
-        .selectAll("g")
+        .append('g')
+        .selectAll('g')
         .data(d3.cross(d3.range(X.length), d3.range(Y.length)))
-        .join("g")
-        .attr("fill-opacity", fillOpacity)
+        .join('g')
+        .attr('fill-opacity', fillOpacity)
         .attr(
-          "transform",
+          'transform',
           ([i, j]) =>
             `translate(${i * (cellWidth + padding)},${
               j * (cellHeight + padding)
             })`
-        );
+        )
 
       cell
-        .append("rect")
-        .attr("fill", "white")
-        .attr("stroke", "grey")
-        .attr("stroke-width", 2)
-        .attr("width", cellWidth)
-        .attr("height", cellHeight)
-        .attr("class", "cell");
+        .append('rect')
+        .attr('fill', 'white')
+        .attr('stroke', 'grey')
+        .attr('stroke-width', 2)
+        .attr('width', cellWidth)
+        .attr('height', cellHeight)
+        .attr('class', 'cell')
 
-      if (x === y)
+      if (x === y) {
         svg
-          .append("g")
-          .attr("font-size", 14)
-          .attr("font-family", "sans-serif")
-          .attr("font-weight", "bold")
-          .selectAll("text")
+          .append('g')
+          .attr('font-size', 14)
+          .attr('font-family', 'sans-serif')
+          .attr('font-weight', 'bold')
+          .selectAll('text')
           .data(x)
-          .join("text")
+          .join('text')
           .attr(
-            "transform",
+            'transform',
             (d, i) =>
               `translate(${0 - margin.left + padding * 1.5},${
                 i * (cellHeight + padding) + margin.top * 9
               }) rotate(270)`
           )
-          .attr("x", padding / 2)
-          .attr("y", padding / 2)
-          .attr("dy", ".71em")
-          .text((d) => d);
+          .attr('x', padding / 2)
+          .attr('y', padding / 2)
+          .attr('dy', '.71em')
+          .text((d) => d)
+      }
 
-      if (x === y)
+      if (x === y) {
         svg
-          .append("g")
-          .attr("font-size", 14)
-          .attr("font-family", "sans-serif")
-          .attr("font-weight", "bold")
-          .selectAll("text")
+          .append('g')
+          .attr('font-size', 14)
+          .attr('font-family', 'sans-serif')
+          .attr('font-weight', 'bold')
+          .selectAll('text')
           .data(y)
-          .join("text")
+          .join('text')
           .attr(
-            "transform",
+            'transform',
             (d, i) =>
               `translate(${
                 i * (cellWidth + padding) + margin.bottom - padding / 2
               },${cellHeight * 6 + margin.bottom + padding * 4})`
           )
-          .attr("x", padding / 2)
-          .attr("y", padding / 2)
-          .text((d) => d);
-      this.chart = true;
-      this.svg = svg;
-      this.cell = cell;
-      this.cellWidth = cellWidth;
-      this.cellHeight = cellHeight;
-      this.X = X;
-      this.Y = Y;
-      this.Z = Z;
-      this.zDomain = zDomain;
+          .attr('x', padding / 2)
+          .attr('y', padding / 2)
+          .text((d) => d)
+      }
+      this.chart = true
+      this.svg = svg
+      this.cell = cell
+      this.cellWidth = cellWidth
+      this.cellHeight = cellHeight
+      this.X = X
+      this.Y = Y
+      this.Z = Z
+      this.zDomain = zDomain
     },
 
-    renderAxis(
+    renderAxis (
       {
         data,
         columns = data.columns, // array of column names, or accessor functions
@@ -259,75 +258,75 @@ export default {
         fillOpacity = 0.7, // opacity of the dots
         colors = d3.schemeCategory10, // array of colors for z
         container = this.container
-      } = {},
+      } = {}
     ) {
       const X = d3.map(x, (x) =>
-        d3.map(data, typeof x === "function" ? x : (d) => +d[x])
-      );
+        d3.map(data, typeof x === 'function' ? x : (d) => +d[x])
+      )
       const Y = d3.map(y, (y) =>
-        d3.map(data, typeof y === "function" ? y : (d) => +d[y])
-      );
-      const Z = d3.map(data, z);
+        d3.map(data, typeof y === 'function' ? y : (d) => +d[y])
+      )
+      const Z = d3.map(data, z)
 
       // Compute default z-domain, and unique the z-domain.
-      if (zDomain === undefined) zDomain = Z;
-      zDomain = new d3.InternSet(zDomain);
+      if (zDomain === undefined) zDomain = Z
+      zDomain = new d3.InternSet(zDomain)
 
-      // Omit any data not present in the z-domain.
-      const I = d3.range(Z.length).filter((i) => zDomain.has(Z[i]));
+    //   // Omit any data not present in the z-domain.
+    //   const I = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
         (width - margin.left - margin.right - (X.length - 1) * padding) /
-        X.length;
+        X.length
       const cellHeight =
         (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
-        Y.length;
+        Y.length
 
       // Construct scales and axes.
-      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]));
-      const yScales = Y.map((Y) => yType(d3.extent(Y), [cellHeight, 0]));
+      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
+      const yScales = Y.map((Y) => yType(d3.extent(Y), [cellHeight, 0]))
       const xAxis = d3
         .axisBottom()
         .tickFormat((x) => `${expo(x, 0)}`)
-        .ticks(3);
+        .ticks(3)
       const yAxis = d3
         .axisLeft()
         .tickFormat((x) => `${expo(x, 0)}`)
-        .ticks(3);
+        .ticks(3)
       this.svg
-        .append("g")
-        .selectAll("g")
+        .append('g')
+        .selectAll('g')
         .data(yScales)
-        .join("g")
+        .join('g')
         .attr(
-          "transform",
+          'transform',
           (d, i) => `translate(0,${i * (cellHeight + padding)})`
         )
-        .attr("class", "yAxisGroup")
+        .attr('class', 'yAxisGroup')
         .each(function (yScale) {
-          d3.select(this).call(yAxis.scale(yScale));
-        });
+          d3.select(this).call(yAxis.scale(yScale))
+        })
 
       this.svg
-        .append("g")
-        .selectAll(".xAxisGroup")
+        .append('g')
+        .selectAll('.xAxisGroup')
         .data(xScales)
-        .join("g")
+        .join('g')
         .attr(
-          "transform",
+          'transform',
           (d, i) =>
             `translate(${i * (cellWidth + padding)}, ${
               height - margin.bottom - margin.top
             })`
         )
-        .attr("class", "xAxisGroup")
+        .attr('class', 'xAxisGroup')
         .each(function (xScale, columns) {
-          d3.select(this).call(xAxis.scale(xScale));
-        });
+          d3.select(this).call(xAxis.scale(xScale))
+        })
     },
 
-    update(
+    update (
       {
         columns, // array of column names, or accessor functions
         x = columns, // array of x-accessors
@@ -339,121 +338,121 @@ export default {
         zDomain, // array of z-values
         fillOpacity = 0.7, // opacity of the dots
         colors = {}, // array of colors for z
-      
-      container,
-      router,
-      max_num_datasets
+
+        container,
+        router,
+        maxNumDatasets
       }
     ) {
-      console.log("updating...");
+      console.log('updating...')
       const self = this
 
-      const circleFocusSize = 7;
-      const circleSize = 3.5;
-      let datasets = [];
-      let dataset_dic = {};
-      for (let i = 0; i < max_num_datasets; i++) {
-        datasets.push([]);
+      const circleFocusSize = 7
+      const circleSize = 3.5
+      const datasets = []
+      const datasetDic = {}
+      for (let i = 0; i < maxNumDatasets; i++) {
+        datasets.push([])
       }
-      const data = this.csvData;
-      let organizedData = this.organizeByName(data);
+      const data = this.csvData
+      const organizedData = this.organizeByName(data)
       organizedData.map((d, i) => {
-        colors[d.name] = d.color;
-        datasets[i] = d.data ? d.data : [];
-        dataset_dic[i] = d.name;
-      });
+        colors[d.name] = d.color
+        datasets[i] = d.data ? d.data : []
+        datasetDic[i] = d.name
+      })
 
-      let finalData = [].concat(...datasets);
+      const finalData = [].concat(...datasets)
 
-      //clean up before updating visuals
-      d3.selectAll(".xAxisGroup").remove();
-      d3.selectAll(".yAxisGroup").remove();
-      d3.selectAll(".legend").remove();
-      d3.selectAll("circle").remove();
-      d3.selectAll(".tooltip_circ").remove();
+      // clean up before updating visuals
+      d3.selectAll('.xAxisGroup').remove()
+      d3.selectAll('.yAxisGroup').remove()
+      d3.selectAll('.legend').remove()
+      d3.selectAll('circle').remove()
+      d3.selectAll('.tooltip_circ').remove()
 
-      for (let i = 0; i < max_num_datasets; i++) {
-        d3.selectAll(".group" + i).remove();
+      for (let i = 0; i < maxNumDatasets; i++) {
+        d3.selectAll('.group' + i).remove()
       }
       this.renderAxis(
         {
           data: finalData,
-          columns: ["C11", "C12", "C22", "C16", "C26", "C66"],
+          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
           // z: d => d.species
           colors: data.color,
-          container: container,
-        },
-      );
+          container: container
+        }
+      )
 
-      let tooltip_hist = d3
+      const tooltipHist = d3
         .select(container.current)
-        .append("div")
-        .attr("class", "tooltip_hist")
-        .style("position", "fixed")
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "1px")
-        .style("border-radius", "5px")
-        .style("padding", "10px")
-        .style("visibility", "hidden");
+        .append('div')
+        .attr('class', 'tooltip_hist')
+        .style('position', 'fixed')
+        .style('background-color', 'white')
+        .style('border', 'solid')
+        .style('border-width', '1px')
+        .style('border-radius', '5px')
+        .style('padding', '10px')
+        .style('visibility', 'hidden')
 
-      let tooltip_circ = d3
+      const tooltipCirc = d3
         .select(container.current)
-        .append("div")
-        .attr("class", "tooltip_circ")
-        .style("position", "fixed")
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "1px")
-        .style("border-radius", "5px")
-        .style("padding", "10px")
-        .style("visibility", "hidden");
+        .append('div')
+        .attr('class', 'tooltip_circ')
+        .style('position', 'fixed')
+        .style('background-color', 'white')
+        .style('border', 'solid')
+        .style('border-width', '1px')
+        .style('border-radius', '5px')
+        .style('padding', '10px')
+        .style('visibility', 'hidden')
 
-      let mouseover_circ = function (e, d) {
+      const mouseoverCirc = function (e, d) {
         d3.select(this)
-          .attr("r", circleFocusSize)
-          .style("stroke", "black")
-          .style("stroke-width", 2)
-          .style("fill-opacity", 1);
-        self.dataPoint = finalData[d];
-        tooltip_circ.style("visibility", "visible").transition().duration(200);
-      };
+          .attr('r', circleFocusSize)
+          .style('stroke', 'black')
+          .style('stroke-width', 2)
+          .style('fill-opacity', 1)
+        self.dataPoint = finalData[d]
+        tooltipCirc.style('visibility', 'visible').transition().duration(200)
+      }
 
-      let mouseleave_circ = function (e, d) {
-        tooltip_circ.style("visibility", "hidden").transition().duration(200);
+      const mouseleaveCirc = function (e, d) {
+        tooltipCirc.style('visibility', 'hidden').transition().duration(200)
         d3.select(this)
-          .attr("r", circleSize)
-          .style("stroke", "none")
-          .style("stroke-width", 2)
-          .style("fill-opacity", 0.8);
-      };
+          .attr('r', circleSize)
+          .style('stroke', 'none')
+          .style('stroke-width', 2)
+          .style('fill-opacity', 0.8)
+      }
 
-      let mouseleave_rec = function (e, d) {
-        tooltip_hist.style("visibility", "hidden").transition().duration(200);
+      const mouseleaveRec = function (e, d) {
+        tooltipHist.style('visibility', 'hidden').transition().duration(200)
         d3.select(this)
-          .style("fill", "white")
-          .style("stroke", "grey")
-          .style("stroke-width", 2)
-          .style("fill-opacity", 0.8);
-      };
+          .style('fill', 'white')
+          .style('stroke', 'grey')
+          .style('stroke-width', 2)
+          .style('fill-opacity', 0.8)
+      }
 
-      let mouseover_hist = function (e, d) {
+      const mouseoverHist = function (e, d) {
         d3.select(this)
-          .style("stroke", "black")
-          .style("stroke-width", 5)
-          .style("fill-opacity", 1);
-        tooltip_hist.style("visibility", "visible").transition().duration(200);
-      };
+          .style('stroke', 'black')
+          .style('stroke-width', 5)
+          .style('fill-opacity', 1)
+        tooltipHist.style('visibility', 'visible').transition().duration(200)
+      }
 
-      let mouseover_non_hist = function (e, d) {
+      const mouseoverNonHist = function (e, d) {
         d3.select(this)
-          .style("stroke", "black")
-          .style("stroke-width", 4)
-          .style("fill-opacity", 1);
-      };
+          .style('stroke', 'black')
+          .style('stroke-width', 4)
+          .style('fill-opacity', 1)
+      }
 
-      let mousedown_non_hist = function (e, d) {
-        d3.select(container.current).remove();
+      const mousedownNonHist = function (e, d) {
+        d3.select(container.current).remove()
         // router.push({
         //   pathname: "/scatter",
         //   query: {
@@ -461,189 +460,189 @@ export default {
         //     pairwise_query2: x[d[1]],
         //   },
         // });
-      };
+      }
 
-      let mousedown_hist = function (e, d) {
-        d3.select(container.current).remove();
+      const mousedownHist = function (e, d) {
+        d3.select(container.current).remove()
         // router.push({
         //   pathname: "/hist",
         //   query: {
         //     pairwise_query1: x[d[0]],
         //   },
         // });
-      };
+      }
 
-      let mousemove_circ = function (e, d) {
-        tooltip_circ
+      const mousemoveCirc = function (e, d) {
+        tooltipCirc
           .html(
-            "Dataset: " +
-              dataset_dic[Math.floor(d / datasets[0].length)] +
-              "<br>symmetry: " +
-              finalData[d]["symmetry"]
+            'Dataset: ' +
+              datasetDic[Math.floor(d / datasets[0].length)] +
+              '<br>symmetry: ' +
+              finalData[d].symmetry
           )
-          .style("top", e.pageY - 85 + "px")
-          .style("left", e.pageX - 165 + "px");
-      };
+          .style('top', e.pageY - 85 + 'px')
+          .style('left', e.pageX - 165 + 'px')
+      }
 
-      let mousemove_hist = function (e, d) {
-        let column = columns[parseInt(d)];
-        let temp_arr = [...finalData.map((data) => data[column])];
-        tooltip_hist
+      const mousemoveHist = function (e, d) {
+        const column = columns[parseInt(d)]
+        const tempArr = [...finalData.map((data) => data[column])]
+        tooltipHist
           .html(
-            "Column: " +
+            'Column: ' +
               column +
-              "<br>Range: " +
-              (d3.min(temp_arr) > 0 ? d3.min(temp_arr) : 0) +
-              " to " +
-              (d3.max(temp_arr) > 0 ? d3.max(temp_arr) : 0) +
-              "<br>Mean: " +
-              d3.mean(temp_arr) +
-              "<br>Median: " +
-              d3.median(temp_arr)
+              '<br>Range: ' +
+              (d3.min(tempArr) > 0 ? d3.min(tempArr) : 0) +
+              ' to ' +
+              (d3.max(tempArr) > 0 ? d3.max(tempArr) : 0) +
+              '<br>Mean: ' +
+              d3.mean(tempArr) +
+              '<br>Median: ' +
+              d3.median(tempArr)
           )
-          .style("top", e.pageY - 110 + "px")
-          .style("left", e.pageX + 10 + "px");
-      };
+          .style('top', e.pageY - 110 + 'px')
+          .style('left', e.pageX + 10 + 'px')
+      }
 
       // Compute values (and promote column names to accessors).
       const X = d3.map(x, (x) =>
-        d3.map(finalData, typeof x === "function" ? x : (d) => +d[x])
-      );
+        d3.map(finalData, typeof x === 'function' ? x : (d) => +d[x])
+      )
       const Y = d3.map(y, (y) =>
-        d3.map(finalData, typeof y === "function" ? y : (d) => +d[y])
-      );
-      const Z = d3.map(finalData, z);
+        d3.map(finalData, typeof y === 'function' ? y : (d) => +d[y])
+      )
+      const Z = d3.map(finalData, z)
 
       // Compute default z-domain, and unique the z-domain.
-      if (zDomain === undefined) zDomain = Z;
-      zDomain = new d3.InternSet(zDomain);
+      if (zDomain === undefined) zDomain = Z
+      zDomain = new d3.InternSet(zDomain)
 
       // Omit any data not present in the z-domain.
-      const I = d3.range(Z.length).filter((i) => zDomain.has(Z[i]));
+      const I = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
         (width - margin.left - margin.right - (X.length - 1) * padding) /
-        X.length;
+        X.length
       const cellHeight =
         (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
-        Y.length;
+        Y.length
 
       // Construct scales and axes.
-      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]));
-      const yScales = Y.map((Y) => yType(d3.extent(Y), [cellHeight, 0]));
+      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
+      const yScales = Y.map((Y) => yType(d3.extent(Y), [cellHeight, 0]))
 
       this.cell.each(function ([x, y]) {
-        if (x != y) {
+        if (x !== y) {
           d3.select(this)
-            .select(".cell")
-            .attr("class", "non_hist")
-            .on("mouseover", mouseover_non_hist)
-            .on("mousedown", mousedown_non_hist)
-            .on("mouseout", mouseleave_rec);
+            .select('.cell')
+            .attr('class', 'non_hist')
+            .on('mouseover', mouseoverNonHist)
+            .on('mousedown', mousedownNonHist)
+            .on('mouseout', mouseleaveRec)
 
           d3.select(this)
-            .selectAll("circle")
+            .selectAll('circle')
             .data(I.filter((i) => !isNaN(X[x][i]) && !isNaN(Y[y][i])))
-            .join("circle")
-            .attr("r", circleSize)
-            .attr("cx", (i) => xScales[x](X[x][i]))
-            .attr("cy", (i) => yScales[y](Y[y][i]))
-            .attr("fill", (i) => finalData[i].color)
-            .on("mouseover", mouseover_circ)
-            .on("mouseleave", mouseleave_circ)
-            .on("mousemove", mousemove_circ);
+            .join('circle')
+            .attr('r', circleSize)
+            .attr('cx', (i) => xScales[x](X[x][i]))
+            .attr('cy', (i) => yScales[y](Y[y][i]))
+            .attr('fill', (i) => finalData[i].color)
+            .on('mouseover', mouseoverCirc)
+            .on('mouseleave', mouseleaveCirc)
+            .on('mousemove', mousemoveCirc)
         } else {
           d3.select(this)
-            .selectAll(".cell")
-            .attr("class", "hist")
-            .on("mouseover", mouseover_hist)
-            .on("mouseleave", mouseleave_rec)
-            .on("mousemove", mousemove_hist)
-            .on("mousedown", mousedown_hist);
+            .selectAll('.cell')
+            .attr('class', 'hist')
+            .on('mouseover', mouseoverHist)
+            .on('mouseleave', mouseleaveRec)
+            .on('mousemove', mousemoveHist)
+            .on('mousedown', mousedownHist)
 
-          for (let i = 0; i < max_num_datasets; i++) {
-            let a = columns;
-            let b = columns;
+          for (let i = 0; i < maxNumDatasets; i++) {
+            const a = columns
+            const b = columns
 
-            let X0 = d3.map(a, (a) =>
-              d3.map(datasets[i], typeof a === "function" ? a : (d) => +d[a])
-            );
+            const X0 = d3.map(a, (a) =>
+              d3.map(datasets[i], typeof a === 'function' ? a : (d) => +d[a])
+            )
             let Y0 = d3.map(b, (b) =>
-              d3.map(datasets[i], typeof b === "function" ? b : (d) => +d[b])
-            );
-            const Z = d3.map(datasets[i], z);
+              d3.map(datasets[i], typeof b === 'function' ? b : (d) => +d[b])
+            )
+            const Z = d3.map(datasets[i], z)
 
             // Omit any data not present in the z-domain.
-            let I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]));
-            const thresholds = 40;
-            Y0 = d3.map(Y0[y], () => 1);
+            const I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
+            const thresholds = 40
+            Y0 = d3.map(Y0[y], () => 1)
             const bins = d3
               .bin()
               .thresholds(thresholds)
-              .value((i) => X0[x][i])(I0);
-            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]));
+              .value((i) => X0[x][i])(I0)
+            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]))
 
             // Compute default domains.
-            const xDomain = [bins[0].x0, bins[bins.length - 1].x1];
-            const yDomain = [0, d3.max(Y1)];
+            const xDomain = [bins[0].x0, bins[bins.length - 1].x1]
+            const yDomain = [0, d3.max(Y1)]
 
             // Construct scales and axes.
-            const xRange = [0, cellWidth];
-            const yRange = [cellHeight, 0];
-            const xScale = xType(xDomain, xRange);
-            const yScale = yType(yDomain, yRange);
+            const xRange = [0, cellWidth]
+            const yRange = [cellHeight, 0]
+            const xScale = xType(xDomain, xRange)
+            const yScale = yType(yDomain, yRange)
 
-            const insetLeft = 0.5;
-            const insetRight = 0.5;
+            const insetLeft = 0.5
+            const insetRight = 0.5
 
-            //when two dataset are selected, shows one color, but shows none when 1 or none are selected
+            // when two dataset are selected, shows one color, but shows none when 1 or none are selected
 
-            if (datasets[i].length == 0) {
-              d3.selectAll(".group" + i).remove();
+            if (datasets[i].length === 0) {
+              d3.selectAll('.group' + i).remove()
             } else {
-              let histogram = d3
+              const histogram = d3
                 .select(this)
-                .append("g")
-                .attr("class", "group" + i);
+                .append('g')
+                .attr('class', 'group' + i)
               histogram
-                .selectAll("rect")
+                .selectAll('rect')
                 .data(bins)
-                .join("rect")
-                .attr("fill", colors[dataset_dic[i]])
-                .attr("x", (d) => xScale(d.x0) + insetLeft)
-                .attr("width", (d) =>
-                  bins.length == 1
+                .join('rect')
+                .attr('fill', colors[datasetDic[i]])
+                .attr('x', (d) => xScale(d.x0) + insetLeft)
+                .attr('width', (d) =>
+                  bins.length === 1
                     ? 5
                     : Math.max(
-                        0,
-                        xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
-                      )
+                      0,
+                      xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
+                    )
                 )
-                .attr("y", (d, i) => yScale(Y1[i]))
-                .attr("height", (d, i) => yScale(0) - yScale(Y1[i]));
+                .attr('y', (d, i) => yScale(Y1[i]))
+                .attr('height', (d, i) => yScale(0) - yScale(Y1[i]))
 
-              histogram.exit().remove();
+              histogram.exit().remove()
             }
           }
         }
-      });
+      })
     },
     organizeByName: (data) => {
-      const dataset_names = [...new Set(data.map((d) => d.name))];
+      const datasetNames = [...new Set(data.map((d) => d.name))]
 
-      let datasets = [];
+      const datasets = []
 
-      dataset_names.map((name, i) => {
+      datasetNames.map((name, i) => {
         datasets.push({
           name: name,
           color: data.filter((d) => d.name === name)[0].color,
-          data: data.filter((d) => d.name === name),
-        });
-      });
+          data: data.filter((d) => d.name === name)
+        })
+      })
 
-      return datasets;
-    },
-  },
-};
+      return datasets
+    }
+  }
+}
 </script>

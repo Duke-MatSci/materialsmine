@@ -22,20 +22,20 @@
 </template>
 
 <script>
-import PairwisePlot from "./components/pairwise-plot.vue";
-import DataSelector from "./components/data-selector.vue";
-import Youngs from "@/pages/metamine/visualizationNU/components/youngs.vue";
-import Poisson from "@/pages/metamine/visualizationNU/components/poisson.vue";
-import Structure from "@/pages/metamine/visualizationNU/components/structure.vue";
+import PairwisePlot from './components/pairwise-plot.vue'
+import DataSelector from './components/data-selector.vue'
+import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
+import Poisson from '@/pages/metamine/visualizationNU/components/poisson.vue'
+import Structure from '@/pages/metamine/visualizationNU/components/structure.vue'
 
 export default {
-  name: "PairwisePlotPage",
+  name: 'PairwisePlotPage',
   components: {
     PairwisePlot,
     DataSelector,
     Youngs,
     Poisson,
-    Structure,
-  },
-};
+    Structure
+  }
+}
 </script>

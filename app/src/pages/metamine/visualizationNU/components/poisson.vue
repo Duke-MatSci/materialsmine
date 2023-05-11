@@ -3,15 +3,15 @@
 </template>
 
 <script>
-import Plotly from "plotly.js";
-import { mapState } from "vuex";
+import Plotly from 'plotly.js'
+import { mapState } from 'vuex'
 
 const layout = {
   title: "Poisson's Ratio",
   font: {
-    family: "Arial, sans-serif",
+    family: 'Arial, sans-serif',
     size: 12,
-    color: "#000",
+    color: '#000'
   },
   orientation: -90,
   width: 200,
@@ -21,22 +21,22 @@ const layout = {
     r: 50,
     b: 50,
     t: 50,
-    pad: 1,
-  },
-};
+    pad: 1
+  }
+}
 
 const config = {
-  modeBarButtonsToRemove: ["zoom2d"],
-  responsive: true,
-};
+  modeBarButtonsToRemove: ['zoom2d'],
+  responsive: true
+}
 
 const style = {
-  marginTop: "0px",
-};
+  marginTop: '0px'
+}
 
 export default {
-  name: "poisson",
-  data() {
+  name: 'poisson',
+  data () {
     return {
       trace1: {
         theta: [
@@ -49,36 +49,36 @@ export default {
           237.6, 241.2, 244.8, 248.4, 252, 255.6, 259.2, 262.8, 266.4, 270,
           273.6, 277.2, 280.8, 284.4, 288, 291.6, 295.2, 298.8, 302.4, 306,
           309.6, 313.2, 316.8, 320.4, 324, 327.6, 331.2, 334.8, 338.4, 342,
-          345.6, 349.2, 352.8, 356.4, 360,
+          345.6, 349.2, 352.8, 356.4, 360
         ],
         r: this.dataPoint?.poisson || null,
-        mode: "lines",
+        mode: 'lines',
         name: "Poisson's Ratio",
-        line: { color: "peru" },
-        type: "scatterpolar",
+        line: { color: 'peru' },
+        type: 'scatterpolar'
       },
       layout: layout,
       config: config,
-      style: style,
-    };
+      style: style
+    }
   },
   computed: {
-    ...mapState("metamineNU", {
-      dataPoint: (state) => state.dataPoint,
-    }),
+    ...mapState('metamineNU', {
+      dataPoint: (state) => state.dataPoint
+    })
   },
-  mounted() {
+  mounted () {
     Plotly.newPlot(
       this.$refs.poissonPlot,
       [this.trace1],
       layout,
       config
-    );
+    )
   },
   watch: {
     dataPoint: {
       deep: true,
-      handler(val, oldVal) {
+      handler (val, oldVal) {
         var newTrace = {
           theta: [
             0, 3.6, 7.2, 10.8, 14.4, 18, 21.6, 25.2, 28.8, 32.4, 36, 39.6, 43.2,
@@ -90,22 +90,22 @@ export default {
             237.6, 241.2, 244.8, 248.4, 252, 255.6, 259.2, 262.8, 266.4, 270,
             273.6, 277.2, 280.8, 284.4, 288, 291.6, 295.2, 298.8, 302.4, 306,
             309.6, 313.2, 316.8, 320.4, 324, 327.6, 331.2, 334.8, 338.4, 342,
-            345.6, 349.2, 352.8, 356.4, 360,
+            345.6, 349.2, 352.8, 356.4, 360
           ],
           r: val.poisson,
-          mode: "lines",
+          mode: 'lines',
           name: "Poisson's Ratio",
-          line: { color: "peru" },
-          type: "scatterpolar",
-        };
+          line: { color: 'peru' },
+          type: 'scatterpolar'
+        }
         Plotly.newPlot(
           this.$refs.poissonPlot,
           [newTrace],
           layout,
           config
-        );
-      },
-    },
-  },
-};
+        )
+      }
+    }
+  }
+}
 </script>
