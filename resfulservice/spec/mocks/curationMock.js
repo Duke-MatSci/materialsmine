@@ -1,5 +1,5 @@
 const sinon = require('sinon');
-const jsonStructure = require('../../config/spreadsheet/xlxs.json');
+const jsonStructure = require('../../config/xlsx.json');
 
 const mockCurationList = [
   {
