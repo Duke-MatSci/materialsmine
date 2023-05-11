@@ -15,6 +15,8 @@ Windows OS:
 # :warning: ADVISORY :warning:
 > Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
 
+> Install nvm [windows](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows#install-nvm-windows-nodejs-and-npm), for mac `brew install nvm`
+
 ## :high_brightness: Testing
 To avoid testing failure, install nvm & copy the command below and run in the project root directory.
 
