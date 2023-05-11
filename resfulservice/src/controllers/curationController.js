@@ -1,38 +1,48 @@
 const util = require('util');
 const XlsxFileManager = require('../utils/xlsxFileManager');
-const jsonStructure = require('../../config/xlsx.json');
+const BaseSchemaObject = require('../../config/xlsx.json');
 const XlsxObject = require('../models/curatedObject');
 const { errorWriter } = require('../utils/logWriter');
 const XlsxCurationList = require('../models/xlsxCurationList');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
-  req.logger.info('createXlsxObject Function Entry:');
+  req.logger.info('curateXlsxSpreadsheet Function Entry:');
   const { user } = req;
   if (!req.files?.uploadfile) {
-    return next(errorWriter(req, 'Material template files not uploaded', 'createXlsxObject', 400));
+    return next(errorWriter(req, 'Material template files not uploaded', 'curateXlsxSpreadsheet', 400));
   }
 
   const regex = /master_template.xlsx$/gi;
   const xlsxFile = req.files.uploadfile.find((file) => regex.test(file?.path));
 
   if (!xlsxFile) {
-    return next(errorWriter(req, 'Master template xlsx file not uploaded', 'createXlsxObject', 400));
+    return next(errorWriter(req, 'Master template xlsx file not uploaded', 'curateXlsxSpreadsheet', 400));
   }
 
   try {
-    const validList = await XlsxCurationList.find({}, null, { lean: true });
+    const [validList, storedObjects] = await Promise.all([
+      XlsxCurationList.find({}, null, { lean: true }),
+      XlsxObject.find({ user: user._id }, { object: 1 }, { lean: true })
+    ]);
+
     const validListMap = generateCurationListMap(validList);
 
-    const result = await this.createMaterialObject(xlsxFile.path, jsonStructure, validListMap, req.files.uploadfile);
+    const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile);
 
     if (result?.count) return res.status(400).json({ errors: result.errors });
+
+    const curatedAlready = storedObjects.find(
+      object => object?.['data origin']?.Title === result?.['data origin']?.Title &&
+      object?.['data origin']?.['Publication Type'] === result?.['data origin']?.['Publication Type']);
+
+    if (curatedAlready) return next(errorWriter(req, 'Object already curated', 'curateXlsxSpreadsheet', 409));
 
     const xlsxObj = new XlsxObject({ object: result, user: user?._id });
     await (await xlsxObj.save()).populate({ path: 'user', select: 'givenName surName' });
 
     return res.status(201).json(xlsxObj);
   } catch (err) {
-    next(errorWriter(req, err, 'createXlsxObject', 500));
+    next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
   }
 };
 
@@ -50,7 +60,7 @@ exports.getXlsxCurations = async (req, res, next) => {
 
       if (!xlsxObject) return next(errorWriter(req, 'Xlsx Object not found', 'getXlsxObject', 404));
 
-      const baseUserObject = createBaseObject(jsonStructure, xlsxObject.object);
+      const baseUserObject = createBaseObject(BaseSchemaObject, xlsxObject.object);
       return res.status(200).json({ ...xlsxObject, object: baseUserObject });
     } else {
       const xlsxObjects = await XlsxObject.find(filter, { user: 1, createdAt: 1, updatedAt: 1, _v: 1 }, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
@@ -70,7 +80,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
 
     if (!storedObject) return next(errorWriter(req, 'Xlsx Object not found', 'getXlsxObject', 404));
 
-    const baseUserObject = createBaseObject(jsonStructure, storedObject.object);
+    const baseUserObject = createBaseObject(BaseSchemaObject, storedObject.object);
     const isObjChanged = !util.isDeepStrictEqual(baseUserObject, payload);
 
     if (isObjChanged) {
@@ -170,7 +180,10 @@ exports.getCurationSchemaObject = async (req, res, next) => {
   req.logger.info('getCurationSchemaObject Function Entry:');
   const { sheetName } = req.query;
 
-  const result = jsonStructure[sheetName?.toLowerCase()] ? jsonStructure[sheetName?.toLowerCase()] : jsonStructure;
+  const result = BaseSchemaObject[sheetName?.toLowerCase()]
+    ? BaseSchemaObject[sheetName?.toLowerCase()]
+    : BaseSchemaObject;
+
   return res.status(200).json(result);
 };
 
@@ -190,7 +203,7 @@ const generateCurationListMap = (validCurationList) => {
 
 /**
  * @description Function to filter out all null/undefined values in the object
- * @param {Object} curatedBaseObject - The curated base object which contains all fields based on the jsonStructure
+ * @param {Object} curatedBaseObject - The curated base object which contains all fields based on the BaseSchemaObject
  * @returns {Object} The filtered curated base object stripped off all null values
  */
 function filterNestedObject (curatedBaseObject) {

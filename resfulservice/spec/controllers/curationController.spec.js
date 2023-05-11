@@ -78,11 +78,27 @@ describe('Xlsx Controllers Unit Tests:', function() {
       };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ errors: { Origin: 'invalid value' } });
+      sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns( { count: 1, errors: { Origin: 'invalid value' }});
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property('errors');
+    });
+
+    it('should return a 409 conflict error if curated sheet has same title and publication year', async function() {
+      req.files.uploadfile = correctXlsxFile;
+      const next = function (fn) {
+        return fn;
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(XlsxObject, 'find').returns([mockCuratedXlsxObject]);
+      sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
+      sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
+      const result = await curateXlsxSpreadsheet(req, res, next);
+
+      expect(result).to.have.property('message');
     });
 
     it('should curateXlsx object', async function() {
@@ -92,6 +108,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(fetchecdCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
       sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchecdCuratedXlsxObject))
