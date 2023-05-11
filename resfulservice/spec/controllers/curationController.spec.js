@@ -96,7 +96,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       sinon.stub(XlsxObject, 'find').returns([mockCuratedXlsxObject]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
-      const result = await curateXlsxSpreadsheet(req, res, next);
+      const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property('message');
     });
@@ -284,7 +284,6 @@ describe('Xlsx Controllers Unit Tests:', function() {
       
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData4);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure4, mockCurationListMap, mockUploadedFiles);
-      console.log(result.Microstructure['Image dimension']);
       expect(result).to.be.an('Object')
       expect(result).to.have.property('Microstructure');
       expect(result.Microstructure).to.have.property('Imagefile');
