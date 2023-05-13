@@ -1,16 +1,25 @@
 #!/bin/bash
 
+# Check if nvm is installed
+command -v nvm >/dev/null 2>&1 || { echo >&2 "nvm is required, but it's not installed.  Aborting."; exit 1; }
+
+# Make NVM available for script use
 export NVM_DIR=$HOME/.nvm;
 source $NVM_DIR/nvm.sh;
 
+# Recieved terminal argument
 args=$1
-if [ "$args" == "install" ] ; then
- yes | npm i && cd app && nvm use && npm i && cd ../resfulservice && nvm use && npm i && cd .. && docker-compose build
+
+if [ "$args" == "re-install" ] ; then
+ yes | npm i && cd app && nvm use && npm i && cd ../resfulservice && nvm use && npm i && cd .. && docker compose build
  echo "Completed '$args' successfully!"
  exit
-elif [ "$args" == "re-install" ] ; then
- yes | rm -rf node_modules && npm i && cd app && rm -rf node_modules && nvm use && npm i && cd ../resfulservice && rm -rf node_modules && nvm use && npm i && cd .. && docker system prune -a && docker-compose build
+elif [ "$args" == "install" ] ; then
+#  Compose V1 is no longer supported and will be removed from Docker Desktop in an upcoming release.
+#  See https://docs.docker.com/go/compose-v1-eol/
+ yes | rm -rf node_modules && npm i && cd app && rm -rf node_modules && nvm use && npm i && cd ../resfulservice && rm -rf node_modules && nvm use && npm i && cd .. && docker system prune -a && docker compose build
  echo "Completed '$args' successfully!"
  exit
 fi
+
 echo 'Did not understand args', "$args"

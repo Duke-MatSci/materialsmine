@@ -35,9 +35,9 @@
     "lint:frontend": "(cd app && npm run lint:test)",
     "lint:server": "(cd resfulservice && npm run lint:test)",
     "test": "npm-run-all -s lint:frontend lint:server",
-    "dev:install": "./install install",
     "dev:re-install": "./install re-install",
-    "dev:start": "docker-compose up",
-    "dev:stop": "docker-compose down -v"
+    "dev:install": "./install install",
+    "dev:start": "docker compose up",
+    "dev:stop": "docker compose down -v"
   }
 }
