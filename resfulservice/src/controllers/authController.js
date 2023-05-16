@@ -6,14 +6,10 @@ const { supportedBrowser, userRoles } = require('../../config/constant');
 
 // Generate and send token info to FE
 const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, res) => {
-  let isAdmin = roles === userRoles.isAdmin;
-
-  if (req.env?.MM_RUNTIME_ENV === 'dev') {
-    isAdmin = true;
-  }
+  const isAdmin = roles === userRoles.isAdmin;
 
   successWriter(req, 'success', 'Found/Created user successfully');
-  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin });
+  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin, roles });
   successWriter(req, 'success', 'Login token generated successfully');
 
   return res
@@ -41,7 +37,8 @@ const _validateUser = async (req) => {
     email,
     givenName: req.headers[env.MM_AUTH_GIVEN_NAME_HEADER] ?? env.MM_USER,
     surName: req.headers[env.MM_AUTH_SURNAME_HEADER] ?? env.MM_USER,
-    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER
+    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER,
+    roles: req.env?.MM_RUNTIME_ENV === 'dev' ? userRoles.isAdmin : userRoles.member
   });
 
   const savedUser = await user.save();
