@@ -1,0 +1,191 @@
+openapi: 3.0.0
+info:
+  title: MaterialsMine Project API Docs
+  description: As MaterialsMine continues to expand, we are committed to facilitating materials research development and
+    welcome feedback and suggestions for further improvements to help you benchmark and visualize your data, explore your 
+    research hypotheses, perform simulations and analysis using our available tools, and more.
+  version: 1.0.0
+  termsOfService: https://security.duke.edu/node/82
+  contact:
+    name: Marc Palmeri, Ph.D.
+    email: marc.j.palmeri@duke.edu
+servers:
+  - url: http://localhost/api
+  - url: https://qa.materialsmine.org/api
+    description: Staging server
+  - url: https://materialsmine.org/api
+    description: Production server
+  
+paths:
+  /admin/es:
+    get:
+      security:
+        - bearerAuth: [] 
+      summary: Check the status of elastic search service
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Returns true if ES service is up or false if ES service is down
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: boolean
+                    example: true
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    post:
+      security:
+        - bearerAuth: [] 
+      summary: Automatically configures & initializes elastic search service
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Returns a successfully configure message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: Successful
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    put:
+      tags:
+        - Admin
+      security:
+        - bearerAuth: [] 
+      summary: Add new resource into elastic search
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [charts, samples, articles]
+                doc:
+                  type: object
+                  properties:
+                    label:
+                      type: string
+                      example: Glass Transition Temperature
+                    identifier:
+                      type: string
+                      example: 1441449bdf0cb480
+                    thumbnail:
+                      type: string
+                      example: https://api.org/explorer/chart/view/1441449bdf0cb480
+                    description:
+                      type: stringThis chart of curated articles per year published is compact, 
+                        with a SPARQL query and Vega-Lite specification (and this description) 
+                        each having fewer than 200 characters... that's less than a Tweet!Just another chart
+      responses:
+        '200':
+          description: Returns a successfully configure message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: Successful
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+components:
+  securitySchemes:
+    bearerAuth:
+      type: apiKey
+      scheme: bearer
+      name: Authorization
+      in: header
+      description: Use this format: Bearer &lt;API Key&gt;
+  schemas:
+    Unauthorized-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: Not authenticated
+    Forbidden-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: User is forbidden
