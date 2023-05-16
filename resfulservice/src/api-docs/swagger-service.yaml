@@ -5,16 +5,11 @@ info:
     welcome feedback and suggestions for further improvements to help you benchmark and visualize your data, explore your 
     research hypotheses, perform simulations and analysis using our available tools, and more.
   version: 1.0.0
-  termsOfService: https://security.duke.edu/node/82
+  termsOfService:
   contact:
-    name: Marc Palmeri, Ph.D.
-    email: marc.j.palmeri@duke.edu
+    name:
+    email:
 servers:
-  - url: http://localhost/api
-  - url: https://qa.materialsmine.org/api
-    description: Staging server
-  - url: https://materialsmine.org/api
-    description: Production server
   
 paths:
   /admin/es:
@@ -76,7 +71,7 @@ paths:
                     properties:
                       status:
                         type: string
-                        example: Successful
+                        example: Successfully configured schemas!
         '401':
           description: User not authorized for this service
           content:

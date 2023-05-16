@@ -5,10 +5,8 @@ const mongoose = require('mongoose');
 const { createServer: createHttpServer } = require('http');
 const { WebSocketServer } = require('ws');
 const { useServer: useWsServer } = require('graphql-ws/lib/use/ws');
-const path = require('path');
 const swaggerUi = require('swagger-ui-express');
-const yaml = require('yamljs');
-const { globalMiddleWare, log } = require('./middlewares');
+const { globalMiddleWare, log, swaggerService } = require('./middlewares');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/authService');
 const curationRoutes = require('./routes/curation');
@@ -23,7 +21,6 @@ const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
 const getWsContext = require('./graphql/context/getWsContext');
 
-const swaggerDocumentPath = path.resolve(__dirname, './api-docs/swagger.yaml');
 const env = process.env;
 
 const app = express();
@@ -31,8 +28,8 @@ globalMiddleWare(app);
 elasticSearch.ping(log);
 
 // Serve the Swagger UI
-const swaggerDocument = yaml.load(swaggerDocumentPath);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
+const apiContractDocument = swaggerService(env);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiContractDocument, { explorer: true }));
 
 app.use('/admin', adminRoutes);
 app.use('/curate', curationRoutes);
