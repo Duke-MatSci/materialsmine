@@ -32,7 +32,7 @@ elasticSearch.ping(log);
 
 // Serve the Swagger UI
 const swaggerDocument = yaml.load(swaggerDocumentPath);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, { explorer: true }));
 
 app.use('/admin', adminRoutes);
 app.use('/curate', curationRoutes);
