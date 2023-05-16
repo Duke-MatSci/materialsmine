@@ -54,6 +54,9 @@
           <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate" class="md-inset">Image Gallery</md-list-item>
           </router-link>
+          <router-link to="/explorer/xmls" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate" class="md-inset">View Xmls</md-list-item>
+          </router-link>
         </md-list>
       </md-list-item>
       <md-list-item md-expand>
@@ -84,9 +87,6 @@
         <md-icon class="utility-navfonticon">upload</md-icon>
         <span class="md-list-item-text utility-navfont">Curate</span>
         <md-list slot="md-expand">
-          <!-- <md-list-item class="md-inset" href="https://materialsmine.org/nm#/XMLCONV">
-            Upload a Spreadsheet
-          </md-list-item> -->
           <router-link :to="'/explorer/curate/spreadsheet'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a Spreadsheet</md-list-item>
           </router-link>

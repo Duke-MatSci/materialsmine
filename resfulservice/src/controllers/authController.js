@@ -6,7 +6,11 @@ const { supportedBrowser, userRoles } = require('../../config/constant');
 
 // Generate and send token info to FE
 const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, res) => {
-  const isAdmin = roles === userRoles.isAdmin;
+  let isAdmin = roles === userRoles.isAdmin;
+
+  if (req.env?.MM_RUNTIME_ENV === 'dev') {
+    isAdmin = true;
+  }
 
   successWriter(req, 'success', 'Found/Created user successfully');
   const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin });
@@ -80,7 +84,7 @@ exports.authenticationService = async (req, res, next) => {
   if (!supportedBrowser.includes(browser)) return res.status(200).json({ message: 'Successful!' });
 
   // 1. Check environment & determine Login type
-  const currentEnv = req.env.MM_RUNTIME_ENV;
+  const currentEnv = env?.MM_RUNTIME_ENV;
   logger.info(`authenticationService(): current environment: ${currentEnv}`);
   if (currentEnv === 'dev') return this.devLoginService(req, res, next);
 

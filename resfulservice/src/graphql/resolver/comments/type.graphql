@@ -1,0 +1,86 @@
+type Comment {
+  """
+  Comments identifier
+  """
+  _id: ID
+
+  """
+  The actual comment text
+  """
+  comment: String
+
+  """
+  The commenting user's information
+  """
+  user: UserInfo,
+
+  """
+  Timestamp of the comment
+  """
+  createdAt: String
+
+  """
+  Updated timestamp of the comment
+  """
+  updatedAt: String
+}
+
+type UserInfo {
+  """
+  The first name of the user who created the comment.
+  """
+  givenName: String
+
+  """
+  The last name of the user who created the comment.
+  """
+  surName: String
+
+  """
+  The user display name.
+  """
+  displayName: String!
+}
+
+"This schema type returns the lists of comments"
+type Comments {
+  """
+  Total number of comments that exists for a given resource
+  """
+  totalItems: Int!
+
+  """
+  Number of comments per page. 
+  Pagination option for specifying how the server should group the comments.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page of comments to display to return.
+  This defaults to 1 if no value is specified.
+  The comments are grouped into pages based on the specified pageSize(defaults to 20, if not specified)
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  """
+  Boolean value specifying If the currently returned page has a previous page
+  """
+  hasPreviousPage: Boolean!
+
+  """
+  Boolean value specifying If the currently returned page has a next page
+  """
+  hasNextPage: Boolean!
+
+  """
+  List of Comments related to a resource returned from the server
+  """
+  comments: [Comment!]!
+}
