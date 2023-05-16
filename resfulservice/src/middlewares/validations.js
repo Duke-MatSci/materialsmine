@@ -1,4 +1,6 @@
 const { param, validationResult, body } = require('express-validator');
+const { userRoles } = require('../../config/constant');
+const { errorWriter } = require('../utils/logWriter');
 
 exports.validateImageType = [
   param('imageType').not().isEmpty().withMessage('image type required').bail().isIn(['tiff', 'tif']).withMessage('only supports tiff & tif migration'),
@@ -24,4 +26,4 @@ function validationErrorHandler (req, res, next) {
   return next();
 };
 
-exports.validateIsAdmin = (user) => user?.roles === 'admin';
+exports.validateIsAdmin = (req, res, next) => !req.user?.roles === userRoles.isAdmin && next(errorWriter(req, 'User is forbidden', 'validateIsAdmin', 403));
