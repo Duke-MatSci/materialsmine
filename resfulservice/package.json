@@ -39,7 +39,8 @@
         "winston": "^3.5.1",
         "ws": "^8.7.0",
         "xlsx": "^0.18.5",
-        "xml-formatter": "^3.3.2"
+        "xml-formatter": "^3.3.2",
+        "xml-js": "^1.6.11"
     },
     "scripts": {
         "start": "nodemon src/server.js --inspect",

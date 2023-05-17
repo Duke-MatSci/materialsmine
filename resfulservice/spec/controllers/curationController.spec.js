@@ -1,5 +1,6 @@
 const chai = require('chai');
 const sinon = require('sinon');
+const Xmljs = require('xml-js');
 const {
   user,
   correctXlsxFile,
@@ -21,7 +22,7 @@ const {
 } = require('../mocks')
 const XlsxObject = require('../../src/models/curatedObject');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
-const XlsxFileManager = require('../../src/utils/xlsxFileManager');
+const XlsxFileManager = require('../../src/utils/curation-utility');
 const XlsxController = require('../../src/controllers/curationController');
 
 const { expect } = chai;
@@ -37,8 +38,10 @@ describe('Xlsx Controllers Unit Tests:', function() {
   }
 
   const res = {
+    header: () => {},
     status: () => {},
     json: () => {},
+    send: () => {}
   };
 
   const next = function (fn) {
@@ -108,10 +111,13 @@ describe('Xlsx Controllers Unit Tests:', function() {
       };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
+      sinon.stub(res, 'send').returns(fetchedCuratedXlsxObject);
       sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
       sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchedCuratedXlsxObject))
+      sinon.stub(Xmljs, 'json2xml').returns(fetchecdCuratedXlsxObject)
+
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property('object');

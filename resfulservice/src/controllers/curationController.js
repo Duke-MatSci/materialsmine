@@ -1,8 +1,9 @@
 const util = require('util');
-const XlsxFileManager = require('../utils/xlsxFileManager');
-const BaseSchemaObject = require('../../config/xlsx.json');
 const XlsxObject = require('../models/curatedObject');
+const XlsxFileManager = require('../utils/curation-utility');
+const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
+const { BaseObjectSubstitutionMap } = require('../../config/constant');
 const XlsxCurationList = require('../models/xlsxCurationList');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
@@ -39,10 +40,13 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (curatedAlready) return next(errorWriter(req, 'Object already curated', 'curateXlsxSpreadsheet', 409));
 
-    const xlsxObj = new XlsxObject({ object: result, user: user?._id });
-    await (await xlsxObj.save()).populate({ path: 'user', select: 'givenName surName' });
+    const newCurationObject = new XlsxObject({ object: result, user: user?._id });
+    await (await newCurationObject.save()).populate({ path: 'user', select: 'givenName surName' });
 
-    return res.status(201).json(xlsxObj);
+    let xml = XlsxFileManager.xmlGenerator(JSON.stringify(newCurationObject));
+    xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
+    res.header('Content-Type', 'application/xml');
+    return res.status(201).send(xml);
   } catch (err) {
     next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
   }
@@ -125,6 +129,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
       }
       if (objArr.length > 0) {
         filteredObject[property] = objArr;
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = objArr;
       }
     } else if (Object.getOwnPropertyDescriptor(propertyValue, 'value')) {
       const [sheetName, row, col] = propertyValue.value.replace(/[[\]]/g, '').split(/\||,/);
@@ -142,9 +147,9 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
           const validList = validListMap[validListKey];
 
           if (!validList && cellValue !== null) {
-            filteredObject[property] = cellValue;
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = cellValue;
           } else if (validList?.includes(cellValue)) {
-            filteredObject[property] = cellValue;
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = cellValue;
           } else if (cellValue !== null) {
             errors[validListKey] = 'Invalid value';
           }
@@ -152,23 +157,24 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
           const regex = new RegExp(`${cellValue}$`, 'gi');
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
           if (file) {
-            filteredObject[property] = file.filename;
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = file.filename;
           } else {
             errors[cellValue] = 'file not uploaded';
           }
         } else {
           if (cellValue !== null) {
             filteredObject[property] = cellValue;
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = cellValue;
           }
         }
       } else if (cellValue === null && propertyValue?.default) {
-        filteredObject[property] = propertyValue.default;
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = propertyValue.default;
       }
     } else {
       const nestedObj = await this.createMaterialObject(path, propertyValue, validListMap, uploadedFiles, errors);
 
       if (Object.keys(nestedObj).length > 0) {
-        filteredObject[property] = nestedObj;
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = nestedObj;
       }
     }
   }

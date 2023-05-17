@@ -10,5 +10,12 @@ module.exports = {
     isAdmin: 'isAdmin',
     member: 'member'
   },
-  commentTypes: ['xml', 'charts', 'images']
+  commentTypes: ['xml', 'charts', 'images'],
+  BaseObjectSubstitutionMap: {
+    'data origin': 'DATA_SOURCE',
+    'material types': 'MATERIALS',
+    'synthesis and processing': 'PROCESSING',
+    'characterization methods': 'CHARACTERIZATION',
+    microstructure: 'MICROSTRUCTURE'
+  }
 };

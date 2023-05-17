@@ -1,146 +1,150 @@
 {
   "data origin": {
-    "Your Name": {
-      "value": "1. Data Origin|[2,1]",
-      "type": "String",
-      "required": false
-    },
-    "Your Email": {
-      "value": "1. Data Origin|[3,1]",
-      "type": "String",
-      "required": false
-    },
-    "Sample ID": {
-      "value": "1. Data Origin|[4,1]",
-      "type": "String",
-      "required": false
-    },
-    "Control sample ID": {
-      "value": "1. Data Origin|[5,1]",
-      "type": "String",
-      "required": false
-    },
-    "Origin": {
-      "value": "1. Data Origin|[6,1]",
-      "type": "List",
-      "required": false,
-      "validList": "origin"
-    },
-    "Citation Type": {
-      "value": "1. Data Origin|[7,1]",
-      "type": "List",
-      "required": false,
-      "validList": "citation_type"
-    },
-    "Publication Type": {
-      "value": "1. Data Origin|[8,1]",
-      "type": "List",
-      "required": false,
-      "validList": "publication_type"
-    },
-    "DOI": {
-      "value": "1. Data Origin|[10,1]",
-      "type": "String",
-      "required": false
-    },
-    "Publication": {
-      "value": "1. Data Origin|[15,1]",
-      "type": "String",
-      "required": false
-    },
-    "Title": {
-      "value": "1. Data Origin|[16,1]",
-      "type": "String",
-      "required": false
-    },
-    "Author": {
-      "type": "multiples",
-      "values": [
-        {
-          "Author #1": {
-            "value": "1. Data Origin|[17,1]",
+    "Citation": {
+      "CommonFields": {
+        "Your Name": {
+          "value": "1. Data Origin|[2,1]",
+          "type": "String",
+          "required": false
+        },
+        "Your Email": {
+          "value": "1. Data Origin|[3,1]",
+          "type": "String",
+          "required": false
+        },
+        "Sample ID": {
+          "value": "1. Data Origin|[4,1]",
+          "type": "String",
+          "required": false
+        },
+        "Control sample ID": {
+          "value": "1. Data Origin|[5,1]",
+          "type": "String",
+          "required": false
+        },
+        "Origin": {
+          "value": "1. Data Origin|[6,1]",
+          "type": "List",
+          "required": false,
+          "validList": "origin"
+        },
+        "Citation Type": {
+          "value": "1. Data Origin|[7,1]",
+          "type": "List",
+          "required": false,
+          "validList": "citation_type"
+        },
+        "Publication Type": {
+          "value": "1. Data Origin|[8,1]",
+          "type": "List",
+          "required": false,
+          "validList": "publication_type"
+        },
+        "DOI": {
+          "value": "1. Data Origin|[10,1]",
+          "type": "String",
+          "required": false
+        },
+        "Publication": {
+          "value": "1. Data Origin|[15,1]",
+          "type": "String",
+          "required": false
+        },
+        "Title": {
+          "value": "1. Data Origin|[16,1]",
+          "type": "String",
+          "required": false
+        },
+        "Author": {
+          "type": "multiples",
+          "values": [
+            {
+              "Author #1": {
+                "value": "1. Data Origin|[17,1]",
+                "type": "String",
+                "required": false
+              }
+            },
+            {
+              "Author #2": {
+                "value": "1. Data Origin|[18,1]",
+                "type": "String",
+                "required": false
+              }
+            }
+          ]
+        },
+        "Keyword": {
+          "type": "multiples",
+          "values": [
+            {
+              "Keyword #1": {
+                "value": "1. Data Origin|[19,1]",
+                "type": "String",
+                "required": false
+              }
+            },
+            {
+              "Keyword #2": {
+                "value": "1. Data Origin|[20,1]",
+                "type": "String",
+                "required": false
+              }
+            }
+          ]
+        },
+        "Publication Year": {
+          "value": "1. Data Origin|[21,1]",
+          "type": "String",
+          "required": false
+        },
+        "Volume": {
+          "value": "1. Data Origin|[22,1]",
+          "type": "String",
+          "required": false
+        },
+        "Issue": {
+          "value": "1. Data Origin|[23,1]",
+          "type": "String",
+          "required": false
+        },
+        "URL": {
+          "value": "1. Data Origin|[24,1]",
+          "type": "String",
+          "required": false
+        },
+        "Language": {
+          "value": "1. Data Origin|[25,1]",
+          "type": "String",
+          "required": false
+        },
+        "Location": {
+          "value": "1. Data Origin|[26,1]",
+          "type": "String",
+          "required": false
+        },
+        "Date of citation": {
+          "value": "1. Data Origin|[27,1]",
+          "type": "String",
+          "required": false
+        },
+        "Laboratory Data Info": {
+          "Date of Sample Made": {
+            "value": "1. Data Origin|[31,1]",
             "type": "String",
             "required": false
-          }
-        },
-        {
-          "Author #2": {
-            "value": "1. Data Origin|[18,1]",
+          },
+          "Date of Data Measurement": {
+            "value": "1. Data Origin|[32,1]",
+            "type": "String",
+            "required": false
+          },
+          "Related DOI": {
+            "value": "1. Data Origin|[33,1]",
             "type": "String",
             "required": false
           }
         }
-      ]
-    },
-    "Keyword": {
-      "type": "multiples",
-      "values": [
-        {
-          "Keyword #1": {
-            "value": "1. Data Origin|[19,1]",
-            "type": "String",
-            "required": false
-          }
-        },
-        {
-          "Keyword #2": {
-            "value": "1. Data Origin|[20,1]",
-            "type": "String",
-            "required": false
-          }
-        }
-      ]
-    },
-    "Publication Year": {
-      "value": "1. Data Origin|[21,1]",
-      "type": "String",
-      "required": false
-    },
-    "Volume": {
-      "value": "1. Data Origin|[22,1]",
-      "type": "String",
-      "required": false
-    },
-    "Issue": {
-      "value": "1. Data Origin|[23,1]",
-      "type": "String",
-      "required": false
-    },
-    "URL": {
-      "value": "1. Data Origin|[24,1]",
-      "type": "String",
-      "required": false
-    },
-    "Language": {
-      "value": "1. Data Origin|[25,1]",
-      "type": "String",
-      "required": false
-    },
-    "Location": {
-      "value": "1. Data Origin|[26,1]",
-      "type": "String",
-      "required": false
-    },
-    "Date of citation": {
-      "value": "1. Data Origin|[27,1]",
-      "type": "String",
-      "required": false
-    },
-    "Laboratory Data Info": {
-      "Date of Sample Made": {
-        "value": "1. Data Origin|[31,1]",
-        "type": "String",
-        "required": false
-      },
-      "Date of Data Measurement": {
-        "value": "1. Data Origin|[32,1]",
-        "type": "String",
-        "required": false
-      },
-      "Related DOI": {
-        "value": "1. Data Origin|[33,1]",
-        "type": "String",
-        "required": false
       }
     }
   },
