@@ -12,6 +12,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     d3: '<rootDir>/node_modules/d3/dist/d3.min.js',
+    prismjs: '<rootDir>/node_modules/prismjs/prism.js',
     'style-loader!(.*)': '<rootDir>/node_modules/style-loader'
   },
   setupFilesAfterEnv: ['<rootDir>/tests/jest/script/test-setup.js'],

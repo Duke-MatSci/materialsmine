@@ -5,8 +5,12 @@
         <h4 class="md-title">Comments</h4>
       </div>
 
-      <div v-for="(item, i) in loadComment?.comments" :key="i" :class="[isUserMessage(item?.user?.displayName) ? 'md-alignment-bottom-right u--margin-left-auto' : 'md-alignment-top-left', 'md-layout-item md-size-60 md-small-size-70 md-xsmall-size-85 md-layout u_margin-top-med']">
-        <div v-if="!isUserMessage(item.user?.displayName)" class="u--margin-right-1"><md-icon>account_circle</md-icon></div>
+      <div v-for="(item, i) in optionalChaining(() => loadComment.comments)" :key="i"
+        :class="[isUserMessage(optionalChaining(() => item.user.displayName))
+          ? 'md-alignment-bottom-right u--margin-left-auto'
+          : 'md-alignment-top-left', 'md-layout-item md-size-85 md-layout u_margin-top-med']"
+      >
+        <div v-if="!isUserMessage(optionalChaining(() => item.user.displayName))" class="u--margin-right-1"><md-icon>account_circle</md-icon></div>
 
         <div style="padding: 1.6rem;border: 1px solid #A2A5A9;" :class="[isUserMessage(item.user?.displayName) && 'u--margin-right-1', 'md-layout-item u--b-rad']" >
           <p class="u--color-primary u--default-size">{{ item.user.givenName }} {{ item.user.surName }}</p>
@@ -14,7 +18,7 @@
           <p class="utility-align--right md-caption">{{ formatDate(item.createdAt) }}</p>
         </div>
 
-        <div v-if="isUserMessage(item.user?.displayName)"><md-icon>account_circle</md-icon></div>
+        <div v-if="isUserMessage(optionalChaining(() => item.user.displayName))"><md-icon>account_circle</md-icon></div>
       </div>
     </div>
 
@@ -34,8 +38,10 @@
 <script >
 import { mapGetters } from 'vuex'
 import { LOAD_COMMENTS, POST_COMMENT } from '@/modules/gql/comment-gql'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
 export default {
   name: 'Comments',
+  mixins: [optionalChainingUtil],
   props: {
     type: {
       type: String,
