@@ -165,7 +165,6 @@
             position: relative !important;
             &-title {
                 color: $secondary !important;
-                font-weight: 900;
                 :hover {
                     color:$primary !important;
                 }
@@ -650,5 +649,28 @@
 .spreadsheet_list_form {
     .md-chip.md-theme-default .md-icon.md-icon-image svg{
         fill: $primary;
+    }
+}
+
+.xmlLoader {
+    .md-app-side-drawer.md-app-container {
+        height: calc(100vh - 149px) !important;
+
+        @include respond(tab-port) {
+            height: calc(100vh - 139px) !important;
+        }
+        @include respond(phone) {
+            height: calc(100vh - 107px) !important;
+        }
+    }
+    .md-right {
+        z-index: 25;
+    }
+    .md-drawer {
+        width: 414px;
+        @include respond(phone) {
+            width: 100%;
+            max-width: 100%;
+        }
     }
 }

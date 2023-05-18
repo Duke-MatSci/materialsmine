@@ -8,6 +8,7 @@ const { useServer: useWsServer } = require('graphql-ws/lib/use/ws');
 const { globalMiddleWare, log } = require('./middlewares');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/authService');
+const curationRoutes = require('./routes/curation');
 const elasticSearch = require('./utils/elasticSearch');
 const fileRoutes = require('./routes/files');
 const invalidRoutes = require('./routes/invalid');
@@ -26,6 +27,7 @@ globalMiddleWare(app);
 elasticSearch.ping(log);
 
 app.use('/admin', adminRoutes);
+app.use('/curate', curationRoutes);
 app.use('/secure', authRoutes);
 app.use('/files', fileRoutes);
 app.use('/knowledge', knowledgeRoutes);

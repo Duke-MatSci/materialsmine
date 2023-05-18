@@ -1,0 +1,47 @@
+type XmlCatalogs {
+  id: String
+  title: String
+  entityState: String
+  sequence: Int
+}
+
+type ReadXml {
+  id: String
+  title: String
+  xmlString: String
+}
+
+type XmlDataList {
+  "Total number of XmlCatalogs found"
+  totalItems: Int
+  
+  """
+  Number of xmldata per page. 
+  Pagination option for specifying how the server should group the XmlCatalogs.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int!
+
+  """
+  Pagination option for the page to display to return.
+  This defaults to 1 if no value is specified.
+  """
+  pageNumber: Int!
+
+  """
+  Total number of pages that are available.
+  This value is based on the pageSize and totalItems
+  """
+  totalPages: Int!
+
+  "Boolean value specifying if the currently returned page has a previous page"
+  hasPreviousPage: Boolean!
+
+  "Boolean value specifying if the currently returned page has a next page"
+  hasNextPage: Boolean!
+
+  """
+  List a meta data catalog of all the xml data that matches a given input
+  """
+  xmlData: [XmlCatalogs!]
+}

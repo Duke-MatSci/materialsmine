@@ -32,6 +32,7 @@
     "jsonschema": "^1.4.0",
     "jszip": "^3.7.1",
     "n3": "^1.15.0",
+    "prismjs": "^1.29.0",
     "rdf-literal": "^1.1.0",
     "register-service-worker": "^1.7.1",
     "smiles-drawer": "^1.2.0",
@@ -78,6 +79,7 @@
     "sass-loader": "^8.0.2",
     "sinon": "^12.0.1",
     "style-loader": "^2.0.0",
+    "vue-template-babel-compiler": "^2.0.0",
     "vue-template-compiler": "^2.7.14"
   },
   "gitHooks": {

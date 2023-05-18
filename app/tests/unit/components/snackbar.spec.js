@@ -52,4 +52,10 @@ describe('@/components/Snackbar.vue', () => {
     await action.trigger('click')
     expect(mockFn).toHaveBeenCalled()
   })
+
+  it('modifies the left position with a custom class', () => {
+    expect.assertions(2)
+    expect(wrapper.find('.md-snackbar-adjust').exists()).toBe(true)
+    expect(wrapper.vm.position).toBe('left')
+  })
 })

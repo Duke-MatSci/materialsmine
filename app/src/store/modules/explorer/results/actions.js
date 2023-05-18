@@ -56,9 +56,9 @@ export default {
       const responseData = await response.json()
       const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems
       const groupTotals = context.getters.getTotalGroupings
-      groupTotals.getImages = responseData?.data?.searchImages?.totalItems
-      context.commit('setTotal', total || 0)
-      context.commit('setImages', responseData?.data?.searchImages?.images || [])
+      groupTotals.getImages = responseData?.data?.searchImages?.totalItems ?? 0
+      context.commit('setTotal', total ?? 0)
+      context.commit('setImages', responseData?.data?.searchImages?.images ?? [])
       context.commit('setTotalGrouping', groupTotals)
     } catch (error) {
       const snackbar = {
