@@ -215,3 +215,14 @@
     left: 0;
     transform: translateY(-5rem);
 }
+
+.md-snackbar {
+    &.md-position-left{
+        &.md-snackbar-adjust{
+            min-width: auto;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    }
+
+}
