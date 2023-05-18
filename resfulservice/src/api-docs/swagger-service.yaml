@@ -99,9 +99,9 @@ paths:
         - Admin
       security:
         - bearerAuth: [] 
-      summary: Add new resource into elastic search
+      summary: Add new resource into search service. Examples of a resource item are charts, samples or articles
       requestBody:
-        description: Optional description in *Markdown*
+        description: New resource document payload to index in json
         required: true
         content:
           application/json:
@@ -110,7 +110,7 @@ paths:
               properties:
                 type:
                   type: string
-                  enum: [charts, samples, articles]
+                  enum: [samples, charts, articles]
                 doc:
                   type: object
                   properties:
@@ -119,34 +119,163 @@ paths:
                       example: Glass Transition Temperature
                     identifier:
                       type: string
-                      example: 1441449bdf0cb480
+                      example: http://matmine.org/sample/l333-s5-salami-1000
                     thumbnail:
                       type: string
-                      example: https://api.org/explorer/chart/view/1441449bdf0cb480
+                      example: https://localhost/explorer/blob?=1441449bdf0cb480
                     description:
-                      type: stringThis chart of curated articles per year published is compact, 
-                        with a SPARQL query and Vega-Lite specification (and this description) 
-                        each having fewer than 200 characters... that's less than a Tweet!Just another chart
+                      type: string
+                      example: This chart of curated articles per year published is compact...
       responses:
         '200':
-          description: Returns a successfully configure message
+          description: Returns an object similar to the example below if successful
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data:
+                  response:
                     type: object
                     properties:
-                      status:
+                      _index:
                         type: string
-                        example: Successful
+                        example: samples
+                      _type:
+                        type: string
+                        example: _doc
+                      _id:
+                        type: string
+                        example: VeMK7LYgBMY-vG6TxJk_N
+                      _version:
+                        type: number
+                        example: 2
+                      _shards:
+                        type: object
+                        properties:
+                          total: 
+                            type: number
+                            example: 1000000
+                          successful: 
+                            type: number
+                            example: 1
+                          failed: 
+                            type: number
+                            example: 0
+                      _seq_no:
+                        type: number
+                        example: 99999
+                      _primary_term:
+                        type: number
+                        example: 36
+
         '401':
           description: User not authorized for this service
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized-Error'
+        '422':
+          description: Missing required input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Missing-Input-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    delete:
+      security:
+        - bearerAuth: [] 
+      summary: Removes resource item from search service. Examples of a resource item are charts, samples or articles
+      tags:
+        - Admin
+      requestBody:
+        description: Details of resource document to remove from search service
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [samples, charts, articles]
+                doc:
+                  type: string
+                  example: http://matmine.org/sample/l333-s5-salami-1000
+      responses:
+        '200':
+          description: Returns an object response if deletion is successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      took:
+                        type: number
+                        example: 36
+                      timed_out:
+                        type: string
+                        example: false
+                      total:
+                        type: number
+                        example: 2
+                      deleted:
+                        type: number
+                        example: 2
+                      batches:
+                        type: number
+                        example: 1
+                      version_conflicts:
+                        type: number
+                        example: 0
+                      noops:
+                        type: number
+                        example: 0
+                      retries:
+                        type: object
+                        properties:
+                          bulk: 
+                            type: number
+                            example: 0
+                          search: 
+                            type: number
+                            example: 0
+                      throttled_millis:
+                        type: number
+                        example: 0
+                      requests_per_second:
+                        type: number
+                        example: -1
+                      throttled_until_millis:
+                        type: number
+                        example: 0
+                      failures:
+                        type: array
+                        example: []
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '422':
+          description: Missing required input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Missing-Input-Error'
         '403':
           description: If user is forbidden from using the service
           content:
@@ -184,3 +313,9 @@ components:
         message:
           type: string
           example: User is forbidden
+    Missing-Input-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: Category type or doc is missing
