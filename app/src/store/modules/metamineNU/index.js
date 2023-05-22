@@ -7,8 +7,8 @@ export default {
     dataLibrary: [],
     dataPoint: {},
     selectedData: [],
-    page: 'pairwise', 
-    query1: null, 
+    page: 'pairwise',
+    query1: null,
     query2: null
   },
   getters: {
@@ -33,20 +33,19 @@ export default {
     },
     setDataLibrary (context, payload) {
       context.commit('setDataLibrary', payload)
-    }, 
+    },
     setSelectedData (context, payload) {
       context.commit('setSelectedData', payload)
-    }, 
-    setPage (context, payload) { 
+    },
+    setPage (context, payload) {
       context.commit('setPage', payload)
-    }, 
+    },
     setQuery1 (context, payload) {
       context.commit('setQuery1', payload)
     },
     setQuery2 (context, payload) {
       context.commit('setQuery2', payload)
     }
-
 
   },
   mutations: {
@@ -64,10 +63,10 @@ export default {
     },
     setDataLibrary (state, payload) {
       state.dataLibrary = payload
-    }, 
+    },
     setSelectedData (state, payload) {
       state.selectedData = payload
-    }, 
+    },
     setPage (state, payload) {
       state.page = payload
     },
@@ -77,7 +76,6 @@ export default {
     setQuery2 (state, payload) {
       state.query2 = payload
     }
-
 
   }
 }

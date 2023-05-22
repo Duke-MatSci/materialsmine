@@ -101,174 +101,174 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import { Table, Select } from 'ant-design-vue';
+import { mapState } from 'vuex'
+import { Table, Select } from 'ant-design-vue'
 
 const columns = [
-    {
-        title: 'Name',
-        dataIndex: 'name',
-        key: 'name',
-        width: '80%'
-    }
-];
+  {
+    title: 'Name',
+    dataIndex: 'name',
+    key: 'name',
+    width: '80%'
+  }
+]
 
 export default {
-    name: 'DataSelector',
-    components: {
-        'a-table': Table,
-        'a-select': Select
-    },
-    mounted() {
-        if (!this.query1) {
-            this.$store.dispatch(
-                'metamineNU/setQuery1',
-                this.$route.query.pairwise_query1
-            );
-        }
-        if (!this.query2) {
-            this.$store.dispatch(
-                'metamineNU/setQuery2',
-                this.$route.query.pairwise_query2
-            );
-        }
-    },
-    computed: {
-        ...mapState('metamineNU', {
-            activeData: (state) => state.activeData,
-            fetchedNames: (state) => state.fetchedNames,
-            dataLibrary: (state) => state.dataLibrary,
-            page: (state) => state.page,
-            query1: (state) => state.query1,
-            query2: (state) => state.query2
-        }),
-        rowSelection() {
-            const self = this;
-            return {
-                selectedRowKeys: self.selectedRowKeys,
-                onChange: (selectedRowKeys, selectedRows) => {
-                    self.selectedRowKeys = selectedRowKeys;
-                },
-                onSelect: (record, selected, selectedRows) => {
-                    if (selected) {
-                        let sourceItems = self.activeData;
-                        let destItems = self.dataLibrary;
-                        const checked = destItems.filter(
-                            (item) => item.name === record.name
-                        );
-                        destItems = destItems.filter(
-                            (item) => item.name !== record.name
-                        );
-                        sourceItems = [...sourceItems, ...checked];
-                        self.$store.dispatch(
-                            'metamineNU/setActiveData',
-                            sourceItems
-                        );
-                        self.$store.dispatch(
-                            'metamineNU/setDataLibrary',
-                            destItems
-                        );
-                    } else {
-                        let sourceItems = self.dataLibrary;
-                        let destItems = self.activeData;
-                        const unchecked = destItems.filter(
-                            (item) => item.name === record.name
-                        );
-                        destItems = destItems.filter(
-                            (item) => item.name !== record.name
-                        );
-                        sourceItems = [...sourceItems, ...unchecked];
-                        self.$store.dispatch(
-                            'metamineNU/setActiveData',
-                            destItems
-                        );
-                        self.$store.dispatch(
-                            'metamineNU/setDataLibrary',
-                            sourceItems
-                        );
-                    }
-                },
-                onSelectAll: (selected, selectedRows, changeRows) => {
-                    if (selected) {
-                        selectedRows.map((record, index) => {
-                            let sourceItems = self.activeData;
-                            let destItems = self.dataLibrary;
-                            const checked = destItems.filter(
-                                (item) => item.name === record.name
-                            );
-                            destItems = destItems.filter(
-                                (item) => item.name !== record.name
-                            );
-                            sourceItems = [...sourceItems, ...checked];
-                            self.$store.dispatch(
-                                'metamineNU/setActiveData',
-                                destItems
-                            );
-                            self.$store.dispatch(
-                                'metamineNU/setDataLibrary',
-                                sourceItems
-                            );
-                        });
-                    } else {
-                        selectedRows.map((record, index) => {
-                            let sourceItems = self.dataLibrary;
-                            let destItems = self.activeData;
-                            const unchecked = destItems.filter(
-                                (item) => item.name === record.name
-                            );
-                            destItems = destItems.filter(
-                                (item) => item.name !== record.name
-                            );
-                            sourceItems = [...sourceItems, ...unchecked];
-                            self.$store.commit(
-                                'metamineNU/setActiveData',
-                                destItems
-                            );
-                            self.$store.commit(
-                                'metamineNU/setDataLibrary',
-                                sourceItems
-                            );
-                        });
-                    }
-                }
-            };
-        }
-    },
-    data() {
-        return {
-            columns,
-            expandedRowKeys: [],
-            selectedRowKeys: []
-        };
-    },
-    watch: {
-        fetchedNames: {
-            handler: function (val, oldVal) {
-                this.data = val;
-                this.selectedRowKeys = val.map((item) => item.key);
-            },
-            deep: true
-        },
-        activeData: {
-            handler: function (val, oldVal) {
-              this.selectedRowKeys = this.fetchedNames.map(item => {return val.map(d => d.name).includes(item.name) ? item.key : null}).filter(item => item !== null);
-            },
-            deep: true
-        },
-        dataLibrary: {
-            handler: function (val, oldVal) {},
-            deep: true
-        }
-    },
-    methods: {
-        handleQuery1Change(value) {
-            this.$store.dispatch('metamineNU/setQuery1', value);
-        },
-        handleQuery2Change(value) {
-            this.$store.dispatch('metamineNU/setQuery2', value);
-        }
+  name: 'DataSelector',
+  components: {
+    'a-table': Table,
+    'a-select': Select
+  },
+  mounted () {
+    if (!this.query1) {
+      this.$store.dispatch(
+        'metamineNU/setQuery1',
+        this.$route.query.pairwise_query1
+      )
     }
-};
+    if (!this.query2) {
+      this.$store.dispatch(
+        'metamineNU/setQuery2',
+        this.$route.query.pairwise_query2
+      )
+    }
+  },
+  computed: {
+    ...mapState('metamineNU', {
+      activeData: (state) => state.activeData,
+      fetchedNames: (state) => state.fetchedNames,
+      dataLibrary: (state) => state.dataLibrary,
+      page: (state) => state.page,
+      query1: (state) => state.query1,
+      query2: (state) => state.query2
+    }),
+    rowSelection () {
+      const self = this
+      return {
+        selectedRowKeys: self.selectedRowKeys,
+        onChange: (selectedRowKeys, selectedRows) => {
+          self.selectedRowKeys = selectedRowKeys
+        },
+        onSelect: (record, selected, selectedRows) => {
+          if (selected) {
+            let sourceItems = self.activeData
+            let destItems = self.dataLibrary
+            const checked = destItems.filter(
+              (item) => item.name === record.name
+            )
+            destItems = destItems.filter(
+              (item) => item.name !== record.name
+            )
+            sourceItems = [...sourceItems, ...checked]
+            self.$store.dispatch(
+              'metamineNU/setActiveData',
+              sourceItems
+            )
+            self.$store.dispatch(
+              'metamineNU/setDataLibrary',
+              destItems
+            )
+          } else {
+            let sourceItems = self.dataLibrary
+            let destItems = self.activeData
+            const unchecked = destItems.filter(
+              (item) => item.name === record.name
+            )
+            destItems = destItems.filter(
+              (item) => item.name !== record.name
+            )
+            sourceItems = [...sourceItems, ...unchecked]
+            self.$store.dispatch(
+              'metamineNU/setActiveData',
+              destItems
+            )
+            self.$store.dispatch(
+              'metamineNU/setDataLibrary',
+              sourceItems
+            )
+          }
+        },
+        onSelectAll: (selected, selectedRows, changeRows) => {
+          if (selected) {
+            selectedRows.map((record, index) => {
+              let sourceItems = self.activeData
+              let destItems = self.dataLibrary
+              const checked = destItems.filter(
+                (item) => item.name === record.name
+              )
+              destItems = destItems.filter(
+                (item) => item.name !== record.name
+              )
+              sourceItems = [...sourceItems, ...checked]
+              self.$store.dispatch(
+                'metamineNU/setActiveData',
+                destItems
+              )
+              self.$store.dispatch(
+                'metamineNU/setDataLibrary',
+                sourceItems
+              )
+            })
+          } else {
+            selectedRows.map((record, index) => {
+              let sourceItems = self.dataLibrary
+              let destItems = self.activeData
+              const unchecked = destItems.filter(
+                (item) => item.name === record.name
+              )
+              destItems = destItems.filter(
+                (item) => item.name !== record.name
+              )
+              sourceItems = [...sourceItems, ...unchecked]
+              self.$store.commit(
+                'metamineNU/setActiveData',
+                destItems
+              )
+              self.$store.commit(
+                'metamineNU/setDataLibrary',
+                sourceItems
+              )
+            })
+          }
+        }
+      }
+    }
+  },
+  data () {
+    return {
+      columns,
+      expandedRowKeys: [],
+      selectedRowKeys: []
+    }
+  },
+  watch: {
+    fetchedNames: {
+      handler: function (val, oldVal) {
+        this.data = val
+        this.selectedRowKeys = val.map((item) => item.key)
+      },
+      deep: true
+    },
+    activeData: {
+      handler: function (val, oldVal) {
+        this.selectedRowKeys = this.fetchedNames.map(item => { return val.map(d => d.name).includes(item.name) ? item.key : null }).filter(item => item !== null)
+      },
+      deep: true
+    },
+    dataLibrary: {
+      handler: function (val, oldVal) {},
+      deep: true
+    }
+  },
+  methods: {
+    handleQuery1Change (value) {
+      this.$store.dispatch('metamineNU/setQuery1', value)
+    },
+    handleQuery2Change (value) {
+      this.$store.dispatch('metamineNU/setQuery2', value)
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>

@@ -9,7 +9,7 @@ import store from './store'
 import router from './router'
 import apollo from './modules/gql/apolloClient'
 import Antd from 'ant-design-vue'
-import 'ant-design-vue/dist/antd.css';
+import 'ant-design-vue/dist/antd.css'
 
 const apolloProvider = new VueApollo({
   defaultClient: apollo

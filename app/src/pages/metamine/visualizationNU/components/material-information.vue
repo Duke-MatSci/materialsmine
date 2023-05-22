@@ -36,16 +36,16 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapState } from 'vuex'
 
 export default {
-  name: "MaterialInformation",
+  name: 'MaterialInformation',
   computed: {
-    ...mapState("metamineNU", {
-      dataPoint: (state) => state.dataPoint,
-    }),
-  },
-};
+    ...mapState('metamineNU', {
+      dataPoint: (state) => state.dataPoint
+    })
+  }
+}
 </script>
 
 <style>
