@@ -329,7 +329,7 @@ export default {
       }
 
       const mousedown = function (e, d) {
-        const target = d3.select(this)
+        // const target = d3.select(this)
         // if (view = 'brush-on') {
         //   target.classed('selected', true)
         // } else if (view === 'brush-off') {

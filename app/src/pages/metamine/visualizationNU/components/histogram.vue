@@ -347,13 +347,13 @@ export default {
             allBins.push(...bins)
             const tempTooltip = {}
             if (organizedData[i]) {
-              const temp_arr = finalData.map((d, i) => d[query1])
+              const tempArr = finalData.map((d, i) => d[query1])
               tempTooltip.name = organizedData[i].name
               tempTooltip.color = organizedData[i].color
-              tempTooltip.min = d3.min(temp_arr)
-              tempTooltip.max = d3.max(temp_arr)
-              tempTooltip.mean = d3.mean(temp_arr)
-              tempTooltip.median = d3.median(temp_arr)
+              tempTooltip.min = d3.min(tempArr)
+              tempTooltip.max = d3.max(tempArr)
+              tempTooltip.mean = d3.mean(tempArr)
+              tempTooltip.median = d3.median(tempArr)
               tooltip.push(tempTooltip)
             }
 
@@ -376,7 +376,7 @@ export default {
 
             // when two dataset are selected, shows one color, but shows none when 1 or none are selected
 
-            if (datasets[i].length == 0) {
+            if (datasets[i].length === 0) {
               d3.selectAll('.group' + i).remove()
             } else {
               const histogram = d3
