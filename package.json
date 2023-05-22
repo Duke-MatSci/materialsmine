@@ -35,5 +35,9 @@
     "lint:frontend": "(cd app && npm run lint:test)",
     "lint:server": "(cd resfulservice && npm run lint:test)",
     "test": "npm-run-all -s lint:frontend lint:server"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.329.0",
+    "ant-design-vue": "^3.2.20"
   }
 }

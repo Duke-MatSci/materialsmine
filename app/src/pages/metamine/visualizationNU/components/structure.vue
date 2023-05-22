@@ -12,7 +12,7 @@ const MARGIN = {
   BOTTOM: 30,
   LEFT: 30
 }
-const SIDE = 230
+const SIDE = 200
 const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM
 

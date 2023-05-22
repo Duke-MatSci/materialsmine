@@ -1,0 +1,109 @@
+<template>
+  <div class="range-selector-wrapper">
+    <div
+      style="font-size: 20px; font-weight: bold; padding: 0px"
+    >
+      Property Range
+    </div>
+    <div class="slider" v-for="(name, index) in rangeList" :key="index">
+      <a-row
+        type="flex"
+        style="display: flex; justify-content: center; align-items: top"
+      >
+        <a-col :span="4">{{ name }}</a-col>
+        <a-col :span="20">
+          <a-slider
+            range
+            :value="values[index]"
+            :default-value="defaultValues[index]"
+            :min="defaultValues[index][0]"
+            :max="defaultValues[index][1]"
+            @change="handleSliderChangeFuncs[index]"
+          >
+          </a-slider>
+        </a-col>
+      </a-row>
+    </div>
+  </div>
+</template>
+
+<script>
+import { mapState } from "vuex";
+import { Slider, Row, Col } from "ant-design-vue";
+
+const rangeList = ["C11", "C12", "C22", "C16", "C26", "C66"];
+// const rangeList = ["C11"];
+
+export default {
+  name: "RangeSelector",
+  components: {
+    "a-slider": Slider,
+    "a-row": Row,
+    "a-col": Col,
+  },
+  computed: {
+    ...mapState("metamineNU", {
+      activeData: (state) => state.activeData,
+      datasets: (state) => state.datasets,
+      dataLibrary: (state) => state.dataLibrary,
+    }),
+    defaultValues() {
+      if (this.datasets.length > 0) {
+        const range = this.rangeList.map((name) => [
+          Math.min(...this.datasets.map((d) => d[name])),
+          Math.max(...this.datasets.map((d) => d[name])),
+        ]);
+        return range;
+      } else {
+        const range = this.rangeList.map((name) => [0, 0]);
+        console.log(range);
+        return range;
+      }
+    },
+    values() {
+      if (this.activeData.length > 0) {
+        return this.rangeList.map((name) => [
+          Math.min(...this.activeData.map((d) => d[name])),
+          Math.max(...this.activeData.map((d) => d[name])),
+        ]);
+      } else {
+        return this.rangeList.map((name) => [0, 0]);
+      }
+    },
+    handleSliderChangeFuncs() {
+      const self = this;
+      return this.rangeList.map((name, index) => {
+        return function (value) {
+          const activeDatasetNames = self.activeData.map((d) => d.name);
+          let filtered_datasets = self.datasets.filter((d, i) => {
+            let filtered = d[name] >= value[0] && d[name] <= value[1] && activeDatasetNames.includes(d.name);
+            return filtered;
+          });
+        let sourceItems = self.dataLibrary;
+        let destItems = filtered_datasets;
+        const unselected = self.activeData.filter((d) => !filtered_datasets.includes(d));
+  
+        sourceItems = sourceItems.concat(unselected);
+        self.$store.dispatch("metamineNU/setActiveData", destItems);
+        self.$store.dispatch("metamineNU/setDataLibrary", sourceItems);
+        };
+      });
+    },
+  },
+  data() {
+    return {
+      rangeList: rangeList,
+    };
+  },
+  watch: {
+    activeData: {
+      handler() {},
+      deep: true,
+    },
+    dataLibrary: {
+      handler() {},
+      deep: true,
+    },
+  },
+};
+</script>

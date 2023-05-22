@@ -14,6 +14,7 @@ const invalidRoutes = require('./routes/invalid');
 const knowledgeRoutes = require('./routes/kg-wrapper');
 const pixelatedRoutes = require('./routes/pixelated');
 const searchRoutes = require('./routes/search');
+const awsRoutes = require('./routes/aws');
 const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
@@ -31,6 +32,7 @@ app.use('/files', fileRoutes);
 app.use('/knowledge', knowledgeRoutes);
 app.use('/search', searchRoutes);
 app.use('/pixelated', pixelatedRoutes);
+app.use('/aws', awsRoutes);
 app.use('/*', invalidRoutes);
 
 const httpServer = createHttpServer(app);

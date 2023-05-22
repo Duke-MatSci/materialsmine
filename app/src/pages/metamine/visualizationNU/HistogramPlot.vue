@@ -1,12 +1,9 @@
 <template>
   <div class="main tool_page">
     <div class="md-layout md-alignment-top-left md-gutter adjust-padding" style="margin:10px">
-      <div class="md-layout-item md-size-100">
-        <h2>Material Data Explorer (Pairwise)</h2>
-      </div>
       <div class="main-content" style="margin: 1rem; display: flex">
-        <div class="pairwise-plot-chart" style="width: 50%">
-          <PairwisePlot />
+        <div class="histogram-chart" style="width: 50%">
+          <Histogram />
         </div>
         <div class="" style="width: 20%">
           <Structure />
@@ -24,7 +21,7 @@
 </template>
 
 <script>
-import PairwisePlot from './components/pairwise-plot.vue'
+import Histogram from './components/histogram.vue'
 import DataSelector from './components/data-selector.vue'
 import RangeSelector from './components/range-selector.vue'
 import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
@@ -33,9 +30,9 @@ import Structure from '@/pages/metamine/visualizationNU/components/structure.vue
 import MaterialInformation from '@/pages/metamine/visualizationNU/components/material-information.vue'
 
 export default {
-  name: 'PairwisePlotPage',
+  name: 'HistogramPage',
   components: {
-    PairwisePlot,
+    Histogram,
     DataSelector,
     RangeSelector,
     Youngs,
