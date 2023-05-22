@@ -27,13 +27,13 @@ function expo (x, f) {
   return Number(x).toExponential(f)
 }
 
-function isBrushed (brushCoords, cx, cy) {
-  var x0 = brushCoords[0][0]
-  var x1 = brushCoords[1][0]
-  var y0 = brushCoords[0][1]
-  var y1 = brushCoords[1][1]
-  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1 // This return TRUE or FALSE depending on if the points is in the selected area
-}
+// function isBrushed (brushCoords, cx, cy) {
+//   var x0 = brushCoords[0][0]
+//   var x1 = brushCoords[1][0]
+//   var y0 = brushCoords[0][1]
+//   var y1 = brushCoords[1][1]
+//   return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1 // This return TRUE or FALSE depending on if the points is in the selected area
+// }
 
 export default {
   name: 'scatter-plot',
@@ -329,13 +329,12 @@ export default {
       }
 
       const mousedown = function (e, d) {
-        const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
         const target = d3.select(this)
-        if (view = 'brush-on') {
-          target.classed('selected', true)
-        } else if (view === 'brush-off') {
-          target.classed('selected', false)
-        }
+        // if (view = 'brush-on') {
+        //   target.classed('selected', true)
+        // } else if (view === 'brush-off') {
+        //   target.classed('selected', false)
+        // }
 
         const selected = []
         d3.selectAll('.selected').each((d, i) => selected.push(d))
@@ -343,41 +342,41 @@ export default {
           root: true
         })
 
-        if (view === 'neighbor') {
-          target.classed('selected', true)
-          // getKnnData(inputData).then((data) => {
-          //     let indices = data.indices;
-          //     let distances = data.distances;
-          //     d3.selectAll('.dataCircle')
-          //         .data(finalData)
-          //         .classed('highlighted', function (datum) {
-          //             return indices.includes(datum.index);
-          //         })
-          //         .classed('masked', function (datum) {
-          //             return !indices.includes(datum.index);
-          //         });
+        // if (view === 'neighbor') {
+        //   target.classed('selected', true)
+        //   getKnnData(inputData).then((data) => {
+        //       let indices = data.indices;
+        //       let distances = data.distances;
+        //       d3.selectAll('.dataCircle')
+        //           .data(finalData)
+        //           .classed('highlighted', function (datum) {
+        //               return indices.includes(datum.index);
+        //           })
+        //           .classed('masked', function (datum) {
+        //               return !indices.includes(datum.index);
+        //           });
 
-          //     let neighborElements = d3.selectAll('.highlighted');
-          //     let masked = d3.selectAll('.masked');
-          //     masked
-          //         .attr('fill', (d) => d.color)
-          //         .attr('r', circleOriginalSize)
-          //         .classed('selected', false);
+        //       let neighborElements = d3.selectAll('.highlighted');
+        //       let masked = d3.selectAll('.masked');
+        //       masked
+        //           .attr('fill', (d) => d.color)
+        //           .attr('r', circleOriginalSize)
+        //           .classed('selected', false);
 
-          //     let neighbors = [];
-          //     neighborElements.each((d, i) => {
-          //         d['outline_color'] = nnColorAssignment[i];
-          //         console.log(d, indices.indexOf(d.index), d.index);
-          //         d['distance'] = distances[indices.indexOf(d.index)];
-          //         return neighbors.push(d);
-          //     });
-          //     neighbors.sort((a, b) => a.distance - b.distance);
-          //     neighborElements
-          //         .attr('fill', (d) => d.outline_color)
-          //         .attr('r', circleFocusSize);
-          //     setNeighbors(neighbors);
-          // });
-        }
+        //       let neighbors = [];
+        //       neighborElements.each((d, i) => {
+        //           d['outline_color'] = nnColorAssignment[i];
+        //           console.log(d, indices.indexOf(d.index), d.index);
+        //           d['distance'] = distances[indices.indexOf(d.index)];
+        //           return neighbors.push(d);
+        //       });
+        //       neighbors.sort((a, b) => a.distance - b.distance);
+        //       neighborElements
+        //           .attr('fill', (d) => d.outline_color)
+        //           .attr('r', circleFocusSize);
+        //       setNeighbors(neighbors);
+        //   });
+        // }
       }
 
       let zoomedXScale = this.xScale
@@ -429,53 +428,53 @@ export default {
       this.xScale = zoomedXScale
       this.yScale = zoomedYScale
 
-    //   const brush = d3
-    //     .brush()
-    //     .extent([
-    //       [0, 0],
-    //       [WIDTH, HEIGHT]
-    //     ])
-    //     .on(
-    //       'start brush end',
-    //       function brushed (event) {
-    //         const xScale = this.xScale
-    //         const yScale = this.yScale
-    //         if (event.selection) {
-    //           if (view === 'brush-on') {
-    //             d3.selectAll('.dataCircle')
-    //               .data(finalData)
-    //               .classed('selected', function (d) {
-    //                 return (
-    //                   d3
-    //                     .select(this)
-    //                     .classed('selected') ||
-    //                                         isBrushed(
-    //                                           event.selection,
-    //                                           xScale(d[query1]),
-    //                                           yScale(d[query2])
-    //                                         )
-    //                 )
-    //               })
-    //           } else if (view === 'brush-off') {
-    //             d3.selectAll('.selected').classed(
-    //               'selected',
-    //               function (d) {
-    //                 return !isBrushed(
-    //                   event.selection,
-    //                   xScale(d[query1]),
-    //                   yScale(d[query2])
-    //                 )
-    //               }
-    //             )
-    //           }
-    //           const selected = []
-    //           d3.selectAll('.selected').each((d, i) =>
-    //             selected.push(d)
-    //           )
-    //           self.setSelectedData(selected)
-    //         }
-    //       }.bind(this)
-    //     )
+      //   const brush = d3
+      //     .brush()
+      //     .extent([
+      //       [0, 0],
+      //       [WIDTH, HEIGHT]
+      //     ])
+      //     .on(
+      //       'start brush end',
+      //       function brushed (event) {
+      //         const xScale = this.xScale
+      //         const yScale = this.yScale
+      //         if (event.selection) {
+      //           if (view === 'brush-on') {
+      //             d3.selectAll('.dataCircle')
+      //               .data(finalData)
+      //               .classed('selected', function (d) {
+      //                 return (
+      //                   d3
+      //                     .select(this)
+      //                     .classed('selected') ||
+      //                                         isBrushed(
+      //                                           event.selection,
+      //                                           xScale(d[query1]),
+      //                                           yScale(d[query2])
+      //                                         )
+      //                 )
+      //               })
+      //           } else if (view === 'brush-off') {
+      //             d3.selectAll('.selected').classed(
+      //               'selected',
+      //               function (d) {
+      //                 return !isBrushed(
+      //                   event.selection,
+      //                   xScale(d[query1]),
+      //                   yScale(d[query2])
+      //                 )
+      //               }
+      //             )
+      //           }
+      //           const selected = []
+      //           d3.selectAll('.selected').each((d, i) =>
+      //             selected.push(d)
+      //           )
+      //           self.setSelectedData(selected)
+      //         }
+      //       }.bind(this)
+      //     )
 
       const circles = this.svg
         .append('g')
