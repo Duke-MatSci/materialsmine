@@ -41,6 +41,12 @@ const explorerRoutes = [
         props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'stepper',
+        name: 'CurateStepper',
+        component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -100,11 +106,6 @@ const explorerRoutes = [
       }
     ]
   },
-  // {
-  //   path: 'stepper',
-  //   name: 'CurateStepper',
-  //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
-  // },
   // {
   //   path: 'sdd',
   //   name: 'CurateSDD',

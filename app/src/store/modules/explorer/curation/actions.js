@@ -88,5 +88,83 @@ export default {
 
     const response = await fetchResponse.json()
     return { response, identifier: chartInstanceObject.identifier }
+  },
+
+  async fetchXlsxJsonStep (context, payload) {
+    const { stepNumber, stepName } = payload
+    const url = `/api/curate?sheetName=${stepName}`
+    const token = context.rootGetters['auth/token']
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        }
+      })
+      if (!response || response.statusText !== 'OK') {
+        const error = new Error(
+          response?.message || 'Something went wrong!'
+        )
+        throw error
+      }
+      const responseData = await response.json()
+      context.commit('setXlsxCurationStep', { stepNumber, stepDictionary: responseData })
+      return responseData
+    } catch (error) {
+      const snackbar = {
+        message: 'Something went wrong while fetching form fields!',
+        action: () => context.dispatch('fetchXlsxJsonStep', payload)
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
+    }
+  },
+
+  createXlsxFormStep ({ commit }, payload) {
+    const { stepNumber, stepDictionary } = payload
+    commit('setXlsxCurationStep', { stepNumber, stepDictionary })
+  },
+
+  addXlsxMultiple ({ commit, getters }, payload) {
+    const { stepNumber, stepDict } = payload
+    /** *
+     * Pseudo code:
+     * Find the entry for this type (e.g., Author)
+     * Look at the dictionary structure for the first thing in the list (element 0)
+     * Copy that structure but replace all 'value' with ''
+     * Check the current length of the field (e.g., how many authors)
+     * Add the new path to this new entry onto entries
+     * Call setNestedObject with the new structure and new vmodel
+     *
+    */
+    var schema = getters.getSingleXlsxStep(stepNumber)
+
+    for (let i = 0; i < stepDict.length; i++) {
+      var elem = stepDict[i]
+      if (!schema[elem]) schema[elem] = {}
+      schema = schema[elem]
+    }
+    const totalItems = schema?.values?.length ?? 0
+    const firstItem = schema?.values[0]
+
+    const resetNestedObject = (obj, newNumber, newObj = {}) => {
+      const regex = /[A-Za-z0-9]+\s#[0-9]+/i
+      if (typeof obj !== 'object') return obj
+      for (const key in obj) {
+        if (key === 'value') { newObj[key] = '' } else if (regex.test(key)) {
+          const newKey = key.split('#')[0] + `#${newNumber}`
+          newObj[newKey] = resetNestedObject(obj[key], newNumber)
+        } else {
+          newObj[key] = resetNestedObject(obj[key], newNumber)
+        }
+      } return newObj
+    }
+    const newItem = resetNestedObject(firstItem, totalItems + 1)
+    commit('setNestedObject', {
+      stepNumber,
+      pathArr: [...stepDict, 'values', totalItems],
+      value: newItem
+    })
   }
 }

@@ -8,7 +8,8 @@ export default {
     return {
       datasetId: null,
       fieldNameSelected: '',
-      newChartExist: false
+      newChartExist: false,
+      xlsxCurationData: {}
     }
   },
   mutations,
