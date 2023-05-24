@@ -16,7 +16,7 @@ Windows OS:
 > Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
 
 ## :high_brightness: Testing
-To avoid testing failure, install nvm & copy the command below and run in the project root directory.
+To avoid testing failure, install nvm & copy the command below and run in the project root directory
 
 ```bash
 npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
