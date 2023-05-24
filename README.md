@@ -4,7 +4,7 @@
 MaterialsMine App
 
 ## :high_brightness: Installation
-Make sure to install [docker](https://docs.docker.com/get-docker/) on your machine first, then `git clone` the repo and run `cmd` below to instantiate or terminate the application.
+Make sure to install [docker](https://docs.docker.com/get-docker/) on your machine first, then `git clone` the repo and run commands below to instantiate or terminate the application.
 
 Windows OS: 
 - Be sure to run the Docker installer as an administrator
@@ -15,6 +15,8 @@ Windows OS:
 # :warning: ADVISORY :warning:
 > Before running the steps below, follow the steps [here](https://github.com/Duke-MatSci/materialsmine/blob/develop/resfulservice/misc/README.md) to retrieve and deploy required environment variables
 
+> *IMPORTANT NOTICE:* Install nvm. For windows PC click [windows](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows#install-nvm-windows-nodejs-and-npm), for Mac `brew install nvm`
+
 ## :high_brightness: Testing
 To avoid testing failure, install nvm & copy the command below and run in the project root directory.
 
@@ -22,7 +24,21 @@ To avoid testing failure, install nvm & copy the command below and run in the pr
 npm i && cd app && npm i && cd ../resfulservice && npm i && cd ..
 ```
 
-## :high_brightness: Starting All Application Services
+## :high_brightness: Starting All Application Services Options 1
+Make sure nvm is installed with node >= v16.20.0 or run the command below to install the right node version:
+```bash
+ nvm install 16
+```
+Run the following command from the root directory:
+```bash
+ npm run dev:install
+```
+Run the following command to start the applications:
+```bash
+ npm run dev:start
+```
+
+## :high_brightness: Starting All Application Services Options 2
 Run the following command from the root directory:
 
 ```bash
