@@ -5,9 +5,11 @@ const mongoose = require('mongoose');
 const { createServer: createHttpServer } = require('http');
 const { WebSocketServer } = require('ws');
 const { useServer: useWsServer } = require('graphql-ws/lib/use/ws');
-const { globalMiddleWare, log } = require('./middlewares');
+const swaggerUi = require('swagger-ui-express');
+const { globalMiddleWare, log, swaggerService } = require('./middlewares');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/authService');
+const curationRoutes = require('./routes/curation');
 const elasticSearch = require('./utils/elasticSearch');
 const fileRoutes = require('./routes/files');
 const invalidRoutes = require('./routes/invalid');
@@ -25,7 +27,12 @@ const app = express();
 globalMiddleWare(app);
 elasticSearch.ping(log);
 
+// Serve the Swagger UI
+const apiContractDocument = swaggerService(env);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiContractDocument, { explorer: true }));
+
 app.use('/admin', adminRoutes);
+app.use('/curate', curationRoutes);
 app.use('/secure', authRoutes);
 app.use('/files', fileRoutes);
 app.use('/knowledge', knowledgeRoutes);

@@ -7,6 +7,7 @@ const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
 const { successWriter, errorWriter } = require('../utils/logWriter');
+const { validateIsAdmin } = require('../middlewares/validations');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -15,6 +16,8 @@ const { successWriter, errorWriter } = require('../utils/logWriter');
  * @returns {*} response
  */
 exports.initializeElasticSearch = async (req, res, next) => {
+  validateIsAdmin(req, res, next);
+
   const log = req.logger;
   log.info('initializeElasticSearch(): Function entry');
   try {
@@ -107,11 +110,14 @@ exports.loadElasticSearch = async (req, res, next) => {
   try {
     let response;
     if (req.method === 'DELETE') {
+      validateIsAdmin(req, res, next);
+
       log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
       response = await elasticSearch.deleteSingleDoc(type, doc);
       log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
     } else {
       response = await elasticSearch.indexDocument(req, type, doc);
+      log.info(`loadElasticSearch(): successfully added ${JSON.stringify(doc)} doc`);
     }
 
     await elasticSearch.refreshIndices(req, type);
@@ -133,10 +139,13 @@ exports.loadElasticSearch = async (req, res, next) => {
  * @returns {*} response
  */
 exports.pingElasticSearch = async (req, res, next) => {
-  const log = req.logger;
-  log.info('pingElasticSearch(): Function entry');
+  validateIsAdmin(req, res, next);
+
+  const { logger } = req;
+  logger.info('pingElasticSearch(): Function entry');
+
   try {
-    const response = await elasticSearch.ping(log, 1);
+    const response = await elasticSearch.ping(logger, 1);
     successWriter(req, 'success', 'pingElasticSearch');
     return res.status(200).json({
       response

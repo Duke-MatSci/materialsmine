@@ -9,7 +9,7 @@ const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, 
   const isAdmin = roles === userRoles.isAdmin;
 
   successWriter(req, 'success', 'Found/Created user successfully');
-  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin });
+  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin, roles });
   successWriter(req, 'success', 'Login token generated successfully');
 
   return res
@@ -30,10 +30,6 @@ const _validateUser = async (req) => {
   const email = req.headers[env.MM_AUTH_EMAIL_HEADER] ?? env.MM_USER_EMAIL;
   const userExist = await User.findOne({ email });
 
-  if (env?.MM_RUNTIME_ENV === 'dev') {
-    userExist.roles = userRoles.isAdmin;
-  }
-
   if (userExist) return userExist;
 
   const user = new User({
@@ -41,7 +37,8 @@ const _validateUser = async (req) => {
     email,
     givenName: req.headers[env.MM_AUTH_GIVEN_NAME_HEADER] ?? env.MM_USER,
     surName: req.headers[env.MM_AUTH_SURNAME_HEADER] ?? env.MM_USER,
-    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER
+    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER,
+    roles: req.env?.MM_RUNTIME_ENV === 'dev' ? userRoles.isAdmin : userRoles.member
   });
 
   const savedUser = await user.save();
