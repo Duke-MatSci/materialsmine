@@ -1061,6 +1061,137 @@ const mockUploadedFiles = [
   }
 ];
 
+const mockJsonStructure5 = {
+  ProcessingMethod: {
+    type: 'varied_multiples',
+    cellValue: '3. Synthesis and Processing|[4,1]',
+    required: false,
+    validList: 'Synthesis_and_Processing::Processing_method',
+    values: [
+      {
+        ChooseParameter: {
+          type: 'multiples',
+          values: [
+            {
+              Mixing: {
+                Description: {
+                  description: {
+                    cellValue: '3. Synthesis and Processing|[7,1]',
+                    type: 'String',
+                    required: false
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[7,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                MixingMixer: {
+                  fixedvalue: {
+                    cellValue: '3. Synthesis and Processing|[8,1]',
+                    type: 'String',
+                    required: false
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[8,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                MixingMethod: {
+                  fixedvalue: {
+                    cellValue: '3. Synthesis and Processing|[9,1]',
+                    type: 'List',
+                    required: false,
+                    validList: 'Synthesis_and_Processing::Mixing::Mixing-method::Description/Fixed Value'
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[9,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                RPM: {
+                  fixedvalue: {
+                    cellValue: '3. Synthesis and Processing|[10,1]',
+                    type: 'String',
+                    required: false
+                  },
+                  unit: {
+                    cellValue: '3. Synthesis and Processing|[10,2]',
+                    type: 'String',
+                    required: false
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[10,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                Time: {
+                  fixedvalue: {
+                    cellValue: '3. Synthesis and Processing|[11,1]',
+                    type: 'String',
+                    required: false
+                  },
+                  unit: {
+                    cellValue: '3. Synthesis and Processing|[11,2]',
+                    type: 'List',
+                    required: false,
+                    validList: 'Synthesis_and_Processing::Mixing::Mixing-time::Unit'
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[11,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                Temperature: {
+                  fixedvalue: {
+                    cellValue: '3. Synthesis and Processing|[12,1]',
+                    type: 'String',
+                    required: false
+                  },
+                  unit: {
+                    cellValue: '3. Synthesis and Processing|[12,2]',
+                    type: 'List',
+                    required: false,
+                    validList: 'Synthesis_and_Processing::Mixing::Mixing-temperature::Unit'
+                  },
+                  note: {
+                    cellValue: '3. Synthesis and Processing|[12,3]',
+                    type: 'String',
+                    required: false
+                  }
+                },
+                ChemicalUsed: [
+                  {
+                    name: {
+                      cellValue: '3. Synthesis and Processing|[14,1]',
+                      type: 'String',
+                      required: false
+                    },
+                    value: {
+                      cellValue: '3. Synthesis and Processing|[14,2]',
+                      type: 'String',
+                      required: false
+                    },
+                    unit: {
+                      cellValue: '3. Synthesis and Processing|[14,3]',
+                      type: 'String',
+                      required: false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+};
+
 const user = {
   _id: 'ai094oja09aw40-o',
   displayName: 'test'
@@ -1084,5 +1215,6 @@ module.exports = {
   mockSheetData3,
   mockSheetData4,
   mockJsonStructure4,
+  mockJsonStructure5,
   mockUploadedFiles
 };

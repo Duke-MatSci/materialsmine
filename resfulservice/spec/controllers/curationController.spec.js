@@ -18,21 +18,23 @@ const {
   mockSheetData4,
   mockJsonStructure2,
   mockJsonStructure4,
+  mockJsonStructure5,
   mockUploadedFiles 
 } = require('../mocks')
-const XlsxObject = require('../../src/models/curatedObject');
+const XlsxObject = require('../../src/models/curatedSamples');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
 const XlsxFileManager = require('../../src/utils/curation-utility');
 const XlsxController = require('../../src/controllers/curationController');
+const { logger } = require('../common/utils')
 
 const { expect } = chai;
 
-describe('Xlsx Controllers Unit Tests:', function() {
+describe('Curation Controller', function() {
 
   afterEach(() => sinon.restore());
 
   const req = { 
-    logger: { info: (_message) => { }, error: (_message) => { }, notice: (_message) =>  {} },
+    logger,
     user,
     files: {}
   }
@@ -61,7 +63,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result.message).to.equal('Material template files not uploaded', 'createXlsxObject');
     });
 
-    it('should return a 400 error if material_template.xlsx file is not uploaded', async function() {
+    it('should return a 400 error if master_template.xlsx file is not uploaded', async function() {
       req.files.uploadfile = wrongXlsxFile
       const next = function (fn) {
         return fn;
@@ -84,8 +86,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
       sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns( { count: 1, errors: { Origin: 'invalid value' }});
+      
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
-
       expect(result).to.have.property('errors');
     });
 
@@ -99,12 +101,12 @@ describe('Xlsx Controllers Unit Tests:', function() {
       sinon.stub(XlsxObject, 'find').returns([mockCuratedXlsxObject]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
+     
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
-
       expect(result).to.have.property('message');
     });
 
-    it('should curateXlsx object', async function() {
+    it('should curate master template', async function() {
       req.files.uploadfile = correctXlsxFile;
       const next = function (fn) {
         return fn;
@@ -136,8 +138,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
     });
   })
 
-  context('getXlsxCurations', () => {
-    it('should return 404 not found error', async () => {
+  context('Retrieve curations', () => {
+    it('should return 404 not found error if req.query ID is invalid', async () => {
       req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XlsxObject, 'findOne').returns(null);
       const result = await XlsxController.getXlsxCurations(req, res, next);
@@ -145,7 +147,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result.message).to.equal('Xlsx Object not found');
     })
 
-    it('should return an xlsx curation when an xlsxObjectId is provided', async () => {
+    it('returns a curation data when a valid req.query ID is provided', async () => {
       req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       const next = function (fn) {
         return fn;
@@ -161,7 +163,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result).to.have.property('user');
     });
 
-    it('should return an xlsx curation when an xlsxObjectId is provided and user is admin', async () => {
+    it('returns curated object when an ID is provided and user is admin', async () => {
       req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'};
       req.user.roles = 'admin'
       const next = function (fn) {
@@ -178,7 +180,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result).to.have.property('user');
     })
 
-    it('should return a list of xlsx curations when an xlsxObjectId is not provided', async () => {
+    it('returns list of curations when an ID is not provided', async () => {
       req.query = { xlsxObjectId: null }
       const next = function (fn) {
         return fn;
@@ -205,8 +207,8 @@ describe('Xlsx Controllers Unit Tests:', function() {
     });
   });
 
-  context('updateXlsxCurations', () => {
-    it('should return 404 not found error', async () => {
+  context('Update Curations', () => {
+    it('should return 404 not found error if ID is invalid', async () => {
       req.body = { payload: mockCuratedXlsxObject }
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XlsxObject, 'findOne').returns(null);
@@ -215,7 +217,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result.message).to.equal('Xlsx Object not found');
     });
 
-    it('Should return a message "No changes"', async () => {
+    it('Should return a message "No changes" if no changes occurred with submitted payload', async () => {
       req.body = { payload: mockBaseObject }
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
@@ -228,7 +230,7 @@ describe('Xlsx Controllers Unit Tests:', function() {
       expect(result.message).to.equal("No changes");
     })
 
-    it('should return an updated curation object', async () => {
+    it('should update curation object with submitted payload', async () => {
       req.body = { payload: updatedCuratedXlsxObject }
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
@@ -259,7 +261,6 @@ describe('Xlsx Controllers Unit Tests:', function() {
 
   context('createMaterialObject', () => {
     it('should return error object', async () => {
-      
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       const error = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure, mockCurationListMap);
 
@@ -269,7 +270,6 @@ describe('Xlsx Controllers Unit Tests:', function() {
     });
 
     it('should return parsed and filtered xlsx object 1', async () => {
-      
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData2);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure, mockCurationListMap);
 
@@ -278,26 +278,33 @@ describe('Xlsx Controllers Unit Tests:', function() {
     });
 
     it('should return parsed and filtered xlsx object 2', async () => {
-      
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData3);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure2, mockCurationListMap, mockUploadedFiles);
+      
       expect(result).to.be.an('Object')
       expect(result).to.have.property('DMA Datafile');
       expect(result['DMA Datafile']).to.be.an('Array');
     });
 
     it('should return parsed and filtered xlsx object 3 handling default', async () => {
-      
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData4);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure4, mockCurationListMap, mockUploadedFiles);
+      
       expect(result).to.be.an('Object')
       expect(result).to.have.property('Microstructure');
       expect(result.Microstructure).to.have.property('Imagefile');
       expect(result.Microstructure.Imagefile).to.be.an('Array');
     });
 
+    it('should return parsed and filtered xlsx object for varied_multiple types', async () => {
+      sinon.stub(FileManager, 'xlsxFileReader').returns(mockSheetData5);
+      const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure5, mockCurationListMap);
+
+      expect(result).to.be.an('Object')
+      expect(result).to.have.property('MeltMixing');
+    });
+
     it('should return error when file is not uploaded', async () => {
-      
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData3);
       const error = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure2, mockCurationListMap, correctXlsxFile);
 

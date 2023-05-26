@@ -12,9 +12,9 @@ const datasetIdSchema = new Schema({
     enum: ['APPROVED', 'UNDER_REVIEW', 'WORK_IN_PROGRESS'],
     default: 'WORK_IN_PROGRESS'
   },
-  dataset: [{
+  samples: [{
     type: Schema.Types.ObjectId,
-    ref: 'datasets'
+    ref: 'CuratedSample'
   }]
 }, { timestamps: true });
 

@@ -6,10 +6,11 @@ const curatedObjectSchema = new Schema({
     type: Schema.Types.Mixed,
     required: true
   },
-  // sampleType: {
-  //   type: String,
-  //   required: true
-  // },
+  dataset: {
+    type: Schema.Types.ObjectId,
+    ref: 'DatasetId',
+    required: true
+  },
   user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -17,4 +18,4 @@ const curatedObjectSchema = new Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('curatedObject', curatedObjectSchema);
+module.exports = mongoose.model('CuratedSample', curatedObjectSchema);

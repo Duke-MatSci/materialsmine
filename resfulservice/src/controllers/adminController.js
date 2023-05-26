@@ -204,32 +204,41 @@ exports.bulkElasticSearchImport = (req, res, next) => {
 exports.populateDatasetIds = async (req, res, next) => {
   const log = req.logger;
   log.info('populateDatasetIds(): Function entry');
-  if (!req.internal) {
-    return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
-  }
+  // if (!req.user) {
+  //   return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
+  // }
 
-  const connDB = iterator.generateMongoUrl(req);
-  if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
+  // const connDB = iterator.generateMongoUrl(req);
+  // if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
 
   try {
-    const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
-    const Dataset = await db.collection('datasets');
-    const datasets = await Dataset.find({});
-    await iterator.iteration(datasets, async (arg) => {
-      const user = await User.findOne({ userid: arg?.userid }).lean();
-      const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
-      if (userExistInDatasetId?._id) {
-        userExistInDatasetId.dataset.push(arg);
-        await userExistInDatasetId.save();
-        return;
-      }
-      const datasetId = new DatasetId({ user });
-      datasetId.dataset.push(arg._id);
-      await datasetId.save();
-      return datasetId;
-    }, 2);
-    successWriter(req, { message: 'Successfully updated DatasetIds' }, 'populateDatasetIds');
-    return res.status(201).json({ message: 'Successfully updated DatasetIds' });
+    // const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
+    // const Dataset = await db.collection('datasets');
+    // const datasets = await Dataset.find({});
+    // await iterator.iteration(datasets, async (arg) => {
+    //   const user = await User.findOne({ userid: arg?.userid }).lean();
+    //   const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
+    //   if (userExistInDatasetId?._id) {
+    //     userExistInDatasetId.dataset.push(arg);
+    //     await userExistInDatasetId.save();
+    //     return;
+    //   }
+    //   const datasetId = new DatasetId({ user });
+    //   datasetId.dataset.push(arg._id);
+    //   await datasetId.save();
+    //   return datasetId;
+    // }, 2);
+    const user = req.user;
+    const datasetId = new DatasetId({ user });
+    const createdDataset = await datasetId.save();
+
+    successWriter(req, { message: `Successfully created DatasetId: ${createdDataset._id}` }, 'populateDatasetIds');
+    return res.status(201).json({
+      id: createdDataset._id,
+      samples: createdDataset.samples,
+      status: createdDataset.status,
+      creationDate: createdDataset.createdAt
+    });
   } catch (err) {
     next(errorWriter(req, err, 'populateDatasetIds', 500));
   }
