@@ -1,8 +1,6 @@
 const elasticSearch = require('../utils/elasticSearch');
 const { outboundRequest } = require('../controllers/kgWrapperController');
-const iterator = require('../utils/iterator');
 const DatasetId = require('../models/datasetId');
-const User = require('../models/user');
 const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
