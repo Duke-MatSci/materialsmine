@@ -137,6 +137,7 @@ class ElasticSearch {
     }
     return this.client.index({
       index: type,
+      refresh: true,
       document: { ...doc }
     });
   }

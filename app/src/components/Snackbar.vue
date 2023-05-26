@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration">
+    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration" class="md-snackbar-adjust">
       {{message}}
       <span>
         <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
@@ -17,7 +17,7 @@ export default {
     position: {
       type: String,
       required: false,
-      default: 'center'
+      default: 'left'
     }
   },
   data () {

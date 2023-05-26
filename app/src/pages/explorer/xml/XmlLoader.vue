@@ -1,20 +1,33 @@
 <template>
-  <div>
-    <section class="u_width--max" v-if="!!Object.keys(xmlViewer).length && xmlViewer.xmlString">
-      <div>
-        <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text"> {{ xmlViewer.title }} </h2>
-      </div>
-      <!-- xml viewer  -->
-      <div class="wrapper">
-        <pre class="language-xml grid">
-          <code class="inlinecode language-xml keepMarkUp">
-            {{ xmlViewer.xmlString }}
-          </code>
-        </pre>
-      </div>
-      <comment :type="type" :identifier="xmlViewer?.id"></comment>
+  <div class="xmlLoader" >
+    <section class="u_width--max viz-u-postion__rel utility-roverflow" v-if="!!Object.keys(xmlViewer).length && xmlViewer.xmlString">
+      <md-drawer class="md-right" :class="{' md-fixed': showSidepanel}" :md-active.sync="showSidepanel">
+        <comment :type="type" :identifier="optionalChaining(() => xmlViewer.id)"></comment>
+        <md-button @click="showSidepanel = false" class="md-fab md-fixed md-dense md-fab-top-right md-primary btn--primary">
+            <md-icon>close</md-icon>
+        </md-button>
+      </md-drawer>
 
+      <md-content class="u_width--max md-app-side-drawer md-app-container md-scrollbar" >
+        <div>
+          <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text"> {{ optionalChaining(() => xmlViewer.title) }} </h2>
+        </div>
+        <!-- xml viewer  -->
+        <div class="wrapper">
+          <pre class="language-xml grid">
+            <code class="inlinecode language-xml keepMarkUp">
+              {{ optionalChaining(() => xmlViewer.xmlString) }}
+            </code>
+          </pre>
+        </div>
+
+      </md-content>
+
+      <md-button @click="showSidepanel = true" class="md-fab md-fixed md-dense md-fab-bottom-right md-primary btn--primary">
+          <md-icon>comment</md-icon>
+      </md-button>
     </section>
+
     <section class="section_loader u--margin-toplg" v-else-if="$apollo.loading">
       <spinner :loading="$apollo.loading" text='Loading Xml'/>
     </section>
@@ -29,17 +42,20 @@ import Prism from 'prismjs'
 import 'prismjs/components/prism-xml-doc'
 import 'prismjs/components/prism-markup'
 import 'prismjs/themes/prism-coy.min.css'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
 export default {
   name: 'XmlVisualizer',
+  mixins: [optionalChainingUtil],
   components: {
     Comment,
     spinner
   },
   data () {
     return {
+      showSidepanel: false,
       type: 'xml',
       xmlViewer: {}
     }
@@ -47,12 +63,6 @@ export default {
   mounted () {
     window.Prism = window.Prism || {}
     window.Prism.manual = true
-    // Prism.hooks.add('before-highlight', function (env) {
-    //   env.code = env.element.innerText
-    //   // env.code = env.code.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    //   // env.code = env.code.replace(/&amp;/g, '&')
-    // })
-    // Prism.highlightElement('code[class*="language-"]')
     Prism.highlightAll()
   },
   apollo: {
