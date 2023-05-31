@@ -84,7 +84,7 @@ docker-compose down -v
    General branch naming convention: `#<issue number>_short_but_specific_title` .
 3. Before committing, run the full test suite by running `npm run test` from the root `materialsmine` directory.
 
-   If you are adding a new feature, please create a unit test for that feature, either in `/app/tests/unit` for frontend features, or in `/resfulservice/spec` for backend.
+   If you are adding a new feature, please create a unit test for that feature, either by using [Vue Test Utils](https://v1.test-utils.vuejs.org/) in `/app/tests/unit` for frontend features, or using [Chai](https://www.chaijs.com/) in `/resfulservice/spec` for backend.
 4. Commit messages should follow Angular’s formatting guidelines, [described here](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#-commit-message-format).
 5. Push your branch to GitHub with `git push origin your_branch_name` .
 6. In GitHub, send a pull request to `develop`. In your PR, describe your changes and [use a keyword](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword) to link the related issue (e.g., closes #999, fixes #001).
