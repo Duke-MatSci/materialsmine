@@ -15,7 +15,7 @@ paths:
   /admin/es:
     get:
       security:
-        - bearerAuth: [] 
+        - BearerAuth: [] 
       summary: Check the status of elastic search service
       tags:
         - Admin
@@ -54,7 +54,7 @@ paths:
                     example: An error occurred
     post:
       security:
-        - bearerAuth: [] 
+        - BearerAuth: [] 
       summary: Automatically configures & initializes elastic search service
       tags:
         - Admin
@@ -98,7 +98,7 @@ paths:
       tags:
         - Admin
       security:
-        - bearerAuth: [] 
+        - BearerAuth: [] 
       summary: Add new resource into search service. Examples of a resource item are charts, samples or articles
       requestBody:
         description: New resource document payload to index in json
@@ -192,7 +192,7 @@ paths:
                     example: An error occurred
     delete:
       security:
-        - bearerAuth: [] 
+        - BearerAuth: [] 
       summary: Removes resource item from search service. Examples of a resource item are charts, samples or articles
       tags:
         - Admin
@@ -292,14 +292,258 @@ paths:
                   message:
                     type: string
                     example: An error occurred
+  /curate:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Gets curation Base Object
+      description: A route to get the Curation Schema Base Object either base on sheetName query or returns the whole Schema
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: sheetName
+          schema:
+            type: string
+          description: The sheetName (i.e subset) of the Schema to return. This is optional
+      responses:
+        '200':
+          description: Returns a json Schema object
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  data origin: {}
+                  material types: {}
+                  synthesis and processing: {}
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: Creates a new curation
+      description: Curates a new data based on a submitted spreadsheet & other files
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: dataset
+          schema:
+            type: string
+          description: Dataset ID
+      requestBody:
+        description: A payload that contains the master_template xlsx file along with other files needed to create the curation
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadfile:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Curation'
+        '400':
+          description: If user doesn't upload master template xlsx file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Missing dataset ID in query', 'Material template files not uploaded', 'Master template xlsx file not uploaded']
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '404':
+          description: Dataset not found
+          content: 
+            application/json: 
+              schema:
+                type: object
+                example:
+                  message: A sample must belong to a dataset. Dataset 583e3d6ae74a1d205f4e3fd3 not found
+        '409':
+          description: conflict error if object already curated
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                    message: 'This had been curated already'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    put:
+      tags:
+        - Curation
+      security:
+        - BearerAuth: [] 
+      summary: Updates existing curated data
+      deprecated: false
+      parameters:
+        - in: query
+          name: xlsxObjectId
+          schema:
+            type: string
+          description: Curation ID
+      requestBody:
+        description: An updated curation json object
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: '#/components/schemas/Successful-Curation'
+      responses:
+        '200':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Curation'
+
+        '304': 
+          description: No changes to the curation object to update
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'No changes'
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Curated sample ID 583e3d6ae74a1d205f4e3fd3 not found
+
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  /curate/edit:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Gets a single curated data or list of curated data
+      description: A route to get a single curation or list of curations depending on if query parameter for the curation to get is set.
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: xlsxObjectId
+          schema:
+            type: string
+          description: The ID of the curated data to return for editing
+        - in: query
+          name: xmlId
+          schema:
+            type: string
+          description: Alternatively the ID of the xml to return for editing
+      responses:
+        '200':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Successful-Curation'
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Curation sample not found', 'Sample xml not found']
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
 components:
   securitySchemes:
-    bearerAuth:
-      type: apiKey
+    BearerAuth:
+      type: http
       scheme: bearer
-      name: Authorization
-      in: header
-      description: Use this format: Bearer &lt;API Key&gt;
+      bearerFormat: JWT
   schemas:
     Unauthorized-Error: 
       type: object
@@ -319,3 +563,16 @@ components:
         message:
           type: string
           example: Category type or doc is missing
+    Successful-Curation:
+      type: object
+      example: 
+        data origin:
+          YourName: Akash Prasad
+          YourEmail: akash@prasad.com
+          ID: S10
+          Control_ID: S28
+          Origin: experiments
+          Citation Type: lab-generated
+          Author: Aditya Shanker Prasad
+          URL: https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y
+          Location: Rensselaer Polytechnic Institute
