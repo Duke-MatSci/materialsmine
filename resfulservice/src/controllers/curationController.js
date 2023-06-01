@@ -53,6 +53,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await newCurationObject.save();
     datasets.samples.push(curatedObject);
+    // await datasets.save();
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
@@ -85,8 +86,8 @@ exports.getXlsxCurations = async (req, res, next) => {
         if (!xmlData) return next(errorWriter(req, 'Sample xml not found', 'getXlsxCurations', 404));
         fetchedObject = XlsxFileManager.jsonGenerator(xmlData.xml_str);
       }
-      const baseUserObject = createBaseObject(BaseSchemaObject, fetchedObject);
-      return res.status(200).json(baseUserObject);
+
+      return res.status(200).json(fetchedObject);
     } else {
       const xlsxObjects = await CuratedSamples.find(filter, { user: 1, createdAt: 1, updatedAt: 1, _v: 1 }, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
       return res.status(200).json(xlsxObjects);
@@ -119,6 +120,37 @@ exports.updateXlsxCurations = async (req, res, next) => {
     return res.status(304).json({ message: 'No changes' });
   } catch (err) {
     next(errorWriter(req, err, 'updateXlsxCurations', 500));
+  }
+};
+
+exports.deleteXlsxCurations = async (req, res, next) => {
+  const { user, logger, query } = req;
+  logger.info('deleteXlsxCurations Function Entry:');
+
+  const { xlsxObjectId, dataset } = query;
+  const filter = {};
+
+  if (user?.roles !== 'admin') filter.user = user._id;
+
+  try {
+    if (xlsxObjectId) {
+      const xlsxObject = await CuratedSamples.findOneAndDelete({ _id: xlsxObjectId, ...filter }, { lean: true });
+
+      if (!xlsxObject) return next(errorWriter(req, 'Curation sample not found', 'deleteXlsxCurations', 404));
+
+      await DatasetId.findOneAndUpdate({ _id: xlsxObject.dataset }, { $pull: { samples: xlsxObject._id } }, { new: true });
+      return res.status(200).json({ message: `Curated sample ID: ${xlsxObjectId} successfully deleted` });
+    } else if (dataset) {
+      const datasets = await DatasetId.findOneAndDelete({ _id: dataset, ...filter }, { lean: true });
+
+      if (!datasets) return next(errorWriter(req, `Dataset ID: ${query.dataset} not found`, 'deleteXlsxCurations', 404));
+
+      await CuratedSamples.deleteMany({ _id: { $in: datasets.samples } });
+      return res.status(200).json({ message: `Dataset ID: ${query.dataset} successfully deleted` });
+    }
+    return next(errorWriter(req, 'Missing dataset ID or curation ID in query', 'curateXlsxSpreadsheet', 400));
+  } catch (err) {
+    next(errorWriter(req, err, 'deleteXlsxCurations', 500));
   }
 };
 
@@ -172,6 +204,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
 
   for (const property in BaseObject) {
     const propertyValue = BaseObject[property];
+
     if (propertyValue.type === 'replace_nested') {
       const objArr = [];
 
@@ -206,17 +239,21 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
       const objArr = [];
       for (const prop of multiples) {
         const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+
         if (Object.keys(newObj).length > 0) {
           objArr.push(newObj);
         }
       }
+
       if (objArr.length > 0) {
         filteredObject[cellValue ?? BaseObjectSubstitutionMap[property] ?? property] = objArr;
       }
     } else if (Array.isArray(propertyValue)) {
       const objArr = [];
+
       for (const prop of propertyValue) {
         const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+
         if (Object.keys(newObj).length > 0) {
           objArr.push(newObj);
         }
@@ -249,6 +286,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
         } else if (propertyValue.type === 'File') {
           const regex = new RegExp(`${cellValue}$`, 'gi');
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
+
           if (file) {
             if (file?.mimetype === 'text/csv') {
               const jsonData = await XlsxFileManager.parseCSV(file.path);
@@ -270,9 +308,11 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
     } else {
       const nestedObj = await this.createMaterialObject(path, propertyValue, validListMap, uploadedFiles, errors);
       const nestedObjectKeys = Object.keys(nestedObj);
+
       if (nestedObjectKeys.length > 0) {
         filteredObject[BaseObjectSubstitutionMap[property] ?? property] = nestedObj;
       }
+
       if (nestedObjectKeys.length === 1 && nestedObjectKeys[0] === 'description') {
         filteredObject[BaseObjectSubstitutionMap[property] ?? property] = nestedObj[nestedObjectKeys[0]];
       }
@@ -360,21 +400,20 @@ const createBaseObject = (BaseObject, storedObject) => {
   const curatedBaseObject = {};
   for (const property in BaseObject) {
     const propertyValue = BaseObject[property];
-
     if (Array.isArray(propertyValue?.values)) {
       const objectArray = propertyValue.values.map((BaseObject, i) => createBaseObject(BaseObject, storedObject?.[property]?.[i]));
       curatedBaseObject[BaseObjectSubstitutionMap[property] ?? property] = objectArray;
     } else if (Array.isArray(propertyValue)) {
       const objectArray = propertyValue.map((BaseObject, i) => createBaseObject(BaseObject, storedObject?.[property]?.[i]));
       curatedBaseObject[BaseObjectSubstitutionMap[property] ?? property] = objectArray;
-    } else if (propertyValue?.cellValue) {
+    } else if (propertyValue.cellValue) {
       if (storedObject?.[property]) {
         curatedBaseObject[BaseObjectSubstitutionMap[property] ?? property] = storedObject[property];
       } else {
         curatedBaseObject[BaseObjectSubstitutionMap[property] ?? property] = null;
       }
     } else {
-      const nestedObj = createBaseObject(propertyValue, storedObject?.[property]);
+      const nestedObj = createBaseObject(propertyValue, storedObject?.[BaseObjectSubstitutionMap[property] ?? property]);
 
       if (Object.keys(nestedObj).length > 0) {
         curatedBaseObject[BaseObjectSubstitutionMap[property] ?? property] = nestedObj;

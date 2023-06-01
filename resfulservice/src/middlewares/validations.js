@@ -1,4 +1,4 @@
-const { param, validationResult, body } = require('express-validator');
+const { param, validationResult, body, query } = require('express-validator');
 const { userRoles } = require('../../config/constant');
 const { errorWriter } = require('../utils/logWriter');
 
@@ -13,7 +13,7 @@ exports.validateAcceptableUploadType = [
 ];
 
 exports.validateXlsxObjectUpdate = [
-  param('xlsxObjectId').not().isEmpty().withMessage('xlsx object ID required').bail().isMongoId().withMessage('invalid xlsx object id'),
+  query('xlsxObjectId').not().isEmpty().withMessage('xlsx object ID required').bail().isMongoId().withMessage('invalid xlsx object id'),
   body('payload').isObject().withMessage('please provide xlsx object for update'),
   validationErrorHandler
 ];
@@ -27,3 +27,9 @@ function validationErrorHandler (req, res, next) {
 };
 
 exports.validateIsAdmin = (req, res, next) => !req.user?.roles === userRoles.isAdmin && next(errorWriter(req, 'User is forbidden', 'validateIsAdmin', 403));
+
+exports.validateXlsxObjectDelete = [
+  query('xlsxObjectId').optional().bail().isMongoId().withMessage('invalid xlsx object id'),
+  query('dataset').optional().bail().isMongoId().withMessage('invalid xlsx object id'),
+  validationErrorHandler
+];

@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const curationController = require('../controllers/curationController');
 const isAuth = require('../middlewares/isAuth');
-const { validateXlsxObjectUpdate } = require('../middlewares/validations');
+const { validateXlsxObjectUpdate, validateXlsxObjectDelete } = require('../middlewares/validations');
 
 router.route('')
   .get(isAuth, curationController.getCurationSchemaObject)
   .post(isAuth, curationController.curateXlsxSpreadsheet)
-  .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations);
+  .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations)
+  .delete(validateXlsxObjectDelete, isAuth, curationController.deleteXlsxCurations);
 
 router.route('/:xmlId/:xlsxObjectId')
   .get(isAuth, curationController.getXlsxCurations);
