@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const { CurationStates, CurationEntityStates, CurationStateDefault, CurationEntityStateDefault } = require('../../config/constant');
 
 const curatedObjectSchema = new Schema({
   object: {
@@ -15,6 +16,18 @@ const curatedObjectSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  curationState: {
+    type: String,
+    enum: CurationStates,
+    required: true,
+    default: CurationStateDefault
+  },
+  entityState: {
+    type: String,
+    enum: CurationEntityStates,
+    required: true,
+    default: CurationEntityStateDefault
   }
 }, { timestamps: true });
 
