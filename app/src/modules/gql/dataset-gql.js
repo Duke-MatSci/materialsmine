@@ -87,22 +87,3 @@ mutation CreateDatasetId {
     }
   }
 }`
-
-export const CREATE_DATASET_MUTATION = gql`
-mutation CreateDataset($input: datasetInput) {
-  createDataset(input: $input) {
-    _id
-    title
-    doi
-    datasetId
-    userid
-    filesets {
-      filesetName
-      files {
-        id
-        filename
-        contentType
-      }
-    }
-  }
-}`

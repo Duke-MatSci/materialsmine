@@ -5,7 +5,7 @@ import Dialog from '@/components/Dialog.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import Spinner from '@/components/Spinner.vue'
 import useFileList from '@/modules/file-list'
-import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY, CREATE_DATASET_MUTATION } from '@/modules/gql/dataset-gql'
+import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY } from '@/modules/gql/dataset-gql'
 import { mapGetters, mapMutations } from 'vuex'
 
 // Create separate file objects for spreadsheet vs supplementary files
@@ -32,6 +32,9 @@ export default {
         label: '',
         id: null
       },
+      tifFiles: [],
+      newTifs: false,
+      renameXlsx: false,
       spreadsheetFiles: spreadsheetFn.files,
       suppFiles: suppFn.files,
       uploadedFiles: null,
@@ -88,23 +91,6 @@ export default {
     navBack () {
       this.$router.back()
     },
-    createDataset () {
-      this.$apollo.mutate({
-        mutation: CREATE_DATASET_MUTATION,
-        variables: {
-          input: {
-            datasetId: `${this.datasetId}`,
-            files: this.uploadedFiles.files,
-            title: this.title,
-            doi: this.doi
-          }
-        }
-      }).then((data) => {
-        return data
-      }).catch((error) => {
-        console.error('error:', error)
-      })
-    },
     // Format files for submission
     processFiles () {
       return this.spreadsheetFiles.filter(file => file.status === 'incomplete')
@@ -113,12 +99,37 @@ export default {
     },
     onInputChange (e) {
       if (e.target.id === 'file-spreadsheet-input') {
-        this.addSpreadsheet(e.target.files)
+        const filteredXlsx = this.filterXlsx(e.target.files)
+        this.addSpreadsheet(filteredXlsx)
       } else {
+        this.filterTif(e.target.files)
         this.addSupp(e.target.files)
       }
       // reset so that selecting the same file again will still cause it to fire this change
       e.target.value = null
+    },
+    filterXlsx (files) {
+      this.renameXlsx = false
+      const newFiles = [...files]
+      const filteredFiles = []
+      for (let i = 0; i < newFiles.length; i++) {
+        if (newFiles[i].name !== 'master_template.xlsx') {
+          this.renameXlsx = true
+        } else filteredFiles.push(newFiles[i])
+      }
+      return filteredFiles
+    },
+    filterTif (files) {
+      this.newTifs = false
+      const newFiles = [...files]
+      const filteredFiles = []
+      for (let i = 0; i < newFiles.length; i++) {
+        if (newFiles[i].type.includes('tif')) {
+          this.tifFiles.push(newFiles[i])
+          this.newTifs = true
+        } else filteredFiles.push(newFiles[i])
+      }
+      return filteredFiles
     },
     goToStep (id, index) {
       if (id === 'fourth' && index === 'sixth') {
@@ -137,16 +148,17 @@ export default {
       this.uploadInProgress = 'Uploading files'
       this.renderDialog('Submitting dataset', 'loading', 40, true)
       try {
-        await this.uploadFiles()
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.createDataset()
         setTimeout(() => {
           this.toggleDialogBox()
-          this.uploadInProgress = false
-          this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
         }, 1000)
+        return await this.createSample()
+      } catch (error) {
+        this.$store.commit('setSnackbar', {
+          message: error?.message ?? error
+        })
+      } finally {
+        this.uploadInProgress = false
+        this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
       }
     },
     renderDialog (title, type, minWidth, disableClose = false) {
@@ -158,21 +170,24 @@ export default {
       }
       this.toggleDialogBox()
     },
-    async uploadFiles () {
-      const url = '/api/files/upload'
+    async createSample () {
+      const url = `/api/curate?dataset=${this.datasetId}`
       const formData = new FormData()
       const files = this.processFiles()
       files.forEach((file) => formData.append('uploadfile', file))
-      return fetch(url, {
+      formData.append('title', this.title)
+      formData.append('doi', this.doi)
+      const response = await fetch(url, {
         method: 'POST',
         body: formData,
         redirect: 'follow'
-      }).then((response) => response.json())
-        .then((result) => {
-          this.uploadedFiles = result
-          this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
-          this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))
-        }).catch(error => console.log('error', error))
+      })
+      if (response.status === 201) {
+        const result = await response.json()
+        this.uploadedFiles = result
+        this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
+        this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))
+      }
     },
     changeSelectedDataset (selection) {
       this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`
