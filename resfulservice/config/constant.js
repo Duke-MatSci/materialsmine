@@ -11,11 +11,15 @@ module.exports = {
     member: 'member'
   },
   commentTypes: ['xml', 'charts', 'images'],
+  CurationStates: ['Editing', 'Completed'],
+  CurationStateDefault: 'Editing',
+  CurationEntityStates: ['Approved', 'Not Approved'],
+  CurationEntityStateDefault: 'Not Approved',
   BaseObjectSubstitutionMap: {
-    'data origin': 'DATA_SOURCE',
-    'material types': 'MATERIALS',
-    'synthesis and processing': 'PROCESSING',
-    'characterization methods': 'CHARACTERIZATION',
-    microstructure: 'MICROSTRUCTURE'
+    'DATA ORIGIN': 'DATA_SOURCE',
+    'MATERIAL TYPES': 'MATERIALS',
+    'SYNTHESIS AND PROCESSING': 'PROCESSING',
+    'CHARACTERIZATION METHODS': 'CHARACTERIZATION',
+    MICROSTRUCTURE: 'MICROSTRUCTURE'
   }
 };
