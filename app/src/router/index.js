@@ -78,10 +78,10 @@ router.beforeEach(async function (to, _, next) {
 
       await store.dispatch('auth/tryLogin')
       if (store.getters['auth/isAuthenticated']) {
-        next()
+        return next()
       }
     }
-    next(false)
+    next('')
   } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
     next()
   } else {

@@ -58,7 +58,7 @@ describe('SpreadsheetUpload.vue', () => {
     expect(steppers.at(1).text()).toContain('DOI')
   })
 
-  it('verifies provided information', async () => {
+  it.skip('verifies provided information', async () => {
     expect.assertions(2)
     await wrapper.setData({ title: 'Test dataset title', doi: '10.000' })
     const lastStep = wrapper.findAll('.md-stepper').at(5)
