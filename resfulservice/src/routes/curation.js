@@ -9,13 +9,13 @@ router.route('')
   .post(isAuth, curationController.curateXlsxSpreadsheet)
   .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations);
 
-router.route('/edit')
+router.route('/:xmlId/:xlsxObjectId')
   .get(isAuth, curationController.getXlsxCurations);
 
-router.route('/xml-generator')
-  .post(isAuth, curationController.getXlsxCurations);
+router.route('/admin')
+  .post(isAuth, curationController.approveCuration);
 
-router.route('/xml-submit')
-  .post(isAuth, curationController.getXlsxCurations);
+router.route('rehydrate')
+  .patch(isAuth, curationController.curationRehydration);
 
 module.exports = router;
