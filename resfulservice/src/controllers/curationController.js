@@ -25,7 +25,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   }
 
   if (!query.dataset) {
-    return next(errorWriter(req, `Missing dataset ID: ${query.dataset} in query`, 'curateXlsxSpreadsheet', 400));
+    return next(errorWriter(req, 'Missing dataset ID in query', 'curateXlsxSpreadsheet', 400));
   }
 
   try {
@@ -36,7 +36,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     ]);
 
     if (!datasets) {
-      return res.status(404).json({ errors: `A sample must belong to a dataset. Dataset ID: ${query.dataset ?? null} not found` });
+      return next(errorWriter(req, `A sample must belong to a dataset. Dataset ID: ${query.dataset ?? null} not found`, 'curateXlsxSpreadsheet', 404));
     }
 
     const validListMap = generateCurationListMap(validList);
@@ -53,7 +53,6 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await newCurationObject.save();
     datasets.samples.push(curatedObject);
-    // await datasets.save();
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
@@ -73,20 +72,21 @@ exports.getXlsxCurations = async (req, res, next) => {
   const filter = {};
 
   if (user?.roles !== 'admin') filter.user = user._id;
-
   try {
-    if (xlsxObjectId) {
-      const xlsxObject = await CuratedSamples.findOne({ _id: xlsxObjectId, ...filter }, null, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
+    if (xmlId || xlsxObjectId) {
+      let fetchedObject;
+      if (xlsxObjectId) {
+        const xlsxObject = await CuratedSamples.findOne({ _id: xlsxObjectId, ...filter }, null, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
 
-      if (!xlsxObject) return next(errorWriter(req, 'Curation sample not found', 'getXlsxCurations', 404));
-
-      const baseUserObject = createBaseObject(BaseSchemaObject, xlsxObject.object);
-      return res.status(200).json({ ...xlsxObject, object: baseUserObject });
-    } else if (xmlId) {
-      const xmlData = await XmlData.findOne({ _id: xmlId }, { xml_str: 1 }, { lean: true });
-      const xmlJson = XlsxFileManager.xmlGenerator(xmlData.xml_str);
-      const object = createBaseObject(BaseSchemaObject, xmlJson);
-      return res.status(200).json(object);
+        if (!xlsxObject) return next(errorWriter(req, 'Curation sample not found', 'getXlsxCurations', 404));
+        fetchedObject = xlsxObject.object;
+      } else if (xmlId) {
+        const xmlData = await XmlData.findOne({ _id: xmlId }, { xml_str: 1 }, { lean: true });
+        if (!xmlData) return next(errorWriter(req, 'Sample xml not found', 'getXlsxCurations', 404));
+        fetchedObject = XlsxFileManager.jsonGenerator(xmlData.xml_str);
+      }
+      const baseUserObject = createBaseObject(BaseSchemaObject, fetchedObject);
+      return res.status(200).json(baseUserObject);
     } else {
       const xlsxObjects = await CuratedSamples.find(filter, { user: 1, createdAt: 1, updatedAt: 1, _v: 1 }, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
       return res.status(200).json(xlsxObjects);
@@ -172,8 +172,22 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
 
   for (const property in BaseObject) {
     const propertyValue = BaseObject[property];
+    if (propertyValue.type === 'replace_nested') {
+      const objArr = [];
 
-    if (Array.isArray(propertyValue?.values)) {
+      for (const prop of propertyValue.values) {
+        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+        const value = Object.values(newObj)[0];
+
+        if (value) {
+          objArr.push(value);
+        }
+      }
+
+      if (objArr.length > 0) {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = objArr;
+      }
+    } else if (Array.isArray(propertyValue?.values)) {
       let multiples = propertyValue.values;
       let cellValue;
       if (propertyValue.type === 'varied_multiples') {
@@ -241,6 +255,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
             }
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = file.filename;
           } else {
             errors[cellValue] = 'file not uploaded';
           }
@@ -273,11 +288,19 @@ exports.getCurationSchemaObject = async (req, res, next) => {
   req.logger.info('getCurationSchemaObject Function Entry:');
   const { sheetName } = req.query;
 
-  const result = BaseSchemaObject[sheetName?.toLowerCase()]
-    ? BaseSchemaObject[sheetName?.toLowerCase()]
+  const result = BaseSchemaObject[sheetName?.toUpperCase()]
+    ? BaseSchemaObject[sheetName?.toUpperCase()]
     : BaseSchemaObject;
 
   return res.status(200).json(result);
+};
+
+exports.approveCuration = async (req, res, next) => {
+
+};
+
+exports.curationRehydration = async (req, res, next) => {
+
 };
 
 /**
