@@ -15,6 +15,8 @@ module.exports = {
   CurationStateDefault: 'Editing',
   CurationEntityStates: ['Approved', 'Not Approved'],
   CurationEntityStateDefault: 'Not Approved',
+  DatasetStatusOpt: ['APPROVED', 'UNDER_REVIEW', 'WORK_IN_PROGRESS'],
+  DatasetStatusDefault: 'WORK_IN_PROGRESS',
   BaseObjectSubstitutionMap: {
     'DATA ORIGIN': 'DATA_SOURCE',
     'MATERIAL TYPES': 'MATERIALS',
