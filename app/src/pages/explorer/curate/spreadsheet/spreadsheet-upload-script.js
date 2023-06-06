@@ -75,7 +75,8 @@ export default {
     ...mapGetters({
       userId: 'auth/userId',
       isAuthenticated: 'auth/isAuthenticated',
-      dialogBoxActive: 'dialogBox'
+      dialogBoxActive: 'dialogBox',
+      token: 'auth/token'
     })
   },
   methods: {
@@ -148,17 +149,11 @@ export default {
       this.uploadInProgress = 'Uploading files'
       this.renderDialog('Submitting dataset', 'loading', 40, true)
       try {
-        setTimeout(() => {
-          this.toggleDialogBox()
-        }, 1000)
-        return await this.createSample()
+        await this.createSample()
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: error?.message ?? error
         })
-      } finally {
-        this.uploadInProgress = false
-        this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
       }
     },
     renderDialog (title, type, minWidth, disableClose = false) {
@@ -171,7 +166,8 @@ export default {
       this.toggleDialogBox()
     },
     async createSample () {
-      const url = `/api/curate?dataset=${this.datasetId}`
+      this.toggleDialogBox()
+      const url = `${window.location.origin}/api/curate/?dataset=${this.datasetId}`
       const formData = new FormData()
       const files = this.processFiles()
       files.forEach((file) => formData.append('uploadfile', file))
@@ -180,14 +176,22 @@ export default {
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
-        redirect: 'follow'
+        redirect: 'follow',
+        headers: {
+          Authorization: 'Bearer ' + this.token
+        }
       })
-      if (response.status === 201) {
-        const result = await response.json()
+
+      if (!!response?.ok) {
         this.uploadedFiles = result
         this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
         this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))
+        this.uploadInProgress = false
+        this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
+        // Todo: @Anya use the response here
+        return this.toggleDialogBox()
       }
+      throw new Error(`Error: ${response?.statusText}` ?? 'An error occurred')
     },
     changeSelectedDataset (selection) {
       this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`
