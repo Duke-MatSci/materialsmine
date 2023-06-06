@@ -52,8 +52,8 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await newCurationObject.save();
-    datasets.samples.push(curatedObject);
-    // await datasets.save();
+
+    await datasets.updateOne({ $push: { samples: curatedObject } });
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
