@@ -7,10 +7,12 @@ const { datasetTransformer, filesetsTransform } = require('../../transformer');
 const datasetMutation = {
   createDatasetId: async (_, _input, { user, req, isAuthenticated }) => {
     req.logger.info('createDatasetId Function Entry');
+
     if (!isAuthenticated) {
       req.logger?.error('[createDatasetId]: User unauthorized');
       return errorFormater('Unauthorized', 401);
     }
+
     try {
       const { _id, displayName } = user;
       const unusedDatasetId = await DatasetId.findOne({ user: _id, samples: [] });
@@ -20,7 +22,7 @@ const datasetMutation = {
         return errorFormater(err.message, 409);
       }
 
-      const datasetId = new Dataset({ user: _id });
+      const datasetId = new DatasetId({ user: _id });
       const savedDataset = await datasetId.save();
 
       return datasetTransformer(savedDataset, { _id, displayName });

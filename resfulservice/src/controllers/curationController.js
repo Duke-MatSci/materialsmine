@@ -2,7 +2,7 @@ const util = require('util');
 const XlsxFileManager = require('../utils/curation-utility');
 const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
-const { BaseObjectSubstitutionMap } = require('../../config/constant');
+const { BaseObjectSubstitutionMap, CurationEntityStateDefault } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
@@ -51,14 +51,20 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     if (curatedAlready) return next(errorWriter(req, 'This had been curated already', 'curateXlsxSpreadsheet', 409));
 
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
-    const curatedObject = await newCurationObject.save();
+    const curatedObject = await (await newCurationObject.save()).populate('user', 'displayName');
 
     await datasets.updateOne({ $push: { samples: curatedObject } });
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
-    res.header('Content-Type', 'application/xml');
-    return res.status(201).send(xml);
+
+    return res.status(201).json({
+      xml,
+      user: curatedObject.user,
+      groupId: curatedObject.dataset,
+      isApproved: curatedObject.entityState !== CurationEntityStateDefault,
+      status: curatedObject.curationState
+    });
   } catch (err) {
     next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
   }

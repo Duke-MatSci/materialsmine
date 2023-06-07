@@ -17,33 +17,22 @@ exports.filesetsTransform = (filesets) => {
   return transformedFilesets;
 };
 
-// Todo: (@tholulomo) Remove this lines of code after reliability test
-// const filterDataset = (data) => {
-//   if (!data.filesets.length) {
-//     return null;
-//   }
-//   return [{
-//     datasetId: data._id ?? null, // Todo: (@tholulomo) deprecate this field
-//     datasets: this.filesetsTransform(data.filesets)
-//   }];
-// };
-
 exports.transformUser = ({ _id, displayName }) => {
   return { id: _id, username: displayName };
 };
 
-// Todo: (@tholulomo) Remove third arg and refactor schema output
 exports.datasetTransform = async (data, user = {}, userDataset = false) => {
   let status;
 
   if (!userDataset) {
-    data.isPublic ? status = 'APPROVED' : status = 'WORK_IN_PROGRESS';
     return {
       datasetGroupId: data?._id,
       status,
-      filesetInfo: this.filesetsTransform(data.filesets),
-      createdAt: new Date(parseInt(data?.dttm_created) * 1000),
-      updatedAt: new Date(parseInt(data?.dttm_updated) * 1000)
+      filesetInfo: [],
+      user: this.transformUser(user),
+      curatedDatasets: data.samples,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
     };
   }
 
@@ -53,6 +42,8 @@ exports.datasetTransform = async (data, user = {}, userDataset = false) => {
       title: item.title,
       status: item.isPublic ? 'APPROVED' : 'WORK_IN_PROGRESS',
       filesetInfo: this.filesetsTransform(item.filesets),
+      curatedDatasets: [],
+      user,
       createdAt: new Date(parseInt(item?.dttm_created) * 1000),
       updatedAt: new Date(parseInt(item?.dttm_updated) * 1000)
     };

@@ -152,7 +152,7 @@ export default {
         await this.createSample()
       } catch (error) {
         this.$store.commit('setSnackbar', {
-          message: error?.message ?? error
+          message: error ?? error
         })
       }
     },
@@ -182,16 +182,23 @@ export default {
         }
       })
 
-      if (!!response?.ok) {
+      const result = await response.json()
+      if (response?.ok) {
         this.uploadedFiles = result
         this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
         this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))
         this.uploadInProgress = false
-        this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
+        return this.$router.push({ name: 'DatasetSingleView', params: { id: `${this.datasetId}` } })
         // Todo: @Anya use the response here
-        return this.toggleDialogBox()
+        // return this.toggleDialogBox()
       }
-      throw new Error(`Error: ${response?.statusText}` ?? 'An error occurred')
+
+      const responseMessage = result.message ?? Object.entries(result?.errors).reduce((str, [key, value], index) => {
+        return index === 0 ? `${str}${key} ${value}` : `${str}, ${key} ${value}`;
+      }, '');
+
+      const message = responseMessage ?? response?.statusText
+      throw new Error(message)
     },
     changeSelectedDataset (selection) {
       this.selectedDataset.label = selection.title || `${selection.datasetGroupId} (Untitled)`
