@@ -81,7 +81,7 @@
       <pagination
         :cpage="page"
         :tpages="totalPages"
-        @go-to-page="loadItems($event)"
+        @go-to-page="loadPrevNextImage($event)"
       />
     </div>
     <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
@@ -122,15 +122,17 @@ import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 
 export default {
   name: 'viz-grid',
-  mixins: [reducer],
+  mixins: [reducer, explorerQueryParams],
   data () {
     return {
       loading: true,
       loadError: false,
       otherArgs: null,
+      pageNumber: 1,
       defaultImg,
       baseUrl: `${window.location.origin}/api/knowledge/images?uri=`,
       dialog: {
@@ -184,6 +186,9 @@ export default {
     bookmark () {
       // TODO
     },
+    async localSearchMethod () {
+      await this.loadItems(this.pageNumber)
+    },
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
@@ -194,7 +199,12 @@ export default {
     }
   },
   async mounted () {
-    await this.loadItems()
+    const query = this.$route.query
+    if (query?.page) {
+      await this.loadParams(this.$route.query, false)
+    } else {
+      await this.loadItems()
+    }
   },
   watch: {
     newChartExist () {
