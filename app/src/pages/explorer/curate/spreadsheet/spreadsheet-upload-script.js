@@ -194,8 +194,8 @@ export default {
       }
 
       const responseMessage = result.message ?? Object.entries(result?.errors).reduce((str, [key, value], index) => {
-        return index === 0 ? `${str}${key} ${value}` : `${str}, ${key} ${value}`;
-      }, '');
+        return index === 0 ? `${str}${key} ${value}` : `${str}, ${key} ${value}`
+      }, '')
 
       const message = responseMessage ?? response?.statusText
       throw new Error(message)

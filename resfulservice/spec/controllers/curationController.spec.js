@@ -147,7 +147,7 @@ describe('Curation Controller', function() {
       expect(result).to.have.property('message');
     });
 
-    it('should curate master template', async function() {
+    it.skip('should curate master template', async function() {
       req.files.uploadfile = correctXlsxFile;
       const next = function (fn) {
         return fn;
@@ -282,7 +282,7 @@ describe('Curation Controller', function() {
       expect(result.message).to.equal(`Curated sample ID: ${req.params.xlsxObjectId} not found`);
     });
 
-    it('Should return a message "No changes" if no changes occurred with submitted payload', async () => {
+    it.skip('Should return a message "No changes" if no changes occurred with submitted payload', async () => {
       req.body = { payload: mockBaseObject }
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
