@@ -405,7 +405,7 @@ paths:
               schema:
                 type: object
                 example:
-                    message: 'This had been curated already'
+                    message: 'This has already been curated'
         '500':
           description: Internal Server Error
           content:
