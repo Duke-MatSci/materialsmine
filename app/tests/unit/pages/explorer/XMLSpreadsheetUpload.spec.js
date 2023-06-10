@@ -50,20 +50,19 @@ describe('SpreadsheetUpload.vue', () => {
     expect(steppers.length).toBe(2)
   })
 
-  it('provides field inputs for title and doi', () => {
-    expect.assertions(3)
+  it('provides field input for doi', () => {
+    expect.assertions(2)
     const steppers = wrapper.findAll('.md-field')
-    expect(steppers.length).toBe(2)
-    expect(steppers.at(0).text()).toContain('Title')
-    expect(steppers.at(1).text()).toContain('DOI')
+    expect(steppers.length).toBe(1)
+    expect(steppers.at(0).text()).toContain('DOI')
   })
 
-  it.skip('verifies provided information', async () => {
-    expect.assertions(2)
-    await wrapper.setData({ title: 'Test dataset title', doi: '10.000' })
-    const lastStep = wrapper.findAll('.md-stepper').at(5)
-    expect(lastStep.html()).toContain('Test dataset title')
-    expect(lastStep.html()).toContain('10.000')
+  it('verifies provided information', async () => {
+    expect.assertions(1)
+    await wrapper.setData({ doi: '10.000' })
+    const verificationStep = wrapper.findAll('.md-stepper').at(4)
+    // TODO: test for files
+    expect(verificationStep.html()).toContain('10.000')
   })
 
   it('provides a button for changing dataset ID', async () => {
