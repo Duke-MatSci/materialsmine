@@ -1,3 +1,4 @@
+const util = require('util');
 const chai = require('chai');
 const sinon = require('sinon');
 const Xmljs = require('xml-js');
@@ -23,7 +24,8 @@ const {
   mockUploadedFiles,
   mockDatasetId,
   mockXmlData,
-  mockCSVData
+  mockCSVData,
+  mockCurateObject
 } = require('../mocks')
 const XlsxObject = require('../../src/models/curatedSamples');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
@@ -147,24 +149,23 @@ describe('Curation Controller', function() {
       expect(result).to.have.property('message');
     });
 
-    it.skip('should curate master template', async function() {
+    it('should curate master template', async function() {
       req.files.uploadfile = correctXlsxFile;
       const next = function (fn) {
         return fn;
       };
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
-      sinon.stub(res, 'send').returns(fetchedCuratedXlsxObject);
+      sinon.stub(res, 'json').returns(mockCurateObject);
       sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
-      sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
+      sinon.stub(DatasetId, 'findOne').returns({...mockDatasetId, updateOne: sinon.stub().returns(true)});
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
       sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchedCuratedXlsxObject))
       sinon.stub(Xmljs, 'json2xml').returns(fetchedCuratedXlsxObject)
 
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
-      expect(result).to.have.property('object');
+      expect(result).to.have.property('xml');
       expect(result).to.have.property('user');
     });
 
@@ -181,24 +182,24 @@ describe('Curation Controller', function() {
   })
 
   context('Retrieve curations', () => {
-    it('should return 404 not found error if req.query ID is invalid', async () => {
-      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+    it('should return 404 not found error if req.param ID is invalid', async () => {
+      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XlsxObject, 'findOne').returns(null);
       const result = await XlsxController.getXlsxCurations(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal('Curation sample not found');
     })
 
-    it('should return 404 not found error if req.query ID is invalid', async () => {
-      req.query = { xmlId: 'a90w49a40ao4094k4aed'}
+    it('should return 404 not found error if req.param ID is invalid', async () => {
+      req.params = { xmlId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XmlData, 'findOne').returns(null);
       const result = await XlsxController.getXlsxCurations(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal('Sample xml not found');
     });
 
-    it('returns a curation data when a valid req.query ID is provided', async () => {
-      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+    it('returns a curation data when a valid req.param ID is provided', async () => {
+      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       const next = function (fn) {
         return fn;
       };
@@ -214,7 +215,7 @@ describe('Curation Controller', function() {
     });
 
     it('returns curated object when an ID is provided and user is admin', async () => {
-      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'};
+      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'};
       req.user.roles = 'admin'
       const next = function (fn) {
         return fn;
@@ -229,24 +230,25 @@ describe('Curation Controller', function() {
       expect(result).to.have.property('object');
       expect(result).to.have.property('user');
     })
+  
     it('should return curation object when an xmlId is provided', async () => {
-        req.query = { xmlId: 'a90w49a40ao4094k4aed'}
-        const next = function (fn) {
-          return fn;
-        };
-        sinon.stub(res, 'status').returnsThis();
-        sinon.stub(res, 'json').returns(mockCuratedXlsxObject);
-        sinon.stub(XmlData, 'findOne').returns(mockXmlData);
-        sinon.stub(Xmljs, 'xml2json').returns(mockCuratedXlsxObject)
-        
-        const result = await XlsxController.getXlsxCurations(req, res, next);
+      req.params = { xmlId: 'a90w49a40ao4094k4aed'}
+      const next = function (fn) {
+        return fn;
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns(mockCuratedXlsxObject);
+      sinon.stub(XmlData, 'findOne').returns(mockXmlData);
+      sinon.stub(Xmljs, 'xml2json').returns(mockCuratedXlsxObject)
+      
+      const result = await XlsxController.getXlsxCurations(req, res, next);
 
-        expect(result).to.be.an('Object');
-        expect(result).to.have.property('DATA_SOURCE');
-      });
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('DATA_SOURCE');
+    });
 
     it('returns list of curations when an ID is not provided', async () => {
-      req.query = { xlsxObjectId: null }
+      req.params = { xlsxObjectId: null }
       const next = function (fn) {
         return fn;
       };
@@ -261,7 +263,7 @@ describe('Curation Controller', function() {
     })
 
     it('should return a 500 server error when database throws an error', async function() {
-      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       const nextSpy = sinon.spy();
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returnsThis();
@@ -275,7 +277,7 @@ describe('Curation Controller', function() {
   context('Update Curations', () => {
     it('should return 404 not found error if ID is invalid', async () => {
       req.body = { payload: mockCuratedXlsxObject }
-      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XlsxObject, 'findOne').returns(null);
       const result = await XlsxController.updateXlsxCurations(req, res, next);
       expect(result).to.have.property('message');
@@ -284,7 +286,7 @@ describe('Curation Controller', function() {
 
     it.skip('Should return a message "No changes" if no changes occurred with submitted payload', async () => {
       req.body = { payload: mockBaseObject }
-      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ message: "No changes"});
       sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
@@ -292,12 +294,12 @@ describe('Curation Controller', function() {
       const result = await XlsxController.updateXlsxCurations(req, res, next);
 
       expect(result).to.have.property('message');
-      expect(result.message).to.equal("No changes");
+      expect(result.message).to.equal('No changes');
     })
 
     it('should update curation object with submitted payload', async () => {
       req.body = { payload: updatedCuratedXlsxObject }
-      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(fetchedCuratedXlsxObject);
       sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
@@ -313,13 +315,74 @@ describe('Curation Controller', function() {
     
     it('should return a 500 server error when database throws an error', async function() {
       req.body = { payload: mockCuratedXlsxObject }
-      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
       const nextSpy = sinon.spy();
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returnsThis();
       sinon.stub(XlsxObject, 'findOne').throws();
 
       await XlsxController.updateXlsxCurations(req, res, nextSpy);
+      sinon.assert.calledOnce(nextSpy);
+    });
+  });
+
+  context('Delete curations', () => {
+    it('should return 404 not found error if req.query ID is invalid', async () => {
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      sinon.stub(XlsxObject, 'findOneAndDelete').returns(null);
+      const result = await XlsxController.deleteXlsxCurations(req, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Curation sample not found');
+    })
+
+    it('should return 404 not found error if req.query ID is invalid', async () => {
+      req.query = { dataset: 'a90w49a40ao4094k4aed'}
+      sinon.stub(DatasetId, 'findOneAndDelete').returns(null);
+      const result = await XlsxController.deleteXlsxCurations(req, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal(`Dataset ID: ${req.query.dataset} not found`);
+    });
+
+    it('deletes a curation  when a valid req.query curation ID is provided', async () => {
+      req.query = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      const next = function (fn) {
+        return fn;
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns({message: `Curated sample ID: ${req.query.xlsxObjectId} successfully deleted`});
+      sinon.stub(XlsxObject, 'findOneAndDelete').returns(fetchedCuratedXlsxObject);
+      sinon.stub(DatasetId, 'findOneAndUpdate').returns(mockDatasetId);
+      const result = await XlsxController.deleteXlsxCurations(req, res, next);
+
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal(`Curated sample ID: ${req.query.xlsxObjectId} successfully deleted`);
+    });
+
+    it('deletes multiple curated objects and datasetID when a valid dataset ID query is provided', async () => {
+      req.query = { dataset: 'a90w49a40ao4094k4aed' };
+      const next = function (fn) {
+        return fn;
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns({ message: `Curated Samples with Dataset ID: ${req.query.dataset} successfully deleted`});
+      sinon.stub(DatasetId, 'findOneAndDelete').returns(mockDatasetId);
+      sinon.stub(XlsxObject, 'deleteMany').returns(true);
+      const result = await XlsxController.deleteXlsxCurations(req, res, next);
+
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal(`Curated Samples with Dataset ID: ${req.query.dataset} successfully deleted`);
+    })
+
+    it('should return a 500 server error when database throws an error', async function() {
+      req.query = { xmlId: 'null', xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      const nextSpy = sinon.spy();
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(XlsxObject, 'findOneAndDelete').throws();
+
+      await XlsxController.deleteXlsxCurations(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);
     });
   });

@@ -10,7 +10,7 @@ router.route('')
   .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations)
   .delete(validateXlsxObjectDelete, isAuth, curationController.deleteXlsxCurations);
 
-router.route('/:xmlId/:xlsxObjectId')
+router.route('/get/:xmlId/:xlsxObjectId')
   .get(isAuth, curationController.getXlsxCurations);
 
 router.route('/admin')

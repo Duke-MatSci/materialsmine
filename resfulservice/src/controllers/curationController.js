@@ -71,16 +71,16 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 };
 
 exports.getXlsxCurations = async (req, res, next) => {
-  const { user, logger, query } = req;
+  const { user, logger, params } = req;
 
   logger.info('getXlsxCurations Function Entry:');
 
-  const { xlsxObjectId, xmlId } = query;
+  const { xlsxObjectId, xmlId } = params;
   const filter = {};
 
   if (user?.roles !== 'admin') filter.user = user._id;
   try {
-    if (xmlId || xlsxObjectId) {
+    if (!!xmlId || !!xlsxObjectId) {
       let fetchedObject;
       if (xlsxObjectId) {
         const xlsxObject = await CuratedSamples.findOne({ _id: xlsxObjectId, ...filter }, null, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
@@ -239,8 +239,8 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
         // added plus(+) to parse as integer
         cellValue = sheetsData[sheetName]?.[+row]?.[+col];
         BaseObject[cellValue] = BaseObject[property];
-        delete BaseObject[property];
         multiples = BaseObject[cellValue]?.values;
+        delete BaseObject[property];
       }
       const objArr = [];
       for (const prop of multiples) {

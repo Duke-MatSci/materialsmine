@@ -29,7 +29,7 @@ function validationErrorHandler (req, res, next) {
 exports.validateIsAdmin = (req, res, next) => !req.user?.roles === userRoles.isAdmin && next(errorWriter(req, 'User is forbidden', 'validateIsAdmin', 403));
 
 exports.validateXlsxObjectDelete = [
-  query('xlsxObjectId').optional().bail().isMongoId().withMessage('invalid xlsx object id'),
-  query('dataset').optional().bail().isMongoId().withMessage('invalid xlsx object id'),
+  query('xlsxObjectId').if(query('dataset').not().exists()).bail().isMongoId().withMessage('invalid xlsx object id'),
+  query('dataset').if(query('xlsxObjectId').not().exists()).bail().isMongoId().withMessage('invalid xlsx object id'),
   validationErrorHandler
 ];

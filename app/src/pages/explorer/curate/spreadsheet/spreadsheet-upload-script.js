@@ -184,6 +184,7 @@ export default {
 
       const result = await response.json()
       if (response?.ok) {
+        console.log('response', result)
         this.uploadedFiles = result
         this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
         this.suppFiles.forEach((file, index) => this.modStatSupp(index, 'complete'))

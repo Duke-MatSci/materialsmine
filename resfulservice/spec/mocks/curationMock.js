@@ -1410,6 +1410,17 @@ const user = {
   displayName: 'test'
 };
 
+const mockCurateObject = {
+  xml: '<?xml version="1.0" encoding="utf-8"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>Tolulomo Fateye</YourName>\n        <YourEmail>tolulomo@toluconsulting.com</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>Gbolahan Adeleke</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n',
+  user: {
+    _id: '643931cc6f44b02f01380f7a',
+    displayName: 'Test'
+  },
+  groupId: '583e3d6ae74a1d205f4e3fd3',
+  isApproved: 'false,',
+  status: 'Editing'
+};
+
 module.exports = {
   user,
   correctXlsxFile,
@@ -1433,5 +1444,6 @@ module.exports = {
   mockUploadedFiles,
   mockDatasetId,
   mockXmlData,
-  mockCSVData
+  mockCSVData,
+  mockCurateObject
 };
