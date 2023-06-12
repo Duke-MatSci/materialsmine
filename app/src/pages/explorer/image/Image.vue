@@ -33,7 +33,7 @@
             <button v-if="searchEnabled"
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-              @click.prevent="resetSearch"
+              @click.prevent="clearForm()"
             >
             Clear Search
             </button>
@@ -115,9 +115,10 @@ import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import { IMAGES_QUERY, SEARCH_IMAGES_QUERY } from '@/modules/gql/image-gql'
 import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 export default {
   name: 'ImageGallery',
-  mixins: [reducer],
+  mixins: [reducer, explorerQueryParams],
   data () {
     return {
       baseUrl: window.location.origin,
@@ -148,35 +149,16 @@ export default {
         this.renderText = `Showing ${newValue.type}: ${newValue.value}`
         this.searchEnabled = true
         this.pageSize = newValue.pageSize || this.pageSize
-        return this.refetchApollo()
+        return this.localSearchMethod()
       } else {
         this.searchEnabled = false
         this.pageSize = newValue.pageSize || this.pageSize
-        return this.refetchApollo()
+        return this.localSearchMethod()
       }
-    },
-    '$route.query' (newValue, oldValues) {
-      this.pageNumber = parseInt(newValue.page) || 1
-      this.pageSize = parseInt(newValue.size) || 20
-      this.filter = newValue.type || ''
-      this.searchWord = newValue.q || ''
-      this.dispatchSearch()
-    },
-    // Limit page size for now
-    pageSize (newValue, oldValue) {
-      this.checkPageSize(newValue)
-      this.loadPrevNextImage(this.pageNumber)
     }
   },
   methods: {
-    loadPrevNextImage (event) {
-      this.pageNumber = event
-      if (!this.searchEnabled) {
-        return this.changeRoute(event, this.pageSize)
-      }
-      this.changeRoute(event, this.pageSize, this.filter, this.searchWord)
-    },
-    refetchApollo () {
+    localSearchMethod () {
       this.error = ''
       if (this.searchEnabled) {
         this.$apollo.queries.images.skip = true
@@ -188,7 +170,7 @@ export default {
         this.$apollo.queries.images.refetch()
       }
     },
-    submitSearch () {
+    async submitSearch () {
       if (!this.searchWord || !this.filter) {
         return this.$store.commit('setSnackbar', {
           message: 'Enter a search term and select a filter type',
@@ -197,33 +179,18 @@ export default {
       }
       this.pageNumber = 1
       this.dispatchSearch()
-      this.changeRoute(this.pageNumber, this.pageSize, this.filter, this.searchWord)
-    },
-    async resetSearch () {
-      this.$router.replace({ query: null })
-      this.searchImages = []
-      this.renderText = 'Showing all images'
+      return await this.updateParamsAndCall(true)
     },
     async dispatchSearch () {
       await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue',
         { type: this.filter, value: this.searchWord, size: this.pageSize })
     },
-    changeRoute (page = 1, size = 20, filter = '', query = '') {
-      const curQuery = this.$route.query
-      // Don't push change if same route to avoid error
-      if (curQuery.page === page && curQuery.size === size && curQuery.type === filter && curQuery.q === query) {
-        this.refetchApollo()
-      } else if (filter === '' || query === '') {
-        if (curQuery.page === page && curQuery.size === size) return this.refetchApollo()
-        this.$router.push({ query: { page, size } })
-      } else this.$router.push({ query: { page, size, type: filter, q: query } })
-    },
-    checkPageSize (page) {
-      if (page > 20) {
-        this.pageSize = 20
-      } else if (page < 1) {
-        this.pageSize = 1
-      }
+    clearForm () {
+      this.resetSearch('images')
+      this.searchImages = []
+      this.filter = ''
+      this.searchWord = ''
+      this.dispatchSearch()
     }
   },
   created () {
@@ -239,7 +206,7 @@ export default {
       this.searchEnabled = true
       this.filter = this.imageSearch?.type
       this.searchWord = this.imageSearch?.value
-      this.refetchApollo()
+      this.localSearchMethod()
     } else {
       this.searchEnabled = false
       this.dispatchSearch()

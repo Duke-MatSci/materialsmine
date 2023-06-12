@@ -2,14 +2,34 @@
 <template>
 <div>
     <div class="section_teams">
-        <div
-            v-if="!loading"
-        >
+        <div>
         <CurateNavBar active="New Spreadsheet" :navRoutes="navRoutes"/>
         </div>
         <div class="curate">
-        <div>
             <LoginReq v-if="!auth"/>
+            <div v-else-if="!!uploadResponse">      
+                <h2 class="visualize_header-h1 u_margin-top-small u_centralize_text"> Curated XML </h2>
+                <hr>
+                <div class="md-layout">
+                    <div class="md-layout-item md-size-50">
+                        <div>Dataset Group ID: {{uploadResponse.groupId}}</div>
+                        <div>Curated by {{ optionalChaining(() => uploadResponse.user.displayName) }}</div>
+                    </div>
+                    <div class="md-layout-item md-size-50" style="text-align: right" > 
+                        <div>Status: {{uploadResponse.status}}</div>
+                        <div>Admin Approval: {{uploadResponse.isApproved ? 'Approved' : 'None'}}</div>
+                    </div>
+                </div>
+                <!-- xml viewer  -->
+                <div>
+                <pre class="language-xml grid">
+                    <code class="inlinecode language-xml keepMarkUp">
+                    {{ optionalChaining(() => uploadResponse.xml) }}
+                    </code>
+                </pre>
+                </div>
+
+            </div>
             <div v-else>
             <h2 class="visualize_header-h1">Import spreadsheet data </h2>
             <div v-if="datasetId" class="md-layout md-alignment-center-left" style="margin: 0rem 1rem">
@@ -57,7 +77,7 @@
                     </md-list>
                 </div>
                 <div style="color: red; margin:2rem 2rem 0; font-weight:600" v-if="renameXlsx">
-                    NOTICE: Main spreadsheet must be named master_template.xlsx. 
+                    NOTICE: Main spreadsheet name must end with 'master_template.xlsx'. 
                     Please rename this file and re-select.
                 </div>
                 <div class="md-layout">
@@ -122,13 +142,6 @@
                     <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">Select an existing ID</a>
                     , or <a @click="navBack">exit the form?</a>
                 </div>
-                <md-field :class="{ 'md-invalid': isInvalidForm }" style="max-width: 80%; margin: 1rem" >
-                    <label>Title</label>
-                    <md-input v-model="title" required></md-input>
-                    <span class="md-error">Title required</span>
-                    <span class="md-helper-text">Create a title for your new dataset</span>
-                </md-field>
-                <div style="max-width: 80%; margin: 1rem" >&nbsp;</div>
                 <md-field style="max-width: 80%; margin: 1rem">
                     <label>DOI</label>
                     <md-input v-model="doi"></md-input>
@@ -146,9 +159,6 @@
                 </div>
                 </md-step>
                 <md-step id="fifth" md-label="Verify data" :md-done.sync="fifth">
-                
-                    <h3>Title:</h3>  {{title}}
-                    <div>&nbsp;</div>
                     <h3>DOI:</h3>
                         {{doi}}
                     <div>&nbsp;</div>
@@ -168,7 +178,7 @@
                         </div>
                     </ul>
         
-                    <div style="color: red; margin-top:2rem" v-if="spreadsheetFiles.length < 1 || isInvalidForm">Title and at least one spreadsheet are required for submission.</div>
+                    <div style="color: red; margin-top:2rem" v-if="spreadsheetFiles.length < 1">At least one spreadsheet is required for submission.</div>
                 <div class="md-layout">
                         <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
                         @click="goToStep('fifth', 'fourth')">
@@ -186,15 +196,14 @@
                         @click="goToStep('sixth', 'fifth')">
                         <md-icon>arrow_back</md-icon>Go Back
                         </md-button>
-                    <md-button id="submit" type="submit" :disabled="(spreadsheetFiles.length < 1) || isInvalidForm" class="md-layout-item md-button_next md-size-40"
-                        @click="renderDialog('Submit files?', 'submit', 40)">
+                    <md-button id="submit" type="submit" :disabled="(spreadsheetFiles.length < 1)" class="md-layout-item md-button_next md-size-40"
+                        @click="renderDialog('Submit files?', 'submit', 40); clearSnackbar()">
                         Save and Submit
                     </md-button>
                 </div>
                 </md-step>
             </md-steppers>
             </div>
-        </div>
         </div>
     </div>
     <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth" :disableClose="dialog.disableClose">

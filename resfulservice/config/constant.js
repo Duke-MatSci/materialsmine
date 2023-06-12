@@ -10,5 +10,18 @@ module.exports = {
     isAdmin: 'isAdmin',
     member: 'member'
   },
-  commentTypes: ['xml', 'charts', 'images']
+  commentTypes: ['xml', 'charts', 'images'],
+  CurationStates: ['Editing', 'Completed'],
+  CurationStateDefault: 'Editing',
+  CurationEntityStates: ['Approved', 'Not Approved'],
+  CurationEntityStateDefault: 'Not Approved',
+  DatasetStatusOpt: ['APPROVED', 'UNDER_REVIEW', 'WORK_IN_PROGRESS'],
+  DatasetStatusDefault: 'WORK_IN_PROGRESS',
+  BaseObjectSubstitutionMap: {
+    'DATA ORIGIN': 'DATA_SOURCE',
+    'MATERIAL TYPES': 'MATERIALS',
+    'SYNTHESIS AND PROCESSING': 'PROCESSING',
+    'CHARACTERIZATION METHODS': 'CHARACTERIZATION',
+    MICROSTRUCTURE: 'MICROSTRUCTURE'
+  }
 };
