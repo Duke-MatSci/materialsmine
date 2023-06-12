@@ -2,24 +2,21 @@ const express = require('express');
 const router = express.Router();
 const curationController = require('../controllers/curationController');
 const isAuth = require('../middlewares/isAuth');
-const { validateXlsxObjectUpdate } = require('../middlewares/validations');
+const { validateXlsxObjectUpdate, validateXlsxObjectDelete } = require('../middlewares/validations');
 
 router.route('')
-  .get(isAuth, curationController.getCurationSchemaObject);
+  .get(isAuth, curationController.getCurationSchemaObject)
+  .post(isAuth, curationController.curateXlsxSpreadsheet)
+  .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations)
+  .delete(validateXlsxObjectDelete, isAuth, curationController.deleteXlsxCurations);
 
-router.route('/new')
-  .post(isAuth, curationController.curateXlsxSpreadsheet);
-
-router.route('/get')
+router.route('/get/:xmlId/:xlsxObjectId')
   .get(isAuth, curationController.getXlsxCurations);
 
-router.route('/update/:xlsxObjectId')
-  .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations);
+router.route('/admin')
+  .post(isAuth, curationController.approveCuration);
 
-router.route('/xml-generator')
-  .post(isAuth, curationController.getXlsxCurations);
-
-router.route('/xml-submit')
-  .post(isAuth, curationController.getXlsxCurations);
+router.route('rehydrate')
+  .patch(isAuth, curationController.curationRehydration);
 
 module.exports = router;

@@ -45,6 +45,12 @@ export default {
         this.action()
         this.show = false
       }
+    },
+    resetSnackbar () {
+      this.show = false
+      this.message = ''
+      this.action = null
+      this.duration = false
     }
   },
   watch: {
@@ -56,6 +62,13 @@ export default {
         this.duration = val.duration ? val.duration : false
         // Reset
         this.$store.commit('setSnackbar', '')
+      } else if (val.duration === 0) {
+        this.resetSnackbar()
+      }
+    },
+    '$route' (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.resetSnackbar()
       }
     }
   }
