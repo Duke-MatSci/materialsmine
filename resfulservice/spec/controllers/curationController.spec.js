@@ -183,20 +183,12 @@ describe('Curation Controller', function() {
 
   context('Retrieve curations', () => {
     it('should return 404 not found error if req.param ID is invalid', async () => {
-      req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
+      req.params = { xmlId: 'null', xlsxObjectId: 'a90w49a40ao4094k4aed'}
       sinon.stub(XlsxObject, 'findOne').returns(null);
       const result = await XlsxController.getXlsxCurations(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal('Curation sample not found');
     })
-
-    it('should return 404 not found error if req.param ID is invalid', async () => {
-      req.params = { xmlId: 'a90w49a40ao4094k4aed'}
-      sinon.stub(XmlData, 'findOne').returns(null);
-      const result = await XlsxController.getXlsxCurations(req, res, next);
-      expect(result).to.have.property('message');
-      expect(result.message).to.equal('Sample xml not found');
-    });
 
     it('returns a curation data when a valid req.param ID is provided', async () => {
       req.params = { xlsxObjectId: 'a90w49a40ao4094k4aed'}
@@ -232,7 +224,7 @@ describe('Curation Controller', function() {
     })
   
     it('should return curation object when an xmlId is provided', async () => {
-      req.params = { xmlId: 'a90w49a40ao4094k4aed'}
+      req.params = { xmlId: 'a90w49a40ao4094k4aed', xlsxObjectId: null }
       const next = function (fn) {
         return fn;
       };
@@ -248,7 +240,7 @@ describe('Curation Controller', function() {
     });
 
     it('returns list of curations when an ID is not provided', async () => {
-      req.params = { xlsxObjectId: null }
+      req.params = { xlsxObjectId: null, xmlId: null }
       const next = function (fn) {
         return fn;
       };
@@ -396,6 +388,7 @@ describe('Curation Controller', function() {
       expect(error).to.have.property('count');
       expect(error).to.have.property('errors');
     });
+    
     it('should return parsed and filtered xlsx object 1', async () => {
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData2);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure, mockCurationListMap);
@@ -403,6 +396,7 @@ describe('Curation Controller', function() {
       expect(result).to.be.an('Object')
       expect(result).to.have.property('Your Name');
     });
+
     it('should return parsed and filtered xlsx object for varied_multiple types', async () => {
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData5);
       const result = await XlsxController.createMaterialObject(correctXlsxFile[0].path, mockJsonStructure5, mockCurationListMap);
@@ -410,6 +404,7 @@ describe('Curation Controller', function() {
       expect(result).to.be.an('Object')
       expect(result).to.have.property('MeltMixing');
     });
+
     it('should return parsed and filtered xlsx object 2', async () => {
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData3);
       sinon.stub(XlsxFileManager, 'parseCSV').returns(mockCSVData);
@@ -429,6 +424,7 @@ describe('Curation Controller', function() {
       expect(result.Microstructure).to.have.property('Imagefile');
       expect(result.Microstructure.Imagefile).to.be.an('Array');
     });
+
     it('should return error when file is not uploaded', async () => {
       
       sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData3);

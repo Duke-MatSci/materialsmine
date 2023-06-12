@@ -48,7 +48,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       object => object?.['data origin']?.Title === result?.['data origin']?.Title &&
       object?.['data origin']?.PublicationType === result?.['data origin']?.PublicationType);
 
-    if (curatedAlready) return next(errorWriter(req, 'This had been curated already', 'curateXlsxSpreadsheet', 409));
+    if (curatedAlready) return next(errorWriter(req, 'This has already been curated', 'curateXlsxSpreadsheet', 409));
 
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await (await newCurationObject.save()).populate('user', 'displayName');
