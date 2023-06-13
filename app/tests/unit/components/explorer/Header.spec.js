@@ -23,7 +23,13 @@ describe('Header.vue', () => {
 
   it('renders Menu tabs correctly', async () => {
     expect.assertions(1)
-    const menuItems = wrapper.findAll('.tabs')
-    expect(menuItems.length).toBe(4)
+    const menuItems = wrapper.findAll('._menutabs')
+    expect(menuItems.length).toBe(5)
+  })
+
+  it('renders Menu tabs only on desktop', async () => {
+    expect.assertions(1)
+    const toolbar = wrapper.findAll('.md-toolbar-row')
+    expect(toolbar.at(1).attributes().class).toContain('u_toggle-display-off')
   })
 })

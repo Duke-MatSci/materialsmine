@@ -1,0 +1,36 @@
+input columnsInput {
+  "Column field name"
+  field: String!
+
+"List of possible values for column field"
+  values: [String!]!
+}
+
+input materialsInput {
+  "list of material column template to store"
+  columns: [columnsInput!]!
+}
+
+input materialQueryInput {
+ "Column field name"
+  field: String
+
+  """
+  Pagination option for the page of columns to display to return.
+  This defaults to 1 if no value is specified.
+  The columns are grouped into pages based on the specified pageSize(defaults to 20, if not specified)
+  """
+  pageNumber: Int
+
+  """
+  Number of columns per page. 
+  Pagination option for specifying how the server should group the columns.
+  Defaults to 1 if none is specified.
+  """
+  pageSize: Int
+}
+
+input materialFieldInput {
+   "Column field name"
+  field: String!
+}

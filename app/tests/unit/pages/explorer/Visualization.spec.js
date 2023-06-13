@@ -19,17 +19,18 @@ describe('Visualization.vue', () => {
   })
 
   it('renders page header', () => {
-    expect(wrapper.html()).toContain('Gallery Categories')
+    expect(wrapper.html()).toContain('Categories')
   })
 
   it('renders layout items', async () => {
     const layoutItems = wrapper.findAll('.md-layout-item')
-    expect(layoutItems.length).toBe(4)
+    expect(layoutItems.length).toBe(3)
     expect(layoutItems.at(1).element.tagName).toBe('DIV')
   })
 
   it('routes to chart and image gallery', async () => {
     expect(wrapper.findAllComponents(RouterLinkStub).at(0).props().to).toBe('/explorer/chart')
     expect(wrapper.findAllComponents(RouterLinkStub).at(1).props().to).toBe('/explorer/images')
+    expect(wrapper.findAllComponents(RouterLinkStub).at(2).props().to).toBe('/explorer/xmls')
   })
 })

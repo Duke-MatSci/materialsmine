@@ -78,6 +78,28 @@ const explorerRoutes = [
       }
     ]
   },
+  {
+    path: 'curate/validlist',
+    component: () => import('@/pages/explorer/curate/CurateBase.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'validList',
+        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue')
+      },
+      {
+        path: 'update',
+        name: 'xlsUpdate',
+        component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+      },
+      {
+        path: 'all',
+        name: 'validListAll',
+        component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue')
+      }
+    ]
+  },
   // {
   //   path: 'stepper',
   //   name: 'CurateStepper',
@@ -103,26 +125,22 @@ const explorerRoutes = [
         component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
+      ...['editor/:type', 'editor/:type/:chartId(.*)']
+        .map(path => ({
+          path,
+          component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
+          props: true,
+          meta: { requiresAuth: true }
+        })),
       {
-        path: 'edit/:chartId',
-        name: 'ChartEdit',
-        props: true,
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'create',
-        name: 'ChartCreate',
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'view/:chartId',
+        path: 'view/:chartId(.*)',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
         props: true,
         meta: { requiresAuth: false }
       },
       {
-        path: 'voyager/:chartId',
+        path: 'voyager/:chartId(.*)',
         name: 'ChartDataVoyager',
         component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
@@ -175,6 +193,27 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: 'sparql',
+    name: 'Sparql',
+    component: () =>
+      import(
+        '@/pages/explorer/Sparql.vue'
+      ),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: 'xmls',
+    name: 'XmlGallery',
+    component: () => import('@/pages/explorer/xml/Xml.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'xmlvisualizer/:id',
+    name: 'XmlVisualizer',
+    component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
     meta: { requiresAuth: false }
   }
 ]

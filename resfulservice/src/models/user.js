@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { userRoles } = require('../../config/constant');
 const Schema = mongoose.Schema;
 
 const usersSchema = new Schema({
@@ -25,7 +26,7 @@ const usersSchema = new Schema({
   roles: {
     type: String,
     required: true,
-    default: 'member'
+    default: userRoles.member
   },
   apiAccess: {
     type: Schema.Types.ObjectId,

@@ -10,6 +10,10 @@ type Query {
   getUserDataset(input: datasetStatusInput): UserDataset!
   getFilesets(input: filesetQueryInput!): Filesets!
   pixelData(input: pixelDataQueryInput!): PixelatedData!
+  getXlsxCurationList(input: materialQueryInput): MaterialTemplates!
+  xmlFinder(input: xmlFinderInput): XmlDataList!
+  xmlViewer(input: xmlViewerInput): ReadXml!
+  loadComment(input: loadCommentInput!): Comments!
 }
 
 type Mutation {
@@ -19,5 +23,11 @@ type Mutation {
   deleteUser(input: userIdInput): User!
   submitContact(input: createContactInput!): Contact!
   createDataset(input: datasetInput): CreatedDataset!
+  createXlsxCurationList(input: materialsInput): MaterialColumns!
+  updateXlsxCurationList(input: columnsInput): Column!
+  deleteXlsxCurationList(input: materialFieldInput): Column! 
+  postComment(input: postCommentInput): Comment!
+  editComment(input: editCommentInput!): Comment!
+  parseTemplateSheet: SuccessMessage!
   createDatasetId: Datasets!
 }

@@ -35,7 +35,7 @@ export default {
           }
         }
       }`,
-      variables: { input: { search: 'filterByKeyword', searchValue: payload, pageSize: 100 } }
+      variables: { input: { search: 'Keyword', searchValue: payload, pageSize: 100 } }
     })
     const requestOptions = {
       method: 'POST',
@@ -44,46 +44,62 @@ export default {
       },
       body: graphql
     }
-    const response = await fetch(url, requestOptions)
-    if (!response || response?.statusText !== 'OK') {
-      const error = new Error(
-        response.message || 'Something went wrong!'
-      )
-      throw error
-    }
+    try {
+      const response = await fetch(url, requestOptions)
+      if (!response || response?.statusText !== 'OK') {
+        const error = new Error(
+          response.message || 'Something went wrong!'
+        )
+        throw error
+      }
 
-    const responseData = await response.json()
-    const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems
-    const groupTotals = context.getters.getTotalGroupings
-    groupTotals.getImages = responseData?.data?.searchImages?.totalItems
-    context.commit('setTotal', total || 0)
-    context.commit('setImages', responseData?.data?.searchImages?.images || [])
-    context.commit('setTotalGrouping', groupTotals)
+      const responseData = await response.json()
+      const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems
+      const groupTotals = context.getters.getTotalGroupings
+      groupTotals.getImages = responseData?.data?.searchImages?.totalItems ?? 0
+      context.commit('setTotal', total ?? 0)
+      context.commit('setImages', responseData?.data?.searchImages?.images ?? [])
+      context.commit('setTotalGrouping', groupTotals)
+    } catch (error) {
+      const snackbar = {
+        message: 'Something went wrong while fetching images!',
+        action: () => context.dispatch('getMatchedImages', payload)
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
+    }
   },
 
   async getMatchedMaterials (context, payload) {
     const url = `/api/admin/populate-datasets-properties?search=${payload}`
-    const response = await fetch(url, {
-      method: 'GET'
-    })
+    try {
+      const response = await fetch(url, {
+        method: 'GET'
+      })
 
-    if (!response || response.statusText !== 'OK') {
-      const error = new Error(
-        response?.message || 'Something went wrong!'
-      )
-      throw error
+      if (!response || response.statusText !== 'OK') {
+        const error = new Error(
+          response?.message || 'Something went wrong!'
+        )
+        throw error
+      }
+
+      const responseData = await response.json()
+      const materialsTotal = responseData?.data?.length || 0
+
+      const total = context.getters.getTotal + materialsTotal
+      const groupTotals = context.getters.getTotalGroupings
+      groupTotals.getMaterials = materialsTotal
+
+      context.commit('setTotal', total || 0)
+      context.commit('setMaterials', responseData?.data || [])
+      context.commit('setTotalGrouping', groupTotals)
+    } catch (error) {
+      const snackbar = {
+        message: 'Something went wrong while fetching properties!',
+        action: () => context.dispatch('getMatchedMaterials', payload)
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
     }
-
-    const responseData = await response.json()
-    const materialsTotal = responseData?.data?.length || 0
-
-    const total = context.getters.getTotal + materialsTotal
-    const groupTotals = context.getters.getTotalGroupings
-    groupTotals.getMaterials = materialsTotal
-
-    context.commit('setTotal', total || 0)
-    context.commit('setMaterials', responseData?.data || [])
-    context.commit('setTotalGrouping', groupTotals)
   },
 
   async outboundSearchRequest (context, payload) {
@@ -95,27 +111,35 @@ export default {
       url = `/api/search/autosuggest?search=${keyPhrase}`
     }
 
-    const response = await fetch(url, {
-      method: 'GET'
-    })
+    try {
+      const response = await fetch(url, {
+        method: 'GET'
+      })
 
-    if (!response || response.statusText !== 'OK') {
-      context.commit('setIsLoading', false)
-      const error = new Error(
-        response?.message || 'Something went wrong!'
-      )
-      throw error
-    }
+      if (!response || response.statusText !== 'OK') {
+        context.commit('setIsLoading', false)
+        const error = new Error(
+          response?.message || 'Something went wrong!'
+        )
+        throw error
+      }
 
-    if (response.status === 201) {
-      return
-    }
+      if (response.status === 201) {
+        return
+      }
 
-    const responseData = await response.json()
-    if (type === 'search') {
-      return context.dispatch('saveSearch', responseData)
-    } else {
-      return context.dispatch('saveAutosuggest', responseData)
+      const responseData = await response.json()
+      if (type === 'search') {
+        return context.dispatch('saveSearch', responseData)
+      } else {
+        return context.dispatch('saveAutosuggest', responseData)
+      }
+    } catch (error) {
+      const snackbar = {
+        message: 'Something went wrong!',
+        action: () => context.dispatch('outboundSearchRequest', payload)
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
     }
   },
 

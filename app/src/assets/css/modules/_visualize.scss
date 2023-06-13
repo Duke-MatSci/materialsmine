@@ -33,15 +33,24 @@
                 }
             }
         }
+        &-mm {
+            @include respond(laptop) {
+                display: none;
+                visibility: hidden;
+                position: absolute;
+            }
+            @include respond(tab-land) {
+                display: block;
+                visibility: visible;
+                top: 15rem;
+                cursor: pointer;
+            }
+        }
         &-left {
             left: -0.5rem;
         }
         &-right {
             right: 0;
-
-            @include respond(phone) {
-                right: -0.5rem;
-            }
         }
     }
 
@@ -59,6 +68,10 @@
 
             @include respond(tab-land){
                 margin: 4rem 0 1.4rem 0;
+            }
+
+            @include respond(tab-port){
+                margin: -1.4rem 0 1.4rem 0;
             }
 
             @include respond(phone){
@@ -369,16 +382,37 @@
         margin-top: .8rem;
         @include respond(tab-port){
             margin: 0 auto;
-            display: grid;
-            grid-template-rows: repeat(1, 100%);
-            grid-template-columns: repeat(4, 1fr);
-            grid-column-gap: 1rem;
+            &_grid-4 {
+                display: grid;
+                grid-template-rows: repeat(1, 100%);
+                grid-template-columns: repeat(4, 1fr);
+                grid-column-gap: 1rem;
+            }
             margin: 1rem auto;
             max-width: 70%;
         }
 
         @include respond(tab-land) {
             max-width: 100%;
+        }
+
+        & > .pagination-label {
+            padding: 3.5rem 0.5rem 0rem 0.5rem;
+        }
+
+        & > .pagination-field {
+            margin-left: 0rem !important;
+            padding-top: 2.5rem;
+            @include respond(tab-land){
+                padding-top: 2.25rem;
+            }
+            .md-input {
+                font-size: 14px !important;
+            }
+            .md-error {
+                transform: translateZ(0) translateX(-2rem);
+                width: 9rem;
+            }
         }
 
         & > .pagination-button {
@@ -426,6 +460,10 @@
                 display: block;
                 visibility: visible;
             }
+        }
+
+        &-width-mod{
+            width: 100%;
         }
     }
 }
@@ -501,6 +539,14 @@
             @include respond(tab-land) {
                 padding: .4rem 0rem;
                 margin: 0 1.3rem;
+            }
+
+            .md-title {
+                font-size: 18px;
+                font-weight: 100;
+                letter-spacing: .005em;
+                line-height: 22px;
+                color: $primary !important;
             }
         }
 

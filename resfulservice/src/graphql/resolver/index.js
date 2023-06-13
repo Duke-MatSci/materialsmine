@@ -7,11 +7,16 @@ const contactMutation = require('./contact/mutation');
 const datasetMutation = require('./dataset/mutation');
 const datasetQuery = require('./dataset/query');
 const pixelatedDataExplorerQuery = require('./pixelated/query');
+const materialMutation = require('./material_template/mutation');
+const materialQuery = require('./material_template/query');
+const xmlQuery = require('./xml/query');
+const commentMutation = require('./comments/mutation');
+const commentQuery = require('./comments/query');
 const { filesetsUnionResolveType } = require('./dataset/field-resolver');
 
 const resolvers = {
-  Query: Object.assign({}, userQuery, imageExplorerQuery, contactQuery, datasetQuery, pixelatedDataExplorerQuery),
-  Mutation: Object.assign({}, userMutation, apiAccessMutation, contactMutation, datasetMutation),
+  Query: Object.assign({}, userQuery, imageExplorerQuery, contactQuery, datasetQuery, pixelatedDataExplorerQuery, materialQuery, xmlQuery, commentQuery),
+  Mutation: Object.assign({}, userMutation, apiAccessMutation, contactMutation, datasetMutation, materialMutation, commentMutation),
   Filesets: { __resolveType: filesetsUnionResolveType }
 };
 

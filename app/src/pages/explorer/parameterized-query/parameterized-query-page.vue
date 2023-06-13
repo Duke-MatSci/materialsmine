@@ -7,11 +7,11 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
-      <md-toolbar>
+      <h1 class="visualize_header-h1 u_margin-top-med u--margin-leftsm">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
+      <div class="viz-sample__header">
         <h3 class="md-title">Query Template</h3>
-      </md-toolbar>
-      <div class="display">
+      </div>
+      <div class="u_display-flex display">
         <md-button
           class="template-back"
           @click="shiftTemplate(-1)"
@@ -65,6 +65,7 @@
           <yasqe
             :value="query"
             :readOnly="true"
+            :showBtns="false"
           ></yasqe>
         </accordion>
       </div>
@@ -73,7 +74,7 @@
           :startOpen="true"
           title="SPARQL Results"
         >
-          <div class="results-controls">
+          <div class="u_display-flex results-controls">
             <button
               class="btn btn--primary"
               :disabled="autoRefresh || !newQuery"
@@ -87,7 +88,7 @@
             >
               Auto Refresh
             </md-switch>
-            <div class="button-row">
+            <div class="u_display-flex button-row">
               <div>
                 <button
                     class="btn btn--primary"
@@ -99,13 +100,13 @@
             </div>
           </div>
           <div
-            class="results-progress"
+            class="u_display-flex results-progress"
             v-show="runningQuery"
           >
-            <md-progress-spinner
-              :md-diameter="100"
-              :md-stroke="6"
-              md-mode="indeterminate"
+            <spinner
+              :loading="runningQuery"
+              text='Loading your request...'
+              v-if="runningQuery"
             />
           </div>
           <div v-show="!runningQuery">
@@ -133,12 +134,14 @@ import debounce from '@/modules/debounce'
 import accordion from '@/components/accordion.vue'
 import yasr from '@/components/explorer/yasr'
 import yasqe from '@/components/explorer/yasqe'
+import spinner from '@/components/Spinner'
 
 export default {
   components: {
     accordion,
     yasqe,
-    yasr
+    yasr,
+    spinner
   },
   data () {
     return {
@@ -337,11 +340,9 @@ export default {
 }
 .button-row {
   margin: 10px 0;
-  display: flex;
   justify-content: flex-end;
 }
 .display {
-  display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
@@ -367,7 +368,6 @@ export default {
 }
 .results-controls {
   margin: 20px 10px;
-  display: flex;
   justify-content: space-between;
   align-items: center;
 
@@ -376,7 +376,6 @@ export default {
   }
 }
 .results-progress {
-  display: flex;
   justify-content: center;
 }
 .no-results-message {

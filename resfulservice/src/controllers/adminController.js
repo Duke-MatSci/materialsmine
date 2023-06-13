@@ -1,12 +1,11 @@
 const elasticSearch = require('../utils/elasticSearch');
 const { outboundRequest } = require('../controllers/kgWrapperController');
-const iterator = require('../utils/iterator');
 const DatasetId = require('../models/datasetId');
-const User = require('../models/user');
 const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
 const { successWriter, errorWriter } = require('../utils/logWriter');
+const { validateIsAdmin } = require('../middlewares/validations');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -15,6 +14,8 @@ const { successWriter, errorWriter } = require('../utils/logWriter');
  * @returns {*} response
  */
 exports.initializeElasticSearch = async (req, res, next) => {
+  validateIsAdmin(req, res, next);
+
   const log = req.logger;
   log.info('initializeElasticSearch(): Function entry');
   try {
@@ -47,17 +48,35 @@ const _loadBulkElasticSearch = async (req, res, next) => {
   }
 
   try {
-    const total = data.length;
+    const total = data.length ?? 0;
     let rejected = 0;
+
+    // Delete existing docs in this index type
+    log.info(`_loadBulkElasticSearch(): Deleting existing ${type} indices`);
+
+    /** Users will always pass limit & offset, if submitting multi bulk entries.
+     * If it's missing in request header delete existing docs
+     * Only clear if it is a one time bulk entry.
+    */
+    if ((!req.query.offset || +req.query.offset === 0) && !!total) {
+      await elasticSearch.deleteIndexDocs(type);
+      log.info(`_loadBulkElasticSearch(): Successfully deleted ${type} indices`);
+    } else {
+      log.info(`_loadBulkElasticSearch(): Skipped deleting ${type} indexes`);
+    }
+
     for (const item of data) {
       const response = await elasticSearch.indexDocument(req, type, item);
+
       if (!response) {
         log.debug(`_loadBulkElasticSearch()::error: rejected - ${response.statusText}`);
         rejected = rejected + 1;
       }
     }
+
     await elasticSearch.refreshIndices(req, type);
     successWriter(req, 'success', '_loadBulkElasticSearch');
+
     return res.status(200).json({
       total,
       rejected
@@ -77,7 +96,8 @@ const _loadBulkElasticSearch = async (req, res, next) => {
 exports.loadElasticSearch = async (req, res, next) => {
   const log = req.logger;
   log.info('loadElasticSearch(): Function entry');
-  const body = JSON.parse(req?.body);
+
+  const body = req?.body;
   const type = body?.type;
   const doc = body?.doc;
 
@@ -86,9 +106,21 @@ exports.loadElasticSearch = async (req, res, next) => {
   }
 
   try {
-    const response = await elasticSearch.indexDocument(req, type, doc);
+    let response;
+    if (req.method === 'DELETE') {
+      validateIsAdmin(req, res, next);
+
+      log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
+      response = await elasticSearch.deleteSingleDoc(type, doc);
+      log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
+    } else {
+      response = await elasticSearch.indexDocument(req, type, doc);
+      log.info(`loadElasticSearch(): successfully added ${JSON.stringify(doc)} doc`);
+    }
+
     await elasticSearch.refreshIndices(req, type);
     successWriter(req, 'success', 'loadElasticSearch');
+
     return res.status(200).json({
       response
     });
@@ -105,10 +137,13 @@ exports.loadElasticSearch = async (req, res, next) => {
  * @returns {*} response
  */
 exports.pingElasticSearch = async (req, res, next) => {
-  const log = req.logger;
-  log.info('pingElasticSearch(): Function entry');
+  validateIsAdmin(req, res, next);
+
+  const { logger } = req;
+  logger.info('pingElasticSearch(): Function entry');
+
   try {
-    const response = await elasticSearch.ping(log, 1);
+    const response = await elasticSearch.ping(logger, 1);
     successWriter(req, 'success', 'pingElasticSearch');
     return res.status(200).json({
       response
@@ -119,7 +154,8 @@ exports.pingElasticSearch = async (req, res, next) => {
 };
 
 /**
- * Data dump into ES
+ * Fetch data from knowledge graph and dump into ES
+ * NOTE: It overwrites the index
  * @param {*} req
  * @param {*} res
  * @param {*} next
@@ -130,6 +166,12 @@ exports.dataDump = async (req, res, next) => {
   log.info('dataDump(): Function entry');
 
   try {
+    if (req.method === 'DELETE') {
+      const type = req.query.type;
+      await elasticSearch.deleteIndexDocs(type);
+      return res.status(200);
+    }
+
     const { type, data } = await outboundRequest(req, next);
     req.body = JSON.stringify({ type, data });
 
@@ -139,6 +181,10 @@ exports.dataDump = async (req, res, next) => {
   }
 };
 
+/** This function allows for upload already fetched data
+ * into ES. It will NOT call the knowledge graph as it assumes
+ * user already have the data. NOTE: It overwrites the index
+ */
 exports.bulkElasticSearchImport = (req, res, next) => {
   const log = req.logger;
   log.info('bulkElasticSearchImport(): Function entry');
@@ -156,32 +202,41 @@ exports.bulkElasticSearchImport = (req, res, next) => {
 exports.populateDatasetIds = async (req, res, next) => {
   const log = req.logger;
   log.info('populateDatasetIds(): Function entry');
-  if (!req.internal) {
-    return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
-  }
+  // if (!req.user) {
+  //   return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
+  // }
 
-  const connDB = iterator.generateMongoUrl(req);
-  if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
+  // const connDB = iterator.generateMongoUrl(req);
+  // if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
 
   try {
-    const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
-    const Dataset = await db.collection('datasets');
-    const datasets = await Dataset.find({});
-    await iterator.iteration(datasets, async (arg) => {
-      const user = await User.findOne({ userid: arg?.userid }).lean();
-      const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
-      if (userExistInDatasetId?._id) {
-        userExistInDatasetId.dataset.push(arg);
-        await userExistInDatasetId.save();
-        return;
-      }
-      const datasetId = new DatasetId({ user });
-      datasetId.dataset.push(arg._id);
-      await datasetId.save();
-      return datasetId;
-    }, 2);
-    successWriter(req, { message: 'Successfully updated DatasetIds' }, 'populateDatasetIds');
-    return res.status(201).json({ message: 'Successfully updated DatasetIds' });
+    // const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
+    // const Dataset = await db.collection('datasets');
+    // const datasets = await Dataset.find({});
+    // await iterator.iteration(datasets, async (arg) => {
+    //   const user = await User.findOne({ userid: arg?.userid }).lean();
+    //   const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
+    //   if (userExistInDatasetId?._id) {
+    //     userExistInDatasetId.dataset.push(arg);
+    //     await userExistInDatasetId.save();
+    //     return;
+    //   }
+    //   const datasetId = new DatasetId({ user });
+    //   datasetId.dataset.push(arg._id);
+    //   await datasetId.save();
+    //   return datasetId;
+    // }, 2);
+    const user = req.user;
+    const datasetId = new DatasetId({ user });
+    const createdDataset = await datasetId.save();
+
+    successWriter(req, { message: `Successfully created DatasetId: ${createdDataset._id}` }, 'populateDatasetIds');
+    return res.status(201).json({
+      id: createdDataset._id,
+      samples: createdDataset.samples,
+      status: createdDataset.status,
+      creationDate: createdDataset.createdAt
+    });
   } catch (err) {
     next(errorWriter(req, err, 'populateDatasetIds', 500));
   }

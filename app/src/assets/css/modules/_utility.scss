@@ -14,6 +14,10 @@
         max-width: 80%;
     }
 
+    .md-layout-item{
+        height: fit-content;
+    }
+
     .wrapper {
         padding-left: 0;
         padding-right: 0;
@@ -27,18 +31,31 @@
         margin-left: 1rem;
         padding-left: 1rem;
     }
+
     &_width--small {
         width: 15rem;
     }
+
     &--bg {
         background-color: $primary !important;
-        color: $primary-white !important
+        color: $primary-white !important;
+
+        &-grey {
+            background-color: $secondary-grey
+        }
+    }
+
+    &_display {
+        &-flex {
+            display: flex;
+        }
     }
 
     &--alt-bg {
         background-color: $tertiary !important;
         color: $primary !important
     }
+
     &-clear {
         @include clearfix;
     }
@@ -67,7 +84,7 @@
 
     &--padding {
         &-zero {
-            padding: 0;
+            padding: 0 !important;
         }
         &-zero-mobile {
             @include respond(phone) {
@@ -123,12 +140,27 @@
                     margin-left: 1.2rem !important;
                 }
             }
+            &-auto {
+                margin-left: auto !important;
+            }
         }
         &-header {
             margin: 2rem 0 !important;
         }
         &-centered {
             margin: auto
+        }
+    }
+
+    &_height {
+        &--max {
+            height: 100% !important;
+        }
+    }
+    
+    &_width {
+        &--max {
+            width: 100% !important;
         }
     }
 
@@ -145,6 +177,12 @@
     &--layout {
         &-width {
             width: 99% !important;
+        }
+        &-flex{
+            display: flex;
+            &-column{
+                flex-direction: column;
+            }
         }
         &-flex-justify-se {
             justify-content: space-evenly;
@@ -171,22 +209,38 @@
 
     &--color{
         &-grey {
-            color: $primary-grey;
+            color: $primary-grey !important;
         }
         &-grey-sec {
-            color: $secondary-grey;
+            color: $secondary-grey !important;
         }
         &-primary {
-            color: $primary;
+            color: $primary !important;
         }
         &-secondary {
-            color: $secondary;
+            color: $secondary !important;
         }
         &-black {
             color: $primary-black;
         }
+        &-tertiary {
+            color: $tertiary !important;
+            & > *,
+            & .md-button-content {
+                color: $tertiary !important;
+            }
+        }
+        &-success {
+            color: green !important;
+        }
+        &-error {
+            color: $error !important;
+        }
     }
     &--font-emph {
+        &-900{
+            font-weight: 900;
+        }
         &-xl {
             font-size: $x-large-size;
             font-weight: 700;
@@ -201,7 +255,7 @@
         }
         &-smm {
             font-size: 1.3rem;
-            font-size: 500;
+            font-weight: 500;
         }
 
     }
@@ -300,12 +354,20 @@
     }
 
     &_pointer {
-        cursor: pointer;
+        cursor: pointer !important;
+
+        &--ew {
+            cursor: ew-resize !important;
+        }
     }
 
     &_centralize {
         &_text {
             text-align: center;
+        }
+        &_content {
+            // Flex type content
+            justify-content: center; 
         }
         &_other {
             margin: 0 auto;
@@ -352,7 +414,7 @@
                 cursor: pointer;
             }
         }
-        & > div:hover{
+        & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
             background-color: $primary-light;
             & > i {
                 color: $secondary-light !important;
@@ -398,7 +460,10 @@
         color: $primary !important;
 
         &_white {
-            color: $primary-white !important
+            color: $primary-white !important;
+            & .md-button-content {
+                color: $primary-white !important;
+            }
         }
     }
     &_gridbg {
@@ -538,20 +603,28 @@
     &-gridicon {
         position: absolute;
         right: 4.5rem;
+        top: 16rem;
         z-index: 10000000;
         @include respond(tab-land){
             right: 2.5rem;
+            top: 19rem;
+        }
+        @include respond(phone) {
+            top: 15rem;
         }
         & > div {
             display: inline-block;
-
-            & > i {
-                font-size: 1rem !important;
-                width: 21px !important;
-                min-width: 21px !important;
-                height: 21px !important; 
-                cursor: pointer;
-            }
+        }
+        .md-icon-button {
+            width: 3rem !important;
+            min-width: 3rem !important
+        }
+        .md-icon {
+            font-size: 2.5rem !important;
+            width: 2.5rem !important;
+            min-width: 2.5rem !important;
+            height: 2.5rem !important; 
+            cursor: pointer;
         }
 
         &_explorer {

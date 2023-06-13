@@ -1,0 +1,10 @@
+{
+  "all": true,
+  "include": ["src/"],
+  "exclude": ["**/*.spec.js"],
+  "check-coverage": true,
+  "statements": 40,
+  "branches": 38,
+  "functions": 30,
+  "lines": 44
+}

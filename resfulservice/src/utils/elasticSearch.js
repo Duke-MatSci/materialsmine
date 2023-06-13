@@ -49,19 +49,33 @@ class ElasticSearch {
   }
 
   /**
-   * Deletes a type group and all its docs
+   * Deletes all documents of an index
    * @param {String} type
-   * @returns {Object} response
+   * @returns response
    */
-  async deleteAType (type) {
-    const configResponse = await axios({
-      method: 'delete',
-      url: `http://${env.ESADDRESS}/${type}`,
-      headers: {
-        'Content-Type': 'application/json'
+  async deleteIndexDocs (type) {
+    return this.client.deleteByQuery({
+      index: type,
+      body: {
+        query: {
+          match_all: {}
+        }
+      },
+      timeout: '5m' // Todo: Increase when data becomes larger
+    });
+  }
+
+  async deleteSingleDoc (type, identifier) {
+    return this.client.deleteByQuery({
+      index: type,
+      body: {
+        query: {
+          match_phrase: {
+            identifier
+          }
+        }
       }
     });
-    return configResponse;
   }
 
   async _putMappings (type, schema) {
@@ -74,21 +88,34 @@ class ElasticSearch {
     });
   }
 
+  async _getExistingIndices () {
+    return await this.client.cat.indices({ format: 'json' });
+  }
+
   async initES (req) {
     const log = req.logger;
     log.info('elasticsearch.initES(): Function entry');
 
-    try {
-      const allSchemas = {
-        articles: configPayload.articles,
-        samples: configPayload.samples,
-        charts: configPayload.charts,
-        images: configPayload.images
-      };
+    // Check and ignore existing indexes before create
+    const existingIndexes = await this._getExistingIndices();
+    if (existingIndexes.length >= Object.keys(configPayload).length) {
+      log.info('elasticsearch.initES(): All indexes exist in Elastic search');
+      return;
+    }
 
-      Object.entries(allSchemas).forEach(async ([key, value]) => {
-        await this._createConfig(key);
-        await this._putMappings(key, value);
+    // Remove elastic search index config from list of keys
+    let preparedKeys = Object.keys(configPayload)?.filter(e => e !== 'config');
+    if (existingIndexes.length) {
+      preparedKeys = preparedKeys.filter(preppedKey => !existingIndexes.some(existingIndex => (existingIndex?.index === preppedKey)));
+      log.info(`elasticsearch.initES(): Adding the following missing index(es) ${preparedKeys.join(',')}`);
+    }
+
+    try {
+      Object.entries(configPayload).forEach(async ([key, value]) => {
+        if (preparedKeys.includes(key)) {
+          await this._createConfig(key);
+          await this._putMappings(key, value);
+        }
       });
 
       return {
@@ -110,6 +137,7 @@ class ElasticSearch {
     }
     return this.client.index({
       index: type,
+      refresh: true,
       document: { ...doc }
     });
   }

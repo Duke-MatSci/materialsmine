@@ -8,7 +8,7 @@ module.exports = {
   signToken: (req, payload) => {
     const logger = req.logger;
     try {
-      const signed = jwt.sign(payload, getTkns(req), { expiresIn: req.timer || '8h' });
+      const signed = jwt.sign(payload, getTkns(req), { expiresIn: req.timer ?? '8h' });
       return signed;
     } catch (err) {
       logger.error(`[signToken]: Failed to sign - ${err}`);

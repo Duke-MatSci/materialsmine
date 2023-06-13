@@ -52,3 +52,8 @@ mockDB/minio/
 #Whyis
 **/**/__pycache__/
 **/**/celerybeat-schedule.db
+
+# Ignore coverage
+app/coverage
+resfulservice/coverage
+resfulservice/.nyc_output
