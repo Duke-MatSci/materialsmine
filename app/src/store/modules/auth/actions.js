@@ -59,6 +59,8 @@ export default {
     const token = res.token ?? null
     const userId = res.userId ?? null
     const displayName = res.displayName ?? null
+    const surName = res.surName ?? null
+    const givenName = res.givenName ?? null
     const isAdmin = res.isAdmin ?? false
     const expiresIn = 9000 * 60 * 60
     const expirationDate = new Date().getTime() + expiresIn
@@ -67,6 +69,8 @@ export default {
       localStorage.setItem('token', token)
       localStorage.setItem('userId', userId)
       localStorage.setItem('displayName', displayName)
+      localStorage.setItem('surName', surName)
+      localStorage.setItem('givenName', givenName)
       localStorage.setItem('isAdmin', isAdmin)
       localStorage.setItem('tokenExpiration', expirationDate)
 
@@ -75,13 +79,15 @@ export default {
       }, expiresIn)
     }
 
-    context.commit('setUser', { token, userId, displayName, isAdmin })
+    context.commit('setUser', { token, userId, displayName, isAdmin, surName, givenName })
   },
 
   tryLogin (context) {
     const token = localStorage.getItem('token')
     const userId = localStorage.getItem('userId')
     const displayName = localStorage.getItem('displayName')
+    const surName = localStorage.getItem('surName')
+    const givenName = localStorage.getItem('givenName')
     const isAdmin = localStorage.getItem('isAdmin')
     const tokenExpiration = localStorage.getItem('tokenExpiration')
 
@@ -97,7 +103,7 @@ export default {
     }, expiresIn)
 
     if (token && userId && displayName) {
-      context.commit('setUser', { token, userId, displayName, isAdmin })
+      context.commit('setUser', { token, userId, displayName, isAdmin, surName, givenName })
     }
   },
 
@@ -105,6 +111,8 @@ export default {
     localStorage.removeItem('token')
     localStorage.removeItem('userId')
     localStorage.removeItem('displayName')
+    localStorage.removeItem('surName')
+    localStorage.removeItem('givenName')
     localStorage.removeItem('isAdmin')
     localStorage.removeItem('tokenExpiration')
 
@@ -114,7 +122,9 @@ export default {
       token: null,
       userId: null,
       displayName: null,
-      isAdmin: false
+      isAdmin: false,
+      surName: null,
+      givenName: null
     })
 
     const meta = router.currentRoute?.meta
