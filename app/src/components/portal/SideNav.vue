@@ -40,7 +40,7 @@
 export default {
   name: 'SideNav',
   props: ['sideBar'],
-  data() {
+  data () {
     return {
       links: [
         {

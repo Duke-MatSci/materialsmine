@@ -37,7 +37,7 @@ import { mapMutations, mapGetters, mapActions } from 'vuex'
 import pagination from '@/components/explorer/Pagination'
 export default {
   name: 'ContactInquiry',
-  data() {
+  data () {
     return {
       showResolved: true,
       pageSize: 10
@@ -67,7 +67,7 @@ export default {
       send: 'contact/send',
       renderDialog: 'contact/renderDialog'
     }),
-    loadContacts(num = 1) {
+    loadContacts (num = 1) {
       const payload = {
         showResolved: this.showResolved,
         page: num,
@@ -76,10 +76,10 @@ export default {
       this.loadItems(payload)
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Resolved Inquiries' })
   },
-  mounted() {
+  mounted () {
     this.loadContacts(this.pageNumber)
   }
 }

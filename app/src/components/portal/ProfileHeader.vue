@@ -24,7 +24,7 @@ export default {
       displayName: 'auth/displayName',
       user: 'auth/user'
     }),
-    getInitials() {
+    getInitials () {
       if (this.user?.givenName && this.user?.surName) {
         return `${this.user?.givenName?.charAt(0)}${this.user?.surName?.charAt(0)}`
       }

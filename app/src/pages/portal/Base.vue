@@ -44,14 +44,14 @@ export default {
     MdSideNav: SideNav,
     ProfileHeader
   },
-  data() {
+  data () {
     return {
       menuVisible: false,
       sideBar: false
     }
   },
   methods: {
-    toggleMenuVisibility() {
+    toggleMenuVisibility () {
       this.menuVisible = !this.menuVisible
     }
   },

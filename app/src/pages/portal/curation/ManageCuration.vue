@@ -27,13 +27,13 @@ export default {
   components: {
     Spinner
   },
-  data() {
+  data () {
     return {
       loading: false,
       loadingMessage: ''
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: '', name: 'Manage Curation' })
   }
 }

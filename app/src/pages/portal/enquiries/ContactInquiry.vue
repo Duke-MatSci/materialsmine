@@ -57,7 +57,7 @@ import TextEditor from '@/components/TextEditor'
 import Dialog from '@/components/Dialog.vue'
 export default {
   name: 'ContactInquiry',
-  data() {
+  data () {
     return {
       showResolved: false,
       pageSize: 10
@@ -82,10 +82,10 @@ export default {
       contentEditable: 'contact/getContentEditable'
     }),
     message: {
-      get() {
+      get () {
         return this.$store.getters['contact/getMessage']
       },
-      set(payload) {
+      set (payload) {
         this.$store.commit('contact/setMessage', payload)
       }
     }
@@ -99,7 +99,7 @@ export default {
       send: 'contact/send',
       renderDialog: 'contact/renderDialog'
     }),
-    loadContacts(num = 1) {
+    loadContacts (num = 1) {
       const payload = {
         showResolved: this.showResolved,
         page: num,
@@ -108,10 +108,10 @@ export default {
       this.loadItems(payload)
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Contact Inquiries' })
   },
-  mounted() {
+  mounted () {
     this.loadContacts(this.pageNumber)
   }
 }

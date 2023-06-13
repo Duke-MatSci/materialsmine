@@ -53,7 +53,7 @@ export default {
     })
   },
   methods: {
-    toggler() {
+    toggler () {
       this.$emit('toggler')
     }
   }

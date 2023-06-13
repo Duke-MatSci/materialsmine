@@ -54,9 +54,9 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'PortalHome',
-  data() {
+  data () {
     return {
-      hours: 0,
+      hours: 0
     }
   },
   computed: {
@@ -67,7 +67,7 @@ export default {
     })
   },
   methods: {
-    async copyContent() {
+    async copyContent () {
       try {
         await navigator.clipboard.writeText(this.token)
         this.$store.commit('setSnackbar', {
@@ -81,23 +81,23 @@ export default {
         })
       }
     },
-    countDown() {
+    countDown () {
       const tokenExpiration = localStorage.getItem('tokenExpiration')
       if (!tokenExpiration) {
-        this.hours = `Token already expired`
-        return;
+        this.hours = 'Token already expired'
+        return
       }
 
       const expiresIn = new Date(+tokenExpiration).getTime() - new Date().getTime()
       if (expiresIn <= 0) {
-        this.hours = `Token already expired`
-        return;
+        this.hours = 'Token already expired'
+        return
       }
 
-      this.hours = `Expires in ${Math.round((expiresIn /(60 * 60 * 1000)) * 100) / 100} hours`
+      this.hours = `Expires in ${Math.round((expiresIn / (60 * 60 * 1000)) * 100) / 100} hours`
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: '', name: 'Account Information' })
     this.countDown()
   }

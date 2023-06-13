@@ -42,7 +42,7 @@ export default {
     dialogBox,
     Spinner
   },
-  data() {
+  data () {
     return {
       loading: false,
       dialogTitle: 'Ready',
@@ -62,17 +62,17 @@ export default {
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
-    closeDialogBox() {
+    closeDialogBox () {
       if (this.dialogBoxActive) { this.toggleDialogBox() }
     },
-    startProcess() {
+    startProcess () {
       this.closeDialogBox()
       this.startLoading()
       setTimeout(() => this.shutDownMessage(), 120000)
       setTimeout(() => this.loadMessage(), 180000)
       setTimeout(() => this.checkServerStatus(), 300000)
     },
-    endProcess() {
+    endProcess () {
       this.$store.commit('setSnackbar', {
         message: 'Deployment Successful',
         duration: 3000
@@ -80,17 +80,17 @@ export default {
       this.loading = false
       this.headerText = true
     },
-    startLoading() {
+    startLoading () {
       this.loadingMessage = 'Server is shutting down'
       this.loading = true
     },
-    shutDownMessage() {
+    shutDownMessage () {
       this.loadingMessage = 'Server Shutdown Completed'
     },
-    loadMessage() {
+    loadMessage () {
       this.loadingMessage = 'Loading Server'
     },
-    async shutDown() {
+    async shutDown () {
       this.headerText = false
       try {
         const response = await fetch('/api/admin/call-script', {
@@ -117,7 +117,7 @@ export default {
         this.closeDialogBox()
       }
     },
-    async checkServerStatus() {
+    async checkServerStatus () {
       try {
         const response = await fetch('/api/admin/confirm-script-call', {
           method: 'GET',
@@ -145,7 +145,7 @@ export default {
       }
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: '', name: 'Deploy' })
   }
 }

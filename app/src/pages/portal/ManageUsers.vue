@@ -79,7 +79,7 @@ export default {
     dialogBox,
     Spinner
   },
-  data() {
+  data () {
     return {
       loading: false,
       pageNumber: 1,
@@ -94,10 +94,10 @@ export default {
       dialogBoxActive: 'dialogBox'
     }),
     tableData: {
-      get() {
+      get () {
         return this.search ? this.searched : this.users.data
       },
-      set(val) {
+      set (val) {
         return val
       }
     }
@@ -106,35 +106,35 @@ export default {
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
-    openDialogBox() {
+    openDialogBox () {
       this.toggleDialogBox()
     },
-    closeDialogBox() {
+    closeDialogBox () {
       this.toggleDialogBox()
     },
-    getClass({ _id }) {
+    getClass ({ _id }) {
       return _id === this.selected?._id ? 'u--bg' : ''
     },
-    getAlternateLabel(count) {
+    getAlternateLabel (count) {
       let plural = ''
       if (count > 1) {
         plural = 's'
       }
       return `${count} user${plural} selected`
     },
-    async searchOnTable() {
+    async searchOnTable () {
       this.pageNumber = 1
       await this.$apollo.queries.users.refetch()
       this.searched = this.users.data
     },
-    onSelect(items) {
+    onSelect (items) {
       this.selected = items
     },
-    async loadPrevNextUsers(event) {
+    async loadPrevNextUsers (event) {
       this.pageNumber = event
       await this.$apollo.queries.users.refetch()
     },
-    async deleteUsers() {
+    async deleteUsers () {
       const id = []
       for (let i = 0; i < this.selected.length; i++) {
         id.push(this.selected[i]._id)
@@ -164,19 +164,19 @@ export default {
       }
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', { icon: '', name: '' })
   },
   apollo: {
     users: {
       query: USERS_QUERY,
-      variables() {
+      variables () {
         return {
           input: { pageNumber: this.pageNumber, pageSize: 10, displayName: this.search }
         }
       },
       fetchPolicy: 'cache-and-network',
-      error(error) {
+      error (error) {
         if (error.networkError) {
           const err = error.networkError
           this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`

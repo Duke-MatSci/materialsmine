@@ -16,7 +16,7 @@
 </template>
 
 <script>
-  export default {
+export default {
   name: 'TextEditor',
   props: {
     value: {
@@ -58,5 +58,5 @@
       document.execCommand('redo')
     }
   }
-  }
+}
 </script>
