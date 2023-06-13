@@ -7,35 +7,28 @@
       </div>
     </div>
     <div class="">
-      <h3 class="metamine_headline"><span>MetaMine is an open source, data resource for members of the metamaterial community with four key goals:</span></h3>
+      <h3 class="metamine_headline"><span>MetaMine is an open source, data resource for
+        members of the metamaterial community with four key goals:</span></h3>
       <div class="card-container">
+        <div class="section_visualize u--padding-zero">
+          <div class="visualize--links">
+              <div class="visualize--link-icons visualize--link-mm visualize--link-left"
+                @click.prevent="reduceAsset('prev')">
+                <i class="material-icons">keyboard_arrow_left</i>
+              </div>
+              <div class="visualize--link-icons visualize--link-mm visualize--link-right " @click.prevent="reduceAsset('next')"><i class="material-icons">keyboard_arrow_right</i></div>
+          </div>
+        </div>
         <ul class="u_display-flex ul_adjust">
-          <li class="card card-float inline-display" @click.prevent="openLinks('/explorer/curate')">
+          <li class="card card-float card-adjust"
+          v-for="(card, index) in assetItems"
+          :class="`charts-${index+1}`"
+          :key="`card_${index}`"
+          @click.prevent="openLinks(card.link)">
             <div class="card-inside">
-              <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">people_alt</i></div>
-              <h2 class="card-heading">Curation</h2>
-              <p>Provide a curation platform for sharing of data across the community in ways that are findable, accessible, interoperable and reusable (FAIR ww.force11.org)</p>
-            </div>
-          </li>
-          <li class="card card-float inline-display" @click.prevent="openLinks('/explorer')">
-            <div class="card-inside">
-              <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">tune</i></div>
-              <h2 class="card-heading">Visualizing Data</h2>
-              <p>Provide a platform for visualizing data, and mechanisms for visualization methods to be shared</p>
-            </div>
-          </li>
-          <li class="card card-float inline-display" @click.prevent="openLinks('/mm/pixelunit')">
-            <div class="card-inside">
-              <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">grain</i></div>
-              <h2 class="card-heading">Module Tools</h2>
-              <p>Provide module tools for analysis and characterization of mechanical metamaterials.</p>
-            </div>
-          </li>
-          <li class="card card-float inline-display">
-            <div class="card-inside">
-              <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">widgets</i></div>
-              <h2 class="card-heading">Simulation Tools</h2>
-              <p>Improve the ability to design metamaterial through simulation and design tools.</p>
+              <div class="card-icon-container"><i class="material-icons card-icon card-icon-adjust">{{card.icon}}</i></div>
+              <h2 class="card-heading">{{card.label}}</h2>
+              <p>{{card.description}}</p>
             </div>
           </li>
         </ul>
@@ -100,8 +93,41 @@
 </template>
 
 <script>
+import reducer from '@/mixins/reduce'
 export default {
   name: 'HomeMM',
+  mixins: [reducer],
+  data () {
+    return {
+      pushedAssetItem: [],
+      assetItems: [
+        {
+          label: 'Curation',
+          icon: 'people_alt',
+          link: '/explorer/curate',
+          description: 'Provide a curation platform for sharing of data across the community in ways that are findable, accessible, interoperable and reusable (FAIR).'
+        },
+        {
+          label: 'Visualizing Data',
+          icon: 'tune',
+          link: '/explorer',
+          description: 'Provide a platform for visualizing data, and mechanisms for visualization methods to be shared.'
+        },
+        {
+          label: 'Module Tools',
+          icon: 'grain',
+          link: '/mm/pixelunit',
+          description: 'Provide module tools for analysis and characterization of mechanical metamaterials.'
+        },
+        {
+          label: 'Simulation Tools',
+          icon: 'widgets',
+          link: '',
+          description: 'Improve the ability to design metamaterial through simulation and design tools.'
+        }
+      ]
+    }
+  },
   methods: {
     openLinks (arg) {
       this.$router.push({
