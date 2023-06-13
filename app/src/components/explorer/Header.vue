@@ -7,7 +7,9 @@
             <md-icon>menu</md-icon>
           </md-button>
 
-          <span class="md-title"><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"></span>
+          <router-link to="/" class="header-logo">
+            <span class="md-title"><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"></span>
+          </router-link>
         </div>
 
         <div class="md-toolbar-section-end md-toolbar-section-end_adjust">
