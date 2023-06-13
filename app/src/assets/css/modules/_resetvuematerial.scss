@@ -226,3 +226,11 @@
     }
 
 }
+
+.md-list.md-dense .md-list-item-content.md-list-item-content-reduce{
+    min-height: auto;
+    padding-left: 0px;
+    @include respond(phone){
+        padding-left: 16px;
+    }
+}
