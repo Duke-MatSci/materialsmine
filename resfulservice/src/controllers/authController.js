@@ -18,7 +18,9 @@ const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, 
         userId: _id,
         token,
         displayName,
-        isAdmin
+        isAdmin,
+        givenName,
+        surName
         })}`);
 };
 

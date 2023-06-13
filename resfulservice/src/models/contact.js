@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { ContactPagePurposeOpt } = require('../../config/constant');
 const Schema = mongoose.Schema;
 
 const contactSChema = new Schema({
@@ -12,11 +13,21 @@ const contactSChema = new Schema({
   },
   purpose: {
     type: String,
-    enum: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT']
+    enum: ContactPagePurposeOpt
   },
   message: {
     type: String,
     required: true
+  },
+  resolved: {
+    type: Boolean,
+    default: false
+  },
+  response: {
+    type: String
+  },
+  resolvedBy: {
+    type: String
   }
 }, { timestamps: true });
 
