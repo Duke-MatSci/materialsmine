@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { DatasetStatusOpt, DatasetStatusDefault } = require('../../config/constant');
 const Schema = mongoose.Schema;
 
 const datasetIdSchema = new Schema({
@@ -9,12 +10,12 @@ const datasetIdSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ['APPROVED', 'UNDER_REVIEW', 'WORK_IN_PROGRESS'],
-    default: 'WORK_IN_PROGRESS'
+    enum: DatasetStatusOpt,
+    default: DatasetStatusDefault
   },
-  dataset: [{
+  samples: [{
     type: Schema.Types.ObjectId,
-    ref: 'datasets'
+    ref: 'CuratedSample'
   }]
 }, { timestamps: true });
 

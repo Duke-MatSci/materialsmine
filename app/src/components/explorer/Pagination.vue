@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div v-if="tpages > 1" class="explorer_page-nav u_margin-top-med viz-pagination-width-mod u_margin-bottom-small">
+  <div class="explorer_page-nav u_margin-top-med viz-pagination-width-mod u_margin-bottom-small">
+    <div v-if="tpages > 1">
       <button
         @click.prevent="goToBeginning"
         v-if="rowNumber > 1" :disabled="rowNumber < 1"
@@ -35,6 +35,14 @@ export default {
       pageInput: this.cpage,
       offset: 0,
       rowNumber: 1
+    }
+  },
+  watch: {
+    // Necessary for when searching changes the page number
+    cpage (newValue, oldValues) {
+      if ((newValue !== oldValues) && this.pageExists(newValue)) {
+        this.pageInput = newValue
+      }
     }
   },
   mounted () {

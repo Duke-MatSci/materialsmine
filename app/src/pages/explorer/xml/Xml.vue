@@ -22,7 +22,7 @@
             <button v-if="searchEnabled"
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-              @click.prevent="resetSearch"
+              @click.prevent="resetSearch('XML')"
             >
             Clear Search
             </button>
@@ -83,7 +83,7 @@
         </md-card>
       </div>
 
-      <pagination
+      <pagination v-if="xmlFinder && xmlFinder.xmlData"
         :cpage="pageNumber"
         :tpages="xmlFinder.totalPages ?? 1"
         @go-to-page="loadPrevNextImage($event)"
@@ -102,6 +102,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import { XML_FINDER } from '../../../modules/gql/xml-gql'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 export default {
   name: 'XmlGallery',
   data () {
@@ -116,46 +117,14 @@ export default {
       error: null
     }
   },
+  mixins: [explorerQueryParams],
   components: {
     pagination,
     spinner
   },
-  watch: {
-    '$route.query' (newValue, oldValues) {
-      if (newValue !== oldValues) {
-        this.loadParams(newValue)
-      }
-    },
-    pageSize (newValue, oldValue) {
-      if (newValue !== oldValue) {
-        this.checkPageSize(newValue)
-        this.updateParamsAndCall(true)
-      }
-    }
-  },
   methods: {
-    async loadParams (query) {
-      this.pageNumber = parseInt(query.page) ? +query.page : 1
-      parseInt(query.size) ? this.checkPageSize(+query.size) : this.checkPageSize(20)
-      query.q ? this.updateSearchWord(query.q) : this.updateSearchWord('')
-      await this.updateParamsAndCall()
-    },
-    async updateParamsAndCall (pushNewRoute = false) {
-      this.searchEnabled = !!this.searchWord
-      if (pushNewRoute) {
-        this.$router.push({
-          query: {
-            page: this.pageNumber,
-            size: this.pageSize,
-            q: this.searchWord
-          }
-        })
-      }
+    async localSearchMethod () {
       await this.$apollo.queries.xmlFinder.refetch()
-    },
-    async loadPrevNextImage (event) {
-      this.pageNumber = event
-      await this.updateParamsAndCall(true)
     },
     async submitSearch () {
       if (!this.searchWord) {
@@ -167,24 +136,6 @@ export default {
       this.searchEnabled = !!this.searchWord
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
-    },
-    async resetSearch () {
-      this.renderText = 'Showing all XMLs'
-      await this.$router.replace({ query: {} })
-      return await this.loadParams({})
-    },
-    checkPageSize (pageSize) {
-      if (!pageSize || (pageSize && pageSize < 1)) {
-        this.pageSize = 20
-      } else if (pageSize && pageSize > 50) {
-        this.pageSize = 20
-      } else {
-        this.pageSize = pageSize
-      }
-    },
-    updateSearchWord (searchWord) {
-      if (!searchWord && !searchWord.length > 0) this.searchEnabled = false
-      this.searchWord = searchWord
     }
   },
   created () {

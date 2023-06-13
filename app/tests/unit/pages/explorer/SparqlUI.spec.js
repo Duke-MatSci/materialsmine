@@ -9,7 +9,11 @@ document.body.createTextRange = (elem) => {
   return textRange
 }
 
+window.focus = jest.fn()
 describe('Sparql.vue', () => {
+  afterAll(() => {
+    window.focus.mockClear()
+  })
   it('contains yasgui component', () => {
     const wrapper = createWrapper(SparqlUI, {}, true)
     const yasguiComponent = wrapper.findComponent('.yasgui')

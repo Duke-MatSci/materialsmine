@@ -25,7 +25,7 @@
         <md-tabs class="btn--primary">
             <md-tab :md-label="'Articles (' + passTotal.getArticles + ')'" @click.prevent="setResultsTabs('getArticles')"></md-tab>
             <md-tab :md-label="'Samples (' + passTotal.getSamples + ')'" @click.prevent="setResultsTabs('getSamples')"></md-tab>
-            <md-tab :md-label="'Images (' + passTotal.getImages + ')'" @click.prevent="setResultsTabs('getImages')"></md-tab>
+            <md-tab :md-label="'Images (' + imageTotal + ')'" @click.prevent="setResultsTabs('getImages')"></md-tab>
             <md-tab :md-label="'Charts (' + passTotal.getCharts + ')'" @click.prevent="setResultsTabs('getCharts')"></md-tab>
             <md-tab :md-label="'Properties (' + passTotal.getMaterials + ')'" @click.prevent="setResultsTabs('getMaterials')"></md-tab>
         </md-tabs>
@@ -42,7 +42,10 @@ export default {
       resultsTab: 'explorer/getResultsTab',
       passTotal: 'explorer/results/getTotalGroupings',
       getTotal: 'explorer/results/getTotal'
-    })
+    }),
+    imageTotal () {
+      return this.passTotal?.getImages ?? 0
+    }
   },
   methods: {
     setResultsTabs (payload) {
