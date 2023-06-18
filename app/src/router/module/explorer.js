@@ -105,15 +105,10 @@ const explorerRoutes = [
   //   name: 'CurateStepper',
   //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
   // },
-  // {
-  //   path: 'sdd',
-  //   name: 'CurateSDD',
-  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
-  // }
   {
     path: 'curate/sdd',
     name: 'CurateSDD',
-    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue')
   },
   {
     path: 'chart',

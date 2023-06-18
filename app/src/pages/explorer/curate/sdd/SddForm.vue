@@ -17,14 +17,14 @@
             <div style="margin: 20px">
             <md-field style="max-width: 100%;">
               <label>DOI of related publication (e.g., 10.1000/000)</label>
-              <md-input v-model="dataset.doi"></md-input>
+              <md-input v-model="dataset.doi" @change="lookupDoi"></md-input>
             </md-field>
 
             <FileInput @files-dropped="addDistr">
               <label for="file-distr-input">
                 <div class="form__file-input">
                   <div class="md-field md-theme-default md-required md-has-file">
-                    <md-icon>attach_file</md-icon> 
+                    <md-icon>attach_file</md-icon>
                     <label for="file-distr-input">Select files to upload for this dataset</label>
                     <div class="md-file" multiple isinvalidvalue=false>
                       <input type="file" id="file-distr-input" multiple @change="onInputChange"/>
@@ -45,7 +45,7 @@
               <label for="file-depict-input">
                 <div class="form__file-input">
                   <div class="md-field md-theme-default md-has-file">
-                    <md-icon>attach_file</md-icon> 
+                    <md-icon>attach_file</md-icon>
                     <label for="file-depict-input">Select a representative image to use as thumbnail</label>
                     <div class="md-file" multiple isinvalidvalue=false>
                       <input type="file" id="file-depict-input" multiple @change="previewFile()" accept="image/*"/>
@@ -65,16 +65,13 @@
 
             </div>
             <div class="md-layout md-gutter md-alignment-top-right">
-              <div class="md-layout-item md-size-10">
+              <div class="md-layout-item md-size-10 md-medium-size-15 md-small-size-20 md-xsmall-size-40">
                 <md-button
                   @click="goToStep('first', 'second')"
                   class="md-theme-default md-button_next">
                   Next
                 </md-button>
               </div>
-              <!-- <div class="md-layout-item" v-if="doiLoading">
-                <md-progress-spinner :md-diameter="30" :md-stroke="3" md-mode="indeterminate"></md-progress-spinner>
-              </div> -->
             </div>
           </md-step>
 
@@ -97,8 +94,16 @@
                 <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50">
                   <md-field>
                     <label style="font-size:14px">ORCID Identifier (e.g., 0000-0001-2345-6789)</label>
-                    <md-input v-model="dataset.contactPoint.orcidId" required ></md-input>
-                    <span class="md-error">ORCID iD required</span>
+                    <md-input v-model="dataset.contactPoint['@id']" required @change="lookupOrcid" ></md-input>
+                    <span class="md-error">ORCID ID required</span>
+                  </md-field>
+                </div>
+
+                <div class="md-layout-item md-size-25 md-xsmall-size-100 md-medium-size-50">
+                  <md-field   style="max-width: 100%;">
+                    <label>Email</label>
+                    <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
+                    <span class="md-error">Valid email required</span>
                   </md-field>
                 </div>
 
@@ -115,14 +120,6 @@
                     <label>Last name</label>
                     <md-input v-model="dataset.contactPoint.cpLastName" required></md-input>
                     <span class="md-error">Contact point required</span>
-                  </md-field>
-                </div>
-
-                <div class="md-layout-item md-size-25 md-xsmall-size-100 md-medium-size-50">
-                  <md-field   style="max-width: 100%;">
-                    <label>Email</label>
-                    <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
-                    <span class="md-error">Valid email required</span>
                   </md-field>
                 </div>
               </div>
@@ -208,27 +205,27 @@
               <div style="width: 100%">
                 <div class="md-layout md-gutter">
                   <div class="md-layout-item md-size-50">
-                    <label>Date Last Modified</label>
+                    <label>Date Published</label>
                     <md-field>
                       <md-input v-model="dataset.dateMod" type="date"></md-input>
                     </md-field>
                   </div>
                 </div>
               </div>
-            </md-content> 
+            </md-content>
 
             <md-card-actions style="width: 100%; height: 100%; margin: 20px; padding-top:5rem;">
               <div class="md-layout md-gutter ">
-                <div class="md-layout-item md-size-10">
+                <div class="md-layout-item md-size-10 md-xsmall-size-35">
                   <md-button
                     @click="goToStep('second', 'first')"
                     class="md-theme-default md-button_prev">
                     Previous
                   </md-button>
                 </div>
-                <div class="md-layout-item md-size-75">
+                <div class="md-layout-item md-size-80 md-small-size-70 md-xsmall-size-30">
                 </div>
-                <div class="md-layout-item md-size-10">
+                <div class="md-layout-item md-size-10 md-small-size-20 md-xsmall-size-35">
                   <md-button
                     @click="goToStep('second', 'third')"
                     class="md-theme-default md-button_next">
@@ -255,9 +252,9 @@
             </div>
             <div v-if="dataset.depiction" class="u--margin-pos"><h3>Depiction</h3> {{dataset.depiction.name}} </div>
             <div class="u--margin-pos"><h3>Description:</h3> {{dataset.description}}</div>
-            <div class="u--margin-pos"><h3>Date last modified:</h3> {{dataset.dateMod}}</div>
+            <div class="u--margin-pos"><h3>Date published:</h3> {{dataset.dateMod}}</div>
             <md-card-actions>
-              <md-button class="md-primary" >Submit</md-button>
+              <md-button class="md-primary" @click="submitForm">Submit</md-button>
             </md-card-actions>
           </md-step>
         </md-steppers>
@@ -275,7 +272,10 @@ import FileDrop from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import useFileList from '@/modules/file-list'
-
+import { saveDataset } from '@/modules/whyis-dataset'
+import { mapGetters } from 'vuex'
+const { v4: uuidv4 } = require('uuid')
+const datasetId = uuidv4()
 const distrFn = useFileList()
 
 export default {
@@ -297,6 +297,7 @@ export default {
       ],
       // Stepper data
       active: 'first',
+      generatedUUID: datasetId,
       dataset: {
         // Dataset info: Step 1
         doi: '',
@@ -305,15 +306,38 @@ export default {
         // Dataset info: Step 2
         title: '',
         contactPoint: {
-          orcidId: '',
+          // "@type": "individual",
+          '@id': null,
           cpFirstName: '',
           cpLastName: '',
-          cpEmail: '',
+          cpEmail: ''
         },
         description: '',
         contributors: [],
-        dateMod: '',
+        dateMod: ''
       }
+    }
+  },
+  computed: {
+    ...mapGetters({
+      doiData: 'explorer/curation/getDoiData',
+      orcidData: 'explorer/curation/getOrcidData'
+    })
+  },
+  watch: {
+    doiData () {
+      this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
+      if (this.doiData?.published?.['date-parts'].length === 3) {
+        const dateArray = this.doiData.published['date-parts'].flat()
+        this.dataset.dateMod = dateArray[0].toString() + '-' +
+          (dateArray[1] < 10 ? '0' + dateArray[1].toString() : dateArray[1].toString()) + '-' +
+          (dateArray[2] < 10 ? '0' + dateArray[2].toString() : dateArray[2].toString())
+      }
+      // TODO: contributors
+    },
+    orcidData () {
+      this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
+      this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
     }
   },
   methods: {
@@ -333,29 +357,47 @@ export default {
         this.active = index
       }
     },
+    async lookupOrcid (e) {
+      await this.$store.dispatch('explorer/curation/lookupOrcid', e.target.value)
+    },
+    async lookupDoi (e) {
+      await this.$store.dispatch('explorer/curation/lookupDoi', e.target.value)
+    },
     // Load a thumbnail of the representative image
-    previewFile() { 
-      const preview = document.querySelector('#depictImg');
+    previewFile () {
+      const preview = document.querySelector('#depictImg')
       const wrapper = document.querySelector('#depictWrapper')
-      const file = document.querySelector('#file-depict-input').files[0]; 
-      const reader = new FileReader();
+      const file = document.querySelector('#file-depict-input').files[0]
+      const reader = new FileReader()
       this.dataset.depiction = file
-    
-      reader.addEventListener("load", function () { 
-        wrapper.style.visibility = "visible";
-        preview.src = reader.result; 
-      }, false);
-    
-      if (file) {  
-        reader.readAsDataURL(file);
+
+      reader.addEventListener('load', function () {
+        wrapper.style.visibility = 'visible'
+        preview.src = reader.result
+      }, false)
+
+      if (file) {
+        reader.readAsDataURL(file)
       }
     },
-    removeImage(){ 
-      document.querySelector('#depictWrapper').style.visibility = "hidden"; 
-      document.querySelector('#file-depict-input').value = "";
-      document.querySelector('#depictImg').src=""; 
-      this.dataset.depiction = null;
+    removeImage () {
+      document.querySelector('#depictWrapper').style.visibility = 'hidden'
+      document.querySelector('#file-depict-input').value = ''
+      document.querySelector('#depictImg').src = ''
+      this.dataset.depiction = null
+    },
+    // Submit and post as nanopublication
+    submitForm: function () {
+      try {
+        // TODO: Modify this function call to also send files
+        saveDataset(this.dataset, this.generatedUUID)
+        // TODO: Decide where routing should go to
+        // .then(() => goToView(this.dataset.uri, "view"));
+      } catch (err) {
+        this.uploadError = err.response
+      }
     }
+
   }
 }
 </script>

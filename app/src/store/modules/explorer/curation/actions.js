@@ -88,5 +88,61 @@ export default {
 
     const response = await fetchResponse.json()
     return { response, identifier: chartInstanceObject.identifier }
+  },
+
+  async lookupOrcid ({ commit }, orcidId) {
+    const unhyphenated = /^\d{15}(\d|X)$/.test(orcidId)
+    unhyphenated && (orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4'))
+
+    const isValidOrcid = (identifier) => {
+      return /^(\d{4}-){3}\d{3}(\d|X)$/.test(identifier)
+    }
+
+    if (isValidOrcid(orcidId)) {
+      // TODO: update the endpoint route name
+      const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`
+      const response = await fetch(url, {
+        method: 'GET'
+      })
+      if (!response || response?.statusText !== 'OK') {
+        const snackbar = {
+          message: response.message || 'Something went wrong while fetching orcid data',
+          duration: 5000
+        }
+        return commit('setSnackbar', snackbar, { root: true })
+      }
+
+      if (response.status === 201) {
+        return
+      }
+      const responseData = await response.json()
+      const cpResult = responseData.filter(entry => entry['@id'] === `http://orcid.org/${orcidId}`)
+      if (cpResult.length) {
+        return commit('setOrcidData', cpResult[0])
+      }
+    } else {
+      return 'Invalid'
+    }
+  },
+
+  async lookupDoi ({ commit }, inputDoi) {
+    const url = `/api/curate/getdoi/${inputDoi}`
+    const response = await fetch(url, {
+      method: 'GET'
+    })
+    if (!response || response?.statusText !== 'OK') {
+      if (!response || response?.statusText !== 'OK') {
+        const snackbar = {
+          message: response.message || 'Something went wrong while fetching DOI data',
+          duration: 5000
+        }
+        return commit('setSnackbar', snackbar, { root: true })
+      }
+    }
+    if (response.status === 201) {
+      return
+    }
+    const responseData = await response.json()
+    return commit('setDoiData', responseData)
   }
 }

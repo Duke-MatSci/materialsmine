@@ -19,4 +19,7 @@ router.route('/admin')
 router.route('rehydrate')
   .patch(isAuth, curationController.curationRehydration);
 
+router.route('/getdoi/:doi([^/]*)')
+  .get(curationController.getDoiInfo);
+
 module.exports = router;
