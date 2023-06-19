@@ -55,7 +55,7 @@ input updateUserInput {
   """
   User ID from auth service
   """
-  userid: String
+  userid: String @deprecated(reason: "No longer supported!")
 
   """
   User first name info
@@ -70,12 +70,12 @@ input updateUserInput {
   """
   Name displayed on user profile similar to username
   """
-  displayName: String
+  displayName: String @deprecated(reason: "No longer supported!")
 
   """
   User email email address
   """
-  email: String
+  email: String @deprecated(reason: "No longer supported!")
 
   """
   User priviledge options
