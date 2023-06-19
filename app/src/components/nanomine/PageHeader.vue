@@ -87,6 +87,7 @@
                                     <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
+                                    <a href="/api/api-docs/" class="nav_menu--siblings-lists"><a>Api Docs</a></a>
                                 </div>
                             </div>
                         </li>
