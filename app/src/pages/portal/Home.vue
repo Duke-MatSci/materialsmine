@@ -37,14 +37,15 @@
 
         <div class="">
           <h4 class="u--color-grey-sec md-button-content">token</h4>
-          <div style="word-wrap: break-word;" class="wrapper--medium md-card-header chart_editor__right-view md-card-header-flex dialog-box_content">
+          <div style="word-wrap: break-word;" class=" md-card-header chart_editor__right-view">
             {{ token }}
           </div>
           <div class="md-card-actions md-alignment-right chart_editor__right-view ">
-            <button @click.prevent="copyContent" class="md-button btn btn--primary btn--noradius">Copy token</button>
+            <button @click.prevent="copyContent" class="md-button btn btn--primary btn--noradius ">
+              <span class="md-caption u--bg">Copy token</span>
+            </button>
           </div>
         </div>
-
       </div>
     </div>
   </div>

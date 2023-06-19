@@ -2,14 +2,14 @@
   <md-app>
     <md-app-toolbar id="header" @toggler="toggleMenuVisibility"/>
 
-    <md-app-content class="utility-roverflow viz-u-postion__rel">
+    <md-app-content class="viz-u-postion__rel">
       <div class="md-layout u_width--max md-gutter md-alignment-top-center">
         <div class="md-layout-item md-size-60 md-small-size-90 md-xsmall-size-95 ">
           <profile-header></profile-header>
 
           <div class="u_margin-top-small u_display-flex md-layout-row md-theme-demo-light md-scrollbar">
             <!-- permanent drawer -->
-            <md-app-drawer class="md-right" :md-active.sync="sideBar" md-permanent="clipped">
+            <md-app-drawer :md-active.sync="sideBar" md-permanent="clipped">
               <md-side-nav></md-side-nav>
             </md-app-drawer>
             <div class="u_width--max md-content u--margin-pos utility-roverflow">
@@ -33,7 +33,7 @@
 <script>
 import PageHeader from '@/components/portal/Header.vue'
 import SideNav from '@/components/portal/SideNav.vue'
-import ProfileHeader from '../../components/portal/ProfileHeader.vue'
+import ProfileHeader from '@/components/portal/ProfileHeader.vue'
 import Drawer from '@/components/Drawer.vue'
 import { mapGetters } from 'vuex'
 export default {

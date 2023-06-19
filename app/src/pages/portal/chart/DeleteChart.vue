@@ -8,8 +8,7 @@
       <div class=" viz-u-mgup-sm utility-margin md-theme-default">
         <div class="md-card-header contactus_radios md-card-header-flex">
           <div class="md-card-header-text">
-            <div class="md-body-1">This task requires super admin priviledges, deploying unapproved changes will require a
-              rollback</div>
+            <div class="md-body-1">This task requires super admin priviledges, deploying unapproved changes will require a rollback</div>
           </div>
         </div>
 

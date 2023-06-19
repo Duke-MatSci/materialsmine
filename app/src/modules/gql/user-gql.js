@@ -26,3 +26,17 @@ mutation DeleteUser($input: deleteUsersInput) {
   deleteUser(input: $input)
 }
 `
+
+export const UPDATE_USER_QUERY = gql`
+mutation UpdateUser($input: updateUserInput) {
+  updateUser(input: $input) {
+    _id
+    alias
+    givenName
+    surName
+    displayName
+    email
+    apiAccess
+  }
+}
+`
