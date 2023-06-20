@@ -1,10 +1,11 @@
-import { listNanopubs, postNewNanopub, deleteNanopub } from './whyis-utils'
-const lodPrefix = window.location.hostname
+import { listNanopubs, postNewNanopub, deleteNanopub, lodPrefix } from './whyis-utils'
+import store from '@/store'
+
 const defaultDataset = {
   title: '',
   description: '',
   contactpoint: {
-    '@type': 'individual',
+    '@type': 'person',
     '@id': null,
     name: '',
     cpfirstname: '',
@@ -35,6 +36,7 @@ const dcat = 'http://w3.org/ns/dcat#'
 const dct = 'http://purl.org/dc/terms/'
 const vcard = 'http://www.w3.org/2006/vcard/ns#'
 const foaf = 'http://xmlns.com/foaf/0.1/'
+const schema = 'http://schema.org/'
 
 const datasetFieldUris = {
   baseSpec: 'http://semanticscience.org/resource/hasValue',
@@ -43,9 +45,10 @@ const datasetFieldUris = {
 
   contactpoint: `${dcat}contactpoint`,
   cpemail: `${vcard}email`,
-  cpfirstname: `${vcard}given-name`,
-  cplastname: `${vcard}family-name`,
+  cpfirstname: `${schema}givenName`,
+  cplastname: `${schema}familyName`,
   individual: `${vcard}individual`,
+  person: `${schema}Person`,
 
   author: `${dct}creator`,
   name: `${foaf}name`,
@@ -61,7 +64,7 @@ const datasetFieldUris = {
 
   refby: `${dct}isReferencedBy`,
 
-  // distribution: `${dcat}distribution`,
+  distribution: `${dcat}distribution`,
   depiction: `${foaf}depiction`,
   hasContent: 'http://vocab.rpi.edu/whyis/hasContent',
   accessURL: `${dcat}accessURL`
@@ -78,7 +81,7 @@ function generateDatasetId (guuid) {
   } else {
     datasetId = guuid
   }
-  return `${lodPrefix}/${datasetPrefix}/${datasetId}`
+  return `${lodPrefix}/explorer/${datasetPrefix}/${datasetId}`
 }
 
 function buildDatasetLd (dataset) {
@@ -172,16 +175,18 @@ function getDefaultDataset () {
 function deleteDataset (datasetUri) {
   return listNanopubs(datasetUri)
     .then(nanopubs => {
-      console.log('deleting nanopubs: ', nanopubs.np)
       Promise.all(nanopubs.map(nanopub => deleteNanopub(nanopub.np)))
     }
     )
 }
 
-// TODO: Refactor for current system
-// Should handle all of the uploads as multipart form
-async function saveDataset (dataset, guuid) {
-  let p = Promise.resolve()
+// Handle all of the uploads as multipart form
+async function saveDataset (dataset, fileList, image, guuid) {
+  const [distrRes, imgRes] = await Promise.all([
+    saveDatasetFiles(fileList),
+    saveDatasetFiles([image]) //TODO: verify we want to use the same function for depiction
+  ])
+
   if (dataset.uri) {
     p = deleteDataset(dataset.uri)
   } else if (arguments.length === 1) {
@@ -190,56 +195,64 @@ async function saveDataset (dataset, guuid) {
     dataset.uri = generateDatasetId(guuid)
   }
   const datasetLd = buildDatasetLd(dataset)
-  await p
+  if (distrRes?.files?.length) {
+    datasetLd[datasetFieldUris.distribution] = buildDistrLd(distrRes?.files)
+  } if (imgRes?.files?.length) {
+    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(imgRes?.files?.[0], dataset.uri)
+  }
   try {
-    console.log(datasetLd)
     return postNewNanopub(datasetLd)
   } catch (err) {
-    return alert(err)
+    //TODO: Error handling
+    throw(err)
   }
 }
 
-// TODO: Refactor for current system -- This should happen as part of the save dataset call
-async function saveDistribution (fileList, id) {
-  const distrData = new FormData()
-  const distrLDs = Array(fileList.length)
-  // Specify is a dataset so handles multiple files
-  distrData.append('upload_type', 'http://www.w3.org/ns/dcat#Dataset')
+async function saveDatasetFiles (fileList) {
+  if (fileList.length) {
+    const url = `${window.location.origin}/api/files/upload`
+    const formData = new FormData()
+    fileList.forEach((file) => formData.append('uploadfile', file?.file ?? file))
+    const result = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      redirect: 'follow',
+      headers: {
+        Authorization: store.getters['auth/token']
+      }
+    })
+    return await result.json()
+    //TODO: Error handling
+  }
+}
 
-  // append the files to FormData
+function buildDistrLd (fileList) {
+  const distrLDs = Array(fileList.length)
   Array
     .from(Array(fileList.length).keys())
     .map(x => {
-      distrData.append(fileList[x].label, fileList[x])
+      //TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
       distrLDs[x] = {
-        '@id': `${lodPrefix}/dataset/${id}/${fileList[x].name.replace(/ /g, '_')}`,
-        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].label
+        '@id': `${window.location.origin}/api/files?filename=${fileList[x].filename}`,
+        '@type': 'http://purl.org/net/provenance/ns#File',
+        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].originalname,
       }
     })
-
-  /// / Where to save the distribution
-  // const uri = `${lodPrefix}/dataset/${id}`
-  /// / TODO: This is the wrong url
-  // const baseUrl = `${window.location.origin}/about?uri=${uri}`
-  /// / TODO: This shouldn't be using axios
-  // axios.post(baseUrl,
-  //   distrData,
-  //   {
-  //     headers: {
-  //       'Content-Type': 'multipart/form-data'
-  //     }
-  //   }
-  // )
-  // Array
-  //   .from(Array(fileList.length).keys())
-  //   .map(x => {
-  //     if (distrLDs[x]['http://www.w3.org/2000/01/rdf-schema#label'] !== '') {
-  //       postNewNanopub(distrLDs[x])
-  //     }
-  //   })
+  return distrLDs
 }
 
-// TODO: Refactor for current system -- This should happen as part of the save dataset call
+function buildDepictionLd (file, uri) {
+  const depictionLd = {
+    '@id': `${uri}/depiction`,
+    '@type': 'http://purl.org/net/provenance/ns#File',
+    'http://www.w3.org/2000/01/rdf-schema#label': file.originalname,
+    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}/api/files?filename=${file.filename}`
+  }
+  return depictionLd
+}
+
+// TODO: Remove if current version works. This is the old method
+// Currently unused
 async function saveImg (file, id) {
   // Where to save the image
   const uri = `${lodPrefix}/dataset/${id}/depiction`
@@ -266,4 +279,4 @@ async function saveImg (file, id) {
   return [uri, baseUrl]
 }
 
-export { getDefaultDataset, saveDataset, deleteDataset, saveDistribution, saveImg }
+export { getDefaultDataset, saveDataset, deleteDataset }

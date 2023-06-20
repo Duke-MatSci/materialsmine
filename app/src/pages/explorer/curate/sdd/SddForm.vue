@@ -17,13 +17,13 @@
             <div style="margin: 20px">
             <md-field style="max-width: 100%;">
               <label>DOI of related publication (e.g., 10.1000/000)</label>
-              <md-input v-model="dataset.doi" @change="lookupDoi"></md-input>
+              <md-input v-model="doi" @change="lookupDoi"></md-input>
             </md-field>
 
             <FileInput @files-dropped="addDistr">
               <label for="file-distr-input">
                 <div class="form__file-input">
-                  <div class="md-field md-theme-default md-required md-has-file">
+                  <div class="md-field md-theme-default md-required md-has-file" :class="{ 'md-invalid': invalid['first'] }">
                     <md-icon>attach_file</md-icon>
                     <label for="file-distr-input">Select files to upload for this dataset</label>
                     <div class="md-file" multiple isinvalidvalue=false>
@@ -82,7 +82,7 @@
               <div class="md-headline" style="margin-top: 10px">
                 General Information
               </div>
-              <md-field style="max-width: 100%;" >
+              <md-field style="max-width: 100%;" :class="{ 'md-invalid': (invalid['second'] && !dataset.title) }">
                 <label>Title</label>
                 <md-input v-model="dataset.title" required></md-input>
                 <span class="md-error">Title required</span>
@@ -92,7 +92,7 @@
               <div class="md-layout md-gutter" style="align-items: center;">
 
                 <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50">
-                  <md-field>
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint['@id']) }">
                     <label style="font-size:14px">ORCID Identifier (e.g., 0000-0001-2345-6789)</label>
                     <md-input v-model="dataset.contactPoint['@id']" required @change="lookupOrcid" ></md-input>
                     <span class="md-error">ORCID ID required</span>
@@ -100,7 +100,7 @@
                 </div>
 
                 <div class="md-layout-item md-size-25 md-xsmall-size-100 md-medium-size-50">
-                  <md-field   style="max-width: 100%;">
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpEmail) }"  style="max-width: 100%;">
                     <label>Email</label>
                     <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
                     <span class="md-error">Valid email required</span>
@@ -108,7 +108,7 @@
                 </div>
 
                 <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50">
-                  <md-field >
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpFirstName) }">
                     <label>First name</label>
                     <md-input v-model="dataset.contactPoint.cpFirstName" required></md-input>
                     <span class="md-error">Contact point required</span>
@@ -116,7 +116,7 @@
                 </div>
 
                 <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50">
-                  <md-field  >
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpLastName) }">
                     <label>Last name</label>
                     <md-input v-model="dataset.contactPoint.cpLastName" required></md-input>
                     <span class="md-error">Contact point required</span>
@@ -133,7 +133,7 @@
                 <a href="https://orcid.org/" target="_blank">Create one here</a>
               </div>
 
-              <md-field style="max-width: 100%;"  >
+              <md-field style="max-width: 100%;" :class="{ 'md-invalid': (invalid['second'] && !dataset.description) }">
                 <label>Text Description</label>
                 <md-textarea v-model="dataset.description" required></md-textarea>
                 <span class="md-error">Description required</span>
@@ -144,7 +144,7 @@
             <md-divider style="border-style: solid" width="100%"></md-divider>
 
             <!---------- TODO: Contributor fields -------->
-            <md-content style="width: 100%; margin: 20px">
+            <!-- <md-content style="width: 100%; margin: 20px">
               <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
                 Contributors
               </div>
@@ -162,26 +162,6 @@
                         {{contributors[index]['name']}}
                       </td>
                       <td style="width:40%">
-                        <!-- <md-autocomplete
-                          style="max-width: 90%;"
-
-                          :md-options="autocomplete.availableInstitutions"
-                          :md-open-on-focus="false"
-                          @md-changed="resolveEntityInstitution"
-                          @md-selected="selectedOrgChange(index, $event)"
-                        >
-                          <label>Organization</label>
-
-                          <template style="max-width: 90%;" slot="md-autocomplete-item" slot-scope="{ item, term }">
-                            <md-highlight-text :md-term="term">{{ item.label }}</md-highlight-text>
-                          </template>
-
-                          <template style="max-width: 90%;" slot="md-autocomplete-empty" slot-scope="{ term }">
-                            <p>No organizations matching "{{ term }}" were found.</p>
-                            <a style="cursor: pointer">Create new</a>
-                          </template>
-                        </md-autocomplete> -->
-
                       </td>
                       <td>
                         <a style="cursor: pointer" >Remove</a>
@@ -195,7 +175,7 @@
               </div>
             </md-content>
 
-            <md-divider style="border-style: solid" width="100%"></md-divider>
+            <md-divider style="border-style: solid" width="100%"></md-divider> -->
 
             <!-- -------- Publication Info fields -------- -->
             <md-content style="width: 100%; margin: 20px">
@@ -207,7 +187,7 @@
                   <div class="md-layout-item md-size-50">
                     <label>Date Published</label>
                     <md-field>
-                      <md-input v-model="dataset.dateMod" type="date"></md-input>
+                      <md-input v-model="dataset.datePub['@value']" type="date"></md-input>
                     </md-field>
                   </div>
                 </div>
@@ -234,7 +214,9 @@
                 </div>
               </div>
             </md-card-actions>
-              <!-- <span v-if="isInvalidForm" class="md-error" style="color:red">Check for errors in required fields</span> -->
+            <span v-if="invalid['second'] && !secondPageFilled" class="md-error" style="color:red">
+              Check for errors in required fields
+            </span>
             </div>
           </md-step>
 
@@ -243,7 +225,7 @@
               Form Results
             </div>
             <div class="u--margin-pos"><h3>Title:</h3> {{ dataset.title }} </div>
-            <div class="u--margin-pos"><h3>DOI:</h3> {{dataset.doi}} </div>
+            <div class="u--margin-pos"><h3>DOI:</h3> {{dataset.refby}} </div>
             <div class="u--margin-pos">
             <h3>Selected files: </h3>
               <div v-for="(file, index) in dataset.distrFiles" :key="index">
@@ -252,7 +234,7 @@
             </div>
             <div v-if="dataset.depiction" class="u--margin-pos"><h3>Depiction</h3> {{dataset.depiction.name}} </div>
             <div class="u--margin-pos"><h3>Description:</h3> {{dataset.description}}</div>
-            <div class="u--margin-pos"><h3>Date published:</h3> {{dataset.dateMod}}</div>
+            <div class="u--margin-pos"><h3>Date published:</h3> {{dataset.datePub['@value']}}</div>
             <md-card-actions>
               <md-button class="md-primary" @click="submitForm">Submit</md-button>
             </md-card-actions>
@@ -297,16 +279,22 @@ export default {
       ],
       // Stepper data
       active: 'first',
+      invalid: {
+        'first': false,
+        'second': false
+      },
       generatedUUID: datasetId,
+      doi: '',
       dataset: {
+        '@type': 'http://www.w3.org/ns/dcat#Dataset',
         // Dataset info: Step 1
-        doi: '',
+        refby: '',
         distrFiles: distrFn.files,
         depiction: [],
         // Dataset info: Step 2
         title: '',
         contactPoint: {
-          // "@type": "individual",
+          '@type': 'individual',
           '@id': null,
           cpFirstName: '',
           cpLastName: '',
@@ -314,7 +302,10 @@ export default {
         },
         description: '',
         contributors: [],
-        dateMod: ''
+        datePub: {
+          '@type': 'date',
+          '@value': ''
+        },
       }
     }
   },
@@ -322,14 +313,20 @@ export default {
     ...mapGetters({
       doiData: 'explorer/curation/getDoiData',
       orcidData: 'explorer/curation/getOrcidData'
-    })
+    }),
+    secondPageFilled () {
+      return !!this.dataset.title && !!this.dataset.contactPoint['@id'] && 
+      !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName && 
+      !!this.dataset.contactPoint.cpEmail && !!this.dataset.description
+    }
   },
   watch: {
     doiData () {
+      this.dataset.refby = this.doiData?.URL
       this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
       if (this.doiData?.published?.['date-parts'].length === 3) {
         const dateArray = this.doiData.published['date-parts'].flat()
-        this.dataset.dateMod = dateArray[0].toString() + '-' +
+        this.dataset.datePub['@value'] = dateArray[0].toString() + '-' +
           (dateArray[1] < 10 ? '0' + dateArray[1].toString() : dateArray[1].toString()) + '-' +
           (dateArray[2] < 10 ? '0' + dateArray[2].toString() : dateArray[2].toString())
       }
@@ -350,11 +347,18 @@ export default {
     onInputChange (e) {
       this.addDistr(e.target.files)
       e.target.value = null
+      this.invalid['first'] = false
     },
-    goToStep (id, index) {
-      this[id] = true
-      if (index) {
-        this.active = index
+    goToStep (id, index) { 
+      if (id === 'first' && !this.dataset.distrFiles.length){
+        this.invalid['first'] = true
+      } if (id === 'second' && !this.secondPageFilled){
+        this.invalid['second'] = true
+      } else {
+        this[id] = true
+        if (index) {
+          this.active = index
+        }
       }
     },
     async lookupOrcid (e) {
@@ -387,14 +391,21 @@ export default {
       this.dataset.depiction = null
     },
     // Submit and post as nanopublication
-    submitForm: function () {
-      try {
-        // TODO: Modify this function call to also send files
-        saveDataset(this.dataset, this.generatedUUID)
-        // TODO: Decide where routing should go to
-        // .then(() => goToView(this.dataset.uri, "view"));
-      } catch (err) {
-        this.uploadError = err.response
+    async submitForm () {
+      if (!this.dataset.distrFiles.length || !this.secondPageFilled) {
+        this.$store.commit('setSnackbar', {
+          message: 'Unable to submit, check for required fields',
+          duration: 3000
+        })
+      } else {
+        try {
+          // TODO: Modify this function call to also send files
+          saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
+          // TODO: Decide where routing should go to
+          // .then(() => goToView(this.dataset.uri, "view"));
+        } catch (err) {
+          this.uploadError = err.response
+        }
       }
     }
 
