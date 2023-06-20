@@ -255,7 +255,7 @@ import FilePreview from '@/components/curate/FilePreview.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import useFileList from '@/modules/file-list'
 import { saveDataset } from '@/modules/whyis-dataset'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 const { v4: uuidv4 } = require('uuid')
 const datasetId = uuidv4()
 const distrFn = useFileList()
@@ -280,8 +280,8 @@ export default {
       // Stepper data
       active: 'first',
       invalid: {
-        'first': false,
-        'second': false
+        first: false,
+        second: false
       },
       generatedUUID: datasetId,
       doi: '',
@@ -294,7 +294,7 @@ export default {
         // Dataset info: Step 2
         title: '',
         contactPoint: {
-          '@type': 'individual',
+          '@type': 'schemaPerson',
           '@id': null,
           cpFirstName: '',
           cpLastName: '',
@@ -305,7 +305,7 @@ export default {
         datePub: {
           '@type': 'date',
           '@value': ''
-        },
+        }
       }
     }
   },
@@ -315,8 +315,8 @@ export default {
       orcidData: 'explorer/curation/getOrcidData'
     }),
     secondPageFilled () {
-      return !!this.dataset.title && !!this.dataset.contactPoint['@id'] && 
-      !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName && 
+      return !!this.dataset.title && !!this.dataset.contactPoint['@id'] &&
+      !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName &&
       !!this.dataset.contactPoint.cpEmail && !!this.dataset.description
     }
   },
@@ -338,6 +338,10 @@ export default {
     }
   },
   methods: {
+    ...mapMutations({
+      setSnackbar: 'setSnackbar',
+      clearSnackbar: 'resetSnackbar'
+    }),
     addDistr: distrFn.addFiles,
     removeDistr: distrFn.removeFile,
     modStatDistr: distrFn.modifyStatus,
@@ -347,13 +351,14 @@ export default {
     onInputChange (e) {
       this.addDistr(e.target.files)
       e.target.value = null
-      this.invalid['first'] = false
+      this.invalid.first = false
     },
-    goToStep (id, index) { 
-      if (id === 'first' && !this.dataset.distrFiles.length){
-        this.invalid['first'] = true
-      } if (id === 'second' && !this.secondPageFilled){
-        this.invalid['second'] = true
+    goToStep (id, index) {
+      this.clearSnackbar()
+      if (id === 'first' && !this.dataset.distrFiles.length) {
+        this.invalid.first = true
+      } if (id === 'second' && !this.secondPageFilled) {
+        this.invalid.second = true
       } else {
         this[id] = true
         if (index) {
@@ -392,10 +397,10 @@ export default {
     },
     // Submit and post as nanopublication
     async submitForm () {
+      this.clearSnackbar()
       if (!this.dataset.distrFiles.length || !this.secondPageFilled) {
-        this.$store.commit('setSnackbar', {
-          message: 'Unable to submit, check for required fields',
-          duration: 3000
+        this.setSnackbar({
+          message: 'Unable to submit, check for required fields'
         })
       } else {
         try {
@@ -404,7 +409,7 @@ export default {
           // TODO: Decide where routing should go to
           // .then(() => goToView(this.dataset.uri, "view"));
         } catch (err) {
-          this.uploadError = err.response
+          this.setSnackbar({ message: err.response ?? err })
         }
       }
     }

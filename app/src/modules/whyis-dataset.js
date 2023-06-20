@@ -5,7 +5,7 @@ const defaultDataset = {
   title: '',
   description: '',
   contactpoint: {
-    '@type': 'person',
+    '@type': 'schemaPerson',
     '@id': null,
     name: '',
     cpfirstname: '',
@@ -48,7 +48,7 @@ const datasetFieldUris = {
   cpfirstname: `${schema}givenName`,
   cplastname: `${schema}familyName`,
   individual: `${vcard}individual`,
-  person: `${schema}Person`,
+  schemaPerson: `${schema}Person`,
 
   author: `${dct}creator`,
   name: `${foaf}name`,
@@ -182,11 +182,7 @@ function deleteDataset (datasetUri) {
 
 // Handle all of the uploads as multipart form
 async function saveDataset (dataset, fileList, image, guuid) {
-  const [distrRes, imgRes] = await Promise.all([
-    saveDatasetFiles(fileList),
-    saveDatasetFiles([image]) //TODO: verify we want to use the same function for depiction
-  ])
-
+  let p = Promise.resolve()
   if (dataset.uri) {
     p = deleteDataset(dataset.uri)
   } else if (arguments.length === 1) {
@@ -194,18 +190,18 @@ async function saveDataset (dataset, fileList, image, guuid) {
   } else {
     dataset.uri = generateDatasetId(guuid)
   }
+  const [distrRes, imgRes] = await Promise.all([
+    saveDatasetFiles(fileList),
+    saveDatasetFiles([image]), // TODO: verify we want to use the same function for depiction
+    p
+  ])
   const datasetLd = buildDatasetLd(dataset)
   if (distrRes?.files?.length) {
     datasetLd[datasetFieldUris.distribution] = buildDistrLd(distrRes?.files)
   } if (imgRes?.files?.length) {
     datasetLd[datasetFieldUris.depiction] = buildDepictionLd(imgRes?.files?.[0], dataset.uri)
-  }
-  try {
-    return postNewNanopub(datasetLd)
-  } catch (err) {
-    //TODO: Error handling
-    throw(err)
-  }
+  } return postNewNanopub(datasetLd)
+  // TODO: Error handling
 }
 
 async function saveDatasetFiles (fileList) {
@@ -222,7 +218,7 @@ async function saveDatasetFiles (fileList) {
       }
     })
     return await result.json()
-    //TODO: Error handling
+    // TODO: Error handling
   }
 }
 
@@ -231,11 +227,11 @@ function buildDistrLd (fileList) {
   Array
     .from(Array(fileList.length).keys())
     .map(x => {
-      //TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
+      // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
       distrLDs[x] = {
         '@id': `${window.location.origin}/api/files?filename=${fileList[x].filename}`,
         '@type': 'http://purl.org/net/provenance/ns#File',
-        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].originalname,
+        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].originalname
       }
     })
   return distrLDs
@@ -251,32 +247,32 @@ function buildDepictionLd (file, uri) {
   return depictionLd
 }
 
-// TODO: Remove if current version works. This is the old method
-// Currently unused
-async function saveImg (file, id) {
-  // Where to save the image
-  const uri = `${lodPrefix}/dataset/${id}/depiction`
-  // TODO: This is the wrong URL
-  const baseUrl = `${window.location.origin}/about?uri=${uri}`
+// // TODO: Remove if current version works. This is the old method
+// // Currently unused
+// async function saveImg (file, id) {
+//   // Where to save the image
+//   const uri = `${lodPrefix}/dataset/${id}/depiction`
+//   // TODO: This is the wrong URL
+//   const baseUrl = `${window.location.origin}/about?uri=${uri}`
 
-  const form = new FormData()
-  form.append('upload_type', 'http://purl.org/net/provenance/ns#File')
-  form.append('depiction', file)
+//   const form = new FormData()
+//   form.append('upload_type', 'http://purl.org/net/provenance/ns#File')
+//   form.append('depiction', file)
 
-  var data = {
-    '@id': uri,
-    file: form
-  }
+//   var data = {
+//     '@id': uri,
+//     file: form
+//   }
 
-  await fetch(baseUrl, {
-    method: 'POST',
-    body: data,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'multipart/form-data'
-    }
-  })
-  return [uri, baseUrl]
-}
+//   await fetch(baseUrl, {
+//     method: 'POST',
+//     body: data,
+//     headers: {
+//       Accept: 'application/json',
+//       'Content-Type': 'multipart/form-data'
+//     }
+//   })
+//   return [uri, baseUrl]
+// }
 
 export { getDefaultDataset, saveDataset, deleteDataset }
