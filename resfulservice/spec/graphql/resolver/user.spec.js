@@ -97,7 +97,7 @@ describe('User Resolver Unit Tests:', function () {
     });
 
     it("Should throw a 404, not found error", async () => {
-      sinon.stub(User, 'findOne').returns(null);
+      sinon.stub(User, 'aggregate').returns([]);
       const error = await  user({}, { input }, { user: { _id: 'kas2344nlkla' }, req, isAuthenticated: true }); 
       
       expect(error).to.have.property('extensions');
@@ -106,7 +106,7 @@ describe('User Resolver Unit Tests:', function () {
 
     it('Should return a user if they are registered', async () => {
 
-      sinon.stub(User, 'findOne').returns(mockDBUser)
+      sinon.stub(User, 'aggregate').returns([mockDBUser])
 
       const dbUser = await user({}, { input: {...input, _id: 'kas2344nlkla'} }, { user: { _id: 'kas2344nlkla' }, req, isAuthenticated: true });
 
@@ -115,7 +115,7 @@ describe('User Resolver Unit Tests:', function () {
     });
 
     it("Should throw a 500, server error", async () => {
-      sinon.stub(User, 'findOne').throws();
+      sinon.stub(User, 'aggregate').throws();
       const error = await  user({}, { input }, { user: { _id: 'kas2344nlkla' }, req, isAuthenticated: true }); 
       
       expect(error).to.have.property('extensions');
@@ -134,10 +134,7 @@ describe('User Resolver Unit Tests:', function () {
     it('Should return a paginated list of users when input is provided', async () => {
       
       sinon.stub(User, 'countDocuments').returns(1);
-      sinon.stub(User, 'find').returns(mockDBUser);
-      sinon.stub(mockDBUser, 'skip').returnsThis();
-      sinon.stub(mockDBUser, 'limit').returnsThis();
-      sinon.stub(mockDBUser, 'lean').returnsThis();
+      sinon.stub(User, 'aggregate').returns(mockDBUser);
       
       const allUsers = await users({}, { input: { pageNumber: 1, pageSize: 1  }}, { req, isAuthenticated: true });
       expect(allUsers).to.have.property('data');
@@ -147,7 +144,7 @@ describe('User Resolver Unit Tests:', function () {
     it('Should return a paginated list of users when input is not provided', async () => {
       
       sinon.stub(User, 'countDocuments').returns(1);
-      sinon.stub(User, 'find').returns(mockDBUser);
+      ssinon.stub(User, 'aggregate').returns(mockDBUser);
       sinon.stub(mockDBUser, 'skip').returnsThis();
       sinon.stub(mockDBUser, 'limit').returnsThis();
       sinon.stub(mockDBUser, 'lean').returnsThis();
