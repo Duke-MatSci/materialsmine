@@ -144,7 +144,7 @@ describe('User Resolver Unit Tests:', function () {
     it('Should return a paginated list of users when input is not provided', async () => {
       
       sinon.stub(User, 'countDocuments').returns(1);
-      ssinon.stub(User, 'aggregate').returns(mockDBUser);
+      sinon.stub(User, 'aggregate').returns(mockDBUser);
       sinon.stub(mockDBUser, 'skip').returnsThis();
       sinon.stub(mockDBUser, 'limit').returnsThis();
       sinon.stub(mockDBUser, 'lean').returnsThis();
