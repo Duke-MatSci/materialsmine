@@ -19,7 +19,6 @@ const userQuery = {
             surName: 1,
             email: 1,
             alias: 1,
-            apiAccess: 1,
             roles: { $ifNull: ['$roles', userRoles.member] }
           }
         }
@@ -50,7 +49,6 @@ const userQuery = {
             surName: 1,
             email: 1,
             alias: 1,
-            apiAccess: 1,
             roles: { $ifNull: ['$roles', userRoles.member] }
           }
         },
