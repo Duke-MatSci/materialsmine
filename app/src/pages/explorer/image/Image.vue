@@ -21,6 +21,7 @@
                 <option value="filterByYear">Year</option>
                 <option value="filterByDOI">DOI</option>
                 <option value="filterByMicroscopy">Microscopy</option>
+                <option value="filterByID">Sample ID</option>
               </select>
             </div>
             <button
