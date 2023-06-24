@@ -16,7 +16,7 @@
                 @click.prevent="reduceAsset('prev')">
                 <i class="material-icons">keyboard_arrow_left</i>
               </div>
-              <div class="visualize--link-icons visualize--link-mm visualize--link-right " 
+              <div class="visualize--link-icons visualize--link-mm visualize--link-right"
                 @click.prevent="reduceAsset('next')">
                 <i class="material-icons">keyboard_arrow_right</i>
               </div>
