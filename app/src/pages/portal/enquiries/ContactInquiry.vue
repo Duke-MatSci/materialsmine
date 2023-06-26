@@ -4,7 +4,7 @@
       <template v-slot:title>Reply Inquiry</template>
       <template v-slot:content>
         <div>
-          <TextEditor :contentEditable=contentEditable value="message" v-model="message" />
+          <TextEditor :contentEditable=contentEditable :value="message" />
         </div>
       </template>
       <template v-slot:actions>
@@ -32,7 +32,7 @@
     </div>
     <div class="utility-roverflow" v-else>
       <template v-if="!!contactInquiries.length">
-        <ContactCard v-if="!!singleInquiry" :contact="singleInquiry" @replyMessage="renderDialog($event)" />
+        <ContactCard v-if="!!singleInquiry" :contact="singleInquiry"/>
 
         <div v-else class="gallery-grid grid grid_col-3 ">
           <ContactBox v-for="(message, i) in contactInquiries" :key="i" :contact="message" />
@@ -81,13 +81,8 @@ export default {
       singleInquiry: 'contact/getSingleInquiry',
       contentEditable: 'contact/getContentEditable'
     }),
-    message: {
-      get () {
-        return this.$store.getters['contact/getMessage']
-      },
-      set (payload) {
-        this.$store.commit('contact/setMessage', payload)
-      }
+    message () {
+      return this.$store.getters['contact/getMessage']
     }
   },
   methods: {
@@ -96,8 +91,7 @@ export default {
     }),
     ...mapActions({
       loadItems: 'contact/loadItems',
-      send: 'contact/send',
-      renderDialog: 'contact/renderDialog'
+      send: 'contact/send'
     }),
     loadContacts (num = 1) {
       const payload = {

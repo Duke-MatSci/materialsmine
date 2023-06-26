@@ -43,7 +43,6 @@ describe('PageHeader.vue', () => {
     const textContainer = wrapper.find('.u--margin-pos')
     const text = textContainer.findAll('p')
     expect(text.length).toBe(2)
-    // expect(text.at(0).text()).toBe('Welcome')
     expect(text.at(0).attributes().class).toBe('u--color-primary md-body-1')
     expect(text.at(1).text()).toBe('Your Admin Center')
     expect(text.at(1).attributes().class).toBe('u--color-grey md-caption')

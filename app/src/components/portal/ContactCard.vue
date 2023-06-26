@@ -31,7 +31,7 @@
             <button v-if="!show" class="md-button btn btn--primary btn--noradius" @click="show = true">SHOW</button>
             <button v-else class="md-button btn btn--primary btn--noradius" @click.prevent="hideInquiry">HIDE</button>
             <button v-if="!contact.resolved" class="md-button btn btn--tertiary btn--noradius"
-              @click.prevent="$emit('replyMessage', contact._id)">Reply
+              @click.prevent="renderDialog(contact._id)">Reply
             </button>
 
           </md-dialog-actions>
@@ -43,7 +43,7 @@
 
 <script>
 import reduce from '@/mixins/reduce'
-import { mapMutations } from 'vuex'
+import { mapMutations, mapActions } from 'vuex'
 export default {
   name: 'ContactCard',
   mixins: [reduce],
@@ -71,6 +71,9 @@ export default {
   methods: {
     ...mapMutations({
       setDisplayedInquiry: 'contact/setDisplayedInquiry'
+    }),
+    ...mapActions({
+      renderDialog: 'contact/renderDialog'
     }),
     hideInquiry () {
       this.setDisplayedInquiry(null)

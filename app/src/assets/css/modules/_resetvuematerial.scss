@@ -148,7 +148,7 @@
 
     &_parent {
         position: relative;
-        z-index: 15;
+        z-index: 15 !important;
     }
 
     & > li {
@@ -214,6 +214,9 @@
     right: 0;
     left: 0;
     transform: translateY(-5rem);
+    &.media-icon-mod {
+        @include absCenter;
+    }
 }
 
 .md-snackbar {
@@ -233,4 +236,14 @@
     @include respond(phone){
         padding-left: 16px;
     }
+}
+
+.md-icon.md-small-size{
+    @include respond(phone){
+        &-3x{
+            height: 72px;
+            font-size: 72px!important;
+        }
+    }
+
 }

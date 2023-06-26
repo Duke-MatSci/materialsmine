@@ -15,8 +15,8 @@ describe('TextEditor', () => {
   it('mounted correctly', () => {
     expect.assertions(3)
     expect(wrapper.exists()).toBe(true)
-    expect(wrapper.find('.contact_text-editor > .md-layout.md-alignment-center-right').exists()).toBe(true)
-    expect(wrapper.find('.contact_text-editor > .editor').exists()).toBe(true)
+    expect(wrapper.find('.section_contact_text-editor > .md-layout.md-alignment-center-right').exists()).toBe(true)
+    expect(wrapper.find('.section_contact_text-editor > .editor').exists()).toBe(true)
   })
 
   it('confirms props', async () => {

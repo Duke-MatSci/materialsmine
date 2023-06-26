@@ -17,6 +17,7 @@ query User($input: usersQueryInput) {
       displayName
       email
       apiAccess
+      roles
     }
   }
 } 
@@ -26,7 +27,6 @@ mutation DeleteUser($input: deleteUsersInput) {
   deleteUser(input: $input)
 }
 `
-
 export const UPDATE_USER_QUERY = gql`
 mutation UpdateUser($input: updateUserInput) {
   updateUser(input: $input) {
@@ -37,6 +37,7 @@ mutation UpdateUser($input: updateUserInput) {
     displayName
     email
     apiAccess
+    roles
   }
 }
 `

@@ -1,9 +1,5 @@
 import createWrapper from '../../../../jest/script/wrapper'
 import ContactInquiry from '@/pages/portal/enquiries/ContactInquiry.vue'
-import router from '@/router'
-
-// Prevents Routing from Admin guard
-jest.spyOn(router, 'push').mockImplementation(() => {})
 
 describe('ContactUsPage.vue', () => {
   let wrapper
@@ -23,7 +19,6 @@ describe('ContactUsPage.vue', () => {
   it('page mounts properly', () => {
     expect.assertions(1)
     expect(wrapper.exists()).toBeTruthy()
-    // expect(routeSpy).toHaveBeenCalledWith('/nm')
   })
 
   it('renders components properly', () => {

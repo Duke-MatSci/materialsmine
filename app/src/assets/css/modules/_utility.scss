@@ -419,7 +419,7 @@
         }
         & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
             background-color: $primary-light;
-            & > i {
+            & > i, & > p {
                 color: $secondary-light !important;
             }
         }

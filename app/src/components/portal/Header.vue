@@ -45,17 +45,13 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'PortalHeader',
+  props: ['toggler'],
   computed: {
     ...mapGetters({
       info: 'appHeaderInfo',
       isAuth: 'auth/isAuthenticated',
       displayName: 'auth/displayName'
     })
-  },
-  methods: {
-    toggler () {
-      this.$emit('toggler')
-    }
   }
 }
 </script>

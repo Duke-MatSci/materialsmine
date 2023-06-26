@@ -65,4 +65,41 @@ describe('SideNav.vue', () => {
       expect(linksContainer.at(i).find('.md-icon.md-icon-font.u--default-size.md-theme-default').exists()).toBeTruthy()
     }
   })
+
+  // mobile footer nav
+  it('renders footer nav with the right classes', () => {
+    expect.assertions(1)
+    expect(wrapper.find('div.footer_content-mobile.u_myprofile--image').exists()).toBeTruthy()
+  })
+
+  it('renders the proper layout', () => {
+    expect.assertions(1)
+    expect(wrapper.find('div.footer_content-mobile > nav.nav_menu > ul.u_centralize_text > li.u_margin-right-small').exists()).toBeTruthy()
+  })
+
+  it('renders first link properly ', () => {
+    const listContainer = wrapper.find('ul.u_centralize_text')
+    const firstLink = listContainer.findAll('li.u_margin-right-small').at(0)
+    expect(firstLink.findComponent(RouterLinkStub).props().to).toBe('/portal/deploy')
+    expect(firstLink.findComponent(RouterLinkStub).attributes().class).toBe('u--default-size')
+    expect(firstLink.findComponent(RouterLinkStub).find('span.u--color-primary').exists()).toBeTruthy()
+    expect(firstLink.findComponent(RouterLinkStub).find('span.u--color-primary').text()).toBe('Deploy')
+  })
+
+  it('renders dropdown links according to the data property links', () => {
+    const links = wrapper.vm.links
+    const listContainer = wrapper.find('ul.u_centralize_text')
+    const linkList = listContainer.findAll('li.u_margin-right-small')
+    expect(linkList.length).toBe(links.length + 1)
+    for (let i = 1; i < links.length; i++) {
+      expect(linkList.at(i).find('div.nav_menu--container > a.nav_menu--handler > span.u--color-primary').text()).toBe(links[i - 1].name)
+      expect(linkList.at(i).find('div.nav_menu--container > a ').attributes().class).toBe('u--default-size nav_menu--handler u--color-primary')
+      expect(linkList.at(i).find('div.nav_menu--container > a ').attributes().href).toBe()
+      expect(linkList.at(i).find('div.nav_menu--container > div.nav_menu--siblings ').exists()).toBe(true)
+      expect(linkList.at(i).findAllComponents(RouterLinkStub).length).toBe(links[i - 1].children.length)
+      expect(linkList.at(i).findAllComponents(RouterLinkStub).at(0).attributes().class).toBe('nav_menu--siblings-lists')
+      expect(linkList.at(i).findAllComponents(RouterLinkStub).at(0).props().to).toBe(links[i - 1].children[0].link)
+      expect(linkList.at(i).findAllComponents(RouterLinkStub).at(0).text()).toBe(links[i - 1].children[0].name)
+    }
+  })
 })

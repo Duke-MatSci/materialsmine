@@ -61,20 +61,14 @@ describe('PageHeader.vue', () => {
     expect(button.text()).toBe('Read')
   })
 
-  it('calls the right method when button is clicked', async () => {
-    const method = jest.spyOn(wrapper.vm, 'displayInquiry').mockImplementation(() => {})
-    await wrapper.find('button').trigger('click')
-    expect(method).toHaveBeenCalledTimes(1)
-  })
-
   it('shortMessage calls the right method', async () => {
     const shortMessage = await wrapper.vm.shortMessage
     expect(shortMessage).toBe(wrapper.vm.reduceDescription(data.message, 3))
   })
 
-  it('displayInquiry calls the right mutation', async () => {
+  it('calls the right mutation when button is clicked', async () => {
     const mutation = jest.spyOn(wrapper.vm.$store, 'commit').mockImplementation(() => {})
-    await wrapper.vm.displayInquiry()
+    await wrapper.find('button').trigger('click')
     expect(mutation).toHaveBeenCalledTimes(1)
     expect(mutation).toHaveBeenCalledWith('contact/setDisplayedInquiry', data)
   })

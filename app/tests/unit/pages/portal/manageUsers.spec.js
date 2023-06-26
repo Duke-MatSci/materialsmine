@@ -3,6 +3,7 @@ import ManageUsers from '@/pages/portal/ManageUsers.vue'
 import store from '@/store'
 
 const created = jest.spyOn(store, 'commit').mockImplementation(() => {})
+
 const data = {
   totalItems: 1,
   pageSize: 10,
@@ -110,6 +111,7 @@ describe('ManageUsers.vue', () => {
     expect(formContainer.find('form.md-card-header').exists()).toBe(true)
     // form direct children
     expect(formContainer.find('form > .md-layout.md-gutter.viz-u-mgbottom-big').exists()).toBe(true)
+    expect(formContainer.find('form > .contactus_radios-text.u_margin-top-med').text()).toBe('Roles:')
     expect(formContainer.find('form > ul.contactus_radios').exists()).toBe(true)
     // input container
     expect(formContainer.findAll('form > .md-layout > .md-layout-item').length).toBe(2)
@@ -142,7 +144,7 @@ describe('ManageUsers.vue', () => {
     }
   })
 
-  it.skip('renders update user form buttons properly', async () => {
+  it('renders update user form buttons properly', async () => {
     const label = ['CANCEL', 'Submit']
     await wrapper.setData({ selected: data.data })
     await wrapper.vm.showUpdateForm()

@@ -26,7 +26,6 @@ describe('Portal Base.vue', () => {
     const content = wrapper.findComponent('md-app-content-stub')
     expect(content.attributes().class).toBe('viz-u-postion__rel')
     expect(content.findComponent('profile-header-stub').exists()).toBeTruthy()
-    expect(content.findComponent('md-app-drawer-stub').exists()).toBeTruthy()
     expect(content.findComponent('md-side-nav-stub').exists()).toBeTruthy()
     expect(content.findComponent('router-view-stub').exists()).toBeTruthy()
   })

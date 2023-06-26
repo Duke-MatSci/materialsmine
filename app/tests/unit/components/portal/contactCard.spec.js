@@ -51,9 +51,11 @@ describe('ToolCard.vue', () => {
     expect(method).toHaveBeenCalledTimes(1)
   })
 
-  it('emits event with _id when the Reply button is clicked ', async () => {
-    expect.assertions(1)
+  it('calls the right action when Reply button is clicked ', async () => {
+    expect.assertions(2)
+    const action = jest.spyOn(wrapper.vm.$store, 'dispatch').mockImplementation(() => {})
     await wrapper.findAll('button').at(1).trigger('click')
-    expect(wrapper.emitted('replyMessage')[0][0]).toBe(data._id)
+    expect(action).toHaveBeenCalledTimes(1)
+    expect(action).toHaveBeenCalledWith('contact/renderDialog', data._id)
   })
 })

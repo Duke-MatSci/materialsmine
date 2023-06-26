@@ -1,17 +1,16 @@
 <template>
   <md-app>
-    <md-app-toolbar id="header" @toggler="toggleMenuVisibility"/>
+    <md-app-toolbar id="header" :toggler="toggleMenuVisibility"/>
 
     <md-app-content class="viz-u-postion__rel">
       <div class="md-layout u_width--max md-gutter md-alignment-top-center">
-        <div class="md-layout-item md-size-60 md-small-size-90 md-xsmall-size-95 ">
+        <div class="md-layout-item md-size-60 md-medium-size-90 md-xsmall-size-95 ">
           <profile-header></profile-header>
 
-          <div class="u_margin-top-small u_display-flex md-layout-row md-theme-demo-light md-scrollbar">
+          <div class="u_margin-top-small u_display-flex section_md-header md-layout-row md-theme-demo-light md-scrollbar">
             <!-- permanent drawer -->
-            <md-app-drawer :md-active.sync="sideBar" md-permanent="clipped">
-              <md-side-nav></md-side-nav>
-            </md-app-drawer>
+            <md-side-nav></md-side-nav>
+
             <div class="u_width--max md-content u--margin-pos utility-roverflow">
               <div v-if="!!info.name">
                 <h2 class="md-title u--color-black" style="margin-bottom: .4rem;">
@@ -24,9 +23,11 @@
         </div>
       </div>
     </md-app-content>
+
     <md-app-drawer :md-active.sync="menuVisible">
       <mdDrawer id="leftdrawer"></mdDrawer>
     </md-app-drawer>
+
   </md-app>
 </template>
 
@@ -46,8 +47,7 @@ export default {
   },
   data () {
     return {
-      menuVisible: false,
-      sideBar: false
+      menuVisible: false
     }
   },
   methods: {

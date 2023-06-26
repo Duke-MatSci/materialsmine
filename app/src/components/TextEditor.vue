@@ -1,5 +1,5 @@
 <template>
-  <div class="contact_text-editor">
+  <div class="section_contact_text-editor">
     <div class="md-layout md-alignment-center-right">
         <button @click="applyHeading" class="md-button md-dense md-icon-button"><b style="font-size:15px">H</b></button>
         <button @click="applyBold" class="md-button md-dense md-icon-button"><md-icon class="utility-navfonticon">format_bold</md-icon></button>
@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     onInput (event) {
-      this.$emit('input', event.target.innerHTML)
+      this.$store.commit('contact/setMessage', event.target.innerHTML)
     },
     applyBold () {
       document.execCommand('bold')
