@@ -41,4 +41,5 @@ enum imageFilter {
   filterByFiller
   filterByYear
   filterByDOI
+  filterByID
 }
