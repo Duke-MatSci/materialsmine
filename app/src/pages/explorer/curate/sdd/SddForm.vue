@@ -324,7 +324,7 @@ export default {
     doiData () {
       this.dataset.refby = this.doiData?.URL
       this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
-      if (this.doiData?.published?.['date-parts'].length === 3) {
+      if (this.doiData?.published?.['date-parts'].flat().length === 3) {
         const dateArray = this.doiData.published['date-parts'].flat()
         this.dataset.datePub['@value'] = dateArray[0].toString() + '-' +
           (dateArray[1] < 10 ? '0' + dateArray[1].toString() : dateArray[1].toString()) + '-' +
@@ -357,7 +357,7 @@ export default {
       this.clearSnackbar()
       if (id === 'first' && !this.dataset.distrFiles.length) {
         this.invalid.first = true
-      } if (id === 'second' && !this.secondPageFilled) {
+      } else if (id === 'second' && !this.secondPageFilled) {
         this.invalid.second = true
       } else {
         this[id] = true
