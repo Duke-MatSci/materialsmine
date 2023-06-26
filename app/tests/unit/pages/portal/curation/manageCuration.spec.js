@@ -90,7 +90,7 @@ describe('ManageCuration.vue', () => {
   })
 
   it('renders text', () => {
-    expect(wrapper.find('.md-body-1').text()).toBe('Administrators can manage curations. The following operations - delete, approve, and update of samples status are allowed')
+    expect(wrapper.find('.md-body-1').text()).toBe('Administrators can manage curations, like for example - delete, approve, and update curated samples status')
   })
 
   // Visual assertions

@@ -1,6 +1,6 @@
 import createWrapper from '../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import SearchGallery from '@/components/SearchGallery.vue'
+import SearchGallery from '@/components/XmlSearchUtil.vue'
 
 describe('@/components/SearchGallery.vue', () => {
   let wrapper
