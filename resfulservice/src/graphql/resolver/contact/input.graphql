@@ -96,7 +96,7 @@ input updateContactInput {
 }
 
 """
-List of enumerable value selectable as purpose for requesting contact
+List of enumerable values selectable as purpose for requesting contact
 """
 enum Purpose {
   "I want to ask a question"

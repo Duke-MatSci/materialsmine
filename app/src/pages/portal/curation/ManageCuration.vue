@@ -4,7 +4,7 @@
       <div class="md-card-header contactus_radios md-card-header-flex">
         <div class="md-card-header-text">
           <div class="md-body-1">
-            Administrators can manage curations, like for example - delete, approve, and update curated samples status
+            Administrators can manage curations. Accepted actions include delete, approve, and update curated samples status
           </div>
         </div>
       </div>
