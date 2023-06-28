@@ -275,4 +275,8 @@ function buildDepictionLd (file, uri) {
 //   return [uri, baseUrl]
 // }
 
-export { getDefaultDataset, saveDataset, deleteDataset }
+const isValidOrcid = (identifier) => {
+  return /^(\d{4}-){3}\d{3}(\d|X)$/.test(identifier)
+}
+
+export { getDefaultDataset, saveDataset, deleteDataset, isValidOrcid }

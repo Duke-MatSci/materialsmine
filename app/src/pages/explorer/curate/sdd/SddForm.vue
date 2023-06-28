@@ -13,7 +13,7 @@
           upload_type="http://www.w3.org/ns/dcat#Dataset">
         <md-steppers class="form__stepper" :md-active-step.sync="active" md-linear>
 
-          <md-step id="first" md-label="Upload files" >
+          <md-step id="first" md-label="Upload files" :md-error="invalid.first">
             <div style="margin: 20px">
             <md-field style="max-width: 100%;">
               <label>DOI of related publication (e.g., 10.1000/000)</label>
@@ -46,7 +46,7 @@
                 <div class="form__file-input">
                   <div class="md-field md-theme-default md-has-file">
                     <md-icon>attach_file</md-icon>
-                    <label for="file-depict-input">Select a representative image to use as thumbnail</label>
+                    <label for="file-depict-input">Select an image to use as a cover for the dataset (optional)</label>
                     <div class="md-file" multiple isinvalidvalue=false>
                       <input type="file" id="file-depict-input" multiple @change="previewFile()" accept="image/*"/>
                     </div>
@@ -57,7 +57,7 @@
 
             <div id="depictWrapper" class="u--margin-toplg justify-center" style="visibility: hidden; height:200px;margin: 5rem; display: flex; justify-content: center">
               <figure>
-                <img id="depictImg" src="" alt="Image preview..."  style="height:200px">
+                <img id="depictImg" src="" alt="Image preview..." style="height:200px">
                 <figcaption v-if="dataset.depiction">{{dataset.depiction.name}}</figcaption>
               </figure>
               <md-button @click="removeImage" type="button" class="close md-raised">Remove image</md-button>
@@ -75,10 +75,10 @@
             </div>
           </md-step>
 
-          <md-step id="second" md-label="Provide additional info">
+          <md-step id="second" md-label="Provide additional info" :md-error="invalid.second">
             <div class="md-layout">
             <!---------- General Info fields ---------->
-            <md-content style="width: 100%; margin: 20px">
+            <md-content class="u_width--max" style="margin: 20px">
               <div class="md-headline" style="margin-top: 10px">
                 General Information
               </div>
@@ -89,25 +89,26 @@
               </md-field>
 
               <div class="md-subheading" style="margin-top: 40px;">Contact Point</div>
-              <div class="md-layout md-gutter" style="align-items: center;">
+              <div class="md-layout md-gutter" style="align-items: center">
 
-                <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50">
-                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint['@id']) }">
+                <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
+                  <md-field :class="{ 'md-invalid': ((invalid['second'] && !dataset.contactPoint['@id']) || invalid.orcid) }">
                     <label style="font-size:14px">ORCID Identifier (e.g., 0000-0001-2345-6789)</label>
                     <md-input v-model="dataset.contactPoint['@id']" required @change="lookupOrcid" ></md-input>
-                    <span class="md-error">ORCID ID required</span>
+                    <span class="md-error" v-if="!invalid.orcid">ORCID ID required</span>
+                    <span class="md-error" v-if="invalid.orcid">Invalid ORCID ID</span>
                   </md-field>
                 </div>
 
-                <div class="md-layout-item md-size-25 md-xsmall-size-100 md-medium-size-50">
-                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpEmail) }"  style="max-width: 100%;">
+                <div class="md-layout-item md-size-25 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpEmail) }" class="u_width--max">
                     <label>Email</label>
                     <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
                     <span class="md-error">Valid email required</span>
                   </md-field>
                 </div>
 
-                <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50">
+                <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
                   <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpFirstName) }">
                     <label>First name</label>
                     <md-input v-model="dataset.contactPoint.cpFirstName" required></md-input>
@@ -115,7 +116,7 @@
                   </md-field>
                 </div>
 
-                <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50">
+                <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
                   <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpLastName) }">
                     <label>Last name</label>
                     <md-input v-model="dataset.contactPoint.cpLastName" required></md-input>
@@ -124,16 +125,12 @@
                 </div>
               </div>
 
-              <!-- <div style="color: red; margin-bottom: 20px; text-align: center;" v-if="cpIDError">
-                No results found for {{cpID}}
-              </div> -->
-
               <div style="margin: 40px; text-align: center;">
                 Don't have an ORCID iD?
                 <a href="https://orcid.org/" target="_blank">Create one here</a>
               </div>
 
-              <md-field style="max-width: 100%;" :class="{ 'md-invalid': (invalid['second'] && !dataset.description) }">
+              <md-field class="u_width--max" :class="{ 'md-invalid': (invalid['second'] && !dataset.description) }">
                 <label>Text Description</label>
                 <md-textarea v-model="dataset.description" required></md-textarea>
                 <span class="md-error">Description required</span>
@@ -141,7 +138,7 @@
 
             </md-content>
 
-            <md-divider style="border-style: solid" width="100%"></md-divider>
+            <md-divider class="u_width--max" style="border-style: solid"></md-divider>
 
             <!---------- TODO: Contributor fields -------->
             <!-- <md-content style="width: 100%; margin: 20px">
@@ -178,11 +175,11 @@
             <md-divider style="border-style: solid" width="100%"></md-divider> -->
 
             <!-- -------- Publication Info fields -------- -->
-            <md-content style="width: 100%; margin: 20px">
+            <md-content class="u_width--max" style="margin: 20px">
               <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
                 Publication Information
               </div>
-              <div style="width: 100%">
+              <div class="u_width--max">
                 <div class="md-layout md-gutter">
                   <div class="md-layout-item md-size-50">
                     <label>Date Published</label>
@@ -194,7 +191,7 @@
               </div>
             </md-content>
 
-            <md-card-actions style="width: 100%; height: 100%; margin: 20px; padding-top:5rem;">
+            <md-card-actions class="u_width--max u_height--max" style="margin: 20px; padding-top:5rem;">
               <div class="md-layout md-gutter ">
                 <div class="md-layout-item md-size-10 md-xsmall-size-35">
                   <md-button
@@ -214,27 +211,46 @@
                 </div>
               </div>
             </md-card-actions>
-            <span v-if="invalid['second'] && !secondPageFilled" class="md-error" style="color:red">
-              Check for errors in required fields
-            </span>
+            <div class="u_width--max u_height--max">
+              <div v-if="invalid['second'] && !secondPageFilled" class="md-error" style="color:red; text-align: right">
+                Check for errors in required fields
+              </div>
+            </div>
             </div>
           </md-step>
 
           <md-step id="third" md-label="Confirm and Submit">
-            <div class="md-headline" style="margin: 10px">
-              Form Results
-            </div>
-            <div class="u--margin-pos"><h3>Title:</h3> {{ dataset.title }} </div>
-            <div class="u--margin-pos"><h3>DOI:</h3> {{dataset.refby}} </div>
-            <div class="u--margin-pos">
-            <h3>Selected files: </h3>
-              <div v-for="(file, index) in dataset.distrFiles" :key="index">
-              {{file.file.name}}
+            <md-card-header>
+              <md-card-header-text>
+                <div class="md-title">Form Results</div>
+                <div class="md-subhead" v-if="dataset.depiction">Cover Image: {{dataset.depiction.name}}</div>
+              </md-card-header-text>
+
+              <md-card-media md-big v-show="dataset.depiction" style="height:0px">
+                <span id="depictWrapperMini" style="visibility: hidden">
+                    <figure>
+                      <img id="depictImgMini" src="" alt="Image preview...">
+                    </figure>
+                  </span>
+              </md-card-media>
+            </md-card-header>
+            <md-card-content>
+              <div class="u_margin-bottom-small"><h3>Title:</h3> {{ dataset.title }} </div>
+              <div v-if="dataset.refby" class="u_margin-bottom-small"><h3>DOI:</h3> {{dataset.refby}} </div>
+              <div v-if="dataset.contactPoint['@id']" class="u_margin-bottom-small">
+                <h3>Contact Point:</h3>
+                {{dataset.contactPoint['cpFirstName']}} {{dataset.contactPoint['cpLastName']}},
+                {{dataset.contactPoint['cpEmail']}}
               </div>
-            </div>
-            <div v-if="dataset.depiction" class="u--margin-pos"><h3>Depiction</h3> {{dataset.depiction.name}} </div>
-            <div class="u--margin-pos"><h3>Description:</h3> {{dataset.description}}</div>
-            <div class="u--margin-pos"><h3>Date published:</h3> {{dataset.datePub['@value']}}</div>
+              <div class="u_margin-bottom-small">
+              <h3>Selected files: </h3>
+                <div v-for="(file, index) in dataset.distrFiles" :key="index">
+                {{file.file.name}}
+                </div>
+              </div>
+              <div class="u_margin-bottom-small"><h3>Description:</h3> {{dataset.description}}</div>
+              <div v-if="dataset.datePub['@value']" class="u_margin-bottom-small"><h3>Date published:</h3> {{dataset.datePub['@value']}}</div>
+            </md-card-content>
             <md-card-actions>
               <md-button class="md-primary" @click="submitForm">Submit</md-button>
             </md-card-actions>
@@ -254,7 +270,7 @@ import FileDrop from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import useFileList from '@/modules/file-list'
-import { saveDataset } from '@/modules/whyis-dataset'
+import { saveDataset, isValidOrcid } from '@/modules/whyis-dataset'
 import { mapGetters, mapMutations } from 'vuex'
 const { v4: uuidv4 } = require('uuid')
 const datasetId = uuidv4()
@@ -280,8 +296,9 @@ export default {
       // Stepper data
       active: 'first',
       invalid: {
-        first: false,
-        second: false
+        first: null,
+        second: null,
+        orcid: false
       },
       generatedUUID: datasetId,
       doi: '',
@@ -290,7 +307,7 @@ export default {
         // Dataset info: Step 1
         refby: '',
         distrFiles: distrFn.files,
-        depiction: [],
+        depiction: null,
         // Dataset info: Step 2
         title: '',
         contactPoint: {
@@ -317,7 +334,8 @@ export default {
     secondPageFilled () {
       return !!this.dataset.title && !!this.dataset.contactPoint['@id'] &&
       !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName &&
-      !!this.dataset.contactPoint.cpEmail && !!this.dataset.description
+      !!this.dataset.contactPoint.cpEmail && !!this.dataset.description &&
+      !this.invalid.orcid
     }
   },
   watch: {
@@ -332,9 +350,14 @@ export default {
       }
       // TODO: contributors
     },
-    orcidData () {
-      this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
-      this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
+    orcidData (newValue, oldValue) {
+      if (newValue === 'invalid') {
+        this.invalid.orcid = true
+      } else {
+        this.invalid.orcid = false
+        this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
+        this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
+      }
     }
   },
   methods: {
@@ -351,15 +374,18 @@ export default {
     onInputChange (e) {
       this.addDistr(e.target.files)
       e.target.value = null
-      this.invalid.first = false
+      this.invalid.first = null
     },
     goToStep (id, index) {
       this.clearSnackbar()
       if (id === 'first' && !this.dataset.distrFiles.length) {
-        this.invalid.first = true
+        this.invalid.first = 'Missing required field'
       } else if (id === 'second' && !this.secondPageFilled) {
-        this.invalid.second = true
+        this.invalid.second = 'Missing required field'
       } else {
+        // Clear invalid errors
+        (id === 'first') && (this.invalid.first = null);
+        (id === 'second') && (this.invalid.second = null)
         this[id] = true
         if (index) {
           this.active = index
@@ -367,7 +393,12 @@ export default {
       }
     },
     async lookupOrcid (e) {
-      await this.$store.dispatch('explorer/curation/lookupOrcid', e.target.value)
+      if (isValidOrcid(e.target.value)) {
+        this.invalid.orcid = false
+        await this.$store.dispatch('explorer/curation/lookupOrcid', e.target.value)
+      } else {
+        this.invalid.orcid = true
+      }
     },
     async lookupDoi (e) {
       await this.$store.dispatch('explorer/curation/lookupDoi', e.target.value)
@@ -376,13 +407,15 @@ export default {
     previewFile () {
       const preview = document.querySelector('#depictImg')
       const wrapper = document.querySelector('#depictWrapper')
+      const previewMini = document.querySelector('#depictImgMini')
+      const wrapperMini = document.querySelector('#depictWrapperMini')
       const file = document.querySelector('#file-depict-input').files[0]
       const reader = new FileReader()
       this.dataset.depiction = file
 
       reader.addEventListener('load', function () {
-        wrapper.style.visibility = 'visible'
-        preview.src = reader.result
+        wrapper.style.visibility = wrapperMini.style.visibility = 'visible'
+        preview.src = previewMini.src = reader.result
       }, false)
 
       if (file) {
@@ -402,9 +435,10 @@ export default {
         this.setSnackbar({
           message: 'Unable to submit, check for required fields'
         })
+        this.invalid.first = !this.dataset.distrFiles.length ? 'Missing required field' : null
+        this.invalid.second = !this.secondPageFilled ? 'Missing required field' : null
       } else {
         try {
-          // TODO: Modify this function call to also send files
           saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
           // TODO: Decide where routing should go to
           // .then(() => goToView(this.dataset.uri, "view"));

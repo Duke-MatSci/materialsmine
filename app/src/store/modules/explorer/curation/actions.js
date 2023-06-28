@@ -2,6 +2,7 @@ import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
 import { deleteChart } from '@/modules/vega-chart'
+import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
   async createDatasetIdVuex ({ commit, dispatch }) {
@@ -94,10 +95,6 @@ export default {
     const unhyphenated = /^\d{15}(\d|X)$/.test(orcidId)
     unhyphenated && (orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4'))
 
-    const isValidOrcid = (identifier) => {
-      return /^(\d{4}-){3}\d{3}(\d|X)$/.test(identifier)
-    }
-
     if (isValidOrcid(orcidId)) {
       // TODO: update the endpoint route name
       const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`
@@ -119,9 +116,13 @@ export default {
       const cpResult = responseData.filter(entry => entry['@id'] === `http://orcid.org/${orcidId}`)
       if (cpResult.length) {
         return commit('setOrcidData', cpResult[0])
+      } else {
+        // No results were returned
+        return commit('setOrcidData', 'invalid')
       }
     } else {
-      return 'Invalid'
+      // Incorrect format
+      return commit('setOrcidData', 'invalid')
     }
   },
 
