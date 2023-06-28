@@ -261,7 +261,7 @@
     </div>
     </div>
   </div>
-</div>    
+</div>
 <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth" :disableClose="dialog.disableClose">
   <template v-slot:title>{{dialog.title}}</template>
   <template v-slot:content>
@@ -350,7 +350,7 @@ export default {
         type: null,
         size: 60,
         disableClose: false
-      },
+      }
     }
   },
   computed: {
@@ -481,8 +481,8 @@ export default {
       } else {
         try {
           await saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
-          this.dialog.title = "Upload successful"
-          this.dialog.type = "success"
+          this.dialog.title = 'Upload successful'
+          this.dialog.type = 'success'
           // TODO: Decide where routing should go to
           // .then(() => goToView(this.dataset.uri, "view"));
         } catch (err) {
