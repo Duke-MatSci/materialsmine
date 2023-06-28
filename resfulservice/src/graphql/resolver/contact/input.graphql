@@ -1,4 +1,6 @@
-"Input schema for fetching a single contact"
+"""
+Input schema for fetching a single contact
+"""
 input userContactQueryInput {
   """
   email of user whose contact to fetch. 
@@ -7,6 +9,9 @@ input userContactQueryInput {
   email: String!
 }
 
+"""
+Date and time input filter options
+"""
 input CreatedBetween {
   from: String!
   to: String!
@@ -24,7 +29,9 @@ input contactsQueryInput {
   """
   pageNumber: Int
 
-  "filter "
+  """
+  Date and time input filter options
+  """
   datetime: CreatedBetween 
 
   """
@@ -33,28 +40,64 @@ input contactsQueryInput {
   Defaults to 1 if none is specified.
   """
   pageSize: Int
+
+  """
+  Boolean value to specify if to return resolved contact enquiries
+  """
+  resolved: Boolean
+
+  """
+  Name of the admin user who resolved the enquiry
+  """
+  resolvedBy: String
 }
 
-"Input Schema type for creating contact"
+"""
+Input payload for submitting new contact inquiry
+"""
 input createContactInput {
-  "full name of the user requesting contact"
+  """
+  Full name of the user requesting contact
+  """
   fullName: String!
 
-  "email address of the user requesting contact"
+  """
+  Email address of the user requesting contact
+  """
   email: String!
 
   """
-  purpose for requesting contact.
+  Purpose for requesting contact.
   You can specify only one from the list of enumerable values defined
   """
   purpose: Purpose!
 
-  "details of the reason or purpose for requesting contact"
+  """
+  Details of the reason or purpose for requesting contact
+  """
   message: String!
-
 }
 
-"list of enumerable value selectable as purpose for requesting contact"
+input updateContactInput {
+  """
+  Id of the contact to update
+  """
+  contactId: ID!
+
+  """
+  Boolean value to either resolve or unresolve a contact enquiry
+  """
+  resolved: Boolean
+
+  """
+  Response text sent back to the user who made an enquiry
+  """
+  response: String
+}
+
+"""
+List of enumerable values selectable as purpose for requesting contact
+"""
 enum Purpose {
   "I want to ask a question"
   QUESTION

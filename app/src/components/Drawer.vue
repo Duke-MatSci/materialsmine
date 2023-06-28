@@ -104,6 +104,15 @@
           </router-link>
         </md-list>
       </md-list-item>
+      <md-toolbar class="md-transparent u--font-emph-l u_margin-top-small" md-elevation="0" v-if="isAuth && isAdmin" ><small>Admin</small></md-toolbar>
+      <md-divider v-if="isAuth && isAdmin" ></md-divider>
+
+      <router-link v-if="isAuth && isAdmin" :to="'/portal'" v-slot="{navigate, href}" custom>
+        <md-list-item @click="navigate" :href="href">
+          <md-icon class="utility-navfonticon">admin_panel_settings</md-icon>
+          <span class="md-list-item-text utility-navfont">Admin Center</span>
+        </md-list-item>
+      </router-link>
     </md-list>
 
     <md-list class="utility-transparentbg">

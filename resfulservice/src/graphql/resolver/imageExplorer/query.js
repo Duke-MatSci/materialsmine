@@ -1,21 +1,22 @@
 const { imageTransformer } = require('../../transformer');
 const errorFormater = require('../../../utils/errorFormater');
 const paginator = require('../../../utils/paginator');
-const { validateImageSearchOptions, imageQuery } = require('../../../pipelines/image-pipeline');
+const { validateImageSearchOptions, validateImageSearchOptionsForUndefinedContent, imageQuery } = require('../../../pipelines/image-pipeline');
 
 const imageExplorerQuery = {
   searchImages: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger?.info('[searchImages]: Function entry');
     try {
       const search = validateImageSearchOptions(input);
+      const searchArgs = { search, selectedImgWithoutContent: validateImageSearchOptionsForUndefinedContent(input), input };
+
       const pagination = input
-        ? paginator((await imageQuery({ search, input }))?.counts, input.pageNumber, input.pageSize)
-        : paginator((await imageQuery({ search, input }))?.counts);
+        ? paginator((await imageQuery({ ...searchArgs }))?.counts, input.pageNumber, input.pageSize)
+        : paginator((await imageQuery({ ...searchArgs }))?.counts);
       const images = imageTransformer((await imageQuery({
-        search,
+        ...searchArgs,
         skip: pagination.skip,
-        limit: pagination.limit,
-        input
+        limit: pagination.limit
       })).images);
       return Object.assign(pagination, { images });
     } catch (err) {
@@ -30,7 +31,8 @@ const imageExplorerQuery = {
       const pagination = input
         ? paginator((await imageQuery())?.counts, input.pageNumber, input.pageSize)
         : paginator((await imageQuery())?.counts);
-      const images = imageTransformer((await imageQuery({ skip: pagination.skip, limit: pagination.limit }))?.images);
+      const imgArray = await imageQuery({ skip: pagination.skip, limit: pagination.limit });
+      const images = imageTransformer(imgArray.images);
       return Object.assign(pagination, { images });
     } catch (err) {
       req.logger?.error(`[images]: ${err}`);

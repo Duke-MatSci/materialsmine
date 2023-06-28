@@ -22,8 +22,12 @@
         </div>
 
       </md-content>
-
+      <md-button @click="approveCuration" v-if="isAuth && isAdmin" class="md-fab md-fixed md-dense md-fab-bottom-right md-primary btn--primary u--margin-rightlg">
+        <md-tooltip md-direction="top">Approve</md-tooltip>
+          <md-icon>check</md-icon>
+      </md-button>
       <md-button @click="showSidepanel = true" class="md-fab md-fixed md-dense md-fab-bottom-right md-primary btn--primary">
+        <md-tooltip md-direction="top">Comment</md-tooltip>
           <md-icon>comment</md-icon>
       </md-button>
     </section>
@@ -46,6 +50,7 @@ import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
+import { mapGetters } from 'vuex'
 export default {
   name: 'XmlVisualizer',
   mixins: [optionalChainingUtil],
@@ -58,6 +63,20 @@ export default {
       showSidepanel: false,
       type: 'xml',
       xmlViewer: {}
+    }
+  },
+  computed: {
+    ...mapGetters({
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin'
+    })
+  },
+  methods: {
+    approveCuration () {
+      this.$store.commit('setSnackbar', {
+        message: 'Something went wrong',
+        action: () => this.approveCuration()
+      })
     }
   },
   mounted () {

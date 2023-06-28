@@ -108,6 +108,9 @@
         }
         &-neg {
             margin-top: -1rem !important;
+            &-left {
+                margin-left: -1rem !important;
+            }
         }
         &-pos {
             margin: 1rem;
@@ -170,7 +173,7 @@
 
     &--shadow {
         &-none {
-            box-shadow: none;
+            box-shadow: none !important;
         }
     }
 
@@ -420,7 +423,7 @@
         }
         & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
             background-color: $primary-light;
-            & > i {
+            & > i, & > p {
                 color: $secondary-light !important;
             }
         }

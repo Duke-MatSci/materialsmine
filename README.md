@@ -29,11 +29,7 @@ Make sure nvm is installed with node >= v16.20.0 or run the command below to ins
 ```bash
  nvm install 16
 ```
-Run the following command from the root directory:
-```bash
- npm run dev:install
-```
-Run the following command to start the applications:
+Run the following command to start the applications from the root directory:
 ```bash
  npm run dev:start
 ```
