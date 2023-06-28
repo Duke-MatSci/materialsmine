@@ -261,14 +261,33 @@
     </div>
     </div>
   </div>
-</div>
+</div>    
+<dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth" :disableClose="dialog.disableClose">
+  <template v-slot:title>{{dialog.title}}</template>
+  <template v-slot:content>
+    <div v-if="dialog.type=='loading' && uploadInProgress">
+      <spinner :text="uploadInProgress"/>
+    </div>
+    <div v-if="dialog.type=='success'">
+      New dataset created with ID {{generatedUUID}}
+    </div>
+  </template>
+  <template v-slot:actions>
+    <div v-if="dialog.type=='success'">
+      <!--TODO: re-route to dataset page on click-->
+      <md-button>OK</md-button>
+    </div>
+  </template>
+</dialogbox>
 </div>
 </template>
 
 <script>
 import FileDrop from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
+import Dialog from '@/components/Dialog.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
+import Spinner from '@/components/Spinner.vue'
 import useFileList from '@/modules/file-list'
 import { saveDataset, isValidOrcid } from '@/modules/whyis-dataset'
 import { mapGetters, mapMutations } from 'vuex'
@@ -281,6 +300,8 @@ export default {
   components: {
     FileInput: FileDrop,
     FilePreview,
+    dialogbox: Dialog,
+    Spinner,
     CurateNavBar
   },
   data () {
@@ -323,11 +344,18 @@ export default {
           '@type': 'date',
           '@value': ''
         }
-      }
+      },
+      dialog: {
+        title: '',
+        type: null,
+        size: 60,
+        disableClose: false
+      },
     }
   },
   computed: {
     ...mapGetters({
+      dialogBoxActive: 'dialogBox',
       doiData: 'explorer/curation/getDoiData',
       orcidData: 'explorer/curation/getOrcidData'
     }),
@@ -362,6 +390,7 @@ export default {
   },
   methods: {
     ...mapMutations({
+      toggleDialogBox: 'setDialogBox',
       setSnackbar: 'setSnackbar',
       clearSnackbar: 'resetSnackbar'
     }),
@@ -428,21 +457,36 @@ export default {
       document.querySelector('#depictImg').src = ''
       this.dataset.depiction = null
     },
+    renderDialog (title, type, minWidth, disableClose = false) {
+      this.dialog = {
+        title,
+        type,
+        minWidth,
+        disableClose
+      }
+      this.toggleDialogBox()
+    },
     // Submit and post as nanopublication
     async submitForm () {
+      this.uploadInProgress = 'Uploading files'
+      this.renderDialog('Submitting dataset', 'loading', 40, true)
       this.clearSnackbar()
       if (!this.dataset.distrFiles.length || !this.secondPageFilled) {
         this.setSnackbar({
           message: 'Unable to submit, check for required fields'
         })
+        this.toggleDialogBox()
         this.invalid.first = !this.dataset.distrFiles.length ? 'Missing required field' : null
         this.invalid.second = !this.secondPageFilled ? 'Missing required field' : null
       } else {
         try {
-          saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
+          await saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
+          this.dialog.title = "Upload successful"
+          this.dialog.type = "success"
           // TODO: Decide where routing should go to
           // .then(() => goToView(this.dataset.uri, "view"));
         } catch (err) {
+          this.toggleDialogBox()
           this.setSnackbar({ message: err.response ?? err })
         }
       }
