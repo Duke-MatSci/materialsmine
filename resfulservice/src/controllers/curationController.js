@@ -1,14 +1,12 @@
-const axios = require('axios');
 const util = require('util');
 const XlsxFileManager = require('../utils/curation-utility');
 const BaseSchemaObject = require('../../config/xlsx.json');
-const { errorWriter, successWriter } = require('../utils/logWriter');
-const { BaseObjectSubstitutionMap, CurationEntityStateDefault, doiApi } = require('../../config/constant');
+const { errorWriter } = require('../utils/logWriter');
+const { BaseObjectSubstitutionMap, CurationEntityStateDefault } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
-const { doiFields } = require('../../config/constant');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -429,46 +427,4 @@ const createBaseObject = (BaseObject, storedObject) => {
     }
   }
   return curatedBaseObject;
-};
-
-const _getDoiInfo = async (req) => {
-  const { logger, params } = req;
-  logger.info('_getDoiInfo(): Function entry');
-  const { doi } = params;
-  const url = `${doiApi}${doi}`;
-  const headers = {
-    accept: 'application/json'
-  };
-
-  const preparedRequest = {
-    method: 'GET',
-    url,
-    headers
-  };
-  return await axios(preparedRequest);
-};
-
-exports.getDoiInfo = async (req, res, next) => {
-  const log = req.logger;
-  log.info('getDoiInfo(): Function entry');
-  try {
-    const response = await _getDoiInfo(req);
-    successWriter(req, { message: 'success' }, 'getDoiInfo');
-    res.set({
-      'Content-Type': response.headers['content-type'],
-      'Content-Length': response.data.length
-    });
-
-    const responseData = response?.data?.message;
-
-    const filtered = Object.keys(responseData)
-      .filter(key => doiFields.includes(key))
-      .reduce((obj, key) => {
-        obj[key] = responseData[key];
-        return obj;
-      }, {});
-    res.send(filtered);
-  } catch (err) {
-    next(errorWriter(req, err, 'getDoiInfo'));
-  }
 };

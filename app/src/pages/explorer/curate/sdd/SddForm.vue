@@ -94,7 +94,7 @@
                 <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
                   <md-field :class="{ 'md-invalid': ((invalid['second'] && !dataset.contactPoint['@id']) || invalid.orcid) }">
                     <label style="font-size:14px">ORCID Identifier (e.g., 0000-0001-2345-6789)</label>
-                    <md-input v-model="dataset.contactPoint['@id']" required @change="lookupOrcid" ></md-input>
+                    <md-input v-model="orcidId" required @change="lookupOrcid" ></md-input>
                     <span class="md-error" v-if="!invalid.orcid">ORCID ID required</span>
                     <span class="md-error" v-if="invalid.orcid">Invalid ORCID ID</span>
                   </md-field>
@@ -323,6 +323,7 @@ export default {
       },
       generatedUUID: datasetId,
       doi: '',
+      orcidId: null,
       dataset: {
         '@type': 'http://www.w3.org/ns/dcat#Dataset',
         // Dataset info: Step 1
@@ -383,6 +384,7 @@ export default {
         this.invalid.orcid = true
       } else {
         this.invalid.orcid = false
+        this.dataset.contactPoint['@id'] = this.orcidData?.['@id']
         this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
         this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
       }

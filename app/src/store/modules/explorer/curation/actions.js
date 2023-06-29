@@ -101,7 +101,7 @@ export default {
       const response = await fetch(url, {
         method: 'GET'
       })
-      if (!response || response?.statusText !== 'OK') {
+      if (response?.statusText !== 'OK') {
         const snackbar = {
           message: response.message || 'Something went wrong while fetching orcid data',
           duration: 5000
@@ -109,9 +109,6 @@ export default {
         return commit('setSnackbar', snackbar, { root: true })
       }
 
-      if (response.status === 201) {
-        return
-      }
       const responseData = await response.json()
       const cpResult = responseData.filter(entry => entry['@id'] === `http://orcid.org/${orcidId}`)
       if (cpResult.length) {
@@ -127,21 +124,16 @@ export default {
   },
 
   async lookupDoi ({ commit }, inputDoi) {
-    const url = `/api/curate/getdoi/${inputDoi}`
+    const url = `/api/knowledge/getdoi/${inputDoi}`
     const response = await fetch(url, {
       method: 'GET'
     })
-    if (!response || response?.statusText !== 'OK') {
-      if (!response || response?.statusText !== 'OK') {
-        const snackbar = {
-          message: response.message || 'Something went wrong while fetching DOI data',
-          duration: 5000
-        }
-        return commit('setSnackbar', snackbar, { root: true })
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message: response.message || 'Something went wrong while fetching DOI data',
+        duration: 5000
       }
-    }
-    if (response.status === 201) {
-      return
+      return commit('setSnackbar', snackbar, { root: true })
     }
     const responseData = await response.json()
     return commit('setDoiData', responseData)

@@ -48,7 +48,7 @@ const datasetFieldUris = {
   cpfirstname: `${schema}givenName`,
   cplastname: `${schema}familyName`,
   individual: `${vcard}individual`,
-  schemaPerson: `${schema}Person`,
+  schemaperson: `${schema}Person`,
 
   author: `${dct}creator`,
   name: `${foaf}name`,
@@ -114,7 +114,7 @@ function buildDatasetLd (dataset) {
 // Recursively check if a value is empty
 function isEmpty (value) {
   // Base case
-  if ((value === '') || (value === null) || (value === []) || (value === 'undefined')) {
+  if ([undefined, null, '', []].includes(value)) {
     return true
   } else if (Array.isArray(value)) {
     // Is empty if array has length 0
@@ -150,14 +150,11 @@ function recursiveFieldSetter ([field, value]) {
     for (const val in value) {
       // type, value and id aren't in datasetFieldURIs dictionary
       // but they are valid keys, so set the value to their value
-      if ((val === '@type') || (val === '@value') || (val === '@id')) {
-        fieldDict[val] = value[val]
-        // but if the value of val is an allowed field, use the field's value
+      if (['@type', '@value', '@id'].includes(val)) {
+        // if the value of val is an allowed field, use the field's value
         // e.g., type = organization, and organization -> foaf:Organization
-        if (Object.prototype.hasOwnProperty.call(datasetFieldUris, value[val].toLowerCase())) {
-          fieldDict[val] = datasetFieldUris[value[val].toLowerCase()]
-        }
-      } else if (Object.prototype.hasOwnProperty.call(datasetFieldUris, val.toLowerCase())) { // Recursive case (val is an allowed field)
+        fieldDict[val] = Object.getOwnPropertyDescriptor(datasetFieldUris, value[val].toLowerCase())?.value ?? value[val]
+      } else if (Object.getOwnPropertyDescriptor(datasetFieldUris, val.toLowerCase())) { // Recursive case (val is an allowed field)
         fieldDict[datasetFieldUris[val.toLowerCase()]] = recursiveFieldSetter([datasetFieldUris[val.toLowerCase()], value[val]])
       } else {
         fieldDict['@value'] = value
