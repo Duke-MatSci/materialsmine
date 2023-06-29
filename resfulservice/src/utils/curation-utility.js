@@ -1,6 +1,8 @@
-const readXlsxFile = require('read-excel-file/node');
-const Xmljs = require('xml-js');
 const fs = require('fs');
+const readXlsxFile = require('read-excel-file/node');
+const decompress = require('decompress');
+const path = require('path');
+const Xmljs = require('xml-js');
 const csv = require('csv-parser');
 
 exports.xlsxFileReader = async (path, sheetName) => {
@@ -27,6 +29,41 @@ exports.parseCSV = async (filename) => {
       })
       .on('error', reject);
   });
+};
+
+exports.unZipFolder = async (req, filename) => {
+  const logger = req.logger;
+  try {
+    const folderPath = `mm_files/bulk-curation-${new Date().getTime()}`;
+    await decompress(filename, folderPath);
+
+    const { files, folders } = this.readFolder(folderPath);
+
+    return { folderPath, files, folders };
+  } catch (error) {
+    logger.error(`[unZipFolder]: ${error}`);
+    error.statusCode = 500;
+    throw error;
+  }
+};
+
+exports.readFolder = (folderPath) => {
+  const folderContent = fs.readdirSync(folderPath)
+    .map(fileName => {
+      return path.join(folderPath, fileName);
+    });
+
+  const isFolder = fileName => {
+    return fs.lstatSync(fileName).isDirectory();
+  };
+
+  const isFile = fileName => {
+    return fs.lstatSync(fileName).isFile();
+  };
+
+  const folders = folderContent.filter(isFolder);
+  const files = folderContent.filter(isFile);
+  return { folders, files };
 };
 
 const fixUrl = function (val, elementName) {

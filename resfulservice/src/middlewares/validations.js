@@ -12,13 +12,13 @@ exports.validateAcceptableUploadType = [
   validationErrorHandler
 ];
 
+exports.validateImageId = [param('fileId').not().isEmpty().withMessage('image ID required').bail().isMongoId().withMessage('invalid file id'), validationErrorHandler];
+
 exports.validateXlsxObjectUpdate = [
   query('xlsxObjectId').not().isEmpty().withMessage('xlsx object ID required').bail().isMongoId().withMessage('invalid xlsx object id'),
   body('payload').isObject().withMessage('please provide xlsx object for update'),
   validationErrorHandler
 ];
-
-exports.validateImageId = [param('fileId').not().isEmpty().withMessage('image ID required').bail().isMongoId().withMessage('invalid file id'), validationErrorHandler];
 
 function validationErrorHandler (req, res, next) {
   const errors = validationResult(req);
@@ -30,6 +30,12 @@ exports.validateIsAdmin = (req, res, next) => !req.user?.roles === userRoles.isA
 
 exports.validateXlsxObjectDelete = [
   query('xlsxObjectId').if(query('dataset').not().exists()).bail().isMongoId().withMessage('invalid xlsx object id'),
-  query('dataset').if(query('xlsxObjectId').not().exists()).bail().isMongoId().withMessage('invalid xlsx object id'),
+  query('dataset').if(query('xlsxObjectId').not().exists()).bail().isMongoId().withMessage('invalid dataset id'),
+  validationErrorHandler
+];
+
+exports.validateXlsxObjectGet = [
+  query('xlsxObjectId').optional().isMongoId().withMessage('invalid xlsx object id'),
+  query('xmlId').optional().isMongoId().withMessage('invalid dataset id'),
   validationErrorHandler
 ];

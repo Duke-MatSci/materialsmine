@@ -2,6 +2,7 @@ const util = require('util');
 const XlsxFileManager = require('../utils/curation-utility');
 const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
+const latency = require('../utils/latency');
 const { BaseObjectSubstitutionMap, CurationEntityStateDefault } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
@@ -41,14 +42,14 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     const validListMap = generateCurationListMap(validList);
     const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile);
-
+    if (result?.count && req?.isParentFunction) return { errors: result.errors };
     if (result?.count) return res.status(400).json({ errors: result.errors });
 
     const curatedAlready = storedCurations.find(
       object => object?.['data origin']?.Title === result?.['data origin']?.Title &&
       object?.['data origin']?.PublicationType === result?.['data origin']?.PublicationType);
 
-    if (curatedAlready) return next(errorWriter(req, 'This has already been curated', 'curateXlsxSpreadsheet', 409));
+    if (curatedAlready) return next(errorWriter(req, 'This had been curated already', 'curateXlsxSpreadsheet', 409));
 
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await (await newCurationObject.save()).populate('user', 'displayName');
@@ -58,29 +59,98 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
 
-    return res.status(201).json({
+    const curatedSample = {
       xml,
       user: curatedObject.user,
       groupId: curatedObject.dataset,
       isApproved: curatedObject.entityState !== CurationEntityStateDefault,
       status: curatedObject.curationState
-    });
+    };
+
+    if (req?.isParentFunction) return curatedSample;
+    latency.latencyCalculator(res);
+    return res.status(200).json({ ...curatedSample });
   } catch (err) {
     next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
   }
 };
 
+exports.bulkXlsxCurations = async (req, res, next) => {
+  const { user, logger, query } = req;
+
+  logger.info('bulkXlsxCurations Function Entry:');
+
+  const regex = /.zip$/gi;
+  const zipFile = req.files?.uploadfile?.find((file) => regex.test(file?.path));
+
+  if (!zipFile) {
+    return next(errorWriter(req, 'bulk curation zip file not uploaded', 'bulkXlsxCurations', 400));
+  }
+
+  if (!query.dataset) {
+    const unusedDatasetId = await DatasetId.findOne({ user, samples: [] });
+    query.dataset = unusedDatasetId?._id ?? await DatasetId.create({ user });
+  }
+  const bulkErrors = {};
+  const bulkCurations = {};
+  try {
+    const { files, folders } = await XlsxFileManager.unZipFolder(req, zipFile.path);
+
+    if (files.length) {
+      const newReq = {
+        ...req,
+        files: { uploadfile: files.map(file => ({ path: file })) },
+        isParentFunction: true
+      };
+      const result = await this.curateXlsxSpreadsheet(newReq, {}, fn => fn);
+
+      if (result?.message || result?.errors) {
+        bulkErrors.root = result?.message ?? result?.errors;
+      } else {
+        bulkCurations.root = result;
+      }
+    }
+    if (folders.length) {
+      for (let folder of folders) {
+        const { files } = XlsxFileManager.readFolder(folder);
+        folder = folder.split('/').pop();
+        if (files.length) {
+          const newReq = {
+            ...req,
+            files: { uploadfile: files.map(file => ({ path: file })) },
+            isParentFunction: true
+          };
+          const result = await this.curateXlsxSpreadsheet(newReq, { }, fn => fn);
+
+          if (result?.message || result?.errors) {
+            bulkErrors[folder] = result?.message ?? result?.errors;
+          } else {
+            bulkCurations[folder] = result;
+          }
+        } else {
+          bulkErrors[folder] = `Mixing Curation files for folder ${folder}`;
+        }
+      }
+    }
+    await DatasetId.findOneAndDelete({ _id: query.dataset, samples: [] });
+    latency.latencyCalculator(res);
+    return res.status(200).json({ bulkCurations, bulkErrors });
+  } catch (err) {
+    next(errorWriter(req, err, 'bulkXlsxCurations', 500));
+  }
+};
+
 exports.getXlsxCurations = async (req, res, next) => {
-  const { user, logger, params } = req;
+  const { user, logger, query } = req;
 
   logger.info('getXlsxCurations Function Entry:');
 
-  const { xlsxObjectId, xmlId } = params;
+  const { xlsxObjectId, xmlId } = query;
   const filter = {};
 
   if (user?.roles !== 'admin') filter.user = user._id;
   try {
-    if (!!xmlId || !!xlsxObjectId) {
+    if (xmlId || xlsxObjectId) {
       let fetchedObject;
       if (xlsxObjectId) {
         const xlsxObject = await CuratedSamples.findOne({ _id: xlsxObjectId, ...filter }, null, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
@@ -92,7 +162,7 @@ exports.getXlsxCurations = async (req, res, next) => {
         if (!xmlData) return next(errorWriter(req, 'Sample xml not found', 'getXlsxCurations', 404));
         fetchedObject = XlsxFileManager.jsonGenerator(xmlData.xml_str);
       }
-
+      latency.latencyCalculator(res);
       return res.status(200).json(fetchedObject);
     } else {
       const xlsxObjects = await CuratedSamples.find(filter, { user: 1, createdAt: 1, updatedAt: 1, _v: 1 }, { lean: true, populate: { path: 'user', select: 'givenName surName' } });
@@ -154,7 +224,6 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       await CuratedSamples.deleteMany({ _id: { $in: datasets.samples } });
       return res.status(200).json({ message: `Dataset ID: ${query.dataset} successfully deleted` });
     }
-    return next(errorWriter(req, 'Missing dataset ID or curation ID in query', 'curateXlsxSpreadsheet', 400));
   } catch (err) {
     next(errorWriter(req, err, 'deleteXlsxCurations', 500));
   }

@@ -27,11 +27,13 @@ const fileFilter = (req, file, cb) => {
     file.mimetype === 'image/tiff' ||
     file.mimetype === 'text/csv' ||
     file.mimetype === 'application/vnd.ms-excel' ||
-    file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    file.mimetype === 'application/zip' ||
+    file.mimetype === 'application/x-zip-compressed'
   ) {
     cb(null, true);
   } else {
-    cb(new Error('Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .xls and .xlsx format allowed!'), false);
+    cb(new Error('Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .zip, .xls and .xlsx format allowed!'), false);
   }
 };
 
