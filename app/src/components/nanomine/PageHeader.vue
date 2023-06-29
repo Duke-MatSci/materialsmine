@@ -87,7 +87,7 @@
                                     <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
-                                    <router-link to="" @click.native="loadApiDocs" class="nav_menu--siblings-lists"><a>Api Docs</a></router-link>
+                                    <a href="/api/api-docs/" class="nav_menu--siblings-lists"><a>Api Docs</a></a>
                                 </div>
                             </div>
                         </li>
@@ -122,12 +122,6 @@ export default {
       isAuth: 'auth/isAuthenticated',
       displayName: 'auth/displayName'
     })
-  },
-  methods: {
-    loadApiDocs () {
-      const url = `${location.origin}/api/api-docs/`
-      return window.location.assign(url)
-    }
   }
 }
 </script>
