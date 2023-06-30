@@ -274,8 +274,7 @@
   </template>
   <template v-slot:actions>
     <div v-if="dialog.type=='success'">
-      <!--TODO: re-route to dataset page on click-->
-      <md-button>OK</md-button>
+      <md-button @click="goToDataset">OK</md-button>
     </div>
   </template>
 </dialogbox>
@@ -485,15 +484,15 @@ export default {
           await saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
           this.dialog.title = 'Upload successful'
           this.dialog.type = 'success'
-          // TODO: Decide where routing should go to
-          // .then(() => goToView(this.dataset.uri, "view"));
         } catch (err) {
           this.toggleDialogBox()
           this.setSnackbar({ message: err.response ?? err })
         }
       }
+    },
+    goToDataset () {
+      return this.$router.push(`/explorer/dataset/${this.generatedUUID}`)
     }
-
   }
 }
 </script>

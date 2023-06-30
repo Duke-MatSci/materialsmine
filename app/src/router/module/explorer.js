@@ -210,6 +210,13 @@ const explorerRoutes = [
     name: 'XmlVisualizer',
     component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: 'dataset/:id',
+    name: 'DatasetVisualizer',
+    component: () => import('@/pages/explorer/dataset/DatasetViewWhyis.vue'),
+    props: true,
+    meta: { requiresAuth: false }
   }
 ]
 

@@ -226,7 +226,7 @@ function buildDistrLd (fileList) {
     .map(x => {
       // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
       distrLDs[x] = {
-        '@id': `${window.location.origin}/api/files?filename=${fileList[x].filename}`,
+        '@id': `${window.location.origin}/api/files/get?filename=${fileList[x].filename}`,
         '@type': 'http://purl.org/net/provenance/ns#File',
         'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].originalname
       }
@@ -239,38 +239,10 @@ function buildDepictionLd (file, uri) {
     '@id': `${uri}/depiction`,
     '@type': 'http://purl.org/net/provenance/ns#File',
     'http://www.w3.org/2000/01/rdf-schema#label': file.originalname,
-    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}/api/files?filename=${file.filename}`
+    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}/api/files/get?filename=${file.filename}`
   }
   return depictionLd
 }
-
-// // TODO: Remove if current version works. This is the old method
-// // Currently unused
-// async function saveImg (file, id) {
-//   // Where to save the image
-//   const uri = `${lodPrefix}/dataset/${id}/depiction`
-//   // TODO: This is the wrong URL
-//   const baseUrl = `${window.location.origin}/about?uri=${uri}`
-
-//   const form = new FormData()
-//   form.append('upload_type', 'http://purl.org/net/provenance/ns#File')
-//   form.append('depiction', file)
-
-//   var data = {
-//     '@id': uri,
-//     file: form
-//   }
-
-//   await fetch(baseUrl, {
-//     method: 'POST',
-//     body: data,
-//     headers: {
-//       Accept: 'application/json',
-//       'Content-Type': 'multipart/form-data'
-//     }
-//   })
-//   return [uri, baseUrl]
-// }
 
 const isValidOrcid = (identifier) => {
   return /^(\d{4}-){3}\d{3}(\d|X)$/.test(identifier)
