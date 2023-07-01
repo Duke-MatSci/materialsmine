@@ -147,7 +147,12 @@
     }
 
     &__stepper {
-        .md-active, .md-done {
+        .md-done {
+            .md-stepper-number {
+                background-color: $secondary-grey !important;
+            }
+        }
+        .md-active {
             .md-button-content {
                 color: $primary !important;
                 font-size: 1.8rem;
@@ -162,7 +167,6 @@
             font-size: 1.8rem;
         }
         .md-button_next {
-            margin-top: 3rem;
             background: $primary;
             .md-button-content, .md-icon {
                 color: $primary-white !important;
@@ -175,11 +179,20 @@
             }
         }
         .md-button_prev {
-            margin-top: 3rem;
             background: $tertiary;
             .md-button-content, .md-icon {
                 color: $primary !important;
             }
+        }
+    }
+
+    &__file-input {
+        width: 100%;
+        margin: 0 auto;
+        transition: .2s ease;
+        cursor: pointer;
+        input[type=file] {
+            visibility: hidden;
         }
     }
 

@@ -78,6 +78,7 @@ services:
       - MONGO_ADDRESS=${MONGO_ADDRESS}
       - MONGO_PORT=${MONGO_PORT}
       - TKNS=${TKNS}
+      - FILES_DIRECTORY=${FILES_DIRECTORY}
       - ESADDRESS=${ESADDRESS}
       - PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
