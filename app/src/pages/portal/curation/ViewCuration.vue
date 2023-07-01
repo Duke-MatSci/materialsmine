@@ -76,7 +76,7 @@
 
 <script>
 import pagination from '@/components/explorer/Pagination'
-import SearchGallery from '@/components/SearchGallery.vue'
+import SearchGallery from '@/components/XmlSearchUtil'
 export default {
   name: 'Deploy',
   components: {
