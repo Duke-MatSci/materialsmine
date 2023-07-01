@@ -74,7 +74,7 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
                                     <a href="/explorer/curate/spreadsheet" class="nav_menu--siblings-lists"><a>Spreadsheet Upload</a></a>
-                                    <router-link to="/explorer/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
+                                    <router-link to="/explorer/curate/sdd" class="nav_menu--siblings-lists"><a>Upload with SDD</a></router-link>
                                 </div>
                             </div>
                         </li>

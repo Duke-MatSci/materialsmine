@@ -5,6 +5,8 @@ module.exports = {
   images: 'about?view=instances&uri=http://semanticscience.org/resource/Image',
   charts: 'about?view=instances&uri=http://semanticscience.org/resource/Chart',
   sparql: 'sparql',
+  doiApi: 'https://api.crossref.org/works/',
+  doiFields: ['publisher', 'title', 'author', 'published', 'volume', 'issue', 'DOI', 'type', 'URL', 'container-title'],
   supportedBrowser: ['Firefox', 'Chrome', 'Canary', 'Safari', 'Opera', 'IE', 'Edge'],
   userRoles: {
     isAdmin: 'isAdmin',

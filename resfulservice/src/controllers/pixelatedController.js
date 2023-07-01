@@ -1,6 +1,6 @@
 const XlsxFileManager = require('../utils/curation-utility');
 const PixelData = require('../models/pixelated');
-const deleteFile = require('../utils/fileManager');
+const { deleteFile } = require('../utils/fileManager');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 
 exports.uploadPixelData = async (req, res, next) => {

@@ -8,7 +8,9 @@ export default {
     return {
       datasetId: null,
       fieldNameSelected: '',
-      newChartExist: false
+      newChartExist: false,
+      doiData: null,
+      orcidData: null
     }
   },
   mutations,

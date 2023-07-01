@@ -243,3 +243,27 @@ exports.getImagesFromKnowledgeGraph = async (req, res, next) => {
     next(errorWriter(req, err, 'getAllCharts'));
   }
 };
+
+exports.getDoiInfo = async (req, res, next) => {
+  const { logger, params } = req;
+  logger.info('_getDoiInfo(): Function entry');
+  try {
+    const { doi } = params;
+    req.query.uri = `${constant.doiApi}${doi}`;
+    const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'getDoiInfo');
+
+    const responseData = response?.data?.message;
+
+    const filtered = Object.keys(responseData)
+      .filter(key => constant.doiFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = responseData[key];
+        return obj;
+      }, {});
+
+    return res.status(200).json({ ...filtered });
+  } catch (err) {
+    next(errorWriter(req, err, 'getDoiInfo'));
+  }
+};
