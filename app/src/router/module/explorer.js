@@ -214,7 +214,7 @@ const explorerRoutes = [
   {
     path: 'dataset/:id',
     name: 'DatasetVisualizer',
-    component: () => import('@/pages/explorer/dataset/DatasetViewWhyis.vue'),
+    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
     props: true,
     meta: { requiresAuth: false }
   }
