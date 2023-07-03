@@ -43,5 +43,45 @@ export default {
       parsedResponseDefinition,
       parsedResponseContent
     })
+  },
+  async fetchSingleDataset (context, uri) {
+    if (!uri) {
+      return
+    }
+    const response = await fetch(`/api/knowledge/images?uri=${uri}`, {
+      method: 'GET'
+    })
+
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message: response.message || 'Something went wrong while fetching dataset',
+        duration: 5000
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
+    }
+
+    const responseData = await response.json()
+    if (Array.isArray(responseData)) return context.commit('setCurrentDataset', responseData[0])
+    return context.commit('setCurrentDataset', responseData)
+  },
+  async fetchDatasetThumbnail (context, uri) {
+    if (!uri) {
+      return
+    }
+    const response = await fetch(`/api/knowledge/images?uri=${uri}`, {
+      method: 'GET'
+    })
+
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message: response.message || 'Something went wrong while fetching thumbnail',
+        duration: 5000
+      }
+      return context.commit('setSnackbar', snackbar, { root: true })
+    }
+
+    const responseData = await response.json()
+    if (Array.isArray(responseData)) return context.commit('setCurrentDatasetThumbnail', responseData[0]['http://w3.org/ns/dcat#accessURL'])
+    return context.commit('setCurrentDatasetThumbnail', responseData['http://w3.org/ns/dcat#accessURL'])
   }
 }

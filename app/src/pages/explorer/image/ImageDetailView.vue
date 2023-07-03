@@ -56,8 +56,9 @@
               <div class="section_md-header u_display-flex image-detail-page__relatedImg">
                 <md-card
                   v-for="(image, index) in assetItems"
-                  :key="index"
                   class="md-card-class u--margin-none"
+                  :class="`charts-${index+1} charts-${index+1}-narrow`"
+                  :key="`card_${index}`"
                 >
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="16:9">

@@ -1,6 +1,6 @@
 import { querySparql } from './sparql'
 
-const lodPrefix = window.location.hostname
+const lodPrefix = window.location.origin
 
 const deleteNanopub = async (uri) => {
   return await querySparql('', {
@@ -73,5 +73,6 @@ function getNanopubSkeleton () {
 export {
   deleteNanopub,
   postNewNanopub,
-  listNanopubs
+  listNanopubs,
+  lodPrefix
 }

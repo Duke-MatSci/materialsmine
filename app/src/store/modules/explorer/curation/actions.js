@@ -2,6 +2,7 @@ import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
 import { deleteChart } from '@/modules/vega-chart'
+import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
   async createDatasetIdVuex ({ commit, dispatch }) {
@@ -88,5 +89,53 @@ export default {
 
     const response = await fetchResponse.json()
     return { response, identifier: chartInstanceObject.identifier }
+  },
+
+  async lookupOrcid ({ commit }, orcidId) {
+    const unhyphenated = /^\d{15}(\d|X)$/.test(orcidId)
+    unhyphenated && (orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4'))
+
+    if (isValidOrcid(orcidId)) {
+      // TODO: update the endpoint route name
+      const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`
+      const response = await fetch(url, {
+        method: 'GET'
+      })
+      if (response?.statusText !== 'OK') {
+        const snackbar = {
+          message: response.message || 'Something went wrong while fetching orcid data',
+          duration: 5000
+        }
+        return commit('setSnackbar', snackbar, { root: true })
+      }
+
+      const responseData = await response.json()
+      const cpResult = responseData.filter(entry => entry['@id'] === `http://orcid.org/${orcidId}`)
+      if (cpResult.length) {
+        return commit('setOrcidData', cpResult[0])
+      } else {
+        // No results were returned
+        return commit('setOrcidData', 'invalid')
+      }
+    } else {
+      // Incorrect format
+      return commit('setOrcidData', 'invalid')
+    }
+  },
+
+  async lookupDoi ({ commit }, inputDoi) {
+    const url = `/api/knowledge/getdoi/${inputDoi}`
+    const response = await fetch(url, {
+      method: 'GET'
+    })
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message: response.message || 'Something went wrong while fetching DOI data',
+        duration: 5000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    }
+    const responseData = await response.json()
+    return commit('setDoiData', responseData)
   }
 }
