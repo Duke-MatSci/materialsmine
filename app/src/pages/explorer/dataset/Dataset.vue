@@ -1,7 +1,7 @@
 <template>
     <div class="image-detail-page">
-      <div class="section_loader" v-if="$apollo.loading">
-        <spinner :loading="$apollo.loading" text='Loading Dataset'/>
+      <div class="section_loader" v-if="loading">
+        <spinner :loading="loading" text='Loading Dataset'/>
       </div>
       <div class="utility-roverflow" v-else-if="dataset">
         <div class="utility-content__result teams_partner">
@@ -21,7 +21,7 @@
           <md-card-header class="section_md-header ">
             <md-card-header-text class="section_text-col flex-item">
               <div v-if="dataset[datasetFields['title']]" class="md-title u--margin-header">
-                {{ dataset[datasetFields['title']][0]['@value'] || "Curated Dataset"}}
+                {{ dataset[datasetFields['title']]?.[0]?.['@value'] || "Curated Dataset"}}
               </div>
               <div v-if="dataset[datasetFields['doi']]">
                 DOI: <a class=" u--b-rad" @click="nav_to_doi(doi)">{{ doi }}</a>
@@ -31,7 +31,9 @@
               </div>
             </md-card-header-text>
             <div v-if="dataset[datasetFields['depiction']]" class="quicklinks_content flex-item u--padding-zero" style="max-width:20rem;">
-              <img v-if="thumbnail" :src="thumbnail[0]['@value']" :alt="dataset[datasetFields['depiction']][0]['@id']" class="facet_viewport img">
+              <img v-if="thumbnail" :src="thumbnail?.[0]?.['@value']"
+                :alt="`${dataset[datasetFields['title']]?.[0]?.['@value']} image` || 'Dataset Thumbnail'"
+                class="facet_viewport img">
             </div>
           </md-card-header>
         </md-card>
@@ -52,11 +54,12 @@
 
               <div class="section_md-header u_display-flex image-detail-page__relatedImg">
                 <md-card
-                  v-for="(item, index) in dataset[datasetFields['distribution']]"
+                  v-for="(item, index) in distributions"
                   class="md-card-class u--margin-none"
                   :class="`charts-${index+1} charts-${index+1}-narrow`"
                   :key="`card_${index}`"
                 >
+                <a :href="item?.downloadLink">
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
                       <md-icon class="explorer_page-nav-card_icon u_margin-top-small">description</md-icon>
@@ -65,11 +68,13 @@
                     <md-card-area class="u_gridbg">
                       <md-card-header class="u_show_hide">
                         <span class="md-subheading">
-                          <strong>{{ reduceDescription(item['@id'] || 'Dataset File', 8) }}</strong>
+                          <strong>{{ item?.label || 'Dataset File'}}</strong>
                         </span>
+                        <span class="md-body-1">Click to download</span>
                       </md-card-header>
                     </md-card-area>
                   </md-card-media-cover>
+                </a>
                 </md-card>
               </div>
 
@@ -80,13 +85,13 @@
             </div>
           </div>
 
-          <div v-if="dataset" id="metadata" :class="{search_box_form: true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
+          <div v-if="dataset" id="metadata" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
             <div class="u--margin-pos" v-if="dataset[datasetFields['datePub']]">
               <span class="u--font-emph-xl u--color-black">
                 Date Published:
               </span>
               <span class="u--font-emph-xl u--color-grey-sec">
-                {{ dataset[datasetFields['datePub']][0]['@value'] || 'N/A' }}
+                {{ dataset[datasetFields['datePub']]?.[0]?.['@value'] || 'N/A' }}
               </span>
             </div>
             <div v-else>
@@ -102,10 +107,17 @@
                 Contact Point:
               </span>
               <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
-                {{ orcidData['http://schema.org/givenName'][0]['@value'] || '' }} {{ orcidData['http://schema.org/familyName'][0]['@value'] || ''}}
+                {{ orcidData['http://schema.org/givenName']?.[0]?.['@value'] || '' }} {{ orcidData['http://schema.org/familyName']?.[0]?.['@value'] || ''}}
               </span>
-              <div>ORCiD: <a class=" u--b-rad">{{orcidData['@id']}}</a></div>
-              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">Contact Email: {{orcidData['http://www.w3.org/2006/vcard/ns#email'][0]['@value']}}</div>
+              <div>ORCiD: <a class=" u--b-rad" :href="orcidData?.['@id']" target="_blank">
+                {{orcidData?.['@id'] || dataset[datasetFields.cp]?.[0]?.['@id'] || 'N/A'}}
+              </a></div>
+              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">Contact Email: {{orcidData['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']|| 'N/A'}}</div>
+            </div>
+            <div class="u--margin-pos" v-else>
+              <span class="u--font-emph-xl u--color-grey-sec">
+                N/A
+              </span>
             </div>
           </div>
         </div>
@@ -143,7 +155,9 @@ export default {
         cp: 'http://w3.org/ns/dcat#contactpoint',
         distribution: 'http://w3.org/ns/dcat#distribution',
         depiction: 'http://xmlns.com/foaf/0.1/depiction'
-      }
+      },
+      distributions: {},
+      loading: true
     }
   },
   components: {
@@ -151,13 +165,25 @@ export default {
   },
   watch: {
     dataset (newValues, oldValues) {
+      this.loading = false
       if (newValues[this.datasetFields.cp]) {
         const orcid = this.dataset[this.datasetFields.cp][0]['@id']
-        this.lookupOrcid(orcid.replace('http://orcid.org/', ''))
+        const trimmedId = orcid.replace('http://orcid.org/', '')
+          .replace(`${window.location.origin}/`, '')
+        this.lookupOrcid(trimmedId)
       }
       if (newValues[this.datasetFields.depiction]) {
         const thumbnailUri = this.dataset[this.datasetFields.depiction][0]['@id']
         this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri)
+      }
+      if (newValues[this.datasetFields.distribution]) {
+        for (const index in newValues[this.datasetFields.distribution]) {
+          const downloadLink = newValues[this.datasetFields.distribution][index]?.['@id']
+          this.distributions[index] = {
+            downloadLink,
+            label: this.parseFileName(downloadLink)
+          }
+        }
       }
     }
   },
@@ -168,16 +194,23 @@ export default {
       orcidData: 'explorer/curation/getOrcidData'
     }),
     doi () {
-      const doiString = this.dataset[this.datasetFields.doi][0]['@value']
-      return doiString.replace('http://dx.doi.org/', '')
+      if (this.dataset[this.datasetFields.doi]) {
+        const doiString = this.dataset[this.datasetFields.doi][0]['@value']
+        return doiString.replace('http://dx.doi.org/', '')
+      } return ''
     },
     fullDatasetUri () {
       return `${window.location.origin}/explorer/dataset/${this.id}`
     }
   },
   methods: {
-    loadDataset () {
-      this.$store.dispatch('explorer/fetchSingleDataset', this.fullDatasetUri)
+    async loadDataset () {
+      try {
+        await this.$store.dispatch('explorer/fetchSingleDataset', this.fullDatasetUri)
+      } catch (e) {
+        this.$store.commit('setSnackbar', { message: e })
+        this.loading = false
+      }
     },
     lookupOrcid (id) {
       this.$store.dispatch('explorer/curation/lookupOrcid', id)
@@ -196,6 +229,10 @@ export default {
       navigator.clipboard.writeText(this.fullDatasetUri)
       this.shareToolTip = 'Link copied to clipboard'
       setTimeout(function () { this.shareToolTip = 'Share Dataset' }, 2000)
+    },
+    parseFileName (file) {
+      const dateString = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)-/
+      return file.split(dateString).pop().replace('?isDirectory=true', '')
     }
   },
   created () {

@@ -53,11 +53,10 @@ export default {
     })
 
     if (response?.statusText !== 'OK') {
-      const snackbar = {
-        message: response.message || 'Something went wrong while fetching dataset',
-        duration: 5000
-      }
-      return context.commit('setSnackbar', snackbar, { root: true })
+      const error = new Error(
+        response?.message || 'Something went wrong while fetching dataset'
+      )
+      throw error
     }
 
     const responseData = await response.json()
