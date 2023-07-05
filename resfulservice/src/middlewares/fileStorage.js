@@ -11,7 +11,7 @@ const shortName = uniqueNamesGenerator({
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'mm_files');
+    cb(null, req.env?.FILES_DIRECTORY ?? 'mm_files');
   },
   filename: (req, file, cb) => {
     cb(null, shortName + '-' + new Date().toISOString() + '-' + file.originalname);
