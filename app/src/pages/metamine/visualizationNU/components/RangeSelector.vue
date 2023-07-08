@@ -21,6 +21,10 @@
             @change="handleSliderChangeFuncs[index]"
           >
           </a-slider>
+          <a-row type='flex' style="justify-content: space-between">
+            <a-col style="color: gray">{{sigFigs(defaultValues[index][0], 4)}}</a-col>
+            <a-col style="color: gray">{{sigFigs(defaultValues[index][1], 4)}}</a-col>
+          </a-row>
         </a-col>
       </a-row>
     </div>
@@ -30,9 +34,9 @@
 <script>
 import { mapState } from 'vuex'
 import { Slider, Row, Col } from 'ant-design-vue'
+import sigFigs from '../utils/sigFigs'
 
 const rangeList = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
-// const rangeList = ["C11"];
 
 export default {
   name: 'RangeSelector',
@@ -56,7 +60,6 @@ export default {
         return range
       } else {
         const range = this.rangeList.map((name) => [0, 0])
-        console.log(range)
         return range
       }
     },
@@ -104,6 +107,9 @@ export default {
       handler () {},
       deep: true
     }
+  }, 
+  methods: {
+    sigFigs: sigFigs
   }
 }
 </script>

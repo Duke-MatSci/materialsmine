@@ -1,10 +1,10 @@
 <template>
-  <div ref="poissonPlot"></div>
+  <Plotly :data="data" :layout="layout" :config="config" :style="style"></Plotly>
 </template>
 
 <script>
-import Plotly from 'plotly.js'
 import { mapState } from 'vuex'
+import { Plotly } from 'vue-plotly'
 
 const layout = {
   title: "Poisson's Ratio",
@@ -14,15 +14,14 @@ const layout = {
     color: '#000'
   },
   orientation: -90,
-  width: 200,
-  height: 200,
+  width: 230,
+  height: 230,
   margin: {
-    l: 50,
-    r: 50,
-    b: 50,
-    t: 50,
-    pad: 1
-  }
+      b: 40,
+      t: 40,
+      l: 40,
+      r: 40,
+  },
 }
 
 const config = {
@@ -36,9 +35,13 @@ const style = {
 
 export default {
   name: 'poisson',
+  components: {
+    Plotly
+  },
   data () {
     return {
-      trace1: {
+      data: [
+        {
         theta: [
           0, 3.6, 7.2, 10.8, 14.4, 18, 21.6, 25.2, 28.8, 32.4, 36, 39.6, 43.2,
           46.8, 50.4, 54, 57.6, 61.2, 64.8, 68.4, 72, 75.6, 79.2, 82.8, 86.4,
@@ -56,7 +59,8 @@ export default {
         name: "Poisson's Ratio",
         line: { color: 'peru' },
         type: 'scatterpolar'
-      },
+      }
+      ],
       layout: layout,
       config: config,
       style: style
@@ -66,14 +70,6 @@ export default {
     ...mapState('metamineNU', {
       dataPoint: (state) => state.dataPoint
     })
-  },
-  mounted () {
-    Plotly.newPlot(
-      this.$refs.poissonPlot,
-      [this.trace1],
-      layout,
-      config
-    )
   },
   watch: {
     dataPoint: {
@@ -98,12 +94,7 @@ export default {
           line: { color: 'peru' },
           type: 'scatterpolar'
         }
-        Plotly.newPlot(
-          this.$refs.poissonPlot,
-          [newTrace],
-          layout,
-          config
-        )
+        this.data = [newTrace]
       }
     }
   }

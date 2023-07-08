@@ -1,7 +1,8 @@
 module.exports = {
   preset: '@vue/cli-plugin-unit-jest',
   transform: {
-    '^.+\\.vue$': 'vue-jest',
+    '^[^.]+.vue$': 'vue-jest',
+    "^.+\\.js$": "babel-jest",
     '\\.(gif)$': '<rootDir>/tests/jest/__mocks__/fileMock.js',
     '\\.(ttl|rq)': 'jest-raw-loader'
   },

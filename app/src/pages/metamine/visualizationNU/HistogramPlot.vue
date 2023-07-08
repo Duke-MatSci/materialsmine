@@ -22,12 +22,12 @@
 
 <script>
 import Histogram from './components/histogram.vue'
-import DataSelector from './components/data-selector.vue'
-import RangeSelector from './components/range-selector.vue'
+import DataSelector from './components/DataSelector.vue'
+import RangeSelector from './components/RangeSelector.vue'
 import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
 import Poisson from '@/pages/metamine/visualizationNU/components/poisson.vue'
 import Structure from '@/pages/metamine/visualizationNU/components/structure.vue'
-import MaterialInformation from '@/pages/metamine/visualizationNU/components/material-information.vue'
+import MaterialInformation from '@/pages/metamine/visualizationNU/components/MaterialInformation.vue'
 
 export default {
   name: 'HistogramPage',
