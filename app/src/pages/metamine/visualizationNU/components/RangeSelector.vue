@@ -107,7 +107,7 @@ export default {
       handler () {},
       deep: true
     }
-  }, 
+  },
   methods: {
     sigFigs: sigFigs
   }

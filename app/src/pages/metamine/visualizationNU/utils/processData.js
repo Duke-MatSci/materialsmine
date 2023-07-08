@@ -1,4 +1,4 @@
-import sigFigs from "./sigFigs"
+import sigFigs from './sigFigs'
 const regex = /[-+]?[0-9]*\.?[0-9]+([eE]?[-+]?[0-9]+)/g
 
 export const processData = (d, i) => {
