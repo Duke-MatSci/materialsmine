@@ -26,5 +26,6 @@ module.exports = {
     'CHARACTERIZATION METHODS': 'CHARACTERIZATION',
     MICROSTRUCTURE: 'MICROSTRUCTURE'
   },
-  ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT']
+  ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
+  SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx']
 };
