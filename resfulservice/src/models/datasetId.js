@@ -8,6 +8,9 @@ const datasetIdSchema = new Schema({
     ref: 'User',
     required: true
   },
+  controlSampleID: {
+    type: String
+  },
   status: {
     type: String,
     enum: DatasetStatusOpt,

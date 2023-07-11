@@ -2,12 +2,13 @@ const util = require('util');
 const XlsxFileManager = require('../utils/curation-utility');
 const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
-const latency = require('../utils/latency');
+const latency = require('../middlewares/latencyTimer');
 const { BaseObjectSubstitutionMap, CurationEntityStateDefault } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
+const TempFiles = require('../models/temporaryFiles');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -17,40 +18,42 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   if (!req.files?.uploadfile) {
     return next(errorWriter(req, 'Material template files not uploaded', 'curateXlsxSpreadsheet', 400));
   }
-
-  const regex = /master_template.xlsx$/gi;
+  const regex = /(?=.*?(master_template))(?=.*?(.xlsx)$)/gi;
   const xlsxFile = req.files.uploadfile.find((file) => regex.test(file?.path));
 
   if (!xlsxFile) {
     return next(errorWriter(req, 'Master template xlsx file not uploaded', 'curateXlsxSpreadsheet', 400));
   }
 
-  if (!query.dataset) {
-    return next(errorWriter(req, 'Missing dataset ID in query', 'curateXlsxSpreadsheet', 400));
-  }
-
   try {
-    const [validList, storedCurations, datasets] = await Promise.all([
+    const [validList, storedCurations] = await Promise.all([
       XlsxCurationList.find({}, null, { lean: true }),
-      CuratedSamples.find({ user: user._id }, { object: 1 }, { lean: true }),
-      DatasetId.findOne({ _id: query.dataset })
+      CuratedSamples.find({ user: user._id }, { object: 1 }, { lean: true })
     ]);
 
-    if (!datasets) {
-      return next(errorWriter(req, `A sample must belong to a dataset. Dataset ID: ${query.dataset ?? null} not found`, 'curateXlsxSpreadsheet', 404));
-    }
-
     const validListMap = generateCurationListMap(validList);
-    const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile);
+    const processedFiles = [];
+    const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile, processedFiles);
     if (result?.count && req?.isParentFunction) return { errors: result.errors };
     if (result?.count) return res.status(400).json({ errors: result.errors });
 
     const curatedAlready = storedCurations.find(
-      object => object?.['data origin']?.Title === result?.['data origin']?.Title &&
-      object?.['data origin']?.PublicationType === result?.['data origin']?.PublicationType);
+      object => object?.DATA_SOURCE?.Citation?.CommonFields?.Title === result?.DATA_SOURCE?.Citation?.CommonFields?.Title &&
+      object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType === result?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType);
 
     if (curatedAlready) return next(errorWriter(req, 'This had been curated already', 'curateXlsxSpreadsheet', 409));
 
+    let datasets;
+    if (query.dataset) {
+      datasets = await DatasetId.findOne({ _id: query.dataset });
+    } else if (result?.Control_ID) {
+      const existingDataset = await DatasetId.findOne({ controlSampleID: result?.Control_ID });
+      datasets = existingDataset ?? await DatasetId.create({ user, controlSampleID: result.Control_ID });
+    }
+
+    if (!datasets) {
+      return next(errorWriter(req, `A sample must belong to a dataset. Dataset ID: ${query.dataset ?? null} not found`, 'curateXlsxSpreadsheet', 404));
+    }
     const newCurationObject = new CuratedSamples({ object: result, user: user?._id, dataset: datasets._id });
     const curatedObject = await (await newCurationObject.save()).populate('user', 'displayName');
 
@@ -60,6 +63,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
 
     const curatedSample = {
+      sampleID: curatedObject._id,
       xml,
       user: curatedObject.user,
       groupId: curatedObject.dataset,
@@ -67,7 +71,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       status: curatedObject.curationState
     };
 
-    if (req?.isParentFunction) return curatedSample;
+    if (req?.isParentFunction) return { curatedSample, processedFiles };
     latency.latencyCalculator(res);
     return res.status(200).json({ ...curatedSample });
   } catch (err) {
@@ -76,7 +80,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 };
 
 exports.bulkXlsxCurations = async (req, res, next) => {
-  const { user, logger, query } = req;
+  const { query, logger } = req;
 
   logger.info('bulkXlsxCurations Function Entry:');
 
@@ -87,57 +91,58 @@ exports.bulkXlsxCurations = async (req, res, next) => {
     return next(errorWriter(req, 'bulk curation zip file not uploaded', 'bulkXlsxCurations', 400));
   }
 
-  if (!query.dataset) {
-    const unusedDatasetId = await DatasetId.findOne({ user, samples: [] });
-    query.dataset = unusedDatasetId?._id ?? await DatasetId.create({ user });
+  if (query.dataset) {
+    const dataset = await DatasetId.findOne({ _id: query.dataset });
+    if (!dataset) return next(errorWriter(req, `Dataset ID: ${query.dataset ?? null} not found`, 'bulkXlsxCurations', 404));
   }
-  const bulkErrors = {};
-  const bulkCurations = {};
+  const bulkErrors = [];
+  const bulkCurations = [];
   try {
-    const { files, folders } = await XlsxFileManager.unZipFolder(req, zipFile.path);
+    const { folders, masterTemplates, curationFiles } = await XlsxFileManager.unZipFolder(req, zipFile.path);
+    const tempFiles = await processSingleCuration(masterTemplates, curationFiles, bulkCurations, bulkErrors, req);
+    await TempFiles.insertMany(tempFiles);
 
-    if (files.length) {
-      const newReq = {
-        ...req,
-        files: { uploadfile: files.map(file => ({ path: file })) },
-        isParentFunction: true
-      };
-      const result = await this.curateXlsxSpreadsheet(newReq, {}, fn => fn);
-
-      if (result?.message || result?.errors) {
-        bulkErrors.root = result?.message ?? result?.errors;
-      } else {
-        bulkCurations.root = result;
-      }
-    }
     if (folders.length) {
-      for (let folder of folders) {
-        const { files } = XlsxFileManager.readFolder(folder);
-        folder = folder.split('/').pop();
-        if (files.length) {
-          const newReq = {
-            ...req,
-            files: { uploadfile: files.map(file => ({ path: file })) },
-            isParentFunction: true
-          };
-          const result = await this.curateXlsxSpreadsheet(newReq, { }, fn => fn);
-
-          if (result?.message || result?.errors) {
-            bulkErrors[folder] = result?.message ?? result?.errors;
-          } else {
-            bulkCurations[folder] = result;
-          }
-        } else {
-          bulkErrors[folder] = `Mixing Curation files for folder ${folder}`;
-        }
+      for (const folder of folders) {
+        const { masterTemplates, curationFiles } = XlsxFileManager.readFolder(folder);
+        const tempFiles = await processSingleCuration(masterTemplates, curationFiles, bulkCurations, bulkErrors, req);
+        await TempFiles.insertMany(tempFiles);
       }
     }
-    await DatasetId.findOneAndDelete({ _id: query.dataset, samples: [] });
     latency.latencyCalculator(res);
     return res.status(200).json({ bulkCurations, bulkErrors });
   } catch (err) {
     next(errorWriter(req, err, 'bulkXlsxCurations', 500));
   }
+};
+
+const processSingleCuration = async (masterTemplates, curationFiles, bulkCurations, bulkErrors, req) => {
+  let imageBucketArray = [];
+  const tempFiles = [];
+  if (masterTemplates.length) {
+    for (const masterTemplate of masterTemplates) {
+      const newCurationFiles = [...curationFiles, masterTemplate];
+      const newReq = {
+        ...req,
+        files: { uploadfile: newCurationFiles.map(file => ({ path: file })) },
+        isParentFunction: true
+      };
+      const nextFnCallBack = fn => fn;
+      const result = await this.curateXlsxSpreadsheet(newReq, {}, nextFnCallBack);
+      if (result?.message || result?.errors) {
+        bulkErrors.push({ filename: masterTemplate, errors: result?.message ?? result?.errors });
+      } else {
+        imageBucketArray = result.processedFiles.filter(file => /\.(jpe?g|tiff?|png)$/i.test(file));
+        bulkCurations.push(result.curatedSample);
+      }
+    }
+  }
+  for (const file of curationFiles) {
+    if (!imageBucketArray.includes(file)) {
+      tempFiles.push({ filename: file });
+    }
+  }
+  return tempFiles;
 };
 
 exports.getXlsxCurations = async (req, res, next) => {
@@ -273,7 +278,7 @@ const appendUploadedFiles = (parsedCSVData) => {
  * @param {Object} errors - Object created to store errors that occur while parsing the spreadsheets
  * @returns {Object} - Newly curated object or errors that occur while  proces
  */
-exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFiles, errors = {}) => {
+exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFiles, processedFiles, errors = {}) => {
   const sheetsData = {};
   const filteredObject = {};
 
@@ -284,7 +289,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
       const objArr = [];
 
       for (const prop of propertyValue.values) {
-        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, processedFiles, errors);
         const value = Object.values(newObj)[0];
 
         if (value) {
@@ -313,7 +318,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
       }
       const objArr = [];
       for (const prop of multiples) {
-        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, processedFiles, errors);
 
         if (Object.keys(newObj).length > 0) {
           objArr.push(newObj);
@@ -327,7 +332,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
       const objArr = [];
 
       for (const prop of propertyValue) {
-        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, errors);
+        const newObj = await this.createMaterialObject(path, prop, validListMap, uploadedFiles, processedFiles, errors);
 
         if (Object.keys(newObj).length > 0) {
           objArr.push(newObj);
@@ -369,6 +374,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
               filteredObject.data = data;
             }
             filteredObject[BaseObjectSubstitutionMap[property] ?? property] = file.filename;
+            processedFiles.push(file.path);
           } else {
             errors[cellValue] = 'file not uploaded';
           }
@@ -381,7 +387,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
         filteredObject[BaseObjectSubstitutionMap[property] ?? property] = propertyValue.default;
       }
     } else {
-      const nestedObj = await this.createMaterialObject(path, propertyValue, validListMap, uploadedFiles, errors);
+      const nestedObj = await this.createMaterialObject(path, propertyValue, validListMap, uploadedFiles, processedFiles, errors);
       const nestedObjectKeys = Object.keys(nestedObj);
 
       if (nestedObjectKeys.length > 0) {

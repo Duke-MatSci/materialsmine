@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const curationController = require('../controllers/curationController');
 const isAuth = require('../middlewares/isAuth');
-const latencyTimer = require('../middlewares/latencyTimer');
+const { latencyTimer } = require('../middlewares/latencyTimer');
 const { validateXlsxObjectUpdate, validateXlsxObjectDelete, validateXlsxObjectGet } = require('../middlewares/validations');
 
 router.route('')

@@ -1436,7 +1436,17 @@ const user = {
 };
 
 const mockUnzippedFolder = {
-  files: ['mm_files/bulk-curation-1686834726293/master_template.xlsx'],
+  masterTemplates: [
+    'mm_files/bulk-curation-1686834726293/master_template.xlsx',
+    'mm_files/bulk-curation-1688984487096/master_template (1).xlsx'
+  ],
+  curationFiles: [
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/real_permittivity.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/loss_permittivity.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/tan_delta.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/weibull.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/001.tif'
+  ],
   folders: ['mm_files/bulk-curation-1686834726293/Ls-94k-askd']
 };
 

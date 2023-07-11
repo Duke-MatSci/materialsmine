@@ -37,9 +37,9 @@ exports.unZipFolder = async (req, filename) => {
     const folderPath = `mm_files/bulk-curation-${new Date().getTime()}`;
     await decompress(filename, folderPath);
 
-    const { files, folders } = this.readFolder(folderPath);
+    const { files, folders, masterTemplates, curationFiles } = this.readFolder(folderPath);
 
-    return { folderPath, files, folders };
+    return { folderPath, files, folders, masterTemplates, curationFiles };
   } catch (error) {
     logger.error(`[unZipFolder]: ${error}`);
     error.statusCode = 500;
@@ -63,7 +63,18 @@ exports.readFolder = (folderPath) => {
 
   const folders = folderContent.filter(isFolder);
   const files = folderContent.filter(isFile);
-  return { folders, files };
+
+  const regex = /(?=.*?(master_template))(?=.*?(.xlsx)$)/gi;
+  const masterTemplates = [];
+  const curationFiles = [];
+  files.forEach((file) => {
+    if (regex.test(file)) {
+      masterTemplates.push(file);
+    } else {
+      curationFiles.push(file);
+    }
+  });
+  return { folders, files, masterTemplates, curationFiles };
 };
 
 const fixUrl = function (val, elementName) {
