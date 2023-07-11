@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { PassThrough } = require('stream');
 const fsFiles = require('../models/fsFiles');
+const latency = require('../middlewares/latencyTimer');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const { deleteFile, findFile } = require('../utils/fileManager');
 
@@ -19,6 +20,7 @@ exports.imageMigration = async (req, res, next) => {
       .limit(10)
       .toArray();
     successWriter(req, { message: 'success' }, 'imageMigration');
+    latency.latencyCalculator(res);
     return res.status(200).json({ images: files });
   } catch (error) {
     next(errorWriter(req, 'Error fetching image', 'imageMigration', 500));
@@ -32,9 +34,10 @@ exports.fileContent = async (req, res, next) => {
 
       if (!fileStream) {
         res.setHeader('Content-Type', 'image/png');
+        latency.latencyCalculator(res);
         return _createEmptyStream().pipe(res);
       }
-
+      latency.latencyCalculator(res);
       return fileStream.pipe(res);
     }
 
@@ -47,9 +50,11 @@ exports.fileContent = async (req, res, next) => {
     const exist = await fsFiles.findById(_id).limit(1);
     if (!exist) {
       res.setHeader('Content-Type', 'image/png');
+      latency.latencyCalculator(res);
       return _createEmptyStream().pipe(res);
     }
     const downloadStream = bucket.openDownloadStream(_id);
+    latency.latencyCalculator(res);
     downloadStream.pipe(res);
   } catch (error) {
     next(errorWriter(req, 'Error fetching file', 'fileContent', 500));
@@ -61,9 +66,10 @@ exports.uploadFile = async (req, res, next) => {
     req.logger.info('datasetIdUpload Function Entry:');
 
     successWriter(req, { message: 'success' }, 'uploadFile');
+    latency.latencyCalculator(res);
     return res.status(201).json({ files: req.files.uploadfile });
   } catch (error) {
-    next(errorWriter(req, 'error uploading files', 'uploadFile', 500));
+    next(errorWriter(req, 'Error uploading files', 'uploadFile', 500));
   }
 };
 
@@ -73,7 +79,7 @@ exports.deleteFile = (req, res, next) => {
   const filePath = `${filesDirectory}/${fileId}`;
   try {
     deleteFile(filePath, req);
-
+    latency.latencyCalculator(res);
     return res.sendStatus(200);
   } catch (err) {
     next(errorWriter(req, 'Error deleting files', 'deleteFile', 500));
