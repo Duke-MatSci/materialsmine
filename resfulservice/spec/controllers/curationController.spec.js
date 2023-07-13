@@ -36,7 +36,7 @@ const {
 const XlsxObject = require('../../src/models/curatedSamples');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
 const DatasetId = require('../../src/models/datasetId');
-const TempFiles = require('../../src/models/tempFiles');
+const TempFiles = require('../../src/models/temporaryFiles');
 const XmlData = require('../../src/models/xmlData');
 const XlsxFileManager = require('../../src/utils/curation-utility');
 const XlsxController = require('../../src/controllers/curationController');

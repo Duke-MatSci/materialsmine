@@ -4,6 +4,7 @@ const fsFiles = require('../models/fsFiles');
 const latency = require('../middlewares/latencyTimer');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const { deleteFile, findFile } = require('../utils/fileManager');
+const { SupportFileResponseHeaders } = require('../../config/constant');
 
 const _createEmptyStream = () => new PassThrough('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII').end();
 
@@ -30,13 +31,14 @@ exports.imageMigration = async (req, res, next) => {
 exports.fileContent = async (req, res, next) => {
   try {
     if (req.query.isDirectory) {
-      const fileStream = await findFile(req);
+      const { fileStream, ext } = await findFile(req);
 
       if (!fileStream) {
         res.setHeader('Content-Type', 'image/png');
         latency.latencyCalculator(res);
         return _createEmptyStream().pipe(res);
       }
+      res.setHeader('Content-Type', SupportFileResponseHeaders[ext]);
       latency.latencyCalculator(res);
       return fileStream.pipe(res);
     }

@@ -41,9 +41,10 @@ async function findFile (req) {
   }
 
   const filePath = path.join(req.env?.FILES_DIRECTORY, foundFile);
+  const { ext } = path.parse(foundFile);
 
-  // Stream the file to the client response
-  return fs.createReadStream(filePath);
+  // Stream the file to the client response and send file extension
+  return { fileStream: fs.createReadStream(filePath), ext };
 }
 
 module.exports = { deleteFile, findFile };

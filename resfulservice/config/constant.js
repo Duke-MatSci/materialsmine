@@ -27,5 +27,15 @@ module.exports = {
     MICROSTRUCTURE: 'MICROSTRUCTURE'
   },
   ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
-  SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx']
+  SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx'],
+  SupportFileResponseHeaders: {
+    '.csv': 'text/csv',
+    '.png': 'image/png',
+    '.jpg': 'image/jpg',
+    '.jpeg': 'image/jpeg',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tif',
+    '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  }
 };
