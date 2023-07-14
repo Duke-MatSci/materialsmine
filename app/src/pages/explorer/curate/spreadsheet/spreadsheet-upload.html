@@ -20,18 +20,11 @@
                         <div>Admin Approval: {{uploadResponse.isApproved ? 'Approved' : 'None'}}</div>
                     </div>
                 </div>
-                <!-- xml viewer  -->
-                <div>
-                <pre class="language-xml grid">
-                    <code class="inlinecode language-xml keepMarkUp">
-                    {{ optionalChaining(() => uploadResponse.xml) }}
-                    </code>
-                </pre>
-                </div>
+                <XmlView :xml='optionalChaining(() => uploadResponse.xml)'/>
 
             </div>
             <div v-else>
-            <h2 class="visualize_header-h1">Import spreadsheet data </h2>
+            <h2 class="visualize_header-h1">Curate single sample </h2>
             <div v-if="datasetId" class="md-layout md-alignment-center-left" style="margin: 0rem 1rem">
                 <span>
                 Uploading to dataset ID
@@ -49,7 +42,9 @@
             </div>
             <md-steppers md-vertical md-linear :md-active-step.sync="active" class="form__stepper">
                 <md-step id="first" md-label="Download blank template" :md-done.sync="first">
-                <div class="utility-line-height-sm"><a href="/master_template.xlsx">Click here</a> to download the template spreadsheet, and fill it out with your data.</div>
+                <div class="utility-line-height-sm"><a href="/master_template.xlsx" download>
+                    Click here</a> to download the template spreadsheet, and fill it out with your data.
+                </div>
                 <div class="utility-line-height-sm">To curate FEA data, <a>click here</a> instead.</div>
     
                 <div class="utility-line-height-sm">Skip this step if you have already downloaded the template spreadsheet.</div>
@@ -112,7 +107,7 @@
                 <!--TODO:  Need to convert tif files, redirect to converter (add step) and allow to download-->
                 <div style="color: red; margin:2rem 2rem 0; font-weight:600" v-if="newTifs">
                     NOTICE: One or more of your selected files was .tif/.tiff. 
-                    Please convert this file to .png or .jpg/.jpeg and re-select.
+                    We recommend converting this file to .png or .jpg/.jpeg and re-selecting.
                 </div>
     
                 <div class="md-layout">
@@ -265,7 +260,7 @@
                 @click="toggleDialogBox()">
                 No, continue editing
             </md-button>
-            <md-button type="submit" class="md-button-transparent"
+            <md-button id="confirmSubmit" type="submit" class="md-button-transparent"
                 @click="submitFiles()">
                 Yes, submit
             </md-button>
