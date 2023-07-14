@@ -10,16 +10,16 @@ const apollo = {
     }
   }
 }
-const testSpreadsheet =[{
+const testSpreadsheet = [{
   file: { name: 'master_template.xlsx' },
   id: 'master_template.xlsx',
   status: 'incomplete'
 }]
-const testFiles =[{
+const testFiles = [{
   file: { name: 'fakedata.csv' },
   id: 'fakedata.csv',
   status: 'incomplete'
-},{
+}, {
   file: { name: 'fakeimage.jpeg' },
   id: 'fakeimage.jpeg',
   status: 'incomplete'
@@ -35,7 +35,7 @@ const mockValues =
   sampleID: 'L1_S23',
   groupId: '123456',
   isApproved: false,
-  status: "Editing"
+  status: 'Editing'
 }
 
 global.fetch = jest.fn(() =>
@@ -90,8 +90,8 @@ describe('SpreadsheetUpload.vue', () => {
 
   it('contains drop areas for spreadsheet and supplementary files', () => {
     expect.assertions(1)
-    const drop_area = wrapper.findAll('.form__drop-area')
-    expect(drop_area.length).toBe(2)
+    const dropArea = wrapper.findAll('.form__drop-area')
+    expect(dropArea.length).toBe(2)
   })
 
   it('provides field input for doi', () => {
@@ -107,7 +107,7 @@ describe('SpreadsheetUpload.vue', () => {
     const verificationStep = wrapper.findAll('.md-stepper').at(4)
     expect(verificationStep.html()).toContain('10.000')
     expect(verificationStep.text()).toContain(testSpreadsheet[0].file.name)
-    for (let index in testFiles) {
+    for (const index in testFiles) {
       expect(verificationStep.text()).toContain(testFiles[index].file.name)
     }
   })
@@ -122,8 +122,8 @@ describe('SpreadsheetUpload.vue', () => {
     expect.assertions(1)
     const submitButton = wrapper.find('#submit')
     expect(submitButton.exists()).toBe(true)
-  })  
-  
+  })
+
   it('calls submit functions', async () => {
     expect.assertions(3)
     const submitFiles = jest.spyOn(wrapper.vm, 'submitFiles')

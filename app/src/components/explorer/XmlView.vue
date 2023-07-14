@@ -17,7 +17,7 @@ import 'prismjs/themes/prism-coy.min.css'
 export default {
   name: 'XmlView',
   props: {
-    xml: String,
+    xml: String
   },
   mounted () {
     window.Prism = window.Prism || {}
