@@ -3,7 +3,10 @@
   <div @click="toggleOpen">
     <md-toolbar :class="dense ? 'md-dense' :'md-toolbar_adjust u--padding-zero'">
       <div class="u_display-flex accordion-toolbar-row viz-sample__header">
-        <h4 v-if="dense" class="md-subheader">{{title}}</h4>
+        <div v-if="customTitle">
+          <slot name="custom_title"></slot>
+        </div>
+        <h4 v-else-if="dense" class="md-subheader">{{title}}</h4>
         <h3 v-else class="md-title">{{title}}</h3>
         <div class="accordion-icons">
           <md-icon v-show="!open">
@@ -35,6 +38,10 @@ export default Vue.component('accordion', {
       type: String
     },
     dense: {
+      type: Boolean,
+      default: () => false
+    },
+    customTitle: {
       type: Boolean,
       default: () => false
     }
