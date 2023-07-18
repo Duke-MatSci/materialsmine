@@ -1436,6 +1436,25 @@ const user = {
 };
 
 const mockUnzippedFolder = {
+  folderPath: 'mm_files/bulk-curation-1688982949940',
+  allfiles: [{
+    mode: 33188,
+    mtime: '2023-05-10T11:43:10.000Z',
+    path: 'bulk/S10_L1/001.tif',
+    type: 'file',
+    data: '<Buffer ff d8 ff e0 00 10 4a 46 49 46 00 01 01 00 00 01 00 01 00 00 ff db 00 84 00 03 02 02 0a 0a 0a 0a 0a 0a 08 08 0a 08 0a 0a 0a 0a 08 08 0a 0a 0a 0a 0a 0a ... 57576 more bytes'
+  },
+  {
+    mode: 33188,
+    mtime: '2023-05-10T11:43:10.000Z',
+    path: '__MACOSX/bulk/S10_L1/._001.tif',
+    type: 'file',
+    data: '<Buffer 00 05 16 07 00 02 00 00 4d 61 63 20 4f 53 20 58 20 20 20 20 20 20 20 20 00 02 00 00 00 09 00 00 00 32 00 00 02 ce 00 00 00 02 00 00 03 00 00 00 00 00 ... 718 more bytes>'
+  }
+  ]
+};
+
+const mockReadFolder = {
   masterTemplates: [
     'mm_files/bulk-curation-1686834726293/master_template.xlsx',
     'mm_files/bulk-curation-1688984487096/master_template (1).xlsx'
@@ -1461,25 +1480,25 @@ const mockCurationError = {
 };
 
 const mockBulkCuration1 = {
-  bulkCurations: {},
-  bulkErrors: {
-    root: mockCurationError.errors,
-    'Ls-94k-askd': {
+  bulkCurations: [],
+  bulkErrors: [
+    {
+      filename: 'mm_files/bulk-curation-1686834726293/master_template.xlsx',
       '001.tif': 'file not uploaded'
     }
-  }
+  ]
 };
 
 const mockBulkCuration2 = {
-  bulkCurations: {
-    root: mockCurateObject,
-    'Ls-94k-askd': mockCurateObject
-  },
-  bulkErrors: {
-    'Ls-95k-askd': {
+  bulkCurations: [
+    mockCurateObject
+  ],
+  bulkErrors: [
+    {
+      filename: 'mm_files/bulk-curation-1686834726293/master_template.xlsx',
       '001.tif': 'file not uploaded'
     }
-  }
+  ]
 };
 
 const mockRes = {
@@ -1521,5 +1540,6 @@ module.exports = {
   mockCurationError,
   mockBulkCuration1,
   mockBulkCuration2,
+  mockReadFolder,
   mockRes
 };
