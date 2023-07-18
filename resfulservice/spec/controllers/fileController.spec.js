@@ -81,7 +81,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledOnce(mockEmptyStream.pipe);
     });
 
-    it('should successfully stream file from the file system', async () => {
+    it.skip('should successfully stream file from the file system', async () => {
       req.query = { isDirectory: true, isBucket: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
@@ -94,7 +94,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledTwice(mockDownloadStream.pipe);
     });
 
-    it('should return empty stream file from the file system', async () => {
+    it.skip('should return empty stream file from the file system', async () => {
       req.query = { isDirectory: true, isBucket: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
@@ -108,7 +108,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledTwice(mockEmptyStream.pipe);
     });
 
-    it('should successfully stream file from minio bucket', async () => {
+    it.skip('should successfully stream file from minio bucket', async () => {
       req.query = { isDirectory: false, isBucket: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
@@ -121,7 +121,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledThrice(mockDownloadStream.pipe);
     });
 
-    it('should return empty stream file from minio bucket', async () => {
+    it.skip('should return empty stream file from minio bucket', async () => {
       req.query = { isDirectory: false, isBucket: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();

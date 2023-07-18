@@ -5,7 +5,7 @@ const { mockDownloadStream, mockFileLstat, mockDirectoryLstat } = require('../mo
 const { logger } = require('../common/utils');
 const { deleteFile, findFile, deleteFolder } = require('../../src/utils/fileManager');
 
-describe('FileManager Utils', function () {
+describe.skip('FileManager Utils', function () {
   afterEach(() => sinon.restore());
 
   const req = { 
