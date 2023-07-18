@@ -8,7 +8,8 @@ const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
-const TempFiles = require('../models/temporaryFiles');
+const FileStorage = require('../middlewares/fileStorage');
+const FileManager = require('../utils/fileManager');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -98,16 +99,18 @@ exports.bulkXlsxCurations = async (req, res, next) => {
   const bulkErrors = [];
   const bulkCurations = [];
   try {
-    const { folders, masterTemplates, curationFiles } = await XlsxFileManager.unZipFolder(req, zipFile.path);
-    const tempFiles = await processSingleCuration(masterTemplates, curationFiles, bulkCurations, bulkErrors, req);
-    await TempFiles.insertMany(tempFiles);
-
-    if (folders.length) {
-      for (const folder of folders) {
-        const { masterTemplates, curationFiles } = XlsxFileManager.readFolder(folder);
-        const tempFiles = await processSingleCuration(masterTemplates, curationFiles, bulkCurations, bulkErrors, req);
-        await TempFiles.insertMany(tempFiles);
+    const { folderPath, allfiles } = await XlsxFileManager.unZipFolder(req, zipFile.path);
+    await processFolders(bulkCurations, bulkErrors, folderPath, req);
+    if (bulkErrors.length) {
+      const failedCuration = bulkErrors.map(curation => `mm_files/${curation.filename}`);
+      for (const file of allfiles) {
+        const filePath = `${folderPath}/${file?.path}`;
+        if (file.type === 'file' && !failedCuration.includes(filePath)) {
+          FileManager.deleteFile(filePath, req);
+        }
       }
+    } else {
+      FileManager.deleteFolder(folderPath, req);
     }
     latency.latencyCalculator(res);
     return res.status(200).json({ bulkCurations, bulkErrors });
@@ -116,9 +119,19 @@ exports.bulkXlsxCurations = async (req, res, next) => {
   }
 };
 
+const processFolders = async (bulkCurations, bulkErrors, folder, req) => {
+  const { folders, masterTemplates, curationFiles } = XlsxFileManager.readFolder(folder);
+  await processSingleCuration(masterTemplates, curationFiles, bulkCurations, bulkErrors, req);
+
+  if (folders.length) {
+    for (const folder of folders) {
+      await processFolders(bulkCurations, bulkErrors, folder, req);
+    }
+  }
+};
+
 const processSingleCuration = async (masterTemplates, curationFiles, bulkCurations, bulkErrors, req) => {
   let imageBucketArray = [];
-  const tempFiles = [];
   if (masterTemplates.length) {
     for (const masterTemplate of masterTemplates) {
       const newCurationFiles = [...curationFiles, masterTemplate];
@@ -129,20 +142,26 @@ const processSingleCuration = async (masterTemplates, curationFiles, bulkCuratio
       };
       const nextFnCallBack = fn => fn;
       const result = await this.curateXlsxSpreadsheet(newReq, {}, nextFnCallBack);
+
       if (result?.message || result?.errors) {
-        bulkErrors.push({ filename: masterTemplate, errors: result?.message ?? result?.errors });
+        bulkErrors.push({ filename: masterTemplate.split('mm_files/').pop(), errors: result?.message ?? result?.errors });
       } else {
-        imageBucketArray = result.processedFiles.filter(file => /\.(jpe?g|tiff?|png)$/i.test(file));
         bulkCurations.push(result.curatedSample);
+        imageBucketArray = result.processedFiles.filter(file => /\.(jpe?g|tiff?|png)$/i.test(file));
       }
     }
   }
-  for (const file of curationFiles) {
-    if (!imageBucketArray.includes(file)) {
-      tempFiles.push({ filename: file });
+
+  if (imageBucketArray.length) {
+    for (const image of imageBucketArray) {
+      const file = {
+        filename: image,
+        mimetype: `image/${image.split('.').pop()}`,
+        path: image
+      };
+      FileStorage.minioPutObject(file, req);
     }
   }
-  return tempFiles;
 };
 
 exports.getXlsxCurations = async (req, res, next) => {

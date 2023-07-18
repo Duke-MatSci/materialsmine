@@ -704,14 +704,20 @@ paths:
   /files/{fileId}:
     get:
       summary: Download files from the server
-      description: A route to download files by specifying a boolean isDirectory query params for files saved in the directory on the server or  in database
+      description: A route to download files by specifying a boolean isFileStore query params for files saved in the directory on the server or  in database
       tags:
         - Files
       parameters:
         - in: query
-          name: isDirectory
+          name: isFileStore
           schema:
-            type: string
+            type: boolean
+            example: true
+          description: a boolean value to specify if the file is stored in a directory or database
+        - in: query
+          name: isStore
+          schema:
+            type: boolean
             example: true
           description: a boolean value to specify if the file is stored in a directory or database
         - in: path
@@ -740,9 +746,9 @@ paths:
                   success: false
                   message: validation error
                   data:
-                    - value: trued
+                    - value: true
                       msg: only boolean value allowed
-                      param: isDirectory
+                      param: isFileStore
                       location: query
         '500':
           description: Internal Server Error
