@@ -31,18 +31,20 @@ const {
   mockCurationError,
   mockBulkCuration1,
   mockBulkCuration2,
+  mockReadFolder,
   next
 } = require('../mocks')
 const XlsxObject = require('../../src/models/curatedSamples');
 const XlsxCurationList = require('../../src/models/xlsxCurationList');
 const DatasetId = require('../../src/models/datasetId');
-const TempFiles = require('../../src/models/temporaryFiles');
 const XmlData = require('../../src/models/xmlData');
 const XlsxFileManager = require('../../src/utils/curation-utility');
+const FileManager = require('../../src/utils/fileManager');
 const XlsxController = require('../../src/controllers/curationController');
 const { createMaterialObject } = require('../../src/controllers/curationController')
 const { logger } = require('../common/utils');
 const latency = require('../../src/middlewares/latencyTimer');
+const FileStorage = require('../../src/middlewares/fileStorage');
 
 const { expect } = chai;
 
@@ -61,10 +63,6 @@ describe('Curation Controller', function() {
     status: () => {},
     json: () => {},
     send: () => {}
-  };
-
-  const next = function (fn) {
-    return fn;
   };
 
   context('curateXlsxSpreadsheet', () => {
@@ -209,8 +207,10 @@ describe('Curation Controller', function() {
       sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
       sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockUnzippedFolder);
       sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns(mockCurationError);
-      sinon.stub(XlsxFileManager, 'readFolder').returns(mockUnzippedFolder);
-      sinon.stub(TempFiles, 'insertMany').returns(true);
+      sinon.stub(XlsxFileManager, 'readFolder').returns({ ...mockReadFolder, folders: [] });
+      sinon.stub(FileStorage, 'minioPutObject').returns(true);
+      sinon.stub(FileManager, 'deleteFile').returns(true);
+      sinon.stub(FileManager, 'deleteFolder').returns(true);
       sinon.stub(latency, 'latencyCalculator').returns(true)
 
       const result = await XlsxController.bulkXlsxCurations(req, res, fn => fn);
@@ -227,10 +227,10 @@ describe('Curation Controller', function() {
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(mockBulkCuration1);
       sinon.stub(DatasetId, 'findOne').returns(null);
-      sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockUnzippedFolder);
-      sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns(mockCurationError);
-      sinon.stub(XlsxFileManager, 'readFolder').returns(mockUnzippedFolder);
-      sinon.stub(latency, 'latencyCalculator').returns(true)
+      // sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockReadFolder);
+      // sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns(mockCurationError);
+      // sinon.stub(XlsxFileManager, 'readFolder').returns(mockUnzippedFolder);
+      // sinon.stub(latency, 'latencyCalculator').returns(true)
 
       const result = await XlsxController.bulkXlsxCurations(req, res, fn => fn);
       expect(result).to.have.property('message');
@@ -243,11 +243,16 @@ describe('Curation Controller', function() {
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(mockBulkCuration2);
       sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
-      sinon.stub(XlsxFileManager, 'unZipFolder').returns({...mockUnzippedFolder, folders: []});
-      sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns({curatedSample: mockCurateObject, processedFiles: mockUnzippedFolder.curationFiles });
-      sinon.stub(XlsxFileManager, 'readFolder').returns(mockUnzippedFolder);
-      sinon.stub(TempFiles, 'insertMany').returns(true);
+      sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockUnzippedFolder);
+      sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns({curatedSample: mockCurateObject, processedFiles: mockReadFolder.curationFiles });
+      const readFolderStub = sinon.stub(XlsxFileManager, 'readFolder');
+      readFolderStub.onFirstCall().returns(mockReadFolder);
+      readFolderStub.onSecondCall().returns({ ...mockReadFolder, folders: [] });
+      sinon.stub(FileManager, 'deleteFolder').returns(true);
+      sinon.stub(FileManager, 'deleteFile').returns(true);
       sinon.stub(latency, 'latencyCalculator').returns(true)
+      sinon.stub(FileStorage, 'minioPutObject').returns(true);
+
 
       const result = await XlsxController.bulkXlsxCurations(req, res, fn => fn);
 
@@ -264,7 +269,7 @@ describe('Curation Controller', function() {
       sinon.stub(res, 'json').returnsThis();
       sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockUnzippedFolder);
       sinon.stub(XlsxController, 'curateXlsxSpreadsheet').throws();
-      sinon.stub(TempFiles, 'insertMany').returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true)
 
       await XlsxController.bulkXlsxCurations(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);

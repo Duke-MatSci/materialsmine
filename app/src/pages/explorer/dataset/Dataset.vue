@@ -233,7 +233,7 @@ export default {
     },
     parseFileName (file) {
       const dateString = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)-/
-      return file.split(dateString).pop().replace('?isDirectory=true', '')
+      return file.split(dateString).pop().replace('?isFileStore=true', '')
     }
   },
   created () {

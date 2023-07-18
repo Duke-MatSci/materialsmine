@@ -4,6 +4,7 @@ const decompress = require('decompress');
 const path = require('path');
 const Xmljs = require('xml-js');
 const csv = require('csv-parser');
+const { deleteFile, deleteFolder } = require('../utils/fileManager');
 
 exports.xlsxFileReader = async (path, sheetName) => {
   const sheetData = await readXlsxFile(path, { sheet: sheetName });
@@ -35,11 +36,11 @@ exports.unZipFolder = async (req, filename) => {
   const logger = req.logger;
   try {
     const folderPath = `mm_files/bulk-curation-${new Date().getTime()}`;
-    await decompress(filename, folderPath);
+    const allfiles = await decompress(filename, folderPath);
 
-    const { files, folders, masterTemplates, curationFiles } = this.readFolder(folderPath);
-
-    return { folderPath, files, folders, masterTemplates, curationFiles };
+    deleteFile(filename, req);
+    deleteFolder(`${folderPath}/__MACOSX`, req);
+    return { folderPath, allfiles };
   } catch (error) {
     logger.error(`[unZipFolder]: ${error}`);
     error.statusCode = 500;
@@ -54,7 +55,7 @@ exports.readFolder = (folderPath) => {
     });
 
   const isFolder = fileName => {
-    return fs.lstatSync(fileName).isDirectory();
+    return (fs.lstatSync(fileName).isDirectory() && fileName.split('/').pop() !== '__MACOSX');
   };
 
   const isFile = fileName => {
@@ -74,6 +75,7 @@ exports.readFolder = (folderPath) => {
       curationFiles.push(file);
     }
   });
+
   return { folders, files, masterTemplates, curationFiles };
 };
 

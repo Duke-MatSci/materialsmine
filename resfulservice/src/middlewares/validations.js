@@ -15,21 +15,23 @@ exports.validateAcceptableUploadType = [
 ];
 
 exports.validateFileDownload = [
-  query('isDirectory', 'only boolean value allowed').exists().isIn(['true', 'false']),
+  query('isFileStore', 'only boolean value allowed').optional().isIn(['true', 'false']),
+  query('isStore', 'only boolean value allowed').optional().isIn(['true', 'false']),
   check('fileId').custom((value, { req }) => {
-    if (req.query.isDirectory === 'true') {
+    if (req.query?.isFileStore === 'true' || req.query?.isStore === 'true') {
       const filetype = value.split('.').pop();
       if (!SupportedFileTypes.includes(filetype)) {
         throw new Error('Unsupported filetype');
       }
       return true;
-    } else if (req.query.isDirectory === 'false') {
+    } else if (!req.query.isFileStore && !req.query.isStore) {
       if (ObjectId.isValid(value)) {
         if ((String)(new ObjectId(value)) === value) { return true; }
         throw new Error('Invalid file id');
       }
       throw new Error('Invalid file id');
     }
+
     return true;
   }),
   validationErrorHandler

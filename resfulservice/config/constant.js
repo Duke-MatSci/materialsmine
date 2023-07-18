@@ -28,7 +28,7 @@ module.exports = {
   },
   ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
   SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx'],
-  SupportFileResponseHeaders: {
+  SupportedFileResponseHeaders: {
     '.csv': 'text/csv',
     '.png': 'image/png',
     '.jpg': 'image/jpg',
@@ -37,5 +37,6 @@ module.exports = {
     '.tif': 'image/tif',
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  }
+  },
+  MinioBucket: 'mgi'
 };

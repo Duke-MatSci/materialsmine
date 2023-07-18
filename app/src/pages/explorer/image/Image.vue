@@ -42,7 +42,7 @@
         </form>
       </div>
     </div>
-    <div class="utility-roverflow" v-if="searchImages && searchImages.images || images && images.images">
+    <div class="utility-roverflow">
 			<div class="u_content__result u_margin-top-small">
 				<span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="renderText != null">{{ renderText }}</strong>
@@ -70,43 +70,45 @@
           </span>
         </span>
 			</div>
-			<div class="gallery-grid grid grid_col-5">
-        <md-card
-          v-for="(image, index) in searchImages.images || images.images"
-          :key="index"
-          class="btn--animated gallery-item"
-        >
-          <router-link :to="{ name: 'ImageDetailView', params: { id: image.metaData.id, fileId: image.file }}">
-            <md-card-media-cover md-solid>
-              <md-card-media md-ratio="4:3">
-                <img
-									:src="baseUrl + image.file"
-									:alt="image.metaData.title"
-                >
-              </md-card-media>
-              <md-card-area class="u_gridbg">
-                <md-card-header class="u_show_hide">
-                  <span class="md-subheading">
-                    <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
-                  </span>
-                 <span class="md-body-1">{{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 15) }}</span>
-                </md-card-header>
-              </md-card-area>
-            </md-card-media-cover>
-          </router-link>
-        </md-card>
-      </div>
-      <pagination
-        :cpage="pageNumber"
-        :tpages="searchImages.totalPages || images.totalPages"
-        @go-to-page="loadPrevNextImage($event)"
-      />
+      <template v-if="!searchImagesEmpty || !imagesEmpty">
+        <div class="gallery-grid grid grid_col-5">
+          <md-card
+            v-for="(image, index) in searchImages.images || images.images"
+            :key="index"
+            class="btn--animated gallery-item"
+          >
+            <router-link :to="{ name: 'ImageDetailView', params: { id: image.metaData.id, fileId: image.file }}">
+              <md-card-media-cover md-solid>
+                <md-card-media md-ratio="4:3">
+                  <img
+                    :src="baseUrl + image.file"
+                    :alt="image.metaData.title"
+                  >
+                </md-card-media>
+                <md-card-area class="u_gridbg">
+                  <md-card-header class="u_show_hide">
+                    <span class="md-subheading">
+                      <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
+                    </span>
+                   <span class="md-body-1">{{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 15) }}</span>
+                  </md-card-header>
+                </md-card-area>
+              </md-card-media-cover>
+            </router-link>
+          </md-card>
+        </div>
+        <pagination
+          :cpage="pageNumber"
+          :tpages="searchImages.totalPages || images.totalPages"
+          @go-to-page="loadPrevNextImage($event)"
+        />
+      </template>
 		</div>
-    <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
+    <div class="u--margin-toplg" v-if="$apollo.loading">
       <spinner :loading="$apollo.loading" text='Loading Images'/>
     </div>
-    <div v-else-if="$apollo.error" class="utility-roverflow u_centralize_text u_margin-top-med">
-      <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Images</h1>
+    <div v-else-if="!!error || !!isEmpty" class="utility-roverflow u_centralize_text u_margin-top-med">
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ !!error ? 'Cannot Load Images' : 'Sorry! No Image Found'}}</h1>
     </div>
 	</div>
 </template>
@@ -142,6 +144,17 @@ export default {
   computed: {
     imageSearch () {
       return this.$store.getters['explorer/getSelectedFacetFilterMaterialsValue']
+    },
+    // This is a WIP TODO (@Tolu) Update later
+    searchImagesEmpty () {
+      return this.searchImages.length === 0 || this.searchImages?.totalItems === 0
+    },
+    imagesEmpty () {
+      if (!Object.keys(this.images)?.length || this.images.totalItems === 0) return true
+      return false
+    },
+    isEmpty () {
+      return (this.imagesEmpty && !this.searchEnabled) || (this.searchImagesEmpty && this.searchEnabled)
     }
   },
   watch: {
@@ -224,7 +237,7 @@ export default {
       skip () {
         if (this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'cache-first',
       error (error) {
         if (error.networkError) {
           const err = error.networkError
@@ -248,7 +261,7 @@ export default {
       skip () {
         if (!this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'network-only',
       error (error) {
         if (error.networkError) {
           const err = error.networkError
