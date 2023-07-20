@@ -105,11 +105,11 @@ const explorerRoutes = [
   //   name: 'CurateStepper',
   //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
   // },
-  // {
-  //   path: 'sdd',
-  //   name: 'CurateSDD',
-  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
-  // }
+  {
+    path: 'curate/sdd',
+    name: 'CurateSDD',
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue')
+  },
   {
     path: 'chart',
     component: ChartBase,
@@ -209,6 +209,13 @@ const explorerRoutes = [
     path: 'xmlvisualizer/:id',
     name: 'XmlVisualizer',
     component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'dataset/:id',
+    name: 'DatasetVisualizer',
+    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+    props: true,
     meta: { requiresAuth: false }
   }
 ]

@@ -1,5 +1,5 @@
 const errorFormater = require('../../../utils/errorFormater');
-const deleteFile = require('../../../utils/fileManager');
+const { deleteFile } = require('../../../utils/fileManager');
 const Dataset = require('../../../models/dataset');
 const DatasetId = require('../../../models/datasetId');
 const { datasetTransformer, filesetsTransform } = require('../../transformer');
