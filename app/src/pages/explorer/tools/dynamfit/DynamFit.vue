@@ -2,7 +2,7 @@
   <div class="explorer_page_header">
     <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">DynamFit</h1>
     <div>
-        Put html content here!
+      <!-- Put html content here -->
     </div>
   </div>
 </template>

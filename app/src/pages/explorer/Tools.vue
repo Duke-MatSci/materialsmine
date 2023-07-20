@@ -34,12 +34,12 @@
                 </div>
                 <div class="u_margin-top-med">
                 <accordion :startOpen="false" :customTitle="true" :title="'Image Binarization'">
-                    <template #custom_title> 
+                    <template #custom_title>
                         <h2 class="visualize_header-h1" style="margin-bottom:0;">Image Binarization</h2>
                     </template>
                   <div class="u_margin-top-small">
-                    <div> Binarization is the process of converting a micrograph to a black and white 
-                        image (assuming there are only 2 phases) by removing noise and thus simplifying 
+                    <div> Binarization is the process of converting a micrograph to a black and white
+                        image (assuming there are only 2 phases) by removing noise and thus simplifying
                         its analysis.
                     </div>
                     <div class="u_margin-bottom-small"> All 'Characterization and Reconstruction' algorithms work with binarized images only.</div>
@@ -49,7 +49,7 @@
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">compare</md-icon>
                                     <span class="explorer_page-nav-card_text">Otsu's Method</span>
-                                    <p class="md-layout-item_para md-layout-item_para_fl"> Works well for relatively 
+                                    <p class="md-layout-item_para md-layout-item_para_fl"> Works well for relatively
                                         noise free images having significant contrast between filler and matrix material.</p>
                                 </div>
                             </router-link>
@@ -72,7 +72,7 @@
                 </div>
                 <div class="u_margin-top-med">
                 <accordion :startOpen="false" :customTitle="true" :title="'Microstructure Characterization'">
-                    <template #custom_title> 
+                    <template #custom_title>
                         <h2 class="visualize_header-h1" style="margin-bottom:0;">Microstructure Characterization</h2>
                     </template>
                     <div class="md-layout u_display-flex md-layout-responsive u_margin-top-med">
@@ -120,7 +120,7 @@
                 </div>
                 <div class="u_margin-top-med">
                     <accordion :startOpen="false" :customTitle="true" :title="'Microstructure Reconstruction'">
-                    <template #custom_title> 
+                    <template #custom_title>
                         <h2 class="visualize_header-h1" style="margin-bottom:0;">Microstructure Reconstruction</h2>
                     </template>
                     <div class="md-layout u_display-flex md-layout-responsive u_margin-top-med">
@@ -178,7 +178,7 @@ import accordion from '@/components/accordion.vue'
 export default {
   name: 'CurateHome',
   components: {
-    accordion,
+    accordion
   }
 }
 </script>

@@ -24,7 +24,7 @@ describe('Header.vue', () => {
   it('renders Menu tabs correctly', async () => {
     expect.assertions(1)
     const menuItems = wrapper.findAll('._menutabs')
-    expect(menuItems.length).toBe(5)
+    expect(menuItems.length).toBe(6)
   })
 
   it('renders Menu tabs only on desktop', async () => {

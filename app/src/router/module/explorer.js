@@ -34,7 +34,7 @@ const explorerRoutes = [
       {
         path: 'dynamfit',
         name: 'DynamFit',
-        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue')
       }
     ]
   },
