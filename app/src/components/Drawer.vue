@@ -66,9 +66,11 @@
           <router-link :to="'/nm/tools/module_homepage'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Module Tools</md-list-item>
           </router-link>
-          <router-link :to="'/nm/tools/simtools'" v-slot="{navigate, href}" custom>
+          <!-- TODO 7/21/2023: The old Polymerizer is no longer functional.
+            The old stewards of the tool are in the process of recovery, but there is currently no ETA. -->
+          <!-- <router-link :to="'/nm/tools/simtools'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Simulation Tools</md-list-item>
-          </router-link>
+          </router-link> -->
           <router-link :to="'/nm/tools/chemprops'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">ChemProps</md-list-item>
           </router-link>

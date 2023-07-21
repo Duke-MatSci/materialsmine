@@ -23,13 +23,14 @@
                                 </div>
                             </router-link>
                         </div>
-                        <div class="md-layout-item md-layout-item_card">
+                        <!-- TODO: The original Polymerizer tool is currently out of commision due to an attack on RPI systems  -->
+                        <!-- <div class="md-layout-item md-layout-item_card">
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card">
                                     <md-icon class="explorer_page-nav-card_icon">grain</md-icon>
                                     <span class="explorer_page-nav-card_text" style="text-align: center">Polymerizer</span>
                                     <p class="md-layout-item_para md-layout-item_para_fl">Short description of Polymerizer.</p>
                                 </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
                 <div class="u_margin-top-med">
