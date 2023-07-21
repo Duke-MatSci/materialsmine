@@ -10,7 +10,8 @@ export default {
       fieldNameSelected: '',
       newChartExist: false,
       doiData: null,
-      orcidData: null
+      orcidData: null,
+      xmlBulkResponse: null
     }
   },
   mutations,

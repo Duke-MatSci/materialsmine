@@ -118,15 +118,13 @@ describe('SpreadsheetUploadBulk.vue', () => {
   })
 
   it('calls submit functions', async () => {
-    expect.assertions(3)
+    expect.assertions(2)
     const submitFiles = jest.spyOn(wrapper.vm, 'submitFiles')
-    const createSample = jest.spyOn(wrapper.vm, 'createSample')
 
     const submitButton = wrapper.find('#submit')
     await submitButton.trigger('click')
 
     expect(submitFiles).toHaveBeenCalledTimes(1)
-    expect(createSample).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('Upload in progress')
   })
 

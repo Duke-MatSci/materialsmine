@@ -13,5 +13,8 @@ export default {
   },
   getOrcidData (state) {
     return state.orcidData
+  },
+  getXmlBulkResponse (state) {
+    return state.xmlBulkResponse
   }
 }

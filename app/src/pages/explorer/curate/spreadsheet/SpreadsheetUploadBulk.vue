@@ -8,33 +8,12 @@
             <LoginReq v-if="!auth"/>
             <div v-else-if="submitted">
               <h2 class="visualize_header-h1 u_margin-top-small u_centralize_text"> Curation Result(s) </h2>
-              <div v-if="uploadInProgress">
+              <div v-if="loading">
                 <spinner text="Upload in progress"/>
               </div>
-              <div v-else-if="!!currentXml">
-                <div class="curate-menu u--padding-zero">
-                  <md-button type="submit" class="md-button md-button_next"
-                    @click="setCurrentXml('none')">
-                    <md-icon>arrow_back</md-icon>
-                    Back to all results
-                  </md-button>
-                </div>
-                <hr>
-                <div class="md-layout">
-                    <div class="md-layout-item md-size-50">
-                        <div>Sample ID: {{currentXml.sampleID}}</div>
-                        <div>Curated by {{ optionalChaining(() => currentXml.user.displayName) }}</div>
-                    </div>
-                    <div class="md-layout-item md-size-50" style="text-align: right" >
-                        <div>Status: {{currentXml.status}}</div>
-                        <div>Admin Approval: {{currentXml.isApproved ? 'Approved' : 'None'}}</div>
-                    </div>
-                </div>
-                <XmlView :xml='optionalChaining(() => currentXml.xml)'/>
-              </div>
-            <div v-else>
-                <div v-if="!!uploadResponse.bulkErrors" class="viz-u-mgup-sm utility-margin md-theme-default">
-                  <md-list class="md-double-line" v-if="!!Object.keys(uploadResponse.bulkErrors).length">
+              <div v-else-if="!!xmlBulkResponse">
+                <div v-if="!!xmlBulkResponse.bulkErrors" class="viz-u-mgup-sm utility-margin md-theme-default">
+                  <md-list class="md-double-line" v-if="!!Object.keys(xmlBulkResponse.bulkErrors).length">
                   <div class="u_width--max md-content utility-roverflow">
                     <h2 class="md-title u--color-black" style="margin-bottom: .4rem;">
                       Errors
@@ -42,10 +21,10 @@
                   </div>
 
                   <md-list class="md-dense md-double-line">
-                    <div class="u_width--max u--margin-pos" v-for="(file, index) in uploadResponse.bulkErrors" :key="index + '_err'">
+                    <div class="u_width--max u--margin-pos" v-for="(file, index) in xmlBulkResponse.bulkErrors" :key="index + '_err'">
 
                     <div class="u--font-emph-l" md-elevation="0">
-                        <a :href="'/api/files/'+(optionalChaining(() => file.filename))+'?isDirectory=true'" download>
+                        <a :href="'/api/files/'+(optionalChaining(() => file.filename))+'?isFileStore=true'" download>
                           <span class="md-body-2 u--color-black">{{file.filename.split('/').pop()}}</span>
                         </a>
                     </div>
@@ -76,18 +55,18 @@
                   </md-list>
                   </md-list>
                 </div>
-                <div v-if="!!uploadResponse.bulkCurations">
+                <div v-if="!!xmlBulkResponse.bulkCurations">
                   <div class="u_width--max md-content utility-roverflow">
                     <h2 class="md-title u--color-black" style="margin-bottom: 1.4rem;">
                       Successful Curations
                     </h2>
                   </div>
-                  <div v-if="!Object.keys(uploadResponse.bulkCurations).length" class="u--margin-pos">No results received.</div>
+                  <div v-if="!Object.keys(xmlBulkResponse.bulkCurations).length" class="u--margin-pos">No results received.</div>
 
                   <div v-else class="gallery-grid grid grid_col-4">
-                    <md-card v-for="(xml, index) in uploadResponse.bulkCurations" :key="index"
+                    <md-card v-for="(xml, index) in xmlBulkResponse.bulkCurations" :key="index"
                        class="btn--animated gallery-item">
-                      <a @click="setCurrentXml(index)" style="text-decoration:none; cursor:pointer">
+                      <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.sampleID }}">
                         <md-card-media-cover md-solid>
                             <div class="utility-align--right">
                               <div> <p class="u--color-primary"> <strong>Status: </strong>{{ xml.status }}</p>
@@ -109,7 +88,7 @@
                               </md-card-header>
                             </md-card-area>
                         </md-card-media-cover>
-                      </a>
+                      </router-link>
                     </md-card>
                   </div>
                 </div>
@@ -205,10 +184,9 @@ import FilePreview from '@/components/curate/FilePreview.vue'
 import LoginRequired from '@/components/LoginRequired.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import Spinner from '@/components/Spinner.vue'
-import XmlView from '@/components/explorer/XmlView'
 import useFileList from '@/modules/file-list'
 import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY } from '@/modules/gql/dataset-gql'
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters, mapMutations, mapActions } from 'vuex'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 
 // Create separate file objects for spreadsheet vs supplementary files
@@ -222,7 +200,6 @@ export default {
     FilePreview,
     CurateNavBar,
     Spinner,
-    XmlView,
     LoginReq: LoginRequired
   },
   data () {
@@ -230,22 +207,18 @@ export default {
       auth: true,
       verifyUser: null,
       invalidFile: null,
-      uploadInProgress: true,
+      loading: true,
       submitted: false,
-      uploadResponse: {},
       selectedDataset: {
         label: '',
         id: null
       },
-      currentXml: null,
       spreadsheetFiles: spreadsheetFn.files,
       active: 'first',
       first: false,
       second: false,
       third: false,
       fourth: false,
-      pageNumber: 1,
-      pageSize: 20,
       navRoutes: [
         {
           label: 'Curate',
@@ -262,7 +235,8 @@ export default {
     ...mapGetters({
       userId: 'auth/userId',
       isAuthenticated: 'auth/isAuthenticated',
-      token: 'auth/token'
+      token: 'auth/token',
+      xmlBulkResponse: 'explorer/curation/getXmlBulkResponse'
     })
   },
   methods: {
@@ -270,6 +244,9 @@ export default {
     removeSpreadsheet: spreadsheetFn.removeFile,
     modStatSpreadsheet: spreadsheetFn.modifyStatus,
     clearAllFiles: spreadsheetFn.clearAllFiles,
+    ...mapActions({
+      submitBulkXml: 'explorer/curation/submitBulkXml'
+    }),
     ...mapMutations({
       clearSnackbar: 'resetSnackbar'
     }),
@@ -304,47 +281,25 @@ export default {
     },
     async submitFiles () {
       this.submitted = true
-      this.uploadInProgress = true
+      this.loading = true
+      const files = this.processFiles()
       try {
-        await this.createSample()
+        await this.submitBulkXml(files)
+        this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
+        this.loading = false
+        if (!this.$route?.query?.complete) this.$router.push({ query: { complete: 'true' } })
       } catch (error) {
+        this.loading = false
         this.$store.commit('setSnackbar', {
-          message: error ?? error
+          message: error
         })
       }
-    },
-    async createSample () {
-      const url = `${window.location.origin}/api/curate/bulk`
-      const formData = new FormData()
-      const files = this.processFiles()
-      files.forEach((file) => formData.append('uploadfile', file))
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        redirect: 'follow',
-        headers: {
-          Authorization: 'Bearer ' + this.token
-        }
-      })
-
-      const result = await response.json()
-      if (response?.ok) {
-        this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
-        this.uploadInProgress = false
-        this.uploadResponse = result
-        return
-      }
-      this.uploadInProgress = false
-      const responseMessage = result.message ?? Object.entries(result?.errors).reduce((str, [key, value], index) => {
-        return index === 0 ? `${str}${key} ${value}` : `${str}, ${key} ${value}`
-      }, '')
-      const message = responseMessage ?? response?.statusText
-      throw new Error(message)
-    },
-    setCurrentXml (e) {
-      if (e === 'none') {
-        this.currentXml = null
-      } else this.currentXml = this.uploadResponse?.bulkCurations[e]
+    }
+  },
+  mounted () {
+    if (!!this.$route?.query?.complete && !!this.xmlBulkResponse) {
+      this.submitted = true
+      this.loading = false
     }
   },
   apollo: {
