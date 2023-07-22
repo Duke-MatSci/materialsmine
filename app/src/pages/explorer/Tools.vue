@@ -46,7 +46,7 @@
                     <div class="u_margin-bottom-small"> All 'Characterization and Reconstruction' algorithms work with binarized images only.</div>
                     <div class="md-layout u_display-flex md-layout-responsive u_margin-top-med">
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/Otsu" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">compare</md-icon>
                                     <span class="explorer_page-nav-card_text">Otsu's Method</span>
@@ -57,7 +57,7 @@
                         </div>
 
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/Niblack" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">compare</md-icon>
                                     <span class="explorer_page-nav-card_text">Niblack's Method</span>
@@ -76,9 +76,22 @@
                     <template #custom_title>
                         <h2 class="visualize_header-h1" style="margin-bottom:0;">Microstructure Characterization</h2>
                     </template>
+                    <div class="u_margin-top-small">
+                        Microstructure Characterization refers to a statistical quantification of morphology.
+                        It essentially converts multi-dimensional microstructure recorded in images into a
+                        set of functions (aka features/descriptors/predictors) that encode significant
+                        morphological details.
+                        The functions obtained as a result are useful in developing
+                        insights on structure - property relationships and serve as the basis for reconstruction
+                        algorithms.
+                    </div>
+                    <div class="u_margin-bottom-small">
+                        Upload a binarized microstructure image / set of images and obtain
+                        characterization data of your choice.
+                    </div>
                     <div class="md-layout u_display-flex md-layout-responsive u_margin-top-med">
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/IntelligentCharacterize" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">image_search</md-icon>
                                     <span class="explorer_page-nav-card_text" style="text-align: center">Intelligent Characterization</span>
@@ -87,7 +100,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/CorrelationCharacterize" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Correlation Functions</span>
@@ -97,7 +110,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/DescriptorCharacterize" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Physical Descriptors</span>
@@ -107,7 +120,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/SDFCharacterized" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Spectral Density</span>
@@ -124,9 +137,17 @@
                     <template #custom_title>
                         <h2 class="visualize_header-h1" style="margin-bottom:0;">Microstructure Reconstruction</h2>
                     </template>
+                    <div class="u_margin-top-small"> Reconstruction involves constructing a statistically equivalent microstructure
+                        image given some statistical characterization. In most cases, reconstruction is
+                        cast as an optimization problem; with the goal of matching characteristics of
+                        reconstructed image to that of input image.
+                    </div>  <div class="u_margin-bottom-small">
+                        In this section, you can upload a binary microstructure image / set of images
+                        and obtain 2D/3D reconstructions using method of your choice.
+                    </div>
                     <div class="md-layout u_display-flex md-layout-responsive u_margin-top-med">
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/CorrelationReconstruct" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Correlation Functions</span>
@@ -136,7 +157,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/DescriptorReconstruct" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Physical Descriptors</span>
@@ -146,7 +167,7 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
+                            <router-link to="/nm/tools/SDFReconstruct" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Spectral Density</span>
@@ -156,14 +177,14 @@
                             </router-link>
                         </div>
                         <div class="md-layout-item md-layout-item_card">
-                            <router-link to="" v-slot="{navigate, href}" custom>
-                                <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
+                            <a href="https://ideal.mech.northwestern.edu/research/software/download/"  target="_blank">
+                                <div class="teams_container explorer_page-nav-card md-layout-item_card">
                                     <md-icon class="explorer_page-nav-card_icon">ssid_chart</md-icon>
                                     <span class="explorer_page-nav-card_text">Transfer Learning</span>
                                     <p class="md-layout-item_para md-layout-item_para_fl">Short description of Transfer Learning
                                     </p>
                                 </div>
-                            </router-link>
+                            </a>
                         </div>
                     </div>
                     </accordion>

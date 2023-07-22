@@ -127,6 +127,13 @@
             display: none !important;
             visibility: hidden !important;
         }
+
+        & > a {
+            color: $primary !important;
+            &:hover{
+                text-decoration: none !important;
+            }
+        }
     }
 }
 .md-menu-content {
