@@ -14,11 +14,7 @@
         </div>
         <!-- xml viewer  -->
         <div class="wrapper">
-          <pre class="language-xml grid">
-            <code class="inlinecode language-xml keepMarkUp">
-              {{ optionalChaining(() => xmlViewer.xmlString) }}
-            </code>
-          </pre>
+          <XmlView :xml='optionalChaining(() => xmlViewer.xmlString)'/>
         </div>
 
       </md-content>
@@ -58,6 +54,7 @@ import 'prismjs/themes/prism-coy.min.css'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
+import XmlView from '@/components/explorer/XmlView'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
 import { mapGetters } from 'vuex'
 export default {
@@ -65,7 +62,8 @@ export default {
   mixins: [optionalChainingUtil],
   components: {
     Comment,
-    spinner
+    spinner,
+    XmlView
   },
   data () {
     return {

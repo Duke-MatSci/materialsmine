@@ -41,6 +41,12 @@ const explorerRoutes = [
         props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'bulk',
+        name: 'CurateBulk',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },

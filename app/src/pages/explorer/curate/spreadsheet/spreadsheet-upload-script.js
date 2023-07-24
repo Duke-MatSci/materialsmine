@@ -4,14 +4,10 @@ import LoginRequired from '@/components/LoginRequired.vue'
 import Dialog from '@/components/Dialog.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import Spinner from '@/components/Spinner.vue'
+import XmlView from '@/components/explorer/XmlView.vue'
 import useFileList from '@/modules/file-list'
 import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY } from '@/modules/gql/dataset-gql'
 import { mapGetters, mapMutations } from 'vuex'
-// XML viewer imports
-import Prism from 'prismjs'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-markup'
-import 'prismjs/themes/prism-coy.min.css'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 
 // Create separate file objects for spreadsheet vs supplementary files
@@ -27,6 +23,7 @@ export default {
     FilePreview,
     CurateNavBar,
     Spinner,
+    XmlView,
     LoginReq: LoginRequired
   },
   data () {
@@ -205,12 +202,6 @@ export default {
     changeDatasetId () {
       this.$router.replace({ name: 'CurateSpreadsheet', params: { datasetId: this.selectedDataset.id } })
     }
-  },
-  mounted () {
-    // For XML viewer
-    window.Prism = window.Prism || {}
-    window.Prism.manual = true
-    Prism.highlightAll()
   },
   apollo: {
     verifyUser: {
