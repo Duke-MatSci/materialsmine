@@ -59,7 +59,7 @@
                   :class="`charts-${index+1} charts-${index+1}-narrow`"
                   :key="`card_${index}`"
                 >
-                <a :href="item?.downloadLink">
+                <a :href="(optionalChaining(() => item?.downloadLink))">
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
                       <md-icon class="explorer_page-nav-card_icon u_margin-top-small">description</md-icon>
@@ -109,7 +109,7 @@
               <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
                 {{ orcidData['http://schema.org/givenName']?.[0]?.['@value'] || '' }} {{ orcidData['http://schema.org/familyName']?.[0]?.['@value'] || ''}}
               </span>
-              <div>ORCiD: <a class=" u--b-rad" :href="orcidData?.['@id']" target="_blank">
+              <div>ORCiD: <a class=" u--b-rad" :href="(optionalChaining(() => orcidData?.['@id']))" target="_blank">
                 {{orcidData?.['@id'] || dataset[datasetFields.cp]?.[0]?.['@id'] || 'N/A'}}
               </a></div>
               <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">Contact Email: {{orcidData['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']|| 'N/A'}}</div>
@@ -132,9 +132,10 @@
 import spinner from '@/components/Spinner'
 import { mapGetters } from 'vuex'
 import reducer from '@/mixins/reduce'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
 export default {
   name: 'DatasetDetailView',
-  mixins: [reducer],
+  mixins: [reducer, optionalChainingUtil],
   props: ['id'],
   data () {
     return {

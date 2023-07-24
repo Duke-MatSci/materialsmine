@@ -137,5 +137,26 @@ export default {
     }
     const responseData = await response.json()
     return commit('setDoiData', responseData)
+  },
+
+  async submitBulkXml ({ commit, rootGetters }, files) {
+    const token = rootGetters['auth/token']
+    const url = `${window.location.origin}/api/curate/bulk`
+    const formData = new FormData()
+    files.forEach((file) => formData.append('uploadfile', file))
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      redirect: 'follow',
+      headers: {
+        Authorization: 'Bearer ' + token
+      }
+    })
+    if (response?.statusText !== 'OK') {
+      throw new Error(response.message || 'Something went wrong while submitting XMLs')
+    }
+    const result = await response.json()
+    commit('setXmlBulkResponse', result)
+    return response
   }
 }
