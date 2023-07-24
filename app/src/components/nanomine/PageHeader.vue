@@ -83,11 +83,9 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Tools</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/explorer/sparql" class="nav_menu--siblings-lists"><a>Sparql Query</a></router-link>
-                                    <router-link to="/nm/tools/module_homepage" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
-                                    <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
-                                    <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
+                                    <router-link to="/explorer/tools" class="nav_menu--siblings-lists"><a>Module & Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
-                                    <router-link to="" @click.native="loadApiDocs" class="nav_menu--siblings-lists"><a>Api Docs</a></router-link>
+                                    <router-link to="" @click.native="loadApiDocs" class="nav_menu--siblings-lists"><a>API Docs</a></router-link>
                                 </div>
                             </div>
                         </li>
