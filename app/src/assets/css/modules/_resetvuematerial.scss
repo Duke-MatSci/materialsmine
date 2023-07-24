@@ -123,6 +123,10 @@
             margin-bottom: 1rem;
         }
 
+        &-tall {
+            height: 38rem !important;
+        }
+
         &::after {
             display: none !important;
             visibility: hidden !important;
