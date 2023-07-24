@@ -621,7 +621,7 @@ paths:
       security:
         - BearerAuth: [] 
       summary: Creates bulk curations
-      description: Creates multiple curations that are uploaded puts in separates folders uploaded in a zip file
+      description: Creates multiple curations based on multiple master template uploaded in a zip file
       tags:
         - Curation
       parameters:

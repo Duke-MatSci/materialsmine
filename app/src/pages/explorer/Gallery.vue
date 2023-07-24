@@ -87,7 +87,7 @@
       </template>
       <div class="utility-roverflow u_centralize_text u_margin-top-med section_loader" v-else>
         <!-- <div class="u_display-flex spinner"></div> -->
-        <h1 class="visualize_header-h1 u_margin-top-med">No Chart Exists...</h1>
+        <h1 class="visualize_header-h1 u_margin-top-med">No Charts Exist...</h1>
       </div>
     </div>
     <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">

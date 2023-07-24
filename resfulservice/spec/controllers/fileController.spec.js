@@ -147,7 +147,7 @@ describe('File Controller Unit Tests:', function() {
 
 
   context('uploadFile', () => {
-    it('should return success when files successful upload', async () => {
+    it('should return success when files successfully upload', async () => {
       req.files = { uploadfile: [{ path: '/images/cat.png'}, { path: '/images/dog.png'}]};
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ files: req.files.uploadfile });

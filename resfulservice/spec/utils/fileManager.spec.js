@@ -42,7 +42,7 @@ describe.skip('FileManager Utils', function () {
   })
 
   context('findFile', () => {
-    it('should return null if fileId is in a nested directory but does not exists', async () => {
+    it('should return null if fileId is in a nested directory but does not exist', async () => {
       sinon.stub(fs, 'existsSync').returns(false);
       const result = await findFile(req);
       expect(result).to.equals(null);
