@@ -5,11 +5,13 @@
       <img src="@/assets/img/nanomine/prop_simu.png" alt="Propertry Simulation">
     </template>
     <template #actions>
-      <a href="http://reccr.chem.rpi.edu/polymerizer/index.html" target="_blank">
-        <md-button class="md-raised md-primary md-raised">
+      <!-- TODO 7/21/2023: The old Polymerizer is no longer functional.
+        The old stewards of the tool are in the process of recovery, but there is currently no ETA. -->
+      <!-- <a href="http://reccr.chem.rpi.edu/polymerizer/index.html" target="_blank"> -->
+        <md-button class="md-raised md-primary md-raised md-disabled" disabled>
           Launch
         </md-button>
-      </a>
+      <!-- </a> -->
     </template>
     <!-- shared slots -->
     <template #title>

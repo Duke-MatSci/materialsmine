@@ -22,6 +22,23 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'tools',
+    component: () => import('@/pages/explorer/tools/ToolsBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'ToolsExplorer',
+        component: () => import('@/pages/explorer/Tools.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dynamfit',
+        name: 'DynamFit',
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue')
+      }
+    ]
+  },
+  {
     path: 'curate',
     component: () => import('@/pages/explorer/curate/CurateBase.vue'),
     children: [

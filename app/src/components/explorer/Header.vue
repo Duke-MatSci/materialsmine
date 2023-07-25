@@ -31,6 +31,7 @@
           <md-tab class="_menutabs" to="/explorer" id="tab-home" md-label="Search" exact> </md-tab>
           <md-tab class="_menutabs" to="/explorer/visualization" id="tab-visualization" md-label="Visualization"> </md-tab>
           <md-tab class="_menutabs" to="/explorer/curate" id="tab-curate" md-label="Curate"> </md-tab>
+          <md-tab class="_menutabs" to="/explorer/tools" id="tab-tools" md-label="Tools"> </md-tab>
           <md-tab class="_menutabs" to="/explorer/parameterized_query" id="tab-query" md-label="Parameterized Query" exact> </md-tab>
           <md-tab class="_menutabs" to="/explorer/sparql" id="tab-sparql" md-label="SPARQL Query" exact> </md-tab>
         </md-tabs>
