@@ -34,6 +34,14 @@
               </div>
             </router-link>
           </li>
+          <li class="md-list-item" v-for="(child, i) in link.hrefChildren" :key="i+'h'">
+            <a mdripple="true" :href="child.href" class="md-list-item-link md-list-item-container md-button-clean">
+              <div class="md-list-item-content md-list-item-content-reduce u--layout-flex-justify-fs md-ripple">
+                <i class="md-icon md-icon-font u--default-size md-theme-default">{{ child.icon }}</i>
+                <span class="md-body-1 u--color-black u--margin-neg-left">{{ child.name }}</span>
+              </div>
+            </a>
+          </li>
         </div>
       </md-list>
     </md-app-drawer>
@@ -83,6 +91,9 @@ export default {
           children: [
             { name: 'Manage Curation', link: '/portal/manage-curation', icon: 'upload' },
             { name: 'View Curation', link: '/portal/view-curation', icon: 'track_changes' }
+          ],
+          hrefChildren: [
+            { name: 'File Store', href: '/api/admin/store', icon: 'folder_open' }
           ]
         },
         {
