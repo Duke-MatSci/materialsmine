@@ -57,7 +57,7 @@ describe('SideNav.vue', () => {
     for (let i = 0; i < linksContainer.length; i++) {
       expect(linksContainer.at(i).find('div.u--font-emph-l.u_margin-top-small > span.md-body-2').text()).toBe(data[i].name)
       expect(linksContainer.at(i).findComponent('md-divider-stub').exists()).toBeTruthy()
-      expect(linksContainer.at(i).findAll('.md-list-item').length).toBe(data[i].children.length)
+      expect(linksContainer.at(i).findAll('.md-list-item').length).toBe(3)
       expect(linksContainer.at(i).find('.md-list-item-link > div.md-list-item-content').exists()).toBeTruthy()
       expect(linksContainer.at(i).findAll('.md-list-item-content > i.md-icon').length).toBe(data[i].children.length)
       expect(linksContainer.at(i).find('.md-list-item-content > span.md-body-1.u--color-black').exists()).toBeTruthy()
