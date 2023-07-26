@@ -6,8 +6,6 @@ const { latencyTimer } = require('../middlewares/latencyTimer');
 const { minioUpload } = require('../middlewares/fileStorage');
 const { validateImageType, validateFileId, validateFileDownload } = require('../middlewares/validations');
 
-// Todo: Contemplating if this is needed - Will remove if router.route('/:fileId([^/]*)') works fine along with its controller
-// router.route('/').get(latencyTimer, fileController.findFiles);
 router.route('/:fileId([^/]*)')
   .get(validateFileDownload, latencyTimer, fileController.fileContent)
   .delete(isAuth, validateFileId, latencyTimer, fileController.deleteFile);

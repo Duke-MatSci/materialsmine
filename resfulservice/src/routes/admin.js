@@ -24,6 +24,8 @@ router
   .put(isAuth, AdminController.loadElasticSearch)
   .delete(isAuth, AdminController.loadElasticSearch);
 
+router.route('/store').get(AdminController.loadObjectStore);
+
 // Note: Not in use. Deprecated for authService.js route.
 router.route('/login').post(loginController.login);
 module.exports = router;

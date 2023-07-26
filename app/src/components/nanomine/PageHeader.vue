@@ -85,11 +85,7 @@
                                     <router-link to="/explorer/sparql" class="nav_menu--siblings-lists"><a>Sparql Query</a></router-link>
                                     <router-link to="/explorer/tools" class="nav_menu--siblings-lists"><a>Module & Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
-<<<<<<< HEAD
                                     <a href="/api/api-docs/" class="nav_menu--siblings-lists"><a>Api Docs</a></a>
-=======
-                                    <router-link to="" @click.native="loadApiDocs" class="nav_menu--siblings-lists"><a>API Docs</a></router-link>
->>>>>>> 6514b70a6a88583dc867054b418a43ed97aa3d97
                                 </div>
                             </div>
                         </li>

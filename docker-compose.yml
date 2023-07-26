@@ -40,7 +40,6 @@ services:
     container_name: minio
     image: minio/minio
     command: server --console-address ":9001" /data
-    hostname: minio
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -84,6 +83,7 @@ services:
       - ESADDRESS=${ESADDRESS}
       - PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
+      - MINIO_CONSOLE_PORT=${MINIO_CONSOLE_PORT}
       - MINIO_BUCKET=${MINIO_BUCKET}
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
