@@ -33,7 +33,15 @@ export default function () {
 class UploadableFile {
   constructor (file) {
     this.file = file
-    this.id = `${file.name}-${file.size}-${file.lastModified}-${file.type}`
+    if (/\s/g.test(file.name)) {
+      this.file = new File([file], file.name.replace(/ /g, '_'), {
+        type: file.type,
+        lastModified: file.lastModified
+      })
+    } else {
+      this.file = file
+    }
+    this.id = `${this.file.name}-${file.size}-${file.lastModified}-${file.type}`
     this.status = 'incomplete'
   }
 }
