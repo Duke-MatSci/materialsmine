@@ -9,8 +9,10 @@ import { mapState } from 'vuex'
 
 const margin = { top: 10, right: 20, bottom: 50, left: 100 }
 const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
-const height = vh * 0.83
-const width = height
+const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+const width = Math.min(vw * 0.4, vh * 0.8)
+const height = width
+// const width = height
 const padding = 20
 
 function expo (x, f) {
@@ -150,11 +152,6 @@ export default {
         .attr('width', width)
         .attr('height', height)
         .attr('viewBox', [-margin.left, -margin.top, width, height])
-        .attr(
-          'style',
-          'max-width: 100%; height: auto;'
-        )
-
       // Compute the inner dimensions of the cells.
       const cellWidth =
                 (width -
@@ -203,7 +200,7 @@ export default {
             'transform',
             (d, i) =>
                             `translate(${0 - margin.left + padding * 1.5},${
-                                i * (cellHeight + padding) + margin.top * 9
+                                i * (cellHeight + padding) + margin.top * 6
                             }) rotate(270)`
           )
           .attr('x', padding / 2)
@@ -224,9 +221,7 @@ export default {
             'transform',
             (d, i) =>
                             `translate(${
-                                i * (cellWidth + padding) +
-                                margin.bottom -
-                                padding / 2
+                                i * (cellWidth + padding) 
                             },${cellHeight * 6 + margin.bottom + padding * 4})`
           )
           .attr('x', padding / 2)
@@ -257,7 +252,6 @@ export default {
       x = columns, // array of x-accessors
       y = columns, // array of y-accessors
       z = () => 1, // given d in data, returns the (categorical) z-value
-      height = width, // outer height, in pixels
       xType = d3.scaleLinear, // the x-scale type
       yType = d3.scaleLinear, // the y-scale type
       zDomain, // array of z-values
