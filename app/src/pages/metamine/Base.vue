@@ -66,8 +66,8 @@
             <drawers />
         </md-app-drawer>
         <md-app-content>
-			<router-view />
-		</md-app-content>
+          <router-view />
+        </md-app-content>
     </md-app>
 </template>
 

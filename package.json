@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.329.0",
-    "ant-design-vue": "^3.2.20"
+    "ant-design-vue": "^3.2.20",
+    "plotly.js-dist-min": "^2.23.2"
   }
 }

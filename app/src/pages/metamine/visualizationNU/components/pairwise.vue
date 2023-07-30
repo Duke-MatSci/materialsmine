@@ -152,7 +152,7 @@ export default {
         .attr('viewBox', [-margin.left, -margin.top, width, height])
         .attr(
           'style',
-          'max-width: 100%; height: auto; height: intrinsic;'
+          'max-width: 100%; height: auto;'
         )
 
       // Compute the inner dimensions of the cells.

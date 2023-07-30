@@ -1,6 +1,6 @@
 <template>
-    <div class="wrapper-box md-layout md-alignment-top-left md-gutter adjust-padding" style="margin:5px 0 0 5px;">
-      <div class="md-layout-item md-size-100">
+    <div class="wrapper-box md-gutter adjust-padding" style="margin:5px 0 0 5px;">
+      <div class="md-layout-item">
         <h2 class="metamine_pairwise-header">Material Data Explorer (Pairwise)</h2>
       </div>
       <div class="main-content" style="margin: 1rem; display: flex">
@@ -22,12 +22,8 @@
 </template>
 
 <style scoped>
-.wrapper-box {
-  max-height: 100vh;
-  overflow: hidden;
-}
 .subcharts {
-    display: flex;
+  display: flex;
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;

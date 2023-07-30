@@ -33,7 +33,7 @@ const metamineRoutes = [{
 {
   path: 'metamaterial_visualization_nu',
   name: 'PairwisePlot',
-  component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/PairwisePlot.vue'),
+  component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/PairwisePlotPage.vue'),
   meta: {
     requiresAuth: false
   }

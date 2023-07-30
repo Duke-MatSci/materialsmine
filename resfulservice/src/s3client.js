@@ -12,8 +12,8 @@ const { S3Client } = require('@aws-sdk/client-s3');
 const s3Client = new S3Client({
   region: 'us-east-2',
   credentials: {
-    accessKeyId: 'AKIAZCLM5UPU5OGMXMKI',
-    secretAccessKey: '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'
+    accessKeyId: 'AKIAZCLM5UPUQ6TWICHO',
+    secretAccessKey: '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'
   }
 });
 

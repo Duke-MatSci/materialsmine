@@ -109,7 +109,7 @@ export default {
     }
   },
   methods: {
-    sigFigs: sigFigs
+    sigFigs
   }
 }
 </script>
