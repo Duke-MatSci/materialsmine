@@ -1,6 +1,5 @@
 import _ from 'lodash'
 import VueMaterial from 'vue-material'
-import Antd from 'ant-design-vue'
 import store from '@/store'
 import router from '@/router'
 import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-utils'
@@ -9,7 +8,6 @@ import { mount, createLocalVue, shallowMount, RouterLinkStub } from '@vue/test-u
 // Using localVue to protect polluting global vue instance
 const localVue = createLocalVue()
 localVue.use(VueMaterial)
-localVue.use(Antd)
 
 /**
  * createWrapper - creates a default mount wrapper for all components

@@ -6,45 +6,34 @@
       Property Range
     </div>
     <div class="slider" v-for="(name, index) in rangeList" :key="index">
-      <a-row
-        type="flex"
+      <div
         style="display: flex; justify-content: center; align-items: top"
       >
-        <a-col :span="4">{{ name }}</a-col>
-        <a-col :span="20">
-          <a-slider
-            range
-            :value="values[index]"
-            :default-value="defaultValues[index]"
-            :min="defaultValues[index][0]"
-            :max="defaultValues[index][1]"
-            @change="handleSliderChangeFuncs[index]"
-          >
-          </a-slider>
-          <a-row type='flex' style="justify-content: space-between">
-            <a-col style="color: gray">{{sigFigs(defaultValues[index][0], 4)}}</a-col>
-            <a-col style="color: gray">{{sigFigs(defaultValues[index][1], 4)}}</a-col>
-          </a-row>
-        </a-col>
-      </a-row>
+        <div style="width: 20%">{{ name }}</div>
+        <div style="width: 80%">
+          <div class="range-slider"> 
+            <input class="range-slider" type="range" v-bind:min=defaultValues[index][0] v-bind:max=defaultValues[index][1] step="1" v-model="values[index][0]" @change="handleMinSliderChangeFuncs($event, index)">
+            <input class="range-slider" type="range" v-bind:min=defaultValues[index][0] v-bind:max=defaultValues[index][1] step="1" v-model="values[index][1]" @change="handleMaxSliderChangeFuncs($event, index)">
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <div style="color: gray">{{sigFigs(defaultValues[index][0], 4)}}</div>
+            <div style="color: gray">{{sigFigs(defaultValues[index][1], 4)}}</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
+
 <script>
 import { mapState } from 'vuex'
-import { Slider, Row, Col } from 'ant-design-vue'
 import sigFigs from '../utils/sigFigs'
 
 const rangeList = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
 
 export default {
   name: 'RangeSelector',
-  components: {
-    'a-slider': Slider,
-    'a-row': Row,
-    'a-col': Col
-  },
   computed: {
     ...mapState('metamineNU', {
       activeData: (state) => state.activeData,
@@ -73,25 +62,6 @@ export default {
         return this.rangeList.map((name) => [0, 0])
       }
     },
-    handleSliderChangeFuncs () {
-      const self = this
-      return this.rangeList.map((name, index) => {
-        return function (value) {
-          const activeDatasetNames = self.activeData.map((d) => d.name)
-          const filteredDatasets = self.datasets.filter((d, i) => {
-            const filtered = d[name] >= value[0] && d[name] <= value[1] && activeDatasetNames.includes(d.name)
-            return filtered
-          })
-          let sourceItems = self.dataLibrary
-          const destItems = filteredDatasets
-          const unselected = self.activeData.filter((d) => !filteredDatasets.includes(d))
-
-          sourceItems = sourceItems.concat(unselected)
-          self.$store.dispatch('metamineNU/setActiveData', destItems)
-          self.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
-        }
-      })
-    }
   },
   data () {
     return {
@@ -109,7 +79,122 @@ export default {
     }
   },
   methods: {
-    sigFigs
+    sigFigs, 
+    handleMinSliderChangeFuncs (event, index) {
+      if (event.target.value > this.values[index][1]) {
+        this.values[index][0] = this.values[index][1]
+      }
+      const activeDatasetNames = this.activeData.map((d) => d.name)
+      const filteredDatasets = this.datasets.filter((d, i) => {
+        const filtered = d[this.rangeList[index]] >= this.values[index][0] && d[this.rangeList[index]] <= this.values[index][1] && activeDatasetNames.includes(d.name)
+        return filtered
+      })
+      let sourceItems = this.dataLibrary
+      const destItems = filteredDatasets
+      const unselected = this.activeData.filter((d) => !filteredDatasets.includes(d))
+
+      sourceItems = sourceItems.concat(unselected)
+      this.$store.dispatch('metamineNU/setActiveData', destItems)
+      this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
+
+    },
+  handleMaxSliderChangeFuncs (event, index) {
+      if (event.target.value < this.values[index][0]) {
+        this.values[index][1] = this.values[index][0]
+      }
+      const activeDatasetNames = this.activeData.map((d) => d.name)
+      const filteredDatasets = this.datasets.filter((d, i) => {
+        const filtered = d[this.rangeList[index]] >= this.values[index][0] && d[this.rangeList[index]] <= this.values[index][1] && activeDatasetNames.includes(d.name)
+        return filtered
+      })
+      let sourceItems = this.dataLibrary
+      const destItems = filteredDatasets
+      const unselected = this.activeData.filter((d) => !filteredDatasets.includes(d))
+
+      sourceItems = sourceItems.concat(unselected)
+      this.$store.dispatch('metamineNU/setActiveData', destItems)
+      this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
+
+    }
   }
 }
 </script>
+
+<style scoped lang="scss">
+  
+.range-slider {
+  margin: auto;
+  text-align: center;
+  position: relative;
+  height: 6em;
+}
+
+.range-slider input[type=range] {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  background: transparent;
+  padding-top: 2em;
+  pointer-events: none;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 70%;
+  margin-left: 15%;
+  
+  &:nth-child(3){
+    &::-webkit-slider-runnable-track{
+      background-color: transparent;
+    }
+    &::-moz-range-track {
+      background-color: transparent;
+    }
+  }
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+  background: #2497e3;
+  border-radius: 1px;
+  border: 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  position: relative;
+  border: 1px solid #2497e3;
+  height: 18px;
+  width: 18px;
+  border-radius: 25px;
+  background: #a1d0ff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -7px;
+  pointer-events: auto;
+}
+
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 5px;
+  cursor: pointer;
+  background: #2497e3;
+  border-radius: 1px;
+  box-shadow: none;
+  border: none;
+}
+input[type=range]::-moz-range-thumb {
+  position: relative;
+  border: 1px solid #2497e3;
+  height: 18px;
+  width: 18px;
+  border-radius: 25px;
+  background: #a1d0ff;
+  cursor: pointer;
+
+  -moz-appearance: none;
+  pointer-events: auto;
+}
+
+</style>

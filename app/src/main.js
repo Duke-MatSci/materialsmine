@@ -8,8 +8,6 @@ import './registerServiceWorker'
 import store from './store'
 import router from './router'
 import apollo from './modules/gql/apolloClient'
-import Antd from 'ant-design-vue'
-import 'ant-design-vue/dist/antd.css'
 
 const apolloProvider = new VueApollo({
   defaultClient: apollo
@@ -17,7 +15,6 @@ const apolloProvider = new VueApollo({
 
 Vue.use(VueApollo)
 Vue.use(VueMaterial)
-Vue.use(Antd)
 Vue.config.productionTip = false
 
 new Vue({

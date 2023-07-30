@@ -21,7 +21,7 @@ exports.getAllDatasetNames = async (req, res, next) => {
       const names = res.Contents.map(content => content.Key);
       for (let i = 0; i < names.length; i++) {
         fetchedNames.push({
-          key: i, // key for antd table
+          key: i, // key for table
           bucket_name: bucketName,
           name: names[i],
           color: colorAssignment[i]

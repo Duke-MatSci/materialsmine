@@ -7,7 +7,7 @@
             <md-table
                 v-model="fetchedNames"
                 @md-selected="onSelect"
-                :md-selected-value="fetchedNames"
+                :md-selected-value="fetchedNames.filter((item) => activeData.map(data => data.name).includes(item.name))"
                 style="width: 100%; margin-bottom: 20px"
             >
                 <md-table-empty-state md-label="No data available">
