@@ -62,7 +62,6 @@ const layout = {
   }
 }
 
-
 const config = {
   modeBarButtonsToRemove: ['zoom2d'],
   responsive: true
