@@ -1,10 +1,10 @@
 <template>
-  <Plotly :data="data" :layout="layout" :config="config" :style="style"></Plotly>
+  <div ref="youngsPlot"></div>
 </template>
 
 <script>
+import Plotly from 'plotly.js'
 import { mapState } from 'vuex'
-import { Plotly } from 'vue-plotly'
 
 const layout = {
   title: "Young's Modulus",
@@ -34,19 +34,15 @@ const config = {
   modeBarButtonsToRemove: ['zoom2d'],
   responsive: true
 }
-
 const style = {
-  marginTop: '30px'
+  marginTop: '0px'
 }
 
 export default {
-  name: 'youngs',
-  components: {
-    Plotly
-  },
+  name: 'poisson',
   data () {
     return {
-      data: [{
+      trace1: {
         theta: [
           0, 3.6, 7.2, 10.8, 14.4, 18, 21.6, 25.2, 28.8, 32.4, 36, 39.6, 43.2,
           46.8, 50.4, 54, 57.6, 61.2, 64.8, 68.4, 72, 75.6, 79.2, 82.8, 86.4,
@@ -64,8 +60,7 @@ export default {
         name: "Young's Modulus",
         line: { color: 'peru' },
         type: 'scatterpolar'
-      }
-      ],
+      },
       layout: layout,
       config: config,
       style: style
@@ -75,6 +70,14 @@ export default {
     ...mapState('metamineNU', {
       dataPoint: (state) => state.dataPoint
     })
+  },
+  mounted () {
+    Plotly.newPlot(
+      this.$refs.youngsPlot,
+      [this.trace1],
+      layout,
+      config
+    )
   },
   watch: {
     dataPoint: {
@@ -99,7 +102,12 @@ export default {
           line: { color: 'peru' },
           type: 'scatterpolar'
         }
-        this.data = [newTrace]
+        Plotly.newPlot(
+          this.$refs.youngsPlot,
+          [newTrace],
+          layout,
+          config
+        )
       }
     }
   }

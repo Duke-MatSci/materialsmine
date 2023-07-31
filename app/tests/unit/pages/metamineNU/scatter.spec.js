@@ -13,6 +13,5 @@ describe('ScatterPlot.vue', () => {
     expect(wrapper.findComponent('.scatter-chart').exists()).toBe(true)
     expect(wrapper.findComponent('.subcharts').exists()).toBe(true)
     expect(wrapper.findComponent('.side-tools').exists()).toBe(true)
-
   })
 })

@@ -221,7 +221,7 @@ export default {
             'transform',
             (d, i) =>
                             `translate(${
-                                i * (cellWidth + padding) 
+                                i * (cellWidth + padding)
                             },${cellHeight * 6 + margin.bottom + padding * 4})`
           )
           .attr('x', padding / 2)

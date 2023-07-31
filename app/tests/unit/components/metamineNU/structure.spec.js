@@ -54,4 +54,4 @@ describe('structure', () => {
   })
 
   // @Note => the methods createSvg and update seem like they have error (they assign values to undeclared data properties)
-}) 
+})

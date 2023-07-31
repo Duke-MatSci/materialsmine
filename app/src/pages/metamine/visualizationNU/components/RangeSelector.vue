@@ -11,7 +11,7 @@
       >
         <div style="width: 20%">{{ name }}</div>
         <div style="width: 80%">
-          <div class="range-slider"> 
+          <div class="range-slider">
             <input class="range-slider" type="range" v-bind:min=defaultValues[index][0] v-bind:max=defaultValues[index][1] step="1" v-model="values[index][0]" @change="handleMinSliderChangeFuncs($event, index)">
             <input class="range-slider" type="range" v-bind:min=defaultValues[index][0] v-bind:max=defaultValues[index][1] step="1" v-model="values[index][1]" @change="handleMaxSliderChangeFuncs($event, index)">
           </div>
@@ -24,7 +24,6 @@
     </div>
   </div>
 </template>
-
 
 <script>
 import { mapState } from 'vuex'
@@ -61,7 +60,7 @@ export default {
       } else {
         return this.rangeList.map((name) => [0, 0])
       }
-    },
+    }
   },
   data () {
     return {
@@ -79,7 +78,7 @@ export default {
     }
   },
   methods: {
-    sigFigs, 
+    sigFigs,
     handleMinSliderChangeFuncs (event, index) {
       if (event.target.value > this.values[index][1]) {
         this.values[index][0] = this.values[index][1]
@@ -96,9 +95,8 @@ export default {
       sourceItems = sourceItems.concat(unselected)
       this.$store.dispatch('metamineNU/setActiveData', destItems)
       this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
-
     },
-  handleMaxSliderChangeFuncs (event, index) {
+    handleMaxSliderChangeFuncs (event, index) {
       if (event.target.value < this.values[index][0]) {
         this.values[index][1] = this.values[index][0]
       }
@@ -114,14 +112,13 @@ export default {
       sourceItems = sourceItems.concat(unselected)
       this.$store.dispatch('metamineNU/setActiveData', destItems)
       this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
-
     }
   }
 }
 </script>
 
 <style scoped lang="scss">
-  
+
 .range-slider {
   margin: auto;
   text-align: center;
@@ -141,7 +138,7 @@ input[type=range] {
   -webkit-appearance: none;
   -moz-appearance: none;
   width: 90%;
-  
+
   &:nth-child(3){
     &::-webkit-slider-runnable-track{
       background-color: transparent;

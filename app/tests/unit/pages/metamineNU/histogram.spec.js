@@ -13,6 +13,5 @@ describe('HistogramPlot.vue', () => {
     expect(wrapper.findComponent('.histogram-chart').exists()).toBe(true)
     expect(wrapper.findComponent('.subcharts').exists()).toBe(true)
     expect(wrapper.findComponent('.side-tools').exists()).toBe(true)
-
   })
 })
