@@ -131,7 +131,8 @@ const explorerRoutes = [
   {
     path: 'curate/sdd',
     name: 'CurateSDD',
-    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue')
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: 'chart',
