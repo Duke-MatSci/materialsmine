@@ -1,19 +1,18 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import PairwisePlot from '@/pages/metamine/visualizationNU/PairwisePlotPage.vue'
+import ScatterPlot from '@/pages/metamine/visualizationNU/ScatterPlot.vue'
 
-describe('PairwisePlotPage.vue', () => {
+describe('ScatterPlot.vue', () => {
   let wrapper
   beforeEach(() => {
-    wrapper = createWrapper(PairwisePlot, {}, false)
+    wrapper = createWrapper(ScatterPlot, {}, false)
   })
   enableAutoDestroy(afterEach)
 
   it('mount component correctly', () => {
-    expect(wrapper.findComponent('.pairwise-plot-chart').exists()).toBe(true)
+    expect(wrapper.findComponent('.scatter-chart').exists()).toBe(true)
     expect(wrapper.findComponent('.subcharts').exists()).toBe(true)
     expect(wrapper.findComponent('.side-tools').exists()).toBe(true)
 
-    expect(wrapper.text()).toContain('Material Data Explorer (Pairwise)')
   })
 })

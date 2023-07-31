@@ -4,7 +4,7 @@
         <h2 class="metamine_pairwise-header">Material Data Explorer (Pairwise)</h2>
       </div>
       <div class="main-content" style="margin: 1rem; display: flex">
-        <div class="pairwise-plot-chart" style="width: 50%">
+        <div class="pairwise-plot-chart" style="width: 45%">
           <PairwisePlot></PairwisePlot>
         </div>
         <div class="subcharts" style="width: 20%">
@@ -12,7 +12,7 @@
           <Youngs></Youngs>
           <Poisson></Poisson>
         </div>
-        <div class="side-tools" style="width: 30%">
+        <div class="side-tools" style="width: 35%">
           <DataSelector></DataSelector>
           <RangeSelector></RangeSelector>
           <MaterialInformation></MaterialInformation>

@@ -7,7 +7,7 @@
     </div>
     <div class="slider" v-for="(name, index) in rangeList" :key="index">
       <div
-        style="display: flex; justify-content: center; align-items: top"
+        style="display: flex; justify-content: center; align-items: center"
       >
         <div style="width: 20%">{{ name }}</div>
         <div style="width: 80%">
@@ -126,7 +126,7 @@ export default {
   margin: auto;
   text-align: center;
   position: relative;
-  height: 6em;
+  height: 3em;
 }
 
 .range-slider input[type=range] {
@@ -134,15 +134,13 @@ export default {
   left: 0;
   bottom: 0;
   background: transparent;
-  padding-top: 2em;
   pointer-events: none;
 }
 
 input[type=range] {
   -webkit-appearance: none;
   -moz-appearance: none;
-  width: 70%;
-  margin-left: 15%;
+  width: 90%;
   
   &:nth-child(3){
     &::-webkit-slider-runnable-track{

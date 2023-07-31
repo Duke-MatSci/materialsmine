@@ -11,12 +11,12 @@
       ></div>
       <h3 style="margin: '0 10px'">Constituent Material 0 Properties</h3>
     </div>
-    <div class="mat-content-line">Type: {{ dataPoint?.CM0 }}</div>
+    <div class="mat-content-line">Type: {{ dataPoint && dataPoint['CM0'] }}</div>
     <div class="mat-content-line">
-      Young&apos;s Modulus: {{ dataPoint?.CM0_E }}
+      Young's Modulus: {{ dataPoint && dataPoint['CM0_E'] }}
     </div>
     <div class="mat-content-line">
-      Poisson&apos;s Ratio: {{ dataPoint?.CM0_nu }}
+      Poisson's Ratio: {{ dataPoint && dataPoint['CM0_nu'] }}
     </div>
 
     <div class="mat-subtitle-line">
@@ -25,12 +25,12 @@
       ></div>
       <h3 style="margin: '0 10px'">Constituent Material 1 Properties</h3>
     </div>
-    <div class="mat-content-line">Type: {{ dataPoint?.CM1 }}</div>
+    <div class="mat-content-line">Type: {{ dataPoint && dataPoint['CM1'] }}</div>
     <div class="mat-content-line">
-      Young&apos;s Modulus: {{ dataPoint?.CM1_E }}
+      Young's Modulus: {{ dataPoint && dataPoint['CM1_E'] }}
     </div>
     <div class="mat-content-line">
-      Poisson&apos;s Ratio: {{ dataPoint?.CM1_nu }}
+      Poisson's Ratio: {{ dataPoint && dataPoint['CM1_nu'] }}
     </div>
   </div>
 </template>

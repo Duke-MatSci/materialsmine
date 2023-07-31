@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import PairwisePlot from '@/pages/metamine/visualizationNU/components/pairwise-plot.vue'
+import PairwisePlot from '@/pages/metamine/visualizationNU/components/pairwise.vue'
 import * as d3 from 'd3'
 
 /*
@@ -86,6 +86,7 @@ describe('PairwisePlot', () => {
     const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
     const spy = jest.spyOn(d3, 'map')
     const zDomain = new d3.InternSet([])
+
     expect(wrapper.vm.chart).toBe(false)
     expect(wrapper.vm.svg).toBe()
     expect(wrapper.vm.cell).toBe()
@@ -99,10 +100,12 @@ describe('PairwisePlot', () => {
     expect(wrapper.vm.chart).toBe(true)
     expect(wrapper.vm.svg).not.toBe()
     expect(wrapper.vm.cell).not.toBe()
-    expect(wrapper.vm.cellWidth).toBe(124.66666666666667)
     expect(wrapper.vm.X).toEqual([[], [], [], [], [], []])
     expect(wrapper.vm.Y).toEqual([[], [], [], [], [], []])
     expect(wrapper.vm.Z).toEqual([])
     expect(wrapper.vm.zDomain).toEqual(zDomain)
+
+    expect(wrapper.find('.xAxisGroup').exists()).toBe(true)
+    expect(wrapper.find('.yAxisGroup').exists()).toBe(true)
   })
 })

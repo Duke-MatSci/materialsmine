@@ -1,7 +1,6 @@
 <template>
-  <div class="main tool_page wrapper-box">
-    <div class="md-layout md-alignment-top-left md-gutter adjust-padding" style="margin:10px">
-      <div class="main-content" style="margin: 1rem; display: flex">
+    <div class="md-gutter adjust-padding wrapper-box">
+      <div class="main-content" style="margin: 3rem; display: flex">
         <div class="scatter-chart" style="width: 50%">
           <Scatter />
         </div>
@@ -16,7 +15,6 @@
           <MaterialInformation />
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -26,7 +24,6 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  width: 18%;
   overflow: hidden;
 }
 </style>

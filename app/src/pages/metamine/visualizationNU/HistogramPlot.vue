@@ -5,12 +5,12 @@
         <div class="histogram-chart" style="width: 50%">
           <Histogram />
         </div>
-        <div class="" style="width: 20%">
+        <div class="subcharts" style="width: 20%">
           <Structure />
           <Youngs />
           <Poisson />
         </div>
-        <div class="" style="width: 30%;">
+        <div class="side-tools" style="width: 30%;">
           <DataSelector />
           <RangeSelector />
           <MaterialInformation />
@@ -19,6 +19,16 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.subcharts {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  overflow: hidden;
+}
+</style>
 
 <script>
 import Histogram from './components/histogram.vue'
