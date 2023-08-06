@@ -58,6 +58,12 @@ const explorerRoutes = [
         props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'bulk',
+        name: 'CurateBulk',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -125,7 +131,8 @@ const explorerRoutes = [
   {
     path: 'curate/sdd',
     name: 'CurateSDD',
-    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue')
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: 'chart',

@@ -64,14 +64,12 @@
             </div>
 
             </div>
-            <div class="md-layout md-gutter md-alignment-top-right">
-              <div class="md-layout-item md-size-10 md-medium-size-15 md-small-size-20 md-xsmall-size-40">
-                <md-button
-                  @click="goToStep('first', 'second')"
-                  class="md-theme-default md-button_next">
-                  Next
-                </md-button>
-              </div>
+            <div class="md-card-actions md-alignment-right chart_editor__right-view ">
+              <md-button
+                @click="goToStep('first', 'second')"
+                class="md-theme-default md-button_next">
+                Next
+              </md-button>
             </div>
           </md-step>
 

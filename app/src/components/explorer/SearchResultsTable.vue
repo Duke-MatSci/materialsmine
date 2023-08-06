@@ -6,7 +6,7 @@
       v-if="getIsloading"
     />
     <div
-      class="utility-roverflow explorer_page-results"
+      class="utility-roverflow explorer_page-results metadata"
       v-else
     >
       <!-- Articles -->

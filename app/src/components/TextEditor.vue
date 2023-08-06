@@ -43,6 +43,7 @@ export default {
       document.execCommand('italic')
     },
     applyHeading () {
+      if (document.queryCommandValue('formatBlock') === 'h1') { return document.execCommand('formatBlock', false, 'div') }
       document.execCommand('formatBlock', false, '<h1>')
     },
     applyUl () {

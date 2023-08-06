@@ -27,8 +27,7 @@
             <md-card-media-cover md-solid>
               <div class="u_gridicon">
                 <div>
-                  <md-tooltip md-direction="left">Last updated</md-tooltip>
-                  <p class="u--color-primary u_margin-none u--padding-zero u_content__result"> {{ new Date().toLocaleDateString() }}</p>
+                  <p class="u--color-primary u_margin-none u--padding-zero u_content__result"><strong>Last updated: </strong>{{ new Date().toLocaleDateString() }}</p>
                 </div>
 
               </div>
@@ -37,12 +36,12 @@
                   <div class="viz-u-postion__rel u--layout-flex md-layout u_centralize_content u_width--max">
                     <template v-if="xml.samples > 8">
                       <div v-for="n in 8" :key="n" class="u_margin-top-small md-layout-item md-size-25 viz-u-postion__rel CodeMirror">
-                        <md-icon class="u--color-primary media-icon-mod viz-u-postion__rel md-small-size-3x ">description</md-icon>
+                        <md-icon class="u--color-primary media-icon-mod viz-u-postion__rel u_icon_mobile_lg ">description</md-icon>
                       </div>
                     </template>
                     <template v-else>
                       <div v-for="n in xml.samples" :key="n" class="u_margin-top-small md-layout-item md-size-25 viz-u-postion__rel CodeMirror">
-                        <md-icon class="u--color-primary media-icon-mod viz-u-postion__rel md-small-size-3x">description</md-icon>
+                        <md-icon class="u--color-primary media-icon-mod viz-u-postion__rel u_icon_mobile_lg">description</md-icon>
                       </div>
                     </template>
                   </div>

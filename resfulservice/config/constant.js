@@ -26,5 +26,17 @@ module.exports = {
     'CHARACTERIZATION METHODS': 'CHARACTERIZATION',
     MICROSTRUCTURE: 'MICROSTRUCTURE'
   },
-  ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT']
+  ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
+  SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx'],
+  SupportedFileResponseHeaders: {
+    '.csv': 'text/csv',
+    '.png': 'image/png',
+    '.jpg': 'image/jpg',
+    '.jpeg': 'image/jpeg',
+    '.tiff': 'image/tiff',
+    '.tif': 'image/tif',
+    '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  },
+  MinioBucket: 'mgi'
 };
