@@ -4,5 +4,14 @@ export default {
   },
   getFieldNameSelected (state) {
     return state.fieldNameSelected
+  },
+  getNewChartExist (state) {
+    return state.newChartExist
+  },
+  getDoiData (state) {
+    return state.doiData
+  },
+  getOrcidData (state) {
+    return state.orcidData
   }
 }

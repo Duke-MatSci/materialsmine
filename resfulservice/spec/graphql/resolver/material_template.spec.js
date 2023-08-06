@@ -170,6 +170,16 @@ describe('Material Template Resolver Unit Tests:', function () {
       expect(error.extensions.code).to.be.equal(404);
     });
 
+    it("should delete a curation list", async () => {
+      sinon.stub(MaterialTemplate, 'findOneAndDelete').returns({
+        lean: sinon.stub().returns(mockDBColumn),
+      });
+      const result = await deleteXlsxCurationList({}, { input }, { user, req, isAuthenticated: true }); 
+
+      expect(result).to.have.property('field');
+      expect(result).to.have.property('values');
+    });
+
     it("should throw a 500, server error", async () => {
       sinon.stub(MaterialTemplate, 'findOneAndDelete').returns({
         lean: sinon.stub().throws(),
@@ -182,7 +192,7 @@ describe('Material Template Resolver Unit Tests:', function () {
   });
 
   context('getXlsxCurationList', () => {
-    const input = { ...mockColumn, pageNumber: 1, pageSize: 10 }
+    const input = { pageNumber: 1, pageSize: 10 }
     it("should throw a 401, not authenticated error", async () => {
 
       const error = await getXlsxCurationList({}, { input }, { user, req, isAuthenticated: false }); 

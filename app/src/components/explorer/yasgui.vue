@@ -14,10 +14,14 @@ export default {
     }
   },
   mounted () {
+    const token = this.$store.getters['auth/token']
     this.yasgui = new YASGUI(this.$el, {
 
       requestConfig: {
-        endpoint: '/api/knowledge/sparql'
+        endpoint: '/api/knowledge/sparql',
+        headers: () => ({
+          authorization: 'Bearer ' + token
+        })
       },
       copyEndpointOnNewTab: false
     })

@@ -1,0 +1,575 @@
+openapi: 3.0.0
+info:
+  title: MaterialsMine Project API Docs
+  description: As MaterialsMine continues to expand, we are committed to facilitating materials research development and
+    welcome feedback and suggestions for further improvements to help you benchmark and visualize your data, explore your 
+    research hypotheses, perform simulations and analysis using our available tools, and more.
+  version: 1.0.0
+  termsOfService:
+  contact:
+    name:
+    email:
+servers:
+  
+paths:
+  /admin/es:
+    get:
+      security:
+        - BearerAuth: [] 
+      summary: Check the status of elastic search service
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Returns true if ES service is up or false if ES service is down
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: boolean
+                    example: true
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: Automatically configures & initializes elastic search service
+      tags:
+        - Admin
+      responses:
+        '200':
+          description: Returns a successfully configure message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: Successfully configured schemas!
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    put:
+      tags:
+        - Admin
+      security:
+        - BearerAuth: [] 
+      summary: Add new resource into search service. Examples of a resource item are charts, samples or articles
+      requestBody:
+        description: New resource document payload to index in json
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [samples, charts, articles]
+                doc:
+                  type: object
+                  properties:
+                    label:
+                      type: string
+                      example: Glass Transition Temperature
+                    identifier:
+                      type: string
+                      example: http://matmine.org/sample/l333-s5-salami-1000
+                    thumbnail:
+                      type: string
+                      example: https://localhost/explorer/blob?=1441449bdf0cb480
+                    description:
+                      type: string
+                      example: This chart of curated articles per year published is compact...
+      responses:
+        '200':
+          description: Returns an object similar to the example below if successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      _index:
+                        type: string
+                        example: samples
+                      _type:
+                        type: string
+                        example: _doc
+                      _id:
+                        type: string
+                        example: VeMK7LYgBMY-vG6TxJk_N
+                      _version:
+                        type: number
+                        example: 2
+                      _shards:
+                        type: object
+                        properties:
+                          total: 
+                            type: number
+                            example: 1000000
+                          successful: 
+                            type: number
+                            example: 1
+                          failed: 
+                            type: number
+                            example: 0
+                      _seq_no:
+                        type: number
+                        example: 99999
+                      _primary_term:
+                        type: number
+                        example: 36
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '422':
+          description: Missing required input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Missing-Input-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    delete:
+      security:
+        - BearerAuth: [] 
+      summary: Removes resource item from search service. Examples of a resource item are charts, samples or articles
+      tags:
+        - Admin
+      requestBody:
+        description: Details of resource document to remove from search service
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [samples, charts, articles]
+                doc:
+                  type: string
+                  example: http://matmine.org/sample/l333-s5-salami-1000
+      responses:
+        '200':
+          description: Returns an object response if deletion is successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    properties:
+                      took:
+                        type: number
+                        example: 36
+                      timed_out:
+                        type: string
+                        example: false
+                      total:
+                        type: number
+                        example: 2
+                      deleted:
+                        type: number
+                        example: 2
+                      batches:
+                        type: number
+                        example: 1
+                      version_conflicts:
+                        type: number
+                        example: 0
+                      noops:
+                        type: number
+                        example: 0
+                      retries:
+                        type: object
+                        properties:
+                          bulk: 
+                            type: number
+                            example: 0
+                          search: 
+                            type: number
+                            example: 0
+                      throttled_millis:
+                        type: number
+                        example: 0
+                      requests_per_second:
+                        type: number
+                        example: -1
+                      throttled_until_millis:
+                        type: number
+                        example: 0
+                      failures:
+                        type: array
+                        example: []
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '422':
+          description: Missing required input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Missing-Input-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  /curate:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Gets curation Base Object
+      description: A route to get the Curation Schema Base Object either base on sheetName query or returns the whole Schema
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: sheetName
+          schema:
+            type: string
+          description: The sheetName (i.e subset) of the Schema to return. This is optional
+      responses:
+        '200':
+          description: Returns a json Schema object
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  data origin: {}
+                  material types: {}
+                  synthesis and processing: {}
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: Creates a new curation
+      description: Curates a new data based on a submitted spreadsheet & other files
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: dataset
+          schema:
+            type: string
+          description: Dataset ID
+      requestBody:
+        description: A payload that contains the master_template xlsx file along with other files needed to create the curation
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadfile:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Curation'
+        '400':
+          description: If user doesn't upload master template xlsx file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Missing dataset ID in query', 'Material template files not uploaded', 'Master template xlsx file not uploaded']
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '404':
+          description: Dataset not found
+          content: 
+            application/json: 
+              schema:
+                type: object
+                example:
+                  message: A sample must belong to a dataset. Dataset 583e3d6ae74a1d205f4e3fd3 not found
+        '409':
+          description: conflict error if object already curated
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                    message: 'This has already been curated'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    put:
+      tags:
+        - Curation
+      security:
+        - BearerAuth: [] 
+      summary: Updates existing curated data
+      deprecated: false
+      parameters:
+        - in: query
+          name: xlsxObjectId
+          schema:
+            type: string
+          description: Curation ID
+      requestBody:
+        description: An updated curation json object
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  $ref: '#/components/schemas/Successful-Curation'
+      responses:
+        '200':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Curation'
+
+        '304': 
+          description: No changes to the curation object to update
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'No changes'
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Curated sample ID 583e3d6ae74a1d205f4e3fd3 not found
+
+        '500':
+          description: Elastic search upstream server response error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  /curate/get{xmlId}/{xlsxObjectId}:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Gets a single curated data or list of curated data
+      description: A route to get a single curation or list of curations depending on if query parameter for the curation to get is set.
+      tags:
+        - Curation
+      parameters:
+        - name: xlsxObjectId
+          in: path
+          schema:
+            type: string
+          description: The ID of the curated data to return for editing
+        - name: xmlId
+          in: path
+          schema:
+            type: string
+          description: Alternatively the ID of the xml to return for editing
+      responses:
+        '200':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                 $ref: '#/components/schemas/Successful-Curation'
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Curation sample not found', 'Sample xml not found']
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Unauthorized-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: Not authenticated
+    Forbidden-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: User is forbidden
+    Missing-Input-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          example: Category type or doc is missing
+    Successful-Curation:
+      type: object
+      example: 
+        xml: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>Tolulomo Fateye</YourName>\n        <YourEmail>tolulomo@toluconsulting.com</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>Gbolahan Adeleke</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n"
+        user:
+          _id: "643931cc6f44b02f01380f7a"
+          displayName: "Test"
+        groupId: "583e3d6ae74a1d205f4e3fd3"
+        isApproved: false,
+        status: "Editing"

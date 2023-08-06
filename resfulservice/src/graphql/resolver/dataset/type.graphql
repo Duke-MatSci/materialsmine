@@ -1,24 +1,53 @@
 type Datasets {
-  "Unique id assigned to a user dataset grouping"
+  """
+  Unique id assigned to a user dataset grouping
+  """
   datasetGroupId: ID
-  "Verified user information"
-  user: VerifiedUser @deprecated(reason: "No longer supported!")
-  "Dataset workflow status"
+
+  """
+  Verified user information
+  """
+  user: VerifiedUser
+
+  """
+  Dataset workflow status
+  """
   status: STATUS
-  "Dataset title at curation"
+
+  """
+  Dataset title at curation
+  """
   title: String
-  "Filesets groupings with similar fileset name"
-  filesetInfo: [Fileset]
-  "Time dataset was created"
+
+  """
+  Filesets groupings with similar fileset name
+  """
+  filesetInfo: [Fileset] @deprecated(reason: "No longer supported!")
+
+  """
+  List of of curations belonging to this dataset grouping
+  """
+  curatedDatasets: [String!]
+
+  """
+  Time dataset was created
+  """
   createdAt: String
-  "Time dataset was last updated"
+
+  """
+  Time dataset was last updated
+  """
   updatedAt: String
 }
 
 type VerifiedUser {
-  "User assigned id string e.g. 583dc006e74a1d205f4e1403"
+  """
+  User assigned id string e.g. 583dc006e74a1d205f4e1403
+  """
   id: String!
-  "User display name"
+  """
+  User display name
+  """
   username: String!
 }
 

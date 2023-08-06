@@ -52,4 +52,23 @@ describe('@/components/Snackbar.vue', () => {
     await action.trigger('click')
     expect(mockFn).toHaveBeenCalled()
   })
+
+  it('modifies the left position with a custom class', () => {
+    expect.assertions(2)
+    expect(wrapper.find('.md-snackbar-adjust').exists()).toBe(true)
+    expect(wrapper.vm.position).toBe('left')
+  })
+
+  it('clears and hides snackbar when reset from Vuex', async () => {
+    expect.assertions(3)
+    await wrapper.vm.$store.commit('setSnackbar', {
+      message: testMessage
+    })
+    wrapper.vm.$nextTick()
+    expect(wrapper.vm.show).toBe(true)
+    await wrapper.vm.$store.commit('resetSnackbar', {})
+    wrapper.vm.$nextTick()
+    expect(wrapper.vm.show).toBe(false)
+    expect(wrapper.vm.message).toBe('')
+  })
 })

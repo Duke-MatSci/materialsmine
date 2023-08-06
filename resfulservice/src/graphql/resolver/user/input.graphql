@@ -1,48 +1,92 @@
-"User ID info for user query resolver"
+"""
+Verify user input payload
+"""
 input userIdInput {
- "The user's unique ID"
+  """
+  Unique ID of the user
+  """
   _id: ID!
 }
 
-"Page and page size info for users query resolver"
+"""
+Delete user input payload
+"""
+input deleteUsersInput {
+  """
+  List of user's unique ID
+  """
+  ids: [ID!]!
+}
+
+"""
+Get user list input payload
+"""
 input usersQueryInput {
-  "Page number of users to find"
+  """
+  Page number of users to find
+  """
   pageNumber: Int
 
-  "Total number of users per page"
+  """
+  Total number of users per page
+  """
   pageSize: Int
-}
 
-"Input schema for createUser Mutation resolver"
-input createUserInput {
-  "User alias from auth service"
-  alias: String!
-
-  "User first name info"
-  givenName: String!
-
-  "User last name info"
-  surName: String!
-
-  "Name displayed on user profile, e.g. username"
-  displayName: String!
-  "User email address"
-  email: String!
-}
-"Update user mutation resolver schema"
-input updateUserInput {
-  "Unique ID of user to update"
-  _id: ID!
-  "User alias e.g. username"
-  alias: String
-  "User ID from auth service"
-  userid: String
-  "User first name info"
-  givenName: String
-  "User last name info"
-  surName: String
-  "name displayed on user profile similar to username"
+  """
+  Optional field to find users base on userName
+  """
   displayName: String
-  "User email"
-  email: String
+}
+
+"""
+User modification input payload
+"""
+input updateUserInput {
+  """
+  Unique ID of user to update
+  """
+  _id: ID!
+
+  """
+  User alias e.g. username
+  """
+  alias: String
+
+  """
+  User ID from auth service
+  """
+  userid: String @deprecated(reason: "No longer supported!")
+
+  """
+  User first name info
+  """
+  givenName: String
+
+  """
+  User last name info
+  """
+  surName: String
+
+  """
+  Name displayed on user profile similar to username
+  """
+  displayName: String @deprecated(reason: "No longer supported!")
+
+  """
+  User email email address
+  """
+  email: String @deprecated(reason: "No longer supported!")
+
+  """
+  User priviledge options
+  """
+  roles: Roles
+}
+
+"""
+Available user priviledge options
+"""
+enum Roles {
+  isAdmin
+  member
 }

@@ -34,7 +34,7 @@
                 <md-table-row slot="md-table-row" slot-scope="{ item }">
                   <md-table-cell md-label="Field Name" md-sort-by="field">{{ item.field }}</md-table-cell>
                   <md-table-cell md-label="Value">
-                    <md-chip v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
+                    <md-chip class="u_margin-bottom-small" v-for="(element, i) in item['values']" :key="`C${i}`">{{ element }}</md-chip>
                   </md-table-cell>
                   <md-table-cell md-label="User" md-sort-by="user">{{ item.user ?? ''}}</md-table-cell>
                   <md-table-cell md-label="Actions">
@@ -67,7 +67,7 @@
             with values:
         </span>
         <div class="md-layout md-gutter md-alignment-bottom-center" style="margin-top:1rem">
-            <md-chip v-for="(value, index) in dialog['values']" :key="`value_${index}`">{{ value }}</md-chip>
+            <md-chip class="u_margin-bottom-small" v-for="(value, index) in dialog['values']" :key="`value_${index}`">{{ value }}</md-chip>
         </div>
       </template>
       <template v-slot:actions>

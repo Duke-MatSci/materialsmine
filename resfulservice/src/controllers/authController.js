@@ -2,12 +2,14 @@ const User = require('../models/user');
 const UAParser = require('ua-parser-js');
 const { setInternal } = require('../middlewares/isInternal');
 const { successWriter, errorWriter } = require('../utils/logWriter');
-const { supportedBrowser } = require('../../config/constant');
+const { supportedBrowser, userRoles } = require('../../config/constant');
 
 // Generate and send token info to FE
-const _redirect = ({ _id, email, displayName }, req, res) => {
+const _redirect = ({ _id, email, displayName, givenName, surName, roles }, req, res) => {
+  const isAdmin = roles === userRoles.isAdmin;
+
   successWriter(req, 'success', 'Found/Created user successfully');
-  const token = setInternal(req, { _id, email, displayName });
+  const token = setInternal(req, { _id, email, displayName, givenName, surName, isAdmin, roles });
   successWriter(req, 'success', 'Login token generated successfully');
 
   return res
@@ -15,7 +17,10 @@ const _redirect = ({ _id, email, displayName }, req, res) => {
       .stringify({
         userId: _id,
         token,
-        displayName
+        displayName,
+        isAdmin,
+        givenName,
+        surName
         })}`);
 };
 
@@ -34,7 +39,8 @@ const _validateUser = async (req) => {
     email,
     givenName: req.headers[env.MM_AUTH_GIVEN_NAME_HEADER] ?? env.MM_USER,
     surName: req.headers[env.MM_AUTH_SURNAME_HEADER] ?? env.MM_USER,
-    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER
+    displayName: req.headers[env.MM_AUTH_DISPLAYNAME_HEADER] ?? env.MM_USER,
+    roles: req.env?.MM_RUNTIME_ENV === 'dev' ? userRoles.isAdmin : userRoles.member
   });
 
   const savedUser = await user.save();
@@ -77,7 +83,7 @@ exports.authenticationService = async (req, res, next) => {
   if (!supportedBrowser.includes(browser)) return res.status(200).json({ message: 'Successful!' });
 
   // 1. Check environment & determine Login type
-  const currentEnv = req.env.MM_RUNTIME_ENV;
+  const currentEnv = env?.MM_RUNTIME_ENV;
   logger.info(`authenticationService(): current environment: ${currentEnv}`);
   if (currentEnv === 'dev') return this.devLoginService(req, res, next);
 

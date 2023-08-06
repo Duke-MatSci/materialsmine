@@ -1,25 +1,46 @@
-"Get a user record"
+"""
+Get a user record
+"""
 type User {
-  "User ID"
+  """
+  User's unique identification
+  """
   _id: ID
 
-  "User alias"
+  """
+  User's alias info
+  """
   alias: String
 
-  "User first name"
+  """
+  User first name info
+  """
   givenName: String
 
-  "User's lastname"
+  """
+  User's lastname info
+  """
   surName: String
   
-  "User display name"
+  """
+  User username info
+  """
   displayName: String
 
-  "User email"
+  """
+  User email address info
+  """
   email: String
 
-  "User API access list"
+  """
+  User API access list
+  """
   apiAccess: String
+
+  """
+  User priviledge options
+  """
+  roles: String
 }
 
 "Get List of users"

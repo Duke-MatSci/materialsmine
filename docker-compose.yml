@@ -78,6 +78,7 @@ services:
       - MONGO_ADDRESS=${MONGO_ADDRESS}
       - MONGO_PORT=${MONGO_PORT}
       - TKNS=${TKNS}
+      - FILES_DIRECTORY=${FILES_DIRECTORY}
       - ESADDRESS=${ESADDRESS}
       - PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
@@ -91,6 +92,16 @@ services:
       - MM_AUTH_EMAIL_HEADER=${MM_AUTH_EMAIL_HEADER}
       - MM_AUTH_USER_HEADER=${MM_AUTH_USER_HEADER}
       - KNOWLEDGE_ADDRESS=${WHYIS_ADDRESS}
+      - MAIL_SERVER_HOST=${MAIL_SERVER_HOST}
+      - MAIL_SERVER_PORT=${MAIL_SERVER_PORT}
+      - MAIL_USER_ADDRESS=${MAIL_USER_ADDRESS}
+      - MAIL_USER_PASSWORD=${MAIL_USER_PASSWORD}
+      - TERM_OF_SERVICE=${TERM_OF_SERVICE}
+      - SWAGGER_CONTACT_NAME=${SWAGGER_CONTACT_NAME}
+      - SWAGGER_CONTACT_EMAIL=${SWAGGER_CONTACT_EMAIL}
+      - DEV_ENDPOINT=${DEV_ENDPOINT}
+      - QA_SERVER_ENDPOINT=${QA_SERVER_ENDPOINT}
+      - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
     ports:
       - '3001:3001'
   client:
@@ -168,6 +179,7 @@ services:
     command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - NM_GRAPH_AUTH_SECRET=${TKNS}
     build: whyis
     volumes:
       - ./whyis/materialsmine:/app
@@ -185,7 +197,7 @@ services:
     environment:
 #      - ADMIN_USER=admin
 #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JVM_ARGS=-Xmx10g
+      - JVM_ARGS=-Xmx4g
       - FUSEKI_BASE=/fuseki
     ports:
       - '3030:3030'

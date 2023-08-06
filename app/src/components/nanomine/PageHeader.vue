@@ -65,6 +65,7 @@
                                     <router-link to="/explorer" class="nav_menu--siblings-lists"><a>Browse Data</a></router-link>
                                     <router-link to="/explorer/chart" class="nav_menu--siblings-lists"><a>Chart Gallery</a></router-link>
                                     <router-link to="/explorer/images" class="nav_menu--siblings-lists"><a>Image Gallery</a></router-link>
+                                    <router-link to="/explorer/xmls" class="nav_menu--siblings-lists"><a>View XMLs</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -72,8 +73,8 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
-                                    <a href="/explorer/curate" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></a>
-                                    <router-link to="/explorer/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
+                                    <a href="/explorer/curate/spreadsheet" class="nav_menu--siblings-lists"><a>Spreadsheet Upload</a></a>
+                                    <router-link to="/explorer/curate/sdd" class="nav_menu--siblings-lists"><a>Upload with SDD</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -82,10 +83,9 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Tools</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/explorer/sparql" class="nav_menu--siblings-lists"><a>Sparql Query</a></router-link>
-                                    <router-link to="/nm/tools/module_homepage" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
-                                    <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
-                                    <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
+                                    <router-link to="/explorer/tools" class="nav_menu--siblings-lists"><a>Module & Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
+                                    <router-link to="" @click.native="loadApiDocs" class="nav_menu--siblings-lists"><a>API Docs</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -120,6 +120,12 @@ export default {
       isAuth: 'auth/isAuthenticated',
       displayName: 'auth/displayName'
     })
+  },
+  methods: {
+    loadApiDocs () {
+      const url = `${location.origin}/api/api-docs/`
+      return window.location.assign(url)
+    }
   }
 }
 </script>

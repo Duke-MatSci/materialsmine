@@ -33,6 +33,19 @@
                 }
             }
         }
+        &-mm {
+            @include respond(laptop) {
+                display: none;
+                visibility: hidden;
+                position: absolute;
+            }
+            @include respond(tab-land) {
+                display: block;
+                visibility: visible;
+                top: 15rem;
+                cursor: pointer;
+            }
+        }
         &-left {
             left: -0.5rem;
         }
@@ -230,6 +243,10 @@
         opacity: 1;
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
+        @include chartDisplayAdjust($i, 5);
+        &-narrow {
+            @include chartDisplayAdjust($i, 4);
+        }
 
         /* @include respond(big-desktop-chart-adjust){
             @include chartDisplayAdjust($i, 4);
@@ -237,10 +254,16 @@
 
         @include respond(laptop) {
             @include chartDisplayAdjust($i, 4);
+            &-narrow {
+                @include chartDisplayAdjust($i, 3);
+            }
         }
 
         @include respond(tab-land) {
             @include chartDisplayAdjust($i, 3);
+            &-narrow {
+                @include chartDisplayAdjust($i, 2);
+            }
         }
 
         @include respond(tab-port) {
