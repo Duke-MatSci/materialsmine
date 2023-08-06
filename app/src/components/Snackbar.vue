@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration">
+    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration" class="md-snackbar-adjust">
       {{message}}
       <span>
         <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
@@ -17,7 +17,7 @@ export default {
     position: {
       type: String,
       required: false,
-      default: 'center'
+      default: 'left'
     }
   },
   data () {
@@ -45,6 +45,12 @@ export default {
         this.action()
         this.show = false
       }
+    },
+    resetSnackbar () {
+      this.show = false
+      this.message = ''
+      this.action = null
+      this.duration = false
     }
   },
   watch: {
@@ -56,6 +62,13 @@ export default {
         this.duration = val.duration ? val.duration : false
         // Reset
         this.$store.commit('setSnackbar', '')
+      } else if (val.duration === 0) {
+        this.resetSnackbar()
+      }
+    },
+    '$route' (newValue, oldValue) {
+      if (newValue !== oldValue) {
+        this.resetSnackbar()
       }
     }
   }

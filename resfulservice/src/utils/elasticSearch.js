@@ -65,6 +65,19 @@ class ElasticSearch {
     });
   }
 
+  async deleteSingleDoc (type, identifier) {
+    return this.client.deleteByQuery({
+      index: type,
+      body: {
+        query: {
+          match_phrase: {
+            identifier
+          }
+        }
+      }
+    });
+  }
+
   async _putMappings (type, schema) {
     return this.client.indices.putMapping({
       index: type,
@@ -124,6 +137,7 @@ class ElasticSearch {
     }
     return this.client.index({
       index: type,
+      refresh: true,
       document: { ...doc }
     });
   }

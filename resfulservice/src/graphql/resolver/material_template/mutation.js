@@ -1,4 +1,4 @@
-const MaterialTemplate = require('../../../models/xlsxCurationList');
+const XlsxCurationList = require('../../../models/xlsxCurationList');
 const errorFormater = require('../../../utils/errorFormater');
 
 const materialMutation = {
@@ -18,12 +18,12 @@ const materialMutation = {
   updateXlsxCurationList: async (_, { input }, { user, req, isAuthenticated }) => {
     req.logger?.info('[updateMaterialColumn] Function Entry:');
     if (!isAuthenticated) {
-      req.logger?.error('[updateMaterialColumn]: User not authenticated to view contact listing');
+      req.logger?.error('[updateMaterialColumn]: User not authenticated to update CurationList');
       return errorFormater('not authenticated', 401);
     }
     const { field } = input;
     try {
-      const column = await MaterialTemplate.findOneAndUpdate({ field }, { $set: { ...input, user: user._id } }, { new: true, lean: true, populate: { path: 'user', select: 'displayName' } });
+      const column = await XlsxCurationList.findOneAndUpdate({ field }, { $set: { ...input, user: user._id } }, { new: true, lean: true, populate: { path: 'user', select: 'displayName' } });
       if (!column) return errorFormater('column not found', 404);
       req.logger?.info(`[updateMaterialColumn]: column successfully updated: ${column.field}`);
       return { ...column, user: column.user.displayName };
@@ -41,7 +41,7 @@ const materialMutation = {
     }
     const { field } = input;
     try {
-      const column = await MaterialTemplate.findOneAndDelete({ field }).lean();
+      const column = await XlsxCurationList.findOneAndDelete({ field }).lean();
       if (!column) return errorFormater('column not found', 404);
       req.logger?.info(`[deleteMaterialColumn]: column successfully deleted: ${column.field}`);
       return column;
@@ -54,7 +54,7 @@ const materialMutation = {
 
 async function insertMany (columns) {
   try {
-    await MaterialTemplate.insertMany(columns, { ordered: false, rawResult: true, lean: true });
+    await XlsxCurationList.insertMany(columns, { ordered: false, rawResult: true, lean: true });
   } catch (e) {
     return e.writeErrors.map(({ err: { errmsg } }) => errmsg.split('key:')[1]);
   }

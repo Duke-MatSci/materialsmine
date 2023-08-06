@@ -22,6 +22,23 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'tools',
+    component: () => import('@/pages/explorer/tools/ToolsBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'ToolsExplorer',
+        component: () => import('@/pages/explorer/Tools.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dynamfit',
+        name: 'DynamFit',
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue')
+      }
+    ]
+  },
+  {
     path: 'curate',
     component: () => import('@/pages/explorer/curate/CurateBase.vue'),
     children: [
@@ -105,11 +122,11 @@ const explorerRoutes = [
   //   name: 'CurateStepper',
   //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
   // },
-  // {
-  //   path: 'sdd',
-  //   name: 'CurateSDD',
-  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
-  // }
+  {
+    path: 'curate/sdd',
+    name: 'CurateSDD',
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue')
+  },
   {
     path: 'chart',
     component: ChartBase,
@@ -120,26 +137,22 @@ const explorerRoutes = [
         component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
+      ...['editor/:type', 'editor/:type/:chartId(.*)']
+        .map(path => ({
+          path,
+          component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
+          props: true,
+          meta: { requiresAuth: true }
+        })),
       {
-        path: 'edit/:chartId',
-        name: 'ChartEdit',
-        props: true,
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'create',
-        name: 'ChartCreate',
-        meta: { requiresAuth: false }
-      },
-      {
-        path: 'view/:chartId',
+        path: 'view/:chartId(.*)',
         name: 'ChartView',
         component: () => import('@/pages/explorer/chart/view/VegaView.vue'),
         props: true,
         meta: { requiresAuth: false }
       },
       {
-        path: 'voyager/:chartId',
+        path: 'voyager/:chartId(.*)',
         name: 'ChartDataVoyager',
         component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
@@ -202,6 +215,25 @@ const explorerRoutes = [
         '@/pages/explorer/Sparql.vue'
       ),
     meta: { requiresAuth: true }
+  },
+  {
+    path: 'xmls',
+    name: 'XmlGallery',
+    component: () => import('@/pages/explorer/xml/Xml.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'xmlvisualizer/:id',
+    name: 'XmlVisualizer',
+    component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'dataset/:id',
+    name: 'DatasetVisualizer',
+    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+    props: true,
+    meta: { requiresAuth: false }
   }
 ]
 

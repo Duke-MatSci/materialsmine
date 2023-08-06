@@ -45,15 +45,18 @@
             >
               <md-icon>bookmark_border</md-icon>
             </div>
-            <div v-if="$store.getters.isAuthenticated && !!$store.getters.user.isAdmin" @click.prevent="deleteChart(result)">
+            <div v-if="isAuth && isAdmin" @click.prevent="editChart(result)">
+              <md-icon>edit</md-icon>
+            </div>
+            <div v-if="isAuth && isAdmin" @click.prevent="renderDialog('Delete Chart?', 'delete', result, 80)">
               <md-icon>delete_outline</md-icon>
             </div>
           </div>
-          <router-link :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
+          <router-link v-if="result.identifier" :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <img
-                  :src="getThumbnailUrl(result)"
+                  :src="baseUrl + result.thumbnail"
                   :alt="result.label"
                   v-if="result.thumbnail"
                 >
@@ -78,64 +81,136 @@
       <pagination
         :cpage="page"
         :tpages="totalPages"
-        @go-to-page="loadItems($event)"
+        @go-to-page="loadPrevNextImage($event)"
       />
     </div>
+    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+      <template v-slot:title>{{dialog.title}}</template>
+      <template v-slot:content>
+        <div v-if="dialog.type=='delete'">
+          <md-content v-if="dialog.chart">
+            <div> This will permanently remove the chart <b>{{dialog.chart.label}}</b> </div>
+            with identifier <b>{{dialog.chart.identifier}}</b>.
+          </md-content>
+        </div>
+        <div v-if="dialogLoading">
+          <spinner
+            :loading="dialogLoading"
+            text='Deleting Chart'
+          />
+        </div>
+      </template>
+      <template v-slot:actions>
+        <span v-if="dialog.type=='delete' && dialog.chart">
+          <md-button @click.native.prevent="toggleDialogBox">
+            No, cancel
+          </md-button>
+          <md-button @click.native.prevent="deleteChart(dialog.chart)">
+            Yes, delete.
+          </md-button>
+        </span>
+        <md-button v-else @click.native.prevent="toggleDialogBox">Close</md-button>
+      </template>
+    </dialogbox>
   </div>
 </template>
 <script>
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
+import Dialog from '@/components/Dialog.vue'
 import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
-import { getViewUrl } from '@/modules/whyis-view'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
 import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 
 export default {
   name: 'viz-grid',
-  mixins: [reducer],
+  mixins: [reducer, explorerQueryParams],
   data () {
     return {
       loading: true,
       loadError: false,
       otherArgs: null,
-      defaultImg
+      pageNumber: 1,
+      defaultImg,
+      baseUrl: `${window.location.origin}/api/knowledge/images?uri=`,
+      dialog: {
+        title: 'Test'
+      },
+      dialogLoading: false
     }
   },
   components: {
     pagination,
-    spinner
+    spinner,
+    dialogbox: Dialog
   },
   computed: {
-    ...mapGetters('explorer/gallery', [
-      'items',
-      'page',
-      'total',
-      'totalPages',
-      'queryTimeMillis'
-    ])
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox',
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
+      items: 'explorer/gallery/items',
+      page: 'explorer/gallery/page',
+      total: 'explorer/gallery/total',
+      totalPages: 'explorer/gallery/totalPages',
+      queryTimeMillis: 'explorer/gallery/queryTimeMillis',
+      newChartExist: 'explorer/curation/getNewChartExist'
+    })
   },
   methods: {
     ...mapActions('explorer/gallery', ['loadItems']),
-    deleteChart (chart) {
-
-      // console.log('delete chart', chart)
+    ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
+    renderDialog (title, type, result, minWidth) {
+      this.dialog = {
+        title,
+        type,
+        minWidth,
+        chart: result
+      }
+      this.toggleDialogBox()
+    },
+    async deleteChart (chart) {
+      if (!this.isAdmin) return // temporary safeguard
+      this.dialogLoading = true
+      await this.$store.dispatch('explorer/curation/deleteChartNanopub', chart.identifier)
+      await this.$store.dispatch('explorer/curation/deleteChartES', chart.identifier)
+      this.toggleDialogBox()
+      this.dialogLoading = false
+      await this.loadItems()
+    },
+    editChart (chart) {
+      return this.$router.push(`/explorer/chart/editor/edit/${this.getChartId(chart)}`)
+    },
+    bookmark () {
+      // TODO
+    },
+    async localSearchMethod () {
+      await this.loadItems(this.pageNumber)
     },
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
       this.loading = false
     },
-    getThumbnailUrl (item) {
-      return getViewUrl({ uri: item.thumbnail })
-    },
     getChartId (chart) {
       return toChartId(chart.identifier)
     }
   },
   async mounted () {
-    await this.loadItems()
+    const query = this.$route.query
+    if (query?.page) {
+      await this.loadParams(this.$route.query, false)
+    } else {
+      await this.loadItems()
+    }
+  },
+  watch: {
+    newChartExist () {
+      this.$store.commit('explorer/curation/setNewChartExist', false)
+      return this.loadItems()
+    }
   }
 }
 </script>

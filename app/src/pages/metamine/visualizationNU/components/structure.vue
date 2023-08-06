@@ -1,5 +1,5 @@
 <template>
-  <div ref="structurePlot"></div>
+    <div ref="structurePlot"></div>
 </template>
 
 <script>
@@ -12,7 +12,7 @@ const MARGIN = {
   BOTTOM: 30,
   LEFT: 30
 }
-const SIDE = 230
+const SIDE = 200
 const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM
 
@@ -38,14 +38,23 @@ export default {
     createSvg (dataPoint) {
       const height = dataPoint.height ? dataPoint.height : HEIGHT
       const width = dataPoint.width ? dataPoint.width : WIDTH
-      const marginLeft = dataPoint.marginLeft ? dataPoint.marginLeft : MARGIN.LEFT
-      const marginTop = dataPoint.marginTop ? dataPoint.marginTop : MARGIN.TOP
+      const marginLeft = dataPoint.marginLeft
+        ? dataPoint.marginLeft
+        : MARGIN.LEFT
+      const marginTop = dataPoint.marginTop
+        ? dataPoint.marginTop
+        : MARGIN.TOP
       this.svg = d3
         .select(this.$refs.structurePlot)
         .append('svg')
         .attr('width', width + marginLeft * 2)
         .attr('height', height + marginTop * 2)
-        .attr('viewBox', [0, 0, width + marginLeft * 2, height + marginTop * 2])
+        .attr('viewBox', [
+          0,
+          0,
+          width + marginLeft * 2,
+          height + marginTop * 2
+        ])
         .style('z-index', 10)
         .style('margin-top', '30px')
         .append('g')
@@ -56,7 +65,10 @@ export default {
         .attr('x', width / 2)
         .attr('y', 0 - marginTop / 2)
         .attr('text-anchor', 'middle')
-        .style('font-size', dataPoint.fontSize ? dataPoint.fontSize : '16px')
+        .style(
+          'font-size',
+          dataPoint.fontSize ? dataPoint.fontSize : '16px'
+        )
         .style('font-family', 'Arial, sans-serif')
         .text('Unit Cell Geometry')
 
@@ -66,7 +78,10 @@ export default {
         .attr('y', height + marginTop)
         .attr('class', 'volumn-ratio')
         .attr('text-anchor', 'middle')
-        .style('font-size', dataPoint.fontSize ? dataPoint.fontSize : '16px')
+        .style(
+          'font-size',
+          dataPoint.fontSize ? dataPoint.fontSize : '16px'
+        )
         .style('font-family', 'Arial, sans-serif')
 
       this.update(dataPoint)
@@ -77,7 +92,9 @@ export default {
       const color = dataPoint.outline_color
       const height = dataPoint.height ? dataPoint.height : HEIGHT
       const width = dataPoint.width ? dataPoint.width : WIDTH
-      const marginLeft = dataPoint.marginLeft ? dataPoint.marginLeft : MARGIN.LEFT
+      const marginLeft = dataPoint.marginLeft
+        ? dataPoint.marginLeft
+        : MARGIN.LEFT
 
       let res = []
       res = this.pixelate(data, color)
@@ -101,6 +118,35 @@ export default {
         .attr('fill', (d) => d.fill)
 
       pixels.exit().remove()
+
+      const tooltip = d3
+        .select(this.$refs.structurePlot)
+        .append('div')
+        .attr('class', 'nuplot-tooltip')
+        .style('background-color', 'white')
+        .style('border', 'solid')
+        .style('border-width', '1px')
+        .style('border-radius', '5px')
+        .style('padding', '10px')
+        .style('visibility', 'hidden')
+        .style('z-index', 100)
+
+      const mouseover = function (event, d) {
+        tooltip.style('visibility', 'visible')
+      }
+      const mousemove = function (event, d) {
+        tooltip
+          .html(`(${data.CM0 || 'N/A'}, ${data.CM1 || 'N/A'})`)
+          .style('left', event.pageX + 10 + 'px')
+          .style('top', event.pageY + 10 + 'px')
+      }
+      const mouseleave = function (event, d) {
+        tooltip.style('visibility', 'hidden')
+      }
+      this.svg
+        .on('mouseover', mouseover)
+        .on('mousemove', mousemove)
+        .on('mouseleave', mouseleave)
     },
 
     calculateRatio (data) {

@@ -14,14 +14,13 @@ const layout = {
     color: '#000'
   },
   orientation: -90,
-  width: 200,
-  height: 200,
+  width: 230,
+  height: 230,
   margin: {
-    l: 50,
-    r: 50,
-    b: 50,
-    t: 50,
-    pad: 1
+    b: 40,
+    t: 40,
+    l: 40,
+    r: 40
   }
 }
 

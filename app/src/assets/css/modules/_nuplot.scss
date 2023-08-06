@@ -1,0 +1,25 @@
+.nuplot {
+    &-selected {
+        opacity: 1 !important;
+        stroke: black !important;
+        stroke-width: 2px !important;
+    }
+    &-highlighted {
+        opacity: 1 !important;
+        fill-opacity: 1 !important;
+      }
+    
+    &-masked {
+        opacity: 0.3 !important;
+      }
+    
+      &-tooltip {
+        position: absolute;
+        z-index: 10;
+        display: inline-block;
+        background-color: white;
+        padding: 10px;
+        visibility: hidden;
+        pointer-events: none;
+      }
+}

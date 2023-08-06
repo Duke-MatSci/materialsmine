@@ -1,6 +1,6 @@
-const csv = require('csvtojson');
+const XlsxFileManager = require('../utils/curation-utility');
 const PixelData = require('../models/pixelated');
-const deleteFile = require('../utils/fileManager');
+const { deleteFile } = require('../utils/fileManager');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 
 exports.uploadPixelData = async (req, res, next) => {
@@ -21,7 +21,7 @@ exports.uploadPixelData = async (req, res, next) => {
       return next(errorWriter(req, 'Pixeldata already exists', 'uploadPixelData', 403));
     }
 
-    const pixelDataArray = await csv().fromFile(req.files.uploadfile[0].path);
+    const pixelDataArray = await XlsxFileManager.parseCSV(req.files.uploadfile[0].path);
     if (pixelDataArray.length === 0) {
       deleteFile(req.files.uploadfile[0].path, req);
       return next(errorWriter(req, 'PixelData csv is empty', 'uploadPixelData', 400));
@@ -53,7 +53,7 @@ exports.updatePixelData = async (req, res, next) => {
       successWriter(req, 'Successfully deleted all existing pixel data in mongoDB', 'updatePixelData');
     }
     req.files.uploadfile.forEach(async ({ path }) => {
-      const pixelDataArray = await csv().fromFile(path);
+      const pixelDataArray = await XlsxFileManager.parseCSV(req.files.uploadfile[0].path);
       await insertMany(req, pixelDataArray);
       deleteFile(path, req);
     });

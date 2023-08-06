@@ -13,7 +13,7 @@
       <div v-if="resultsTab==='getArticles'" class="grid_explorer-fullrow" ref="articles_ref">
         <div v-for="(result, index) in getArticles"
           :key="index"
-          class="btn--animated md-card gallery-item results_card">
+          class="btn--animated md-card gallery-item results_card u--font-emph-900">
           <md-card-header style="padding:0px">
             <router-link @click.native="fixUriBeforeRouting(result.identifier, 'http://dx.doi.org/')" to="#" class="results_card-title">
               <div >{{ result.label }}</div>
@@ -33,7 +33,7 @@
       <div class="grid_explorer-fullrow" v-if="resultsTab === 'getSamples'" ref="samples_ref">
         <div v-for="(result, index) in getSamples"
           :key="index"
-          class="btn--animated md-card gallery-item results_card" ref="sample_ref">
+          class="btn--animated md-card gallery-item results_card u--font-emph-900" ref="sample_ref">
 
           <md-card-header style="padding:0px">
             <md-avatar v-if="result.thumbnail">
@@ -65,7 +65,7 @@
       <div class="grid_explorer-boxes" v-if="resultsTab === 'getCharts'" ref="charts_ref">
         <div v-for="(result, index) in getCharts"
           :key="index"
-          class="btn--animated md-card gallery-item results_card">
+          class="btn--animated md-card gallery-item results_card u--font-emph-900">
 
           <div class="utility-gridicon_explorer" v-if="resultsTab === 'getCharts'">
             <div
@@ -85,7 +85,7 @@
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3"  v-if="result.thumbnail">
               <img
-                :src="baseUrl + '/api/files/' + result.thumbnail.split('=')[1]"
+                :src="baseUrl + '/api/knowledge/images?uri=' + result.thumbnail"
                 :alt="result.label"
                 v-if="result.thumbnail"
               >
@@ -106,7 +106,7 @@
       <div class="grid_explorer-boxes" v-if="resultsTab === 'getImages'" ref="images_ref">
         <div v-for="(result, index) in getImages"
           :key="index"
-          class="btn--animated md-card gallery-item results_card">
+          class="btn--animated md-card gallery-item results_card u--font-emph-900">
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3"  v-if="result.file">
               <img
@@ -130,7 +130,7 @@
       <div class="grid_explorer-fullrow" v-if="resultsTab === 'getMaterials'" ref="materials_ref">
         <div v-for="({label}, index) in getMaterials"
           :key="index"
-          class="btn--animated md-card gallery-item results_card">
+          class="btn--animated md-card gallery-item results_card u--font-emph-900">
           <md-card-header style="padding:0px">
             <router-link @click.native.prevent="loadProperties(label)" to="#" class="results_card-title">
               <div >{{ label }}</div>
@@ -261,7 +261,7 @@ export default {
         } else if (this.resultsTab === 'getSamples') {
           return this.$router.push(`/explorer/sample/${identifier}`)
         } else if (this.resultsTab === 'getCharts') {
-          return this.$router.push(`/explorer/chart/view/${identifier}`)
+          return this.$router.push(`/explorer/chart/view/${encodeURIComponent(identifier)}`)
         } else if (this.resultsTab === 'getImages') {
           return this.$router.push(`/explorer/images/${address}/${encodeURIComponent(prefix)}`)
         }
