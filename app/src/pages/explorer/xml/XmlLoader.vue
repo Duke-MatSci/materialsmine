@@ -9,27 +9,32 @@
       </md-drawer>
 
       <md-content class="u_width--max md-app-side-drawer md-app-container md-scrollbar" >
-        <div>
+        <div :class="[isSmallTabView ? 'u_margin-top-med' : '']">
           <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text"> {{ optionalChaining(() => xmlViewer.title) }} </h2>
         </div>
         <!-- xml viewer  -->
         <div class="wrapper">
-          <pre class="language-xml grid">
-            <code class="inlinecode language-xml keepMarkUp">
-              {{ optionalChaining(() => xmlViewer.xmlString) }}
-            </code>
-          </pre>
+          <XmlView :xml='optionalChaining(() => xmlViewer.xmlString)'/>
         </div>
 
       </md-content>
-      <md-button @click="approveCuration" v-if="isAuth && isAdmin" class="md-fab md-fixed md-dense md-fab-bottom-right md-primary btn--primary u--margin-rightlg">
-        <md-tooltip md-direction="top">Approve</md-tooltip>
-          <md-icon>check</md-icon>
-      </md-button>
-      <md-button @click="showSidepanel = true" class="md-fab md-fixed md-dense md-fab-bottom-right md-primary btn--primary">
-        <md-tooltip md-direction="top">Comment</md-tooltip>
-          <md-icon>comment</md-icon>
-      </md-button>
+      <div :class="[isSmallTabView ? 'u_margin-top-small u_adjust-banner-text' : 'u--margin-neg','md-fab md-fab-top-right u_width--max u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad']">
+        <md-button class="md-fab md-dense md-primary btn--primary" @click.native.prevent="navBack">
+          <md-tooltip> Go Back </md-tooltip>
+          <md-icon>arrow_back</md-icon>
+        </md-button>
+
+        <md-button @click="showSidepanel = true" class="md-fab md-dense md-primary btn--primary">
+          <md-tooltip md-direction="top">Comment</md-tooltip>
+            <md-icon>comment</md-icon>
+        </md-button>
+
+        <md-button @click="approveCuration" v-if="isAuth && isAdmin" class="md-fab md-dense md-primary btn--primary ">
+          <md-tooltip md-direction="top">Approve</md-tooltip>
+            <md-icon>check</md-icon>
+        </md-button>
+
+      </div>
     </section>
 
     <section class="section_loader u--margin-toplg" v-else-if="$apollo.loading">
@@ -49,6 +54,7 @@ import 'prismjs/themes/prism-coy.min.css'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
+import XmlView from '@/components/explorer/XmlView'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
 import { mapGetters } from 'vuex'
 export default {
@@ -56,7 +62,8 @@ export default {
   mixins: [optionalChainingUtil],
   components: {
     Comment,
-    spinner
+    spinner,
+    XmlView
   },
   data () {
     return {
@@ -69,7 +76,10 @@ export default {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
       isAdmin: 'auth/isAdmin'
-    })
+    }),
+    isSmallTabView () {
+      return screen.width < 760
+    }
   },
   methods: {
     approveCuration () {
@@ -77,6 +87,9 @@ export default {
         message: 'Something went wrong',
         action: () => this.approveCuration()
       })
+    },
+    navBack () {
+      this.$router.back()
     }
   },
   mounted () {

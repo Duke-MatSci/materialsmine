@@ -182,7 +182,8 @@ export default {
       getArticles: articlesLength,
       getSamples: samplesLength,
       getCharts: chartsLength,
-      getMaterials: 0
+      getMaterials: 0,
+      getImages: 0
     })
   },
 

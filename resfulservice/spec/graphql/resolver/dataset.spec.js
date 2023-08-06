@@ -91,7 +91,7 @@ describe('Dataset Resolver Unit Tests:', function () {
       expect(createDatasetId.name).to.equal('createDatasetId');
       expect(createDatasetId.type.toString()).to.equal('Datasets!');
     });
-
+    
     it("should throw a 401, not authenticated error", async () => {
       const result = await createDatasetId({}, { }, { user, req, isAuthenticated: false });
 
@@ -107,13 +107,15 @@ describe('Dataset Resolver Unit Tests:', function () {
       expect(datasetId).to.have.property('datasetGroupId');
     }); 
 
+
     it("should throw a 409, when an unused datasetId exists", async () => {
       sinon.stub(DatasetId, 'findOne').returns({_id: '62d951cb6981a12d136a0a0d', status: 'WORK IN PROGRESS', samples: [] })
       const result = await createDatasetId({}, { }, { user, req, isAuthenticated: true });
 
       expect(result).to.have.property('extensions');
-      expect(result.extensions.code).to.be.equal(409);
+      expect(result.extensions.code).to.be.equal(409)
     });
+
 
     it('should throw a 500 Internal server error when error is thrown', async () => {
       sinon.stub(DatasetId, 'findOne').throws();

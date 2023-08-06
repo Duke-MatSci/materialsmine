@@ -2,7 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const DatasetProperty = require('../../src/models/datasetProperty');
 const { getDatasetProperties } = require('../../src/controllers/adminController');
-
+const { next } = require('../mocks');
 const { expect } = chai;
 
 const mockDatasetProperties =  [
@@ -53,9 +53,6 @@ describe('Admin Controllers Unit Tests:', function() {
 
   context('getDatasetProperties', () => {
     it('should return a 400 error if no search query params', async function() {
-      const next = function (fn) {
-        return fn;
-      };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returnsThis();
       const result = await getDatasetProperties(req, res, next);
@@ -66,9 +63,6 @@ describe('Admin Controllers Unit Tests:', function() {
 
     it('should return a list of filtered dataset properties', async function() {
       req.query = { search: 'Loss' }
-      const next = function (fn) {
-        return fn;
-      };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({data: mockDatasetProperties});
       sinon.stub(DatasetProperty, 'find').returns(fetchedDatasetProperties)
@@ -79,9 +73,7 @@ describe('Admin Controllers Unit Tests:', function() {
 
     it.skip('should return a 500 server error', async function() {
       req.query = { search: 'Loss' }
-      const next = function (fn) {
-        return fn;
-      };
+
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({message: 'Server Error'});
       sinon.stub(DatasetProperty, 'find').throws('Error connecting to database');

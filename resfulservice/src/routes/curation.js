@@ -2,16 +2,19 @@ const express = require('express');
 const router = express.Router();
 const curationController = require('../controllers/curationController');
 const isAuth = require('../middlewares/isAuth');
-const { validateXlsxObjectUpdate, validateXlsxObjectDelete } = require('../middlewares/validations');
+const { latencyTimer } = require('../middlewares/latencyTimer');
+const { validateXlsxObjectUpdate, validateXlsxObjectDelete, validateXlsxObjectGet } = require('../middlewares/validations');
 
 router.route('')
-  .get(isAuth, curationController.getCurationSchemaObject)
-  .post(isAuth, curationController.curateXlsxSpreadsheet)
-  .put(validateXlsxObjectUpdate, isAuth, curationController.updateXlsxCurations)
+  .get(isAuth, latencyTimer, curationController.getCurationSchemaObject)
+  .post(isAuth, latencyTimer, curationController.curateXlsxSpreadsheet)
+  .put(validateXlsxObjectUpdate, isAuth, latencyTimer, curationController.updateXlsxCurations)
   .delete(validateXlsxObjectDelete, isAuth, curationController.deleteXlsxCurations);
 
-router.route('/get/:xmlId/:xlsxObjectId')
-  .get(isAuth, curationController.getXlsxCurations);
+router.route('/bulk')
+  .post(isAuth, latencyTimer, curationController.bulkXlsxCurations);
+router.route('/get')
+  .get(validateXlsxObjectGet, isAuth, latencyTimer, curationController.getXlsxCurations);
 
 router.route('/admin')
   .post(isAuth, curationController.approveCuration);

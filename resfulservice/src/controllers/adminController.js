@@ -30,6 +30,20 @@ exports.initializeElasticSearch = async (req, res, next) => {
 };
 
 /**
+ * Redirect admin user to object store
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} redirect
+ */
+exports.loadObjectStore = async (req, res, next) => {
+  const log = req.logger;
+  log.info('loadObjectStore(): Function entry');
+
+  return res.redirect(`http://localhost:${req.env.MINIO_CONSOLE_PORT}`);
+};
+
+/**
  * Bulk Load Elastic Search
  * @param {*} req
  * @param {*} res
@@ -210,6 +224,7 @@ exports.populateDatasetIds = async (req, res, next) => {
   // if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
 
   try {
+    // TODO: Fix iterator or remove
     // const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
     // const Dataset = await db.collection('datasets');
     // const datasets = await Dataset.find({});

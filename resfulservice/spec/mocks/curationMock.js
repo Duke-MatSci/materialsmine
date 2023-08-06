@@ -1026,8 +1026,8 @@ const mockCuratedXlsxObject = {
   DATA_SOURCE: {
     Citation: {
       CommonFields: {
-        YourName: 'Tolulomo Fateye',
-        YourEmail: 'tolulomo@toluconsulting.com',
+        YourName: 'John Doe',
+        YourEmail: 'john@doe.com',
         Origin: 'experiments',
         CitationType: 'lab-generated',
         Author: [
@@ -1330,6 +1330,19 @@ const correctXlsxFile = [
   }
 ];
 
+const mockBulkCurationZipFile = [
+  {
+    fieldname: 'uploadfile',
+    originalname: 'curations.zip',
+    encoding: '7bit',
+    mimetype: 'application/zip',
+    destination: 'mm_files',
+    filename: 'entitled_bobolink_emmaline-2023-06-15T12:02:53.834Z-curations.zip',
+    path: 'mm_files/entitled_bobolink_emmaline-2023-06-15T12:02:53.834Z-curations.zip',
+    size: 121836
+  }
+];
+
 const mockUploadedFiles = [
   {
     fieldname: 'uploadfile',
@@ -1394,9 +1407,21 @@ const mockUploadedFiles = [
 ];
 
 const mockDatasetId = {
+  _id: '583e3d6ae74a1d205f4e3fd3',
   user: '583e3d6ae44a1d205f4e3fd3',
   status: 'APPROVED',
   samples: ['583e3d6ae74a3d205f4e3fd3', '583e3d6ae74a1d205f4e3fd3']
+};
+
+const mockCurateObject = {
+  xml: '<?xml version="1.0" encoding="utf-8"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>John Doe</YourName>\n        <YourEmail>john@doe.com</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>John Doe</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n',
+  user: {
+    _id: '643931cc6f44b02f01380f7a',
+    displayName: 'Test'
+  },
+  groupId: '583e3d6ae74a1d205f4e3fd3',
+  isApproved: 'false,',
+  status: 'Editing'
 };
 
 const mockXmlData = {
@@ -1410,22 +1435,88 @@ const user = {
   displayName: 'test'
 };
 
-const mockCurateObject = {
-  xml: '<?xml version="1.0" encoding="utf-8"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>Tolulomo Fateye</YourName>\n        <YourEmail>tolulomo@toluconsulting.com</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>Gbolahan Adeleke</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n',
-  user: {
-    _id: '643931cc6f44b02f01380f7a',
-    displayName: 'Test'
+const mockUnzippedFolder = {
+  folderPath: 'mm_files/bulk-curation-1688982949940',
+  allfiles: [{
+    mode: 33188,
+    mtime: '2023-05-10T11:43:10.000Z',
+    path: 'bulk/S10_L1/001.tif',
+    type: 'file',
+    data: '<Buffer ff d8 ff e0 00 10 4a 46 49 46 00 01 01 00 00 01 00 01 00 00 ff db 00 84 00 03 02 02 0a 0a 0a 0a 0a 0a 08 08 0a 08 0a 0a 0a 0a 08 08 0a 0a 0a 0a 0a 0a ... 57576 more bytes'
   },
-  groupId: '583e3d6ae74a1d205f4e3fd3',
-  isApproved: 'false,',
-  status: 'Editing'
+  {
+    mode: 33188,
+    mtime: '2023-05-10T11:43:10.000Z',
+    path: '__MACOSX/bulk/S10_L1/._001.tif',
+    type: 'file',
+    data: '<Buffer 00 05 16 07 00 02 00 00 4d 61 63 20 4f 53 20 58 20 20 20 20 20 20 20 20 00 02 00 00 00 09 00 00 00 32 00 00 02 ce 00 00 00 02 00 00 03 00 00 00 00 00 ... 718 more bytes>'
+  }
+  ]
+};
+
+const mockReadFolder = {
+  masterTemplates: [
+    'mm_files/bulk-curation-1686834726293/master_template.xlsx',
+    'mm_files/bulk-curation-1688984487096/master_template (1).xlsx'
+  ],
+  curationFiles: [
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/real_permittivity.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/loss_permittivity.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/tan_delta.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/weibull.csv',
+    'mm_files/bulk-curation-1688982949940/Ls-94k-askd/001.tif'
+  ],
+  folders: ['mm_files/bulk-curation-1686834726293/Ls-94k-askd']
+};
+
+const mockCurationError = {
+  errors: {
+    'real_permittivity.csv': 'file not uploaded',
+    'loss_permittivity.csv': 'file not uploaded',
+    'tan_delta.csv': 'file not uploaded',
+    'weibull.csv': 'file not uploaded',
+    '001.tif': 'file not uploaded'
+  }
+};
+
+const mockBulkCuration1 = {
+  bulkCurations: [],
+  bulkErrors: [
+    {
+      filename: 'mm_files/bulk-curation-1686834726293/master_template.xlsx',
+      '001.tif': 'file not uploaded'
+    }
+  ]
+};
+
+const mockBulkCuration2 = {
+  bulkCurations: [
+    mockCurateObject
+  ],
+  bulkErrors: [
+    {
+      filename: 'mm_files/bulk-curation-1686834726293/master_template.xlsx',
+      '001.tif': 'file not uploaded'
+    }
+  ]
+};
+
+const mockRes = {
+  status: function (code) {
+    return this;
+  },
+  json: function (object) {
+    return object;
+  }
 };
 
 module.exports = {
   user,
   correctXlsxFile,
+  mockBulkCurationZipFile,
   wrongXlsxFile,
   mockCurationList,
+  mockCurateObject,
   mockCuratedXlsxObject,
   fetchedCuratedXlsxObject,
   mockSheetData,
@@ -1445,5 +1536,10 @@ module.exports = {
   mockDatasetId,
   mockXmlData,
   mockCSVData,
-  mockCurateObject
+  mockUnzippedFolder,
+  mockCurationError,
+  mockBulkCuration1,
+  mockBulkCuration2,
+  mockReadFolder,
+  mockRes
 };
