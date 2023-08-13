@@ -18,13 +18,14 @@ def create_app(config_class = Config):
     bcrypt.init_app(app)
     mail.init_app(app)
     db.init_app(app)
-    CORS(app)    
+    CORS(app)
 
     from app.chemprops.routes import chemprops
     from app.intellicharact.routes import icharact
     from app.otsu.routes import otsu
     from app.descriptor.routes import descriptor
     from app.correlation.routes import correlation
+    from app.dynamfit.routes import dynamfit
     from app.main.routes import main
 
     app.register_blueprint(chemprops)
@@ -32,6 +33,7 @@ def create_app(config_class = Config):
     app.register_blueprint(otsu)
     app.register_blueprint(descriptor)
     app.register_blueprint(correlation)
+    app.register_blueprint(dynamfit)
     app.register_blueprint(main)
 
     return app
