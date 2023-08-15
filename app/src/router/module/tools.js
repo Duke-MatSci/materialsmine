@@ -40,8 +40,8 @@ const toolSetRoutes = [
 
 const toolRoutes = [
   {
-    path: 'dynamfit',
-    name: 'Dynamfit',
+    path: 'Ynamfit', //TODO: Should be dynamfit
+    name: 'Ynamfit',
     component: () => import(/* webpackChunkName: "dynamfit" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
     meta: { requiresAuth: false }
   },
