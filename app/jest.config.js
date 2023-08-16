@@ -14,7 +14,7 @@ module.exports = {
     '\\.(gif)$': '<rootDir>/tests/jest/__mocks__/fileMock.js',
     '\\.(ttl|rq)': 'jest-raw-loader',
     '^.+\\.js$': 'babel-jest',
-    '.*\\.(vue)$': 'vue-jest',
+    '.*\\.(vue)$': 'vue-jest'
   },
   snapshotSerializers: [
     '<rootDir>/node_modules/jest-serializer-vue'
