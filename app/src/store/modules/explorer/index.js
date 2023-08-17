@@ -22,7 +22,9 @@ export default {
       searching: false,
       facetFilterMaterials: [],
       selectedFacetFilterMaterialsValue: null,
-      selectedFacetFilterMaterials: {}
+      selectedFacetFilterMaterials: {},
+      dataset: null,
+      datasetThumbnail: ''
     }
   },
   mutations,

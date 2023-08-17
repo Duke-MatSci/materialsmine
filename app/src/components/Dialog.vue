@@ -8,8 +8,8 @@
           <slot name="title">
           </slot>
         </md-dialog-title>
-        <md-button v-if="!disableClose" class="md-icon-button dialog-box_close" @click="toggleDialogBox()">
-          <md-icon class="utility-navfonticon">close</md-icon>
+        <md-button v-if="!disableClose" class="md-icon-button dialog-box_close facet-content_container u_margin-right-small" @click="toggleDialogBox()">
+          <md-icon class="utility-navfonticon u--font-emph-xl">close</md-icon>
         </md-button>
       </div>
       <div class="dialog-box_content">

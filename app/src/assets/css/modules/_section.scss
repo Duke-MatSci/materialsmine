@@ -215,4 +215,37 @@
             }
         }
     }
+    &_contact{
+        &_text-editor{
+            .editor{
+                width: 100%;
+                min-height: 6em;
+                outline: none;
+                border: 1px solid #e2dcdc;
+                border-radius: 6px;
+                padding: 8px 16px;
+                text-align: left;
+    
+                &:hover{
+                    border: .1rem solid $primary;
+                }
+                & > * {
+                    margin: .51rem 0;
+                }
+                & > h1{
+                    margin: 1rem 0;
+                }
+            }
+    
+        }
+        &__box{
+            &-email {
+                max-width: 120px;
+                text-overflow: ellipsis;
+                @include respond(phone) {
+                    max-width: fit-content;
+                }
+            }
+        }
+    }
 }

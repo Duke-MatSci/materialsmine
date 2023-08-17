@@ -274,6 +274,7 @@ paths:
           description: Missing required input
           content:
             application/json:
+
               schema:
                 $ref: '#/components/schemas/Missing-Input-Error'
         '403':
@@ -367,6 +368,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Successful-Curation'
+
         '400':
           description: If user doesn't upload master template xlsx file
           content:
@@ -405,7 +407,7 @@ paths:
               schema:
                 type: object
                 example:
-                    message: 'This has already been curated'
+                    message: 'This had been curated already'
         '500':
           description: Internal Server Error
           content:
@@ -438,14 +440,14 @@ paths:
               type: object
               properties:
                 payload:
-                  $ref: '#/components/schemas/Successful-Curation'
+                  $ref: '#/components/schemas/Sample-Curation'
       responses:
         '200':
           description: Returns the newly curated object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Successful-Curation'
+                $ref: '#/components/schemas/Sample-Curation'
 
         '304': 
           description: No changes to the curation object to update
@@ -485,7 +487,82 @@ paths:
                   message:
                     type: string
                     example: An error occurred
-  /curate/get{xmlId}/{xlsxObjectId}:
+    delete:
+
+      security:
+        - BearerAuth: []
+      summary: Deletes a curation or list of curations
+      description: A route to delete a  single curation or list of curations with similar datasetID
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: xlsxObjectId
+          schema:
+            type: string
+          description: the id of the curation to delete
+        - in: query
+          name: dataset
+          schema:
+            type: string
+          description: Dataset ID linked to multiple curations
+
+      responses:
+        '200':
+          description: Returns a success message for deleting curations
+          content:
+            application/json:
+              schema:
+
+                type: object
+                properties:
+                  message:
+
+                    type: string
+                    enum: ['Curated sample ID: 6475c82ffbeb8571b77a5991 successfully deleted', 'Curated Samples with Dataset ID: 583e3d6ae74a1d205f4e3fd3 successfully deleted']
+                
+        '400':
+          description: Bad user input
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  success: false
+                  message: validation error
+                  data:
+                    - value: '231543536'
+                      msg: invalid xlsx object id
+                      param: dataset
+                      location: query
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Curation sample not found', '`Dataset ID: 583e3d6ae74a1d205f4e3fd3 not found`']
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  
+  /curate/get:
     get:
       security:
         - BearerAuth: []
@@ -495,22 +572,22 @@ paths:
         - Curation
       parameters:
         - name: xlsxObjectId
-          in: path
-          schema:
-            type: string
+          in: query
           description: The ID of the curated data to return for editing
-        - name: xmlId
-          in: path
           schema:
             type: string
+        - name: xmlId
+          in: query
           description: Alternatively the ID of the xml to return for editing
+          schema:
+            type: string
       responses:
         '200':
           description: Returns the newly curated object
           content:
             application/json:
               schema:
-                 $ref: '#/components/schemas/Successful-Curation'
+                 $ref: '#/components/schemas/Sample-Curation'
 
         '401':
           description: User not authorized for this service
@@ -538,6 +615,308 @@ paths:
                   message:
                     type: string
                     example: An error occurred
+  
+  /curate/bulk:
+     post:
+      security:
+        - BearerAuth: [] 
+      summary: Creates bulk curations
+      description: Creates multiple curations based on multiple master template uploaded in a zip file
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: dataset
+          schema:
+            type: string
+          description: Dataset ID
+      requestBody:
+        description: A payload that contains zip file which holds all the files for separate curations in individual folders
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadfile:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Returns the newly curated object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bulkCurations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Successful-Curation'
+                  bulkErrors:
+                    example:
+                      - "flename": "mm_files/bulk-curation-1688984487096/master_template (1).xlsx"
+                        "real_permittivity.csv": "file not uploaded"
+                        "loss_permittivity.csv": "file not uploaded"
+                        "tan_delta.csv": "file not uploaded"
+                        "weibull.csv": "file not uploaded"
+                        
+        '400':
+          description: If user doesn't upload master template xlsx file
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ['Missing dataset ID in query', 'bulk curation zip file not uploaded']
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+  
+        '404':
+          description: Dataset not found
+          content: 
+            application/json: 
+              schema:
+                type: object
+                example:
+                  message: "Dataset ID: 583e3d6ae74a1d205f4e3fd3 not found"
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+                    
+  /files/{fileId}:
+    get:
+      summary: Download files from the server
+      description: A route to download files by specifying a boolean isFileStore query params for files saved in the directory on the server or  in database
+      tags:
+        - Files
+      parameters:
+        - in: query
+          name: isFileStore
+          schema:
+            type: boolean
+            example: true
+          description: a boolean value to specify if the file is stored in a directory or database
+        - in: query
+          name: isStore
+          schema:
+            type: boolean
+            example: true
+          description: a boolean value to specify if the file is stored in a directory or database
+        - in: path
+          required: true
+          name: fileId
+          description: the id of the file to download
+          schema:
+            type: string
+            example: 'mobile (15).png'
+      responses:
+        '200':
+          description: Returns the downloaded file type
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+        '400':
+          description: Bad user input
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  success: false
+                  message: validation error
+                  data:
+                    - value: true
+                      msg: only boolean value allowed
+                      param: isFileStore
+                      location: query
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Error fetching file'
+                    
+    delete:
+      security:
+        - BearerAuth: []
+      summary: Deletes a file from the server
+      description: A route to delete a file by passing the fileId path params
+      tags:
+        - Files
+      parameters:
+        - in: path
+          required: true
+          name: fileId
+          description: the id of the file to delete
+          schema:
+            type: string
+            example: 'mobile (15).png'
+      responses:
+        '200':
+          description: OK
+
+        '400':
+          description: Bad user input
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  success: false
+                  message: validation error
+                  data:
+                    - value: 'mobile (15).pnge'
+                      msg: Unsupported filetype
+                      param: fileId
+                      location: params
+                      
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+  
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Error deleting files'
+                    
+  /files/image_migration/{imageType}:
+    get:
+      summary: Image migration routes
+      description: A route to fetch images of specific types only
+      tags:
+        - Files
+      parameters:
+        - in: path
+          required: true
+          name: imageType
+          description: the type of images to fetch
+          schema:
+            type: string
+            example: 'tiff'
+      responses:
+        '200':
+          description: Returns the fetched image information
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  images: 
+                    - fieldname: 'uploadfile'
+                      originalname: '001.tif'
+                      encoding: '7bit'
+                      mimetype: 'image/tiff'
+                      destination: 'mm_files'
+                      filename: 'exciting_spoonbill_ermentrude-2023-05-05T11:25:53.451Z-001.tif'
+                      path: 'mm_files/exciting_spoonbill_ermentrude-2023-05-05T11:25:53.451Z-001.tif'
+                      size: 101196
+
+        '400':
+          description: Bad user input
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  success: false
+                  message: validation error
+                  data:
+                    - value: png
+                      msg: only supports tiff & tif migration
+                      param: imageType
+                      location: params
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Error fetching file'
+              
+  /files/upload:
+    post:
+      summary: upload files to the server
+      description: A route to upload files to the server
+      tags:
+        - Files
+      requestBody:
+        description: An array selection of files to upload
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadfile:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Returns the downloaded file type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sample-Files'
+
+        '400':
+          description: User uploads unsupported files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        example: 'Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .zip, .xls and .xlsx format allowed!'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Error uploading files
 components:
   securitySchemes:
     BearerAuth:
@@ -563,13 +942,50 @@ components:
         message:
           type: string
           example: Category type or doc is missing
+          
     Successful-Curation:
       type: object
       example: 
-        xml: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>Tolulomo Fateye</YourName>\n        <YourEmail>tolulomo@toluconsulting.com</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>Gbolahan Adeleke</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n"
+        xml: "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n  <PolymerNanocomposite>\n  <ID>S10</ID>\n  <Control_ID>S28</Control_ID>\n  <DATA_SOURCE>\n    <Citation>\n      <CommonFields>\n        <YourName>John Smith</YourName>\n        <YourEmail>jonsmith@nomail.org</YourEmail>\n        <Origin>experiments</Origin>\n        <CitationType>lab-generated</CitationType>\n        <Author>Aditya Shanker Prasad</Author>\n        <Author>John Doe</Author>\n        <URL>https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y</URL>\n        <Location>Rensselaer Polytechnic Institute</Location>\n      </CommonFields>\n    </Citation>\n  </DATA_SOURCE>\n   </PolymerNanocomposite>\n"
         user:
           _id: "643931cc6f44b02f01380f7a"
           displayName: "Test"
         groupId: "583e3d6ae74a1d205f4e3fd3"
+        sampleID: "64394c8032bc6325505af6f9"
         isApproved: false,
         status: "Editing"
+        
+    Sample-Curation:
+      type: object
+      example: 
+        data origin:
+          YourName: Akash Prasad
+          YourEmail: akash@prasad.com
+          ID: S10
+          Control_ID: S28
+          Origin: experiments
+          Citation Type: lab-generated
+          Author: Aditya Shanker Prasad
+          URL: https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y
+          Location: Rensselaer Polytechnic Institute
+          
+    Sample-Files:
+      type: object
+      example:
+        files: 
+          - fieldname: 'uploadfile'
+            originalname: '001.tif'
+            encoding: '7bit'
+            mimetype: 'image/tiff'
+            destination: 'mm_files'
+            filename: 'exciting_spoonbill_ermentrude-2023-05-05T11:25:53.451Z-001.tif'
+            path: 'mm_files/exciting_spoonbill_ermentrude-2023-05-05T11:25:53.451Z-001.tif'
+            size: 101196
+          - fieldname: 'uploadfile'
+            originalname: 'master-template.xlsx'
+            encoding: '7bit'
+            mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            destination: 'mm_files'
+            filename: 'educational_hornet_maisie-2023-04-18T16:01:27.609Z-master-template.xlsx'
+            path: 'mm_files/educational_hornet_maisie-2023-04-18T16:01:27.609Z-master-template.xlsx'
+            size: 104928

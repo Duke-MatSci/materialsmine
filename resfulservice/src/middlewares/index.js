@@ -1,7 +1,7 @@
 const express = require('express');
 const acceptedHeaders = require('./accept');
 const getEnv = require('./parseEnv');
-const { fileMgr, fileServer } = require('./fileStorage');
+const { fileMgr } = require('./fileStorage');
 const { logParser, mmLogger } = require('./loggerService');
 const swaggerService = require('./swagger-service');
 
@@ -17,7 +17,6 @@ const globalMiddleWare = async (app) => {
   app.use(express.urlencoded({ extended: true }));
   app.use((req, res, next) => logParser(log, req, next));
   app.use(fileMgr);
-  app.use('/mm_files', fileServer);
   app.use(acceptedHeaders);
   app.use(getEnv);
 };

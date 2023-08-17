@@ -108,6 +108,9 @@
         }
         &-neg {
             margin-top: -1rem !important;
+            &-left {
+                margin-left: -1rem !important;
+            }
         }
         &-pos {
             margin: 1rem;
@@ -170,7 +173,7 @@
 
     &--shadow {
         &-none {
-            box-shadow: none;
+            box-shadow: none !important;
         }
     }
 
@@ -291,7 +294,7 @@
             font-size: 3rem;
         }
         @include respond(phone){
-            top: -10px;
+            top: -10px !important;
             font-size: 2.3rem;
         }
         &_subtitle {
@@ -340,6 +343,10 @@
             @include respond(phone){
                 margin-bottom: 0.4rem;
             }
+        }
+
+        &-med {
+            margin-bottom: 3rem !important;
         }
 
         &-small {
@@ -416,7 +423,7 @@
         }
         & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
             background-color: $primary-light;
-            & > i {
+            & > i, & > p {
                 color: $secondary-light !important;
             }
         }
@@ -469,6 +476,14 @@
     &_gridbg {
         background-color: rgba($primary-black, 0.7) !important;
         border: 1px solid $primary !important;
+    }
+    &_icon_mobile { 
+        &_lg {
+            @include respond(phone){
+                height: 72px;
+                font-size: 72px!important;
+            }
+        }
     }
 }
 

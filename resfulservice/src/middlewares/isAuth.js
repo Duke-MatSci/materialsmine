@@ -1,5 +1,5 @@
 const { decodeToken } = require('../utils/jwtService');
-const deleteFile = require('../utils/fileManager');
+const { deleteFile } = require('../utils/fileManager');
 const { errorWriter } = require('../utils/logWriter');
 
 module.exports = (req, res, next) => {

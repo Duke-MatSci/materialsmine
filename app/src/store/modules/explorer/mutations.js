@@ -29,5 +29,11 @@ export default {
   },
   setEnableAutosuggest (state, payload) {
     state.enableAutosuggest = payload
+  },
+  setCurrentDataset (state, payload) {
+    state.dataset = payload
+  },
+  setCurrentDatasetThumbnail (state, payload) {
+    state.datasetThumbnail = payload
   }
 }
