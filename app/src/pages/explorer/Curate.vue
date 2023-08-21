@@ -35,9 +35,14 @@
                                 </div>
                             </router-link>
                         </div>
+<<<<<<< HEAD
+                         <div class="md-layout-item md-layout-item_card">
+                        </div>
+=======
                         <!-- Extra Div causes misalignment and has no known use -->
                          <!-- <div class="md-layout-item md-layout-item_card">
                         </div> -->
+>>>>>>> 5bee685f61e0193b08c6f72f8621586db4360223
                         <div class="md-layout-item md-layout-item_card">
                             <router-link to="" v-slot="{navigate, href}" custom>
                                 <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
