@@ -10,7 +10,11 @@ const xmlFinderQuery = {
   xmlFinder: async (_, { input }, { req }) => {
     req.logger?.info('[xmlFinder] Function Entry');
     try {
-      const { filter: { status, param, isNewCuration, curationState, user } } = input;
+      const status = input?.filter?.status;
+      const param = input?.filter?.param;
+      const isNewCuration = input?.filter?.isNewCuration;
+      const curationState = input?.filter?.curationState;
+      const user = input?.filter?.user;
       const xmlDataFilter = param ? { title: { $regex: new RegExp(param.toString(), 'gi') } } : {};
       const curationSampleFilter = param ? { 'object.DATA_SOURCE.Citation.CommonFields.Title': { $regex: new RegExp(param.toString(), 'gi') } } : {};
 
