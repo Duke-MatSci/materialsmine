@@ -77,4 +77,16 @@ async function findFile (req) {
   return { fileStream: fs.createReadStream(filePath), ext };
 }
 
-module.exports = { deleteFile, findFile, getFileExtension, deleteFolder };
+// TODO (@tee): Remember this two functions are temporary, I'll remove later
+async function writeFile (req, filename, data) {
+  const filePath = path.join(req.env?.FILES_DIRECTORY, filename);
+  await fs.promises.writeFile(filePath, data);
+  return filePath;
+}
+
+async function readFile (req, filename) {
+  const data = await fs.promises.readFile(filename, 'utf8');
+  return data;
+}
+
+module.exports = { deleteFile, findFile, writeFile, deleteFolder, readFile };
