@@ -1,32 +1,66 @@
-"Schema type returned from the getSingleContact query resolver"
+"""
+Schema type returned from the getSingleContact query resolver
+"""
 type Contact {
-  "ID of the contact"
+  """
+  ID of the contact
+  """
   _id: ID
-  "full name of the user requesting contact"
+
+  """
+  Full name of the user requesting contact
+  """
   fullName: String!
 
-  "email address of the user requesting contact"
+  """
+  Email address of the user requesting contact
+  """
   email: String!
 
   """
-  purpose for requesting contact.
+  Purpose for requesting contact.
   You can specify only one from the list of enumerable values defined
   """
   purpose: Purpose!
 
-  "details of the reason or purpose for requesting contact"
+  """
+  Details of the reason or purpose for requesting contact
+  """
   message: String!
 
-  "time the contact was created"
+  """
+  Boolean value which shows the status of a contact enquiry
+  """
+  resolved: Boolean
+
+  """
+  Response text sent back to the user who made an enquiry
+  """
+  response: String
+
+  """
+  Admin user who resolved the enquiry
+  """
+  resolvedBy: String
+
+  """
+  Time the contact was created
+  """
   createdAt: String
 
-  "last time contact was updated"
+  """
+  Last time contact was updated
+  """
   updatedAt: String
 }
 
-"This schema type returns the lists of contacts"
+"""
+This schema type returns the lists of contacts
+"""
 type Contacts {
-  "Total number of contacts that exists"
+  """
+  Total number of contacts that exists
+  """
   totalItems: Int!
 
   """

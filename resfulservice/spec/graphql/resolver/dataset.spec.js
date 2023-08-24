@@ -91,25 +91,34 @@ describe('Dataset Resolver Unit Tests:', function () {
       expect(createDatasetId.name).to.equal('createDatasetId');
       expect(createDatasetId.type.toString()).to.equal('Datasets!');
     });
-
-    it.skip('should create a new datasetId', async () => {
-      sinon.stub(DatasetId.prototype, 'save').callsFake(() => ({_id: '62d951cb6981a12d136a0a0d', populate: () => user, status: 'WORK IN PROGRESS'}))
-
-      const datasetId = await createDatasetId({}, {}, { user, req, isAuthenticated: true });
-
-      expect(datasetId).to.have.property('_id');
-    }); 
-
+    
     it("should throw a 401, not authenticated error", async () => {
-
       const result = await createDatasetId({}, { }, { user, req, isAuthenticated: false });
 
       expect(result).to.have.property('extensions');
       expect(result.extensions.code).to.be.equal(401)
     });
 
-    it.skip('should throw a 500 error', async () => {
-      sinon.stub(DatasetId.prototype, 'save').throws();
+    it('should create a new datasetId', async () => {
+      sinon.stub(DatasetId, 'findOne').returns(null);
+      sinon.stub(DatasetId.prototype, 'save').callsFake(() => ({_id: '62d951cb6981a12d136a0a0d', status: 'WORK IN PROGRESS', samples: [] }))
+
+      const datasetId = await createDatasetId({}, {}, { user, req, isAuthenticated: true });
+      expect(datasetId).to.have.property('datasetGroupId');
+    }); 
+
+
+    it("should throw a 409, when an unused datasetId exists", async () => {
+      sinon.stub(DatasetId, 'findOne').returns({_id: '62d951cb6981a12d136a0a0d', status: 'WORK IN PROGRESS', samples: [] })
+      const result = await createDatasetId({}, { }, { user, req, isAuthenticated: true });
+
+      expect(result).to.have.property('extensions');
+      expect(result.extensions.code).to.be.equal(409)
+    });
+
+
+    it('should throw a 500 Internal server error when error is thrown', async () => {
+      sinon.stub(DatasetId, 'findOne').throws();
 
       const result = await createDatasetId({}, { }, { user, req, isAuthenticated: true });
 
@@ -229,6 +238,18 @@ describe('Dataset Resolver Unit Tests:', function () {
       expect(dataset).to.have.property('filesets');
     });
 
+    it('should create a new dataset when files is empty', async () => {
+      const mockCreatedDataset = {
+        _id: '62d951cb6981a12d136a0a0d',
+        ...mockDataset
+      }
+      sinon.stub(Dataset, 'findOne').returns({ _id: '62d951cb6981a12d136a0a0d',  filesets: []  })
+      sinon.stub(Dataset, 'findOneAndUpdate').callsFake(() => (mockCreatedDataset))
+
+      const dataset = await createDataset({}, { input: {...input, files: [] } }, { user, req, isAuthenticated: true });
+      expect(dataset).to.have.property('filesets');
+    });
+
     it("should throw a 401, not authenticated error", async () => {
       const result = await createDataset({}, { input }, { user, req, isAuthenticated: false });
 
@@ -243,6 +264,15 @@ describe('Dataset Resolver Unit Tests:', function () {
 
       expect(result).to.have.property('extensions');
       expect(result.extensions.code).to.be.equal(404)
+    });
+
+    it('should return a 409, conflict error', async () => {
+      sinon.stub(Dataset, 'findOne').returns(mockDataset)
+
+      const result = await createDataset({}, { input }, { user, req, isAuthenticated: true });
+
+      expect(result).to.have.property('extensions');
+      expect(result.extensions.code).to.be.equal(409)
     });
 
     it('should throw a 500 error', async () => {

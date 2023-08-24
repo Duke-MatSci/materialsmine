@@ -1,12 +1,11 @@
 const elasticSearch = require('../utils/elasticSearch');
 const { outboundRequest } = require('../controllers/kgWrapperController');
-const iterator = require('../utils/iterator');
 const DatasetId = require('../models/datasetId');
-const User = require('../models/user');
 const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
 const { successWriter, errorWriter } = require('../utils/logWriter');
+const { validateIsAdmin } = require('../middlewares/validations');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -15,6 +14,8 @@ const { successWriter, errorWriter } = require('../utils/logWriter');
  * @returns {*} response
  */
 exports.initializeElasticSearch = async (req, res, next) => {
+  validateIsAdmin(req, res, next);
+
   const log = req.logger;
   log.info('initializeElasticSearch(): Function entry');
   try {
@@ -26,6 +27,20 @@ exports.initializeElasticSearch = async (req, res, next) => {
   } catch (err) {
     next(errorWriter(req, err, 'initializeElasticSearch', 500));
   }
+};
+
+/**
+ * Redirect admin user to object store
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} redirect
+ */
+exports.loadObjectStore = async (req, res, next) => {
+  const log = req.logger;
+  log.info('loadObjectStore(): Function entry');
+
+  return res.redirect(`http://localhost:${req.env.MINIO_CONSOLE_PORT}`);
 };
 
 /**
@@ -107,11 +122,14 @@ exports.loadElasticSearch = async (req, res, next) => {
   try {
     let response;
     if (req.method === 'DELETE') {
+      validateIsAdmin(req, res, next);
+
       log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
       response = await elasticSearch.deleteSingleDoc(type, doc);
       log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
     } else {
       response = await elasticSearch.indexDocument(req, type, doc);
+      log.info(`loadElasticSearch(): successfully added ${JSON.stringify(doc)} doc`);
     }
 
     await elasticSearch.refreshIndices(req, type);
@@ -133,10 +151,13 @@ exports.loadElasticSearch = async (req, res, next) => {
  * @returns {*} response
  */
 exports.pingElasticSearch = async (req, res, next) => {
-  const log = req.logger;
-  log.info('pingElasticSearch(): Function entry');
+  validateIsAdmin(req, res, next);
+
+  const { logger } = req;
+  logger.info('pingElasticSearch(): Function entry');
+
   try {
-    const response = await elasticSearch.ping(log, 1);
+    const response = await elasticSearch.ping(logger, 1);
     successWriter(req, 'success', 'pingElasticSearch');
     return res.status(200).json({
       response
@@ -195,32 +216,42 @@ exports.bulkElasticSearchImport = (req, res, next) => {
 exports.populateDatasetIds = async (req, res, next) => {
   const log = req.logger;
   log.info('populateDatasetIds(): Function entry');
-  if (!req.internal) {
-    return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
-  }
+  // if (!req.user) {
+  //   return next(errorWriter(req, 'User is unauthorized', 'populateDatasetIds', 401));
+  // }
 
-  const connDB = iterator.generateMongoUrl(req);
-  if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
+  // const connDB = iterator.generateMongoUrl(req);
+  // if (!connDB) return next(errorWriter(req, 'DB error', 'populateDatasetIds'));
 
   try {
-    const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
-    const Dataset = await db.collection('datasets');
-    const datasets = await Dataset.find({});
-    await iterator.iteration(datasets, async (arg) => {
-      const user = await User.findOne({ userid: arg?.userid }).lean();
-      const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
-      if (userExistInDatasetId?._id) {
-        userExistInDatasetId.dataset.push(arg);
-        await userExistInDatasetId.save();
-        return;
-      }
-      const datasetId = new DatasetId({ user });
-      datasetId.dataset.push(arg._id);
-      await datasetId.save();
-      return datasetId;
-    }, 2);
-    successWriter(req, { message: 'Successfully updated DatasetIds' }, 'populateDatasetIds');
-    return res.status(201).json({ message: 'Successfully updated DatasetIds' });
+    // TODO: Fix iterator or remove
+    // const db = await iterator.dbConnectAndOpen(connDB, req?.env?.MM_DB);
+    // const Dataset = await db.collection('datasets');
+    // const datasets = await Dataset.find({});
+    // await iterator.iteration(datasets, async (arg) => {
+    //   const user = await User.findOne({ userid: arg?.userid }).lean();
+    //   const userExistInDatasetId = await DatasetId.findOne({ user: user._id });
+    //   if (userExistInDatasetId?._id) {
+    //     userExistInDatasetId.dataset.push(arg);
+    //     await userExistInDatasetId.save();
+    //     return;
+    //   }
+    //   const datasetId = new DatasetId({ user });
+    //   datasetId.dataset.push(arg._id);
+    //   await datasetId.save();
+    //   return datasetId;
+    // }, 2);
+    const user = req.user;
+    const datasetId = new DatasetId({ user });
+    const createdDataset = await datasetId.save();
+
+    successWriter(req, { message: `Successfully created DatasetId: ${createdDataset._id}` }, 'populateDatasetIds');
+    return res.status(201).json({
+      id: createdDataset._id,
+      samples: createdDataset.samples,
+      status: createdDataset.status,
+      creationDate: createdDataset.createdAt
+    });
   } catch (err) {
     next(errorWriter(req, err, 'populateDatasetIds', 500));
   }

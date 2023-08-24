@@ -4,10 +4,12 @@ import store from '@/store/index.js'
 import ExplorerBase from '@/pages/explorer/Base.vue'
 import MetamineBase from '@/pages/metamine/Base.vue'
 import NanomineBase from '@/pages/nanomine/Base.vue'
+import PortalBase from '@/pages/portal/Base.vue'
 import NotFound from '@/pages/NotFound.vue'
 import nanomineRoutes from '@/router/module/nanomine'
 import metamineRoutes from '@/router/module/metamine'
 import explorerRoutes from '@/router/module/explorer'
+import portalRoutes from '@/router/module/portal'
 Vue.use(VueRouter)
 
 const routes = [
@@ -35,6 +37,13 @@ const routes = [
     component: ExplorerBase,
     children: [
       ...explorerRoutes
+    ]
+  },
+  {
+    path: '/portal',
+    component: PortalBase,
+    children: [
+      ...portalRoutes
     ]
   },
   {
@@ -78,10 +87,10 @@ router.beforeEach(async function (to, _, next) {
 
       await store.dispatch('auth/tryLogin')
       if (store.getters['auth/isAuthenticated']) {
-        next()
+        return next()
       }
     }
-    next(false)
+    next('')
   } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
     next()
   } else {

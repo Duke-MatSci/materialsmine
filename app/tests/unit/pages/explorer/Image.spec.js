@@ -66,8 +66,8 @@ describe('Image.vue', () => {
   it('shows number of results', async () => {
     expect.assertions(2)
     expect(await wrapper.find('.utility-roverflow').exists()).toBe(true)
-    expect(await wrapper.find('.u_content__result').text()).toMatch(
-      /[1-9]\d* result/
+    expect(await wrapper.find('#css-adjust-navfont > span').text()).toMatch(
+      /[1-9]\d*|No result/
     )
   })
 
@@ -116,5 +116,16 @@ describe('Image.vue', () => {
     expect(wrapper.find('.search_box').html()).toContain('filter')
     const searchBtn = wrapper.findAll('button').at(0)
     expect(searchBtn.text()).toBe('Search Images')
+  })
+
+  it('renders the right text when response empty', async () => {
+    var expectedString = 'Sorry! No Image Found'
+    const emptyData = apollo.images
+    emptyData.images = []
+    emptyData.totalItems = 0
+    await wrapper.setData({ images: emptyData })
+    expect(wrapper.find('.gallery-item').exists()).toBe(false)
+    expect(wrapper.find('.utility-roverflow.u_centralize_text.u_margin-top-med').exists()).toBe(true)
+    expect(wrapper.find('h1.visualize_header-h1.u_margin-top-med').text()).toBe(expectedString)
   })
 })

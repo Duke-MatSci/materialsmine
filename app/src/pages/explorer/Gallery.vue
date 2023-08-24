@@ -26,63 +26,69 @@
           ({{(queryTimeMillis/1000).toFixed(2)}} seconds)
         </span>
       </div>
-      <div class="gallery-grid grid grid_col-5">
-        <md-card
-          v-for="(result, index) in items"
-          :key="index"
-          class="btn--animated gallery-item"
-        >
-          <div class="u_gridicon">
-            <div
-              @click.prevent="bookmark(result.name, true)"
-              v-if="result.bookmark"
-            >
-              <md-icon>bookmark</md-icon>
+      <template v-if="!!items && !!items.length">
+        <div class="gallery-grid grid grid_col-5">
+          <md-card
+            v-for="(result, index) in items"
+            :key="index"
+            class="btn--animated gallery-item"
+          >
+            <div class="u_gridicon">
+              <div
+                @click.prevent="bookmark(result.name, true)"
+                v-if="result.bookmark"
+              >
+                <md-icon>bookmark</md-icon>
+              </div>
+              <div
+                @click.prevent="bookmark(result.name, false)"
+                v-else
+              >
+                <md-icon>bookmark_border</md-icon>
+              </div>
+              <div v-if="isAuth && isAdmin" @click.prevent="editChart(result)">
+                <md-icon>edit</md-icon>
+              </div>
+              <div v-if="isAuth && isAdmin" @click.prevent="renderDialog('Delete Chart?', 'delete', result, 80)">
+                <md-icon>delete_outline</md-icon>
+              </div>
             </div>
-            <div
-              @click.prevent="bookmark(result.name, false)"
-              v-else
-            >
-              <md-icon>bookmark_border</md-icon>
-            </div>
-            <div v-if="isAuth && isAdmin" @click.prevent="editChart(result)">
-              <md-icon>edit</md-icon>
-            </div>
-            <div v-if="isAuth && isAdmin" @click.prevent="renderDialog('Delete Chart?', 'delete', result, 80)">
-              <md-icon>delete_outline</md-icon>
-            </div>
-          </div>
-          <router-link v-if="result.identifier" :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
-            <md-card-media-cover md-solid>
-              <md-card-media md-ratio="4:3">
-                <img
-                  :src="baseUrl + result.thumbnail"
-                  :alt="result.label"
-                  v-if="result.thumbnail"
-                >
-                <img
-                  :src="defaultImg"
-                  :alt="result.label"
-                  v-else
-                >
-              </md-card-media>
-              <md-card-area class="u_gridbg">
-                <md-card-header class="u_show_hide">
-                  <span class="md-subheading">
-                    <strong>{{ result.label }}</strong>
-                  </span>
-                  <span class="md-body-1">{{ reduceDescription(result.description, 15) }}</span>
-                </md-card-header>
-              </md-card-area>
-            </md-card-media-cover>
-          </router-link>
-        </md-card>
+            <router-link v-if="result.identifier" :to="{ name: 'ChartView', params: { chartId: getChartId(result) }}">
+              <md-card-media-cover md-solid>
+                <md-card-media md-ratio="4:3">
+                  <img
+                    :src="baseUrl + result.thumbnail"
+                    :alt="result.label"
+                    v-if="result.thumbnail"
+                  >
+                  <img
+                    :src="defaultImg"
+                    :alt="result.label"
+                    v-else
+                  >
+                </md-card-media>
+                <md-card-area class="u_gridbg">
+                  <md-card-header class="u_show_hide">
+                    <span class="md-subheading">
+                      <strong>{{ result.label }}</strong>
+                    </span>
+                    <span class="md-body-1">{{ reduceDescription(result.description, 15) }}</span>
+                  </md-card-header>
+                </md-card-area>
+              </md-card-media-cover>
+            </router-link>
+          </md-card>
+        </div>
+        <pagination
+          :cpage="page"
+          :tpages="totalPages"
+          @go-to-page="loadPrevNextImage($event)"
+        />
+      </template>
+      <div class="utility-roverflow u_centralize_text u_margin-top-med section_loader" v-else>
+        <!-- <div class="u_display-flex spinner"></div> -->
+        <h1 class="visualize_header-h1 u_margin-top-med">No Charts Exist...</h1>
       </div>
-      <pagination
-        :cpage="page"
-        :tpages="totalPages"
-        @go-to-page="loadItems($event)"
-      />
     </div>
     <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
       <template v-slot:title>{{dialog.title}}</template>
@@ -122,15 +128,17 @@ import defaultImg from '@/assets/img/rdf_flyer.svg'
 import { toChartId } from '@/modules/vega-chart'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 
 export default {
   name: 'viz-grid',
-  mixins: [reducer],
+  mixins: [reducer, explorerQueryParams],
   data () {
     return {
       loading: true,
       loadError: false,
       otherArgs: null,
+      pageNumber: 1,
       defaultImg,
       baseUrl: `${window.location.origin}/api/knowledge/images?uri=`,
       dialog: {
@@ -184,6 +192,9 @@ export default {
     bookmark () {
       // TODO
     },
+    async localSearchMethod () {
+      await this.loadItems(this.pageNumber)
+    },
     async loadItems (page = 1) {
       this.loading = true
       await this.$store.dispatch('explorer/gallery/loadItems', { page })
@@ -194,7 +205,12 @@ export default {
     }
   },
   async mounted () {
-    await this.loadItems()
+    const query = this.$route.query
+    if (query?.page) {
+      await this.loadParams(this.$route.query, false)
+    } else {
+      await this.loadItems()
+    }
   },
   watch: {
     newChartExist () {

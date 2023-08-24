@@ -22,5 +22,11 @@ export default {
   },
   getAutosuggest (state) {
     return state.enableAutosuggest
+  },
+  getCurrentDataset (state) {
+    return state.dataset
+  },
+  getDatasetThumbnail (state) {
+    return state.datasetThumbnail
   }
 }

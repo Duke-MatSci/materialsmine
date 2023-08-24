@@ -9,7 +9,11 @@ document.body.createTextRange = (elem) => {
   return textRange
 }
 
+window.focus = jest.fn()
 describe('yasgui.vue', () => {
+  afterAll(() => {
+    window.focus.mockClear()
+  })
   it('renders yasgui in correct place', () => {
     const wrapper = createWrapper(YasguiWrapper, {}, true)
     const yasguiComponent = wrapper.findComponent('#YASGUI > .yasgui')

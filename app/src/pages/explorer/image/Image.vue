@@ -21,6 +21,7 @@
                 <option value="filterByYear">Year</option>
                 <option value="filterByDOI">DOI</option>
                 <option value="filterByMicroscopy">Microscopy</option>
+                <option value="filterByID">Sample ID</option>
               </select>
             </div>
             <button
@@ -33,7 +34,7 @@
             <button v-if="searchEnabled"
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-              @click.prevent="resetSearch"
+              @click.prevent="clearForm()"
             >
             Clear Search
             </button>
@@ -41,7 +42,7 @@
         </form>
       </div>
     </div>
-    <div class="utility-roverflow" v-if="searchImages && searchImages.images || images && images.images">
+    <div class="utility-roverflow">
 			<div class="u_content__result u_margin-top-small">
 				<span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="renderText != null">{{ renderText }}</strong>
@@ -69,43 +70,45 @@
           </span>
         </span>
 			</div>
-			<div class="gallery-grid grid grid_col-5">
-        <md-card
-          v-for="(image, index) in searchImages.images || images.images"
-          :key="index"
-          class="btn--animated gallery-item"
-        >
-          <router-link :to="{ name: 'ImageDetailView', params: { id: image.metaData.id, fileId: image.file }}">
-            <md-card-media-cover md-solid>
-              <md-card-media md-ratio="4:3">
-                <img
-									:src="baseUrl + image.file"
-									:alt="image.metaData.title"
-                >
-              </md-card-media>
-              <md-card-area class="u_gridbg">
-                <md-card-header class="u_show_hide">
-                  <span class="md-subheading">
-                    <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
-                  </span>
-                 <span class="md-body-1">{{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 15) }}</span>
-                </md-card-header>
-              </md-card-area>
-            </md-card-media-cover>
-          </router-link>
-        </md-card>
-      </div>
-      <pagination
-        :cpage="pageNumber"
-        :tpages="searchImages.totalPages || images.totalPages"
-        @go-to-page="loadPrevNextImage($event)"
-      />
+      <template v-if="!searchImagesEmpty || !imagesEmpty">
+        <div class="gallery-grid grid grid_col-5">
+          <md-card
+            v-for="(image, index) in searchImages.images || images.images"
+            :key="index"
+            class="btn--animated gallery-item"
+          >
+            <router-link :to="{ name: 'ImageDetailView', params: { id: image.metaData.id, fileId: image.file }}">
+              <md-card-media-cover md-solid>
+                <md-card-media md-ratio="4:3">
+                  <img
+                    :src="baseUrl + image.file"
+                    :alt="image.metaData.title"
+                  >
+                </md-card-media>
+                <md-card-area class="u_gridbg">
+                  <md-card-header class="u_show_hide">
+                    <span class="md-subheading">
+                      <strong>{{ reduceDescription(image.description || 'polymer nanocomposite', 2) }}</strong>
+                    </span>
+                   <span class="md-body-1">{{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 15) }}</span>
+                  </md-card-header>
+                </md-card-area>
+              </md-card-media-cover>
+            </router-link>
+          </md-card>
+        </div>
+        <pagination
+          :cpage="pageNumber"
+          :tpages="searchImages.totalPages || images.totalPages"
+          @go-to-page="loadPrevNextImage($event)"
+        />
+      </template>
 		</div>
-    <div class="section_loader u--margin-toplg" v-if="$apollo.loading">
+    <div class="u--margin-toplg" v-if="$apollo.loading">
       <spinner :loading="$apollo.loading" text='Loading Images'/>
     </div>
-    <div v-else-if="$apollo.error" class="utility-roverflow u_centralize_text u_margin-top-med">
-      <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Images</h1>
+    <div v-else-if="!!error || !!isEmpty" class="utility-roverflow u_centralize_text u_margin-top-med">
+      <h1 class="visualize_header-h1 u_margin-top-med">{{ !!error ? 'Cannot Load Images' : 'Sorry! No Image Found'}}</h1>
     </div>
 	</div>
 </template>
@@ -115,9 +118,10 @@ import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import { IMAGES_QUERY, SEARCH_IMAGES_QUERY } from '@/modules/gql/image-gql'
 import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 export default {
   name: 'ImageGallery',
-  mixins: [reducer],
+  mixins: [reducer, explorerQueryParams],
   data () {
     return {
       baseUrl: window.location.origin,
@@ -140,6 +144,17 @@ export default {
   computed: {
     imageSearch () {
       return this.$store.getters['explorer/getSelectedFacetFilterMaterialsValue']
+    },
+    // This is a WIP TODO (@Tolu) Update later
+    searchImagesEmpty () {
+      return this.searchImages.length === 0 || this.searchImages?.totalItems === 0
+    },
+    imagesEmpty () {
+      if (!Object.keys(this.images)?.length || this.images.totalItems === 0) return true
+      return false
+    },
+    isEmpty () {
+      return (this.imagesEmpty && !this.searchEnabled) || (this.searchImagesEmpty && this.searchEnabled)
     }
   },
   watch: {
@@ -148,35 +163,16 @@ export default {
         this.renderText = `Showing ${newValue.type}: ${newValue.value}`
         this.searchEnabled = true
         this.pageSize = newValue.pageSize || this.pageSize
-        return this.refetchApollo()
+        return this.localSearchMethod()
       } else {
         this.searchEnabled = false
         this.pageSize = newValue.pageSize || this.pageSize
-        return this.refetchApollo()
+        return this.localSearchMethod()
       }
-    },
-    '$route.query' (newValue, oldValues) {
-      this.pageNumber = parseInt(newValue.page) || 1
-      this.pageSize = parseInt(newValue.size) || 20
-      this.filter = newValue.type || ''
-      this.searchWord = newValue.q || ''
-      this.dispatchSearch()
-    },
-    // Limit page size for now
-    pageSize (newValue, oldValue) {
-      this.checkPageSize(newValue)
-      this.loadPrevNextImage(this.pageNumber)
     }
   },
   methods: {
-    loadPrevNextImage (event) {
-      this.pageNumber = event
-      if (!this.searchEnabled) {
-        return this.changeRoute(event, this.pageSize)
-      }
-      this.changeRoute(event, this.pageSize, this.filter, this.searchWord)
-    },
-    refetchApollo () {
+    localSearchMethod () {
       this.error = ''
       if (this.searchEnabled) {
         this.$apollo.queries.images.skip = true
@@ -188,7 +184,7 @@ export default {
         this.$apollo.queries.images.refetch()
       }
     },
-    submitSearch () {
+    async submitSearch () {
       if (!this.searchWord || !this.filter) {
         return this.$store.commit('setSnackbar', {
           message: 'Enter a search term and select a filter type',
@@ -197,33 +193,18 @@ export default {
       }
       this.pageNumber = 1
       this.dispatchSearch()
-      this.changeRoute(this.pageNumber, this.pageSize, this.filter, this.searchWord)
-    },
-    async resetSearch () {
-      this.$router.replace({ query: null })
-      this.searchImages = []
-      this.renderText = 'Showing all images'
+      return await this.updateParamsAndCall(true)
     },
     async dispatchSearch () {
       await this.$store.commit('explorer/setSelectedFacetFilterMaterialsValue',
         { type: this.filter, value: this.searchWord, size: this.pageSize })
     },
-    changeRoute (page = 1, size = 20, filter = '', query = '') {
-      const curQuery = this.$route.query
-      // Don't push change if same route to avoid error
-      if (curQuery.page === page && curQuery.size === size && curQuery.type === filter && curQuery.q === query) {
-        this.refetchApollo()
-      } else if (filter === '' || query === '') {
-        if (curQuery.page === page && curQuery.size === size) return this.refetchApollo()
-        this.$router.push({ query: { page, size } })
-      } else this.$router.push({ query: { page, size, type: filter, q: query } })
-    },
-    checkPageSize (page) {
-      if (page > 20) {
-        this.pageSize = 20
-      } else if (page < 1) {
-        this.pageSize = 1
-      }
+    clearForm () {
+      this.resetSearch('images')
+      this.searchImages = []
+      this.filter = ''
+      this.searchWord = ''
+      this.dispatchSearch()
     }
   },
   created () {
@@ -239,7 +220,7 @@ export default {
       this.searchEnabled = true
       this.filter = this.imageSearch?.type
       this.searchWord = this.imageSearch?.value
-      this.refetchApollo()
+      this.localSearchMethod()
     } else {
       this.searchEnabled = false
       this.dispatchSearch()
@@ -256,7 +237,7 @@ export default {
       skip () {
         if (this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'cache-first',
       error (error) {
         if (error.networkError) {
           const err = error.networkError
@@ -280,7 +261,7 @@ export default {
       skip () {
         if (!this.searchEnabled) return this.skipQuery
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'network-only',
       error (error) {
         if (error.networkError) {
           const err = error.networkError

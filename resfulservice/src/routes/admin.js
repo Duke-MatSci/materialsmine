@@ -12,17 +12,19 @@ router
 
 router.route('/populate-datasets-properties')
   .get(AdminController.getDatasetProperties)
-  .post(AdminController.populateDatasetProperties);
+  .post(isAuth, AdminController.populateDatasetProperties);
 
 router.route('/populate-datasets')
   .post(isAuth, AdminController.populateDatasetIds);
 
 router
   .route('/es')
-  .get(AdminController.pingElasticSearch)
-  .post(AdminController.initializeElasticSearch)
+  .get(isAuth, AdminController.pingElasticSearch)
+  .post(isAuth, AdminController.initializeElasticSearch)
   .put(isAuth, AdminController.loadElasticSearch)
-  .delete(AdminController.loadElasticSearch);
+  .delete(isAuth, AdminController.loadElasticSearch);
+
+router.route('/store').get(AdminController.loadObjectStore);
 
 // Note: Not in use. Deprecated for authService.js route.
 router.route('/login').post(loginController.login);

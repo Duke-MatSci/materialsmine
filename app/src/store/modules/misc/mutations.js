@@ -11,5 +11,12 @@ export default {
       action,
       duration
     }
+  },
+  resetSnackbar (state) {
+    state.snackbar = {
+      message: '',
+      action: null,
+      duration: 0 // Indicate reset
+    }
   }
 }

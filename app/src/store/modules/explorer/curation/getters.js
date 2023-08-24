@@ -7,5 +7,14 @@ export default {
   },
   getNewChartExist (state) {
     return state.newChartExist
+  },
+  getDoiData (state) {
+    return state.doiData
+  },
+  getOrcidData (state) {
+    return state.orcidData
+  },
+  getXmlBulkResponse (state) {
+    return state.xmlBulkResponse
   }
 }

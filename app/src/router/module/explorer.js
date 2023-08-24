@@ -22,6 +22,23 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'tools',
+    component: () => import('@/pages/explorer/tools/ToolsBase.vue'),
+    children: [
+      {
+        path: '',
+        name: 'ToolsExplorer',
+        component: () => import('@/pages/explorer/Tools.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: 'dynamfit',
+        name: 'DynamFit',
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue')
+      }
+    ]
+  },
+  {
     path: 'curate',
     component: () => import('@/pages/explorer/curate/CurateBase.vue'),
     children: [
@@ -40,6 +57,12 @@ const explorerRoutes = [
         name: 'CurateSpreadsheet',
         props: true,
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'bulk',
+        name: 'CurateBulk',
+        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
         meta: { requiresAuth: true }
       }
     ]
@@ -105,11 +128,12 @@ const explorerRoutes = [
   //   name: 'CurateStepper',
   //   component: () => import('@/pages/explorer/curate/stepper/StepperForm.vue'),
   // },
-  // {
-  //   path: 'sdd',
-  //   name: 'CurateSDD',
-  //   component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
-  // }
+  {
+    path: 'curate/sdd',
+    name: 'CurateSDD',
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: 'chart',
     component: ChartBase,
@@ -209,6 +233,13 @@ const explorerRoutes = [
     path: 'xmlvisualizer/:id',
     name: 'XmlVisualizer',
     component: () => import('@/pages/explorer/xml/XmlLoader.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'dataset/:id',
+    name: 'DatasetVisualizer',
+    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+    props: true,
     meta: { requiresAuth: false }
   }
 ]

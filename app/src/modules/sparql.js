@@ -12,9 +12,12 @@ async function querySparql (query, {
   method = 'GET',
   whyisPath = undefined
 } = {}) {
-  let urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(
-    query
-  )}&output=json`
+  let urlEncodedQuery = `${endpoint}?output=json`
+  if (query) {
+    urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(
+      query
+    )}&output=json`
+  }
 
   // Get user Token
   const token = store.getters['auth/token']

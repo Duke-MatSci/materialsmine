@@ -1,5 +1,15 @@
 module.exports = {
   preset: '@vue/cli-plugin-unit-jest',
+  collectCoverage: true,
+  collectCoverageFrom: ['src/**/*.{js,vue}', '!src/router/**'],
+  coverageThreshold: {
+    // global: {
+    //   branches: 13,
+    //   functions: 30,
+    //   lines: 30,
+    //   statements: 30
+    // }
+  },
   transform: {
     '^.+\\.vue$': 'vue-jest',
     '\\.(gif)$': '<rootDir>/tests/jest/__mocks__/fileMock.js',

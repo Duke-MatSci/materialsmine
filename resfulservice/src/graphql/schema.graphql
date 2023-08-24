@@ -18,13 +18,13 @@ type Query {
 
 type Mutation {
   createAPIAccess(input: createAPIAccessInput): ApiAccess!
-  createUser(input: createUserInput): User!
   updateUser(input: updateUserInput): User!
-  deleteUser(input: userIdInput): User!
+  deleteUser(input: deleteUsersInput): Boolean!
   submitContact(input: createContactInput!): Contact!
   createDataset(input: datasetInput): CreatedDataset!
   createXlsxCurationList(input: materialsInput): MaterialColumns!
   updateXlsxCurationList(input: columnsInput): Column!
+  updateContact(input: updateContactInput!): Contact!
   deleteXlsxCurationList(input: materialFieldInput): Column! 
   postComment(input: postCommentInput): Comment!
   editComment(input: editCommentInput!): Comment!

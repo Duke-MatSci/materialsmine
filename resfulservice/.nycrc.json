@@ -3,8 +3,8 @@
   "include": ["src/"],
   "exclude": ["**/*.spec.js"],
   "check-coverage": true,
-  "statements": 30,
-  "branches": 22,
-  "functions": 21,
-  "lines": 31
+  "statements": 40,
+  "branches": 38,
+  "functions": 30,
+  "lines": 44
 }

@@ -73,8 +73,8 @@
                             <div class="nav_menu--container">
                                 <a class="u--default-size nav_menu--handler" href="#">Upload</a>
                                 <div class="nav_menu--siblings">
-                                    <a href="/explorer/curate" class="nav_menu--siblings-lists"><a>XML-Based Upload</a></a>
-                                    <router-link to="/explorer/dataset-entry-form" class="nav_menu--siblings-lists"><a>Direct Dataset Entry Form</a></router-link>
+                                    <a href="/explorer/curate/spreadsheet" class="nav_menu--siblings-lists"><a>Spreadsheet Upload</a></a>
+                                    <router-link to="/explorer/curate/sdd" class="nav_menu--siblings-lists"><a>Upload with SDD</a></router-link>
                                 </div>
                             </div>
                         </li>
@@ -83,10 +83,10 @@
                                 <a class="u--default-size nav_menu--handler" href="#">Tools</a>
                                 <div class="nav_menu--siblings">
                                     <router-link to="/explorer/sparql" class="nav_menu--siblings-lists"><a>Sparql Query</a></router-link>
-                                    <router-link to="/nm/tools/module_homepage" class="nav_menu--siblings-lists"><a>Module Tools</a></router-link>
-                                    <router-link to="/nm/tools/simtools" class="nav_menu--siblings-lists"><a>Simulation Tools</a></router-link>
-                                    <router-link to="/nm/tools/chemprops" class="nav_menu--siblings-lists"><a>ChemProps</a></router-link>
+                                    <a href="/dynamfit" class="nav_menu--siblings-lists"><a>DynamFit</a></a>
+                                    <router-link to="/explorer/tools" class="nav_menu--siblings-lists"><a>Module & Simulation Tools</a></router-link>
                                     <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"><a>Easy CSV Plotter</a></router-link>
+                                    <a href="/api/api-docs/" class="nav_menu--siblings-lists"><a>Api Docs</a></a>
                                 </div>
                             </div>
                         </li>

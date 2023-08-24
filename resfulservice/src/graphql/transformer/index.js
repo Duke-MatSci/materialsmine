@@ -17,12 +17,12 @@ exports.imageTransformer = (imageArray) => {
   const images = [];
   if (imageArray.length) {
     imageArray.map(el => images.push({
-      file: getBase + el?.File?.split('=')[1] || '',
-      description: el?.Description || '',
-      microscopyType: el?.MicroscopyType || '',
-      type: el?.Type || '',
-      dimension: el?.Dimension || {},
-      metaData: transformMetaData(el?.metaData)
+      file: getBase + el?.images.File?.split('=')[1] ?? '',
+      description: el?.images.Description ?? '',
+      microscopyType: el?.images.MicroscopyType ?? '',
+      type: el?.images.Type ?? '',
+      dimension: el?.images.Dimension ?? {},
+      metaData: transformMetaData(el?.images.metaData)
     }));
   }
   return images;
