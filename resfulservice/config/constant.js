@@ -38,5 +38,36 @@ module.exports = {
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   },
-  MinioBucket: 'mgi'
+  MinioBucket: 'mgi',
+  TestData: { // TODO (@tee) Rename object later
+    String: 'string',
+    File: {
+      headers: {
+        column: [{
+          _attributes: {
+            id: ''
+          },
+          _text: ''
+        }]
+      },
+      rows: {
+        row: [
+          {
+            _attributes: {
+              id: ''
+            },
+            column: [
+              {
+                _attributes: { id: '' },
+                _text: ''
+              }
+            ]
+          }
+        ]
+      }
+    },
+    varied_multiples: {
+      ProcessingMethod: ['MeltMixing', 'SolutionProcessing', 'In-SituPolymerization', 'Other_Processing']
+    }
+  }
 };

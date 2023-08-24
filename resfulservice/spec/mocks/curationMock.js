@@ -1501,6 +1501,70 @@ const mockBulkCuration2 = {
   ]
 };
 
+const mockJsonSchema = {
+  $schema: 'http://json-schema.org/draft-04/schema#',
+  type: 'object',
+  properties: {
+    PolymerNanocomposite: {
+      type: 'object',
+      properties: {
+        ID: { type: 'string' },
+        Control_ID: { type: 'string' },
+        DATA_SOURCE: {
+          type: 'object',
+          properties: {
+            Citation: {
+              type: 'object',
+              properties: {
+                CommonFields: {
+                  type: 'object',
+                  properties: {
+                    YourName: { type: 'string' },
+                    YourEmail: { type: 'string' },
+                    Origin: { type: 'string' },
+                    CitationType: { type: 'string' },
+                    PublicationType: { type: 'string' },
+                    DOI: { type: 'string' },
+                    Publication: { type: 'string' },
+                    Title: { type: 'string' },
+                    Author: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    Keyword: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    PublicationYear: { type: 'string' },
+                    Volume: { type: 'string' },
+                    Issue: { type: 'string' },
+                    URL: { type: 'string' },
+                    Language: { type: 'string' },
+                    Location: { type: 'string' },
+                    DateOfCitation: { type: 'string' },
+                    LaboratoryDataInfo: {
+                      type: 'object',
+                      properties: {
+                        DateOfSampleMade: { type: 'string' },
+                        DateOfDataMeasurement: { type: 'string' },
+                        RelatedDOI: { type: 'string' }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+const mockCurationStream = {
+  pipe: sinon.spy()
+};
+
 const mockRes = {
   status: function (code) {
     return this;
@@ -1540,6 +1604,8 @@ module.exports = {
   mockCurationError,
   mockBulkCuration1,
   mockBulkCuration2,
+  mockJsonSchema,
+  mockCurationStream,
   mockReadFolder,
   mockRes
 };

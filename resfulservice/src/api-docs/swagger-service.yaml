@@ -307,6 +307,21 @@ paths:
           schema:
             type: string
           description: The sheetName (i.e subset) of the Schema to return. This is optional
+        - in: query
+          name: isFile
+          schema:
+            type: string
+          description: The query param to specify if to return the xsd schema as file
+        - in: query
+          name: isJson
+          schema:
+            type: string
+          description: The query param to specify if to return the json schema
+        - in: query
+          name: getXSD
+          schema:
+            type: string
+          description: Query params to specify when to return the xsd schema as json
       responses:
         '200':
           description: Returns a json Schema object
@@ -712,13 +727,13 @@ paths:
           name: isFileStore
           schema:
             type: boolean
-            example: true
+            example: false
           description: a boolean value to specify if the file is stored in a directory or database
         - in: query
           name: isStore
           schema:
             type: boolean
-            example: true
+            example: false
           description: a boolean value to specify if the file is stored in a directory or database
         - in: path
           required: true

@@ -1,7 +1,8 @@
 type XmlCatalogs {
   id: String
   title: String
-  entityState: String
+  status: String
+  isNewCuration: Boolean
   sequence: Int
 }
 

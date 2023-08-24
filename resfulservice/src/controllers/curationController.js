@@ -1,15 +1,16 @@
 const util = require('util');
+const fs = require('fs');
 const XlsxFileManager = require('../utils/curation-utility');
+const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
-const { BaseObjectSubstitutionMap, CurationEntityStateDefault } = require('../../config/constant');
+const { BaseObjectSubstitutionMap, CurationEntityStateDefault, TestData } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
 const FileStorage = require('../middlewares/fileStorage');
-const FileManager = require('../utils/fileManager');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -36,7 +37,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     const processedFiles = [];
     const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile, processedFiles);
     if (result?.count && req?.isParentFunction) return { errors: result.errors };
-    if (result?.count) return res.status(400).json({ errors: result.errors });
+    if (result?.count) return res.status(400).json({ filename: `/api/files/${xlsxFile}?isFileStore=true`, errors: result.errors });
 
     const curatedAlready = storedCurations.find(
       object => object?.DATA_SOURCE?.Citation?.CommonFields?.Title === result?.DATA_SOURCE?.Citation?.CommonFields?.Title &&
@@ -62,7 +63,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
-
+    await FileManager.writeFile(req, 'curation.xml', xml);
     const curatedSample = {
       sampleID: curatedObject._id,
       xml,
@@ -144,7 +145,7 @@ const processSingleCuration = async (masterTemplates, curationFiles, bulkCuratio
       const result = await this.curateXlsxSpreadsheet(newReq, {}, nextFnCallBack);
 
       if (result?.message || result?.errors) {
-        bulkErrors.push({ filename: masterTemplate.split('mm_files/').pop(), errors: result?.message ?? result?.errors });
+        bulkErrors.push({ filename: `/api/files/${masterTemplate.split('mm_files/').pop()}?isFileStore=true`, errors: result?.message ?? result?.errors });
       } else {
         bulkCurations.push(result.curatedSample);
         imageBucketArray = result.processedFiles.filter(file => /\.(jpe?g|tiff?|png)$/i.test(file));
@@ -194,6 +195,39 @@ exports.getXlsxCurations = async (req, res, next) => {
     }
   } catch (err) {
     next(errorWriter(req, err, 'getXlsxCurations', 500));
+  }
+};
+
+exports.getCurationXSD = async (req, res, next) => {
+  const { isFile, isJson } = req.query;
+  try {
+    let jsonOBject = await createJsonObject(BaseSchemaObject, []);
+
+    jsonOBject = { PolymerNanocomposite: jsonOBject };
+    const jsonSchema = XlsxFileManager.jsonSchemaGenerator(jsonOBject);
+
+    await FileManager.writeFile(req, 'curationSchema.json', JSON.stringify(jsonSchema));
+    if (isJson) {
+      latency.latencyCalculator(res);
+      return res.status(201).json(jsonSchema);
+    }
+
+    let xsd = XlsxFileManager.jsonSchemaToXsdGenerator(jsonSchema);
+    latency.latencyCalculator(res);
+
+    const filePath = await FileManager.writeFile(req, 'schema.xsd', xsd);
+
+    const parsedFile = await XlsxFileManager.parseXSDFile(req, filePath);
+    if (isFile) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', 'attachment; filename=curationschema.xsd');
+      const stream = fs.createReadStream(parsedFile);
+      return stream.pipe(res);
+    }
+    xsd = await FileManager.readFile(req, parsedFile);
+    return res.status(201).json({ xsd });
+  } catch (error) {
+    next(errorWriter(req, error, 'getCurationXSD', 500));
   }
 };
 
@@ -392,7 +426,7 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
             }
-            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = file.filename;
+            filteredObject[BaseObjectSubstitutionMap[property] ?? property] = `/api/files/${file.path}?isStore=true`;
             processedFiles.push(file.path);
           } else {
             errors[cellValue] = 'file not uploaded';
@@ -424,9 +458,84 @@ exports.createMaterialObject = async (path, BaseObject, validListMap, uploadedFi
   return filteredObject;
 };
 
+const createJsonObject = async (BaseObject, validListMap) => {
+  const filteredObject = {};
+
+  for (const property in BaseObject) {
+    const propertyValue = BaseObject[property];
+
+    if (propertyValue.type === 'replace_nested') {
+      const objArr = [];
+
+      for (const prop of propertyValue.values) {
+        const newObj = await createJsonObject(prop, validListMap);
+        const value = Object.values(newObj)?.[0];
+
+        if (value) {
+          objArr.push(value);
+        }
+      }
+
+      if (objArr.length > 0) {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = objArr;
+      }
+    } else if (Array.isArray(propertyValue?.values)) {
+      const multiples = propertyValue.values;
+      let cellValue;
+      const objArr = [];
+      for (const prop of multiples) {
+        const newObj = await createJsonObject(prop, validListMap);
+
+        if (Object.keys(newObj).length > 0) {
+          objArr.push(newObj);
+        }
+      }
+
+      if (propertyValue.type === 'varied_multiples') {
+        const possibleValues = TestData.varied_multiples[property];
+        possibleValues.forEach(cellValue => {
+          filteredObject[cellValue] = objArr;
+        });
+        delete BaseObject[property];
+      } else if (objArr.length > 0) {
+        filteredObject[cellValue ?? BaseObjectSubstitutionMap[property] ?? property] = objArr;
+      }
+    } else if (Array.isArray(propertyValue)) {
+      const objArr = [];
+
+      for (const prop of propertyValue) {
+        const newObj = await createJsonObject(prop, validListMap);
+
+        if (Object.keys(newObj).length > 0) {
+          objArr.push(newObj);
+        }
+      }
+      if (objArr.length > 0) {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = objArr;
+      }
+    } else if (Object.getOwnPropertyDescriptor(propertyValue, 'cellValue')) {
+      if (propertyValue.type === 'File') {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = TestData.File;
+      } else {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = TestData.String;
+      }
+    } else {
+      const nestedObj = await createJsonObject(propertyValue, validListMap);
+      const nestedObjectKeys = Object.keys(nestedObj);
+
+      if (nestedObjectKeys.length > 0) {
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = nestedObj;
+      }
+    }
+  }
+
+  return filteredObject;
+};
+
 exports.getCurationSchemaObject = async (req, res, next) => {
   req.logger.info('getCurationSchemaObject Function Entry:');
-  const { sheetName } = req.query;
+  const { sheetName, getXSD, isFile, isJson } = req.query;
+  if (getXSD || isFile || isJson) return next();
 
   const result = BaseSchemaObject[sheetName?.toUpperCase()]
     ? BaseSchemaObject[sheetName?.toUpperCase()]
