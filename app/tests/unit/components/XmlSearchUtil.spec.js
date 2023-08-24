@@ -50,7 +50,7 @@ describe('@/components/SearchGallery.vue', () => {
     expect.assertions(3)
     const form = wrapper.find('form.form')
     const inputContainer = form.find('.form__group.search_box_form-item-1')
-    const buttonContainer = form.find('.form__group.search_box_form-item-2')
+    const buttonContainer = form.findAll('.form__group.search_box_form-item-2').at(1)
     expect(inputContainer.find('.random-class').exists()).toBe(true)
     expect(inputContainer.find('.form__label.search_box_form_label').text()).toBe('Search Xml')
     expect(buttonContainer.find('button').text()).toBe('Search')

@@ -20,7 +20,7 @@ export default {
       await this.updateParamsAndCall()
     },
     async updateParamsAndCall (pushNewRoute = false) {
-      this.searchEnabled = !!this.searchWord
+      this.searchEnabled = !!this.searchWord || !!this?.filtersActive
       if (pushNewRoute) {
         const query = {
           page: this.pageNumber
