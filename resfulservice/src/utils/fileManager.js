@@ -89,4 +89,4 @@ async function readFile (req, filename) {
   return data;
 }
 
-module.exports = { deleteFile, findFile, writeFile, deleteFolder, readFile };
+module.exports = { deleteFile, findFile, writeFile, deleteFolder, readFile, getFileExtension };
