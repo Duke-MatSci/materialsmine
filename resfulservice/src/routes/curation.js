@@ -6,7 +6,7 @@ const { latencyTimer } = require('../middlewares/latencyTimer');
 const { validateXlsxObjectUpdate, validateXlsxObjectDelete, validateXlsxObjectGet } = require('../middlewares/validations');
 
 router.route('')
-  .get(isAuth, latencyTimer, curationController.getCurationSchemaObject)
+  .get(isAuth, latencyTimer, curationController.getCurationSchemaObject, curationController.getCurationXSD)
   .post(isAuth, latencyTimer, curationController.curateXlsxSpreadsheet)
   .put(validateXlsxObjectUpdate, isAuth, latencyTimer, curationController.updateXlsxCurations)
   .delete(validateXlsxObjectDelete, isAuth, curationController.deleteXlsxCurations);

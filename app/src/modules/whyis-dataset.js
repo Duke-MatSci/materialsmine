@@ -226,9 +226,9 @@ function buildDistrLd (fileList) {
     .map(x => {
       // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
       distrLDs[x] = {
-        '@id': `${window.location.origin}/api/files/${fileList[x].filename}?isFileStore=true`,
+        '@id': `${window.location.origin}${fileList[x].filename}`,
         '@type': 'http://purl.org/net/provenance/ns#File',
-        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].originalname
+        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].swaggerFilename
       }
     })
   return distrLDs
@@ -238,8 +238,8 @@ function buildDepictionLd (file, uri) {
   const depictionLd = {
     '@id': `${uri}/depiction`,
     '@type': 'http://purl.org/net/provenance/ns#File',
-    'http://www.w3.org/2000/01/rdf-schema#label': file.originalname,
-    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}/api/files/${file.filename}?isFileStore=true`
+    'http://www.w3.org/2000/01/rdf-schema#label': file.swaggerFilename,
+    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}${file.filename}`
   }
   return depictionLd
 }

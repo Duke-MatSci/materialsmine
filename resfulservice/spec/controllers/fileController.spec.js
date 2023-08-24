@@ -53,7 +53,7 @@ describe('File Controller Unit Tests:', function() {
     req.params = { fileId: '638dd8e9af9d478e0136ffcb' };
     
     it('should successfully stream files from mongo bucket', async () => {
-      req.query = { isDirectory: false, isBucket: false };
+      req.query = { isFileStore: false, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
@@ -67,7 +67,7 @@ describe('File Controller Unit Tests:', function() {
     });
 
     it('should empty stream files from mongo bucket', async () => {
-      req.query = { isDirectory: false, isBucket: false };
+      req.query = { isFileStore: false, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
@@ -82,7 +82,7 @@ describe('File Controller Unit Tests:', function() {
     });
 
     it.skip('should successfully stream file from the file system', async () => {
-      req.query = { isDirectory: true, isBucket: false };
+      req.query = { isFileStore: true, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
@@ -95,7 +95,7 @@ describe('File Controller Unit Tests:', function() {
     });
 
     it.skip('should return empty stream file from the file system', async () => {
-      req.query = { isDirectory: true, isBucket: false };
+      req.query = { isFileStore: true, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
@@ -109,7 +109,7 @@ describe('File Controller Unit Tests:', function() {
     });
 
     it.skip('should successfully stream file from minio bucket', async () => {
-      req.query = { isDirectory: false, isBucket: true };
+      req.query = { isFileStore: false, isStore: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
@@ -122,7 +122,7 @@ describe('File Controller Unit Tests:', function() {
     });
 
     it.skip('should return empty stream file from minio bucket', async () => {
-      req.query = { isDirectory: false, isBucket: true };
+      req.query = { isFileStore: false, isStore: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
