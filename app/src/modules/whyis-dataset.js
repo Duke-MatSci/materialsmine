@@ -255,13 +255,13 @@ function buildDistrLd (fileList) {
     .from(Array(fileList.length).keys())
     .map(x => {
       // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
-      const fileName = fileList[x]?.originalname ?? fileList[x]?.name
+      const fileName = fileList[x]?.swaggerFilename ?? fileList[x]?.name
       distrLDs[x] = {
         '@type': 'http://purl.org/net/provenance/ns#File',
         'http://www.w3.org/2000/01/rdf-schema#label': fileName
       }
       if (fileList[x]?.status === 'complete') distrLDs[x]['@id'] = fileList[x].uri
-      else distrLDs[x]['@id'] = `${window.location.origin}/api/files/${fileList[x].filename}?isStore=true`
+      else distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}`
     })
   return distrLDs
 }
@@ -270,8 +270,8 @@ function buildDepictionLd (file, uri) {
   const depictionLd = {
     '@id': `${uri}/depiction`,
     '@type': 'http://purl.org/net/provenance/ns#File',
-    'http://www.w3.org/2000/01/rdf-schema#label': file.originalname,
-    'http://w3.org/ns/dcat#accessURL': file?.accessUrl ?? `${window.location.origin}/api/files/${file.filename}?isStore=true`
+    'http://www.w3.org/2000/01/rdf-schema#label': file?.swaggerFilename ?? file.originalname,
+    'http://w3.org/ns/dcat#accessURL': file?.accessUrl ?? `${window.location.origin}${file.filename}`
   }
   return depictionLd
 }
