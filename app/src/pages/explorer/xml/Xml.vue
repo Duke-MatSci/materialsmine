@@ -6,7 +6,46 @@
         required v-model="searchWord" />
     </template>
 
+    <template  #filter_inputs>
+      <md-field v-if="selectedFilters.includes('apprStatus')">
+        <label for="approvalStatus">Admin Approval Status</label>
+        <md-select v-model="apprStatus" name="approvalStatus" id="approvalStatus">
+          <md-option value="Approved">Approved</md-option>
+          <md-option value="Not_Approved">Not Approved</md-option>
+        </md-select>
+      </md-field>
+      <md-field v-if="selectedFilters.includes('curationState')">
+        <label for="curationState">Curation State</label>
+        <md-select v-model="curationState" name="approvalStatus" id="approvalStatus">
+          <md-option value="Edit">Edit</md-option>
+          <md-option value="Review">Review</md-option>
+          <md-option value="Curated">Curated</md-option>
+        </md-select>
+      </md-field>
+      <md-field v-if="selectedFilters.includes('isNew')">
+        <label for="curationState">Is New Curation</label>
+        <md-select v-model="isNew" name="is-new" id="is-new">
+          <md-option :value=true>Yes</md-option>
+          <md-option :value=false>No</md-option>
+        </md-select>
+      </md-field>
+      <md-field v-if="selectedFilters.includes('user')" style="max-width: 100%;">
+        <label>Curating User</label>
+        <md-input v-model="user"></md-input>
+      </md-field>
+
+    </template>
+
     <template #action_buttons>
+    <md-field>
+      <label for="filterBy">Filter by...</label>
+      <md-select v-model="selectedFilters" name="filterBy" id="filterBy" multiple>
+        <md-option value="apprStatus">Admin Approval Status</md-option>
+        <md-option value="curationState">Curation State</md-option>
+        <md-option value="user">Curating User</md-option>
+        <md-option value="isNew">Is New</md-option>
+      </md-select>
+    </md-field>
       <button
         type="submit"
         class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -17,7 +56,7 @@
       <button v-if="searchEnabled"
         type="submit"
         class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-        @click.prevent="resetSearch('XML')"
+        @click.prevent="customReset('XML')"
       >
       Clear Search
       </button>
@@ -76,6 +115,12 @@ export default {
       pageSize: 20,
       searchEnabled: false,
       searchWord: '',
+      selectedFilters: [],
+      apprStatus: null,
+      curationState: null,
+      user: null,
+      isNew: null,
+      filterParams: {},
       error: null
     }
   },
@@ -88,22 +133,41 @@ export default {
     isEmpty () {
       if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
       return false
+    },
+    filtersActive () {
+      return !!this.apprStatus || !!this.curationState || !!this.user || !!this.isNew
     }
   },
   methods: {
     async localSearchMethod () {
+      // TODO @aswallace: Update to user query params instead
+      this.filterParams = {
+        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew : null,
+        status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
+        curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
+        user: this.selectedFilters.includes('user') ? this.user : null
+      }
       await this.$apollo.queries.xmlFinder.refetch()
     },
     async submitSearch () {
-      if (!this.searchWord) {
+      if (!this.searchWord && !this.filtersActive) {
         return this.$store.commit('setSnackbar', {
-          message: 'Enter a XML sample file name',
+          message: 'Enter a XML sample file name or select a filter type',
           duration: 10000
         })
       }
-      this.searchEnabled = !!this.searchWord
+      this.searchEnabled = !!this.searchWord || !!this.filtersActive
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
+    },
+    async customReset (type) {
+      this.apprStatus = null
+      this.curationState = null
+      this.user = null
+      this.isNew = null
+      this.selectedFilters = []
+      this.filterParams = {}
+      await this.resetSearch(type)
     }
   },
   created () {
@@ -117,7 +181,11 @@ export default {
       query: XML_FINDER,
       variables () {
         return {
-          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize), param: this.$route.query?.q }
+          input: {
+            pageNumber: this.pageNumber,
+            pageSize: parseInt(this.pageSize),
+            filter: { param: this.$route.query?.q, ...this.filterParams }
+          }
         }
       },
       fetchPolicy: 'cache-and-network',
