@@ -1,77 +1,17 @@
-const mongoose = require('mongoose');
 const xmlFormatter = require('xml-formatter');
 const XlsxFileManager = require('../../../utils/curation-utility');
 const XmlData = require('../../../models/xmlData');
 const errorFormater = require('../../../utils/errorFormater');
 const paginator = require('../../../utils/paginator');
 const CuratedSamples = require('../../../models/curatedSamples');
+const { curationSearchQuery } = require('../../../pipelines/curation-pipeline');
 
 const xmlFinderQuery = {
   xmlFinder: async (_, { input }, { req }) => {
     req.logger?.info('[xmlFinder] Function Entry');
     try {
-      const status = input?.filter?.status;
-      const param = input?.filter?.param;
-      const isNewCuration = input?.filter?.isNewCuration;
-      const curationState = input?.filter?.curationState;
-      const user = input?.filter?.user;
-      const xmlDataFilter = param ? { title: { $regex: new RegExp(param.toString(), 'gi') } } : {};
-      const curationSampleFilter = param ? { 'object.DATA_SOURCE.Citation.CommonFields.Title': { $regex: new RegExp(param.toString(), 'gi') } } : {};
-
-      if (curationState) xmlDataFilter.curateState = curationState;
-      if (user) {
-        xmlDataFilter.user = mongoose.Types.ObjectId(user);
-        curationSampleFilter.user = mongoose.Types.ObjectId(user);
-      }
-
-      const filter = {};
-
-      if (status) filter.status = status.replace('_', ' ');
-      if (typeof isNewCuration === 'boolean') filter.isNewCuration = isNewCuration;
-
-      const [xmlDataCount, curationSampleCount] = await Promise.all([
-        XmlData.countDocuments(xmlDataFilter),
-        CuratedSamples.countDocuments(curationSampleFilter)
-      ]);
-
-      const pagination = paginator(xmlDataCount + curationSampleCount, input?.pageNumber, input?.pageSize);
-
-      // TODO (@tee) Will move this into the pipeline folder later
-      const xmlData = await XmlData.aggregate([
-        { $match: xmlDataFilter },
-        {
-          $project: {
-            id: '$_id',
-            title: 1,
-            sequence: '$dsSeq',
-            isNewCuration: { $literal: false },
-            status: {
-              $cond: [{ $eq: ['$entityState', 'IngestSuccess'] }, 'Approved', 'Not Approved']
-            }
-          }
-        },
-        {
-          $unionWith: {
-            coll: 'curatedsamples',
-            pipeline: [
-              { $match: curationSampleFilter },
-              {
-                $project: {
-                  id: '$_id',
-                  title: '$object.DATA_SOURCE.Citation.CommonFields.Title',
-                  object: 1,
-                  isNewCuration: { $literal: true },
-                  status: '$entityState'
-                }
-              }
-            ]
-          }
-        },
-        { $match: filter },
-        { $skip: pagination.skip },
-        { $limit: pagination.pageSize }
-      ]);
-
+      const { xmlData, count } = await curationSearchQuery(input);
+      const pagination = paginator(count, input?.pageNumber, input?.pageSize);
       return Object.assign(pagination, { xmlData });
     } catch (error) {
       req.logger?.error(`[xmlFinder]: ${error}`);
