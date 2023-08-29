@@ -2,6 +2,7 @@ type XmlCatalogs {
   id: String
   title: String
   status: String
+  entityState: String @deprecated(reason: "No longer supported!")
   isNewCuration: Boolean
   sequence: Int
 }

@@ -12,7 +12,7 @@
       >
         <div v-if="!isUserMessage(optionalChaining(() => item.user.displayName))" class="u--margin-right-1"><md-icon>account_circle</md-icon></div>
 
-        <div style="padding: 1.6rem;border: 1px solid #A2A5A9;" :class="[isUserMessage(item.user?.displayName) && 'u--margin-right-1', 'md-layout-item u--b-rad']" >
+        <div style="padding: 1.6rem;border: 1px solid #A2A5A9;" :class="[isUserMessage(optionalChaining(() => item.user.displayName)) && 'u--margin-right-1', 'md-layout-item u--b-rad']" >
           <p class="u--color-primary u--default-size">{{ item.user.givenName }} {{ item.user.surName }}</p>
           <p class="md-body-1">{{ item.comment }}</p>
           <p class="utility-align--right md-caption">{{ formatDate(item.createdAt) }}</p>
