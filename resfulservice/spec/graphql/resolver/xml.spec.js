@@ -48,7 +48,7 @@ describe('XmlData Resolver Unit Tests:', function () {
     it("should return paginated lists of xmlData when no input", async () => {
       sinon.stub(XmlData, 'countDocuments').returns(2);
       sinon.stub(CuratedSamples, 'countDocuments').returns(1)
-      sinon.stub(XmlData, 'aggregate').returns(mockXmlDataList);
+      sinon.stub(XmlData, 'aggregate').returns([{count: mockXmlDataList.length, xmlData: mockXmlDataList }]);
 
       const result = await xmlFinder({}, { input }, { req }); 
 
@@ -60,7 +60,7 @@ describe('XmlData Resolver Unit Tests:', function () {
       sinon.stub(XmlData, 'countDocuments').returns(2)
       sinon.stub(CuratedSamples, 'countDocuments').returns(1)
 
-      sinon.stub(XmlData, 'aggregate').returns(mockXmlDataList);
+      sinon.stub(XmlData, 'aggregate').returns([{count: mockXmlDataList.length, xmlData: mockXmlDataList }]);
 
       const result = await xmlFinder({}, { input }, { req }); 
 
