@@ -68,7 +68,7 @@
 
     <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
       <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item">
-        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }}">
+        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: `${xml.isNewCuration}` }}">
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3">
               <md-icon class="explorer_page-nav-card_icon u_margin-top-small">code_off</md-icon>
@@ -135,7 +135,7 @@ export default {
       return false
     },
     filtersActive () {
-      return !!this.apprStatus || !!this.curationState || !!this.user || !!this.isNew
+      return !!this.apprStatus || !!this.curationState || !!this.user || (this.isNew !== null)
     }
   },
   methods: {
