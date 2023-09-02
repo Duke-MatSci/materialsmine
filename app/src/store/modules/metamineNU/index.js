@@ -9,7 +9,10 @@ export default {
     selectedData: [],
     page: 'pairwise',
     query1: null,
-    query2: null
+    query2: null,
+    neighbors: [],
+    reset: false,
+    knnUmap: 15
   },
   getters: {
     getFetchedNames: state => state.fetchedNames,
@@ -45,6 +48,15 @@ export default {
     },
     setQuery2 (context, payload) {
       context.commit('setQuery2', payload)
+    },
+    setNeighbors (context, payload) {
+      context.commit('setNeighbors', payload)
+    },
+    setReset (context, payload) {
+      context.commit('setReset', payload)
+    },
+    setKnnUmap (context, payload) {
+      context.commit('setKnnUmap', payload)
     }
 
   },
@@ -75,7 +87,15 @@ export default {
     },
     setQuery2 (state, payload) {
       state.query2 = payload
+    },
+    setNeighbors (state, payload) {
+      state.neighbors = payload
+    },
+    setReset (state, payload) {
+      state.reset = payload
+    },
+    setKnnUmap (state, payload) {
+      state.knnUmap = payload
     }
-
   }
 }

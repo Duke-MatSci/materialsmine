@@ -1,7 +1,11 @@
 <template>
     <div class="wrapper-box md-gutter adjust-padding" style="margin:5px 0 0 5px">
       <div class="md-layout-item">
-        <h2 class="metamine_pairwise-header">Material Data Explorer (Pairwise)</h2>
+        <button class="nuplot-button-link">
+          <router-link to="/mm/metamaterial_visualization_nu/umap" style="color: #fff; font-weight: 700;">
+          Visualize In Reduced Dimension
+        </router-link>
+        </button>
       </div>
       <div class="main-content" style="margin: 1rem; display: flex">
         <div class="pairwise-plot-chart" style="width: 45%">

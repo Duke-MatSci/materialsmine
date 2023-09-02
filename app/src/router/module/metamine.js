@@ -33,7 +33,7 @@ const metamineRoutes = [{
 {
   path: 'metamaterial_visualization_nu',
   name: 'PairwisePlot',
-  component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/PairwisePlotPage.vue'),
+  component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/PairwisePlot.vue'),
   meta: {
     requiresAuth: false
   }
@@ -50,6 +50,14 @@ const metamineRoutes = [{
   path: 'metamaterial_visualization_nu/scatter',
   name: 'Scatter',
   component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/ScatterPlot.vue'),
+  meta: {
+    requiresAuth: false
+  }
+},
+{
+  path: 'metamaterial_visualization_nu/umap',
+  name: 'Umap',
+  component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/UmapPlot.vue'),
   meta: {
     requiresAuth: false
   }

@@ -4,48 +4,29 @@
 
 <script>
 import * as d3 from 'd3'
-import { mapState } from 'vuex'
 
 const MARGIN = {
-  TOP: 30,
-  RIGHT: 30,
-  BOTTOM: 30,
-  LEFT: 30
+  TOP: 20,
+  RIGHT: 20,
+  BOTTOM: 20,
+  LEFT: 20
 }
-const SIDE = 200
+const SIDE = 100
 const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM
 
 export default {
-  name: 'structure-plot',
-  computed: {
-    ...mapState('metamineNU', {
-      dataPoint: (state) => state.dataPoint
-    })
-  },
-  watch: {
-    dataPoint: {
-      handler: function (val, oldVal) {
-        if (this.svg) {
-          this.update(val)
-        }
-      },
-      deep: true
-    }
-  },
+  name: 'structure-knn-plot',
+  props: ['dataPoint'],
   mounted () {
     this.createSvg(this.dataPoint)
   },
   methods: {
     createSvg (dataPoint) {
-      const height = dataPoint.height ? dataPoint.height : HEIGHT
-      const width = dataPoint.width ? dataPoint.width : WIDTH
-      const marginLeft = dataPoint.marginLeft
-        ? dataPoint.marginLeft
-        : MARGIN.LEFT
-      const marginTop = dataPoint.marginTop
-        ? dataPoint.marginTop
-        : MARGIN.TOP
+      const height = HEIGHT
+      const width = WIDTH
+      const marginLeft = MARGIN.LEFT
+      const marginTop = MARGIN.TOP
       this.svg = d3
         .select(this.$refs.structurePlot)
         .append('svg')
@@ -69,7 +50,7 @@ export default {
         .attr('text-anchor', 'middle')
         .style(
           'font-size',
-          dataPoint.fontSize ? dataPoint.fontSize : '16px'
+          '8px'
         )
         .style('font-family', 'Arial, sans-serif')
         .text('Unit Cell Geometry')
@@ -82,7 +63,7 @@ export default {
         .attr('text-anchor', 'middle')
         .style(
           'font-size',
-          dataPoint.fontSize ? dataPoint.fontSize : '16px'
+          '8px'
         )
         .style('font-family', 'Arial, sans-serif')
 
@@ -92,11 +73,9 @@ export default {
     update (dataPoint) {
       const data = dataPoint.geometry
       const color = dataPoint.outline_color
-      const height = dataPoint.height ? dataPoint.height : HEIGHT
-      const width = dataPoint.width ? dataPoint.width : WIDTH
-      const marginLeft = dataPoint.marginLeft
-        ? dataPoint.marginLeft
-        : MARGIN.LEFT
+      const height = HEIGHT
+      const width = WIDTH
+      const marginLeft = MARGIN.LEFT
 
       let res = []
       res = this.pixelate(data, color)
@@ -105,7 +84,7 @@ export default {
       const xScale = d3.scaleLinear().domain([0, 50]).range([0, width])
 
       const size = (width + marginLeft * 2) / 50
-      const ratio = this.calculateRatio(this.data)
+      const ratio = this.calculateRatio(data)
       this.svg.select('.volumn-ratio').text(`Volumn Ratio: ${ratio}`)
 
       const pixels = this.svg.selectAll('rect').data(res)

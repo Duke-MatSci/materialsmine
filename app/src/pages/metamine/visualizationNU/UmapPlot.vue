@@ -14,8 +14,8 @@
             </button>
         </div>
         <div class="main-content" style="margin: 3rem; display: flex">
-            <div class="scatter-chart" style="width: 50%">
-                <Scatter />
+            <div class="umap-chart" style="width: 50%">
+                <Umap />
                 <div
                     style="
                         display: flex;
@@ -75,8 +75,7 @@
             </div>
             <div class="side-tools" style="width: 30%">
                 <DataSelector />
-                <RangeSelector />
-                <MaterialInformation />
+                <ParamSelector />
             </div>
         </div>
     </div>
@@ -93,13 +92,12 @@
 </style>
 
 <script>
-import Scatter from './components/scatter.vue'
+import Umap from './components/umap.vue'
 import DataSelector from './components/DataSelector.vue'
-import RangeSelector from './components/RangeSelector.vue'
+import ParamSelector from './components/ParamSelector.vue'
 import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
 import Poisson from '@/pages/metamine/visualizationNU/components/poisson.vue'
 import Structure from '@/pages/metamine/visualizationNU/components/structure.vue'
-import MaterialInformation from '@/pages/metamine/visualizationNU/components/MaterialInformation.vue'
 import NeighborPanel from '@/pages/metamine/visualizationNU/components/NeighborPanel.vue'
 import SaveDataPanel from './components/SaveDataPanel.vue'
 import Dialog from '@/components/Dialog.vue'
@@ -107,13 +105,12 @@ import Dialog from '@/components/Dialog.vue'
 export default {
   name: 'ScatterPage',
   components: {
-    Scatter,
+    Umap,
     DataSelector,
-    RangeSelector,
+    ParamSelector,
     Youngs,
     Poisson,
     Structure,
-    MaterialInformation,
     NeighborPanel,
     SaveDataPanel,
     dialogBox: Dialog
