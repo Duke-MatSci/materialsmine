@@ -119,6 +119,9 @@
             &lg {
                 margin-top: 5rem;
             }
+            &xl{
+                margin-top: 7rem;
+            }
         }
         &-bottom {
             &md {
@@ -131,6 +134,9 @@
             }
             &md {
                 margin-right: 5rem;
+            }
+            &ml {
+                margin-right: 8rem;
             }
             &lg {
                 margin-right: 10rem;
@@ -260,6 +266,11 @@
             font-size: 1.3rem;
             font-weight: 500;
         }
+        &-sl {
+            font-weight: 200!important;
+            font-size: $medium-size!important;
+        }
+
 
     }
     &--b-rad {
@@ -786,6 +797,12 @@
         @include respond(phone) {
             display: flex !important;
             flex-direction: column !important;
+        }
+    }
+
+    &-phone_margin {
+        @include respond(phone){
+            margin: 0 auto !important;
         }
     }
 }

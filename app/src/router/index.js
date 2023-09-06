@@ -5,6 +5,7 @@ import ExplorerBase from '@/pages/explorer/Base.vue'
 import MetamineBase from '@/pages/metamine/Base.vue'
 import NanomineBase from '@/pages/nanomine/Base.vue'
 import PortalBase from '@/pages/portal/Base.vue'
+import XsdBase from '@/pages/portal/curation/xsd/Base.vue'
 import NotFound from '@/pages/NotFound.vue'
 import nanomineRoutes from '@/router/module/nanomine'
 import metamineRoutes from '@/router/module/metamine'
@@ -44,6 +45,18 @@ const routes = [
     component: PortalBase,
     children: [
       ...portalRoutes
+    ]
+  },
+  {
+    path: '/xsd',
+    component: XsdBase,
+    children: [
+      {
+        path: 'xsd-view',
+        name: 'XsdView',
+        component: () => import('@/pages/portal/curation/xsd/XsdViewer.vue'),
+        meta: { requiresAuth: true }
+      }
     ]
   },
   {
