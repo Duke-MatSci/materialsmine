@@ -70,6 +70,24 @@ const nanomineRoutes = [
         /* webpackChunkName: "contactus" */ '@/pages/nanomine/contactus/ContactUs.vue'
       ),
     meta: { requiresAuth: false }
+  },
+  {
+    path: 'mrs2022',
+    name: 'MRS2022',
+    component: () =>
+      import(
+        /* webpackChunkName: "mrs2022" */ '@/pages/nanomine/conferences/MRS2022.vue'
+      ),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: 'cssi2023',
+    name: 'CSSI2023',
+    component: () =>
+      import(
+        /* webpackChunkName: "cssi2023" */ '@/pages/nanomine/conferences/CSSI2023.vue'
+      ),
+    meta: { requiresAuth: false }
   }
 ]
 
