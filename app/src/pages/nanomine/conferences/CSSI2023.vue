@@ -106,8 +106,13 @@ export default {
           doi: '10.1115/DETC2022-87653'
         },
         {
-          citation: `Jablonka, Kevin Maik et al. “14 Examples of How LLMs Can Transform Materials Science and Chemistry: 
-          A Reflection on a Large Language Model Hackathon.” Digital Discovery, 2023.`,
+          citation: `Chen, Z., Ogren, A., Daraio, C., Brinson, L. C., & Rudin, C. (2022). How to see hidden patterns 
+            in metamaterials with interpretable machine learning. Extreme Mechanics Letters, 57, 101895. `,
+          doi: '10.1016/j.eml.2022.101895'
+        },
+        {
+          citation: `Jablonka, Kevin Maik et al. "14 Examples of How LLMs Can Transform Materials Science and Chemistry: 
+          A Reflection on a Large Language Model Hackathon." Digital Discovery, 2023.`,
           doi: '10.48550/arXiv.2306.06283'
         },
         {
@@ -120,11 +125,6 @@ export default {
             Material Properties from Monocular Video," in 2022 IEEE/CVF Conference on Computer Vision and Pattern 
             Recognition (CVPR), New Orleans, LA, USA, 2022 pp. 16210-16219. `,
           doi: '10.1109/CVPR52688.2022.01575'
-        },
-        {
-          citation: `Z Chen, A Ogren, Chiara Daraio, LC Brinson, C Rudin, How to See Hidden Patterns in Metamaterials 
-            with Interpretable Machine Learning, Extreme Mechanics Letters, accepted 2022. `,
-          doi: '10.1016/j.eml.2022.101895'
         },
         {
           citation: `M.E. Deagen, L.C. Brinson, R.A. Vaia, L.S. Schadler, The Materials Tetrahedron Has a Digital 
@@ -141,6 +141,19 @@ export default {
           citation: `Lee, D., Jiang, S., Balogun, O., & Chen, W., "Dynamic Control of Plasmonic Localization 
             by Inverse Optimization of Spatial Phase Modulation", ACS Photonics, 2022 9 (2), 351-359. `,
           doi: '10.1021/acsphotonics.1c01043'
+        },
+        {
+          citation: `LC Brinson, LM Bartolo, B Blaiszik, D Elbert, I Foster, A Strachan, PW Voorhees, Community 
+          Action on FAIR Data will Fuel a Revolution in Materials Research, MRS Bulletin, 2023.`,
+          doi: '10.1557/s43577-023-00498-4'
+        },
+        {
+          citation: `MV Bastawrous, LC Brinson, Z Chen, C Daraio, AC Ogren, C Rudin, 2023. Phononic materials with 
+          effectively scale-separated hierarchical features using interpretable machine learning. (in preparation)`
+        },
+        {
+          citation: `AC Ogren, BT Feng, KL Bouman, C Daraio, 2023. Gaussian Process Regression as a Surrogate Model 
+            for Dispersion Computations. (submitted)`
         }
       ]
     }
