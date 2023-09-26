@@ -66,7 +66,7 @@
                   <div v-else class="gallery-grid grid grid_col-4">
                     <md-card v-for="(xml, index) in xmlBulkResponse.bulkCurations" :key="index"
                        class="btn--animated gallery-item">
-                      <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.sampleID }}">
+                      <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.sampleID }, query: { isNewCuration: 'true' }}">
                         <md-card-media-cover md-solid>
                             <div class="utility-align--right">
                               <div> <p class="u--color-primary"> <strong>Status: </strong>{{ xml.status }}</p>

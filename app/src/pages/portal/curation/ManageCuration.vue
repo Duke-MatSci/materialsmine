@@ -10,33 +10,71 @@
       </div>
 
     </div>
-    <search-gallery :isEmpty="isEmpty" :totalItems="xmlFinder.totalItems || 0" :loading="$apollo.loading" :error="!!error" :dense="true">
+    <search-gallery :isEmpty="isEmpty" :totalItems="xmlFinder.totalItems || 0" :loading="$apollo.loading" :error="!!error"
+      :dense="true">
       <template #search_input>
-        <input type="text" ref="search_input" class="form__input form__input--flat"
-          placeholder="Search XML" name="search" id="search"
-          required v-model="searchWord" />
+        <input type="text" ref="search_input" class="form__input form__input--flat" placeholder="Search XML" name="search"
+          id="search" required v-model="searchWord" />
+      </template>
+
+      <template #filter_inputs>
+        <md-field v-if="selectedFilters.includes('apprStatus')">
+          <label for="approvalStatus">Admin Approval Status</label>
+          <md-select v-model="apprStatus" name="approvalStatus" id="approvalStatus">
+            <md-option value="Approved">Approved</md-option>
+            <md-option value="Not_Approved">Not Approved</md-option>
+          </md-select>
+        </md-field>
+        <md-field v-if="selectedFilters.includes('curationState')">
+          <label for="curationState">Curation State</label>
+          <md-select v-model="curationState" name="approvalStatus" id="approvalStatus">
+            <md-option value="Edit">Edit</md-option>
+            <md-option value="Review">Review</md-option>
+            <md-option value="Curated">Curated</md-option>
+          </md-select>
+        </md-field>
+        <md-field v-if="selectedFilters.includes('isNew')">
+          <label for="curationState">Is New Curation</label>
+          <md-select v-model="isNew" name="is-new" id="is-new">
+            <md-option :value=true>Yes</md-option>
+            <md-option :value=false>No</md-option>
+          </md-select>
+        </md-field>
+        <md-field v-if="selectedFilters.includes('user')" style="max-width: 100%;">
+          <label>Curating User</label>
+          <md-input v-model="user"></md-input>
+        </md-field>
       </template>
 
       <template #action_buttons>
-        <button type="submit" class="md-button btn btn--primary btn--noradius u--margin-pos" @click.prevent="submitSearch" >
+        <md-field>
+          <label for="filterBy">Filter by...</label>
+          <md-select v-model="selectedFilters" name="filterBy" id="filterBy" multiple>
+            <md-option value="apprStatus">Admin Approval Status</md-option>
+            <md-option value="curationState">Curation State</md-option>
+            <md-option value="user">Curating User</md-option>
+            <md-option value="isNew">Is New</md-option>
+          </md-select>
+        </md-field>
+        <button type="submit" class="md-button btn btn--primary btn--noradius u--margin-pos"
+          @click.prevent="submitSearch">
           <span class="md-caption u--bg">Search Xml</span>
         </button>
-        <button v-if="searchEnabled"
-          type="submit"
-          class="md-button btn btn btn--primary btn--noradius u--margin-pos"
-          @click.prevent="resetSearch('XML')"
-        >
+        <button v-if="searchEnabled" type="submit" class="md-button btn btn btn--primary btn--noradius u--margin-pos"
+          @click.prevent="customReset('XML')">
           <span class="md-caption u--bg">Clear Search</span>
         </button>
       </template>
 
       <template #page_input>
-        <input type="number" id="pagesize" class="u_width--xs utility-navfont" name="pagesize" v-model.lazy="pageSize" min="1" max="20">
+        <input type="number" id="pagesize" class="u_width--xs utility-navfont" name="pagesize" v-model.lazy="pageSize"
+          min="1" max="20">
       </template>
 
       <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
-        <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item viz-u-mgup-md" >
-          <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }}">
+        <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item viz-u-mgup-md">
+          <router-link
+            :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: `${xml.isNewCuration}` } }">
             <md-card-media-cover md-solid>
               <md-card-media md-ratio="4:3">
                 <md-icon class="u--color-primary md-size-3x">code_off</md-icon>
@@ -44,7 +82,7 @@
               <md-card-area class="u_gridbg">
                 <div class="md-card-actions u_show_hide viz-u-display__show">
                   <span class="md-body-2"> {{ xml.title || '' }} </span>
-                <span class="md-body-1">Click to view</span>
+                  <span class="md-body-1">Click to view</span>
                 </div>
               </md-card-area>
             </md-card-media-cover>
@@ -53,11 +91,8 @@
       </template>
 
       <template #pagination>
-        <pagination v-if="xmlFinder && xmlFinder.xmlData"
-          :cpage="pageNumber"
-          :tpages="xmlFinder.totalPages || 1"
-          @go-to-page="loadPrevNextImage($event)"
-        />
+        <pagination v-if="xmlFinder && xmlFinder.xmlData" :cpage="pageNumber" :tpages="xmlFinder.totalPages || 1"
+          @go-to-page="loadPrevNextImage($event)" />
       </template>
 
       <template #errorMessage>{{ !!error ? 'Cannot Load Xml List' : 'Sorry! No Xml Found' }}</template>
@@ -86,6 +121,12 @@ export default {
       pageSize: 20,
       searchEnabled: false,
       searchWord: '',
+      selectedFilters: [],
+      apprStatus: null,
+      curationState: null,
+      user: null,
+      isNew: null,
+      filterParams: {},
       error: null
     }
   },
@@ -94,22 +135,41 @@ export default {
     isEmpty () {
       if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
       return false
+    },
+    filtersActive () {
+      return !!this.apprStatus || !!this.curationState || !!this.user || (this.isNew !== null)
     }
   },
   methods: {
     async localSearchMethod () {
+      // TODO @aswallace: Update to user query params instead
+      this.filterParams = {
+        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew : null,
+        status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
+        curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
+        user: this.selectedFilters.includes('user') ? this.user : null
+      }
       await this.$apollo.queries.xmlFinder.refetch()
     },
     async submitSearch () {
-      if (!this.searchWord) {
+      if (!this.searchWord && !this.filtersActive) {
         return this.$store.commit('setSnackbar', {
-          message: 'Enter a XML sample file name',
+          message: 'Enter a XML sample file name  or select a filter type',
           duration: 10000
         })
       }
-      this.searchEnabled = !!this.searchWord
+      this.searchEnabled = !!this.searchWord || !!this.filtersActive
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
+    },
+    async customReset (type) {
+      this.apprStatus = null
+      this.curationState = null
+      this.user = null
+      this.isNew = null
+      this.selectedFilters = []
+      this.filterParams = {}
+      await this.resetSearch(type)
     }
   },
   created () {
@@ -124,7 +184,11 @@ export default {
       query: XML_FINDER,
       variables () {
         return {
-          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize), param: this.$route.query?.q }
+          input: {
+            pageNumber: this.pageNumber,
+            pageSize: parseInt(this.pageSize),
+            filter: { param: this.$route.query?.q, ...this.filterParams }
+          }
         }
       },
       fetchPolicy: 'cache-and-network',

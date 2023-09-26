@@ -23,7 +23,7 @@ exports.curationSearchQuery = async (input) => {
   if (status) filter.status = status.replace('_', ' ');
   if (typeof isNewCuration === 'boolean') filter.isNewCuration = isNewCuration;
 
-  const xmlData = await XmlData.aggregate([
+  const data = await XmlData.aggregate([
     { $match: xmlDataFilter },
     {
       $project: {
@@ -54,9 +54,9 @@ exports.curationSearchQuery = async (input) => {
       }
     },
     { $match: filter },
-    { $skip: skip },
-    { $limit: pageSize }
+    { $group: { _id: null, count: { $sum: 1 }, xmlData: { $push: '$$ROOT' } } },
+    { $project: { _id: 0, count: 1, xmlData: { $slice: ['$xmlData', skip, pageSize] } } }
   ]);
-
-  return { xmlData, count: xmlData.length };
+  const { xmlData, count } = data[0];
+  return { xmlData, count };
 };
