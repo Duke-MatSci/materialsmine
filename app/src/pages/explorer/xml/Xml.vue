@@ -7,28 +7,19 @@
     </template>
 
     <template  #filter_inputs>
-      <md-field v-if="selectedFilters.includes('apprStatus')">
-        <label for="approvalStatus">Admin Approval Status</label>
-        <md-select v-model="apprStatus" name="approvalStatus" id="approvalStatus">
-          <md-option value="Approved">Approved</md-option>
-          <md-option value="Not_Approved">Not Approved</md-option>
-        </md-select>
-      </md-field>
-      <md-field v-if="selectedFilters.includes('curationState')">
-        <label for="curationState">Curation State</label>
-        <md-select v-model="curationState" name="approvalStatus" id="approvalStatus">
-          <md-option value="Edit">Edit</md-option>
-          <md-option value="Review">Review</md-option>
-          <md-option value="Curated">Curated</md-option>
-        </md-select>
-      </md-field>
-      <md-field v-if="selectedFilters.includes('isNew')">
-        <label for="curationState">Is New Curation</label>
-        <md-select v-model="isNew" name="is-new" id="is-new">
-          <md-option :value=true>Yes</md-option>
-          <md-option :value=false>No</md-option>
-        </md-select>
-      </md-field>
+      <div v-if="selectedFilters.includes('apprStatus')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" md-deletable @md-delete="removeChip('apprStatus')" >
+          Admin Approval Status: {{ apprStatus  }}</md-chip>
+      </div>
+
+      <div v-if="selectedFilters.includes('curationState')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('curationState')" md-deletable>Curation State: {{ curationState }}</md-chip>
+      </div>
+
+      <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('isNew')" md-deletable="">is New: {{ isNew }}</md-chip>
+      </div>
+
       <md-field v-if="selectedFilters.includes('user')" style="max-width: 100%;">
         <label>Curating User</label>
         <md-input v-model="user"></md-input>
@@ -37,15 +28,19 @@
     </template>
 
     <template #action_buttons>
-    <md-field>
-      <label for="filterBy">Filter by...</label>
-      <md-select v-model="selectedFilters" name="filterBy" id="filterBy" multiple>
-        <md-option value="apprStatus">Admin Approval Status</md-option>
-        <md-option value="curationState">Curation State</md-option>
-        <md-option value="user">Curating User</md-option>
-        <md-option value="isNew">Is New</md-option>
-      </md-select>
-    </md-field>
+      <div class="form__field md-field">
+        <select @change="(e) => selectFilters(e)" class="form__select" name="filterBy" id="filterBy">
+          <option value="" disabled selected hidden>Filter by...</option>
+          <option value="apprStatus::Approved">Admin Approval Status (Approved)</option>
+          <option value="apprStatus::Not_Approved">Admin Approval Status (Not_Approved)</option>
+          <option value="curationState::Edit">Editing State</option>
+          <option value="curationState::Review">Reviewing State</option>
+          <option value="curationState::Curated">Curated</option>
+          <option value="user">Curating User</option>
+          <option value="isNew::Yes">New curation</option>
+          <option value="isNew::No">Old Curation</option>
+        </select>
+      </div>
       <button
         type="submit"
         class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -68,7 +63,7 @@
 
     <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
       <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item">
-        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: `${xml.isNewCuration}` }}">
+        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }}">
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3">
               <md-icon class="explorer_page-nav-card_icon u_margin-top-small">code_off</md-icon>
@@ -135,7 +130,7 @@ export default {
       return false
     },
     filtersActive () {
-      return !!this.apprStatus || !!this.curationState || !!this.user || (this.isNew !== null)
+      return !!this.apprStatus || !!this.curationState || !!this.user || !!this.isNew
     }
   },
   methods: {
@@ -168,6 +163,21 @@ export default {
       this.selectedFilters = []
       this.filterParams = {}
       await this.resetSearch(type)
+    },
+    selectFilters (e) {
+      const value = e.target.value
+      const arrValue = value.split('::')
+      if (!this.selectedFilters.includes(arrValue[0])) {
+        this.selectedFilters.push(arrValue[0])
+      }
+      this[arrValue[0]] = arrValue[1] ? arrValue[1] : null
+      e.target.value = ''
+    },
+    removeChip (str) {
+      const index = this.selectedFilters.indexOf(str)
+      if (index < 0) return
+      this.selectedFilters.splice(index, 1) // 2nd parameter means remove one item only
+      this[str] = null
     }
   },
   created () {

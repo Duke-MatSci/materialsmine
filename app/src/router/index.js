@@ -11,6 +11,7 @@ import nanomineRoutes from '@/router/module/nanomine'
 import metamineRoutes from '@/router/module/metamine'
 import explorerRoutes from '@/router/module/explorer'
 import portalRoutes from '@/router/module/portal'
+import xsdRoutes from '@/router/module/xsd'
 Vue.use(VueRouter)
 
 const routes = [
@@ -41,22 +42,17 @@ const routes = [
     ]
   },
   {
+    path: '/xsd',
+    component: XsdBase,
+    children: [
+      ...xsdRoutes
+    ]
+  },
+  {
     path: '/portal',
     component: PortalBase,
     children: [
       ...portalRoutes
-    ]
-  },
-  {
-    path: '/xsd',
-    component: XsdBase,
-    children: [
-      {
-        path: 'xsd-view',
-        name: 'XsdView',
-        component: () => import('@/pages/portal/curation/xsd/XsdViewer.vue'),
-        meta: { requiresAuth: true }
-      }
     ]
   },
   {
