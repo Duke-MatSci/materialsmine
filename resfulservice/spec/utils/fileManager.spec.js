@@ -102,21 +102,4 @@ describe.skip('FileManager Utils', function () {
     });
 
   });
-
-  // TODO (@tee): Remove later when fs rewrite is done inside the controller  
-  context('writeFile', () => {
-    it('should return file path of the written file', async () => {
-      sinon.stub(fs.promises, 'writeFile').returns(true);
-      const result = await writeFile(req, 'hello.txt', 'Hello world');
-      expect(result).to.equal('files-directory\\hello.txt')
-    })
-  });
-
-  context('readFile', () => {
-    it('should return data read from file', async () => {
-      sinon.stub(fs.promises, 'readFile').returns('Hello World');
-      const result = await readFile(req, 'hello.txt', 'Hello world');
-      expect(result).to.equal('Hello World');
-    })
-  });
 });

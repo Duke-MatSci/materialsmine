@@ -20,6 +20,7 @@ const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
 const getWsContext = require('./graphql/context/getWsContext');
+const { latencyCalculator } = require('./middlewares/latencyTimer');
 
 const env = process.env;
 
@@ -63,6 +64,7 @@ app.use((error, req, res, next) => {
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;
+  latencyCalculator(res);
   res.status(status).json({ message, data });
 });
 

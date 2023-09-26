@@ -5,7 +5,7 @@ const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
 const { errorWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
-const { BaseObjectSubstitutionMap, CurationEntityStateDefault, TestData } = require('../../config/constant');
+const { BaseObjectSubstitutionMap, CurationEntityStateDefault, XSDJsonPlaceholder } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
@@ -37,10 +37,13 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     const processedFiles = [];
     const result = await this.createMaterialObject(xlsxFile.path, BaseSchemaObject, validListMap, req.files.uploadfile, processedFiles);
     if (result?.count && req?.isParentFunction) return { errors: result.errors };
-    if (result?.count) return res.status(400).json({ filename: `/api/files/${xlsxFile}?isFileStore=true`, errors: result.errors });
+    if (result?.count) {
+      latency.latencyCalculator(res);
+      return res.status(400).json({ filename: `/api/files/${xlsxFile.filename}?isFileStore=true`, errors: result.errors });
+    }
 
-    const curatedAlready = storedCurations.find(
-      object => object?.DATA_SOURCE?.Citation?.CommonFields?.Title === result?.DATA_SOURCE?.Citation?.CommonFields?.Title &&
+    const curatedAlready = storedCurations.find(({ object }) =>
+      object?.DATA_SOURCE?.Citation?.CommonFields?.Title === result?.DATA_SOURCE?.Citation?.CommonFields?.Title &&
       object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType === result?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType);
 
     if (curatedAlready) return next(errorWriter(req, 'This had been curated already', 'curateXlsxSpreadsheet', 409));
@@ -63,7 +66,6 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     let xml = XlsxFileManager.xmlGenerator(JSON.stringify({ PolymerNanocomposite: curatedObject.object }));
     xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
-    await FileManager.writeFile(req, 'curation.xml', xml);
     const curatedSample = {
       sampleID: curatedObject._id,
       xml,
@@ -75,7 +77,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (req?.isParentFunction) return { curatedSample, processedFiles };
     latency.latencyCalculator(res);
-    return res.status(200).json({ ...curatedSample });
+    return res.status(201).json({ ...curatedSample });
   } catch (err) {
     next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
   }
@@ -114,7 +116,8 @@ exports.bulkXlsxCurations = async (req, res, next) => {
       FileManager.deleteFolder(folderPath, req);
     }
     latency.latencyCalculator(res);
-    return res.status(200).json({ bulkCurations, bulkErrors });
+    const bulkErrorsArray = bulkErrors.map(curation => ({ ...curation, filename: `/api/files/${curation.filename}?isFileStore=true` }));
+    return res.status(200).json({ bulkCurations, bulkErrors: bulkErrorsArray });
   } catch (err) {
     next(errorWriter(req, err, 'bulkXlsxCurations', 500));
   }
@@ -145,7 +148,7 @@ const processSingleCuration = async (masterTemplates, curationFiles, bulkCuratio
       const result = await this.curateXlsxSpreadsheet(newReq, {}, nextFnCallBack);
 
       if (result?.message || result?.errors) {
-        bulkErrors.push({ filename: `/api/files/${masterTemplate.split('mm_files/').pop()}?isFileStore=true`, errors: result?.message ?? result?.errors });
+        bulkErrors.push({ filename: masterTemplate.split('mm_files/').pop(), errors: result?.message ?? result?.errors });
       } else {
         bulkCurations.push(result.curatedSample);
         imageBucketArray = result.processedFiles.filter(file => /\.(jpe?g|tiff?|png)$/i.test(file));
@@ -206,25 +209,25 @@ exports.getCurationXSD = async (req, res, next) => {
     jsonOBject = { PolymerNanocomposite: jsonOBject };
     const jsonSchema = XlsxFileManager.jsonSchemaGenerator(jsonOBject);
 
-    await FileManager.writeFile(req, 'curationSchema.json', JSON.stringify(jsonSchema));
     if (isJson) {
       latency.latencyCalculator(res);
       return res.status(201).json(jsonSchema);
     }
 
     let xsd = XlsxFileManager.jsonSchemaToXsdGenerator(jsonSchema);
-    latency.latencyCalculator(res);
-
-    const filePath = await FileManager.writeFile(req, 'schema.xsd', xsd);
-
+    const filePath = `${req.env?.FILES_DIRECTORY}/schema.xsd`;
+    await fs.promises.writeFile(filePath, xsd);
     const parsedFile = await XlsxFileManager.parseXSDFile(req, filePath);
+
     if (isFile) {
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Content-Disposition', 'attachment; filename=curationschema.xsd');
+      latency.latencyCalculator(res);
       const stream = fs.createReadStream(parsedFile);
       return stream.pipe(res);
     }
-    xsd = await FileManager.readFile(req, parsedFile);
+    xsd = await fs.promises.readFile(parsedFile, 'utf8');
+    latency.latencyCalculator(res);
     return res.status(201).json({ xsd });
   } catch (error) {
     next(errorWriter(req, error, 'getCurationXSD', 500));
@@ -492,7 +495,7 @@ const createJsonObject = async (BaseObject, validListMap) => {
       }
 
       if (propertyValue.type === 'varied_multiples') {
-        const possibleValues = TestData.varied_multiples[property];
+        const possibleValues = XSDJsonPlaceholder.varied_multiples[property];
         possibleValues.forEach(cellValue => {
           filteredObject[cellValue] = objArr;
         });
@@ -515,9 +518,9 @@ const createJsonObject = async (BaseObject, validListMap) => {
       }
     } else if (Object.getOwnPropertyDescriptor(propertyValue, 'cellValue')) {
       if (propertyValue.type === 'File') {
-        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = TestData.File;
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = XSDJsonPlaceholder.File;
       } else {
-        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = TestData.String;
+        filteredObject[BaseObjectSubstitutionMap[property] ?? property] = XSDJsonPlaceholder.String;
       }
     } else {
       const nestedObj = await createJsonObject(propertyValue, validListMap);

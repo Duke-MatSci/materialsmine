@@ -59,7 +59,7 @@ async function findFile (req) {
   const { fileId } = req.params;
 
   if (!req.env?.FILES_DIRECTORY || !fileId) {
-    return null;
+    throw new Error('Internal Server Error');
   }
 
   const { filesDirectoryValue, parsedFileName } = getDirectoryFiles(req.env?.FILES_DIRECTORY, fileId);
@@ -67,7 +67,7 @@ async function findFile (req) {
   const foundFile = await selectFile(filesDirectoryValue, parsedFileName);
 
   if (!foundFile) {
-    return null;
+    throw new Error('File not found');
   }
 
   const filePath = path.join(filesDirectoryValue, parsedFileName);

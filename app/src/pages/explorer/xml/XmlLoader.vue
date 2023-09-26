@@ -79,6 +79,9 @@ export default {
     }),
     isSmallTabView () {
       return screen.width < 760
+    },
+    isNewCuration () {
+      return this.$route?.query?.isNewCuration === 'true'
     }
   },
   methods: {
@@ -102,7 +105,10 @@ export default {
       query: XML_VIEWER,
       variables () {
         return {
-          input: { id: this.$route.params.id }
+          input: {
+            id: this.$route.params.id,
+            isNewCuration: this.isNewCuration
+          }
         }
       },
       fetchPolicy: 'cache-and-network',

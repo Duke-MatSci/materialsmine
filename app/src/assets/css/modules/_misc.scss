@@ -48,6 +48,34 @@
                 list-style: none;
             }
         }
+        &-ordered {
+          margin: 0px -0.8rem !important;
+          @include respond(laptop){
+            margin: 0px -1.3rem !important;
+          }
+          @include respond(tab-port){
+            margin: 0px -1.5rem !important;
+          }
+          @include respond(phone){
+            margin: 0px -1.3rem !important;
+          }
+          ol li {
+            counter-increment: OrderedList;
+            list-style: none;
+            margin: 2rem 1rem;
+            font-size: 1.6rem;
+            line-height: 1.5;
+            @include respond(tab-port){
+              margin: 2rem 1.4rem;
+            }
+            @include respond(phone){
+              font-size: 1.1rem;
+            }
+          }
+          ol li:before {
+            content: "[" counter(OrderedList) "]  ";
+          }
+        }
     }
 
     &_container {
