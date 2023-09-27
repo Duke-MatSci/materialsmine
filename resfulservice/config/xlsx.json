@@ -144,6 +144,33 @@
             "type": "String",
             "required": false
           }
+        },
+        "ComputationalDataInfo": {
+          "DateOfSimulationRun": {
+            "cellValue": "1. Data Origin|[37,1]",
+            "type": "String",
+            "required": false
+          },
+          "DataOwner": {
+            "cellValue": "1. Data Origin|[38,1]",
+            "type": "String",
+            "required": false
+          },
+          "RelatedDOI": {
+            "cellValue": "1. Data Origin|[39,1]",
+            "type": "String",
+            "required": false
+          },
+          "NumberOfCPUs": {
+            "cellValue": "1. Data Origin|[40,1]",
+            "type": "String",
+            "required": false
+          },
+          "ComputationalTime": {
+            "cellValue": "1. Data Origin|[41,1]",
+            "type": "String",
+            "required": false
+          }
         }
       }
     }
@@ -6647,6 +6674,293 @@
           "required": false,
           "validList":"Sample_experimental_info::Sample_thickness::Unit"
         }
+      }
+    }
+  },
+  "SIMULATION-FEA": {
+    "FEAModel": {
+      "SoftwareUsed": {
+        "cellValue": "7. Simulation - FEA|[4,1]",
+        "type": "List",
+        "required": false,
+        "validList":"SIMULATION-FEA::FEAModel::SoftwareUsed::description"
+      },
+      "NumberOfElements": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[5,1]",
+          "type": "String",
+          "required": false
+        },
+        "value":{
+          "cellValue": "7. Simulation - FEA|[5,2]",
+          "type": "String",
+          "required": false
+        }
+      },
+      "MeshType": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[6,1]",
+          "type": "String",
+          "required": false
+        },
+        "value":{
+          "cellValue": "7. Simulation - FEA|[6,2]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::FEAModel::MeshType::value"
+        }
+      },
+      "ElementType-Abaqus": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[7,1]",
+          "type": "String",
+          "required": false
+        },
+        "value":{
+          "cellValue": "7. Simulation - FEA|[7,2]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::FEAModel::ElementType-Abaqus::value"
+        }
+      },
+      "ElementType-COMSOL": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[8,1]",
+          "type": "String",
+          "required": false
+        },
+        "value":{
+          "cellValue": "7. Simulation - FEA|[8,2]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::FEAModel::ElementType-COMSOL::value"
+        }
+      },
+      "ElementType-General": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[9,1]",
+          "type": "String",
+          "required": false
+        }
+      },
+      "ModelInputFile": { 
+        "type": "multiples",
+        "values": [
+          {
+            "description": {
+              "cellValue": "7. Simulation - FEA|[10,1]",
+              "type": "String",
+              "required": false
+            },
+            "data": {
+              "cellValue": "7. Simulation - FEA|[10,3]",
+              "type": "File",
+              "required": false
+            }
+            
+          },
+          {
+            "description": {
+              "cellValue": "7. Simulation - FEA|[11,1]",
+              "type": "String",
+              "required": false
+            },
+            "data": {
+              "cellValue": "7. Simulation - FEA|[11,3]",
+              "type": "File",
+              "required": false
+            }
+          }
+        ]
+      },
+      "FEAModel-Abaqus": {
+        "LoadingType": {
+          "cellValue": "7. Simulation - FEA|[13,2]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::FEAModel-Abaqus::LoadingType::value"
+        },
+        "MinFrequency": {
+          "description": {
+            "cellValue": "7. Simulation - FEA|[14,1]",
+            "type": "String",
+            "required": false
+          },
+          "value":{
+            "cellValue": "7. Simulation - FEA|[14,2]",
+            "type": "String",
+            "required": false
+          }
+        },
+        "MaxFrequency": {
+          "description": {
+            "cellValue": "7. Simulation - FEA|[15,1]",
+            "type": "String",
+            "required": false
+          },
+          "value":{
+            "cellValue": "7. Simulation - FEA|[15,2]",
+            "type": "String",
+            "required": false
+          }
+        },
+        "NumberOfFrequencyIntervals": {
+          "value":{
+            "cellValue": "7. Simulation - FEA|[16,2]",
+            "type": "String",
+            "required": false
+          }
+        },
+        "ReactionForceComputation": {
+          "cellValue": "7. Simulation - FEA|[17,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::FEAModel-Abaqus::ReactionForceComputation::description"
+        }
+      }
+    },
+    "BoundaryConditions": {
+      "BoundaryConditionType": {
+        "cellValue": "7. Simulation - FEA|[21,1]",
+        "type": "List",
+        "required": false,
+        "validList":"SIMULATION-FEA::BoundaryConditions::BoundaryConditionType::description"
+      },
+      "MechanicalBoundaryCondition": {
+          "cellValue": "7. Simulation - FEA|[22,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::BoundaryConditions::MechanicalBoundaryCondition::description"
+      },
+      "Mechanical_BC-x_direction": {
+          "cellValue": "7. Simulation - FEA|[23,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::BoundaryConditions::Mechanical_BC-x_direction::description"
+      },
+      "Mechanical_BC-y_direction": {
+          "cellValue": "7. Simulation - FEA|[24,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::BoundaryConditions::Mechanical_BC-y_direction::description"
+      },
+      "Mechanical_BC-z_direction": {
+        "cellValue": "7. Simulation - FEA|[25,1]",
+        "type": "List",
+        "required": false,
+        "validList":"SIMULATION-FEA::BoundaryConditions::Mechanical_BC-z_direction::description"
+      }
+    },
+    "LoadingConditions": { 
+      "type": "multiples",
+      "values": [{
+        "Direction": {
+          "cellValue": "7. Simulation - FEA|[28,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::BoundaryConditions::Mechanical_BC-z_direction::description"
+        },
+        "Magnitude": {
+          "description": {
+            "cellValue": "7. Simulation - FEA|[29,1]",
+            "type": "String",
+            "required": false
+          },
+          "value":{
+            "cellValue": "7. Simulation - FEA|[29,2]",
+            "type": "String",
+            "required": false
+          },
+          "unit":{
+            "cellValue": "7. Simulation - FEA|[29,3]",
+            "type": "String",
+            "required": false
+          }
+        },
+        "RelevantNodes": {
+          "cellValue": "7. Simulation - FEA|[28,1]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::BoundaryConditions::Mechanical_BC-z_direction::description"
+        }
+      }]
+    },
+    "MicrostructureGeneration": {
+      "MicrostructureDimension": {
+        "cellValue": "7. Simulation - FEA|[34,1]",
+        "type": "List",
+        "required": false,
+        "validList":"SIMULATION-FEA::MicrostructureGeneration::MicrostructureDimension::description"
+      },
+      "MicrostructureDatafile": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[35,1]",
+          "type": "String",
+          "required": false
+        },
+        "data":{
+          "cellValue": "7. Simulation - FEA|[35,4]",
+          "type": "File",
+          "required": false
+        }
+      },
+      "Scale-nm_per_RVE_length_unit": {
+        "cellValue": "7. Simulation - FEA|[36,2]",
+        "type": "String",
+        "required": false
+      },
+      "2D_RVE": {
+        "Width": {
+          "cellValue": "7. Simulation - FEA|[38,2]",
+          "type": "String",
+          "required": false
+        },
+        "Height": {
+          "cellValue": "7. Simulation - FEA|[39,2]",
+          "type": "String",
+          "required": false
+        }
+      },
+      "3D_RVE": {
+        "Width": {
+          "cellValue": "7. Simulation - FEA|[41,2]",
+          "type": "String",
+          "required": false
+        },
+        "Length": {
+          "cellValue": "7. Simulation - FEA|[42,2]",
+          "type": "String",
+          "required": false
+        },
+        "Height": {
+          "cellValue": "7. Simulation - FEA|[43,2]",
+          "type": "String",
+          "required": false
+        }
+      },
+      "MeanNeighborDistance": {
+        "description": {
+          "cellValue": "7. Simulation - FEA|[45,1]",
+          "type": "String",
+          "required": false
+        },
+        "value":{
+          "cellValue": "7. Simulation - FEA|[45,2]",
+          "type": "String",
+          "required": false
+        },
+        "unit":{
+          "cellValue": "7. Simulation - FEA|[45,3]",
+          "type": "List",
+          "required": false,
+          "validList":"SIMULATION-FEA::MicrostructureGeneration::MeanNeighborDistance::unit"
+        }
+      },
+      "Orientation": {
+        "cellValue": "7. Simulation - FEA|[46,1]",
+        "type": "List",
+        "required": false,
+        "validList":"SIMULATION-FEA::MicrostructureGeneration::Orientation::description"
       }
     }
   }

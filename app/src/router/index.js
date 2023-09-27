@@ -5,11 +5,13 @@ import ExplorerBase from '@/pages/explorer/Base.vue'
 import MetamineBase from '@/pages/metamine/Base.vue'
 import NanomineBase from '@/pages/nanomine/Base.vue'
 import PortalBase from '@/pages/portal/Base.vue'
+import XsdBase from '@/pages/portal/curation/xsd/Base.vue'
 import NotFound from '@/pages/NotFound.vue'
 import nanomineRoutes from '@/router/module/nanomine'
 import metamineRoutes from '@/router/module/metamine'
 import explorerRoutes from '@/router/module/explorer'
 import portalRoutes from '@/router/module/portal'
+import xsdRoutes from '@/router/module/xsd'
 Vue.use(VueRouter)
 
 const routes = [
@@ -37,6 +39,13 @@ const routes = [
     component: ExplorerBase,
     children: [
       ...explorerRoutes
+    ]
+  },
+  {
+    path: '/xsd',
+    component: XsdBase,
+    children: [
+      ...xsdRoutes
     ]
   },
   {

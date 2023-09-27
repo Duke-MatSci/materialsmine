@@ -42,6 +42,12 @@
                 margin: 0;
                 padding-top: 0;
             }
+            &-padded {
+              .md-field {
+                margin: 1rem;
+                padding-top: 2rem;
+              }
+            }
         }
         &_btn {
             display: block !important;

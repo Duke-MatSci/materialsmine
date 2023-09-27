@@ -14,6 +14,7 @@ const xmlFinder = {
   xmlData: [
     {
       id: '58587cfee74a1d205f4eae8d',
+      isNewCuration: false,
       title: "L175_S8_O'Reilly_2015.xml",
       entityState: 'EditedValid',
       sequence: 175,
@@ -21,6 +22,7 @@ const xmlFinder = {
     },
     {
       id: '583e3adde74a1d205f4e3a99',
+      isNewCuration: false,
       title: 'L183_S11_Poetschke_2003.xml',
       entityState: 'EditedValid',
       sequence: 183,
@@ -28,6 +30,7 @@ const xmlFinder = {
     },
     {
       id: '583e38c4e74a1d205f4e3034',
+      isNewCuration: false,
       title: 'L183_S5_Poetschke_2003.xml',
       entityState: 'EditedValid',
       sequence: 183,
@@ -35,6 +38,7 @@ const xmlFinder = {
     },
     {
       id: '58587c9be74a1d205f4ea8c8',
+      isNewCuration: false,
       title: "L175_S6_O'Reilly_2015.xml",
       entityState: 'EditedValid',
       sequence: 175,
@@ -115,10 +119,10 @@ describe('ManageCuration.vue', () => {
     expect.assertions(3)
     const form = wrapper.find('form.form')
     const inputContainer = form.find('.form__group.search_box_form-item-1')
-    const buttonContainer = form.find('.search_box_form-item-2')
+    const buttonContainer = form.findAll('.search_box_form-item-2').at(1)
     expect(inputContainer.find('.form__input.form__input--flat').exists()).toBe(true)
     expect(inputContainer.find('.form__label.search_box_form_label').text()).toBe('Search Xml')
-    expect(buttonContainer.find('button').text()).toBe('Search Xml')
+    expect(buttonContainer.findAll('button').at(4).text()).toBe('Search Xml')
   })
 
   it('submits button calls the right method', async () => {
@@ -158,7 +162,11 @@ describe('ManageCuration.vue', () => {
     for (let i = 0; i < xml.length; i++) {
       expect(
         await wrapper.findAllComponents(RouterLinkStub).at(i).props().to
-      ).toEqual({ name: 'XmlVisualizer', params: { id: xmlFinder.xmlData[i].id } })
+      ).toEqual({
+        name: 'XmlVisualizer',
+        params: { id: xmlFinder.xmlData[i].id },
+        query: { isNewCuration: `${xmlFinder.xmlData[i].isNewCuration}` }
+      })
     }
   })
 
