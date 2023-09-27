@@ -19,7 +19,7 @@
       </a>
 
       <div class="howto_item-header teams_text teams_header">
-        <a>Virtual Poster Link</a>
+        <a href="https://doi.org/10.6084/m9.figshare.24201960.v1" target="_blank">Virtual Poster Link</a>
       </div>
       <div class="howto_item-header teams_text">
         <a href="https://metamaterials.northwestern.edu/" target="_blank">
