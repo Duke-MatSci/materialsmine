@@ -9,7 +9,7 @@
     ],
     "private": true,
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.329.0",
+        "@aws-sdk/client-s3": "^3.420.0",
         "@elastic/elasticsearch": "^8.1.0",
         "@graphql-tools/graphql-file-loader": "^7.3.14",
         "@graphql-tools/load": "^7.5.13",

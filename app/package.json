@@ -33,7 +33,7 @@
     "jsonschema": "^1.4.0",
     "jszip": "^3.7.1",
     "n3": "^1.15.0",
-    "plotly.js": "^1.52.1",
+    "plotly.js": "^1.58.5",
     "plotly.js-dist": "^2.23.2",
     "prismjs": "^1.29.0",
     "rdf-literal": "^1.1.0",

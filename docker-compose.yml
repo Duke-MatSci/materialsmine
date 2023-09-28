@@ -1,155 +1,155 @@
 version: '3'
 services:
-    mongo:
-        image: 'mongo:4.4'
-        restart: always
-        container_name: mongo
-        environment:
-            - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
-            - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
-            - MONGO_DEVS=${MONGO_DEVS}
-            - MONGO_DEV_PWD=${MONGO_DEV_PWD}
-            - MONGO_PORT=${MONGO_PORT}
-            - MM_DB=${MM_DB}
-        ports:
-            - '27017:27017'
-        volumes:
-            - ./mockDB/db:/data/db
-            - ./mockDB/restore:/restore
-            - ./mockDB/log:/var/log/mongodb
-            - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
-    es:
-        image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
-        container_name: es
-        restart: always
-        environment:
-            - node.name=es
-            - bootstrap.memory_lock=true
-            - cluster.initial_master_nodes=es
-            - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
-            - xpack.security.enabled=false
-        ulimits:
-            memlock:
-                soft: -1
-                hard: -1
-        ports:
-            - '9200:9200'
-        volumes:
-            - ./mockDB/es:/usr/share/elasticsearch/data
-    minio:
-        container_name: minio
-        image: minio/minio
-        command: server --console-address ":9001" /data
-        environment:
-            - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-            - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-        ports:
-            - '9000:9000'
-            - '9001:9001'
-        volumes:
-            - ./mockDB/minio:/data
-    proxy:
-        container_name: proxy
-        depends_on:
-            - api
-            - client
-        restart: always
-        build:
-            dockerfile: Dockerfile.dev
-            context: ./nginx
-        ports:
-            - '80:80'
-    api:
-        depends_on:
-            # - client
-            - mongo
-            - minio
-        container_name: restful
-        restart: always
-        build:
-            dockerfile: Dockerfile.dev
-            context: ./resfulservice
-        volumes:
-            - /app/node_modules
-            - ./resfulservice:/app
-        environment:
-            - DB_USERNAME=${MONGO_DEVS}
-            - DB_PASSWORD=${MONGO_DEV_PWD}
-            - MM_DB=${MM_DB}
-            - MONGO_ADDRESS=${MONGO_ADDRESS}
-            - MONGO_PORT=${MONGO_PORT}
-            - TKNS=${TKNS}
-            - FILES_DIRECTORY=${FILES_DIRECTORY}
-            - ESADDRESS=${ESADDRESS}
-            - PORT=${PORT}
-            - MINIO_PORT=${MINIO_PORT}
-            - MINIO_CONSOLE_PORT=${MINIO_CONSOLE_PORT}
-            - MINIO_BUCKET=${MINIO_BUCKET}
-            - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-            - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-            - ROUTER=${HOST_PORT}
-            - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-            - MM_USER=${MM_USER}
-            - MM_USER_EMAIL=${MM_USER_EMAIL}
-            - MM_AUTH_GIVEN_NAME_HEADER=${MM_AUTH_GIVEN_NAME_HEADER}
-            - MM_AUTH_DISPLAYNAME_HEADER=${MM_AUTH_DISPLAYNAME_HEADER}
-            - MM_AUTH_SURNAME_HEADER=${MM_AUTH_SURNAME_HEADER}
-            - MM_AUTH_EMAIL_HEADER=${MM_AUTH_EMAIL_HEADER}
-            - MM_AUTH_USER_HEADER=${MM_AUTH_USER_HEADER}
-            - KNOWLEDGE_ADDRESS=${WHYIS_ADDRESS}
-            - MAIL_SERVER_HOST=${MAIL_SERVER_HOST}
-            - MAIL_SERVER_PORT=${MAIL_SERVER_PORT}
-            - MAIL_USER_ADDRESS=${MAIL_USER_ADDRESS}
-            - MAIL_USER_PASSWORD=${MAIL_USER_PASSWORD}
-            - TERM_OF_SERVICE=${TERM_OF_SERVICE}
-            - SWAGGER_CONTACT_NAME=${SWAGGER_CONTACT_NAME}
-            - SWAGGER_CONTACT_EMAIL=${SWAGGER_CONTACT_EMAIL}
-            - DEV_ENDPOINT=${DEV_ENDPOINT}
-            - QA_SERVER_ENDPOINT=${QA_SERVER_ENDPOINT}
-            - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
-            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-        ports:
-            - '3001:3001'
-    client:
-        stdin_open: true
-        container_name: frontend
-        environment:
-            - CHOKIDAR_USEPOLLING=true
-            - API_PORT=${PORT}
-            - MINIO_PORT=${MINIO_PORT}
-            - SERVICE_PORT=${HOST_PORT}
-        build:
-            dockerfile: Dockerfile.dev
-            context: ./app
-        volumes:
-            - /app/node_modules
-            - ./app:/app
-    managedservices:
-        depends_on:
-            - mongo
-        restart: always
-        build:
-            dockerfile: Dockerfile.dev
-            context: ./services
-        ports:
-            - '5050:5050'
-        volumes:
-            - ./services:/usr/src/app
-            - ./resfulservice/mm_files:/usr/src/files
-        environment:
-            - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-            - SECRET_KEY=${TKNS}
-            - MM_MONGO_USER=${MM_MONGO_USER}
-            - MM_MONGO_PWD=${MM_MONGO_PWD}
-            - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
-            - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
-            - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
-            - MONGO_ADDRESS=${MONGO_ADDRESS}
-            - MONGO_PORT=${MONGO_PORT}
-            - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
-            - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
-            - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
+  mongo:
+    image: 'mongo:4.4'
+    restart: always
+    container_name: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MM_MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MM_MONGO_PWD}
+      - MONGO_DEVS=${MONGO_DEVS}
+      - MONGO_DEV_PWD=${MONGO_DEV_PWD}
+      - MONGO_PORT=${MONGO_PORT}
+      - MM_DB=${MM_DB}
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mockDB/db:/data/db
+      - ./mockDB/restore:/restore
+      - ./mockDB/log:/var/log/mongodb
+      - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+  es:
+    image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
+    container_name: es
+    restart: always
+    environment:
+      - node.name=es
+      - bootstrap.memory_lock=true
+      - cluster.initial_master_nodes=es
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
+    volumes:
+      - ./mockDB/es:/usr/share/elasticsearch/data
+  minio:
+    container_name: minio
+    image: minio/minio
+    command: server --console-address ":9001" /data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./mockDB/minio:/data
+  proxy:
+    container_name: proxy
+    depends_on:
+      - api
+      - client
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '80:80'
+  api:
+    depends_on:
+      - es
+      - mongo
+      - minio
+    container_name: restful
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./resfulservice
+    volumes:
+      - /app/node_modules
+      - ./resfulservice:/app
+    environment:
+      - DB_USERNAME=${MONGO_DEVS}
+      - DB_PASSWORD=${MONGO_DEV_PWD}
+      - MM_DB=${MM_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - TKNS=${TKNS}
+      - FILES_DIRECTORY=${FILES_DIRECTORY}
+      - ESADDRESS=${ESADDRESS}
+      - PORT=${PORT}
+      - MINIO_PORT=${MINIO_PORT}
+      - MINIO_CONSOLE_PORT=${MINIO_CONSOLE_PORT}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - ROUTER=${HOST_PORT}
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
+      - MM_USER=${MM_USER}
+      - MM_USER_EMAIL=${MM_USER_EMAIL}
+      - MM_AUTH_GIVEN_NAME_HEADER=${MM_AUTH_GIVEN_NAME_HEADER}
+      - MM_AUTH_DISPLAYNAME_HEADER=${MM_AUTH_DISPLAYNAME_HEADER}
+      - MM_AUTH_SURNAME_HEADER=${MM_AUTH_SURNAME_HEADER}
+      - MM_AUTH_EMAIL_HEADER=${MM_AUTH_EMAIL_HEADER}
+      - MM_AUTH_USER_HEADER=${MM_AUTH_USER_HEADER}
+      - KNOWLEDGE_ADDRESS=${WHYIS_ADDRESS}
+      - MAIL_SERVER_HOST=${MAIL_SERVER_HOST}
+      - MAIL_SERVER_PORT=${MAIL_SERVER_PORT}
+      - MAIL_USER_ADDRESS=${MAIL_USER_ADDRESS}
+      - MAIL_USER_PASSWORD=${MAIL_USER_PASSWORD}
+      - TERM_OF_SERVICE=${TERM_OF_SERVICE}
+      - SWAGGER_CONTACT_NAME=${SWAGGER_CONTACT_NAME}
+      - SWAGGER_CONTACT_EMAIL=${SWAGGER_CONTACT_EMAIL}
+      - DEV_ENDPOINT=${DEV_ENDPOINT}
+      - QA_SERVER_ENDPOINT=${QA_SERVER_ENDPOINT}
+      - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    ports:
+      - '3001:3001'
+  client:
+    stdin_open: true
+    container_name: frontend
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - API_PORT=${PORT}
+      - MINIO_PORT=${MINIO_PORT}
+      - SERVICE_PORT=${HOST_PORT}
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./app
+    volumes:
+      - /app/node_modules
+      - ./app:/app
+  managedservices:
+    depends_on:
+      - mongo
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./services
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./services:/usr/src/app
+      - ./resfulservice/mm_files:/usr/src/files
+    environment:
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
+      - SECRET_KEY=${TKNS}
+      - MM_MONGO_USER=${MM_MONGO_USER}
+      - MM_MONGO_PWD=${MM_MONGO_PWD}
+      - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
+      - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
+      - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
+      - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
+      - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
 #   redis:
 #     image: "redis:alpine"
 #     command: redis-server
@@ -212,4 +212,4 @@ services:
 #       - ./mockDB/fuseki:/fuseki
 
 volumes:
-    mockDB:
+  mockDB:
