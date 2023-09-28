@@ -1,4 +1,5 @@
 const util = require('util');
+const fs = require('fs');
 const chai = require('chai');
 const sinon = require('sinon');
 const Xmljs = require('xml-js');
@@ -31,7 +32,9 @@ const {
   mockCurationError,
   mockBulkCuration1,
   mockBulkCuration2,
+  mockJsonSchema,
   mockReadFolder,
+  mockCurationStream,
   next
 } = require('../mocks')
 const XlsxObject = require('../../src/models/curatedSamples');
@@ -62,7 +65,8 @@ describe('Curation Controller', function() {
     header: () => {},
     status: () => {},
     json: () => {},
-    send: () => {}
+    send: () => {},
+    setHeader: () => {}
   };
 
   context('curateXlsxSpreadsheet', () => {
@@ -106,6 +110,7 @@ describe('Curation Controller', function() {
       sinon.stub(res, 'json').returns({ errors: { Origin: 'invalid value' } });
       sinon.stub(XlsxObject, 'find').returns([]);
       sinon.stub(XlsxCurationList, 'find').returns(mockCurationList);
+      sinon.stub(latency, 'latencyCalculator').returns(true)
       sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
       sinon.stub(XlsxController, 'createMaterialObject').returns( { count: 1, errors: { Origin: 'invalid value' }});
       
@@ -151,7 +156,8 @@ describe('Curation Controller', function() {
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
       sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchedCuratedXlsxObject))
       sinon.stub(latency, 'latencyCalculator').returns(true)
-      sinon.stub(Xmljs, 'json2xml').returns(fetchedCuratedXlsxObject)
+      sinon.stub(Xmljs, 'json2xml').returns(fetchedCuratedXlsxObject);
+      sinon.stub(FileManager, 'writeFile').returns(true);
 
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
@@ -168,7 +174,7 @@ describe('Curation Controller', function() {
       sinon.stub(XlsxController, 'createMaterialObject').returns(mockCuratedXlsxObject);
       sinon.stub(XlsxObject.prototype, 'save').callsFake(() => (fetchedCuratedXlsxObject))
       sinon.stub(Xmljs, 'json2xml').returns(fetchedCuratedXlsxObject)
-
+      sinon.stub(FileManager, 'writeFile').returns(true);
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property('curatedSample');
@@ -227,10 +233,6 @@ describe('Curation Controller', function() {
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(mockBulkCuration1);
       sinon.stub(DatasetId, 'findOne').returns(null);
-      // sinon.stub(XlsxFileManager, 'unZipFolder').returns(mockReadFolder);
-      // sinon.stub(XlsxController, 'curateXlsxSpreadsheet').returns(mockCurationError);
-      // sinon.stub(XlsxFileManager, 'readFolder').returns(mockUnzippedFolder);
-      // sinon.stub(latency, 'latencyCalculator').returns(true)
 
       const result = await XlsxController.bulkXlsxCurations(req, res, fn => fn);
       expect(result).to.have.property('message');
@@ -356,6 +358,69 @@ describe('Curation Controller', function() {
 
       await XlsxController.getXlsxCurations(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);
+    });
+  });
+
+  context('Retrieve curation XSD', () => {
+    it('should return json Schema Definition when "isJson" query params is passed', async () => {
+      req.query = { isJson: true, isFile: false };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns(mockJsonSchema);
+      sinon.stub(XlsxFileManager, 'jsonSchemaGenerator').returns(mockJsonSchema);
+      sinon.stub(fs.promises, 'writeFile').returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+
+      const result = await XlsxController.getCurationXSD(req, res, next);
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('$schema');
+      expect(result).to.have.property('properties');
+      expect(result.properties).to.have.property('PolymerNanocomposite');
+      expect(result.properties.PolymerNanocomposite).to.be.an('Object');
+    });
+
+    it('should return a downloadable file stream when "isFile" query params is passed', async () => {
+      req.query = { isJson: false, isFile: true };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns();
+      sinon.stub(res, 'setHeader').returns(true);
+      sinon.stub(XlsxFileManager, 'jsonSchemaGenerator').returns(mockJsonSchema);
+      const writeFileStub = sinon.stub(fs.promises, 'writeFile');
+      writeFileStub.onFirstCall().returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+      writeFileStub.onSecondCall().returns('mm_files/schema.xsd');
+      sinon.stub(XlsxFileManager, 'parseXSDFile').returns('mm_files/curation.xsd');
+      sinon.stub(fs, 'createReadStream').returns(mockCurationStream);
+
+      await XlsxController.getCurationXSD(req, res, next);
+      sinon.assert.called(mockCurationStream.pipe);
+    });
+
+    it('should return xsd in json response if "getXSD" query params is passed', async () => {
+      req.query = { isJson: false, isFile: false, getXSD: true };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns({ xsd: 'asdopasjf'});
+      sinon.stub(XlsxFileManager, 'jsonSchemaGenerator').returns(mockJsonSchema);
+      const writeFileStub = sinon.stub(fs.promises, 'writeFile');
+      writeFileStub.onFirstCall().returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+      writeFileStub.onSecondCall().returns('mm_files/schema.xsd');
+      sinon.stub(XlsxFileManager, 'parseXSDFile').returns('mm_files/curation.xsd');
+      sinon.stub(fs.promises, 'readFile').returns({ xsd: 'asdopasjf'});
+      const result = await XlsxController.getCurationXSD(req, res, next);
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('xsd');
+    });
+
+    it('should return a 500 server error when database throws an error', async function() {
+      req.query = { isJson: false, isFile: true };
+      const nextSpy = sinon.spy();
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(XlsxFileManager, 'jsonSchemaGenerator').throws();
+
+      await XlsxController.getCurationXSD(req, res, nextSpy);
+      sinon.assert.called(nextSpy);
     });
   });
 

@@ -307,17 +307,35 @@ paths:
           schema:
             type: string
           description: The sheetName (i.e subset) of the Schema to return. This is optional
+        - in: query
+          name: isFile
+          schema:
+            type: boolean
+          description: Set query param to true to download the xsd schema as file
+        - in: query
+          name: isJson
+          schema:
+            type: boolean
+          description: Set query param to true to  return the json schema
+        - in: query
+          name: getXSD
+          schema:
+            type: boolean
+          description: Set query params to true to return the xsd schema as json
       responses:
-        '200':
-          description: Returns a json Schema object
+        '201':
+          description: Returns a base object schema or curation json schema or curation xsd or downloads the xsd as file 
           content:
             application/json:
               schema:
-                type: object
-                example: 
-                  data origin: {}
-                  material types: {}
-                  synthesis and processing: {}
+                anyOf:
+                  - type: object
+                    example: 
+                      data origin: {}
+                      material types: {}
+                      synthesis and processing: {}
+                  - $ref: '#/components/schemas/Sample-XSD'
+                  - $ref: '#/components/schemas/Sample-JsonSchema'
         '401':
           description: User not authorized for this service
           content:
@@ -587,7 +605,7 @@ paths:
           content:
             application/json:
               schema:
-                 $ref: '#/components/schemas/Sample-Curation'
+                $ref: '#/components/schemas/Sample-Curation'
 
         '401':
           description: User not authorized for this service
@@ -712,13 +730,13 @@ paths:
           name: isFileStore
           schema:
             type: boolean
-            example: true
+            example: false
           description: a boolean value to specify if the file is stored in a directory or database
         - in: query
           name: isStore
           schema:
             type: boolean
-            example: true
+            example: false
           description: a boolean value to specify if the file is stored in a directory or database
         - in: path
           required: true
@@ -968,7 +986,99 @@ components:
           Author: Aditya Shanker Prasad
           URL: https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y
           Location: Rensselaer Polytechnic Institute
-          
+
+    Sample-XSD:
+      type: object
+      example:
+        xsd:  "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\r\n    <xs:element name=\"PolymerNanocomposite\">\r\n        <xs:complexType>\r\n            <xs:sequence>\r\n                <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"ID\"/>\r\n                <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Control_ID\"/>\r\n                <xs:element minOccurs=\"0\" name=\"DATA_SOURCE\">\r\n                    <xs:complexType>\r\n                        <xs:sequence>\r\n                            <xs:element minOccurs=\"0\" name=\"Citation\">\r\n                                <xs:complexType>\r\n                                    <xs:sequence>\r\n                                        <xs:element minOccurs=\"0\" name=\"CommonFields\">\r\n                                            <xs:complexType>\r\n                                                <xs:sequence>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"YourName\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"YourEmail\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Origin\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"CitationType\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"PublicationType\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"DOI\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Publication\"/>"                                                  
+
+    Sample-JsonSchema:
+      type: object
+      example:
+        $schema: http://json-schema.org/draft-04/schema#
+        type: object
+        properties:
+          Polymer:
+            type: object
+            properties:
+              ID:
+                type: string
+              Control_ID:
+                type: string
+              DATA ORIGIN:
+                type: object
+                properties:
+                  Citation:
+                    type: object
+                    properties:
+                      CommonFields:
+                        type: object
+                        properties:
+                          YourName:
+                            type: string
+                          YourEmail:
+                            type: string
+                          Origin:
+                            type: string
+                          CitationType:
+                            type: string
+                          PublicationType:
+                            type: string
+                          DOI:
+                            type: string
+                          Publication:
+                            type: string
+                          Title:
+                            type: string
+                          Author:
+                            type: array
+                            items: {}
+                          Keyword:
+                            type: array
+                            items: {}
+                          PublicationYear:
+                            type: string
+                          Volume:
+                            type: string
+                          Issue:
+                            type: string
+                          URL:
+                            type: string
+                          Language:
+                            type: string
+                          Location:
+                            type: string
+                          DateOfCitation:
+                            type: string
+                        required:
+                          - YourName
+                          - YourEmail
+                          - Origin
+                          - CitationType
+                          - PublicationType
+                          - DOI
+                          - Publication
+                          - Title
+                          - Author
+                          - Keyword
+                          - PublicationYear
+                          - Volume
+                          - Issue
+                          - URL
+                          - Language
+                          - Location
+                          - DateOfCitation
+                    required:
+                      - CommonFields
+                required:
+                  - Citation
+            required:
+              - ID
+              - Control_ID
+              - DATA ORIGIN
+        required:
+          - Polymer
+
     Sample-Files:
       type: object
       example:

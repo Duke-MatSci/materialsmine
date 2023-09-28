@@ -66,6 +66,15 @@ const portalRoutes = [
     meta: { requiresAuth: true }
   },
   {
+    path: 'view-schema',
+    name: 'ViewSchema',
+    component: () =>
+      import(
+        '@/pages/portal/curation/ViewSchema.vue'
+      ),
+    meta: { requiresAuth: true }
+  },
+  {
     path: 'users',
     name: 'ManageUsers',
     component: () =>

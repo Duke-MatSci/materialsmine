@@ -83,7 +83,12 @@ exports.uploadFile = async (req, res, next) => {
 
     successWriter(req, { message: 'success' }, 'uploadFile');
     latency.latencyCalculator(res);
-    return res.status(201).json({ files: req.files.uploadfile });
+    const files = req.files.uploadfile.map(({ filename }) => ({
+      filename: `/api/files/${filename}?isStore=true`,
+      swaggerFilename: filename,
+      isStore: true
+    }));
+    return res.status(201).json({ files });
   } catch (error) {
     next(errorWriter(req, 'Error uploading files', 'uploadFile', 500));
   }

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import Vue from 'vue'
 import VueApollo from 'vue-apollo'
 import VueMaterial from 'vue-material'

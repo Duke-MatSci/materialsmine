@@ -1,15 +1,58 @@
 input xmlFinderInput {
-  "param value to filter lists of XmlCatalogs"
-  param: String
-
   "XmlCatalogs page to return"
   pageNumber: Int
 
   "Number of XmlCatalogs to return per page"
   pageSize: Int
+
+  "posible options to filter the xmlData and curations by"
+  filter: Filters
+}
+
+input Filters {
+  """
+  A parameter value utilized for filtering collections within the XmlCatalogs
+  """
+  param: String
+  """
+  The current state of the curation"
+  """
+  status: Status
+  """
+  A boolean value indicating whether the curation is newly created
+  """
+  isNewCuration: Boolean
+  
+  """
+  Enumerable values representing the possible states of curation for selection during querying
+  """
+  curationState: CurationState
+
+  """
+  Identifier corresponding to the user who initiated the curation
+  """
+  user: String
+}
+
+enum CurationState { 
+  Edit
+  Review
+  Curated
+}
+
+enum Status {
+  Approved
+  Not_Approved
 }
 
 input xmlViewerInput {
-  "XmlCatalog ID to find specific xml data"
+  """
+  Unique Identifier for the XmlCatalog, used to retrieve specific XML data.
+  """
   id: ID!
+
+  """
+  A Boolean value to specify it is new curation
+  """
+  isNewCuration: Boolean
 }
