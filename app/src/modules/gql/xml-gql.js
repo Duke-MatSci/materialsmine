@@ -12,7 +12,8 @@ query XmlFinder($input: xmlFinderInput) {
     xmlData {
       id
       title
-      entityState
+      status
+      isNewCuration
       sequence
     }
   }

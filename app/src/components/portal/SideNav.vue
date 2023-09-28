@@ -60,8 +60,8 @@
                     <span class="u--color-primary">{{ link.name }} </span>
                   </a>
                   <div v-if="!!link.children && !!link.children.length" class="nav_menu--siblings" >
-                      <router-link v-for="(child, i) in link.children" :key="i + 'i'"
-                       :to="child.link" class="nav_menu--siblings-lists"><a>{{ child.name }}</a></router-link>
+                    <router-link v-for="(child, i) in link.children" :key="i + 'i'"
+                      :to="child.link" class="nav_menu--siblings-lists"><a>{{ child.name }}</a></router-link>
                   </div>
               </div>
           </li>
@@ -90,7 +90,8 @@ export default {
           name: 'Curation',
           children: [
             { name: 'Manage Curation', link: '/portal/manage-curation', icon: 'upload' },
-            { name: 'View Curation', link: '/portal/view-curation', icon: 'track_changes' }
+            { name: 'View Curation', link: '/portal/view-curation', icon: 'track_changes' },
+            { name: 'View Schema', link: '/portal/view-schema', icon: 'schema' }
           ],
           hrefChildren: [
             { name: 'File Store', href: '/api/admin/store', icon: 'folder_open' }

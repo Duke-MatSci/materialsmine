@@ -96,9 +96,10 @@ describe.skip('FileManager Utils', function () {
     });
 
     it('should return null if FILES_DIRECTORY env variable is not set', async function () {
-      req.env.FILES_DIRECTORY = undefined
+      const req = { env: { FILES_DIRECTORY: undefined }};
       const result = await findFile(req);
       expect(result).to.equals(null);
     });
-  })
+
+  });
 });

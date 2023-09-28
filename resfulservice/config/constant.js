@@ -38,5 +38,40 @@ module.exports = {
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   },
-  MinioBucket: 'mgi'
+  MinioBucket: 'mgi',
+  /**  This json object holds placeholder values for all the different types of fields
+    *  in the xlsx.json object. This are the values used as placeholders when generating a valid jsonSchema
+    *  which is the used to generate a valid XSD.
+    */
+  XSDJsonPlaceholder: {
+    String: 'string',
+    File: {
+      headers: {
+        column: [{
+          _attributes: {
+            id: ''
+          },
+          _text: ''
+        }]
+      },
+      rows: {
+        row: [
+          {
+            _attributes: {
+              id: ''
+            },
+            column: [
+              {
+                _attributes: { id: '' },
+                _text: ''
+              }
+            ]
+          }
+        ]
+      }
+    },
+    varied_multiples: {
+      ProcessingMethod: ['MeltMixing', 'SolutionProcessing', 'In-SituPolymerization', 'Other_Processing']
+    }
+  }
 };

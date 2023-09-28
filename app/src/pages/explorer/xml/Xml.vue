@@ -6,7 +6,41 @@
         required v-model="searchWord" />
     </template>
 
+    <template  #filter_inputs>
+      <div v-if="selectedFilters.includes('apprStatus')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" md-deletable @md-delete="removeChip('apprStatus')" >
+          Admin Approval Status: {{ apprStatus  }}</md-chip>
+      </div>
+
+      <div v-if="selectedFilters.includes('curationState')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('curationState')" md-deletable>Curation State: {{ curationState }}</md-chip>
+      </div>
+
+      <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
+        <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('isNew')" md-deletable="">is New: {{ isNew }}</md-chip>
+      </div>
+
+      <md-field v-if="selectedFilters.includes('user')" style="max-width: 100%;">
+        <label>Curating User</label>
+        <md-input v-model="user"></md-input>
+      </md-field>
+
+    </template>
+
     <template #action_buttons>
+      <div class="form__field md-field">
+        <select @change="(e) => selectFilters(e)" class="form__select" name="filterBy" id="filterBy">
+          <option value="" disabled selected hidden>Filter by...</option>
+          <option value="apprStatus::Approved">Admin Approval Status (Approved)</option>
+          <option value="apprStatus::Not_Approved">Admin Approval Status (Not_Approved)</option>
+          <option value="curationState::Edit">Editing State</option>
+          <option value="curationState::Review">Reviewing State</option>
+          <option value="curationState::Curated">Curated</option>
+          <option value="user">Curating User</option>
+          <option value="isNew::Yes">New curation</option>
+          <option value="isNew::No">Old Curation</option>
+        </select>
+      </div>
       <button
         type="submit"
         class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -17,7 +51,7 @@
       <button v-if="searchEnabled"
         type="submit"
         class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
-        @click.prevent="resetSearch('XML')"
+        @click.prevent="customReset('XML')"
       >
       Clear Search
       </button>
@@ -76,6 +110,12 @@ export default {
       pageSize: 20,
       searchEnabled: false,
       searchWord: '',
+      selectedFilters: [],
+      apprStatus: null,
+      curationState: null,
+      user: null,
+      isNew: null,
+      filterParams: {},
       error: null
     }
   },
@@ -88,22 +128,56 @@ export default {
     isEmpty () {
       if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
       return false
+    },
+    filtersActive () {
+      return !!this.apprStatus || !!this.curationState || !!this.user || !!this.isNew
     }
   },
   methods: {
     async localSearchMethod () {
+      // TODO @aswallace: Update to user query params instead
+      this.filterParams = {
+        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew : null,
+        status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
+        curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
+        user: this.selectedFilters.includes('user') ? this.user : null
+      }
       await this.$apollo.queries.xmlFinder.refetch()
     },
     async submitSearch () {
-      if (!this.searchWord) {
+      if (!this.searchWord && !this.filtersActive) {
         return this.$store.commit('setSnackbar', {
-          message: 'Enter a XML sample file name',
+          message: 'Enter a XML sample file name or select a filter type',
           duration: 10000
         })
       }
-      this.searchEnabled = !!this.searchWord
+      this.searchEnabled = !!this.searchWord || !!this.filtersActive
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
+    },
+    async customReset (type) {
+      this.apprStatus = null
+      this.curationState = null
+      this.user = null
+      this.isNew = null
+      this.selectedFilters = []
+      this.filterParams = {}
+      await this.resetSearch(type)
+    },
+    selectFilters (e) {
+      const value = e.target.value
+      const arrValue = value.split('::')
+      if (!this.selectedFilters.includes(arrValue[0])) {
+        this.selectedFilters.push(arrValue[0])
+      }
+      this[arrValue[0]] = arrValue[1] ? arrValue[1] : null
+      e.target.value = ''
+    },
+    removeChip (str) {
+      const index = this.selectedFilters.indexOf(str)
+      if (index < 0) return
+      this.selectedFilters.splice(index, 1) // 2nd parameter means remove one item only
+      this[str] = null
     }
   },
   created () {
@@ -117,7 +191,11 @@ export default {
       query: XML_FINDER,
       variables () {
         return {
-          input: { pageNumber: this.pageNumber, pageSize: parseInt(this.pageSize), param: this.$route.query?.q }
+          input: {
+            pageNumber: this.pageNumber,
+            pageSize: parseInt(this.pageSize),
+            filter: { param: this.$route.query?.q, ...this.filterParams }
+          }
         }
       },
       fetchPolicy: 'cache-and-network',
