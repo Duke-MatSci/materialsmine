@@ -14,11 +14,9 @@ describe('CSSI2023.vue', () => {
   it('provides links to relevant resources', () => {
     const links = wrapper.findAll('a')
     expect(links.length).toBeGreaterThan(3)
-    const conferenceLink = links.at(0)
-    // const posterLink = links.at(1) // Update when link is provided
-    const metamaterialViz = links.at(2) // Update when visualization is integrated
-    expect(conferenceLink.attributes('href')).toBe('https://www.cssi-pi2023.org/')
-    expect(metamaterialViz.attributes('href')).toBe('https://metamaterials.northwestern.edu/')
+    expect(links.at(0).attributes('href')).toBe('https://www.cssi-pi2023.org/')
+    expect(links.at(1).attributes('href')).toBe('https://doi.org/10.6084/m9.figshare.24201960.v1')
+    expect(links.at(2).attributes('href')).toBe('https://metamaterials.northwestern.edu/') // Update when visualization is integrated
   })
 
   it('provides a full list of publications', () => {
