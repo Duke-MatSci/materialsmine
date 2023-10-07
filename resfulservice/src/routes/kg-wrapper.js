@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getKnowledge, getFacetValues, getAllCharts, getSparql, getImagesFromKnowledgeGraph, getDoiInfo } = require('../controllers/kgWrapperController');
+const { getKnowledge, getFacetValues, getAllCharts, getSparql, getInstanceFromKnowledgeGraph, getDoiInfo } = require('../controllers/kgWrapperController');
 const isAuth = require('../middlewares/isAuth');
 const { getInternal } = require('../middlewares/isInternal');
 
@@ -26,7 +26,10 @@ router.route('/charts')
   .get(getAllCharts);
 
 router.route('/images')
-  .get(getImagesFromKnowledgeGraph);
+  .get(getInstanceFromKnowledgeGraph);
+
+router.route('/instance')
+  .get(getInstanceFromKnowledgeGraph);
 
 router.route('/sparql')
   .post(isAuth, getSparql)

@@ -14,6 +14,12 @@
               <md-tooltip> {{ shareToolTip }} </md-tooltip>
               <md-icon>share</md-icon>
             </md-button>
+            <div v-if="isAuth && isAdmin">
+              <md-button class="md-icon-button" @click.native.prevent="editDataset">
+                <md-tooltip> Edit Dataset </md-tooltip>
+                <md-icon>edit</md-icon>
+              </md-button>
+            </div>
           </div>
         </div>
 
@@ -133,6 +139,7 @@ import spinner from '@/components/Spinner'
 import { mapGetters } from 'vuex'
 import reducer from '@/mixins/reduce'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import { parseFileName } from '@/modules/whyis-dataset'
 export default {
   name: 'DatasetDetailView',
   mixins: [reducer, optionalChainingUtil],
@@ -167,22 +174,22 @@ export default {
   watch: {
     dataset (newValues, oldValues) {
       this.loading = false
-      if (newValues[this.datasetFields.cp]) {
+      if (newValues?.[this.datasetFields.cp]) {
         const orcid = this.dataset[this.datasetFields.cp][0]['@id']
         const trimmedId = orcid.replace('http://orcid.org/', '')
           .replace(`${window.location.origin}/`, '')
         this.lookupOrcid(trimmedId)
       }
-      if (newValues[this.datasetFields.depiction]) {
+      if (newValues?.[this.datasetFields.depiction]) {
         const thumbnailUri = this.dataset[this.datasetFields.depiction][0]['@id']
         this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri)
       }
-      if (newValues[this.datasetFields.distribution]) {
+      if (newValues?.[this.datasetFields.distribution]) {
         for (const index in newValues[this.datasetFields.distribution]) {
           const downloadLink = newValues[this.datasetFields.distribution][index]?.['@id']
           this.distributions[index] = {
             downloadLink,
-            label: this.parseFileName(downloadLink)
+            label: parseFileName(downloadLink)
           }
         }
       }
@@ -190,12 +197,15 @@ export default {
   },
   computed: {
     ...mapGetters({
+      dialogBoxActive: 'dialogBox',
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
       dataset: 'explorer/getCurrentDataset',
       thumbnail: 'explorer/getDatasetThumbnail',
       orcidData: 'explorer/curation/getOrcidData'
     }),
     doi () {
-      if (this.dataset[this.datasetFields.doi]) {
+      if (this.dataset?.[this.datasetFields.doi]) {
         const doiString = this.dataset[this.datasetFields.doi][0]['@value']
         return doiString.replace('http://dx.doi.org/', '')
       } return ''
@@ -231,9 +241,8 @@ export default {
       this.shareToolTip = 'Link copied to clipboard'
       setTimeout(function () { this.shareToolTip = 'Share Dataset' }, 2000)
     },
-    parseFileName (file) {
-      const dateString = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)-/
-      return file.split(dateString).pop().replace('?isFileStore=true', '')
+    editDataset () {
+      this.$router.push(`/explorer/curate/sdd/edit/${this.id}`)
     }
   },
   created () {

@@ -4,28 +4,25 @@ import store from '@/store'
 const defaultDataset = {
   title: '',
   description: '',
-  contactpoint: {
+  contactPoint: {
     '@type': 'schemaPerson',
     '@id': null,
-    name: '',
-    cpfirstname: '',
-    cplastname: '',
-    cpemail: ''
+    cpFirstName: '',
+    cpLastName: '',
+    cpEmail: ''
   },
   contributor: [],
   author: [],
-  datepub: {
+  datePub: {
     '@type': 'date',
     '@value': ''
   },
-  datemod: {
+  dateMod: {
     '@type': 'date',
     '@value': ''
   },
   refby: [],
-  distribution: {
-    accessURL: null
-  },
+  distribution: [],
   depiction: {
     name: '',
     accessURL: null
@@ -114,7 +111,7 @@ function buildDatasetLd (dataset) {
 // Recursively check if a value is empty
 function isEmpty (value) {
   // Base case
-  if ([undefined, null, '', []].includes(value)) {
+  if ([undefined, null, ''].includes(value)) {
     return true
   } else if (Array.isArray(value)) {
     // Is empty if array has length 0
@@ -178,7 +175,13 @@ function deleteDataset (datasetUri) {
 }
 
 // Handle all of the uploads as multipart form
-async function saveDataset (dataset, fileList, image, guuid) {
+async function saveDataset (dataset, fileList, imageList, guuid) {
+  const oldFiles = fileList.filter(file => file.status === 'complete')
+  const oldDepiction = imageList.filter(file => file.status === 'complete')
+  const imgToDelete = imageList.filter(file => file.status === 'delete')?.[0]?.accessUrl
+  let imgDeleteId
+  if (imgToDelete) imgDeleteId = parseFileName(imgToDelete, true)
+
   let p = Promise.resolve()
   if (dataset.uri) {
     p = deleteDataset(dataset.uri)
@@ -188,16 +191,25 @@ async function saveDataset (dataset, fileList, image, guuid) {
     dataset.uri = generateDatasetId(guuid)
   }
   const [distrRes, imgRes] = await Promise.all([
-    saveDatasetFiles(fileList),
-    saveDatasetFiles([image]), // TODO: verify we want to use the same function for depiction
+    saveDatasetFiles(fileList.filter(file => file.status === 'incomplete')),
+    saveDatasetFiles(imageList.filter(file => file.status === 'incomplete')),
+    deleteFile(imgDeleteId),
     p
   ])
   const datasetLd = buildDatasetLd(dataset)
-  if (distrRes?.files?.length) {
-    datasetLd[datasetFieldUris.distribution] = buildDistrLd(distrRes?.files)
-  } if (imgRes?.files?.length) {
+  let allFiles = [...oldFiles]
+  if (distrRes?.files) allFiles = [...allFiles, ...distrRes.files]
+  if (allFiles?.length) {
+    datasetLd[datasetFieldUris.distribution] = buildDistrLd(allFiles)
+  }
+
+  if (imgRes?.files?.length) {
     datasetLd[datasetFieldUris.depiction] = buildDepictionLd(imgRes?.files?.[0], dataset.uri)
-  } return postNewNanopub(datasetLd)
+  } else if (oldDepiction.length) {
+    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(oldDepiction[0], dataset.uri)
+  }
+
+  return postNewNanopub(datasetLd)
   // TODO: Error handling
 }
 
@@ -219,17 +231,37 @@ async function saveDatasetFiles (fileList) {
   }
 }
 
+async function deleteFile (fileId) {
+  if (fileId) {
+    const response = await fetch(`${window.location.origin}/api/files/${fileId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${store.getters['auth/token']}`
+      }
+    })
+    if (response?.statusText !== 'OK') {
+      const error = new Error(
+        response?.message || 'Something went wrong while deleting file'
+      )
+      throw error
+    }
+    return response
+  }
+}
+
 function buildDistrLd (fileList) {
   const distrLDs = Array(fileList.length)
   Array
     .from(Array(fileList.length).keys())
     .map(x => {
       // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
+      const fileName = fileList[x]?.swaggerFilename ?? fileList[x]?.name
       distrLDs[x] = {
-        '@id': `${window.location.origin}${fileList[x].filename}`,
         '@type': 'http://purl.org/net/provenance/ns#File',
-        'http://www.w3.org/2000/01/rdf-schema#label': fileList[x].swaggerFilename
+        'http://www.w3.org/2000/01/rdf-schema#label': fileName
       }
+      if (fileList[x]?.status === 'complete') distrLDs[x]['@id'] = fileList[x].uri
+      else distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}`
     })
   return distrLDs
 }
@@ -238,14 +270,73 @@ function buildDepictionLd (file, uri) {
   const depictionLd = {
     '@id': `${uri}/depiction`,
     '@type': 'http://purl.org/net/provenance/ns#File',
-    'http://www.w3.org/2000/01/rdf-schema#label': file.swaggerFilename,
-    'http://w3.org/ns/dcat#accessURL': `${window.location.origin}${file.filename}`
+    'http://www.w3.org/2000/01/rdf-schema#label': file?.swaggerFilename ?? file.originalname,
+    'http://w3.org/ns/dcat#accessURL': file?.accessUrl ?? `${window.location.origin}${file.filename}`
   }
   return depictionLd
+}
+
+// Load for editing
+async function loadDataset (datasetUri) {
+  try {
+    const response = await store.dispatch('explorer/fetchSingleDataset', datasetUri)
+    const [extractedDataset, oldDistributions, oldDepiction] = extractDataset(response)
+    return [extractedDataset, oldDistributions, oldDepiction]
+  } catch (e) {
+    store.commit('setSnackbar', { message: e })
+  }
+}
+
+// Extract information from dataset in JSONLD format
+function extractDataset (datasetLd) {
+  // eslint-disable-next-line no-undef
+  const dataset = structuredClone(defaultDataset)
+  dataset.uri = datasetLd?.['@id']
+  let oldDistributions = []
+  let oldDepiction
+
+  Object.entries(defaultDataset)
+    .forEach(([field]) => {
+      const uri = datasetFieldUris?.[field.toLowerCase()]
+      const val = datasetLd?.[uri]
+      if (!!uri && (typeof val !== 'undefined')) {
+        if (field === 'distribution') {
+          oldDistributions = val.map(fileId => {
+            return ({
+              uri: fileId['@id'],
+              name: parseFileName(fileId['@id'])
+            })
+          })
+        } else if (field === 'depiction') oldDepiction = val
+        else if (Array.isArray(defaultDataset[field]) && Array.isArray(val)) {
+          dataset[field] = val.map((entry) => {
+            return entry?.['@value'] ?? entry
+          })
+        } else if (typeof defaultDataset[field] === 'object') {
+          Object.entries(defaultDataset[field]).forEach(([subfield]) => {
+            if (typeof val?.[0]?.[subfield] !== 'undefined') {
+              dataset[field][subfield] = val?.[0]?.[subfield]
+            }
+          })
+        } else if (typeof val[0]['@value'] !== 'undefined') {
+          dataset[field] = datasetLd[uri][0]['@value']
+        }
+      }
+    })
+  return [dataset, oldDistributions, oldDepiction]
+}
+
+// For extracting the original file name from the URI
+function parseFileName (fileString, fullId = false) {
+  const dateString = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)-/
+  let parsed
+  if (fullId) parsed = fileString.split('api/files/').pop()
+  else parsed = fileString.split(dateString).pop()
+  return parsed.split('?')[0]
 }
 
 const isValidOrcid = (identifier) => {
   return /^(\d{4}-){3}\d{3}(\d|X)$/.test(identifier)
 }
 
-export { getDefaultDataset, saveDataset, deleteDataset, isValidOrcid }
+export { getDefaultDataset, saveDataset, deleteDataset, deleteFile, loadDataset, isValidOrcid, parseFileName }
