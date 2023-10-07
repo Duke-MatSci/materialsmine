@@ -15,6 +15,7 @@ query XmlFinder($input: xmlFinderInput) {
       status
       isNewCuration
       sequence
+      user
     }
   }
 }
@@ -25,6 +26,8 @@ query XmlViewer($input: xmlViewerInput) {
     id
     title
     xmlString
+    isNewCuration
+    user
   }
 }
 `
