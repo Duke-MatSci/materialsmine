@@ -13,7 +13,7 @@ const log = mmLogger();
  * @param {*} app Express app object
  */
 const globalMiddleWare = async (app) => {
-  app.use(express.json());
+  app.use(express.json({ limit: '500mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use((req, res, next) => logParser(log, req, next));
   app.use(fileMgr);
