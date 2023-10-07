@@ -64,6 +64,18 @@ const explorerRoutes = [
         name: 'CurateBulk',
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'stepper',
+        name: 'CurationForm',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'stepper/edit',
+        name: 'EditXmlCuration',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
