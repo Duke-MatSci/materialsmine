@@ -1,4 +1,3 @@
-
 module.exports = {
   samples: 'about?view=instances&uri=http://materialsmine.org/ns/PolymerNanocomposite',
   articles: 'about?view=instances&uri=http%3A%2F%2Fmaterialsmine.org%2Fns%2FResearchArticle',
@@ -24,7 +23,8 @@ module.exports = {
     'MATERIAL TYPES': 'MATERIALS',
     'SYNTHESIS AND PROCESSING': 'PROCESSING',
     'CHARACTERIZATION METHODS': 'CHARACTERIZATION',
-    MICROSTRUCTURE: 'MICROSTRUCTURE'
+    MICROSTRUCTURE: 'MICROSTRUCTURE',
+    DMA_Datafile: 'DynamicPropertyProfile'
   },
   ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
   SupportedFileTypes: ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'csv', 'zip', 'xls', 'xlsx'],
