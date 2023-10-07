@@ -366,19 +366,30 @@ paths:
           schema:
             type: string
           description: Dataset ID
+        - in: query
+          name: isBaseObject
+          schema:
+            type: boolean
+          description: should be set to true if curating with Base schema object
       requestBody:
         description: A payload that contains the master_template xlsx file along with other files needed to create the curation
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
-                uploadfile:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
+                curatedjsonObject:
+                  $ref: '#/components/schemas/Sample-BaseObject'
+          multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  uploadfile:
+                    type: array
+                    items:
+                      type: string
+                      format: binary
       responses:
         '201':
           description: Returns the newly curated object
@@ -449,23 +460,34 @@ paths:
           schema:
             type: string
           description: Curation ID
+        - in: query
+          name: isBaseUpdate
+          schema:
+            type: boolean
+          description: query params to specify if update is through baseJson object
+        - in: query
+          name: isNew
+          schema:
+            type: boolean
+          description: query params specifying if curation is new or old curation
       requestBody:
         description: An updated curation json object
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                payload:
-                  $ref: '#/components/schemas/Sample-Curation'
+              oneOf:
+                - $ref: '#/components/schemas/BaseSchemaUpdate'
+                - $ref: '#/components/schemas/CurationJsonUpdate'
       responses:
         '200':
           description: Returns the newly curated object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sample-Curation'
+                oneOf:
+                  - $ref: '#/components/schemas/Sample-Curation'
+                  - $ref: '#/components/schemas/Sample-BaseObject'
 
         '304': 
           description: No changes to the curation object to update
@@ -580,7 +602,7 @@ paths:
                     type: string
                     example: An error occurred
   
-  /curate/get:
+  /curate/get/{curationId}:
     get:
       security:
         - BearerAuth: []
@@ -589,16 +611,19 @@ paths:
       tags:
         - Curation
       parameters:
-        - name: xlsxObjectId
-          in: query
+        - in: path
+          required: true
+          name: curationId
           description: The ID of the curated data to return for editing
           schema:
             type: string
-        - name: xmlId
-          in: query
-          description: Alternatively the ID of the xml to return for editing
+            example: "64394c8032bc6325505af6f9"
+  
+        - in: query
+          name: isNew
           schema:
-            type: string
+            type: boolean
+          description: query params specifying if curation is new or old curation
       responses:
         '200':
           description: Returns the newly curated object
@@ -941,6 +966,8 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+    
   schemas:
     Unauthorized-Error: 
       type: object
@@ -960,7 +987,19 @@ components:
         message:
           type: string
           example: Category type or doc is missing
-          
+    
+    CurationJsonUpdate:
+      type: object
+      properties:
+        payload:
+          $ref: '#/components/schemas/Sample-Curation'
+    
+    BaseSchemaUpdate:
+      type: object
+      properties:
+        payload:
+          $ref: '#/components/schemas/Sample-BaseObject'
+
     Successful-Curation:
       type: object
       example: 
@@ -992,6 +1031,415 @@ components:
       example:
         xsd:  "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\r\n    <xs:element name=\"PolymerNanocomposite\">\r\n        <xs:complexType>\r\n            <xs:sequence>\r\n                <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"ID\"/>\r\n                <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Control_ID\"/>\r\n                <xs:element minOccurs=\"0\" name=\"DATA_SOURCE\">\r\n                    <xs:complexType>\r\n                        <xs:sequence>\r\n                            <xs:element minOccurs=\"0\" name=\"Citation\">\r\n                                <xs:complexType>\r\n                                    <xs:sequence>\r\n                                        <xs:element minOccurs=\"0\" name=\"CommonFields\">\r\n                                            <xs:complexType>\r\n                                                <xs:sequence>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"YourName\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"YourEmail\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Origin\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"CitationType\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"PublicationType\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"DOI\"/>\r\n                                                    <xs:element minOccurs=\"0\" type=\"xs:string\" name=\"Publication\"/>"                                                  
 
+    Sample-BaseObject:
+      type: object
+      example:
+        ID:
+          cellValue: null
+          type: String
+          required: false
+        Control_ID:
+          cellValue: '12'
+          type: String
+          required: false
+        DATA ORIGIN:
+          Citation:
+            CommonFields:
+              YourName:
+                cellValue: Heybee
+                type: String
+                required: false
+              YourEmail:
+                cellValue: null
+                type: String
+                required: false
+              Origin:
+                cellValue: null
+                type: List
+                required: false
+                validList: origin
+              CitationType:
+                cellValue: null
+                type: List
+                required: false
+                validList: citation_type
+              PublicationType:
+                cellValue: null
+                type: List
+                required: false
+                validList: publication_type
+              DOI:
+                cellValue: null
+                type: String
+                required: false
+              Publication:
+                cellValue: null
+                type: String
+                required: false
+              Title:
+                cellValue: Test title
+                type: String
+                required: false
+              Author:
+                - Uzumaki Naruto
+                - Uchiha Sasuke
+                - Haruno Sakura
+              Keyword:
+                - Anime
+                - Shounin
+                - Naruto
+              PublicationYear:
+                cellValue: '1992'
+                type: String
+                required: false
+              Volume:
+                cellValue: null
+                type: String
+                required: false
+              Issue:
+                cellValue: null
+                type: String
+                required: false
+              URL:
+                cellValue: null
+                type: String
+                required: false
+              Language:
+                cellValue: null
+                type: String
+                required: false
+              Location:
+                cellValue: null
+                type: String
+                required: false
+              DateOfCitation:
+                cellValue: null
+                type: String
+                required: false
+              LaboratoryDataInfo:
+                DateOfSampleMade:
+                  cellValue: null
+                  type: String
+                  required: false
+                DateOfDataMeasurement:
+                  cellValue: null
+                  type: String
+                  required: false
+                RelatedDOI:
+                  cellValue: null
+                  type: String
+                  required: false
+        PROPERTIES:
+          Electrical:
+            ElectricConductivity:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            CurrentDensity:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            EnergyDensity:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            SurfaceResistivity:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            VolumeResistivity:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              datafile:
+                cellValue: null
+                type: File
+                required: false
+            ArcResistance:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              datafile:
+                cellValue: null
+                type: File
+                required: false
+            Impedance:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              datafile:
+                cellValue: null
+                type: File
+                required: false
+            ElectricPercolationThreshold:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            DC_DielectricConstant:
+              description:
+                cellValue: null
+                type: String
+                required: false
+              value:
+                cellValue: null
+                type: String
+                required: false
+              unit:
+                cellValue: null
+                type: String
+                required: false
+              data:
+                cellValue: null
+                type: File
+                required: false
+            AC_DielectricDispersion:
+              Description:
+                cellValue: null
+                type: String
+                required: false
+              DielectricDispersionDependence:
+                FrequencyDependence:
+                  condition:
+                    temperature:
+                      description:
+                        cellValue: null
+                        type: String
+                        required: false
+                      value:
+                        cellValue: null
+                        type: String
+                        required: false
+                      unit:
+                        cellValue: null
+                        type: List
+                        required: false
+                        validList: AC_dielectric_dispersion_#::Test_Conditions_-_Temperature::Unit
+                      data:
+                        cellValue: null
+                        type: File
+                        required: false
+                TemperatureDependence:
+                  condition:
+                    frequency:
+                      description:
+                        cellValue: null
+                        type: String
+                        required: false
+                      value:
+                        cellValue: null
+                        type: String
+                        required: false
+                      unit:
+                        cellValue: null
+                        type: String
+                        required: false
+                      data:
+                        cellValue: null
+                        type: File
+                        required: false
+              Dielectric_Real_Permittivity:
+                description:
+                  cellValue: Real permittivity
+                  type: String
+                  required: false
+                value:
+                  cellValue: null
+                  type: String
+                  required: false
+                unit:
+                  cellValue: null
+                  type: String
+                  required: false
+                data:
+                  cellValue: null
+                  type: File
+                  required: false
+              Dielectric_Loss_Permittivity:
+                description:
+                  cellValue: null
+                  type: String
+                  required: false
+                value:
+                  cellValue: null
+                  type: String
+                  required: false
+                unit:
+                  cellValue: null
+                  type: String
+                  required: false
+                data:
+                  cellValue: null
+                  type: File
+                  required: false
+              Dielectric_Loss_Tangent:
+                description:
+                  cellValue: null
+                  type: String
+                  required: false
+                value:
+                  cellValue: null
+                  type: String
+                  required: false
+                unit:
+                  cellValue: null
+                  type: String
+                  required: false
+                data:
+                  cellValue: null
+                  type: File
+                  required: false
+            DielectricBreakdownStrength:
+              Condition:
+                cellValue: null
+                type: List
+                required: false
+                validList: AC_dielectric_dispersion_#::Dielectric_breakdown_strength::Condition
+              Profile:
+                value:
+                  cellValue: null
+                  type: String
+                  required: false
+                unit:
+                  cellValue: null
+                  type: String
+                  required: false
+                data:
+                  cellValue: null
+                  type: File
+                  required: false
+              WeibullPlot:
+                description:
+                  cellValue: null
+                  type: String
+                  required: false
+                data:
+                  cellValue: null
+                  type: File
+                  required: false
+              WeibullParameter:
+                type: multiples
+                values:
+                  - description:
+                      cellValue: Weibull parameter description 1
+                      type: String
+                      required: false
+                      default: scale parameter
+                    value:
+                      value:
+                        cellValue: Weibull parameter value 1
+                        type: String
+                        required: false
+                      unit:
+                        cellValue: Weibull parameter unit 1
+                        type: String
+                        required: false
+                  - description:
+                      cellValue: Weibull parameter description 2
+                      type: String
+                      required: false
+                      default: shape parameter
+                    value:
+                      value:
+                        cellValue: Weibull parameter value 2
+                        type: String
+                        required: false
+                      unit:
+                        cellValue: Weibull parameter unit 2
+                        type: String
+                        required: false
+        
     Sample-JsonSchema:
       type: object
       example:
