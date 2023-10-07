@@ -17,5 +17,23 @@ export default {
   },
   setXmlBulkResponse (state, payload) {
     state.xmlBulkResponse = payload
+  },
+  setCurationFormData (state, payload) {
+    state.curationFormData = payload
+  },
+  setCurationFormError (state, payload) {
+    state.curationFormError = payload
+  },
+  setReplaceNestedRef (state, payload) {
+    if (payload.length) {
+      const data = state.replaceNestedRef.length
+        ? [...state.replaceNestedRef, JSON.stringify(payload)]
+        : [JSON.stringify(payload)]
+      
+      state.replaceNestedRef = [...new Set(data)]
+    }
+  },
+  clearReplaceNestedRef (state) {
+    state.replaceNestedRef = []
   }
 }
