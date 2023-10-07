@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { log } = require('../middlewares');
 
-const deleteFile = (path, req) => {
+const deleteFile = (path, req = { logger: log }) => {
   fs.unlink(path, err => {
     if (err) return err;
     else {
@@ -77,16 +78,4 @@ async function findFile (req) {
   return { fileStream: fs.createReadStream(filePath), ext };
 }
 
-// TODO (@tee): Remember this two functions are temporary, I'll remove later
-async function writeFile (req, filename, data) {
-  const filePath = path.join(req.env?.FILES_DIRECTORY, filename);
-  await fs.promises.writeFile(filePath, data);
-  return filePath;
-}
-
-async function readFile (req, filename) {
-  const data = await fs.promises.readFile(filename, 'utf8');
-  return data;
-}
-
-module.exports = { deleteFile, findFile, writeFile, deleteFolder, readFile, getFileExtension };
+module.exports = { deleteFile, findFile, deleteFolder, getFileExtension };
