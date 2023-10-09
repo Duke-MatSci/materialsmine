@@ -29,7 +29,7 @@ export default {
       const data = state.replaceNestedRef.length
         ? [...state.replaceNestedRef, JSON.stringify(payload)]
         : [JSON.stringify(payload)]
-      
+
       state.replaceNestedRef = [...new Set(data)]
     }
   },
