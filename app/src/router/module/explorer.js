@@ -147,6 +147,13 @@ const explorerRoutes = [
     meta: { requiresAuth: true }
   },
   {
+    path: 'curate/sdd/edit/:datasetId',
+    name: 'EditSDD',
+    props: true,
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: 'chart',
     component: ChartBase,
     children: [
