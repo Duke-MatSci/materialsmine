@@ -936,7 +936,7 @@ const createJsonObject = async (
         if (propertyValue?.required && !propertyValue.cellValue) {
           errors[property] = `${property} cannot be null`;
         } else {
-          const regex = /(?=.*?([.csv | .tsv]))(?=.*?(isStore=true)$)/gi;
+          const regex = /(?=.*?((?:.csv|.tsv)))(?=.*?(isStore=true)$)/gi;
           const isProccessable = regex.test(propertyValue.cellValue);
           if (isProccessable) {
             const file = propertyValue.cellValue.split('/').pop();
