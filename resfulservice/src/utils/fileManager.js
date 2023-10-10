@@ -1,9 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { log } = require('../middlewares');
 
-const deleteFile = (path, req = { logger: log }) => {
-  fs.unlink(path, err => {
+const deleteFile = (path, req) => {
+  fs.unlink(path, (err) => {
     if (err) return err;
     else {
       req.logger?.info('file deleted');
@@ -15,7 +14,9 @@ const deleteFolder = async (folderPath, req) => {
   fs.rm(folderPath, { recursive: true, force: true }, (err) => {
     if (err) {
       return err;
-    } else { req.logger?.info('Directory deleted successfully'); }
+    } else {
+      req.logger?.info('Directory deleted successfully');
+    }
   });
 };
 
@@ -63,7 +64,10 @@ async function findFile (req) {
     throw new Error('Internal Server Error');
   }
 
-  const { filesDirectoryValue, parsedFileName } = getDirectoryFiles(req.env?.FILES_DIRECTORY, fileId);
+  const { filesDirectoryValue, parsedFileName } = getDirectoryFiles(
+    req.env?.FILES_DIRECTORY,
+    fileId
+  );
 
   const foundFile = await selectFile(filesDirectoryValue, parsedFileName);
 
