@@ -225,9 +225,12 @@ exports.getAllCharts = async (req, res, next) => {
  * @param {*} next
  * @returns {*} response
  */
-exports.getImagesFromKnowledgeGraph = async (req, res, next) => {
+exports.getInstanceFromKnowledgeGraph = async (req, res, next) => {
   try {
-    const url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
+    const view = req?.query?.view;
+    let url;
+    if (!view) url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
+    else url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`;
     return axios
       .get(url, {
         responseType: 'arraybuffer'

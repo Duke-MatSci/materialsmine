@@ -97,7 +97,7 @@ export default {
 
     if (isValidOrcid(orcidId)) {
       // TODO: update the endpoint route name
-      const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`
+      const url = `/api/knowledge/instance?uri=http://orcid.org/${orcidId}`
       const response = await fetch(url, {
         method: 'GET'
       })
