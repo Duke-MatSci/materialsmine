@@ -1,4 +1,3 @@
-
 module.exports = {
   samples: 'about?view=instances&uri=http://materialsmine.org/ns/PolymerNanocomposite',
   articles: 'about?view=instances&uri=http%3A%2F%2Fmaterialsmine.org%2Fns%2FResearchArticle',
@@ -38,7 +37,11 @@ module.exports = {
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   },
+  colorAssignment: [
+    '#FFB347', '#8A8BD0', '#FFC0CB', '#6FA8DC', '#8FCE00', '#CC0000', '#38761D', '#9FC5E8', '#2f3b45', '#e8c29f'
+  ],
   MinioBucket: 'mgi',
+  MetamineBucket: 'metamine',
   /**  This json object holds placeholder values for all the different types of fields
     *  in the xlsx.json object. This are the values used as placeholders when generating a valid jsonSchema
     *  which is the used to generate a valid XSD.
