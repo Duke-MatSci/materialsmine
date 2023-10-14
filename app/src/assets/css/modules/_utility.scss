@@ -253,9 +253,12 @@
         &-900{
             font-weight: 900;
         }
+        &-700{
+            font-weight: 700;
+        }
         &-xl {
             font-size: $x-large-size;
-            font-weight: 700;
+            @extend .u--font-emph-700
         }
         &-l {
             font-size: $large-size;
@@ -389,6 +392,9 @@
         &_content {
             // Flex type content
             justify-content: center; 
+        }
+        &_items {
+            align-items: center;
         }
         &_other {
             margin: 0 auto;
@@ -815,4 +821,4 @@
         flex-direction: column;
         margin: 0 2rem;
     }
-} 
+}
