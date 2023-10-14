@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import structure from '@/pages/metamine/visualizationNU/components/structure.vue'
+import structure from '@/components/metamine/visualizationNU/structure.vue'
 
 const onMountMethod = jest.spyOn(structure.methods, 'createSvg').mockImplementation(() => {})
 

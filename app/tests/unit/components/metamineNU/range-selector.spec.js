@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, mount, createLocalVue } from '@vue/test-utils'
-import RangeSelector from '@/pages/metamine/visualizationNU/components/RangeSelector.vue'
+import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
 import Vuex from 'vuex'
 import VueMaterial from 'vue-material'
 import { mockDataPoint } from './constants'

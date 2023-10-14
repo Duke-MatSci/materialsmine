@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, mount } from '@vue/test-utils'
-import NeighborPanel from '@/pages/metamine/visualizationNU/components/NeighborPanel.vue'
+import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue'
 import { mockDataPoint } from './constants'
 import store from '@/store'
 

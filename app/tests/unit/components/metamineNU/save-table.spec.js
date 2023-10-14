@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy, mount, createLocalVue } from '@vue/test-utils'
-import SaveDataPanel from '@/pages/metamine/visualizationNU/components/SaveDataPanel.vue'
+import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue'
 import Vuex from 'vuex'
 import VueMaterial from 'vue-material'
 import { mockDataPoint } from './constants'

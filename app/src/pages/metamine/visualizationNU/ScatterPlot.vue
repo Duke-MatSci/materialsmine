@@ -1,108 +1,50 @@
 <template>
-    <div
-        class="md-gutter adjust-padding wrapper-box"
-        style="margin: 5px 0 0 5px"
-    >
-        <div class="md-layout-item">
-            <button class="nuplot-button-link">
-                <router-link
-                    to="/mm/metamaterial_visualization_nu"
-                    style="color: #fff; font-weight: 700"
-                >
-                    Visualize In Pairwise Plot
-                </router-link>
-            </button>
-        </div>
-        <div class="main-content" style="margin: 3rem; display: flex">
-            <div class="scatter-chart" style="width: 50%">
-                <Scatter />
-                <div
-                    style="
-                        display: flex;
-                        justify-content: space-between;
-                        margin-top: 40px;
-                    "
-                >
-                    <button @click="toggleDialogBoxKnn()" class="nuplot-button">
-                        Find Nearest Neighbors
-                    </button>
-                    <dialog-box
-                        :active="dialogBoxActiveKnn"
-                        :disableClose="true"
-                    >
-                        <template v-slot:content>
-                            <NeighborPanel />
-                        </template>
-                        <template v-slot:actions>
-                            <md-button
-                                @click.native.prevent="toggleDialogBoxKnn"
-                                >Close</md-button
-                            >
-                        </template>
-                    </dialog-box>
-                    <button
-                        @click="toggleDialogBoxSaveData()"
-                        class="nuplot-button button-primary"
-                    >
-                        Save Data
-                    </button>
-                    <dialog-box
-                        :active="dialogBoxActiveSaveData"
-                        :disableClose="true"
-                    >
-                        <template v-slot:content>
-                            <SaveDataPanel />
-                        </template>
-                        <template v-slot:actions>
-                            <md-button
-                                @click.native.prevent="toggleDialogBoxSaveData"
-                                >Close</md-button
-                            >
-                        </template>
-                    </dialog-box>
-                    <button
-                        @click="handleReset"
-                        class="nuplot-button button-alert"
-                    >
-                        Reset
-                    </button>
-                </div>
-            </div>
-            <div class="subcharts" style="width: 20%">
-                <Structure />
-                <Youngs />
-                <Poisson />
-            </div>
-            <div class="side-tools" style="width: 30%">
-                <DataSelector />
-                <RangeSelector />
-                <MaterialInformation />
-            </div>
-        </div>
-    </div>
+  <VisualizationLayout :link="link" :dense="true">
+    <template #main_chart>
+      <Scatter />
+      <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
+        <button @click="toggleDialogBoxKnn()" class="nuplot-button"> Find Nearest Neighbors</button>
+        <dialog-box :active="dialogBoxActiveKnn" :disableClose="true">
+            <template v-slot:content> <NeighborPanel /> </template>
+            <template v-slot:actions>
+                <md-button @click.native.prevent="toggleDialogBoxKnn" >Close</md-button>
+            </template>
+        </dialog-box>
+        <button @click="toggleDialogBoxSaveData()" class="nuplot-button button-primary"> Save Data </button>
+        <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
+            <template v-slot:content> <SaveDataPanel /> </template>
+            <template v-slot:actions> <md-button @click.native.prevent="toggleDialogBoxSaveData">Close</md-button > </template>
+        </dialog-box>
+        <button @click="handleReset" class="nuplot-button button-alert">Reset</button>
+      </div>
+    </template>
+
+    <template #subcharts>
+      <Structure />
+      <Youngs />
+      <Poisson />
+    </template>
+
+    <template #side_tools>
+      <DataSelector />
+      <RangeSelector />
+      <MaterialInformation />
+    </template>
+  </VisualizationLayout>
 </template>
 
-<style scoped>
-.subcharts {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    overflow: hidden;
-}
-</style>
-
 <script>
-import Scatter from './components/scatter.vue'
-import DataSelector from './components/DataSelector.vue'
-import RangeSelector from './components/RangeSelector.vue'
-import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
-import Poisson from '@/pages/metamine/visualizationNU/components/poisson.vue'
-import Structure from '@/pages/metamine/visualizationNU/components/structure.vue'
-import MaterialInformation from '@/pages/metamine/visualizationNU/components/MaterialInformation.vue'
-import NeighborPanel from '@/pages/metamine/visualizationNU/components/NeighborPanel.vue'
-import SaveDataPanel from './components/SaveDataPanel.vue'
+import Scatter from '@/components/metamine/visualizationNU/scatter.vue'
+import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
+import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
+import Youngs from '@/components/metamine/visualizationNU/youngs.vue'
+import Poisson from '@/components/metamine/visualizationNU/poisson.vue'
+import Structure from '@/components/metamine/visualizationNU/structure.vue'
+import MaterialInformation from '@/components/metamine/visualizationNU/MaterialInformation.vue'
+import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue'
+import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue'
 import Dialog from '@/components/Dialog.vue'
+import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
 
 export default {
   name: 'ScatterPage',
@@ -116,13 +58,16 @@ export default {
     MaterialInformation,
     NeighborPanel,
     SaveDataPanel,
-    dialogBox: Dialog
+    dialogBox: Dialog,
+    VisualizationLayout
   },
   data () {
     return {
       dialogBoxActiveKnn: false,
       dialogBoxActiveSaveData: false,
-      reset: false
+      reset: false,
+      link: { to: '/mm/metamaterial_visualization_nu', text: 'Visualize In Pairwise Plot' }
+
     }
   },
   methods: {

@@ -1,6 +1,6 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import Youngs from '@/pages/metamine/visualizationNU/components/youngs.vue'
+import Youngs from '@/components/metamine/visualizationNU/youngs.vue'
 import Plotly from 'plotly.js'
 
 const newPlotSpy = jest.spyOn(Plotly, 'newPlot').mockImplementation(() => {})
