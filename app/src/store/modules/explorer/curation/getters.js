@@ -16,5 +16,8 @@ export default {
   },
   getXmlBulkResponse (state) {
     return state.xmlBulkResponse
+  },
+  getCurationFormData (state) {
+    return state.curationFormData
   }
 }

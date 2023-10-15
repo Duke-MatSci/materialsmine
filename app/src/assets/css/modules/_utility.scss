@@ -117,6 +117,9 @@
         }
         &-pos {
             margin: 1rem;
+            &md {
+                margin: 2rem;
+            }
         }
         &-top {
             &lg {
@@ -167,6 +170,9 @@
     &_height {
         &--max {
             height: 100% !important;
+        }
+        &--auto {
+            height: auto !important;
         }
     }
     
@@ -400,7 +406,7 @@
             margin-bottom: 0 !important;
             width: 55% !important;
             @include respond(phone){
-                width: 80%;
+                width: 80% !important;
             }
         }
         &_input {

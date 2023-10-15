@@ -41,13 +41,14 @@ exports.fileContent = async (req, res, next) => {
       }
       latency.latencyCalculator(res);
       res.setHeader('Content-Type', SupportedFileResponseHeaders[ext]);
+      if (req.isInternal) return fileStream;
       return fileStream.pipe(res);
     }
 
     if (req.query.isStore) {
-      const bucketName = req.env.MINIO_BUCKET ?? MinioBucket;
+      const bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
       const dataStream = await minioClient.getObject(bucketName, fileId);
-
+      if (req.isInternal) return dataStream;
       if (!dataStream) {
         res.setHeader('Content-Type', 'image/png');
         latency.latencyCalculator(res);
@@ -99,9 +100,9 @@ exports.deleteFile = async (req, res, next) => {
   const { fileId } = req.params;
   const filePath = `${filesDirectory}/${fileId}`;
   try {
-    const bucketName = req.env.MINIO_BUCKET ?? MinioBucket;
-
+    const bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
     await minioClient.removeObject(bucketName, fileId);
+    if (req.isInternal) return true;
     FileManager.deleteFile(filePath, req);
     latency.latencyCalculator(res);
     return res.sendStatus(200);

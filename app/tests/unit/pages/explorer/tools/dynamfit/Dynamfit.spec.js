@@ -1,4 +1,4 @@
-import createWrapper from '../../../jest/script/wrapper'
+import createWrapper from '../../../../../jest/script/wrapper'
 import DynamFit from '@/pages/explorer/tools/dynamfit/DynamFit.vue'
 
 describe('DynamFit.vue', () => {
