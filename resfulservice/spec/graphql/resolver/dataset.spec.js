@@ -2,6 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const DatasetId = require('../../../src/models/datasetId');
 const Dataset = require('../../../src/models/dataset');
+const User = require('../../../src/models/user');
 const graphQlSchema = require('../../../src/graphql');
 const { Mutation: { createDatasetId, createDataset }, Query: { getUserDataset, getFilesets }} = require('../../../src/graphql/resolver');
 
@@ -70,7 +71,9 @@ describe('Dataset Resolver Unit Tests:', function () {
         ],
       },
     ],
-    lean: () => this
+    skip: sinon.stub().returnsThis(),
+    limit: sinon.stub().returnsThis(),
+    lean: sinon.stub().returnsThis()
   }
 
   const user = {
@@ -79,6 +82,7 @@ describe('Dataset Resolver Unit Tests:', function () {
     givenName: 'test',
     surName: 'test user',
     displayName: 'tester',
+    userid: '62dab1b76db8739c8330611d',
     email: 'test@example.com',
     roles: 'member'
   }
@@ -142,12 +146,18 @@ describe('Dataset Resolver Unit Tests:', function () {
       populate: () => this,
       limit: () => this 
     }
+    const input = {
+      pageNumber: 1,
+      pageSize: 10,
+      status: 'APPROVED'
+    }
 
-
-    it.skip("should return paginated lists of a user's datasets", async () => {
-      sinon.stub(DatasetId, 'aggregate').returns(mockDatasetId);
+    it("should return paginated lists of a user's datasets", async () => {
+      sinon.stub(Dataset, 'find').returns(mockDataset);
+      sinon.stub(Dataset, 'countDocuments').returns(1);
+      sinon.stub(User, 'findOne').returns(user);
       const datasets = await getUserDataset({}, { input }, { user, req, isAuthenticated: true });
-      expect(datasets).to.have.property('datasetId');
+      expect(datasets).to.have.property('datasets');
       expect(datasets.totalItems).to.equal(1);
     });
 
@@ -170,9 +180,15 @@ describe('Dataset Resolver Unit Tests:', function () {
 
   context('getFilesets', () => {
     const mockFilesetAggregate = [{
-        count: 1,
-        filesets: mockDataset.filesets
-    }] 
+      count: 1,
+      filesets: mockDataset.filesets
+    }];
+
+    const filesetInput = {
+      ...input,
+      pageSize: 10,
+      pageNumber: 1
+    }
     it("should return file list of a fileset when both datasetId and filesetName are provided", async () => {
       sinon.stub(Dataset, 'aggregate').returns(mockFilesetAggregate);
     //   sinon.stub(mockDataset, 'lean').returnsThis();
@@ -184,9 +200,9 @@ describe('Dataset Resolver Unit Tests:', function () {
 
     });
 
-    it.skip("should return file list of a fileset when only datasetId is provided", async () => {
+    it("should return file list of a fileset when only datasetId is provided", async () => {
       sinon.stub(Dataset, 'aggregate').returns(mockFilesetAggregate);
-      const filesetGroup = await getFilesets({}, { input }, { user, req, isAuthenticated: true });
+      const filesetGroup = await getFilesets({}, { input: filesetInput }, { user, req, isAuthenticated: true });
 
       expect(filesetGroup).to.have.property('filesets');
       expect(filesetGroup.filesets).to.be.an('array');
@@ -195,7 +211,6 @@ describe('Dataset Resolver Unit Tests:', function () {
 
     it("should return an aggregated list of a fileset when only filesetName is provided", async () => {
       sinon.stub(Dataset, 'aggregate').returns([{filesets: mockDataset.filesets}]);
-      sinon.stub(mockDataset, 'lean').returnsThis();
       const fileset = await getFilesets({}, {input: { filesetName: 'E109_S2_Huang_2016' } }, { user, req, isAuthenticated: true });
       expect(fileset).to.have.property('filesetName');
       expect(fileset).to.have.property('files');

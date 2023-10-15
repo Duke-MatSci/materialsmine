@@ -5,12 +5,15 @@ type XmlCatalogs {
   entityState: String @deprecated(reason: "No longer supported!")
   isNewCuration: Boolean
   sequence: Int
+  user: String
 }
 
 type ReadXml {
   id: String
   title: String
   xmlString: String
+  isNewCuration: Boolean
+  user: String
 }
 
 type XmlDataList {

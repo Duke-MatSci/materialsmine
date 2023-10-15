@@ -24,7 +24,7 @@
                     <div class="u_width--max u--margin-pos" v-for="(file, index) in xmlBulkResponse.bulkErrors" :key="index + '_err'">
 
                     <div class="u--font-emph-l" md-elevation="0">
-                        <a :href="'/api/files/'+(optionalChaining(() => file.filename))+'?isFileStore=true'" download>
+                        <a :href="optionalChaining(() => file.filename)" download>
                           <span class="md-body-2 u--color-black">{{file.filename.split('/').pop()}}</span>
                         </a>
                     </div>

@@ -171,6 +171,9 @@
         &--max {
             height: 100% !important;
         }
+        &--auto {
+            height: auto !important;
+        }
     }
     
     &_width {
@@ -403,7 +406,7 @@
             margin-bottom: 0 !important;
             width: 55% !important;
             @include respond(phone){
-                width: 80%;
+                width: 80% !important;
             }
         }
         &_input {

@@ -63,7 +63,13 @@
 
     <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
       <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item">
-        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }}">
+        <div class="u_gridicon">
+          <div v-if="isAuth && (xml.user === userId || isAdmin)" @click.prevent="editCuration(xml.id, xml.isNewCuration)">
+            <md-tooltip md-direction="top">Edit Curation</md-tooltip>
+            <md-icon>edit</md-icon>
+          </div>
+        </div>
+        <router-link :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: xml.isNewCuration}}">
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3">
               <md-icon class="explorer_page-nav-card_icon u_margin-top-small">code_off</md-icon>
@@ -99,6 +105,7 @@ import pagination from '@/components/explorer/Pagination'
 import { XML_FINDER } from '../../../modules/gql/xml-gql'
 import explorerQueryParams from '@/mixins/explorerQueryParams'
 import SearchGallery from '@/components/XmlSearchUtil'
+import { mapGetters } from 'vuex'
 export default {
   name: 'XmlGallery',
   data () {
@@ -125,6 +132,11 @@ export default {
     pagination
   },
   computed: {
+    ...mapGetters({
+      isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
+      userId: 'auth/userId'
+    }),
     isEmpty () {
       if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
       return false
@@ -163,6 +175,9 @@ export default {
       this.selectedFilters = []
       this.filterParams = {}
       await this.resetSearch(type)
+    },
+    editCuration (id, isNew) {
+      this.$router.push({ name: 'EditXmlCuration', query: { isNew: isNew, id: id } })
     },
     selectFilters (e) {
       const value = e.target.value
