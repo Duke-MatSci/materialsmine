@@ -187,7 +187,7 @@ describe("Curation Controller", function () {
       expect(result).to.have.property("message");
     });
 
-    it("should return error when jsonOBject has error fields", async function () {
+    it("should return error when base object has error fields", async function () {
       req.body = { curatedjsonObject: mockJsonObjectErrored };
       req.query = { dataset: "64902493388ad3a79b54b58e", isBaseObject: true };
       sinon.stub(res, "status").returnsThis();

@@ -241,11 +241,11 @@ export default {
       {}
 
     if (!cId?.cellValue) {
-      throw new Error('Please Enter Control_ID Before Submitting')
+      throw new Error('Please enter Control_ID before submitting')
     }
 
     if (Object.keys(state.curationFormError).length) {
-      throw new Error('Field Error: Please fill all Required fields')
+      throw new Error('Field Error: Please fill all required fields')
     }
 
     const data = JSON.parse(JSON.stringify(state.curationFormData))
@@ -291,7 +291,7 @@ export default {
       const response = await fetchResponse.json()
       const errorObj = response?.fieldError ?? {}
       commit('setCurationFormError', errorObj)
-      throw new Error('Field Error: Please fill all Required fields')
+      throw new Error('Field Error: Please fill all required fields')
     }
 
     if (fetchResponse.status !== successResponse) {

@@ -56,7 +56,7 @@ describe('InputComponent.vue with input type string', async () => {
     expect(consoleSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('does not renders the error message', () => {
+  it('does not render the error message', () => {
     var layout = wrapper.find('div.md-card-actions.viz-u-display__show')
     var text = layout.find('p.u--color-error')
     expect(layout.exists()).toBe(true)
@@ -147,14 +147,14 @@ describe('InputComponent.vue with input type list', () => {
     expect(consoleSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('does not renders the error message', () => {
+  it('does not render the error message', () => {
     var layout = wrapper.find('div.md-card-actions.viz-u-display__show')
     var text = layout.find('p.u--color-error')
     expect(layout.exists()).toBe(true)
     expect(text.exists()).toBe(false)
   })
 
-  it('it renders a material form select component and label', async () => {
+  it('renders a material form select component and label', async () => {
     const inputContainer = wrapper.find('div.md-card-actions > md-field-stub')
     expect(wrapper.vm.inputObj.type).toEqual('List')
     expect(inputContainer.attributes('style')).toEqual(reduceSpacing)
@@ -240,14 +240,14 @@ describe('InputComponent.vue with input type replace_nested', () => {
     expect(consoleSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('does not renders the error message', () => {
+  it('does not render the error message', () => {
     var layout = wrapper.find('div.md-card-actions.viz-u-display__show')
     var text = layout.find('p.u--color-error')
     expect(layout.exists()).toBe(true)
     expect(text.exists()).toBe(false)
   })
 
-  it('it renders a material form input chip component and placeholder', async () => {
+  it('renders a material form input chip component and placeholder', async () => {
     const chips = wrapper.find('div.md-card-actions > md-chips-stub')
     const button = wrapper.find('md-button-stub')
     expect(wrapper.vm.inputObj.type).toEqual('replace_nested')
@@ -329,14 +329,14 @@ describe('InputComponent.vue with input type File', () => {
     expect(consoleSpy).toHaveBeenCalledTimes(0)
   })
 
-  it('does not renders the error message', () => {
+  it('does not render the error message', () => {
     var layout = wrapper.find('div.md-card-actions.viz-u-display__show')
     var text = layout.find('p.u--color-error')
     expect(layout.exists()).toBe(true)
     expect(text.exists()).toBe(false)
   })
 
-  it('it renders an input type file component and placeholder', async () => {
+  it('renders an input type file component and placeholder', async () => {
     const label = wrapper.findAll('label')
     expect(label.at(0).attributes('for')).toBe(uniqueKey.join(','))
     expect(label.at(1).text()).toBe('Select file to upload')

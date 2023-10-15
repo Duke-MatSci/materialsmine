@@ -736,7 +736,7 @@ export default {
       this.$store.commit('explorer/curation/clearReplaceNestedRef')
     },
     openDialogBox (msg = null, func = null) {
-      this.dialogBoxText = !msg ? 'Are You sure you want to submit?' : msg
+      this.dialogBoxText = !msg ? 'Are you sure you want to submit?' : msg
       this.dialogBoxAction = !func ? () => this.submitForm() : func
       if (!this.dialogBoxActive) {
         this.toggleDialogBox()

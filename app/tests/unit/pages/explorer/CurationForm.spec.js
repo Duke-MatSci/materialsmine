@@ -17,7 +17,7 @@ describe('CurationForm.vue', () => {
       .spyOn(CurationForm.methods, 'fetchCurationData')
       .mockImplementation(() => {})
 
-    it('calls the right funtion on mount', async () => {
+    it('calls the right function on mount', async () => {
       expect(createdSpy).toHaveBeenCalledTimes(1)
     })
 
@@ -96,7 +96,7 @@ describe('CurationForm.vue', () => {
       expect(text.exists()).toBe(false)
     })
 
-    it('load inactive horizontal stepper', async () => {
+    it('loads inactive horizontal stepper', async () => {
       const stepper = wrapper.findComponent('md-steppers-stub')
       expect(stepper.exists()).toBe(true)
       expect(stepper.attributes('class')).toBe(

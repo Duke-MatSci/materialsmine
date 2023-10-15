@@ -137,7 +137,7 @@ export default {
     async addExtra () {
       if (!this.validateFields()) {
         return this.$store.commit('setSnackbar', {
-          message: 'Fields are Empty',
+          message: 'Fields are empty',
           duration: 3000
         })
       }
