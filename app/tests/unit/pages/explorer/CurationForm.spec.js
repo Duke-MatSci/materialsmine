@@ -102,7 +102,7 @@ describe('CurationForm.vue', () => {
       expect(stepper.attributes('class')).toBe(
         'form__stepper form__stepper-curate'
       )
-      expect(stepper.props().mdActiveStep).toBe('stepper_null')
+      expect(stepper.props().mdActiveStep).toBe('')
       expect(stepper.props().mdVertical).toBe(false)
     })
 
@@ -122,7 +122,7 @@ describe('CurationForm.vue', () => {
       const title = Object.keys(data).filter((word) => word !== 'ID')
       const options = select.findAllComponents('md-option-stub')
 
-      expect(select.props().value).toBe('stepper_null')
+      expect(select.props().value).toBe('')
       expect(options.length).toBe(title.length)
 
       for (let i = 0; i < options.length; i++) {

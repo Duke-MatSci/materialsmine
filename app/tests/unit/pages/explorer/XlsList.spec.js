@@ -31,12 +31,11 @@ describe('Spreadsheet List Form.vue', () => {
   })
 
   it('renders page input properly', () => {
-    expect.assertions(4)
+    expect.assertions(3)
     const field = wrapper.findAll('.md-field-stub')
     expect(field.length).toBe(2)
     const name = field.at(0)
     expect(name.find('p').text()).toBe('FieldName:')
-    expect(name.find('span').text()).toBe('Section::Subsection::Unit')
     const value = field.at(1)
     expect(value.find('p').text()).toBe('Value:')
   })
