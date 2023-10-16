@@ -41,7 +41,7 @@ module.exports = {
   MinioBucket: 'mgi',
   /**  This json object holds placeholder values for all the different types of fields
     *  in the xlsx.json object. This are the values used as placeholders when generating a valid jsonSchema
-    *  which is the used to generate a valid XSD.
+    *  which is then used to generate a valid XSD.
     */
   XSDJsonPlaceholder: {
     String: 'string',
