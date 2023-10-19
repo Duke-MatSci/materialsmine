@@ -67,7 +67,6 @@
                       <md-field style="align-items: baseline;">
                         <p style="margin-right: 4px;font-weight: bold;">FieldName:</p>
                         <md-input v-model="fieldName" id="fieldName"></md-input>
-                        <!-- <span class="md-helper-text">Unit</span> -->
                       </md-field>
 
                       <md-field style="align-items: baseline;">
