@@ -11,7 +11,11 @@ export default {
       newChartExist: false,
       doiData: null,
       orcidData: null,
-      xmlBulkResponse: null
+      xmlBulkResponse: null,
+      replaceNestedRef: [],
+      curationFormData: {},
+      curationSheetStatus: {},
+      curationFormError: {}
     }
   },
   mutations,

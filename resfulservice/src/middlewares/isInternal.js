@@ -1,4 +1,4 @@
-const { decodeToken, signToken } = require('../utils/jwtService');
+const jwtService = require('../utils/jwtService');
 const { errorWriter } = require('../utils/logWriter');
 
 exports.getInternal = (req, res, next) => {
@@ -8,7 +8,7 @@ exports.getInternal = (req, res, next) => {
     throw errorWriter(req, 'Not authorized.', 'getInternal()', 403);
   }
   try {
-    decodedToken = decodeToken(req, isInternal);
+    decodedToken = jwtService.decodeToken(req, isInternal);
   } catch (err) {
     throw errorWriter(req, err, 'getInternal()', 500);
   }
@@ -19,7 +19,7 @@ exports.getInternal = (req, res, next) => {
 exports.setInternal = (req, payload) => {
   let signedToken;
   try {
-    signedToken = signToken(req, {
+    signedToken = jwtService.signToken(req, {
       ...payload,
       isInternal: true
     });

@@ -75,6 +75,7 @@
                                 <div class="nav_menu--siblings">
                                     <a href="/explorer/curate/spreadsheet" class="nav_menu--siblings-lists"><a>Spreadsheet Upload</a></a>
                                     <router-link to="/explorer/curate/sdd" class="nav_menu--siblings-lists"><a>Upload with SDD</a></router-link>
+                                    <router-link to="/explorer/curate/stepper" class="nav_menu--siblings-lists"><a>Form Curation</a></router-link>
                                 </div>
                             </div>
                         </li>

@@ -155,13 +155,13 @@
         .md-active {
             .md-button-content {
                 color: $primary !important;
-                font-size: 1.8rem;
                 font-weight: 500;
             }
             .md-stepper-number {
                 background-color: $primary !important;
             }
         }
+        
         .md-button-content {
             color: $secondary-grey !important;
             font-size: 1.8rem;
@@ -183,6 +183,39 @@
             .md-button-content, .md-icon {
                 color: $primary !important;
             }
+        }
+        &-curate{
+            .md-button-content {
+                font-size: $medium-size;
+            }
+            .md-stepper-header .md-ripple {
+                padding: 0px 4px;
+            }
+            & > .md-steppers-navigation {
+                box-shadow: none !important;
+                @include respond(tab-port) {
+                    display: none;
+                }
+                .md-stepper-header {
+                    &.md-active {
+                        .md-stepper-number  {
+                            @extend .u--bg;
+                        }
+                    }
+                    &.md-done {
+                        .md-stepper-number  {
+                            @extend .u--alt-bg;
+                            border: unset !important;
+                        }
+                    }
+                    .md-stepper-number  {
+                        @extend .utility-gridborder;
+                        @extend .utility-transparentbg;
+                        @extend .u--color-primary;
+                    }
+                }
+            }
+            
         }
     }
 

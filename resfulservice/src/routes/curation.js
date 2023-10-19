@@ -13,7 +13,7 @@ router.route('')
 
 router.route('/bulk')
   .post(isAuth, latencyTimer, curationController.bulkXlsxCurations);
-router.route('/get')
+router.route('/get/:curationId')
   .get(validateXlsxObjectGet, isAuth, latencyTimer, curationController.getXlsxCurations);
 
 router.route('/admin')

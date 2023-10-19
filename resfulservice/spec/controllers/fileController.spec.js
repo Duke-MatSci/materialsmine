@@ -16,7 +16,7 @@ describe('File Controller Unit Tests:', function() {
   const req = { 
     logger,
     files: {},
-    env: { FILES_DIRECTORY: 'file_directory' }
+    env: { FILES_DIRECTORY: 'file_directory',  MINIO_BUCKET: undefined }
   }
 
   const res = {
@@ -51,7 +51,7 @@ describe('File Controller Unit Tests:', function() {
   });
 
   context('fileContent', () => {
-    req.params = { fileId: '638dd8e9af9d478e0136ffcb' };
+    req.params = { fileId: '001.tiff' };
     
     it('should successfully stream files from mongo bucket', async () => {
       req.query = { isFileStore: false, isStore: false };
@@ -82,12 +82,12 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledOnce(mockEmptyStream.pipe);
     });
 
-    it.skip('should successfully stream file from the file system', async () => {
+    it('should successfully stream file from the file system', async () => {
       req.query = { isFileStore: true, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
-      sinon.stub(FileManager, 'findFile').returns(mockDownloadStream);
+      sinon.stub(FileManager, 'findFile').returns({ fileStream: mockDownloadStream, ext: '.jpeg' });
       sinon.stub(res, 'setHeader').returns(true);
       sinon.stub(latency, 'latencyCalculator').returns(true)
 
@@ -95,12 +95,12 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledTwice(mockDownloadStream.pipe);
     });
 
-    it.skip('should return empty stream file from the file system', async () => {
+    it('should return empty stream file from the file system', async () => {
       req.query = { isFileStore: true, isStore: false };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
-      sinon.stub(FileManager, 'findFile').returns(null);
+      sinon.stub(FileManager, 'findFile').returns({ fileStream: null, ext: '.jpeg' });
       sinon.stub(FileController, '_createEmptyStream').returns(mockEmptyStream);
       sinon.stub(res, 'setHeader').returns(true);
       sinon.stub(latency, 'latencyCalculator').returns(true)
@@ -109,12 +109,13 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledTwice(mockEmptyStream.pipe);
     });
 
-    it.skip('should successfully stream file from minio bucket', async () => {
+    it('should successfully stream file from minio bucket', async () => {
       req.query = { isFileStore: false, isStore: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({ images: files });
       sinon.stub(minioClient, 'getObject').returns(mockDownloadStream);
+      sinon.stub(FileManager, 'getFileExtension').returns('.tiff');
       sinon.stub(res, 'setHeader').returns(true);
       sinon.stub(latency, 'latencyCalculator').returns(true)
 
@@ -122,7 +123,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.assert.calledThrice(mockDownloadStream.pipe);
     });
 
-    it.skip('should return empty stream file from minio bucket', async () => {
+    it('should return empty stream file from minio bucket', async () => {
       req.query = { isFileStore: false, isStore: true };
       const files = [[{ path: '/images/cat.png'}, { path: '/images/dog.png'}]];
       sinon.stub(res, 'status').returnsThis();
@@ -196,7 +197,7 @@ describe('File Controller Unit Tests:', function() {
       sinon.stub(minioClient, 'listObjects').returns(mockFindObjectStream);
       sinon.stub(latency, 'latencyCalculator').returns(true)
 
-      FileController.getMetamineFileNames(req, res, next);
+      FileController.findFiles(req, res, next);
       sinon.assert.called(mockFindObjectStream.on);
     });
 

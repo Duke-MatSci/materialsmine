@@ -69,7 +69,6 @@ exports.validateXlsxObjectDelete = [
 ];
 
 exports.validateXlsxObjectGet = [
-  query('xlsxObjectId').optional().isMongoId().withMessage('invalid xlsx object id'),
-  query('xmlId').optional().isMongoId().withMessage('invalid dataset id'),
+  param('curationId').optional().isMongoId().withMessage('invalid xlsx object id'),
   validationErrorHandler
 ];

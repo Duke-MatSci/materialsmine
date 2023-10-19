@@ -33,7 +33,8 @@ exports.curationSearchQuery = async (input) => {
         isNewCuration: { $literal: false },
         status: {
           $cond: [{ $eq: ['$entityState', 'IngestSuccess'] }, 'Approved', 'Not Approved']
-        }
+        },
+        user: '$iduser'
       }
     },
     {
@@ -47,7 +48,8 @@ exports.curationSearchQuery = async (input) => {
               title: { $ifNull: ['$object.DATA_SOURCE.Citation.CommonFields.Title', '$object.Control_ID'] },
               object: 1,
               isNewCuration: { $literal: true },
-              status: '$entityState'
+              status: '$entityState',
+              user: 1
             }
           }
         ]
@@ -57,6 +59,7 @@ exports.curationSearchQuery = async (input) => {
     { $group: { _id: null, count: { $sum: 1 }, xmlData: { $push: '$$ROOT' } } },
     { $project: { _id: 0, count: 1, xmlData: { $slice: ['$xmlData', skip, pageSize] } } }
   ]);
-  const { xmlData, count } = data[0];
+  const xmlData = data[0]?.xmlData ?? [];
+  const count = data[0]?.count ?? 0;
   return { xmlData, count };
 };
