@@ -40,7 +40,7 @@
             <template v-if="active === `stepper_${id}`">
               <!-- NavBar and Dropdown  -->
               <div
-                v-if="active !== 'stepper_null'"
+                v-if="active !== ''"
                 class="md-layout md-gutter md-alignment-center-space-between"
                 style="position: relative"
               >
@@ -160,13 +160,7 @@
                             item.detail.type !== 'varied_multiples'
                           "
                         >
-                          <InputComponent
-                            @update-step-error="updateStepError(title, step)"
-                            :title="title"
-                            :name="item.name"
-                            :uniqueKey="item.ref"
-                            :inputObj="item.detail"
-                          />
+                          <InputComponent @update-step-error="updateStepError(title, step)" :title="title" :name="item.name" :uniqueKey="item.ref" :inputObj="item.detail"/>
                         </template>
 
                         <!-- For handling varied_multiples -->
@@ -291,7 +285,7 @@
 
       <!-- Center Stepper  -->
       <div
-        v-if="active === 'stepper_null'"
+        v-if="active === ''"
         class="u--margin-toplg spinner md-layout md-gutter md-alignment-center-center"
       >
         <div
@@ -360,7 +354,7 @@ export default {
       loading: true,
       loadingText: 'Loading Curation Form',
       error: false,
-      active: 'stepper_null',
+      active: '',
       verticalActive: 'v_1',
       dialogBoxText: '',
       dialogBoxAction: null,
@@ -727,7 +721,7 @@ export default {
       this.tempInputObj = {}
       this.vStepError = {}
       this.titles = []
-      this.active = 'stepper_null'
+      this.active = ''
       this.verticalActive = 'v_1'
       this.dialogBoxText = ''
       this.dialogBoxAction = null
