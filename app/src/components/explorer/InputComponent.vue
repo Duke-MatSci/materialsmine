@@ -2,9 +2,12 @@
 <div class="md-card-actions viz-u-display__show">
   <template v-if="(typeof inputObj === 'object')">
     <md-field :class="[inputError ? 'md-invalid' : '']" v-if="inputObj.type === 'String'" md-dense :style="reduceSpacing">
-      <p class="md-body-2 u--color-grey-sec" style="margin-right: 4px;">{{ name }}:</p>
-      <md-input v-model="inputObj.cellValue" :required="inputObj.required" :name="uniqueKey.join(',')" :id="uniqueKey.join(',')"></md-input>
+      <p class="u--color-grey-sec" :class="[name.length >= 15 ? 'md-caption' : 'md-body-2 ']" style="margin-right: 4px;">{{ name }}:</p>
+      <md-input v-model="inputObj.cellValue" :required="inputObj.required" :name="uniqueKey.join(',')"
+      :id="uniqueKey.join(',')" :placeholder="noteExists ? inputObj.note : ''"
+      ></md-input>
       <span class="md-error">Input Required</span>
+      <span v-if="unitOfMeasureExists" class="md-body-1">{{inputObj.unitofmeasurement}}</span>
       <md-tooltip v-if="!!parent" md-direction="top">{{ parent }}</md-tooltip>
     </md-field>
 
@@ -17,15 +20,15 @@
           <md-option v-if="!!inputObj.cellValue && !listItem.length" :value="inputObj.cellValue">{{inputObj.cellValue}}</md-option>
           <md-option v-for="(item, id) in listItem" :key="id" :value="item">{{item}}</md-option>
         </template>
-
       </md-select>
       <span class="md-error">Input Required</span>
-
       <md-tooltip md-direction="top">{{ parent }}</md-tooltip>
+      <md-tooltip v-if="unitOfMeasureExists" md-direction="right">{{inputObj.unitofmeasurement}}</md-tooltip>
     </md-field>
 
     <div class="md-card-actions u--padding-zero" v-else-if="inputObj.type === 'replace_nested'" >
-      <md-chips :class="[inputError ? 'md-invalid' : '', 'md-primary']" v-model="inputObj.values" :md-placeholder="`Enter ${name}`" :md-auto-insert="true">
+      <md-chips :class="[inputError ? 'md-invalid' : '', 'md-primary']" v-model="inputObj.values"
+      :md-placeholder="`Enter ${name}`" :md-auto-insert="true">
         <md-tooltip md-direction="top">{{ parent }}</md-tooltip>
         <span class="md-error">Input Required</span>
       </md-chips>
@@ -115,7 +118,8 @@ export default {
       dialogText: '',
       dialogAction: '',
       dialogActive: false,
-      tempFileContainer: {}
+      tempFileContainer: {},
+      inFocus: false
     }
   },
   computed: {
@@ -125,6 +129,12 @@ export default {
     ...mapState({
       errors: state => state.explorer.curation.curationFormError
     }),
+    unitOfMeasureExists () {
+      return Object.hasOwnProperty.call(this.inputObj, 'unitofmeasurement')
+    },
+    noteExists () {
+      return Object.hasOwnProperty.call(this.inputObj, 'note')
+    },
     reduceSpacing () {
       return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 }
     },
@@ -173,6 +183,9 @@ export default {
     ...mapActions({
       fetchXlsList: 'explorer/curation/fetchXlsList'
     }),
+    hasProperty (obj, prop) {
+      return Object.hasOwnProperty.call(obj, prop)
+    },
     async fetchValues () {
       // set error and loading state
       this.loading = true
