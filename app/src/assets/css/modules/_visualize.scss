@@ -509,6 +509,11 @@
                 position: absolute !important;
             }
         }
+        &-zIndex {
+            &__min {
+                z-index: 1;
+            }
+        }
         &-display {
             &__show {
                 display: block !important;

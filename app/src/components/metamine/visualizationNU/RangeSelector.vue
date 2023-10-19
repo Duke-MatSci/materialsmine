@@ -1,21 +1,15 @@
 <template>
     <div class="range-selector-wrapper">
-        <div style="font-size: 20px; font-weight: bold; padding: 0px">
+        <div class="md-title u--font-emph-700">
             Property Range
         </div>
         <div class="slider" v-for="(name, index) in rangeList" :key="index">
-            <div
-                style="
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                "
-            >
+            <div class="u--layout-flex u--layout-flex-justify-sb u_centralize_items">
                 <div style="width: 20%">{{ name }}</div>
-                <div style="width: 80%">
-                    <div class="nuplot-range-slider">
+                <div style="width: 80%;">
+                    <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
                         <input
-                            class="nuplot-range-slider"
+                            class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
                             type="range"
                             v-bind:min="defaultValues[index][0]"
                             v-bind:max="defaultValues[index][1]"
@@ -24,7 +18,7 @@
                             @change="handleMinSliderChangeFuncs($event, index)"
                         />
                         <input
-                            class="nuplot-range-slider"
+                            class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
                             type="range"
                             v-bind:min="defaultValues[index][0]"
                             v-bind:max="defaultValues[index][1]"
@@ -33,11 +27,11 @@
                             @change="handleMaxSliderChangeFuncs($event, index)"
                         />
                     </div>
-                    <div style="display: flex; justify-content: space-between">
-                        <div style="color: gray">
+                    <div class=" u--layout-flex u--layout-flex-justify-sb">
+                        <div class="u--color-grey-sec">
                             {{ sigFigs(defaultValues[index][0], 4) }}
                         </div>
-                        <div style="color: gray">
+                        <div class="u--color-grey-sec">
                             {{ sigFigs(defaultValues[index][1], 4) }}
                         </div>
                     </div>
@@ -49,7 +43,7 @@
 
 <script>
 import { mapState } from 'vuex'
-import sigFigs from '../utils/sigFigs'
+import sigFigs from '@/modules/metamine/utils/sigFigs'
 
 const rangeList = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
 
@@ -148,78 +142,3 @@ export default {
   }
 }
 </script>
-
-<style scoped lang="scss">
-// .range-slider {
-//   margin: auto;
-//   text-align: center;
-//   position: relative;
-//   height: 3em;
-// }
-
-// .range-slider input[type=range] {
-//   position: absolute;
-//   left: 0;
-//   bottom: 0;
-//   background: transparent;
-//   pointer-events: none;
-// }
-
-// input[type=range] {
-//   -webkit-appearance: none;
-//   -moz-appearance: none;
-//   width: 90%;
-
-//   &:nth-child(3){
-//     &::-webkit-slider-runnable-track{
-//       background-color: transparent;
-//     }
-//     &::-moz-range-track {
-//       background-color: transparent;
-//     }
-//   }
-// }
-
-// input[type=range]::-webkit-slider-runnable-track {
-//   width: 100%;
-//   height: 5px;
-//   cursor: pointer;
-//   background: #2497e3;
-//   border-radius: 1px;
-//   border: 0;
-// }
-// input[type=range]::-webkit-slider-thumb {
-//   position: relative;
-//   border: 1px solid #2497e3;
-//   height: 18px;
-//   width: 18px;
-//   border-radius: 25px;
-//   background: #a1d0ff;
-//   cursor: pointer;
-//   -webkit-appearance: none;
-//   margin-top: -7px;
-//   pointer-events: auto;
-// }
-
-// input[type=range]::-moz-range-track {
-//   width: 100%;
-//   height: 5px;
-//   cursor: pointer;
-//   background: #2497e3;
-//   border-radius: 1px;
-//   box-shadow: none;
-//   border: none;
-// }
-// input[type=range]::-moz-range-thumb {
-//   position: relative;
-//   border: 1px solid #2497e3;
-//   height: 18px;
-//   width: 18px;
-//   border-radius: 25px;
-//   background: #a1d0ff;
-//   cursor: pointer;
-
-//   -moz-appearance: none;
-//   pointer-events: auto;
-// }
-</style>

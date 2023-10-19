@@ -1,14 +1,8 @@
 <template>
     <div class="sava-data-panel-wrapper" style="width: fit-content">
         <div
-            class="table-header"
-            style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            "
-        >
-            <div class="nuplot-table-title">Save Data Panel</div>
+            class="table-header u_display-flex u--layout-flex-justify-sb u_centralize_items">
+            <div class="nuplot-table-title article_metadata_strong md-title u--padding-zero">Save Data Panel</div>
             <md-button>
                 <download-csv :data="selectedData" name="selected_data.csv">
                     Download Data

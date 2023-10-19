@@ -1,25 +1,15 @@
 <template>
-    <div ref="umapPlot"></div>
+    <div ref="scatterPlot"></div>
 </template>
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '../utils/processData'
+import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
-import { StandardScaler } from '../utils/standardScaler'
-import { UMAP } from 'umap-js'
-import { organizeByName } from '../utils/organizeByName'
+import { nnColorAssignment } from '@/components/metamine/visualizationNU/constants.js'
 
 const circleOriginalSize = 5
 const circleFocusSize = 8
-
-const nnColorAssignment = [
-  '#EA1A7F',
-  '#FEC603',
-  '#A8F387',
-  '#16D6FA',
-  '#6020a4'
-]
 
 const MARGIN = {
   TOP: 0,
@@ -43,19 +33,18 @@ function isBrushed (brushCoords, cx, cy) {
   var x1 = brushCoords[1][0]
   var y0 = brushCoords[0][1]
   var y1 = brushCoords[1][1]
-  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1
-  // This return TRUE or FALSE depending on if the points is in the selected area
+  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1 // This return TRUE or FALSE depending on if the points is in the selected area
 }
 
 export default {
-  name: 'umap-plot',
+  name: 'scatter-plot',
   mounted: async function () {
-    this.$store.dispatch('metamineNU/setPage', 'umap', { root: true })
+    this.$store.dispatch('metamineNU/setPage', 'scatter', { root: true })
 
     // fetch data from AWS
-    const bucketName = 'ideal-dataset-1'
+    // const bucketName = 'ideal-dataset-1'
 
-    const fetchedNamesResponse = await fetch(`/api/aws/${bucketName}`).then(
+    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
       (response) => {
         return response.json()
       }
@@ -68,7 +57,7 @@ export default {
 
     this.fetchedNames.map(async (info, index) => {
       const fetchedData = await fetch(
-                `/api/aws/${bucketName}/${info.name}`
+                `/api/files/metamine/${info.name}`
       )
         .then((response) => {
           return response.json()
@@ -96,7 +85,7 @@ export default {
         root: true
       })
     })
-    this.container = this.$refs.umapPlot
+    this.container = this.$refs.scatterPlot
 
     // Create svg
     this.createSvg({
@@ -110,8 +99,9 @@ export default {
       dataPoint: (state) => state.dataPoint,
       fetchedNames: (state) => state.fetchedNames,
       selectedData: (state) => state.selectedData,
-      reset: (state) => state.reset,
-      knnUmap: (state) => state.knnUmap
+      query1: (state) => state.query1,
+      query2: (state) => state.query2,
+      reset: (state) => state.reset
     })
   },
   data () {
@@ -123,11 +113,9 @@ export default {
     csvData: {
       deep: true,
       handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container
-          })
-        }
+        this.update({
+          container: this.container
+        })
       }
     },
     activeData: {
@@ -154,7 +142,7 @@ export default {
         })
       }
     },
-    reset: {
+    query1: {
       handler (newVal, oldVal) {
         if (this.svg) {
           this.update({
@@ -163,7 +151,16 @@ export default {
         }
       }
     },
-    knnUmap: {
+    query2: {
+      handler (newVal, oldVal) {
+        if (this.svg) {
+          this.update({
+            container: this.container
+          })
+        }
+      }
+    },
+    reset: {
       handler (newVal, oldVal) {
         if (this.svg) {
           this.update({
@@ -186,7 +183,7 @@ export default {
           WIDTH + MARGIN.LEFT + MARGIN.RIGHT,
           HEIGHT + MARGIN.TOP + MARGIN.BOTTOM
         ])
-        .attr('style', 'max-width: 100%;')
+        .attr('style', 'max-width: 100%; overflow: visible;')
 
       // brush
       this.svg.append('g').attr('class', 'brush')
@@ -223,59 +220,12 @@ export default {
     update ({ container }) {
       const data = this.activeData
       const self = this
-      const datasets = []
-      const query1 = 'X'
-      const query2 = 'Y'
-      const properties = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
-      const scaler = new StandardScaler()
-
-      const organizedData = organizeByName(data)
-      const umap = new UMAP({
-        nNeighbors: this.knnUmap || 15
-      })
-      let tempData = []
-      organizedData.map((d, i) => {
-        for (const data of d.data) {
-          const tempProperties = []
-          for (const p of properties) {
-            tempProperties.push(+data[p])
-          }
-          tempData.push(tempProperties)
-        }
-      })
-
-      if (tempData.length) {
-        tempData = scaler.fitTransform(tempData)
-        umap.fit(tempData)
-      }
-
-      organizedData.map((d, i) => {
-        let tempData2 = []
-        for (const data of d.data) {
-          const tempProperties = []
-          for (const p of properties) {
-            tempProperties.push(data[p])
-          }
-          data.name = d.name
-          data.color = d.color
-          tempData2.push(tempProperties)
-        }
-
-        tempData2 = scaler.transform(tempData2)
-        const res = tempData2.length ? umap.transform(tempData2) : null
-
-        if (res) {
-          res.map((p, i) => {
-            d.data[i].X = p[0]
-            d.data[i].Y = p[1]
-          })
-        }
-        datasets.push(d.data)
-      })
-
+      const datasets = data
       const finalData = [].concat(...datasets)
-
+      const query1 = this.query1
+      const query2 = this.query2
       // remove elements to avoid repeated append
+      d3.selectAll('.legend').remove()
       d3.select('.nuplot-tooltip').remove()
       d3.selectAll('.dataCircle').remove()
       d3.selectAll('defs').remove()
@@ -392,7 +342,14 @@ export default {
       }
 
       const mousedown = function (e, d) {
-        const inputData = ['X', 'Y'].map((c) => d[c])
+        const inputData = [
+          'C11',
+          'C12',
+          'C22',
+          'C16',
+          'C26',
+          'C66'
+        ].map((c) => d[c])
         const target = d3.select(this)
         target.classed(
           'nuplot-selected',
@@ -563,12 +520,19 @@ export default {
     },
     async getKnnData (dataPoint, data) {
       const url = 'https://metamaterials-srv.northwestern.edu./model/'
-      const response = await fetch(`${url}`, {
+      const response = await fetch(url, {
         method: 'POST',
         mode: 'cors',
         body: JSON.stringify({
           dataPoint: [dataPoint],
-          data: data.map((d) => [d.X, d.Y])
+          data: data.map((d) => [
+            d.C11,
+            d.C12,
+            d.C22,
+            d.C16,
+            d.C26,
+            d.C66
+          ])
         })
       }).catch((err) => {
         alert(err.message)

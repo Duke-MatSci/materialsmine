@@ -16,7 +16,7 @@ const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM
 
 export default {
-  name: 'structure-knn-plot',
+  name: 'StructureKnnVue',
   props: ['dataPoint'],
   mounted () {
     this.createSvg(this.dataPoint)

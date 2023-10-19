@@ -1,28 +1,21 @@
-import { mapState } from 'vuex';
 <template>
     <div>
-        <div style="font-size: 20px; font-weight: bold; padding: 10px 0">
+        <div class="md-title article_metadata_strong section_footer utility-transparentbg">
             Hyperparameter
         </div>
-        <div style="font-weight: bold">Number of neighbors:</div>
+        <div class="article_metadata_strong">Number of neighbors:</div>
         <div style="width: 80%">
             The size of local neighborhood (in terms of number of neighboring
             sample points) used for manifold approximation. Larger values result
             in more global views of the manifold, while smaller values result in
             more local data being preserved. (Default: 15)
         </div>
-        <div
-            style="
-                display: flex;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            "
-        >
-            <div style="width: 80%">
-                <div class="nuplot-range-slider">
+        <div class="u_display-flex md-layout u--layout-flex-justify-sb tool_page">
+            <div class="md-layout-item md-size-80">
+                <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
                     <input
                         id="parame-selector-slider"
-                        class="nuplot-range-slider"
+                        class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
                         type="range"
                         min="5"
                         max="50"
@@ -30,35 +23,17 @@ import { mapState } from 'vuex';
                         v-model="knnUmap"
                         @change="handleKnnUmapChange"
                     />
-                    <div
-                        style="
-                            display: flex;
-                            justify-content: space-between;
-                            width: 90%;
-                            padding-top: 30px;
-                        "
-                    >
-                        <div
-                            style="color: gray"
-                            v-for="tick in ticks"
-                            :key="tick"
-                        >
+                    <div class="u_display-flex u--layout-flex-justify-sb tools_box-content-odd" style="padding-top: 30px;">
+                        <div class="u--color-grey-sec" v-for="tick in ticks" :key="tick" >
                             {{ tick }}
                         </div>
                     </div>
-                    <div
-                        class="nuplot-slider-tooltip"
-                        id="parame-selector-slider-id"
-                    ></div>
+                    <div class="nuplot-slider-tooltip" id="parame-selector-slider-id"></div>
                 </div>
             </div>
-            <div style="width: 20%">
+            <div class="utility-roverflow md-layout-item md-size-20">
                 <md-field>
-                    <md-input
-                        v-model="knnUmap"
-                        type="number"
-                        @change="handleKnnUmapChange"
-                    ></md-input>
+                    <md-input v-model="knnUmap" type="number" @change="handleKnnUmapChange" ></md-input>
                 </md-field>
             </div>
         </div>
