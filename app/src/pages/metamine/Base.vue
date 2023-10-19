@@ -27,9 +27,7 @@
                             <a class="u--default-size nav_menu--handler" href="#">VISUALIZE</a>
                             <div class="nav_menu--siblings-mm">
                                 <router-link to="/explorer" class="nav_menu--siblings-mm-lists"><a>Browse Data</a></router-link>
-                                <router-link to="/explorer/chart" class="nav_menu--siblings-mm-lists"><a>Explore Chart Gallery</a></router-link>
-                                <router-link to="/mm/metamaterial_visualization" class="nav_menu--siblings-mm-lists"><a>Interactive Unit Cell Graph</a></router-link>
-                                <router-link to="/mm/metamaterial_visualization_nu" class="nav_menu--siblings-mm-lists"><a>NU Material Visualization</a></router-link>
+                                <router-link to="/mm/metamaterial_visualization_nu" class="nav_menu--siblings-mm-lists"><a>Material Visualization</a></router-link>
                             </div>
                           </div>
                         </li>
