@@ -1,23 +1,23 @@
 <template>
-  <VisualizationLayout :link="{to: '/mm/metamaterial_visualization_nu', text: 'Visualize In Pairwise Plot'}">
-    <template #main_chart> <Histogram /> </template>
+  <VisualizationLayout :link="{to: '/mm/metamaterial_visualization_nu/umap', text: 'Visualize In Reduced Dimension'}">
+    <template #main_chart> <PairwisePlot></PairwisePlot> </template>
 
     <template #subcharts>
-      <Structure />
-      <Youngs />
-      <Poisson />
+      <Structure></Structure>
+      <Youngs></Youngs>
+      <Poisson></Poisson>
     </template>
 
     <template #side_tools>
-      <DataSelector />
-      <RangeSelector />
-      <MaterialInformation />
+      <DataSelector></DataSelector>
+      <RangeSelector></RangeSelector>
+      <MaterialInformation></MaterialInformation>
     </template>
   </VisualizationLayout>
 </template>
 
 <script>
-import Histogram from '@/components/metamine/visualizationNU/histogram.vue'
+import PairwisePlot from '@/components/metamine/visualizationNU/pairwise.vue'
 import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
 import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
 import Youngs from '@/components/metamine/visualizationNU/youngs.vue'
@@ -27,9 +27,9 @@ import MaterialInformation from '@/components/metamine/visualizationNU/MaterialI
 import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
 
 export default {
-  name: 'HistogramPage',
+  name: 'PairwisePlotPage',
   components: {
-    Histogram,
+    PairwisePlot,
     DataSelector,
     RangeSelector,
     Youngs,

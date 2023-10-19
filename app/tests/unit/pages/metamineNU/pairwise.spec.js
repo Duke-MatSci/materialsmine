@@ -1,8 +1,8 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import PairwisePlot from '@/pages/metamine/visualizationNU/PairwisePlotPage.vue'
+import PairwisePlot from '@/pages/metamine/visualizationNU/PairwisePlot.vue'
 
-describe('PairwisePlotPage.vue', () => {
+describe('PairwisePlot.vue', () => {
   let wrapper
   beforeEach(() => {
     wrapper = createWrapper(PairwisePlot, {}, false)
@@ -10,10 +10,13 @@ describe('PairwisePlotPage.vue', () => {
   enableAutoDestroy(afterEach)
 
   it('mount component correctly', () => {
-    expect(wrapper.findComponent('.pairwise-plot-chart').exists()).toBe(true)
-    expect(wrapper.findComponent('.subcharts').exists()).toBe(true)
-    expect(wrapper.findComponent('.side-tools').exists()).toBe(true)
-
-    expect(wrapper.text()).toContain('Material Data Explorer (Pairwise)')
+    const layout = wrapper.findComponent('visualizationlayout-stub')
+    expect(layout.exists()).toBe(true)
+    expect(layout.findComponent('pairwiseplot-stub').exists()).toBe(true)
+    expect(layout.findComponent('structure-stub').exists()).toBe(true)
+    expect(layout.findComponent('poisson-stub').exists()).toBe(true)
+    expect(layout.findComponent('dataselector-stub').exists()).toBe(true)
+    expect(layout.findComponent('rangeselector-stub').exists()).toBe(true)
+    expect(layout.findComponent('materialinformation-stub').exists()).toBe(true)
   })
 })

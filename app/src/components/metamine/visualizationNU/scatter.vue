@@ -4,19 +4,12 @@
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '../utils/processData'
+import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
+import { nnColorAssignment } from '@/components/metamine/visualizationNU/constants.js'
 
 const circleOriginalSize = 5
 const circleFocusSize = 8
-
-const nnColorAssignment = [
-  '#EA1A7F',
-  '#FEC603',
-  '#A8F387',
-  '#16D6FA',
-  '#6020a4'
-]
 
 const MARGIN = {
   TOP: 0,
@@ -49,9 +42,9 @@ export default {
     this.$store.dispatch('metamineNU/setPage', 'scatter', { root: true })
 
     // fetch data from AWS
-    const bucketName = 'ideal-dataset-1'
+    // const bucketName = 'ideal-dataset-1'
 
-    const fetchedNamesResponse = await fetch(`/api/aws/${bucketName}`).then(
+    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
       (response) => {
         return response.json()
       }
@@ -64,7 +57,7 @@ export default {
 
     this.fetchedNames.map(async (info, index) => {
       const fetchedData = await fetch(
-                `/api/aws/${bucketName}/${info.name}`
+                `/api/files/metamine/${info.name}`
       )
         .then((response) => {
           return response.json()
@@ -107,13 +100,13 @@ export default {
       fetchedNames: (state) => state.fetchedNames,
       selectedData: (state) => state.selectedData,
       query1: (state) => state.query1,
-      query2: (state) => state.query2
+      query2: (state) => state.query2,
+      reset: (state) => state.reset
     })
   },
   data () {
     return {
-      chart: false,
-      reset: false
+      chart: false
     }
   },
   watch: {
@@ -128,10 +121,11 @@ export default {
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
-        this.update({
-          container: this.container
-        })
-        this.refitKnn(newVal)
+        if (this.svg) {
+          this.update({
+            container: this.container
+          })
+        }
       }
     },
     fetchedNames: {
@@ -158,6 +152,15 @@ export default {
       }
     },
     query2: {
+      handler (newVal, oldVal) {
+        if (this.svg) {
+          this.update({
+            container: this.container
+          })
+        }
+      }
+    },
+    reset: {
       handler (newVal, oldVal) {
         if (this.svg) {
           this.update({
@@ -214,7 +217,7 @@ export default {
       this.yScaleForBrush = null
     },
 
-    update ({ container, reset = false }) {
+    update ({ container }) {
       const data = this.activeData
       const self = this
       const datasets = data
@@ -339,11 +342,19 @@ export default {
       }
 
       const mousedown = function (e, d) {
-        const inputData = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'].map(
-          (c) => d[c]
-        )
+        const inputData = [
+          'C11',
+          'C12',
+          'C22',
+          'C16',
+          'C26',
+          'C66'
+        ].map((c) => d[c])
         const target = d3.select(this)
-        target.classed('nuplot-selected', !target.classed('nuplot-selected'))
+        target.classed(
+          'nuplot-selected',
+          !target.classed('nuplot-selected')
+        )
 
         const selected = []
         d3.selectAll('.nuplot-selected').each((d, i) =>
@@ -354,7 +365,7 @@ export default {
         })
 
         target.classed('nuplot-selected', true)
-        self.getKnnData(inputData).then((res) => {
+        self.getKnnData(inputData, finalData).then((res) => {
           const indices = res.indices
           const distances = res.distances
           d3.selectAll('.dataCircle')
@@ -371,7 +382,9 @@ export default {
             }
           )
 
-          const neighborElements = d3.selectAll('.nuplot-highlighted')
+          const neighborElements = d3.selectAll(
+            '.nuplot-highlighted'
+          )
           const masked = d3.selectAll('.nuplot-masked')
           masked
             .attr('fill', (d) => d.color)
@@ -381,13 +394,18 @@ export default {
           const neighbors = []
           neighborElements.each((d, i) => {
             d.outline_color = nnColorAssignment[i]
-            d.distance = distances[indices.indexOf(finalData.indexOf(d))]
+            d.distance =
+                            distances[indices.indexOf(finalData.indexOf(d))]
             neighbors.push(d)
           })
           neighbors.sort((a, b) => a.distance - b.distance)
           neighborElements
             .attr('fill', (d) => d.outline_color)
             .attr('r', circleFocusSize)
+
+          self.$store.dispatch('metamineNU/setNeighbors', neighbors, {
+            root: true
+          })
         })
       }
 
@@ -486,7 +504,7 @@ export default {
         .attr('cy', (d) => yScale(d[query2]))
 
       circles.exit().transition().attr('r', 0).remove()
-      if (reset) {
+      if (this.reset) {
         this.svg.call(zoom.transform, d3.zoomIdentity)
         d3.selectAll('.nuplot-selected').classed(
           'nuplot-selected',
@@ -495,39 +513,32 @@ export default {
         this.$store.dispatch('metamineNU/setSelectedData', [], {
           root: true
         })
-        // setReset(false);
+        this.$store.dispatch('metamineNU/setReset', false, {
+          root: true
+        })
       }
     },
-    async getKnnData (inputData) {
-      const url =
-                'https://metamaterials-srv.northwestern.edu./model?data='
-      const response = await fetch(`${url}[${inputData}]`, {
-        method: 'GET',
-        mode: 'cors'
+    async getKnnData (dataPoint, data) {
+      const url = 'https://metamaterials-srv.northwestern.edu./model/'
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        body: JSON.stringify({
+          dataPoint: [dataPoint],
+          data: data.map((d) => [
+            d.C11,
+            d.C12,
+            d.C22,
+            d.C16,
+            d.C26,
+            d.C66
+          ])
+        })
       }).catch((err) => {
         alert(err.message)
       })
       const { distances, indices } = await response.json()
       return { distances: distances, indices: indices }
-    },
-    refitKnn (newActiveData) {
-      const url = 'https://metamaterials-srv.northwestern.edu/model/'
-      const data = newActiveData.map((d) => [
-        d.C11,
-        d.C12,
-        d.C22,
-        d.C16,
-        d.C26,
-        d.C66
-      ])
-      fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify({
-          data: data,
-          n_neighbors: 5
-        })
-      }).catch((err) => console.log('scatter refit knn error', err))
     }
   }
 }

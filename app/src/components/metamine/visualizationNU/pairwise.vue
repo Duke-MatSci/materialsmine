@@ -4,13 +4,28 @@
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '../utils/processData'
+import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
+import { organizeByName } from '@/modules/metamine/utils/organizeByName'
 
 const margin = { top: 10, right: 20, bottom: 50, left: 100 }
-const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
-const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
-const width = Math.min(vw * 0.4, vh * 0.8)
+const vh = Math.max(
+  document.documentElement.clientHeight || 0,
+  window.innerHeight || 0
+)
+const vw = Math.max(
+  document.documentElement.clientWidth || 0,
+  window.innerWidth || 0
+)
+let wFactor = 0.4
+
+if (vw <= 600) {
+  wFactor = 0.9
+} else if (vw <= 960) {
+  wFactor = 0.6
+}
+
+const width = Math.min(vw * wFactor, vh * 0.8)
 const height = width
 // const width = height
 const padding = 20
@@ -24,8 +39,8 @@ export default {
   name: 'pairwise-plot',
   mounted: async function () {
     this.$store.dispatch('metamineNU/setPage', 'pairwise', { root: true })
-    const bucketName = 'ideal-dataset-1'
-    const fetchedNamesResponse = await fetch(`/api/aws/${bucketName}`).then(
+    // const bucketName = 'ideal-dataset-1'
+    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
       (response) => {
         return response.json()
       }
@@ -38,7 +53,7 @@ export default {
 
     this.fetchedNames.map(async (info, index) => {
       const fetchedData = await fetch(
-                `/api/aws/${bucketName}/${info.name}`
+                `/api/files/metamine/${info.name}`
       )
         .then((response) => {
           return response.json()
@@ -220,9 +235,9 @@ export default {
           .attr(
             'transform',
             (d, i) =>
-                            `translate(${
-                                i * (cellWidth + padding)
-                            },${cellHeight * 6 + margin.bottom + padding * 4})`
+                            `translate(${i * (cellWidth + padding)},${
+                                cellHeight * 6 + margin.bottom + padding * 4
+                            })`
           )
           .attr('x', padding / 2)
           .attr('y', padding / 2)
@@ -254,10 +269,7 @@ export default {
       z = () => 1, // given d in data, returns the (categorical) z-value
       xType = d3.scaleLinear, // the x-scale type
       yType = d3.scaleLinear, // the y-scale type
-      zDomain, // array of z-values
-      fillOpacity = 0.7, // opacity of the dots
-      colors = d3.schemeCategory10, // array of colors for z
-      container = this.container
+      zDomain // array of z-values
     } = {}) {
       const X = d3.map(x, (x) =>
         d3.map(data, typeof x === 'function' ? x : (d) => +d[x])
@@ -356,7 +368,7 @@ export default {
         datasets.push([])
       }
       const data = this.activeData
-      const organizedData = this.organizeByName(data)
+      const organizedData = organizeByName(data)
       organizedData.map((d, i) => {
         colors[d.name] = d.color
         datasets[i] = d.data ? d.data : []
@@ -678,21 +690,6 @@ export default {
           }
         }
       })
-    },
-    organizeByName: (data) => {
-      const datasetNames = [...new Set(data.map((d) => d.name))]
-
-      const datasets = []
-
-      datasetNames.map((name, i) => {
-        datasets.push({
-          name: name,
-          color: data.filter((d) => d.name === name)[0].color,
-          data: data.filter((d) => d.name === name)
-        })
-      })
-
-      return datasets
     }
   }
 }

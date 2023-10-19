@@ -4,8 +4,9 @@
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '../utils/processData'
+import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
+import { organizeByName } from '@/modules/metamine/utils/organizeByName'
 
 const padding = 10 // separation between adjacent cells, in pixels
 const marginTop = 0 // top margin, in pixels
@@ -24,8 +25,8 @@ export default {
   name: 'histogram-plot',
   mounted: async function () {
     this.$store.dispatch('metamineNU/setPage', 'hist', { root: true })
-    const bucketName = 'ideal-dataset-1'
-    const fetchedNamesResponse = await fetch(`/api/aws/${bucketName}`).then(
+    // const bucketName = 'ideal-dataset-1'
+    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
       (response) => {
         return response.json()
       }
@@ -38,7 +39,7 @@ export default {
 
     this.fetchedNames.map(async (info, index) => {
       const fetchedData = await fetch(
-                `/api/aws/${bucketName}/${info.name}`
+                `/api/files/metamine/${info.name}`
       )
         .then((response) => {
           return response.json()
@@ -221,7 +222,7 @@ export default {
         datasets.push([])
       }
       const data = this.activeData
-      const organizedData = this.organizeByName(data)
+      const organizedData = organizeByName(data)
       organizedData.map((d, i) => {
         colors[d.name] = d.color
         datasets[i] = d.data ? d.data : []
@@ -531,21 +532,6 @@ export default {
         .html(tooltipContent.join('<br>'))
         .style('top', 100 + 'px')
         .style('left', 25 + 'vw')
-    },
-    organizeByName: (data) => {
-      const datasetNames = [...new Set(data.map((d) => d.name))]
-
-      const datasets = []
-
-      datasetNames.map((name, i) => {
-        datasets.push({
-          name: name,
-          color: data.filter((d) => d.name === name)[0].color,
-          data: data.filter((d) => d.name === name)
-        })
-      })
-
-      return datasets
     }
   }
 }

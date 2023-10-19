@@ -26,7 +26,9 @@ export default {
   watch: {
     dataPoint: {
       handler: function (val, oldVal) {
-        this.update(val)
+        if (this.svg) {
+          this.update(val)
+        }
       },
       deep: true
     }

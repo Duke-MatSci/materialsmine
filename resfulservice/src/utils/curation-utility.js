@@ -30,11 +30,16 @@ exports.jsonSchemaToXsdGenerator = (jsonSchema) => {
   return jsonSchema2xsd(jsonSchema);
 };
 
-exports.parseCSV = async (filename) => {
+exports.parseCSV = async (filename, dataStream) => {
   return new Promise((resolve, reject) => {
     const jsonData = [];
-    fs.createReadStream(filename)
-      .pipe(csv())
+    let fileStream;
+    if (filename) {
+      fileStream = fs.createReadStream(filename);
+    } else {
+      fileStream = dataStream;
+    }
+    fileStream.pipe(csv({ mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header }))
       .on('data', (data) => jsonData.push(data))
       .on('end', () => {
         resolve(jsonData);

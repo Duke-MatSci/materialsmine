@@ -1,25 +1,24 @@
 import createWrapper from '../../../jest/script/wrapper'
 import { enableAutoDestroy } from '@vue/test-utils'
-import ScatterPlot from '@/pages/metamine/visualizationNU/ScatterPlot.vue'
+import UmapPlot from '@/pages/metamine/visualizationNU/UmapPlot.vue'
 
-describe('ScatterPlot.vue', () => {
+describe('UmapPlot.vue', () => {
   let wrapper
   beforeEach(() => {
-    wrapper = createWrapper(ScatterPlot, {}, false)
+    wrapper = createWrapper(UmapPlot, {}, false)
   })
   enableAutoDestroy(afterEach)
 
   it('mount component correctly', () => {
     const layout = wrapper.findComponent('visualizationlayout-stub')
     expect(layout.exists()).toBe(true)
-    expect(layout.findComponent('scatter-stub').exists()).toBe(true)
-    expect(layout.findAllComponents('dialog-box-stub').length).toBe(2)
-    expect(layout.findComponent('structure-stub').exists()).toBe(true)
+    expect(layout.findComponent('umap-stub').exists()).toBe(true)
+    expect(layout.findComponent('dataselector-stub').exists()).toBe(true)
+    expect(layout.findComponent('paramselector-stub').exists()).toBe(true)
     expect(layout.findComponent('youngs-stub').exists()).toBe(true)
     expect(layout.findComponent('poisson-stub').exists()).toBe(true)
-    expect(layout.findComponent('dataselector-stub').exists()).toBe(true)
-    expect(layout.findComponent('rangeselector-stub').exists()).toBe(true)
-    expect(layout.findComponent('materialinformation-stub').exists()).toBe(true)
+    expect(layout.findComponent('structure-stub').exists()).toBe(true)
+    expect(layout.findAllComponents('dialog-box-stub').length).toBe(2)
   })
 
   it('mounts dialog box correctly', () => {

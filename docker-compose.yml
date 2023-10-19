@@ -61,7 +61,7 @@ services:
       - '80:80'
   api:
     depends_on:
-      # - client
+      - es
       - mongo
       - minio
     container_name: restful
@@ -107,6 +107,8 @@ services:
       - DEV_ENDPOINT=${DEV_ENDPOINT}
       - QA_SERVER_ENDPOINT=${QA_SERVER_ENDPOINT}
       - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
       - '3001:3001'
   client:
