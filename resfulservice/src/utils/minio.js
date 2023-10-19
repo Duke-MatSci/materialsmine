@@ -10,7 +10,7 @@ const minioClient = new Minio.Client({
   secretKey: env.MINIO_ROOT_PASSWORD
 });
 
-const connectMinio = (bucketName) => {
+const createBucket = (bucketName) => {
   const minioBucket = bucketName ?? env.MINIO_BUCKET ?? MinioBucket;
   minioClient.bucketExists(minioBucket, function (err, exists) {
     if (err) {
@@ -27,8 +27,12 @@ const connectMinio = (bucketName) => {
     }
   });
 };
+const generalBucket = env.MINIO_BUCKET ?? MinioBucket;
+const metamineBucket = env.METAMINEBUCKET ?? MetamineBucket;
+const bucketNames = [generalBucket, metamineBucket];
 
-connectMinio();
-connectMinio(MetamineBucket);
+bucketNames.forEach((bucketName) => {
+  createBucket(bucketName);
+});
 
 module.exports = minioClient;
