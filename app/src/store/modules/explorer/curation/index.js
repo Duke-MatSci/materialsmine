@@ -11,6 +11,7 @@ export default {
       newChartExist: false,
       doiData: null,
       orcidData: null,
+      rorData: [],
       xmlBulkResponse: null,
       replaceNestedRef: [],
       curationFormData: {},

@@ -15,6 +15,9 @@ export default {
   setDoiData (state, payload) {
     state.doiData = payload
   },
+  setRorData (state, payload) {
+    state.rorData = payload
+  },
   setXmlBulkResponse (state, payload) {
     state.xmlBulkResponse = payload
   },

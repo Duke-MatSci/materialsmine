@@ -6,6 +6,8 @@ module.exports = {
   sparql: 'sparql',
   doiApi: 'https://api.crossref.org/works/',
   doiFields: ['publisher', 'title', 'author', 'published', 'volume', 'issue', 'DOI', 'type', 'URL', 'container-title'],
+  rorApi: 'https://api.ror.org/organizations',
+  rorFields: ['id', 'name', 'links', 'country', 'addresses'],
   supportedBrowser: ['Firefox', 'Chrome', 'Canary', 'Safari', 'Opera', 'IE', 'Edge'],
   userRoles: {
     isAdmin: 'isAdmin',

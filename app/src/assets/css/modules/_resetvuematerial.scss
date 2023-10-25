@@ -194,6 +194,19 @@
             }
         }
     }
+  &-plain {
+    @extend .search-dropdown-menu;
+    & > li:nth-child(odd) {
+      background-color: $primary-white !important;
+      border-top: 0;
+      border-bottom: 0;
+
+      &:hover {
+        background-color: $tertiary !important;
+        color: $primary;
+      }
+    }
+  }
 }
 
 .md-card-class {

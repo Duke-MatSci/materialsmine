@@ -318,5 +318,32 @@ export default {
       }
       return commit('setSnackbar', snackbar, { root: true })
     }
+  },
+  async searchRor ({ commit }, payload) {
+    const { query, id } = payload
+    let url
+    if (query) url = `/api/knowledge/ror?query=${query}`
+    else if (id) url = `/api/knowledge/ror?id=${id}`
+    else {
+      const snackbar = {
+        message: 'Missing parameter from ROR search',
+        duration: 10000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    }
+    const response = await fetch(url, {
+      method: 'GET'
+    })
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message:
+          response.message || 'Something went wrong while fetching ROR data',
+        duration: 5000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    }
+    const responseData = await response.json()
+    commit('setRorData', responseData)
+    return responseData
   }
 }

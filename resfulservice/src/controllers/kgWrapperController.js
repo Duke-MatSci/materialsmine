@@ -270,3 +270,33 @@ exports.getDoiInfo = async (req, res, next) => {
     next(errorWriter(req, err, 'getDoiInfo'));
   }
 };
+
+exports.searchRor = async (req, res, next) => {
+  const { logger } = req;
+  logger.info('_searchRor(): Function entry');
+  try {
+    if (req?.query?.query) {
+      const term = req?.query?.query;
+      req.query.uri = `${constant.rorApi}?query=${encodeURI(term)}`;
+    } else if (req?.query?.id) {
+      const term = req?.query?.id;
+      req.query.uri = `${constant.rorApi}/${encodeURI(term)}`;
+    } else throw new Error('Missing search value');
+
+    const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'searchRor');
+
+    const responseData = response?.data?.items ?? [response?.data];
+    const filtered = responseData.map((item) => {
+      return Object.keys(item)
+        .filter(key => constant.rorFields.includes(key))
+        .reduce((obj, key) => {
+          obj[key] = item[key];
+          return obj;
+        }, {});
+    });
+    return res.status(200).json(filtered);
+  } catch (err) {
+    next(errorWriter(req, err, 'searchRor'));
+  }
+};
