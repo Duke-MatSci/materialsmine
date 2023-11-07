@@ -6,7 +6,7 @@ import { deleteChart } from '@/modules/vega-chart'
 import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
-  async createDatasetIdVuex ({ commit, dispatch }) {
+  async createDatasetIdVuex ({ commit, dispatch }, { isBulk = false }) {
     await apollo
       .mutate({
         mutation: CREATE_DATASET_ID_MUTATION
@@ -14,12 +14,14 @@ export default {
       .then((result) => {
         const datasetId = result.data.createDatasetId.datasetGroupId
         commit('setDatasetId', datasetId)
+        if (isBulk) return datasetId
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
       })
       .catch((error) => {
         if (error.message.includes('unused datasetId')) {
           const datasetId = error.message.split('-')[1]?.split(' ')[1]
           commit('setDatasetId', datasetId)
+          if (isBulk) return datasetId
           router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
         } else {
           // Show error in snackbar and pass current function as callback
@@ -28,7 +30,7 @@ export default {
             {
               message: error.message,
               action: () => {
-                dispatch('createDatasetIdVuex')
+                dispatch('createDatasetIdVuex', { isBulk })
               }
             },
             { root: true }
@@ -165,9 +167,10 @@ export default {
     const responseData = await response.json()
     return commit('setDoiData', responseData)
   },
-  async submitBulkXml ({ commit, rootGetters }, files) {
+  async submitBulkXml ({ commit, dispatch, rootGetters }, files) {
     const token = rootGetters['auth/token']
-    const url = `${window.location.origin}/api/curate/bulk`
+    const datasetId = await dispatch('createDatasetIdVuex', { isBulk: true }) ?? ''
+    const url = `${window.location.origin}/api/curate/bulk?dataset=${datasetId}`
     const formData = new FormData()
     files.forEach((file) => formData.append('uploadfile', file))
     const response = await fetch(url, {

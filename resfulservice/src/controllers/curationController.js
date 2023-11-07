@@ -89,7 +89,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
           .json({
             filename: `/api/files/${xlsxFile.path.split(
               'mm_files/'
-            )}?isFileStore=true`,
+            )[1]}?isFileStore=true`,
             errors: result.errors
           });
       }
@@ -796,6 +796,11 @@ exports.createMaterialObject = async (
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
 
           if (file) {
+            const newReq = {
+              params: { fileId: file.path },
+              query: { isStore: true },
+              isInternal: true
+            };
             if (
               file?.mimetype === 'text/csv' ||
               file?.mimetype === 'text/tab-separated-values'
@@ -803,16 +808,14 @@ exports.createMaterialObject = async (
               const jsonData = await XlsxFileManager.parseCSV(file.path);
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
-              const newReq = {
-                params: { fileId: file.path },
-                query: { isStore: true },
-                isInternal: true
-              };
               processedFiles.push(newReq);
             } else {
               filteredObject[
                 BaseObjectSubstitutionMap[property] ?? property
-              ] = `/api/files/${file.path}?isStore=true`;
+              ] = `/api/files/${file.path.split(
+                'mm_files/'
+              )[1]}?isStore=true`;
+              processedFiles.push(newReq);
             }
           } else {
             errors[cellValue] = 'file not uploaded';

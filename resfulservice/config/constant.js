@@ -36,7 +36,8 @@ module.exports = {
     '.tiff': 'image/tiff',
     '.tif': 'image/tif',
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.tsv': 'text/tab-separated-values'
   },
   MinioBucket: 'mgi',
   /**  This json object holds placeholder values for all the different types of fields
