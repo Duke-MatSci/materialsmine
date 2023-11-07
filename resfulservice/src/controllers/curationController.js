@@ -9,7 +9,8 @@ const {
   BaseObjectSubstitutionMap,
   CurationEntityStateDefault,
   XSDJsonPlaceholder,
-  userRoles
+  userRoles,
+  SupportedFileResponseHeaders
 } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
@@ -268,13 +269,18 @@ const processSingleCuration = async (
   bulkErrors,
   req
 ) => {
-  let imageBucketArray = [];
+  let toBeUploaded = [];
   if (masterTemplates.length) {
     for (const masterTemplate of masterTemplates) {
       const newCurationFiles = [...curationFiles, masterTemplate];
       const newReq = {
         ...req,
-        files: { uploadfile: newCurationFiles.map((file) => ({ path: file })) },
+        files: {
+          uploadfile: newCurationFiles.map((file) => ({
+            path: file,
+            mimetype: SupportedFileResponseHeaders[`.${file.split('.').pop()}`]
+          }))
+        },
         isParentFunction: true
       };
       const nextFnCallBack = (fn) => fn;
@@ -291,21 +297,21 @@ const processSingleCuration = async (
         });
       } else {
         bulkCurations.push(result.curatedSample);
-        imageBucketArray = result.processedFiles.filter(
-          ({ params: { fileId } }) => /\.(jpe?g|tiff?|png)$/i.test(fileId)
+        toBeUploaded = result.processedFiles.filter(
+          ({ params: { fileId } }) => !(/\.(tsv|csv)$/i.test(fileId))
         );
       }
     }
   }
 
-  if (imageBucketArray.length) {
-    for (const image of imageBucketArray) {
+  if (toBeUploaded.length) {
+    for (const uploadFile of toBeUploaded) {
       const {
         params: { fileId }
-      } = image;
+      } = uploadFile;
       const file = {
         filename: fileId,
-        mimetype: `image/${fileId.split('.').pop()}`,
+        mimetype: SupportedFileResponseHeaders[`.${fileId.split('.').pop()}`],
         path: fileId
       };
       FileStorage.minioPutObject(file, req);
@@ -510,7 +516,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
           { _id: xlsxObjectId, ...filter },
           {
             $set: {
-              content: { PolymerNanocomposite: { filteredObject } },
+              content: { PolymerNanocomposite: { ...filteredObject } },
               xml_str: xml
             }
           },

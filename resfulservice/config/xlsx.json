@@ -6862,7 +6862,7 @@
           }
         },
         "RelevantNodes": {
-          "cellValue": "7. Simulation - FEA|[28,1]",
+          "cellValue": "7. Simulation - FEA|[30,1]",
           "type": "List",
           "required": false,
           "validList":"common_node_set"
