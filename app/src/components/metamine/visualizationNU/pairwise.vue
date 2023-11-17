@@ -52,9 +52,7 @@ export default {
     )
 
     this.fetchedNames.map(async (info, index) => {
-      const fetchedData = await fetch(
-                `/api/files/metamine/${info.name}`
-      )
+      const fetchedData = await fetch(`/api/files/metamine/${info.name}`)
         .then((response) => {
           return response.json()
         })

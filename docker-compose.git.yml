@@ -33,8 +33,6 @@ services:
             - MONGO_PORT=${MONGO_PORT}
             - TKNS=${TKNS}
             - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-            - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     client:
         image: 'dukematsci/dev-app:latest'
         depends_on:

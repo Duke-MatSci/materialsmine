@@ -2,24 +2,48 @@
     <div class="data-selector-wrapper">
         <div class="data-row">
             <div class="article_metadata_strong md-title">Data</div>
-            <md-table class="u_width--max u_divider-fullspan utility-transparentbg viz-u-postion__rel viz-u-zIndex__min"
-                v-model="fetchedNames" @md-selected="onSelect" :md-selected-value="selectedValue" >
+            <md-table
+                class="u_width--max u_divider-fullspan utility-transparentbg viz-u-postion__rel viz-u-zIndex__min"
+                v-model="fetchedNames"
+                @md-selected="onSelect"
+                :md-selected-value="selectedValue"
+            >
                 <md-table-empty-state md-label="No data available">
                 </md-table-empty-state>
                 <template #md-table-row="{ item }">
-                    <md-table-row md-selectable="multiple" md-auto-select md-default-selected :key="item.name" >
+                    <md-table-row
+                        md-selectable="multiple"
+                        md-auto-select
+                        md-default-selected
+                        :key="item.name"
+                    >
                         <md-table-cell md-label="Name" md-sort-by="name">
-                            <md-chip md-clickable :style="{'background-color': item.color, color: 'white'}">{{ item.name }}</md-chip>
+                            <md-chip
+                                md-clickable
+                                :style="{
+                                    'background-color': item.color,
+                                    color: 'white'
+                                }"
+                                >{{ item.name }}</md-chip
+                            >
                         </md-table-cell>
                     </md-table-row>
                 </template>
             </md-table>
         </div>
         <div v-if="page === 'scatter'">
-            <div class="u--layout-flex u--layout-flex-column" style="margin: 5px 0px">
+            <div
+                class="u--layout-flex u--layout-flex-column"
+                style="margin: 5px 0px"
+            >
                 <md-field>
                     <label for="xAxis">X-axis</label>
-                    <md-select class="u_width--max" v-model="query1" name="xAxis">
+                    <md-select
+                        class="u_width--max"
+                        v-model="query1"
+                        name="xAxis"
+                        @change="handleQuery1Change"
+                    >
                         <md-option value="C11">C11</md-option>
                         <md-option value="C12">C12</md-option>
                         <md-option value="C22">C22</md-option>
@@ -29,10 +53,18 @@
                     </md-select>
                 </md-field>
             </div>
-            <div class="u--layout-flex u--layout-flex-column" style="margin: 5px 0px">
+            <div
+                class="u--layout-flex u--layout-flex-column"
+                style="margin: 5px 0px"
+            >
                 <md-field>
                     <label for="yAxis">Y-axis</label>
-                    <md-select  class="u_width--max" v-model="query2" name="yAxis">
+                    <md-select
+                        class="u_width--max"
+                        v-model="query2"
+                        name="yAxis"
+                        @change="handleQuery2Change"
+                    >
                         <md-option value="C11">C11</md-option>
                         <md-option value="C12">C12</md-option>
                         <md-option value="C22">C22</md-option>
@@ -44,10 +76,18 @@
             </div>
         </div>
         <div v-if="page === 'hist'">
-            <div class="u--layout-flex u--layout-flex-column" style="margin: 5px 0px">
+            <div
+                class="u--layout-flex u--layout-flex-column"
+                style="margin: 5px 0px"
+            >
                 <md-field>
                     <label for="xAxis">X-axis</label>
-                    <md-select v-model="query1" class="u_width--max" name="xAxis">
+                    <md-select
+                        v-model="query1"
+                        class="u_width--max"
+                        name="xAxis"
+                        @change="handleQuery1Change"
+                    >
                         <md-option value="C11">C11</md-option>
                         <md-option value="C12">C12</md-option>
                         <md-option value="C22">C22</md-option>
@@ -84,7 +124,9 @@ export default {
       query2: (state) => state.query2
     }),
     selectedValue () {
-      return this.fetchedNames.filter((item) => this.activeData.map(data => data.name).includes(item.name))
+      return this.fetchedNames.filter((item) =>
+        this.activeData.map((data) => data.name).includes(item.name)
+      )
     }
   },
   watch: {

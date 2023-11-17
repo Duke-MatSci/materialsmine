@@ -105,7 +105,7 @@ export default {
       const xScale = d3.scaleLinear().domain([0, 50]).range([0, width])
 
       const size = (width + marginLeft * 2) / 50
-      const ratio = this.calculateRatio(this.data)
+      const ratio = this.calculateRatio(data)
       this.svg.select('.volumn-ratio').text(`Volumn Ratio: ${ratio}`)
 
       const pixels = this.svg.selectAll('rect').data(res)
