@@ -17,6 +17,12 @@ module.exports = {
   CurationEntityStates: ['Approved', 'Not Approved'],
   CurationEntityStateDefault: 'Not Approved',
   DatasetStatusOpt: ['APPROVED', 'UNDER_REVIEW', 'WORK_IN_PROGRESS'],
+  // Use for filterings in response
+  CurationStateSubstitutionMap: {
+    Edit: 'Editing',
+    Curated: 'Completed',
+    Review: 'Review'
+  },
   DatasetStatusDefault: 'WORK_IN_PROGRESS',
   BaseObjectSubstitutionMap: {
     'DATA ORIGIN': 'DATA_SOURCE',
@@ -37,7 +43,8 @@ module.exports = {
     '.tif': 'image/tif',
     '.xls': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    '.tsv': 'text/tab-separated-values'
+    '.tsv': 'text/tab-separated-values',
+    '.npy': 'application/octet-stream'
   },
   colorAssignment: [
     '#FFB347', '#8A8BD0', '#FFC0CB', '#6FA8DC', '#8FCE00', '#CC0000', '#38761D', '#9FC5E8', '#2f3b45', '#e8c29f'

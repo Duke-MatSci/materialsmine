@@ -8,7 +8,6 @@ const GenerateSchema = require('generate-schema');
 const { jsonSchema2xsd } = require('xsdlibrary');
 const csv = require('csv-parser');
 const { deleteFile, deleteFolder } = require('../utils/fileManager');
-const FileStorage = require('../middlewares/fileStorage');
 
 exports.xlsxFileReader = async (path, sheetName) => {
   try {
@@ -44,14 +43,20 @@ exports.parseCSV = async (filename, dataStream) => {
   return new Promise((resolve, reject) => {
     const jsonData = [];
     let fileStream;
+
     const isTsv = /(?=.*?(.tsv)$)/.test(filename);
-    let options = { mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header };
+
+    let options = {
+      mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header, quote: ''
+    };
     options = isTsv ? { ...options, separator: '\t' } : options;
+
     if (filename) {
       fileStream = fs.createReadStream(filename);
     } else {
       fileStream = dataStream;
     }
+
     fileStream
       .pipe(csv(options))
       .on('data', (data) => jsonData.push(data))
@@ -69,17 +74,19 @@ exports.generateCSVData = (data, req) => {
   const dataRows = rows.row.map(({ column }) => {
     return column.map(({ _text }) => _text);
   });
+
   const csvData = [[dataHeaders], ...dataRows]
     .map((arr) => arr.join(','))
     .join('\r\n');
-  const filename = `processed-${new Date().getTime()}.csv`;
+
+  const filename = `processed-${Math.floor(100000000 + Math.random() * 900000000)}.csv`;
   const filePath = `mm_files/${filename}`;
-  const file = { filename, mimetype: 'text/csv', path: filePath };
+
   fs.writeFile(filePath, csvData, (err) => {
-    FileStorage.minioPutObject(file, req);
     if (err) console.error(err);
   });
-  return `/api/files/${filename}?isStore=true`;
+
+  return `/api/files/${filename}?isFileStore=true`;
 };
 
 exports.parseXSDFile = async (req, filename) => {
@@ -92,6 +99,7 @@ exports.parseXSDFile = async (req, filename) => {
 
     lineReader.on('line', function (line) {
       const removeLine = '<xs:attribute';
+
       if (!new RegExp(removeLine, 'gm').test(line)) {
         const regex = /<xs:element/gm;
         const root = /name="PolymerNanocomposite"/gm;
