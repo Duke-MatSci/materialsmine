@@ -80,7 +80,7 @@ export default {
     },
 
     fetchJsonSchema () {
-      fetch('http://localhost/api/curate?getXSD=true', {
+      fetch('/api/curate?getXSD=true', {
         method: 'GET',
         headers: { Authorization: `Bearer ${this.token}`, accept: 'application/json' }
       })
@@ -96,7 +96,7 @@ export default {
         message: 'Preparing File For Download',
         duration: 7000
       })
-      fetch('http://localhost/api/curate?isFile=true', {
+      fetch('/api/curate?isFile=true', {
         method: 'GET',
         headers: { Authorization: `Bearer ${this.token}` },
         responseType: 'blob'

@@ -45,7 +45,8 @@ exports.parseCSV = async (filename, dataStream) => {
     const jsonData = [];
     let fileStream;
     const isTsv = /(?=.*?(.tsv)$)/.test(filename);
-    const options = isTsv ? { separator: '\t' } : {};
+    let options = { mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header };
+    options = isTsv ? { ...options, separator: '\t' } : options;
     if (filename) {
       fileStream = fs.createReadStream(filename);
     } else {
