@@ -46,9 +46,10 @@ exports.fileContent = async (req, res, next) => {
         latency.latencyCalculator(res);
         return this._createEmptyStream().pipe(res);
       }
+
+      if (req.isInternal) return fileStream;
       latency.latencyCalculator(res);
       res.setHeader('Content-Type', SupportedFileResponseHeaders[ext]);
-      if (req.isInternal) return fileStream;
       return fileStream.pipe(res);
     }
 

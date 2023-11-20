@@ -147,9 +147,9 @@ export default {
       // TODO @aswallace: Update to user query params instead
       const filterParams = {
         isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew === 'Yes' : null,
-        status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
-        curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
-        user: this.selectedFilters.includes('user') ? this.user : null
+        status: this?.apprStatus,
+        curationState: this?.curationState,
+        user: this?.user
       }
       for (const key in filterParams) {
         if (filterParams[key] === null) delete filterParams[key]
@@ -185,7 +185,7 @@ export default {
       if (!this.selectedFilters.includes(arrValue[0])) {
         this.selectedFilters.push(arrValue[0])
       }
-      this[arrValue[0]] = arrValue[1] ? arrValue[1] : null
+      this[arrValue[0]] = arrValue[1] && arrValue[1]
       e.target.value = ''
     },
     removeChip (str) {

@@ -590,7 +590,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
         }
       }
 
-      if (processedFiles.toBeUploaded.length) {
+      if (processedFiles.toBeDeleted.length) {
         processedFiles.toBeDeleted.forEach(
           async (newReq) => await FileController.deleteFile(newReq, {}, (fn) => fn)
         );
@@ -872,10 +872,11 @@ exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (proce
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
 
           if (file) {
-            const filename = file.path.split(`${process.env?.FILES_DIRECTORY}/` ?? 'mm_files/')[1];
-            const processbaleRegex = /(?=.*?((?:.csv|.tsv))$)/gi;
+            const filesDirectory = process.env?.FILES_DIRECTORY ? `${process.env?.FILES_DIRECTORY}/` : 'mm_files/';
+            const filename = file.path.split(filesDirectory)[1];
+            const processableRegex = /(?=.*?((?:.csv|.tsv))$)/gi;
 
-            const isProccessable = processbaleRegex.test(filename);
+            const isProccessable = processableRegex.test(filename);
             if (isProccessable) {
               const jsonData = await XlsxFileManager.parseCSV(file.path);
               const data = appendUploadedFiles(jsonData);
@@ -1076,7 +1077,6 @@ const createJsonObject = async (
                 // TODO (@tee): Refactor!! This logic is repeated in else block
                 filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
                 XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
-                return;
               } else {
                 const fileDetails = {
                   filename,

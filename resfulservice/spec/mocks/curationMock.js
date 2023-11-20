@@ -930,7 +930,7 @@ const mockJsonObjectErrored = {
             validList: 'citation_type'
           },
           PublicationType: {
-            cellValue: null,
+            cellValue: 'research article',
             type: 'List',
             required: false,
             validList: 'publication_type'
@@ -2522,11 +2522,13 @@ const mockCuratedXlsxObject = {
         YourEmail: 'john@doe.com',
         Origin: 'experiments',
         CitationType: 'lab-generated',
+        Title: 'Research Sciemtist',
         Author: [
           {
             'Author #1': 'Aditya Shanker Prasad'
           }
         ],
+        PublicationType: 'research article',
         URL: 'https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y',
         Location: 'Rensselaer Polytechnic Institute'
       }

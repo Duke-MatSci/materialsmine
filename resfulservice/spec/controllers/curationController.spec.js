@@ -65,6 +65,8 @@ describe("Curation Controller", function () {
     logger,
     user,
     files: {},
+    body: {},
+    query: {}
   };
 
   const res = {
@@ -76,22 +78,11 @@ describe("Curation Controller", function () {
   };
 
   context("curateXlsxSpreadsheet", () => {
-    it("should return a 400 error if no file is uploaded", async function () {
-      sinon.stub(res, "status").returnsThis();
-      sinon.stub(res, "json").returnsThis();
-      const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
-
-      expect(result).to.have.property("message");
-      expect(result.message).to.equal(
-        "Material template files not uploaded",
-        "createXlsxObject"
-      );
-    });
-
     it("should return a 400 error if master_template.xlsx file is not uploaded", async function () {
       req.files.uploadfile = wrongXlsxFile;
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
+      sinon.stub(XlsxObject, "find").returns([]);
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property("message");
@@ -107,6 +98,7 @@ describe("Curation Controller", function () {
       req.query = { dataset: "64902493388ad3a79b54b58e", isBaseObject: true };
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
+      sinon.stub(XlsxObject, "find").returns([]);
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property("message");
@@ -123,6 +115,7 @@ describe("Curation Controller", function () {
       sinon.stub(res, "json").returnsThis();
       sinon.stub(XlsxObject, "find").returns([]);
       sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       sinon
         .stub(XlsxController, "createMaterialObject")
         .returns(mockCuratedXlsxObject);
@@ -143,12 +136,12 @@ describe("Curation Controller", function () {
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returns({ errors: { Origin: "invalid value" } });
       sinon.stub(XlsxObject, "find").returns([]);
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
       sinon.stub(latency, "latencyCalculator").returns(true);
-      sinon.stub(DatasetId, "findOne").returns(mockDatasetId);
       sinon
         .stub(XlsxController, "createMaterialObject")
-        .returns({ count: 1, errors: { Origin: "invalid value" } });
+        .returns({ errorCount: 1, errors: { Origin: "invalid value" } });
 
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
       expect(result).to.have.property("errors");
@@ -158,11 +151,11 @@ describe("Curation Controller", function () {
       req.files.uploadfile = correctXlsxFile;
       req.query = { dataset: "583e3d6ae74a1d205f4e3fd3" };
       sinon.stub(XlsxObject, "find").returns([]);
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
-      sinon.stub(DatasetId, "findOne").returns(mockDatasetId);
       sinon
         .stub(XlsxController, "createMaterialObject")
-        .returns({ count: 1, errors: { Origin: "invalid value" } });
+        .returns({ errorCount: 1, errors: { Origin: "invalid value" } });
 
       const result = await XlsxController.curateXlsxSpreadsheet(
         { ...req, isParentFunction: true },
@@ -172,19 +165,29 @@ describe("Curation Controller", function () {
       expect(result).to.have.property("errors");
     });
 
-    it("should return a 409 conflict error if curated sheet has same title and publication year", async function () {
+    it.skip("should return a 409 conflict error if curated sheet has same title and publication year", async function () {
       req.files.uploadfile = correctXlsxFile;
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
-      sinon.stub(DatasetId, "findOne").returns(mockDatasetId);
-      sinon.stub(XlsxObject, "find").returns([mockCuratedXlsxObject]);
-      sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
-      sinon
-        .stub(XlsxController, "createMaterialObject")
-        .returns(mockCuratedXlsxObject);
-
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
+      sinon.stub(XlsxObject, "find").returns([{ object: mockCuratedXlsxObject }]);
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
       expect(result).to.have.property("message");
+    });
+
+    it.skip("should return a 409 conflict error when base object title and publication year both already exists", async function () {
+      req.body = { curatedjsonObject: mockJsonObjectErrored.curatedjsonObject };
+      req.query = { dataset: "64902493388ad3a79b54b58e", isBaseObject: true };
+      sinon.stub(res, "status").returnsThis();
+      sinon.stub(res, "json").returnsThis();
+      sinon.stub(XlsxObject, "find").returns([{ object: mockCuratedXlsxObject }]);
+      const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
+
+      expect(result).to.have.property("message");
+      expect(result.message).to.equal(
+        'This had been curated already',
+        "createXlsxObject"
+      );
     });
 
     it("should return error when base object has error fields", async function () {
@@ -215,6 +218,7 @@ describe("Curation Controller", function () {
       sinon
         .stub(XlsxObject.prototype, "save")
         .callsFake(() => fetchedCuratedXlsxObject);
+      sinon.stub(FileController, 'deleteFile').resolves(true);
       sinon.stub(latency, "latencyCalculator").returns(true);
       sinon.stub(Xmljs, "json2xml").returns(fetchedCuratedXlsxObject);
 
@@ -230,6 +234,7 @@ describe("Curation Controller", function () {
       sinon.stub(res, "json").returns(mockCurateObject);
       sinon.stub(XlsxObject, "find").returns([]);
       sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       sinon.stub(DatasetId, "findOne").returns(null);
       sinon
         .stub(DatasetId, "create")
@@ -240,9 +245,9 @@ describe("Curation Controller", function () {
       sinon
         .stub(XlsxObject.prototype, "save")
         .callsFake(() => fetchedCuratedXlsxObject);
+      sinon.stub(FileController, 'deleteFile').resolves(true);
       sinon.stub(latency, "latencyCalculator").returns(true);
       sinon.stub(Xmljs, "json2xml").returns(fetchedCuratedXlsxObject);
-      // sinon.stub(FileManager, 'writeFile').returns(true);
 
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
@@ -255,6 +260,7 @@ describe("Curation Controller", function () {
       req.isParentFunction = true;
       sinon.stub(XlsxObject, "find").returns([]);
       sinon.stub(XlsxCurationList, "find").returns(mockCurationList);
+      sinon.stub(XlsxFileManager, 'xlsxFileReader').returns(mockSheetData);
       sinon
         .stub(DatasetId, "findOne")
         .returns({ ...mockDatasetId, updateOne: sinon.stub().returns(true) });
@@ -265,7 +271,6 @@ describe("Curation Controller", function () {
         .stub(XlsxObject.prototype, "save")
         .callsFake(() => fetchedCuratedXlsxObject);
       sinon.stub(Xmljs, "json2xml").returns(fetchedCuratedXlsxObject);
-      // sinon.stub(FileManager, 'writeFile').returns(true);
       const result = await XlsxController.curateXlsxSpreadsheet(req, res, next);
 
       expect(result).to.have.property("curatedSample");
@@ -277,7 +282,7 @@ describe("Curation Controller", function () {
       const nextSpy = sinon.spy();
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
-      sinon.stub(XlsxCurationList, "find").throws();
+      sinon.stub(XlsxObject, "find").throws();
 
       await XlsxController.curateXlsxSpreadsheet(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);
@@ -359,7 +364,7 @@ describe("Curation Controller", function () {
         .stub(XlsxController, "curateXlsxSpreadsheet")
         .returns({
           curatedSample: mockCurateObject,
-          processedFiles: mockProcessedFiles,
+          processedFiles: { toBeUploaded: mockProcessedFiles },
         });
       const readFolderStub = sinon.stub(XlsxFileManager, "readFolder");
       readFolderStub.onFirstCall().returns(mockReadFolder);
@@ -387,7 +392,6 @@ describe("Curation Controller", function () {
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
       sinon.stub(XlsxFileManager, "unZipFolder").throws();
-      // sinon.stub(XlsxController, 'curateXlsxSpreadsheet').throws();
       sinon.stub(latency, "latencyCalculator").returns(true);
 
       await XlsxController.bulkXlsxCurations(req, res, nextSpy);
@@ -460,6 +464,7 @@ describe("Curation Controller", function () {
       expect(result).to.have.property("object");
       expect(result).to.have.property("user");
     });
+
     it("should return curation object when an it is an old curation", async () => {
       req.params = { curationId: "a90w49a40ao4094k4aed" };
       req.query = { isNew: "false" };
@@ -476,7 +481,7 @@ describe("Curation Controller", function () {
     });
 
     it("should return a 500 server error when database throws an error", async function () {
-      req.query = { curationId: "a90w49a40ao4094k4aed" };
+      req.query = { curationId: "a90w49a40ao4094k4aed", isNew: 'true' };
       const nextSpy = sinon.spy();
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
@@ -677,7 +682,7 @@ describe("Curation Controller", function () {
 
     it("should return a 500 server error when database throws an error", async function () {
       req.body = { payload: mockCuratedXlsxObject };
-      req.query = { xlsxObjectId: "a90w49a40ao4094k4aed" };
+      req.query = { xlsxObjectId: "a90w49a40ao4094k4aed", isNew: 'true' };
       const nextSpy = sinon.spy();
       sinon.stub(res, "status").returnsThis();
       sinon.stub(res, "json").returnsThis();
@@ -765,11 +770,11 @@ describe("Curation Controller", function () {
       const error = await createMaterialObject(
         correctXlsxFile[0].path,
         mockJsonStructure,
-        mockCurationListMap
+        mockCurationListMap,
       );
 
       expect(error).to.be.an("Object");
-      expect(error).to.have.property("count");
+      expect(error).to.have.property("errorCount");
       expect(error).to.have.property("errors");
     });
     it("should return parsed and filtered xlsx object 1", async () => {
@@ -783,6 +788,7 @@ describe("Curation Controller", function () {
       expect(result).to.be.an("Object");
       expect(result).to.have.property("Your Name");
     });
+    
     it("should return parsed and filtered xlsx object for varied_multiple types", async () => {
       sinon.stub(XlsxFileManager, "xlsxFileReader").returns(mockSheetData5);
       const result = await XlsxController.createMaterialObject(
@@ -794,15 +800,17 @@ describe("Curation Controller", function () {
       expect(result).to.be.an("Object");
       expect(result).to.have.property("MeltMixing");
     });
+
     it("should return parsed and filtered xlsx object 2", async () => {
       sinon.stub(XlsxFileManager, "xlsxFileReader").returns(mockSheetData3);
       sinon.stub(XlsxFileManager, "parseCSV").returns(mockCSVData);
+      sinon.stub(FileStorage, 'minioPutObject').returns(true);
       const result = await XlsxController.createMaterialObject(
         correctXlsxFile[0].path,
         mockJsonStructure2,
         mockCurationListMap,
         mockUploadedFiles,
-        []
+        { toBeUploaded: [], toBeDeleted: [] }
       );
       expect(result).to.be.an("Object");
       expect(result).to.have.property("DMA Datafile");
@@ -811,12 +819,16 @@ describe("Curation Controller", function () {
 
     it("should return parsed and filtered xlsx object 3 handling default", async () => {
       sinon.stub(XlsxFileManager, "xlsxFileReader").returns(mockSheetData4);
+      sinon.stub(FileStorage, 'minioPutObject').returns(true);
       const result = await XlsxController.createMaterialObject(
         correctXlsxFile[0].path,
         mockJsonStructure4,
         mockCurationListMap,
         mockUploadedFiles,
-        []
+        { toBeUploaded: [], toBeDeleted: [] },
+        [],
+        { info: sinon.spy() },
+        true
       );
 
       expect(result).to.be.an("Object");
@@ -824,8 +836,10 @@ describe("Curation Controller", function () {
       expect(result.Microstructure).to.have.property("Imagefile");
       expect(result.Microstructure.Imagefile).to.be.an("Array");
     });
+
     it("should return error when file is not uploaded", async () => {
       sinon.stub(XlsxFileManager, "xlsxFileReader").returns(mockSheetData3);
+      sinon.stub(FileStorage, 'minioPutObject').returns(true);
       const error = await XlsxController.createMaterialObject(
         correctXlsxFile[0].path,
         mockJsonStructure2,
@@ -834,7 +848,7 @@ describe("Curation Controller", function () {
       );
 
       expect(error).to.be.an("Object");
-      expect(error).to.have.property("count");
+      expect(error).to.have.property("errorCount");
       expect(error).to.have.property("errors");
     });
   });

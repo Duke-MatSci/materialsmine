@@ -287,7 +287,7 @@ export default {
       const encodedUrl = encodeURI(fileUrl)
       const fileLink = document.createElement('a')
       fileLink.href = encodedUrl
-      const name = arg.replace('?isFileStore=true', '')
+      const name = arg?.split('?')[0]
       fileLink.setAttribute('download', name)
       document.body.appendChild(fileLink)
       fileLink.click()
