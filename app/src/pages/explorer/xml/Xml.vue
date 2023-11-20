@@ -30,7 +30,7 @@
     <template #action_buttons>
       <div class="form__field md-field">
         <select @change="(e) => selectFilters(e)" class="form__select" name="filterBy" id="filterBy">
-          <option value="" disabled selected hidden>Filter by...</option>
+          <option value="" disabled selected>Filter by...</option>
           <option value="apprStatus::Approved">Admin Approval Status (Approved)</option>
           <option value="apprStatus::Not_Approved">Admin Approval Status (Not_Approved)</option>
           <option value="curationState::Edit">Editing State</option>
@@ -61,7 +61,7 @@
       <input type="number" id="pagesize" class="u_width--xs utility-navfont" name="pagesize" v-model.lazy="pageSize" min="1" max="20">
     </template>
 
-    <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
+    <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length && !error">
       <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item">
         <div class="u_gridicon">
           <div v-if="isAuth && (xml.user === userId || isAdmin)" @click.prevent="editCuration(xml.id, xml.isNewCuration)">
@@ -77,7 +77,7 @@
             <md-card-area class="u_gridbg">
               <md-card-header class="u_show_hide">
                 <span class="md-subheading">
-                  <strong>{{ xml.title ?? '' }}</strong>
+                  <strong>{{ xml.title ?? xml.id ?? '' }}</strong>
                 </span>
               <span class="md-body-1">Click to view</span>
               </md-card-header>
@@ -148,12 +148,16 @@ export default {
   methods: {
     async localSearchMethod () {
       // TODO @aswallace: Update to user query params instead
-      this.filterParams = {
-        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew : null,
+      const filterParams = {
+        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew === 'Yes' : null,
         status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
         curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
         user: this.selectedFilters.includes('user') ? this.user : null
       }
+      for (const key in filterParams) {
+        if (filterParams[key] === null) delete filterParams[key]
+      }
+      this.filterParams = filterParams
       await this.$apollo.queries.xmlFinder.refetch()
     },
     async submitSearch () {
@@ -163,6 +167,7 @@ export default {
           duration: 10000
         })
       }
+      this.error = null
       this.searchEnabled = !!this.searchWord || !!this.filtersActive
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
@@ -174,6 +179,7 @@ export default {
       this.isNew = null
       this.selectedFilters = []
       this.filterParams = {}
+      this.error = null
       await this.resetSearch(type)
     },
     editCuration (id, isNew) {
@@ -214,6 +220,9 @@ export default {
         }
       },
       fetchPolicy: 'cache-and-network',
+      result ({ data, loading }) {
+        if (!loading && data) this.error = null
+      },
       error (error) {
         if (error.networkError) {
           const err = error.networkError

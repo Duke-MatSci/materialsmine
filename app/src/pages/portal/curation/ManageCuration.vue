@@ -17,29 +17,20 @@
           id="search" required v-model="searchWord" />
       </template>
 
-      <template #filter_inputs>
-        <md-field v-if="selectedFilters.includes('apprStatus')">
-          <label for="approvalStatus">Admin Approval Status</label>
-          <md-select v-model="apprStatus" name="approvalStatus" id="approvalStatus">
-            <md-option value="Approved">Approved</md-option>
-            <md-option value="Not_Approved">Not Approved</md-option>
-          </md-select>
-        </md-field>
-        <md-field v-if="selectedFilters.includes('curationState')">
-          <label for="curationState">Curation State</label>
-          <md-select v-model="curationState" name="approvalStatus" id="approvalStatus">
-            <md-option value="Edit">Edit</md-option>
-            <md-option value="Review">Review</md-option>
-            <md-option value="Curated">Curated</md-option>
-          </md-select>
-        </md-field>
-        <md-field v-if="selectedFilters.includes('isNew')">
-          <label for="curationState">Is New Curation</label>
-          <md-select v-model="isNew" name="is-new" id="is-new">
-            <md-option :value=true>Yes</md-option>
-            <md-option :value=false>No</md-option>
-          </md-select>
-        </md-field>
+      <template  #filter_inputs>
+        <div v-if="selectedFilters.includes('apprStatus')" class="u--margin-rightsm">
+          <md-chip class="u--bg u_margin-bottom-small" md-deletable @md-delete="removeChip('apprStatus')" >
+            Admin Approval Status: {{ apprStatus  }}</md-chip>
+        </div>
+
+        <div v-if="selectedFilters.includes('curationState')" class="u--margin-rightsm">
+          <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('curationState')" md-deletable>Curation State: {{ curationState }}</md-chip>
+        </div>
+
+        <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
+          <md-chip class="u--bg u_margin-bottom-small" @md-delete="removeChip('isNew')" md-deletable="">is New: {{ isNew }}</md-chip>
+        </div>
+
         <md-field v-if="selectedFilters.includes('user')" style="max-width: 100%;">
           <label>Curating User</label>
           <md-input v-model="user"></md-input>
@@ -47,22 +38,32 @@
       </template>
 
       <template #action_buttons>
-        <md-field>
-          <label for="filterBy">Filter by...</label>
-          <md-select v-model="selectedFilters" name="filterBy" id="filterBy" multiple>
-            <md-option value="apprStatus">Admin Approval Status</md-option>
-            <md-option value="curationState">Curation State</md-option>
-            <md-option value="user">Curating User</md-option>
-            <md-option value="isNew">Is New</md-option>
-          </md-select>
-        </md-field>
-        <button type="submit" class="md-button btn btn--primary btn--noradius u--margin-pos"
-          @click.prevent="submitSearch">
-          <span class="md-caption u--bg">Search Xml</span>
+        <div class="form__field md-field">
+          <select @change="(e) => selectFilters(e)" class="form__select" name="filterBy" id="filterBy">
+            <option value="" disabled selected>Filter by...</option>
+            <option value="apprStatus::Approved">Admin Approval Status (Approved)</option>
+            <option value="apprStatus::Not_Approved">Admin Approval Status (Not_Approved)</option>
+            <option value="curationState::Edit">Editing State</option>
+            <option value="curationState::Review">Reviewing State</option>
+            <option value="curationState::Curated">Curated</option>
+            <option value="user">Curating User</option>
+            <option value="isNew::Yes">New curation</option>
+            <option value="isNew::No">Old Curation</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+          @click.prevent="submitSearch"
+        >
+        Search Xml
         </button>
-        <button v-if="searchEnabled" type="submit" class="md-button btn btn btn--primary btn--noradius u--margin-pos"
-          @click.prevent="customReset('XML')">
-          <span class="md-caption u--bg">Clear Search</span>
+        <button v-if="searchEnabled"
+          type="submit"
+          class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+          @click.prevent="customReset('XML')"
+        >
+        Clear Search
         </button>
       </template>
 
@@ -71,8 +72,8 @@
           min="1" max="20">
       </template>
 
-      <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length">
-        <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item viz-u-mgup-md">
+      <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length && !error">
+        <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item viz-u-mgup-md u_margin-none">
           <router-link
             :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: `${xml.isNewCuration}` } }">
             <md-card-media-cover md-solid>
@@ -81,7 +82,7 @@
               </md-card-media>
               <md-card-area class="u_gridbg">
                 <div class="md-card-actions u_show_hide viz-u-display__show">
-                  <span class="md-body-2"> {{ xml.title || '' }} </span>
+                  <span class="md-body-2">{{ xml.title || '' }} </span>
                   <span class="md-body-1">Click to view</span>
                 </div>
               </md-card-area>
@@ -139,16 +140,21 @@ export default {
     filtersActive () {
       return !!this.apprStatus || !!this.curationState || !!this.user || (this.isNew !== null)
     }
+
   },
   methods: {
     async localSearchMethod () {
       // TODO @aswallace: Update to user query params instead
-      this.filterParams = {
-        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew : null,
+      const filterParams = {
+        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew === 'Yes' : null,
         status: this.selectedFilters.includes('apprStatus') ? this.apprStatus : null,
         curationState: this.selectedFilters.includes('curationState') ? this.curationState : null,
         user: this.selectedFilters.includes('user') ? this.user : null
       }
+      for (const key in filterParams) {
+        if (filterParams[key] === null) delete filterParams[key]
+      }
+      this.filterParams = filterParams
       await this.$apollo.queries.xmlFinder.refetch()
     },
     async submitSearch () {
@@ -158,6 +164,7 @@ export default {
           duration: 10000
         })
       }
+      this.error = null
       this.searchEnabled = !!this.searchWord || !!this.filtersActive
       this.pageNumber = 1
       return await this.updateParamsAndCall(true)
@@ -169,7 +176,23 @@ export default {
       this.isNew = null
       this.selectedFilters = []
       this.filterParams = {}
+      this.error = null
       await this.resetSearch(type)
+    },
+    selectFilters (e) {
+      const value = e.target.value
+      const arrValue = value.split('::')
+      if (!this.selectedFilters.includes(arrValue[0])) {
+        this.selectedFilters.push(arrValue[0])
+      }
+      this[arrValue[0]] = arrValue[1] ? arrValue[1] : null
+      e.target.value = ''
+    },
+    removeChip (str) {
+      const index = this.selectedFilters.indexOf(str)
+      if (index < 0) return
+      this.selectedFilters.splice(index, 1) // 2nd parameter means remove one item only
+      this[str] = null
     }
   },
   created () {
@@ -192,6 +215,9 @@ export default {
         }
       },
       fetchPolicy: 'cache-and-network',
+      result ({ data, loading }) {
+        if (!loading && data) this.error = null
+      },
       error (error) {
         if (error.networkError) {
           const err = error.networkError

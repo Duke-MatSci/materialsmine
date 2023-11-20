@@ -677,7 +677,7 @@ export default {
     },
     filterCurationData () {
       this.titles = Object.keys(this.curate).filter((word) => word !== 'ID')
-      this.clearFields(this.curate.ID)
+      if (!this.isEditMode) this.clearFields(this.curate.ID)
       const objArr = {}
       const errArr = {}
       for (let i = 0; i < this.titles.length; i++) {

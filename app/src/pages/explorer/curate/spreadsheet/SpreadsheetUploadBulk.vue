@@ -248,7 +248,8 @@ export default {
       submitBulkXml: 'explorer/curation/submitBulkXml'
     }),
     ...mapMutations({
-      clearSnackbar: 'resetSnackbar'
+      clearSnackbar: 'resetSnackbar',
+      setDatasetId: 'explorer/curation/setDatasetId'
     }),
     navBack () {
       this.$router.back()
@@ -287,9 +288,11 @@ export default {
         await this.submitBulkXml(files)
         this.spreadsheetFiles.forEach((file, index) => this.modStatSpreadsheet(index, 'complete'))
         this.loading = false
+        this.setDatasetId('')
         if (!this.$route?.query?.complete) this.$router.push({ query: { complete: 'true' } })
       } catch (error) {
         this.loading = false
+        this.setDatasetId('')
         this.$store.commit('setSnackbar', {
           message: error
         })

@@ -14,14 +14,14 @@ export default {
       .then((result) => {
         const datasetId = result.data.createDatasetId.datasetGroupId
         commit('setDatasetId', datasetId)
-        if (isBulk) return datasetId
+        if (isBulk) return
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
       })
       .catch((error) => {
         if (error.message.includes('unused datasetId')) {
           const datasetId = error.message.split('-')[1]?.split(' ')[1]
           commit('setDatasetId', datasetId)
-          if (isBulk) return datasetId
+          if (isBulk) return
           router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
         } else {
           // Show error in snackbar and pass current function as callback
@@ -169,8 +169,8 @@ export default {
   },
   async submitBulkXml ({ commit, dispatch, rootGetters }, files) {
     const token = rootGetters['auth/token']
-    const datasetId = await dispatch('createDatasetIdVuex', { isBulk: true }) ?? ''
-    const url = `${window.location.origin}/api/curate/bulk?dataset=${datasetId}`
+    await dispatch('createDatasetIdVuex', { isBulk: true })
+    const url = `${window.location.origin}/api/curate/bulk?dataset=${rootGetters['explorer/curation/datasetId']}`
     const formData = new FormData()
     files.forEach((file) => formData.append('uploadfile', file))
     const response = await fetch(url, {
@@ -243,7 +243,7 @@ export default {
       state.curationFormData.CONTROL_ID ??
       {}
 
-    if (!cId?.cellValue) {
+    if (!cId?.cellValue && !xlsxObjectId) {
       throw new Error('Please enter Control_ID before submitting')
     }
 

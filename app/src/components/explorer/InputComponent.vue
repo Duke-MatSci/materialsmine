@@ -240,7 +240,7 @@ export default {
       formData.append('uploadfile', arg[0])
       try {
         const res = await fetch(
-          '/api/files/upload',
+          '/api/files/upload?isTemp=true',
           {
             method: 'POST',
             body: formData
@@ -262,7 +262,7 @@ export default {
     async removeImage () {
       try {
         const res = await fetch(
-          `/api/files/${this.inputObj.cellValue}`,
+          `${this.inputObj.cellValue}`,
           {
             headers: { Authorization: `Bearer ${this.token}` },
             method: 'DELETE'
@@ -271,6 +271,7 @@ export default {
         if (res.status === 200) {
           if (this.isEditMode) return (this.inputObj.cellValue = '')
           this.$emit('data-file-deleted', this.inputObj.cellValue)
+          this.inputObj.cellValue = ''
           this.onCancel()
         }
       } catch (err) {
@@ -286,7 +287,7 @@ export default {
       const encodedUrl = encodeURI(fileUrl)
       const fileLink = document.createElement('a')
       fileLink.href = encodedUrl
-      const name = arg.replace('?isStore=true', '')
+      const name = arg.replace('?isFileStore=true', '')
       fileLink.setAttribute('download', name)
       document.body.appendChild(fileLink)
       fileLink.click()
