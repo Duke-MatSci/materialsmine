@@ -12,7 +12,7 @@
                 <div class="md-toolbar-section-end">
                   <div>
                     <nav class="nav_menu nav_menu--lightbg">
-                      <ul class="nav_ul">
+                      <ul class="nav_ul" style="width: 100%">
                         <li>
                           <div class="nav_menu--container">
                             <a class="u--default-size nav_menu--handler" href="#">ABOUT</a>
@@ -27,8 +27,7 @@
                             <a class="u--default-size nav_menu--handler" href="#">VISUALIZE</a>
                             <div class="nav_menu--siblings-mm">
                                 <router-link to="/explorer" class="nav_menu--siblings-mm-lists"><a>Browse Data</a></router-link>
-                                <router-link to="/explorer/chart" class="nav_menu--siblings-mm-lists"><a>Explore Chart Gallery</a></router-link>
-                                <router-link to="/mm/metamaterial_visualization" class="nav_menu--siblings-mm-lists"><a>Interactive Unit Cell Graph</a></router-link>
+                                <router-link to="/mm/metamaterial_visualization_nu" class="nav_menu--siblings-mm-lists"><a>Material Visualization</a></router-link>
                             </div>
                           </div>
                         </li>
@@ -65,8 +64,8 @@
             <drawers />
         </md-app-drawer>
         <md-app-content>
-			<router-view />
-		</md-app-content>
+          <router-view />
+        </md-app-content>
     </md-app>
 </template>
 

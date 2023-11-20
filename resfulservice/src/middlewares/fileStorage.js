@@ -7,7 +7,7 @@ const {
 } = require('unique-names-generator');
 const minioClient = require('../utils/minio');
 const { deleteFile } = require('../utils/fileManager');
-const { MinioBucket } = require('../../config/constant');
+const { MinioBucket, MetamineBucket } = require('../../config/constant');
 
 const shortName = uniqueNamesGenerator({
   dictionaries: [adjectives, animals, names],
@@ -72,7 +72,12 @@ const minioUpload = (req, res, next) => {
 };
 
 const minioPutObject = (file, req) => {
-  const bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
+  let bucketName;
+  if (req.query?.isVisualizationCSV === 'true') {
+    bucketName = req?.env?.METAMINEBUCKET ?? MetamineBucket;
+  } else {
+    bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
+  }
   const metaData = {
     'Content-Type': file.mimetype,
     'X-Amz-Meta-Data': 'MaterialsMine Project'
