@@ -85,6 +85,7 @@ describe('InputComponent.vue with input type string', async () => {
     var text = 'sampletext'
     const input = wrapper.find('input')
     expect(wrapper.vm.inputObj.cellValue).toBe(inputObj.cellValue)
+    input.element.value = text
     await input.setValue(text)
     expect(wrapper.vm.inputObj.cellValue).toBe(text)
   })

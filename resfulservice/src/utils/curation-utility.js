@@ -45,7 +45,8 @@ exports.parseCSV = async (filename, dataStream) => {
     const jsonData = [];
     let fileStream;
     const isTsv = /(?=.*?(.tsv)$)/.test(filename);
-    const options = isTsv ? { separator: '\t' } : {};
+    let options = { mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header };
+    options = isTsv ? { ...options, separator: '\t' } : options;
     if (filename) {
       fileStream = fs.createReadStream(filename);
     } else {
@@ -61,9 +62,9 @@ exports.parseCSV = async (filename, dataStream) => {
   });
 };
 
-exports.generateCSVData = (data) => {
-  const headers = data?.headers ?? data?.data;
-  const rows = data?.rows ?? data?.data;
+exports.generateCSVData = (data, req) => {
+  const headers = data?.headers ?? data?.data ?? data;
+  const rows = data?.rows ?? data?.data ?? data;
   const dataHeaders = headers.column.map(({ _text }) => _text);
   const dataRows = rows.row.map(({ column }) => {
     return column.map(({ _text }) => _text);
@@ -75,7 +76,7 @@ exports.generateCSVData = (data) => {
   const filePath = `mm_files/${filename}`;
   const file = { filename, mimetype: 'text/csv', path: filePath };
   fs.writeFile(filePath, csvData, (err) => {
-    FileStorage.minioPutObject(file);
+    FileStorage.minioPutObject(file, req);
     if (err) console.error(err);
   });
   return `/api/files/${filename}?isStore=true`;

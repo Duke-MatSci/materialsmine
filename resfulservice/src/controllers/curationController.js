@@ -371,7 +371,7 @@ exports.getXlsxCurations = async (req, res, next) => {
       }
     }
     latency.latencyCalculator(res);
-    const baseCuratedObject = createBaseSchema(baseSchemaObject, fetchedObject);
+    const baseCuratedObject = createBaseSchema(baseSchemaObject, fetchedObject, logger);
     return res.status(200).json(baseCuratedObject);
   } catch (err) {
     next(errorWriter(req, err, 'getXlsxCurations', 500));
@@ -1132,7 +1132,7 @@ const createBaseObject = (baseObject, storedObject) => {
   return curatedBaseObject;
 };
 
-const createBaseSchema = (baseObject, storedObject) => {
+const createBaseSchema = (baseObject, storedObject, logger) => {
   const curatedBaseObject = {};
 
   for (const property in baseObject) {
@@ -1170,25 +1170,25 @@ const createBaseSchema = (baseObject, storedObject) => {
               const currentMultipleSchema =
                 multiplesSchemaMap[currentMultipleKey];
               const multipleObj = { ...currentMultipleSchema };
-              return createBaseSchema(multipleObj, obj);
+              return createBaseSchema(multipleObj, obj, logger);
             }
             const multipleObj = { ...propertyValue.values[0] };
-            return createBaseSchema(multipleObj, obj);
+            return createBaseSchema(multipleObj, obj, logger);
           });
         } else {
           objectArray = currentStoredObj.map((obj) => {
             const multipleObj = { ...propertyValue.values[0] };
-            return createBaseSchema(multipleObj, obj);
+            return createBaseSchema(multipleObj, obj, logger);
           });
         }
       } else if (typeof currentStoredObj === 'object') {
         currentStoredObj = [currentStoredObj];
         objectArray = propertyValue.values.map((obj, i) => {
-          return createBaseSchema(obj, currentStoredObj?.[i]);
+          return createBaseSchema(obj, currentStoredObj?.[i], logger);
         });
       } else {
         objectArray = propertyValue.values.map((obj, i) =>
-          createBaseSchema(obj, currentStoredObj?.[i])
+          createBaseSchema(obj, currentStoredObj?.[i], logger)
         );
       }
 
@@ -1201,10 +1201,12 @@ const createBaseSchema = (baseObject, storedObject) => {
       if (
         propertyValue.type === 'File' &&
         (storedObject?.[propertyKey]?.headers ||
-          storedObject?.[propertyKey]?.data)
+          storedObject?.[propertyKey]?.data ||
+          storedObject?.[propertyKey]?.column ||
+          storedObject?.[propertyKey]?.row)
       ) {
         const filePath = XlsxFileManager.generateCSVData(
-          storedObject?.[propertyKey]
+          storedObject?.[propertyKey], { logger }
         );
         curatedBaseObject[propertyKey] = {
           ...propertyValue,
@@ -1221,7 +1223,7 @@ const createBaseSchema = (baseObject, storedObject) => {
       if (Array.isArray(storedObject?.[propertyKey])) {
         const generatedMultiple = storedObject[propertyKey].map((obj) => {
           const ObjSchema = { ...propertyValue };
-          return createBaseSchema(ObjSchema, obj);
+          return createBaseSchema(ObjSchema, obj, logger);
         });
         nestedObj = {
           type: 'multiples',
@@ -1232,11 +1234,13 @@ const createBaseSchema = (baseObject, storedObject) => {
           property === 'SYNTHESIS AND PROCESSING'
             ? createBaseSchema(
               propertyValue,
-              storedObject[BaseObjectSubstitutionMap[property]]
+              storedObject[BaseObjectSubstitutionMap[property]],
+              logger
             )
             : createBaseSchema(
               propertyValue,
-              storedObject?.[BaseObjectSubstitutionMap[property] || property]
+              storedObject?.[BaseObjectSubstitutionMap[property] || property],
+              logger
             );
       }
 

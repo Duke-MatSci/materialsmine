@@ -1,5 +1,5 @@
 const Minio = require('minio');
-const { MinioBucket } = require('../../config/constant');
+const { MinioBucket, MetamineBucket } = require('../../config/constant');
 const env = process.env;
 
 const minioClient = new Minio.Client({
@@ -10,19 +10,29 @@ const minioClient = new Minio.Client({
   secretKey: env.MINIO_ROOT_PASSWORD
 });
 
-minioClient.bucketExists(env.MINIO_BUCKET ?? MinioBucket, function (err, exists) {
-  if (err) {
-    return console.log(err);
-  }
-  if (exists) {
-    return console.log('Bucket exists.');
-  } else {
-    minioClient.makeBucket(env.MINIO_BUCKET ?? MinioBucket, 'us-east-1', function (err) {
-      if (err) return console.log(err);
+const createBucket = (bucketName) => {
+  const minioBucket = bucketName ?? env.MINIO_BUCKET ?? MinioBucket;
+  minioClient.bucketExists(minioBucket, function (err, exists) {
+    if (err) {
+      return console.log(err);
+    }
+    if (exists) {
+      return console.log('Bucket exists.');
+    } else {
+      minioClient.makeBucket(minioBucket, 'us-east-1', function (err) {
+        if (err) return console.log(err);
 
-      console.log('Bucket created successfully in "us-east-1".');
-    });
-  }
+        console.log('Bucket created successfully in "us-east-1".');
+      });
+    }
+  });
+};
+const generalBucket = env.MINIO_BUCKET ?? MinioBucket;
+const metamineBucket = env.METAMINEBUCKET ?? MetamineBucket;
+const bucketNames = [generalBucket, metamineBucket];
+
+bucketNames.forEach((bucketName) => {
+  createBucket(bucketName);
 });
 
 module.exports = minioClient;
