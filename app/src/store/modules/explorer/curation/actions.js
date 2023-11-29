@@ -44,7 +44,9 @@ export default {
       nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
 
     // Return if not able to retrieve chart object
-    if (!chartObject) { return new Error('Caching error. Chart object is missing') }
+    if (!chartObject) {
+      return new Error('Caching error. Chart object is missing')
+    }
 
     // Build chart instance object
     return {
@@ -320,6 +322,55 @@ export default {
         duration: 10000
       }
       return commit('setSnackbar', snackbar, { root: true })
+    }
+  },
+  async deleteCuration ({ commit, rootGetters, dispatch }, payload) {
+    try {
+      if (!payload || !payload?.xmlId || !payload?.isNew) {
+        throw new Error('Incorrect query parameters', {
+          cause: 'Missing flag'
+        })
+      }
+      const token = rootGetters['auth/token']
+      const { xmlId, isNew } = payload
+
+      const fetchResponse = await fetch(
+        `/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          }
+        }
+      )
+
+      if (fetchResponse.status !== 200) {
+        throw new Error(
+          fetchResponse.statusText || 'Server error, Unable to delete curation'
+        )
+      }
+      const response = await fetchResponse.json()
+      const snackbar = {
+        message: response?.message ?? 'Delete Successful',
+        duration: 5000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    } catch (error) {
+      let snackbar
+      if ('cause' in error) {
+        snackbar = { message: error?.message, duration: 4000 }
+      } else {
+        snackbar = {
+          message: error?.message ?? 'Something went wrong',
+          action: () =>
+            dispatch('deleteCuration', {
+              xmlId: payload.xmlId,
+              isNew: payload.isNew
+            })
+        }
+      }
+      commit('setSnackbar', snackbar, { root: true })
     }
   }
 }
