@@ -33,7 +33,7 @@
         "CitationType": {
           "cellValue": "1. Data Origin|[7,1]",
           "type": "List",
-          "required": false,
+          "required": true,
           "validList": "experiments"
         },
         "PublicationType": {
@@ -55,16 +55,17 @@
         "Title": {
           "cellValue": "1. Data Origin|[16,1]",
           "type": "String",
-          "required": false
+          "required": true
         },
         "Author": {
           "type": "replace_nested",
+          "required": true,
           "values": [
             {
               "Author": {
                 "cellValue": "1. Data Origin|[17,1]",
                 "type": "String",
-                "required": false
+                "required": true
               }
             },
             {
@@ -78,6 +79,7 @@
         },
         "Keyword": {
           "type": "replace_nested",
+          "required": false,
           "values": [
             {
               "Keyword": {
@@ -98,7 +100,7 @@
         "PublicationYear": {
           "cellValue": "1. Data Origin|[21,1]",
           "type": "String",
-          "required": false
+          "required": true
         },
         "Volume": {
           "cellValue": "1. Data Origin|[22,1]",
@@ -728,7 +730,7 @@
                                     "type": "String",
                                     "required": false
                                   }
-                                }, 
+                                },
                                 {
                                   "description": {
                                     "cellValue": "2. Material Types|[70,1]",
@@ -745,7 +747,7 @@
                                     "type": "String",
                                     "required": false
                                   }
-                                }, 
+                                },
                                 {
                                   "description": {
                                     "cellValue": "2. Material Types|[71,1]",
@@ -5417,7 +5419,7 @@
               "cellValue": "5.4 Properties-Thermal|[12,4]",
               "type": "List",
               "required": false,
-              "validList":  "uncertainty_type"
+              "validList": "uncertainty_type"
             },
             "value": {
               "cellValue": "5.4 Properties-Thermal|[12,5]",
@@ -5454,7 +5456,7 @@
               "cellValue": "5.4 Properties-Thermal|[13,4]",
               "type": "List",
               "required": false,
-              "validList":  "uncertainty_type"
+              "validList": "uncertainty_type"
             },
             "value": {
               "cellValue": "5.4 Properties-Thermal|[13,5]",
@@ -5491,7 +5493,7 @@
               "cellValue": "5.4 Properties-Thermal|[14,4]",
               "type": "List",
               "required": false,
-              "validList":  "uncertainty_type"
+              "validList": "uncertainty_type"
             },
             "value": {
               "cellValue": "5.4 Properties-Thermal|[14,5]",
@@ -5528,7 +5530,7 @@
               "cellValue": "5.4 Properties-Thermal|[15,4]",
               "type": "List",
               "required": false,
-              "validList":  "uncertainty_type"
+              "validList": "uncertainty_type"
             },
             "value": {
               "cellValue": "5.4 Properties-Thermal|[15,5]",
@@ -5565,7 +5567,7 @@
             "cellValue": "5.4 Properties-Thermal|[17,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[17,5]",
@@ -5600,7 +5602,7 @@
             "cellValue": "5.4 Properties-Thermal|[19,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[19,5]",
@@ -5635,7 +5637,7 @@
             "cellValue": "5.4 Properties-Thermal|[21,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[21,5]",
@@ -5674,7 +5676,7 @@
                 "cellValue": "5.4 Properties-Thermal|[23,4]",
                 "type": "List",
                 "required": false,
-                "validList":  "uncertainty_type"
+                "validList": "uncertainty_type"
               },
               "value": {
                 "cellValue": "5.4 Properties-Thermal|[23,5]",
@@ -5715,7 +5717,7 @@
                 "cellValue": "5.4 Properties-Thermal|[25,4]",
                 "type": "List",
                 "required": false,
-                "validList":  "uncertainty_type"
+                "validList": "uncertainty_type"
               },
               "value": {
                 "cellValue": "5.4 Properties-Thermal|[25,5]",
@@ -5753,7 +5755,7 @@
             "cellValue": "5.4 Properties-Thermal|[27,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[27,5]",
@@ -5789,7 +5791,7 @@
             "cellValue": "5.4 Properties-Thermal|[29,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[29,5]",
@@ -5824,7 +5826,7 @@
             "cellValue": "5.4 Properties-Thermal|[31,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[31,5]",
@@ -5859,7 +5861,7 @@
             "cellValue": "5.4 Properties-Thermal|[33,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[33,5]",
@@ -5894,7 +5896,7 @@
             "cellValue": "5.4 Properties-Thermal|[35,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[35,5]",
@@ -5929,7 +5931,7 @@
             "cellValue": "5.4 Properties-Thermal|[37,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[37,5]",
@@ -5965,7 +5967,7 @@
             "cellValue": "5.4 Properties-Thermal|[39,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.4 Properties-Thermal|[39,5]",
@@ -6036,7 +6038,7 @@
             "cellValue": "5.5 Properties-Volumetric|[5,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.5 Properties-Volumetric|[5,5]",
@@ -6065,7 +6067,7 @@
             "cellValue": "5.5 Properties-Volumetric|[6,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.5 Properties-Volumetric|[6,5]",
@@ -6098,7 +6100,7 @@
             "cellValue": "5.5 Properties-Volumetric|[7,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.5 Properties-Volumetric|[7,5]",
@@ -6131,7 +6133,7 @@
             "cellValue": "5.5 Properties-Volumetric|[8,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.5 Properties-Volumetric|[8,5]",
@@ -6164,7 +6166,7 @@
             "cellValue": "5.5 Properties-Volumetric|[9,4]",
             "type": "List",
             "required": false,
-            "validList":  "uncertainty_type"
+            "validList": "uncertainty_type"
           },
           "value": {
             "cellValue": "5.5 Properties-Volumetric|[9,5]",
@@ -6663,7 +6665,7 @@
         "cellValue": "7. Simulation - FEA|[4,1]",
         "type": "List",
         "required": false,
-        "validList":"fea_software_used"
+        "validList": "fea_software_used"
       },
       "NumberOfElements": {
         "description": {
@@ -6671,7 +6673,7 @@
           "type": "String",
           "required": false
         },
-        "value":{
+        "value": {
           "cellValue": "7. Simulation - FEA|[5,2]",
           "type": "String",
           "required": false
@@ -6683,11 +6685,11 @@
           "type": "String",
           "required": false
         },
-        "value":{
+        "value": {
           "cellValue": "7. Simulation - FEA|[6,2]",
           "type": "List",
           "required": false,
-          "validList":"mesh_type"
+          "validList": "mesh_type"
         }
       },
       "ElementType-Abaqus": {
@@ -6696,11 +6698,11 @@
           "type": "String",
           "required": false
         },
-        "value":{
+        "value": {
           "cellValue": "7. Simulation - FEA|[7,2]",
           "type": "List",
           "required": false,
-          "validList":"element_type-abaqus"
+          "validList": "element_type-abaqus"
         }
       },
       "ElementType-COMSOL": {
@@ -6709,11 +6711,11 @@
           "type": "String",
           "required": false
         },
-        "value":{
+        "value": {
           "cellValue": "7. Simulation - FEA|[8,2]",
           "type": "List",
           "required": false,
-          "validList":"element_type-comsol"
+          "validList": "element_type-comsol"
         }
       },
       "ElementType-General": {
@@ -6723,7 +6725,7 @@
           "required": false
         }
       },
-      "ModelInputFile": { 
+      "ModelInputFile": {
         "type": "multiples",
         "values": [
           {
@@ -6738,7 +6740,6 @@
               "required": false,
               "note": ".inp for Abaqus, .mph for COMSOL"
             }
-            
           },
           {
             "description": {
@@ -6760,7 +6761,7 @@
           "cellValue": "7. Simulation - FEA|[13,2]",
           "type": "List",
           "required": false,
-          "validList":"loading_type"
+          "validList": "loading_type"
         },
         "MinFrequency": {
           "description": {
@@ -6769,7 +6770,7 @@
             "required": false,
             "unitofmeasurement": "Hz"
           },
-          "value":{
+          "value": {
             "cellValue": "7. Simulation - FEA|[14,2]",
             "type": "String",
             "required": false
@@ -6782,14 +6783,14 @@
             "required": false,
             "unitofmeasurement": "Hz"
           },
-          "value":{
+          "value": {
             "cellValue": "7. Simulation - FEA|[15,2]",
             "type": "String",
             "required": false
           }
         },
         "NumberOfFrequencyIntervals": {
-          "value":{
+          "value": {
             "cellValue": "7. Simulation - FEA|[16,2]",
             "type": "String",
             "required": false
@@ -6799,7 +6800,7 @@
           "cellValue": "7. Simulation - FEA|[17,1]",
           "type": "List",
           "required": false,
-          "validList":"reaction_force_computation"
+          "validList": "reaction_force_computation"
         }
       }
     },
@@ -6808,73 +6809,75 @@
         "cellValue": "7. Simulation - FEA|[21,1]",
         "type": "List",
         "required": false,
-        "validList":"boundary_condition_type"
+        "validList": "boundary_condition_type"
       },
       "MechanicalBoundaryCondition": {
-          "cellValue": "7. Simulation - FEA|[22,1]",
-          "type": "List",
-          "required": false,
-          "validList": "mechanical_bc"
+        "cellValue": "7. Simulation - FEA|[22,1]",
+        "type": "List",
+        "required": false,
+        "validList": "mechanical_bc"
       },
       "Mechanical_BC-x_direction": {
-          "cellValue": "7. Simulation - FEA|[23,1]",
-          "type": "List",
-          "required": false,
-          "validList":"mechanical_bc_direction"
+        "cellValue": "7. Simulation - FEA|[23,1]",
+        "type": "List",
+        "required": false,
+        "validList": "mechanical_bc_direction"
       },
       "Mechanical_BC-y_direction": {
-          "cellValue": "7. Simulation - FEA|[24,1]",
-          "type": "List",
-          "required": false,
-          "validList":"mechanical_bc_direction"
+        "cellValue": "7. Simulation - FEA|[24,1]",
+        "type": "List",
+        "required": false,
+        "validList": "mechanical_bc_direction"
       },
       "Mechanical_BC-z_direction": {
         "cellValue": "7. Simulation - FEA|[25,1]",
         "type": "List",
         "required": false,
-        "validList":"mechanical_bc_direction"
+        "validList": "mechanical_bc_direction"
       }
     },
-    "LoadingConditions": { 
+    "LoadingConditions": {
       "type": "multiples",
-      "values": [{
-        "Direction": {
-          "cellValue": "7. Simulation - FEA|[28,1]",
-          "type": "List",
-          "required": false,
-          "validList":"loading_direction"
-        },
-        "Magnitude": {
-          "description": {
-            "cellValue": "7. Simulation - FEA|[29,1]",
-            "type": "String",
-            "required": false
+      "values": [
+        {
+          "Direction": {
+            "cellValue": "7. Simulation - FEA|[28,1]",
+            "type": "List",
+            "required": false,
+            "validList": "loading_direction"
           },
-          "value":{
-            "cellValue": "7. Simulation - FEA|[29,2]",
-            "type": "String",
-            "required": false
+          "Magnitude": {
+            "description": {
+              "cellValue": "7. Simulation - FEA|[29,1]",
+              "type": "String",
+              "required": false
+            },
+            "value": {
+              "cellValue": "7. Simulation - FEA|[29,2]",
+              "type": "String",
+              "required": false
+            },
+            "unit": {
+              "cellValue": "7. Simulation - FEA|[29,3]",
+              "type": "String",
+              "required": false
+            }
           },
-          "unit":{
-            "cellValue": "7. Simulation - FEA|[29,3]",
-            "type": "String",
-            "required": false
+          "RelevantNodes": {
+            "cellValue": "7. Simulation - FEA|[30,1]",
+            "type": "List",
+            "required": false,
+            "validList": "common_node_set"
           }
-        },
-        "RelevantNodes": {
-          "cellValue": "7. Simulation - FEA|[30,1]",
-          "type": "List",
-          "required": false,
-          "validList":"common_node_set"
         }
-      }]
+      ]
     },
     "MicrostructureGeneration": {
       "MicrostructureDimension": {
         "cellValue": "7. Simulation - FEA|[34,1]",
         "type": "List",
         "required": false,
-        "validList":"dimensions"
+        "validList": "dimensions"
       },
       "MicrostructureDatafile": {
         "description": {
@@ -6882,7 +6885,7 @@
           "type": "String",
           "required": false
         },
-        "data":{
+        "data": {
           "cellValue": "7. Simulation - FEA|[35,4]",
           "type": "File",
           "required": false,
@@ -6935,12 +6938,12 @@
           "type": "String",
           "required": false
         },
-        "value":{
+        "value": {
           "cellValue": "7. Simulation - FEA|[45,2]",
           "type": "String",
           "required": false
         },
-        "unit":{
+        "unit": {
           "cellValue": "7. Simulation - FEA|[45,3]",
           "type": "List",
           "required": false,
@@ -7474,198 +7477,200 @@
     },
     "Filler": {
       "type": "multiples",
-      "values": [{
-        "Filler": {
-          "type": "multiples",
-          "values": [
-            {
-              "FillerInputAgglomeration": {
-                "Non-agglomerateFraction": {
-                  "value": {
-                    "cellValue": "8. Material Properties - FEA|[43,2]",
-                    "type": "String",
-                    "required": false
-                  }
-                },
-                "NumberOfAgglomeration": {
-                  "value": {
-                    "cellValue": "8. Material Properties - FEA|[44,2]",
-                    "type": "String",
-                    "required": false
-                  }
-                },
-                "AgglomerateFraction": {
-                  "type": "multiples",
-                  "values": [
-                    {
-                      "value": {
-                        "cellValue": "8. Material Properties - FEA|[45,2]",
-                        "type": "String",
-                        "required": false
-                      }
-                    },
-                    {
-                      "value": {
-                        "cellValue": "8. Material Properties - FEA|[46,2]",
-                        "type": "String",
-                        "required": false
-                      }
-                    }
-                  ]
-                }
-              },
-              "InputProperties-Mechanical": {
-                "Tensile": {
-                  "TensileModulus": {
-                    "description": {
-                      "cellValue": "8. Material Properties - FEA|[50,1]",
-                      "type": "List",
-                      "required": false,
-                      "validList": "tensile_modulus_type"
-                    },
+      "values": [
+        {
+          "Filler": {
+            "type": "multiples",
+            "values": [
+              {
+                "FillerInputAgglomeration": {
+                  "Non-agglomerateFraction": {
                     "value": {
-                      "cellValue": "8. Material Properties - FEA|[50,2]",
+                      "cellValue": "8. Material Properties - FEA|[43,2]",
                       "type": "String",
                       "required": false
-                    },
-                    "unit": {
-                      "cellValue": "8. Material Properties - FEA|[50,3]",
-                      "type": "List",
-                      "required": false,
-                      "validList": "pressure"
-                    },
-                    "uncertainty": {
-                      "uncertaintytype": {
-                        "cellValue": "8. Material Properties - FEA|[50,4]",
+                    }
+                  },
+                  "NumberOfAgglomeration": {
+                    "value": {
+                      "cellValue": "8. Material Properties - FEA|[44,2]",
+                      "type": "String",
+                      "required": false
+                    }
+                  },
+                  "AgglomerateFraction": {
+                    "type": "multiples",
+                    "values": [
+                      {
+                        "value": {
+                          "cellValue": "8. Material Properties - FEA|[45,2]",
+                          "type": "String",
+                          "required": false
+                        }
+                      },
+                      {
+                        "value": {
+                          "cellValue": "8. Material Properties - FEA|[46,2]",
+                          "type": "String",
+                          "required": false
+                        }
+                      }
+                    ]
+                  }
+                },
+                "InputProperties-Mechanical": {
+                  "Tensile": {
+                    "TensileModulus": {
+                      "description": {
+                        "cellValue": "8. Material Properties - FEA|[50,1]",
                         "type": "List",
                         "required": false,
-                        "validList": "uncertainty_type"
+                        "validList": "tensile_modulus_type"
                       },
                       "value": {
-                        "cellValue": "8. Material Properties - FEA|[50,5]",
+                        "cellValue": "8. Material Properties - FEA|[50,2]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "unit": {
+                        "cellValue": "8. Material Properties - FEA|[50,3]",
+                        "type": "List",
+                        "required": false,
+                        "validList": "pressure"
+                      },
+                      "uncertainty": {
+                        "uncertaintytype": {
+                          "cellValue": "8. Material Properties - FEA|[50,4]",
+                          "type": "List",
+                          "required": false,
+                          "validList": "uncertainty_type"
+                        },
+                        "value": {
+                          "cellValue": "8. Material Properties - FEA|[50,5]",
+                          "type": "String",
+                          "required": false
+                        }
+                      }
+                    },
+                    "PoissonsRatio": {
+                      "value": {
+                        "cellValue": "8. Material Properties - FEA|[51,2]",
                         "type": "String",
                         "required": false
                       }
                     }
-                  },
-                  "PoissonsRatio": {
+                  }
+                },
+                "InputProperties-Electrical": {
+                  "ElectricConductivity": {
+                    "description": {
+                      "cellValue": "8. Material Properties - FEA|[53,1]",
+                      "type": "String",
+                      "required": false
+                    },
                     "value": {
-                      "cellValue": "8. Material Properties - FEA|[51,2]",
+                      "cellValue": "8. Material Properties - FEA|[53,2]",
+                      "type": "String",
+                      "required": false
+                    },
+                    "unit": {
+                      "cellValue": "8. Material Properties - FEA|[53,3]",
+                      "type": "String",
+                      "required": false
+                    }
+                  },
+                  "AC_DielectricDispersion": {
+                    "Dielectric_Real_Permittivity": {
+                      "description": {
+                        "cellValue": "8. Material Properties - FEA|[55,1]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "value": {
+                        "cellValue": "8. Material Properties - FEA|[55,2]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "unit": {
+                        "cellValue": "8. Material Properties - FEA|[55,3]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "data": {
+                        "cellValue": "8. Material Properties - FEA|[55,4]",
+                        "type": "File",
+                        "required": false
+                      }
+                    },
+                    "Dielectric_Loss_Permittivity": {
+                      "description": {
+                        "cellValue": "8. Material Properties - FEA|[56,1]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "value": {
+                        "cellValue": "8. Material Properties - FEA|[56,2]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "unit": {
+                        "cellValue": "8. Material Properties - FEA|[56,3]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "data": {
+                        "cellValue": "8. Material Properties - FEA|[56,4]",
+                        "type": "File",
+                        "required": false
+                      }
+                    },
+                    "Dielectric_Loss_Tangent": {
+                      "description": {
+                        "cellValue": "8. Material Properties - FEA|[57,1]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "value": {
+                        "cellValue": "8. Material Properties - FEA|[57,2]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "unit": {
+                        "cellValue": "8. Material Properties - FEA|[57,3]",
+                        "type": "String",
+                        "required": false
+                      },
+                      "data": {
+                        "cellValue": "8. Material Properties - FEA|[57,4]",
+                        "type": "File",
+                        "required": false
+                      }
+                    }
+                  },
+                  "DielectricBreakdownStrength": {
+                    "Condition": {
+                      "cellValue": "8. Material Properties - FEA|[59,1]",
+                      "type": "List",
+                      "required": false,
+                      "validList": "electrical"
+                    },
+                    "value": {
+                      "cellValue": "8. Material Properties - FEA|[59,2]",
+                      "type": "String",
+                      "required": false
+                    },
+                    "unit": {
+                      "cellValue": "8. Material Properties - FEA|[59,3]",
                       "type": "String",
                       "required": false
                     }
                   }
                 }
-              },
-              "InputProperties-Electrical": {
-                "ElectricConductivity": {
-                  "description": {
-                    "cellValue": "8. Material Properties - FEA|[53,1]",
-                    "type": "String",
-                    "required": false
-                  },
-                  "value": {
-                    "cellValue": "8. Material Properties - FEA|[53,2]",
-                    "type": "String",
-                    "required": false
-                  },
-                  "unit": {
-                    "cellValue": "8. Material Properties - FEA|[53,3]",
-                    "type": "String",
-                    "required": false
-                  }
-                },
-                "AC_DielectricDispersion": {
-                  "Dielectric_Real_Permittivity": {
-                    "description": {
-                      "cellValue": "8. Material Properties - FEA|[55,1]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "value": {
-                      "cellValue": "8. Material Properties - FEA|[55,2]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "unit": {
-                      "cellValue": "8. Material Properties - FEA|[55,3]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "data": {
-                      "cellValue": "8. Material Properties - FEA|[55,4]",
-                      "type": "File",
-                      "required": false
-                    }
-                  },
-                  "Dielectric_Loss_Permittivity": {
-                    "description": {
-                      "cellValue": "8. Material Properties - FEA|[56,1]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "value": {
-                      "cellValue": "8. Material Properties - FEA|[56,2]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "unit": {
-                      "cellValue": "8. Material Properties - FEA|[56,3]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "data": {
-                      "cellValue": "8. Material Properties - FEA|[56,4]",
-                      "type": "File",
-                      "required": false
-                    }
-                  },
-                  "Dielectric_Loss_Tangent": {
-                    "description": {
-                      "cellValue": "8. Material Properties - FEA|[57,1]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "value": {
-                      "cellValue": "8. Material Properties - FEA|[57,2]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "unit": {
-                      "cellValue": "8. Material Properties - FEA|[57,3]",
-                      "type": "String",
-                      "required": false
-                    },
-                    "data": {
-                      "cellValue": "8. Material Properties - FEA|[57,4]",
-                      "type": "File",
-                      "required": false
-                    }
-                  }
-                },
-                "DielectricBreakdownStrength": {
-                  "Condition": {
-                    "cellValue": "8. Material Properties - FEA|[59,1]",
-                    "type": "List",
-                    "required": false,
-                    "validList": "electrical"
-                  },
-                  "value": {
-                    "cellValue": "8. Material Properties - FEA|[59,2]",
-                    "type": "String",
-                    "required": false
-                  },
-                  "unit": {
-                    "cellValue": "8. Material Properties - FEA|[59,3]",
-                    "type": "String",
-                    "required": false
-                  }
-                }
-              }  
-            }
-          ]
+              }
+            ]
+          }
         }
-      }]
+      ]
     },
     "NumberOfInterphaseLayers": {
       "description": {
@@ -7679,7 +7684,7 @@
         "required": false
       }
     },
-    "Interphase" : {
+    "Interphase": {
       "type": "multiples",
       "values": [
         {
@@ -7689,7 +7694,7 @@
               "type": "String",
               "required": false
             },
-            "unit":{
+            "unit": {
               "cellValue": "8. Material Properties - FEA|[65,3]",
               "type": "List",
               "required": false,
@@ -7703,18 +7708,18 @@
                   "cellValue": "8. Material Properties - FEA|[68,1]",
                   "type": "List",
                   "required": false,
-                  "validList":"tensile_modulus_type"
+                  "validList": "tensile_modulus_type"
                 },
                 "value": {
                   "cellValue": "8. Material Properties - FEA|[68,2]",
                   "type": "String",
                   "required": false
                 },
-                "unit":{
+                "unit": {
                   "cellValue": "8. Material Properties - FEA|[68,3]",
                   "type": "List",
                   "required": false,
-                  "validList":"pressure"
+                  "validList": "pressure"
                 },
                 "uncertainty": {
                   "uncertaintytype": {
@@ -7735,7 +7740,7 @@
                   "cellValue": "8. Material Properties - FEA|[69,1]",
                   "type": "List",
                   "required": false,
-                  "validList":"tensile_modulus_type"
+                  "validList": "tensile_modulus_type"
                 },
                 "value": {
                   "cellValue": "8. Material Properties - FEA|[69,2]",

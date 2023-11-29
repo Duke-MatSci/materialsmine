@@ -101,7 +101,8 @@ exports.uploadFile = async (req, res, next) => {
     successWriter(req, { message: 'success' }, 'uploadFile');
     latency.latencyCalculator(res);
 
-    const storeLocation = req.query?.isTemp === 'true' ? 'isFileStore' : 'isStore';
+    const storeLocation =
+      req.query?.isTemp === 'true' ? 'isFileStore' : 'isStore';
     const files = req.files.uploadfile.map(({ filename }) => ({
       filename: `/api/files/${filename}?${storeLocation}=true`,
       swaggerFilename: filename,
@@ -118,11 +119,7 @@ exports.getMetamineFileNames = async (req, res, next) => {
   const foundFiles = [];
   try {
     const bucketName = MetamineBucket;
-    const objectsStream = minioClient.listObjects(
-      bucketName,
-      undefined,
-      true
-    );
+    const objectsStream = minioClient.listObjects(bucketName, undefined, true);
     objectsStream.on('data', (obj) => {
       foundFiles.push(obj.name);
     });
@@ -166,7 +163,8 @@ exports.fetchMetamineDatasets = async (req, res, next) => {
         )
       );
     }
-    const data = await DatasetFileManager.parseCSV(null, stream);
+    // TODO: Remove third argument when metamine csv is fixed
+    const data = await DatasetFileManager.parseCSV(null, stream, true);
     successWriter(req, { message: 'success' }, 'fetchDatasets');
     return res.status(200).json({ fetchedData: data });
   } catch (error) {

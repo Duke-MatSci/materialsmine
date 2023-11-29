@@ -1,3 +1,6 @@
+/* eslint-disable space-before-function-paren */
+// https://github.com/prettier/prettier/issues/3847
+/* eslint-disable indent */
 const util = require('util');
 const fs = require('fs');
 const XlsxFileManager = require('../utils/curation-utility');
@@ -17,6 +20,7 @@ const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
+const FsFile = require('../models/fsFiles');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 
@@ -41,12 +45,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     const errorMessage = validateCurationPayload(req, xlsxFile);
     if (errorMessage) {
-      return next(errorWriter(
-        req,
-        errorMessage,
-        'curateXlsxSpreadsheet',
-        400
-      ));
+      return next(errorWriter(req, errorMessage, 'curateXlsxSpreadsheet', 400));
     }
 
     if (query?.isBaseObject) {
@@ -55,7 +54,11 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       const publicationType = uniqueFields.publicationType ?? undefined;
       const title = uniqueFields.title ?? undefined;
 
-      const curatedAlready = findDuplicate(storedCurations, title, publicationType);
+      const curatedAlready = findDuplicate(
+        storedCurations,
+        title,
+        publicationType
+      );
       if (curatedAlready) {
         return next(
           errorWriter(
@@ -79,8 +82,11 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
       result = filterNestedObject(filteredObject);
     } else {
-      const sheetsData = { };
-      const { title: titleCellLocation, publicationType: publicationTypeCellLocation } = getCurationUniqueFields(BaseSchemaObject);
+      const sheetsData = {};
+      const {
+        title: titleCellLocation,
+        publicationType: publicationTypeCellLocation
+      } = getCurationUniqueFields(BaseSchemaObject);
       const [sheetName, titleRow, titleCol] = titleCellLocation
         .replace(/[[\]]/g, '')
         .split(/\||,/);
@@ -94,9 +100,15 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         sheetName
       );
 
-      const title = sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
-      const publicationType = sheetsData[sheetName]?.[+pubRow]?.[+pubCol] ?? undefined;
-      const curatedAlready = findDuplicate(storedCurations, title, publicationType);
+      const title =
+        sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
+      const publicationType =
+        sheetsData[sheetName]?.[+pubRow]?.[+pubCol] ?? undefined;
+      const curatedAlready = findDuplicate(
+        storedCurations,
+        title,
+        publicationType
+      );
       if (curatedAlready) {
         return next(
           errorWriter(
@@ -125,25 +137,24 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       }
 
       if (result?.errorCount) {
-        return res
-          .status(400)
-          .json({
-            filename: `/api/files/${xlsxFile.filename}?isFileStore=true`,
-            errors: result.errors
-          });
+        return res.status(400).json({
+          filename: `/api/files/${xlsxFile.filename}?isFileStore=true`,
+          errors: result.errors
+        });
       }
     }
+    const requiredFields = getCurationUniqueFields(result);
+    result.Control_ID = await generateControlSampleId(
+      requiredFields,
+      user,
+      query?.dataset
+    );
 
     let datasets;
     if (query.dataset) {
       datasets = await DatasetId.findOne({ _id: query.dataset });
-    } else if (result?.Control_ID) {
-      const existingDataset = await DatasetId.findOne({
-        controlSampleID: result?.Control_ID
-      });
-      datasets =
-        existingDataset ??
-        (await DatasetId.create({ user, controlSampleID: result.Control_ID }));
+    } else {
+      datasets = await DatasetId.create({ user });
     }
 
     if (!datasets) {
@@ -194,7 +205,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         },
         isInternal: true
       });
-    };
+    }
 
     processedFiles.toBeDeleted.forEach(
       async (newReq) => await FileController.deleteFile(newReq, {}, (fn) => fn)
@@ -216,8 +227,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 const findDuplicate = (storedCurations, title, publicationType) => {
   const curatedAlready = storedCurations.find(
     ({ object }) =>
-      object?.DATA_SOURCE?.Citation?.CommonFields?.Title ===
-        title &&
+      object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
       object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
         publicationType
   );
@@ -240,9 +250,76 @@ const validateCurationPayload = (req, xlsxFile) => {
 };
 
 const getCurationUniqueFields = (BaseSchemaObject) => {
-  const title = BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title?.cellValue;
-  const publicationType = BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType?.cellValue;
-  return { title, publicationType };
+  const controlID = BaseSchemaObject?.Control_ID;
+  const title =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title?.cellValue;
+  const publicationType =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType
+      ?.cellValue;
+  const author = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Author;
+  const citationType =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.CitationType;
+  const publicationYear =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationYear;
+  return {
+    title,
+    publicationType,
+    author,
+    citationType,
+    publicationYear,
+    controlID
+  };
+};
+
+const generateControlSampleId = async (requiredFields, user, datasetId) => {
+  try {
+    let [existingDatasets, userDatasets] = await Promise.all([
+      DatasetId.find({ user: user._id }),
+      DatasetId.findOne({
+        user: user._id,
+        _id: datasetId
+      })
+    ]);
+
+    if (!userDatasets && !existingDatasets?.length) {
+      userDatasets = await DatasetId.create({ user });
+    } else {
+      userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+    }
+
+    let { citationType, publicationYear, author } = requiredFields;
+
+    // L325_S1_Test_2015
+    citationType = citationType === 'lab-generated' ? 'E' : 'L';
+    publicationYear = publicationYear ?? new Date().getFullYear();
+    author = author?.length ? author[0].split(' ')[0] : 'unknown';
+    const sampleIndex = userDatasets?.samples?.length;
+    const datasetIndex = existingDatasets?.length ?? 1;
+
+    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}`;
+  } catch (error) {
+    const err = new Error(error);
+    err.functionName = 'generateControlSampleId';
+    throw err;
+  }
+};
+
+exports.getControlSampleId = async (req, res, next) => {
+  const { user, logger, body } = req;
+  try {
+    logger.info('getControlSampleId Function Entry:');
+
+    const controlID = await generateControlSampleId(
+      body,
+      user,
+      body?.datasetId
+    );
+
+    latency.latencyCalculator(res);
+    return res.status(201).json({ controlID });
+  } catch (error) {
+    next(errorWriter(req, error, 'getControlSampleId', 500));
+  }
 };
 
 exports.bulkXlsxCurations = async (req, res, next) => {
@@ -433,7 +510,11 @@ exports.getXlsxCurations = async (req, res, next) => {
       }
     }
     latency.latencyCalculator(res);
-    const baseCuratedObject = createBaseSchema(baseSchemaObject, fetchedObject, logger);
+    const baseCuratedObject = createBaseSchema(
+      baseSchemaObject,
+      fetchedObject,
+      logger
+    );
     return res.status(200).json(baseCuratedObject);
   } catch (err) {
     next(errorWriter(req, err, 'getXlsxCurations', 500));
@@ -592,7 +673,8 @@ exports.updateXlsxCurations = async (req, res, next) => {
 
       if (processedFiles.toBeDeleted.length) {
         processedFiles.toBeDeleted.forEach(
-          async (newReq) => await FileController.deleteFile(newReq, {}, (fn) => fn)
+          async (newReq) =>
+            await FileController.deleteFile(newReq, {}, (fn) => fn)
         );
       }
 
@@ -610,17 +692,48 @@ exports.deleteXlsxCurations = async (req, res, next) => {
   const { user, logger, query } = req;
   logger.info('deleteXlsxCurations Function Entry:');
 
-  const { xlsxObjectId, dataset } = query;
-  const filter = {};
-
-  if (user?.roles !== 'admin') filter.user = user._id;
+  const { xlsxObjectId, dataset, isNew } = query;
+  const userFilter =
+    isNew === 'true' ? { user: user._id } : { iduser: user._id };
+  const filter = user?.roles !== userRoles.isAdmin ? userFilter : {};
 
   try {
     if (xlsxObjectId) {
-      const xlsxObject = await CuratedSamples.findOneAndDelete(
-        { _id: xlsxObjectId, ...filter },
-        { lean: true }
-      );
+      let xlsxObject;
+      if (isNew === 'true') {
+        xlsxObject = await CuratedSamples.findOneAndDelete(
+          { _id: xlsxObjectId, ...filter },
+          { lean: true }
+        );
+        const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
+        if (imageFiles) {
+          imageFiles.forEach(async ({ File }) => {
+            const file = File.split('/api/files/').pop();
+            const newReq = {
+              params: { fileId: file.split('?')[0] },
+              isInternal: true
+            };
+            await FileController.deleteFile(newReq, {}, (fn) => fn);
+          });
+        }
+      } else {
+        xlsxObject = await XmlData.findOneAndDelete(
+          { _id: xlsxObjectId, ...filter },
+          { lean: true }
+        );
+        if (xlsxObject?.xml_str) {
+          const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
+          const xmlObject = JSON.parse(xmlJson);
+          xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
+          const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
+          if (imageFiles) {
+            imageFiles.forEach(async ({ File }) => {
+              const blobId = File.split('?id=').pop();
+              await FsFile.findOneAndDelete({ _id: blobId });
+            });
+          }
+        }
+      }
 
       if (!xlsxObject) {
         return next(
@@ -634,15 +747,13 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       }
 
       await DatasetId.findOneAndUpdate(
-        { _id: xlsxObject.dataset },
-        { $pull: { samples: xlsxObject._id } },
+        { _id: xlsxObject?.dataset }, // TODO (@tee): Check if this is correct. Should we be calling this if value can be undefined?
+        { $pull: { samples: xlsxObject?._id } },
         { new: true }
       );
-      return res
-        .status(200)
-        .json({
-          message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
-        });
+      return res.status(200).json({
+        message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
+      });
     } else if (dataset) {
       const datasets = await DatasetId.findOneAndDelete(
         { _id: dataset, ...filter },
@@ -717,7 +828,8 @@ const appendUploadedFiles = (parsedCSVData) => {
  * @param {Object} errors - Object created to store errors that occur while parsing the spreadsheets
  * @returns {Object} - Newly curated object or errors that occur while  proces
  */
-exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (processedFiles, etc)
+exports.createMaterialObject = async (
+  // TODO (@tee): Missing decorators (processedFiles, etc)
   path,
   BaseObject,
   validListMap,
@@ -872,7 +984,9 @@ exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (proce
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
 
           if (file) {
-            const filesDirectory = process.env?.FILES_DIRECTORY ? `${process.env?.FILES_DIRECTORY}/` : 'mm_files/';
+            const filesDirectory = process.env?.FILES_DIRECTORY
+              ? `${process.env?.FILES_DIRECTORY}/`
+              : 'mm_files/';
             const filename = file.path.split(filesDirectory)[1];
             const processableRegex = /(?=.*?((?:.csv|.tsv))$)/gi;
 
@@ -891,7 +1005,8 @@ exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (proce
             } else {
               const fileDetails = {
                 filename,
-                mimetype: SupportedFileResponseHeaders[`.${filename.split('.').pop()}`],
+                mimetype:
+                  SupportedFileResponseHeaders[`.${filename.split('.').pop()}`],
                 path: file.path
               };
 
@@ -917,6 +1032,8 @@ exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (proce
       } else if (cellValue === null && propertyValue?.default) {
         filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
           propertyValue.default;
+      } else if (cellValue === null && propertyValue?.required) {
+        errors[property] = `${property} cannot be null`;
       }
     } else {
       const nestedObj = await this.createMaterialObject(
@@ -947,12 +1064,14 @@ exports.createMaterialObject = async ( // TODO (@tee): Missing decorators (proce
     }
   }
 
-  if (Object.keys(errors)?.length) { return { errors, errorCount: Object.keys(errors)?.length }; }
+  if (Object.keys(errors)?.length) {
+    return { errors, errorCount: Object.keys(errors)?.length };
+  }
 
   return filteredObject;
 };
 
-async function checkFileExistence (filePath) {
+async function checkFileExistence(filePath) {
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     return true;
@@ -1069,29 +1188,40 @@ const createJsonObject = async (
               errors[property] = 'file not found';
             }
           } else {
-            const filename = propertyValue.cellValue?.split('files/')[1]?.split('?')[0];
+            const filename = propertyValue.cellValue
+              ?.split('files/')[1]
+              ?.split('?')[0];
 
             if (filename) {
-              const fileExist = await checkFileExistence(`${process.env?.FILES_DIRECTORY}/${filename}`);
+              const fileExist = await checkFileExistence(
+                `${process.env?.FILES_DIRECTORY}/${filename}`
+              );
               if (!fileExist) {
                 // TODO (@tee): Refactor!! This logic is repeated in else block
-                filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
-                XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
+                filteredObject[
+                  BaseObjectSubstitutionMap[property] ?? property
+                ] = XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
               } else {
                 const fileDetails = {
                   filename,
-                  mimetype: SupportedFileResponseHeaders[`.${filename.split('.').pop()}`],
+                  mimetype:
+                    SupportedFileResponseHeaders[
+                      `.${filename.split('.').pop()}`
+                    ],
                   path: `${process.env?.FILES_DIRECTORY}/${filename}`,
                   env: process.env
                 };
 
-                filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
-                XSDJsonPlaceholder?.File ?? `/api/files/${filename}?isStore=true`;
+                filteredObject[
+                  BaseObjectSubstitutionMap[property] ?? property
+                ] =
+                  XSDJsonPlaceholder?.File ??
+                  `/api/files/${filename}?isStore=true`;
                 processedFiles.toBeUploaded.push(fileDetails);
               }
             } else {
               filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
-              XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
+                XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
             }
           }
         }
@@ -1196,7 +1326,7 @@ const generateCurationListMap = (validCurationList) => {
  * @param {Object} curatedBaseObject - The curated base object which contains all fields based on the BaseSchemaObject
  * @returns {Object} The filtered curated base object stripped off all null values
  */
-function filterNestedObject (curatedBaseObject) {
+function filterNestedObject(curatedBaseObject) {
   const filteredObject = {};
   for (const property in curatedBaseObject) {
     const value = curatedBaseObject[property];
@@ -1336,7 +1466,8 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
           storedObject?.[propertyKey]?.row)
       ) {
         const filePath = XlsxFileManager.generateCSVData(
-          storedObject?.[propertyKey], { logger }
+          storedObject?.[propertyKey],
+          { logger }
         );
         curatedBaseObject[propertyKey] = {
           ...propertyValue,
@@ -1363,15 +1494,15 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
         nestedObj =
           property === 'SYNTHESIS AND PROCESSING'
             ? createBaseSchema(
-              propertyValue,
-              storedObject[BaseObjectSubstitutionMap[property]],
-              logger
-            )
+                propertyValue,
+                storedObject[BaseObjectSubstitutionMap[property]],
+                logger
+              )
             : createBaseSchema(
-              propertyValue,
-              storedObject?.[BaseObjectSubstitutionMap[property] || property],
-              logger
-            );
+                propertyValue,
+                storedObject?.[BaseObjectSubstitutionMap[property] || property],
+                logger
+              );
       }
 
       if (Object.keys(nestedObj).length > 0) {

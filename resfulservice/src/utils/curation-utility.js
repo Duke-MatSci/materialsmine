@@ -39,7 +39,7 @@ exports.jsonSchemaToXsdGenerator = (jsonSchema) => {
   return jsonSchema2xsd(jsonSchema);
 };
 
-exports.parseCSV = async (filename, dataStream) => {
+exports.parseCSV = async (filename, dataStream, isMetamine) => {
   return new Promise((resolve, reject) => {
     const jsonData = [];
     let fileStream;
@@ -47,8 +47,13 @@ exports.parseCSV = async (filename, dataStream) => {
     const isTsv = /(?=.*?(.tsv)$)/.test(filename);
 
     let options = {
-      mapHeaders: ({ header, index }) => header === '' ? `field${index + 1}` : header, quote: ''
+      mapHeaders: ({ header, index }) =>
+        header === '' ? `field${index + 1}` : header,
+      quote: ''
     };
+
+    if (isMetamine) options.quote = '"';
+
     options = isTsv ? { ...options, separator: '\t' } : options;
 
     if (filename) {
@@ -79,7 +84,9 @@ exports.generateCSVData = (data, req) => {
     .map((arr) => arr.join(','))
     .join('\r\n');
 
-  const filename = `processed-${Math.floor(100000000 + Math.random() * 900000000)}.csv`;
+  const filename = `processed-${Math.floor(
+    100000000 + Math.random() * 900000000
+  )}.csv`;
   const filePath = `mm_files/${filename}`;
 
   fs.writeFile(filePath, csvData, (err) => {
