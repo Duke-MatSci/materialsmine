@@ -137,7 +137,7 @@
                           item.detail.type === 'multiples'
                             ? 'md-size-80 md-medium-size-90'
                             : inputSizesm,
-                          'md-layout-item md-xsmall-size-95 u_height--auto',
+                          'md-layout-item md-xsmall-size-95 u_height--auto'
                         ]"
                       >
                         <!-- Form Input Field Name  -->
@@ -160,7 +160,13 @@
                             item.detail.type !== 'varied_multiples'
                           "
                         >
-                          <InputComponent @update-step-error="updateStepError(title, step)" :title="title" :name="item.name" :uniqueKey="item.ref" :inputObj="item.detail"/>
+                          <InputComponent
+                            @update-step-error="updateStepError(title, step)"
+                            :title="title"
+                            :name="item.name"
+                            :uniqueKey="item.ref"
+                            :inputObj="item.detail"
+                          />
                         </template>
 
                         <!-- For handling varied_multiples -->
@@ -463,7 +469,11 @@ export default {
                 JSON.stringify(currVal.ref) === JSON.stringify([...ref])
             )
           }
-          if (matchIndex < 5 && matchIndex !== -1) { this.updateStepError(title, 1) } else if (matchIndex !== -1) { this.updateStepError(title, Math.floor(matchIndex / 5) + 1) }
+          if (matchIndex < 5 && matchIndex !== -1) {
+            this.updateStepError(title, 1)
+          } else if (matchIndex !== -1) {
+            this.updateStepError(title, Math.floor(matchIndex / 5) + 1)
+          }
         }
       }
     },
@@ -594,7 +604,6 @@ export default {
           [refData.values[length - 1]],
           parent
         )
-        console.log(title)
       }
     },
     filterData (title, obj, parent = []) {
