@@ -20,6 +20,12 @@
                 <md-icon>edit</md-icon>
               </md-button>
             </div>
+            <div v-if="isAuth && isAdmin">
+              <md-button class="md-icon-button" @click.native.prevent="linkDataset">
+                <md-tooltip> Link to SDD </md-tooltip>
+                <md-icon>link</md-icon>
+              </md-button>
+            </div>
           </div>
         </div>
 
@@ -27,7 +33,7 @@
           <md-card-header class="section_md-header ">
             <md-card-header-text class="section_text-col flex-item">
               <div v-if="dataset[datasetFields['title']]" class="md-title u--margin-header">
-                {{ dataset[datasetFields['title']]?.[0]?.['@value'] || "Curated Dataset"}}
+                {{ (optionalChaining(() => dataset[datasetFields['title']][0]['@value'])) || "Curated Dataset"}}
               </div>
               <div v-if="dataset[datasetFields['doi']]">
                 DOI: <a class=" u--b-rad" @click="nav_to_doi(doi)">{{ doi }}</a>
@@ -37,8 +43,8 @@
               </div>
             </md-card-header-text>
             <div v-if="dataset[datasetFields['depiction']]" class="quicklinks_content flex-item u--padding-zero" style="max-width:20rem;">
-              <img v-if="thumbnail" :src="thumbnail?.[0]?.['@value']"
-                :alt="`${dataset[datasetFields['title']]?.[0]?.['@value']} image` || 'Dataset Thumbnail'"
+              <img v-if="thumbnail" :src="(optionalChaining(() => thumbnail[0]['@value']))"
+                :alt="`${(optionalChaining(() => dataset[datasetFields['title']][0]['@value']))} image` || 'Dataset Thumbnail'"
                 class="facet_viewport img">
             </div>
           </md-card-header>
@@ -51,7 +57,7 @@
         </div>
 
         <div>
-          <div id="related-images" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.ds_active}">
+          <div id="distributions" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.ds_active}">
             <div class="search_box_form howto_item-header">
               <md-button :class="{'md-icon-button': true, 'u--layout-hide': hideAssetNavLeft}" @click.prevent="reduceAsset('prev')">
                 <md-tooltip> Show Left </md-tooltip>
@@ -65,7 +71,7 @@
                   :class="`charts-${index+1} charts-${index+1}-narrow`"
                   :key="`card_${index}`"
                 >
-                <a :href="(optionalChaining(() => item?.downloadLink))">
+                <a :href="(optionalChaining(() => item.downloadLink))">
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
                       <md-icon class="explorer_page-nav-card_icon u_margin-top-small">description</md-icon>
@@ -74,7 +80,7 @@
                     <md-card-area class="u_gridbg">
                       <md-card-header class="u_show_hide">
                         <span class="md-subheading">
-                          <strong>{{ item?.label || 'Dataset File'}}</strong>
+                          <strong>{{ (optionalChaining(() => item.label)) || 'Dataset File'}}</strong>
                         </span>
                         <span class="md-body-1">Click to download</span>
                       </md-card-header>
@@ -97,7 +103,7 @@
                 Date Published:
               </span>
               <span class="u--font-emph-xl u--color-grey-sec">
-                {{ dataset[datasetFields['datePub']]?.[0]?.['@value'] || 'N/A' }}
+                {{ (optionalChaining(() => dataset[datasetFields['datePub']][0]['@value'])) || 'N/A' }}
               </span>
             </div>
             <div v-else>
@@ -113,12 +119,13 @@
                 Contact Point:
               </span>
               <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
-                {{ orcidData['http://schema.org/givenName']?.[0]?.['@value'] || '' }} {{ orcidData['http://schema.org/familyName']?.[0]?.['@value'] || ''}}
+                {{ (optionalChaining(() => orcidData['http://schema.org/givenName'][0]['@value'])) || '' }} {{ (optionalChaining(() => orcidData['http://schema.org/familyName'][0]['@value'])) || ''}}
               </span>
-              <div>ORCiD: <a class=" u--b-rad" :href="(optionalChaining(() => orcidData?.['@id']))" target="_blank">
-                {{orcidData?.['@id'] || dataset[datasetFields.cp]?.[0]?.['@id'] || 'N/A'}}
+              <div>ORCiD: <a class=" u--b-rad" :href="(optionalChaining(() => orcidData['@id']))" target="_blank">
+                {{ (optionalChaining(() => orcidData['@id'])) || (optionalChaining(() => dataset[datasetFields.cp][0]['@id'])) || 'N/A'}}
               </a></div>
-              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">Contact Email: {{orcidData['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']|| 'N/A'}}</div>
+              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">
+                Contact Email: {{ (optionalChaining(() => orcidData['http://www.w3.org/2006/vcard/ns#email'][0]['@value'])) || 'N/A'}}</div>
             </div>
             <div class="u--margin-pos" v-else>
               <span class="u--font-emph-xl u--color-grey-sec">
@@ -243,6 +250,9 @@ export default {
     },
     editDataset () {
       this.$router.push(`/explorer/curate/sdd/edit/${this.id}`)
+    },
+    linkDataset () {
+      this.$router.push(`/explorer/curate/sdd/link/${this.id}`)
     }
   },
   created () {
