@@ -1,6 +1,6 @@
-import createWrapper from '../../../jest/script/wrapper';
-import { enableAutoDestroy } from '@vue/test-utils';
-import SpreadsheetUploadBulk from '@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue';
+import createWrapper from '../../../jest/script/wrapper'
+import { enableAutoDestroy } from '@vue/test-utils'
+import SpreadsheetUploadBulk from '@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'
 
 const apollo = {
   verifyUser: {
@@ -9,7 +9,7 @@ const apollo = {
       username: 'Test User'
     }
   }
-};
+}
 
 const testFiles = [
   {
@@ -17,7 +17,7 @@ const testFiles = [
     id: 'MultipleSamples 2.zip-6541598-1688622380706-application/zip',
     status: 'incomplete'
   }
-];
+]
 
 const mockValues = {
   bulkCurations: [
@@ -57,7 +57,7 @@ const mockValues = {
       }
     }
   ]
-};
+}
 
 global.fetch = jest.fn(() =>
   Promise.resolve({
@@ -65,10 +65,10 @@ global.fetch = jest.fn(() =>
     statusText: 'OK',
     status: 200
   })
-);
+)
 
 describe('SpreadsheetUploadBulk.vue', () => {
-  let wrapper;
+  let wrapper
   beforeEach(async () => {
     wrapper = await createWrapper(
       SpreadsheetUploadBulk,
@@ -83,77 +83,77 @@ describe('SpreadsheetUploadBulk.vue', () => {
         }
       },
       true
-    );
-    await wrapper.setData({ verifyUser: apollo.verifyUser });
-  });
+    )
+    await wrapper.setData({ verifyUser: apollo.verifyUser })
+  })
 
-  enableAutoDestroy(afterEach);
+  enableAutoDestroy(afterEach)
 
   it('renders steppers', () => {
-    expect.assertions(1);
-    const steppers = wrapper.findAll('.md-stepper');
-    expect(steppers.length).toBe(3);
-  });
+    expect.assertions(1)
+    const steppers = wrapper.findAll('.md-stepper')
+    expect(steppers.length).toBe(3)
+  })
 
   it.skip('provides link to download template', () => {
-    expect.assertions(3);
-    const steppers = wrapper.findAll('.md-stepper');
+    expect.assertions(3)
+    const steppers = wrapper.findAll('.md-stepper')
     expect(steppers.at(0).text()).toContain(
       'Click here to download the template spreadsheet, and fill it out with your data.'
-    );
-    const downloadLinks = steppers.at(0).findAll('a');
-    expect(downloadLinks.at(0).exists()).toBe(true);
-    expect(downloadLinks.at(0).html()).toContain('href');
-  });
+    )
+    const downloadLinks = steppers.at(0).findAll('a')
+    expect(downloadLinks.at(0).exists()).toBe(true)
+    expect(downloadLinks.at(0).html()).toContain('href')
+  })
 
   it('contains drop area for zip file', () => {
-    expect.assertions(1);
-    const steppers = wrapper.findAll('.form__drop-area');
-    expect(steppers.length).toBe(1);
-  });
+    expect.assertions(1)
+    const steppers = wrapper.findAll('.form__drop-area')
+    expect(steppers.length).toBe(1)
+  })
 
   it('verifies provided information', async () => {
-    expect.assertions(1);
-    await wrapper.setData({ spreadsheetFiles: testFiles });
-    const verificationStep = wrapper.findAll('.md-stepper').at(2);
-    expect(verificationStep.text()).toContain(testFiles[0].file.name);
-  });
+    expect.assertions(1)
+    await wrapper.setData({ spreadsheetFiles: testFiles })
+    const verificationStep = wrapper.findAll('.md-stepper').at(2)
+    expect(verificationStep.text()).toContain(testFiles[0].file.name)
+  })
 
   it('renders a submit button', () => {
-    expect.assertions(1);
-    const submitButton = wrapper.find('#submit');
-    expect(submitButton.exists()).toBe(true);
-  });
+    expect.assertions(1)
+    const submitButton = wrapper.find('#submit')
+    expect(submitButton.exists()).toBe(true)
+  })
 
   it('calls submit functions', async () => {
-    expect.assertions(2);
-    const submitFiles = jest.spyOn(wrapper.vm, 'submitFiles');
+    expect.assertions(2)
+    const submitFiles = jest.spyOn(wrapper.vm, 'submitFiles')
 
-    const submitButton = wrapper.find('#submit');
-    await submitButton.trigger('click');
+    const submitButton = wrapper.find('#submit')
+    await submitButton.trigger('click')
 
-    expect(submitFiles).toHaveBeenCalledTimes(1);
-    expect(wrapper.text()).toContain('Upload in progress');
-  });
+    expect(submitFiles).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Upload in progress')
+  })
 
   it('renders results', async () => {
-    expect.assertions(6);
+    expect.assertions(6)
     await wrapper.setData({
       submitted: true,
       uploadInProgress: false,
       uploadResponse: mockValues
-    });
+    })
 
     // Successful curations
-    const cards = wrapper.findAll('.md-card');
-    expect(cards.length).toBe(2);
-    expect(cards.at(0).text()).toContain(mockValues.bulkCurations[0].sampleID);
+    const cards = wrapper.findAll('.md-card')
+    expect(cards.length).toBe(2)
+    expect(cards.at(0).text()).toContain(mockValues.bulkCurations[0].sampleID)
 
     // Errors
-    const list = wrapper.find('.md-list');
-    expect(list.exists()).toBe(true);
-    expect(list.text()).toContain('master_template.xlsx');
-    expect(list.text()).toContain(mockValues.bulkErrors[0].errors);
-    expect(wrapper.findAll('.md-list-item').length).toBe(3);
-  });
-});
+    const list = wrapper.find('.md-list')
+    expect(list.exists()).toBe(true)
+    expect(list.text()).toContain('master_template.xlsx')
+    expect(list.text()).toContain(mockValues.bulkErrors[0].errors)
+    expect(wrapper.findAll('.md-list-item').length).toBe(3)
+  })
+})
