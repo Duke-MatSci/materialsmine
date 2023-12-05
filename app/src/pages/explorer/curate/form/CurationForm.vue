@@ -81,28 +81,27 @@
                   </md-field>
                 </div>
                 <template v-if="!!searchResult.length && showDropdown">
-                  <ul
+                  <div
                     class="search-dropdown-menu u_searchimage_form-group"
                     :style="setDropdownPosition"
                   >
-                    <li
+                    <button
                       v-for="(item, index) in searchResult"
                       :key="index"
                       @click.prevent="showInputLocation(item)"
-                      class=""
+                      style="white-space: wrap"
+                      class="btn-text md-button-clean viz-u-display__show u_width--max md-card-actions search_box_form_label u_pointer"
                     >
-                      <a href="#" @click.prevent="showInputLocation(item)">
-                        <template v-for="(level, l_id) in item">
-                          <span v-if="item.length - 1 !== l_id" :key="l_id">
-                            {{ level }} >>
-                          </span>
-                          <span v-else :key="level">
-                            <strong>{{ level }}</strong></span
-                          >
-                        </template>
-                      </a>
-                    </li>
-                  </ul>
+                      <template v-for="(level, l_id) in item">
+                        <span v-if="item.length - 1 !== l_id" :key="l_id">
+                          {{ level }} >>
+                        </span>
+                        <span v-else :key="level">
+                          <strong>{{ level }}</strong></span
+                        >
+                      </template>
+                    </button>
+                  </div>
                 </template>
               </div>
 
@@ -325,12 +324,12 @@
 </template>
 
 <script>
-import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import InputComponent from '@/components/explorer/InputComponent.vue'
-import dialogBox from '@/components/Dialog.vue'
-import spinner from '@/components/Spinner'
-import MultipleInputComponent from '@/components/explorer/MultipleInputComponent.vue'
-import { mapActions, mapState, mapGetters, mapMutations } from 'vuex'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue';
+import InputComponent from '@/components/explorer/InputComponent.vue';
+import dialogBox from '@/components/Dialog.vue';
+import spinner from '@/components/Spinner';
+import MultipleInputComponent from '@/components/explorer/MultipleInputComponent.vue';
+import { mapActions, mapState, mapGetters, mapMutations } from 'vuex';
 export default {
   name: 'CurationForm',
   components: {
@@ -340,7 +339,7 @@ export default {
     InputComponent,
     MultipleInputComponent
   },
-  data () {
+  data() {
     return {
       editRouteParent: [
         {
@@ -368,290 +367,296 @@ export default {
       searchResult: [],
       showDropdown: false,
       resetVStep: true
-    }
+    };
   },
   methods: {
     ...mapActions({
       fetchData: 'explorer/curation/fetchCurationData',
       fetchXlsList: 'explorer/curation/fetchXlsList',
-      submitCurationData: 'explorer/curation/submitCurationData'
+      submitCurationData: 'explorer/curation/submitCurationData',
+      generateControlID: 'explorer/curation/createControlId'
     }),
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
-    hasProperty (obj, prop) {
-      return Object.hasOwnProperty.call(obj, prop)
+    hasProperty(obj, prop) {
+      return Object.hasOwnProperty.call(obj, prop);
     },
-    navBack () {
-      this.$router.back()
+    navBack() {
+      this.$router.back();
     },
-    searchCurationForm () {
-      this.searchResult = []
-      if (this.searchKeyword.length < 3) return
-      const searchResult = []
-      const regex = new RegExp(this.searchKeyword, 'gi')
+    searchCurationForm() {
+      this.searchResult = [];
+      if (this.searchKeyword.length < 3) return;
+      const searchResult = [];
+      const regex = new RegExp(this.searchKeyword, 'gi');
       for (const key in this.tempInputObj) {
-        const arr = this.tempInputObj[key]
+        const arr = this.tempInputObj[key];
         for (let i = 0; i < arr.length; i++) {
           if (
             !!arr[i].ref.length &&
             !!arr[i].ref.find((e) => e.search(regex) !== -1)
           ) {
-            searchResult.push([key, ...arr[i].ref])
+            searchResult.push([key, ...arr[i].ref]);
           }
         }
       }
-      this.searchResult = searchResult
-      this.showDropdown = true
+      this.searchResult = searchResult;
+      this.showDropdown = true;
     },
-    async showInputLocation (arr = [], title = null) {
-      this.resetVStep = false
-      await this.$nextTick()
-      const ref = arr
-      const formTitle = !title ? ref.shift() : title
-      const formArr = this.tempInputObj[formTitle]
+    async showInputLocation(arr = [], title = null) {
+      this.resetVStep = false;
+      await this.$nextTick();
+      const ref = arr;
+      const formTitle = !title ? ref.shift() : title;
+      const formArr = this.tempInputObj[formTitle];
       const matchIndex = formArr.findIndex(
         (currVal) => JSON.stringify(currVal.ref) === JSON.stringify([...ref])
-      )
-      const hIndex = this.titles.findIndex((val) => val === formTitle)
-      const vIndex = Math.floor(matchIndex / 5) + 1
-      await this.$nextTick()
-      this.active = `stepper_${hIndex}`
-      this.verticalActive = `v_${vIndex}`
-      this.searchKeyword = ''
+      );
+      const hIndex = this.titles.findIndex((val) => val === formTitle);
+      const vIndex = Math.floor(matchIndex / 5) + 1;
+      await this.$nextTick();
+      this.active = `stepper_${hIndex}`;
+      this.verticalActive = `v_${vIndex}`;
+      this.searchKeyword = '';
     },
-    async disableRender (e) {
-      const selected = e.target.closest('.search_box')
+    async disableRender(e) {
+      const selected = e.target.closest('.search_box');
       if (!selected) {
-        this.showDropdown = false
+        this.showDropdown = false;
       }
     },
-    closeDialogBox () {
+    closeDialogBox() {
       if (this.dialogBoxActive) {
-        this.toggleDialogBox()
+        this.toggleDialogBox();
       }
-      this.dialogBoxText = ''
-      this.dialogBoxAction = null
+      this.dialogBoxText = '';
+      this.dialogBoxAction = null;
     },
-    updateStepError (title, step) {
+    updateStepError(title, step) {
       if (!this.vStepError[title].includes(step)) {
-        return this.vStepError[title].push(step)
+        return this.vStepError[title].push(step);
       }
     },
-    checkErrorsLocation () {
+    checkErrorsLocation() {
       for (let i = 0; i < this.titles.length; i++) {
         if (this.hasProperty(this.errors, this.titles[i])) {
           this.showErrorsLocation(
             this.titles[i],
             this.errors[this.titles[i]],
             []
-          )
+          );
         }
       }
     },
-    showErrorsLocation (title, obj, ref = []) {
+    showErrorsLocation(title, obj, ref = []) {
       for (const key in obj) {
         if (Array.isArray(obj[key])) {
           for (let i = 0; i < obj[key].length; i++) {
-            this.showErrorsLocation(title, obj[key][i], [...ref, key])
+            this.showErrorsLocation(title, obj[key][i], [...ref, key]);
           }
         } else if (typeof obj[key] === 'object') {
-          this.showErrorsLocation(title, obj[key], [...ref, key])
+          this.showErrorsLocation(title, obj[key], [...ref, key]);
         } else {
-          const arr = this.tempInputObj[title]
+          const arr = this.tempInputObj[title];
           let matchIndex = arr.findIndex(
             (currVal) =>
               JSON.stringify(currVal.ref) === JSON.stringify([...ref, key])
-          )
+          );
           if (matchIndex === -1) {
             matchIndex = arr.findIndex(
               (currVal) =>
                 JSON.stringify(currVal.ref) === JSON.stringify([...ref])
-            )
+            );
           }
           if (matchIndex < 5 && matchIndex !== -1) {
-            this.updateStepError(title, 1)
+            this.updateStepError(title, 1);
           } else if (matchIndex !== -1) {
-            this.updateStepError(title, Math.floor(matchIndex / 5) + 1)
+            this.updateStepError(title, Math.floor(matchIndex / 5) + 1);
           }
         }
       }
     },
-    submitForm () {
-      this.submit()
-      this.closeDialogBox()
+    submitForm() {
+      this.submit();
+      this.closeDialogBox();
     },
-    async submit () {
-      this.loading = true
-      this.error = false
-      this.loadingText = 'Uploading Data Entry'
+    async submit() {
+      this.loading = true;
+      this.error = false;
+      this.loadingText = 'Uploading Data Entry';
       for (let i = 0; i < this.titles.length; i++) {
-        this.vStepError[this.titles[i]] = []
+        this.vStepError[this.titles[i]] = [];
       }
       try {
-        await this.validateForm(this.tempInputObj)
+        await this.validateForm(this.tempInputObj);
         if (this.isEditMode) {
-          const query = this.$route.query
+          const query = this.$route.query;
           await this.submitCurationData({
             xlsxObjectId: query?.id,
             isNew: query?.isNew
-          })
+          });
         } else {
-          await this.submitCurationData()
+          await this.submitCurationData();
         }
       } catch (error) {
-        if (Object.keys(this.errors).length) this.checkErrorsLocation()
+        if (Object.keys(this.errors).length) this.checkErrorsLocation();
         this.$store.commit('setSnackbar', {
           message: error?.message ?? 'Something went wrong',
           action: () => this.submit()
-        })
+        });
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    async validateForm (obj) {
-      this.$store.commit('explorer/curation/setCurationFormError', {})
-      const errorObj = {}
+    isFieldEmpty(obj) {
+      return obj.type === 'replace_nested'
+        ? !obj.values.length
+        : !obj.cellValue;
+    },
+    async validateForm(obj) {
+      this.$store.commit('explorer/curation/setCurationFormError', {});
+      const errorObj = {};
       for (const key in obj) {
-        const arr = obj[key]
+        const arr = obj[key];
         for (let i = 0; i < arr.length; i++) {
-          const detail = obj[key][i]?.detail ?? {}
+          const detail = obj[key][i]?.detail ?? {};
           if (detail.required) {
-            if (this.hasProperty(detail, 'cellValue') && !detail?.cellValue) {
+            if (this.isFieldEmpty(detail)) {
               errorObj[key] = this.hasProperty(errorObj, key)
                 ? errorObj[key]
-                : {}
-              const refArr = obj[key][i]?.ref || []
+                : {};
+              const refArr = obj[key][i]?.ref || [];
               if (!refArr.length) {
-                errorObj[key] = `${obj[key][i].name} is a required field`
+                errorObj[key] = `${obj[key][i].name} is a required field`;
               } else {
                 refArr.reduce(function (o, x, index) {
                   return index === refArr.length - 1
                     ? (o[x] = `${obj[key][i].name} is a required field`)
-                    : (o[x] = typeof o[x] === 'object' ? o[x] : {})
-                }, errorObj[key])
+                    : (o[x] = typeof o[x] === 'object' ? o[x] : {});
+                }, errorObj[key]);
               }
             }
           }
         }
       }
 
-      this.$store.commit('explorer/curation/setCurationFormError', errorObj)
+      this.$store.commit('explorer/curation/setCurationFormError', errorObj);
     },
-    goToStep (id, index) {
-      if (index) this.verticalActive = index
+    goToStep(id, index) {
+      if (index) this.verticalActive = index;
     },
-    async fetchListValues (arg) {
-      this.listItems = []
-      this.loadingList = true
+    async fetchListValues(arg) {
+      this.listItems = [];
+      this.loadingList = true;
       try {
-        const result = await this.fetchXlsList({ field: arg })
-        this.listItems = result?.columns[0]?.values || []
+        const result = await this.fetchXlsList({ field: arg });
+        this.listItems = result?.columns[0]?.values || [];
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: 'Something went wrong',
           action: () => this.fetchListValues(arg)
-        })
+        });
       } finally {
-        this.loadingList = false
+        this.loadingList = false;
       }
     },
-    fetchParameterValues (arr = []) {
-      this.listItems = []
-      const data = arr.reduce((acc, val) => acc.concat(Object.keys(val)), [])
-      this.listItems = data
+    fetchParameterValues(arr = []) {
+      this.listItems = [];
+      const data = arr.reduce((acc, val) => acc.concat(Object.keys(val)), []);
+      this.listItems = data;
     },
-    sortCurate (arg) {
-      var id = arg.slice(-1)
-      this.verticalActive = this.resetVStep ? 'v_1' : this.verticalActive
-      this.resetVStep = true
+    sortCurate(arg) {
+      var id = arg.slice(-1);
+      this.verticalActive = this.resetVStep ? 'v_1' : this.verticalActive;
+      this.resetVStep = true;
       if (!this.tempInputObj[this.titles[id]].length) {
         return this.filterData(
           this.titles[id],
           this.curate[this.titles[id]],
           []
-        )
+        );
       }
     },
-    sort_variedMultiple_alt (title, arr, parent) {
+    sort_variedMultiple_alt(title, arr, parent) {
       for (let i = 0; i < arr.length; i++) {
         if (this.hasProperty(arr[i], 'ChooseParameter')) {
-          const ref = [...parent, 'ChooseParameter']
+          const ref = [...parent, 'ChooseParameter'];
           this.tempInputObj[title].push({
             detail: arr[i].ChooseParameter,
             name: 'ChooseParameter',
             ref: ref
-          })
+          });
         }
       }
     },
-    addVariedMultiple (title, arr, parent) {
-      const obj = JSON.parse(JSON.stringify(arr[0]))
-      this.clearFields(obj)
-      const refArr = parent || []
+    addVariedMultiple(title, arr, parent) {
+      const obj = JSON.parse(JSON.stringify(arr[0]));
+      this.clearFields(obj);
+      const refArr = parent || [];
       const refData = refArr.reduce(function (o, x) {
-        return typeof o === 'undefined' || o === null ? o : o[x]
-      }, this.curate[title])
+        return typeof o === 'undefined' || o === null ? o : o[x];
+      }, this.curate[title]);
 
       if (
         this.hasProperty(refData, 'values') &&
         Array.isArray(refData?.values)
       ) {
-        refData.values.push(obj)
-        const length = refData.values.length
+        refData.values.push(obj);
+        const length = refData.values.length;
         this.sort_variedMultiple_alt(
           title,
           [refData.values[length - 1]],
           parent
-        )
+        );
       }
     },
-    filterData (title, obj, parent = []) {
+    filterData(title, obj, parent = []) {
       if (
         this.hasProperty(obj, 'type') &&
         this.hasProperty(obj, 'cellValue') &&
         !parent.length
       ) {
-        obj.cellValue = this.$route?.query?.id ? obj.cellValue : null
+        obj.cellValue = this.$route?.query?.id ? obj.cellValue : null;
         return this.tempInputObj[title].push({
           detail: obj,
           name: title,
           ref: [...parent, title]
-        })
+        });
       }
       for (const prop in obj) {
-        const ref = parent
+        const ref = parent;
         if (!obj[prop]?.type && typeof (obj[prop] === 'object')) {
-          this.filterData(title, obj[prop], [...parent, prop])
+          this.filterData(title, obj[prop], [...parent, prop]);
         } else {
           if (
             obj[prop].type === 'replace_nested' &&
             !this.hasProperty(obj[prop], 'edited')
           ) {
-            obj[prop].values = this.$route?.query?.id ? obj[prop].values : []
+            obj[prop].values = this.$route?.query?.id ? obj[prop].values : [];
             this.$store.commit('explorer/curation/setReplaceNestedRef', [
               title,
               ...ref,
               prop
-            ])
+            ]);
           } else if (
             obj[prop].type === 'multiples' &&
             !this.$route?.query?.id
           ) {
-            this.clearFields(obj[prop])
+            this.clearFields(obj[prop]);
           } else if (!this.$route?.query?.id) {
-            obj[prop].cellValue = null
+            obj[prop].cellValue = null;
           }
           this.tempInputObj[title].push({
             detail: obj[prop],
             name: prop,
             ref: [...ref, prop]
-          })
+          });
           if (
             obj[prop].type === 'varied_multiples' &&
             !this.$route?.query?.id
           ) {
-            this.clearFields(obj[prop])
+            this.clearFields(obj[prop]);
           }
           if (
             obj[prop].type === 'varied_multiples' &&
@@ -661,118 +666,120 @@ export default {
             this.sort_variedMultiple_alt(title, obj[prop].values, [
               ...ref,
               prop
-            ])
+            ]);
           }
         }
       }
     },
-    clearFields (obj) {
+    clearFields(obj) {
       if (this.hasProperty(obj, 'type')) {
         if (obj.type === 'multiples' || obj.type === 'varied_multiples') {
-          const arr = obj.values
+          const arr = obj.values;
           for (let i = 0; i < arr.length; i++) {
-            this.clearFields(arr[i])
+            this.clearFields(arr[i]);
           }
         } else if (obj.type === 'replace_nested') {
-          obj.values = []
+          obj.values = [];
         } else {
-          obj.cellValue = null
+          obj.cellValue = null;
         }
       } else {
         for (const key in obj) {
-          this.clearFields(obj[key])
+          this.clearFields(obj[key]);
         }
       }
     },
-    filterCurationData () {
-      this.titles = Object.keys(this.curate).filter((word) => word !== 'ID')
-      if (!this.isEditMode) this.clearFields(this.curate.ID)
-      const objArr = {}
-      const errArr = {}
+    filterCurationData() {
+      this.titles = Object.keys(this.curate).filter((word) => word !== 'ID');
+      if (!this.isEditMode) this.clearFields(this.curate.ID);
+      const objArr = {};
+      const errArr = {};
       for (let i = 0; i < this.titles.length; i++) {
-        objArr[this.titles[i]] = []
-        errArr[this.titles[i]] = []
-        this.vStepError = Object.assign({}, this.vStepError, errArr)
-        this.tempInputObj = Object.assign({}, this.tempInputObj, objArr)
-        this.filterData(this.titles[i], this.curate[this.titles[i]], [])
+        objArr[this.titles[i]] = [];
+        errArr[this.titles[i]] = [];
+        this.vStepError = Object.assign({}, this.vStepError, errArr);
+        this.tempInputObj = Object.assign({}, this.tempInputObj, objArr);
+        this.filterData(this.titles[i], this.curate[this.titles[i]], []);
       }
     },
-    async fetchCurationData () {
-      this.loading = true
-      this.error = false
-      this.loadingText = 'Loading Curation Form'
-      const query = this.$route.query
-      this.$store.commit('explorer/curation/clearReplaceNestedRef')
+    async fetchCurationData() {
+      this.loading = true;
+      this.error = false;
+      this.loadingText = 'Loading Curation Form';
+      const query = this.$route.query;
+      this.$store.commit('explorer/curation/clearReplaceNestedRef');
       try {
         const arg = this.isEditMode
           ? { isNew: query.isNew, id: query.id }
-          : null
+          : null;
         if (
           this.isEditMode &&
           (!this.hasProperty(query, 'isNew') || !this.hasProperty(query, 'id'))
         ) {
-          throw new Error('Incorrect Route Parameters')
+          throw new Error('Incorrect Route Parameters');
         }
-        await this.fetchData(arg)
-        this.filterCurationData()
+        await this.fetchData(arg);
+        this.filterCurationData();
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: error?.message || 'Something went wrong',
           action: () => this.fetchCurationData()
-        })
-        this.error = true
+        });
+        this.error = true;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-    resetState () {
-      this.loading = true
-      this.tempInputObj = {}
-      this.vStepError = {}
-      this.titles = []
-      this.active = ''
-      this.verticalActive = 'v_1'
-      this.dialogBoxText = ''
-      this.dialogBoxAction = null
-      this.$store.commit('explorer/curation/setCurationFormData', {})
-      this.$store.commit('explorer/curation/setCurationFormError', {})
-      this.$store.commit('explorer/curation/clearReplaceNestedRef')
+    resetState() {
+      this.loading = true;
+      this.tempInputObj = {};
+      this.vStepError = {};
+      this.titles = [];
+      this.active = '';
+      this.verticalActive = 'v_1';
+      this.dialogBoxText = '';
+      this.dialogBoxAction = null;
+      this.$store.commit('explorer/curation/setCurationFormData', {});
+      this.$store.commit('explorer/curation/setCurationFormError', {});
+      this.$store.commit('explorer/curation/clearReplaceNestedRef');
     },
-    openDialogBox (msg = null, func = null) {
-      this.dialogBoxText = !msg ? 'Are you sure you want to submit?' : msg
-      this.dialogBoxAction = !func ? () => this.submitForm() : func
+    openDialogBox(msg = null, func = null) {
+      this.dialogBoxText = !msg ? 'Are you sure you want to submit?' : msg;
+      this.dialogBoxAction = !func ? () => this.submitForm() : func;
       if (!this.dialogBoxActive) {
-        this.toggleDialogBox()
+        this.toggleDialogBox();
       }
     },
-    confirmAction () {
+    confirmAction() {
       if (this.dialogBoxAction) {
-        this.dialogBoxAction()
-        this.closeDialogBox()
+        this.dialogBoxAction();
+        this.closeDialogBox();
       }
     }
   },
-  async created () {
-    await this.fetchCurationData()
+  async created() {
+    this.$store.commit('explorer/curation/setDatasetId', null);
+    await this.fetchCurationData();
+    !this.isEditMode && (await this.generateControlID());
   },
-  beforeRouteLeave (to, _, next) {
-    let msg = ''
-    if (to.name === 'XmlVisualizer') return next()
-    if (this.error) return next()
+  beforeRouteLeave(to, _, next) {
+    let msg = '';
+    if (to.name === 'XmlVisualizer') return next();
+    if (this.error) return next();
     if (to.path === '/explorer/curate/stepper') {
       msg =
-        'Do you want to create a new curation? You would lose any unsaved changes!'
+        'Do you want to create a new curation? You would lose any unsaved changes!';
       return this.openDialogBox(msg, () => {
-        next()
-        this.resetState()
-        this.fetchCurationData()
-      })
+        next();
+        this.resetState();
+        this.fetchCurationData();
+      });
     }
-    msg = 'Do you really want to leave? You would lose any unsaved changes!'
+    msg = 'Do you really want to leave? You would lose any unsaved changes!';
     return this.openDialogBox(msg, () => {
-      next()
-      this.resetState()
-    })
+      next();
+      this.resetState();
+    });
   },
   computed: {
     ...mapState({
@@ -782,29 +789,29 @@ export default {
     ...mapGetters({
       dialogBoxActive: 'dialogBox'
     }),
-    reduceSpacing () {
-      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 }
+    reduceSpacing() {
+      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 };
     },
-    setDropdownPosition () {
-      return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
+    setDropdownPosition() {
+      return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' };
     },
-    inputSizesm () {
-      return 'md-size-40 md-medium-size-45 md-small-size-50 '
+    inputSizesm() {
+      return 'md-size-40 md-medium-size-45 md-small-size-50 ';
     },
-    isEditMode () {
-      return !!Object.keys(this.$route.query).length
+    isEditMode() {
+      return !!Object.keys(this.$route.query).length;
     },
-    navRoutes () {
-      if (this.isEditMode) return [...this.editRouteParent]
-      return [this.editRouteParent[0]]
+    navRoutes() {
+      if (this.isEditMode) return [...this.editRouteParent];
+      return [this.editRouteParent[0]];
     }
   },
   watch: {
-    searchKeyword (newVal) {
+    searchKeyword(newVal) {
       if (newVal) {
-        this.searchCurationForm()
+        this.searchCurationForm();
       }
     }
   }
-}
+};
 </script>
