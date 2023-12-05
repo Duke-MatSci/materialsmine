@@ -46,7 +46,7 @@ router.route('/admin').post(isAuth, curationController.approveCuration);
 
 router
   .route('/newsampleid')
-  .get(isAuth, latencyTimer, curationController.getControlSampleId);
+  .post(isAuth, latencyTimer, curationController.getControlSampleId);
 
 router.route('rehydrate').patch(isAuth, curationController.curationRehydration);
 
