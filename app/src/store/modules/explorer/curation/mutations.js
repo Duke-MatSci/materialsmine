@@ -1,44 +1,44 @@
 export default {
-  setDatasetId(state, datasetId) {
-    state.datasetId = datasetId;
+  setDatasetId (state, datasetId) {
+    state.datasetId = datasetId
   },
-  setFieldNameSelected(state, fieldName) {
-    state.fieldNameSelected = fieldName;
+  setFieldNameSelected (state, fieldName) {
+    state.fieldNameSelected = fieldName
   },
-  setNewChartExist(state, payload) {
+  setNewChartExist (state, payload) {
     // Using this to trigger a refresh after user creates a new chart
-    state.newChartExist = payload;
+    state.newChartExist = payload
   },
-  setOrcidData(state, payload) {
-    state.orcidData = payload;
+  setOrcidData (state, payload) {
+    state.orcidData = payload
   },
-  setDoiData(state, payload) {
-    state.doiData = payload;
+  setDoiData (state, payload) {
+    state.doiData = payload
   },
-  setXmlBulkResponse(state, payload) {
-    state.xmlBulkResponse = payload;
+  setXmlBulkResponse (state, payload) {
+    state.xmlBulkResponse = payload
   },
-  setCurationFormData(state, payload) {
-    state.curationFormData = payload;
+  setCurationFormData (state, payload) {
+    state.curationFormData = payload
   },
-  setCurationFormError(state, payload) {
-    state.curationFormError = payload;
+  setCurationFormError (state, payload) {
+    state.curationFormError = payload
   },
-  setReplaceNestedRef(state, payload) {
+  setReplaceNestedRef (state, payload) {
     if (payload.length) {
       const data = state.replaceNestedRef.length
         ? [...state.replaceNestedRef, JSON.stringify(payload)]
-        : [JSON.stringify(payload)];
+        : [JSON.stringify(payload)]
 
-      state.replaceNestedRef = [...new Set(data)];
+      state.replaceNestedRef = [...new Set(data)]
     }
   },
-  clearReplaceNestedRef(state) {
-    state.replaceNestedRef = [];
+  clearReplaceNestedRef (state) {
+    state.replaceNestedRef = []
   },
-  setControlID(state, payload) {
+  setControlID (state, payload) {
     if (state.curationFormData?.Control_ID) {
-      state.curationFormData.Control_ID.cellValue = payload;
+      state.curationFormData.Control_ID.cellValue = payload
     }
   }
-};
+}

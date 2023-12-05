@@ -308,21 +308,21 @@
 </template>
 
 <script>
-import DropZone from '@/components/curate/FileDrop.vue';
-import FilePreview from '@/components/curate/FilePreview.vue';
-import LoginRequired from '@/components/LoginRequired.vue';
-import CurateNavBar from '@/components/curate/CurateNavBar.vue';
-import Spinner from '@/components/Spinner.vue';
-import useFileList from '@/modules/file-list';
+import DropZone from '@/components/curate/FileDrop.vue'
+import FilePreview from '@/components/curate/FilePreview.vue'
+import LoginRequired from '@/components/LoginRequired.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
+import Spinner from '@/components/Spinner.vue'
+import useFileList from '@/modules/file-list'
 import {
   VERIFY_AUTH_QUERY,
   USER_DATASET_IDS_QUERY
-} from '@/modules/gql/dataset-gql';
-import { mapGetters, mapMutations, mapActions } from 'vuex';
-import optionalChainingUtil from '@/mixins/optional-chaining-util';
+} from '@/modules/gql/dataset-gql'
+import { mapGetters, mapMutations, mapActions } from 'vuex'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
 
 // Create separate file objects for spreadsheet vs supplementary files
-const spreadsheetFn = useFileList();
+const spreadsheetFn = useFileList()
 
 export default {
   name: 'SpreadsheetBulk',
@@ -334,7 +334,7 @@ export default {
     Spinner,
     LoginReq: LoginRequired
   },
-  data() {
+  data () {
     return {
       auth: true,
       verifyUser: null,
@@ -361,7 +361,7 @@ export default {
           path: '/explorer/curate/spreadsheet'
         }
       ]
-    };
+    }
   },
   computed: {
     ...mapGetters({
@@ -383,63 +383,62 @@ export default {
       clearSnackbar: 'resetSnackbar',
       setDatasetId: 'explorer/curation/setDatasetId'
     }),
-    navBack() {
-      this.$router.back();
+    navBack () {
+      this.$router.back()
     },
     // Format files for submission
-    processFiles() {
+    processFiles () {
       return this.spreadsheetFiles
         .filter((file) => file.status === 'incomplete')
-        .map(({ file }) => file);
+        .map(({ file }) => file)
     },
-    onInputChange(e) {
-      this.invalidFile = null;
-      const reg = /\.(zip)$/;
+    onInputChange (e) {
+      this.invalidFile = null
+      const reg = /\.(zip)$/
       if (!reg.test(e.target.files[0].name)) {
-        this.invalidFile = 'Only .zip files are accepted';
+        this.invalidFile = 'Only .zip files are accepted'
       } else if (this.spreadsheetFiles.length) {
         this.invalidFile =
-          'Only one .zip file can be uploaded at a time. Your previously selected file has been removed.';
-        this.clearAllFiles();
-        this.addSpreadsheet(e.target.files);
-      } else this.addSpreadsheet(e.target.files);
+          'Only one .zip file can be uploaded at a time. Your previously selected file has been removed.'
+        this.clearAllFiles()
+        this.addSpreadsheet(e.target.files)
+      } else this.addSpreadsheet(e.target.files)
 
       // reset so that selecting the same file again will still cause it to fire this change
-      e.target.value = null;
+      e.target.value = null
     },
-    goToStep(id, index) {
-      this.clearSnackbar();
-      this[id] = true;
+    goToStep (id, index) {
+      this.clearSnackbar()
+      this[id] = true
       if (index) {
-        this.active = index;
+        this.active = index
       }
     },
-    async submitFiles() {
-      this.submitted = true;
-      this.loading = true;
-      const files = this.processFiles();
+    async submitFiles () {
+      this.submitted = true
+      this.loading = true
+      const files = this.processFiles()
       try {
-        await this.submitBulkXml(files);
+        await this.submitBulkXml(files)
         this.spreadsheetFiles.forEach((file, index) =>
           this.modStatSpreadsheet(index, 'complete')
-        );
-        this.loading = false;
-        this.setDatasetId('');
-        if (!this.$route?.query?.complete)
-          this.$router.push({ query: { complete: 'true' } });
+        )
+        this.loading = false
+        this.setDatasetId('')
+        if (!this.$route?.query?.complete) { this.$router.push({ query: { complete: 'true' } }) }
       } catch (error) {
-        this.loading = false;
-        this.setDatasetId('');
+        this.loading = false
+        this.setDatasetId('')
         this.$store.commit('setSnackbar', {
           message: error
-        });
+        })
       }
     }
   },
-  mounted() {
+  mounted () {
     if (!!this.$route?.query?.complete && !!this.xmlBulkResponse) {
-      this.submitted = true;
-      this.loading = false;
+      this.submitted = true
+      this.loading = false
     }
   },
   apollo: {
@@ -452,5 +451,5 @@ export default {
       fetchPolicy: 'cache-and-network'
     }
   }
-};
+}
 </script>
