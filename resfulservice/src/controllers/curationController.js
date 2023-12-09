@@ -1,3 +1,6 @@
+/* eslint-disable space-before-function-paren */
+// https://github.com/prettier/prettier/issues/3847
+/* eslint-disable indent */
 const util = require('util');
 const fs = require('fs');
 const XlsxFileManager = require('../utils/curation-utility');
@@ -9,12 +12,15 @@ const {
   BaseObjectSubstitutionMap,
   CurationEntityStateDefault,
   XSDJsonPlaceholder,
-  userRoles
+  userRoles,
+  SupportedFileResponseHeaders,
+  CurationStateSubstitutionMap
 } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
+const FsFile = require('../models/fsFiles');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 
@@ -23,51 +29,93 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   logger.info('curateXlsxSpreadsheet Function Entry:');
 
   try {
+    const storedCurations = await CuratedSamples.find(
+      { user: user._id },
+      { object: 1 },
+      { lean: true }
+    );
+
     let result;
-    const processedFiles = [];
+    const processedFiles = { toBeUploaded: [], toBeDeleted: [] };
+
+    const regex = /(?=.*?(master_template))(?=.*?(.xlsx)$)/gi;
+    const xlsxFile = req.files?.uploadfile.find((file) =>
+      regex.test(file?.path)
+    );
+
+    const errorMessage = validateCurationPayload(req, xlsxFile);
+    if (errorMessage) {
+      return next(errorWriter(req, errorMessage, 'curateXlsxSpreadsheet', 400));
+    }
+
     if (query?.isBaseObject) {
-      if (!req.body?.curatedjsonObject) {
+      const curationObject = req.body.curatedjsonObject;
+      const uniqueFields = getCurationUniqueFields(curationObject);
+      const publicationType = uniqueFields.publicationType ?? undefined;
+      const title = uniqueFields.title ?? undefined;
+
+      const curatedAlready = findDuplicate(
+        storedCurations,
+        title,
+        publicationType
+      );
+      if (curatedAlready) {
         return next(
           errorWriter(
             req,
-            'Base Schema curation object not sent',
+            'This had been curated already',
             'curateXlsxSpreadsheet',
-            400
+            409
           )
         );
       }
-      const curationObject = req.body.curatedjsonObject;
       const { filteredObject, errors } = await createJsonObject(
         curationObject,
         [],
         undefined,
         processedFiles
       );
-      if (Object.keys(errors)?.length) { return res.status(400).json({ fieldError: errors }); }
+
+      if (Object.keys(errors)?.length) {
+        return res.status(400).json({ fieldError: errors });
+      }
+
       result = filterNestedObject(filteredObject);
     } else {
-      if (!req.files?.uploadfile) {
-        return next(
-          errorWriter(
-            req,
-            'Material template files not uploaded',
-            'curateXlsxSpreadsheet',
-            400
-          )
-        );
-      }
-      const regex = /(?=.*?(master_template))(?=.*?(.xlsx)$)/gi;
-      const xlsxFile = req.files.uploadfile.find((file) =>
-        regex.test(file?.path)
+      const sheetsData = {};
+      const {
+        title: titleCellLocation,
+        publicationType: publicationTypeCellLocation
+      } = getCurationUniqueFields(BaseSchemaObject);
+      const [sheetName, titleRow, titleCol] = titleCellLocation
+        .replace(/[[\]]/g, '')
+        .split(/\||,/);
+
+      const [, pubRow, pubCol] = publicationTypeCellLocation
+        .replace(/[[\]]/g, '')
+        .split(/\||,/);
+
+      sheetsData[sheetName] = await XlsxFileManager.xlsxFileReader(
+        xlsxFile.path,
+        sheetName
       );
 
-      if (!xlsxFile) {
+      const title =
+        sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
+      const publicationType =
+        sheetsData[sheetName]?.[+pubRow]?.[+pubCol] ?? undefined;
+      const curatedAlready = findDuplicate(
+        storedCurations,
+        title,
+        publicationType
+      );
+      if (curatedAlready) {
         return next(
           errorWriter(
             req,
-            'Master template xlsx file not uploaded',
+            'This had been curated already',
             'curateXlsxSpreadsheet',
-            400
+            409
           )
         );
       }
@@ -79,55 +127,34 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         validListMap,
         req.files.uploadfile,
         processedFiles,
-        logger
+        sheetsData,
+        logger,
+        req?.isParentFunction
       );
-      if (result?.count && req?.isParentFunction) { return { errors: result.errors }; }
-      if (result?.count) {
-        return res
-          .status(400)
-          .json({
-            filename: `/api/files/${xlsxFile.path.split(
-              'mm_files/'
-            )}?isFileStore=true`,
-            errors: result.errors
-          });
+
+      if (result?.errorCount && req?.isParentFunction) {
+        return { errors: result.errors };
+      }
+
+      if (result?.errorCount) {
+        return res.status(400).json({
+          filename: `/api/files/${xlsxFile.filename}?isFileStore=true`,
+          errors: result.errors
+        });
       }
     }
-    const storedCurations = await CuratedSamples.find(
-      { user: user._id },
-      { object: 1 },
-      { lean: true }
+    const requiredFields = getCurationUniqueFields(result);
+    result.Control_ID = await generateControlSampleId(
+      requiredFields,
+      user,
+      query?.dataset
     );
-
-    const curatedAlready = storedCurations.find(
-      ({ object }) =>
-        object?.DATA_SOURCE?.Citation?.CommonFields?.Title ===
-          result?.DATA_SOURCE?.Citation?.CommonFields?.Title &&
-        object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
-          result?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType
-    );
-
-    if (curatedAlready) {
-      return next(
-        errorWriter(
-          req,
-          'This had been curated already',
-          'curateXlsxSpreadsheet',
-          409
-        )
-      );
-    }
 
     let datasets;
     if (query.dataset) {
       datasets = await DatasetId.findOne({ _id: query.dataset });
-    } else if (result?.Control_ID) {
-      const existingDataset = await DatasetId.findOne({
-        controlSampleID: result?.Control_ID
-      });
-      datasets =
-        existingDataset ??
-        (await DatasetId.create({ user, controlSampleID: result.Control_ID }));
+    } else {
+      datasets = await DatasetId.create({ user });
     }
 
     if (!datasets) {
@@ -142,6 +169,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         )
       );
     }
+
     const newCurationObject = new CuratedSamples({
       object: result,
       user: user?._id,
@@ -154,10 +182,11 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     await datasets.updateOne({ $push: { samples: curatedObject } });
 
-    let xml = XlsxFileManager.xmlGenerator(
+    const generatedXml = XlsxFileManager.xmlGenerator(
       JSON.stringify({ PolymerNanocomposite: curatedObject.object })
     );
-    xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
+
+    const xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${generatedXml}`;
     const curatedSample = {
       sampleID: curatedObject._id,
       xml,
@@ -169,13 +198,127 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (req?.isParentFunction) return { curatedSample, processedFiles };
 
-    processedFiles.forEach(
+    if (!query?.isBaseObject) {
+      processedFiles.toBeDeleted.push({
+        params: {
+          fileId: xlsxFile.filename
+        },
+        isInternal: true
+      });
+    }
+
+    processedFiles.toBeDeleted.forEach(
       async (newReq) => await FileController.deleteFile(newReq, {}, (fn) => fn)
     );
+
+    if (query?.isBaseObject && processedFiles.toBeUploaded.length) {
+      for (const file of processedFiles.toBeUploaded) {
+        FileStorage.minioPutObject(file, req);
+      }
+    }
+
     latency.latencyCalculator(res);
     return res.status(201).json({ ...curatedSample });
   } catch (err) {
     next(errorWriter(req, err, 'curateXlsxSpreadsheet', 500));
+  }
+};
+
+const findDuplicate = (storedCurations, title, publicationType) => {
+  const curatedAlready = storedCurations.find(
+    ({ object }) =>
+      object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
+      object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
+        publicationType
+  );
+  return curatedAlready;
+};
+
+const validateCurationPayload = (req, xlsxFile) => {
+  const { query } = req;
+  let errorMessage;
+  if (query?.isBaseObject) {
+    if (!req.body?.curatedjsonObject) {
+      errorMessage = 'Base Schema curation object not sent';
+    }
+  } else {
+    if (!xlsxFile) {
+      errorMessage = 'Master template xlsx file not uploaded';
+    }
+  }
+  return errorMessage;
+};
+
+const getCurationUniqueFields = (BaseSchemaObject) => {
+  const controlID = BaseSchemaObject?.Control_ID;
+  const title =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title?.cellValue;
+  const publicationType =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType
+      ?.cellValue;
+  const author = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Author;
+  const citationType =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.CitationType;
+  const publicationYear =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationYear;
+  return {
+    title,
+    publicationType,
+    author,
+    citationType,
+    publicationYear,
+    controlID
+  };
+};
+
+const generateControlSampleId = async (requiredFields, user, datasetId) => {
+  try {
+    let [existingDatasets, userDatasets] = await Promise.all([
+      DatasetId.find({ user: user._id }),
+      DatasetId.findOne({
+        user: user._id,
+        _id: datasetId
+      })
+    ]);
+
+    if (!userDatasets && !existingDatasets?.length) {
+      userDatasets = await DatasetId.create({ user });
+    } else {
+      userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+    }
+
+    let { citationType, publicationYear, author } = requiredFields;
+
+    // L325_S1_Test_2015
+    citationType = citationType === 'lab-generated' ? 'E' : 'L';
+    publicationYear = publicationYear ?? new Date().getFullYear();
+    author = author?.length ? author[0].split(' ')[0] : 'unknown';
+    const sampleIndex = userDatasets?.samples?.length;
+    const datasetIndex = existingDatasets?.length ?? 1;
+
+    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}`;
+  } catch (error) {
+    const err = new Error(error);
+    err.functionName = 'generateControlSampleId';
+    throw err;
+  }
+};
+
+exports.getControlSampleId = async (req, res, next) => {
+  const { user, logger, body } = req;
+  try {
+    logger.info('getControlSampleId Function Entry:');
+
+    const controlID = await generateControlSampleId(
+      body,
+      user,
+      body?.datasetId
+    );
+
+    latency.latencyCalculator(res);
+    return res.status(201).json({ controlID });
+  } catch (error) {
+    next(errorWriter(req, error, 'getControlSampleId', 500));
   }
 };
 
@@ -268,13 +411,18 @@ const processSingleCuration = async (
   bulkErrors,
   req
 ) => {
-  let imageBucketArray = [];
+  let toBeUploaded = [];
   if (masterTemplates.length) {
     for (const masterTemplate of masterTemplates) {
       const newCurationFiles = [...curationFiles, masterTemplate];
       const newReq = {
         ...req,
-        files: { uploadfile: newCurationFiles.map((file) => ({ path: file })) },
+        files: {
+          uploadfile: newCurationFiles.map((file) => ({
+            path: file,
+            mimetype: SupportedFileResponseHeaders[`.${file.split('.').pop()}`]
+          }))
+        },
         isParentFunction: true
       };
       const nextFnCallBack = (fn) => fn;
@@ -291,23 +439,14 @@ const processSingleCuration = async (
         });
       } else {
         bulkCurations.push(result.curatedSample);
-        imageBucketArray = result.processedFiles.filter(
-          ({ params: { fileId } }) => /\.(jpe?g|tiff?|png)$/i.test(fileId)
-        );
+        toBeUploaded = result?.processedFiles?.toBeUploaded;
       }
     }
   }
 
-  if (imageBucketArray.length) {
-    for (const image of imageBucketArray) {
-      const {
-        params: { fileId }
-      } = image;
-      const file = {
-        filename: fileId,
-        mimetype: `image/${fileId.split('.').pop()}`,
-        path: fileId
-      };
+  // TODO (@tee*): Refactor to remove this and upload inside the closure function e.g. createMaterialObject
+  if (toBeUploaded.length) {
+    for (const file of toBeUploaded) {
       FileStorage.minioPutObject(file, req);
     }
   }
@@ -371,7 +510,11 @@ exports.getXlsxCurations = async (req, res, next) => {
       }
     }
     latency.latencyCalculator(res);
-    const baseCuratedObject = createBaseSchema(baseSchemaObject, fetchedObject, logger);
+    const baseCuratedObject = createBaseSchema(
+      baseSchemaObject,
+      fetchedObject,
+      logger
+    );
     return res.status(200).json(baseCuratedObject);
   } catch (err) {
     next(errorWriter(req, err, 'getXlsxCurations', 500));
@@ -431,7 +574,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
 
     // Fetch the storedObject based on the isNew flag
     let storedObject;
-    const processedFiles = [];
+    const processedFiles = { toBeDeleted: [], toBeUploaded: [] };
     if (isNew === 'true') {
       const curationObject = await CuratedSamples.findOne(
         { _id: xlsxObjectId, ...filter },
@@ -465,7 +608,6 @@ exports.updateXlsxCurations = async (req, res, next) => {
     }
 
     let baseCuratedObject;
-
     if (isBaseUpdate === 'true') {
       // Handle JSON update
       const { filteredObject, errors } = await createJsonObject(
@@ -485,7 +627,6 @@ exports.updateXlsxCurations = async (req, res, next) => {
     }
 
     const isObjChanged = !util.isDeepStrictEqual(baseCuratedObject, payload);
-
     if (isObjChanged) {
       // Create XML from filteredObject
       const filteredObject = filterNestedObject(payload);
@@ -498,7 +639,12 @@ exports.updateXlsxCurations = async (req, res, next) => {
       if (isNew === 'true') {
         await CuratedSamples.findOneAndUpdate(
           { _id: xlsxObjectId, ...filter },
-          { $set: { object: filteredObject } },
+          {
+            $set: {
+              object: filteredObject,
+              curationState: CurationStateSubstitutionMap.Review
+            }
+          },
           {
             new: true,
             lean: true,
@@ -510,17 +656,28 @@ exports.updateXlsxCurations = async (req, res, next) => {
           { _id: xlsxObjectId, ...filter },
           {
             $set: {
-              content: { PolymerNanocomposite: { filteredObject } },
-              xml_str: xml
+              content: { PolymerNanocomposite: { ...filteredObject } },
+              xml_str: xml,
+              curateState: CurationStateSubstitutionMap.Review
             }
           },
           { new: true, lean: true }
         );
       }
-      processedFiles.forEach(
-        async (newReq) =>
-          await FileController.deleteFile(newReq, {}, (fn) => fn)
-      );
+
+      if (processedFiles.toBeUploaded.length) {
+        for (const file of processedFiles.toBeUploaded) {
+          FileStorage.minioPutObject(file, req);
+        }
+      }
+
+      if (processedFiles.toBeDeleted.length) {
+        processedFiles.toBeDeleted.forEach(
+          async (newReq) =>
+            await FileController.deleteFile(newReq, {}, (fn) => fn)
+        );
+      }
+
       latency.latencyCalculator(res);
       return res.status(200).json(req.body.payload);
     }
@@ -535,17 +692,48 @@ exports.deleteXlsxCurations = async (req, res, next) => {
   const { user, logger, query } = req;
   logger.info('deleteXlsxCurations Function Entry:');
 
-  const { xlsxObjectId, dataset } = query;
-  const filter = {};
-
-  if (user?.roles !== 'admin') filter.user = user._id;
+  const { xlsxObjectId, dataset, isNew } = query;
+  const userFilter =
+    isNew === 'true' ? { user: user._id } : { iduser: user._id };
+  const filter = user?.roles !== userRoles.isAdmin ? userFilter : {};
 
   try {
     if (xlsxObjectId) {
-      const xlsxObject = await CuratedSamples.findOneAndDelete(
-        { _id: xlsxObjectId, ...filter },
-        { lean: true }
-      );
+      let xlsxObject;
+      if (isNew === 'true') {
+        xlsxObject = await CuratedSamples.findOneAndDelete(
+          { _id: xlsxObjectId, ...filter },
+          { lean: true }
+        );
+        const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
+        if (imageFiles) {
+          imageFiles.forEach(async ({ File }) => {
+            const file = File.split('/api/files/').pop();
+            const newReq = {
+              params: { fileId: file.split('?')[0] },
+              isInternal: true
+            };
+            await FileController.deleteFile(newReq, {}, (fn) => fn);
+          });
+        }
+      } else {
+        xlsxObject = await XmlData.findOneAndDelete(
+          { _id: xlsxObjectId, ...filter },
+          { lean: true }
+        );
+        if (xlsxObject?.xml_str) {
+          const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
+          const xmlObject = JSON.parse(xmlJson);
+          xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
+          const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
+          if (imageFiles) {
+            imageFiles.forEach(async ({ File }) => {
+              const blobId = File.split('?id=').pop();
+              await FsFile.findOneAndDelete({ _id: blobId });
+            });
+          }
+        }
+      }
 
       if (!xlsxObject) {
         return next(
@@ -559,15 +747,13 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       }
 
       await DatasetId.findOneAndUpdate(
-        { _id: xlsxObject.dataset },
-        { $pull: { samples: xlsxObject._id } },
+        { _id: xlsxObject?.dataset }, // TODO (@tee): Check if this is correct. Should we be calling this if value can be undefined?
+        { $pull: { samples: xlsxObject?._id } },
         { new: true }
       );
-      return res
-        .status(200)
-        .json({
-          message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
-        });
+      return res.status(200).json({
+        message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
+      });
     } else if (dataset) {
       const datasets = await DatasetId.findOneAndDelete(
         { _id: dataset, ...filter },
@@ -643,15 +829,17 @@ const appendUploadedFiles = (parsedCSVData) => {
  * @returns {Object} - Newly curated object or errors that occur while  proces
  */
 exports.createMaterialObject = async (
+  // TODO (@tee): Missing decorators (processedFiles, etc)
   path,
   BaseObject,
   validListMap,
   uploadedFiles,
   processedFiles,
+  sheetsData = {},
   logger,
+  isParentCall,
   errors = {}
 ) => {
-  const sheetsData = {};
   const filteredObject = {};
 
   for (const property in BaseObject) {
@@ -667,7 +855,9 @@ exports.createMaterialObject = async (
           validListMap,
           uploadedFiles,
           processedFiles,
+          sheetsData,
           logger,
+          isParentCall,
           errors
         );
         const value = Object.values(newObj)[0];
@@ -715,7 +905,9 @@ exports.createMaterialObject = async (
           validListMap,
           uploadedFiles,
           processedFiles,
+          sheetsData,
           logger,
+          isParentCall,
           errors
         );
 
@@ -739,7 +931,9 @@ exports.createMaterialObject = async (
           validListMap,
           uploadedFiles,
           processedFiles,
+          sheetsData,
           logger,
+          isParentCall,
           errors
         );
 
@@ -790,23 +984,41 @@ exports.createMaterialObject = async (
           const file = uploadedFiles?.find((file) => regex.test(file?.path));
 
           if (file) {
-            if (
-              file?.mimetype === 'text/csv' ||
-              file?.mimetype === 'text/tab-separated-values'
-            ) {
+            const filesDirectory = process.env?.FILES_DIRECTORY
+              ? `${process.env?.FILES_DIRECTORY}/`
+              : 'mm_files/';
+            const filename = file.path.split(filesDirectory)[1];
+            const processableRegex = /(?=.*?((?:.csv|.tsv))$)/gi;
+
+            const isProccessable = processableRegex.test(filename);
+            if (isProccessable) {
               const jsonData = await XlsxFileManager.parseCSV(file.path);
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
+
               const newReq = {
-                params: { fileId: file.path },
-                query: { isStore: true },
-                isInternal: true
+                params: { fileId: filename },
+                isInternal: true,
+                env: process.env
               };
-              processedFiles.push(newReq);
+              processedFiles.toBeDeleted.push(newReq);
             } else {
+              const fileDetails = {
+                filename,
+                mimetype:
+                  SupportedFileResponseHeaders[`.${filename.split('.').pop()}`],
+                path: file.path
+              };
+
               filteredObject[
                 BaseObjectSubstitutionMap[property] ?? property
-              ] = `/api/files/${file.path}?isStore=true`;
+              ] = `/api/files/${filename}?isStore=true`;
+
+              if (isParentCall) {
+                processedFiles.toBeUploaded.push(fileDetails);
+              } else {
+                FileStorage.minioPutObject(fileDetails, { logger });
+              }
             }
           } else {
             errors[cellValue] = 'file not uploaded';
@@ -820,6 +1032,8 @@ exports.createMaterialObject = async (
       } else if (cellValue === null && propertyValue?.default) {
         filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
           propertyValue.default;
+      } else if (cellValue === null && propertyValue?.required) {
+        errors[property] = `${property} cannot be null`;
       }
     } else {
       const nestedObj = await this.createMaterialObject(
@@ -828,7 +1042,9 @@ exports.createMaterialObject = async (
         validListMap,
         uploadedFiles,
         processedFiles,
+        sheetsData,
         logger,
+        isParentCall,
         errors
       );
       const nestedObjectKeys = Object.keys(nestedObj);
@@ -848,16 +1064,27 @@ exports.createMaterialObject = async (
     }
   }
 
-  if (Object.keys(errors)?.length) { return { errors, count: Object.keys(errors)?.length }; }
+  if (Object.keys(errors)?.length) {
+    return { errors, errorCount: Object.keys(errors)?.length };
+  }
 
   return filteredObject;
 };
+
+async function checkFileExistence(filePath) {
+  try {
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 const createJsonObject = async (
   BaseObject,
   validListMap,
   XSDJsonPlaceholder,
-  processedFiles = []
+  processedFiles = { toBeDeleted: [], toBeUploaded: [] }
 ) => {
   const filteredObject = {};
   const errors = {};
@@ -936,33 +1163,66 @@ const createJsonObject = async (
         if (propertyValue?.required && !propertyValue.cellValue) {
           errors[property] = `${property} cannot be null`;
         } else {
-          const regex = /(?=.*?((?:.csv|.tsv)))(?=.*?(isStore=true)$)/gi;
+          const regex = /(?=.*?((?:.csv|.tsv)))(?=.*?(isFileStore=true)$)/gi;
           const isProccessable = regex.test(propertyValue.cellValue);
           if (isProccessable) {
             const file = propertyValue.cellValue.split('/').pop();
             const newReq = {
               params: { fileId: file.split('?')[0] },
-              query: { isStore: true },
-              isInternal: true
+              query: { isFileStore: true },
+              isInternal: true,
+              env: process.env // TODO: Fix later, there is already a middleware that parses env var
             };
-            const nextFnCallBack = (fn) => fn;
+
             const dataStream = await FileController.fileContent(
               newReq,
               {},
-              nextFnCallBack
+              (fn) => fn
             );
             if (dataStream) {
               const jsonData = await XlsxFileManager.parseCSV(null, dataStream);
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
-              processedFiles.push(newReq);
-              // await deleteFile(newReq, { sendStatus: (code) => code }, nextFnCallBack);
+              processedFiles.toBeDeleted.push(newReq);
             } else {
               errors[property] = 'file not found';
             }
           } else {
-            filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
-              XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
+            const filename = propertyValue.cellValue
+              ?.split('files/')[1]
+              ?.split('?')[0];
+
+            if (filename) {
+              const fileExist = await checkFileExistence(
+                `${process.env?.FILES_DIRECTORY}/${filename}`
+              );
+              if (!fileExist) {
+                // TODO (@tee): Refactor!! This logic is repeated in else block
+                filteredObject[
+                  BaseObjectSubstitutionMap[property] ?? property
+                ] = XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
+              } else {
+                const fileDetails = {
+                  filename,
+                  mimetype:
+                    SupportedFileResponseHeaders[
+                      `.${filename.split('.').pop()}`
+                    ],
+                  path: `${process.env?.FILES_DIRECTORY}/${filename}`,
+                  env: process.env
+                };
+
+                filteredObject[
+                  BaseObjectSubstitutionMap[property] ?? property
+                ] =
+                  XSDJsonPlaceholder?.File ??
+                  `/api/files/${filename}?isStore=true`;
+                processedFiles.toBeUploaded.push(fileDetails);
+              }
+            } else {
+              filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
+                XSDJsonPlaceholder?.File ?? propertyValue.cellValue;
+            }
           }
         }
       } else {
@@ -992,7 +1252,7 @@ const createJsonObject = async (
     }
   }
 
-  return { filteredObject, errors };
+  return { filteredObject, errors, processedFiles };
 };
 
 const parseXmlDataToBaseSchema = (xmlJson) => {
@@ -1066,7 +1326,7 @@ const generateCurationListMap = (validCurationList) => {
  * @param {Object} curatedBaseObject - The curated base object which contains all fields based on the BaseSchemaObject
  * @returns {Object} The filtered curated base object stripped off all null values
  */
-function filterNestedObject (curatedBaseObject) {
+function filterNestedObject(curatedBaseObject) {
   const filteredObject = {};
   for (const property in curatedBaseObject) {
     const value = curatedBaseObject[property];
@@ -1206,7 +1466,8 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
           storedObject?.[propertyKey]?.row)
       ) {
         const filePath = XlsxFileManager.generateCSVData(
-          storedObject?.[propertyKey], { logger }
+          storedObject?.[propertyKey],
+          { logger }
         );
         curatedBaseObject[propertyKey] = {
           ...propertyValue,
@@ -1233,15 +1494,15 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
         nestedObj =
           property === 'SYNTHESIS AND PROCESSING'
             ? createBaseSchema(
-              propertyValue,
-              storedObject[BaseObjectSubstitutionMap[property]],
-              logger
-            )
+                propertyValue,
+                storedObject[BaseObjectSubstitutionMap[property]],
+                logger
+              )
             : createBaseSchema(
-              propertyValue,
-              storedObject?.[BaseObjectSubstitutionMap[property] || property],
-              logger
-            );
+                propertyValue,
+                storedObject?.[BaseObjectSubstitutionMap[property] || property],
+                logger
+              );
       }
 
       if (Object.keys(nestedObj).length > 0) {

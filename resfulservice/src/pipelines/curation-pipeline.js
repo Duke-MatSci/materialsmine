@@ -1,5 +1,6 @@
 const { Types: { ObjectId } } = require('mongoose');
 const XmlData = require('../models/xmlData');
+const { CurationStateSubstitutionMap } = require('../../config/constant');
 
 exports.curationSearchQuery = async (input) => {
   const status = input?.filter?.status;
@@ -10,7 +11,11 @@ exports.curationSearchQuery = async (input) => {
   const xmlDataFilter = param ? { title: { $regex: new RegExp(param.toString(), 'gi') } } : {};
   const curationSampleFilter = param ? { 'object.DATA_SOURCE.Citation.CommonFields.Title': { $regex: new RegExp(param.toString(), 'gi') } } : {};
 
-  if (curationState) xmlDataFilter.curateState = curationState;
+  if (curationState) {
+    xmlDataFilter.curateState = curationState;
+    curationSampleFilter.curationState = CurationStateSubstitutionMap[curationState];
+  }
+
   if (user) {
     xmlDataFilter.iduser = ObjectId.isValid(user) ? ObjectId(user) : user;
     curationSampleFilter.user = ObjectId.isValid(user) ? ObjectId(user) : user;

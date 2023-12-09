@@ -13,7 +13,7 @@
           <div class="form__group search_box_form-item-2 search_box_form-item-2-padded explorer_page-nav u--margin-neg" :class="[dense ? 'u--layout-width' : '']">
             <slot name="filter_inputs"></slot>
           </div>
-          <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg" :class="[dense ? 'u--layout-width search_box_form-item-2-padded' : '']">
+          <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg" :class="[dense ? 'u--layout-width ' : '']">
             <slot name="action_buttons"></slot>
           </div>
         </form>
