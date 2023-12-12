@@ -197,13 +197,6 @@ export default {
       })
     },
     onSelectInfo (items) {
-      console.log(this.showDropDown)
-      console.log(
-        this.showDropDown.map(
-          (entry, index) =>
-            !!items.map((item) => item.key).includes(index)
-        )
-      )
       this.showDropDown.map(
         (entry, index) =>
           !!items.map((item) => item.key).includes(index)
@@ -217,7 +210,6 @@ export default {
           ? (entry.showDropDown = true)
           : (entry.showDropDown = false)
       )
-      console.log(this.fetchedNamesWithInfo)
       const unselected = this.fetchedNames.filter(
         (item) => !selected.includes(item)
       )

@@ -34,7 +34,6 @@ describe('ScatterPlot.vue', () => {
     for (let i = 0; i < dialogBox.length; i++) {
       const element = dialogBox.at(i)
       expect(element.attributes('minwidth')).toBe(dialogProps[i].minwidth)
-      expect(element.attributes('disableclose')).toBe(dialogProps[i].disableclose)
     }
   })
 

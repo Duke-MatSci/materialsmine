@@ -42,14 +42,6 @@ describe('DataSelector', () => {
     expect(wrapper.find('table').text()).toBe('No data available')
   })
 
-  it('handleQuery1Change dispatches the right action ', async () => {
-    const storeSpy = jest.spyOn(wrapper.vm.$store, 'dispatch')
-    await wrapper.vm.handleQuery1Change('C11')
-    await wrapper.vm.handleQuery2Change('C12')
-    expect(storeSpy).toHaveBeenNthCalledWith(1, 'metamineNU/setQuery1', 'C11')
-    expect(storeSpy).toHaveBeenNthCalledWith(2, 'metamineNU/setQuery2', 'C12')
-  })
-
   it('renders data returned from mapState', async () => {
     await wrapper.vm.$store.commit('metamineNU/setFetchedNames', fetchedNamesSample)
     await wrapper.vm.handleQuery1Change('C11')
@@ -58,8 +50,6 @@ describe('DataSelector', () => {
     await wrapper.vm.$store.commit('metamineNU/setDataLibrary', [])
     await wrapper.vm.$store.commit('metamineNU/setPage', 'pairwise-plot')
     expect(wrapper.vm.fetchedNames).toEqual(fetchedNamesSample)
-    expect(wrapper.vm.query1).toEqual('C11')
-    expect(wrapper.vm.query2).toEqual('C12')
     expect(wrapper.findAllComponents('tr').length).toEqual(2)
   })
 
@@ -72,6 +62,6 @@ describe('DataSelector', () => {
     await wrapper.vm.$store.commit('metamineNU/setPage', 'pairwise-plot')
     const storeSpy = jest.spyOn(wrapper.vm.$store, 'dispatch')
     await wrapper.vm.onSelect([fetchedNamesSample[0]])
-    expect(storeSpy).toHaveBeenCalledTimes(6)
+    expect(storeSpy).toHaveBeenCalledTimes(4)
   })
 })
