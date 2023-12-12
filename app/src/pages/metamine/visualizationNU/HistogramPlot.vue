@@ -19,22 +19,22 @@
 </template>
 
 <script>
-import Histogram from '@/components/metamine/visualizationNU/histogram.vue';
-import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue';
-import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue';
-import MaterialInformation from '@/components/metamine/visualizationNU/MaterialInformation.vue';
-import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue';
-import DataInfo from '../../../components/metamine/visualizationNU/DataInfo.vue';
+import Histogram from '@/components/metamine/visualizationNU/histogram.vue'
+import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
+import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
+import MaterialInformation from '@/components/metamine/visualizationNU/MaterialInformation.vue'
+import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
+import DataInfo from '../../../components/metamine/visualizationNU/DataInfo.vue'
 
 export default {
-    name: 'HistogramPage',
-    components: {
-        Histogram,
-        DataSelector,
-        RangeSelector,
-        MaterialInformation,
-        DataInfo,
-        VisualizationLayout
-    }
-};
+  name: 'HistogramPage',
+  components: {
+    Histogram,
+    DataSelector,
+    RangeSelector,
+    MaterialInformation,
+    DataInfo,
+    VisualizationLayout
+  }
+}
 </script>

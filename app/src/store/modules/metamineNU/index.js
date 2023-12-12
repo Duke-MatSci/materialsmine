@@ -13,7 +13,7 @@ export default {
     neighbors: [],
     reset: false,
     knnUmap: 15,
-    dialogBoxActiveKnn: false, 
+    dialogBoxActiveKnn: false,
     enableKnn: true
   },
   getters: {
@@ -59,13 +59,13 @@ export default {
     },
     setKnnUmap (context, payload) {
       context.commit('setKnnUmap', payload)
-    }, 
+    },
     setDialogBoxActiveKnn (context, payload) {
       context.commit('setDialogBoxActiveKnn', payload)
     },
     setEnableKnn (context, payload) {
       context.commit('setEnableKnn', payload)
-    },
+    }
 
   },
   mutations: {
@@ -107,7 +107,7 @@ export default {
     },
     setDialogBoxActiveKnn (state, payload) {
       state.dialogBoxActiveKnn = payload
-    }, 
+    },
     setEnableKnn (state, payload) {
       state.enableKnn = payload
     }

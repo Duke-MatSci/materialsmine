@@ -45,7 +45,11 @@
                         name="xAxis"
                         @change="handleQuery1Change"
                     >
-                        <option v-for="item in columns" :value="item">
+                        <option
+                            v-for="item in columns"
+                            :value="item"
+                            v-bind="item"
+                        >
                             {{ item }}
                         </option>
                     </select>
@@ -63,7 +67,11 @@
                         name="yAxis"
                         @change="handleQuery2Change"
                     >
-                        <option v-for="item in columns" :value="item">
+                        <option
+                            v-for="item in columns"
+                            :value="item"
+                            v-bind="item"
+                        >
                             {{ item }}
                         </option>
                     </select>
@@ -187,12 +195,14 @@ export default {
         onSelectInfo(items) {
             console.log(this.showDropDown);
             console.log(
-                this.showDropDown.map((entry, index) =>
-                    items.map((item) => item.key).includes(index) ? true : false
+                this.showDropDown.map(
+                    (entry, index) =>
+                        !!items.map((item) => item.key).includes(index)
                 )
             );
-            this.showDropDown.map((entry, index) =>
-                items.map((item) => item.key).includes(index) ? true : false
+            this.showDropDown.map(
+                (entry, index) =>
+                    !!items.map((item) => item.key).includes(index)
             );
         },
         onSelect(items) {

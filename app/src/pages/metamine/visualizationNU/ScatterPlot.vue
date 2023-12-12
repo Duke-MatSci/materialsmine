@@ -65,71 +65,71 @@
 </template>
 
 <script>
-import Scatter from '@/components/metamine/visualizationNU/scatter.vue';
-import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue';
-import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue';
-import Youngs from '@/components/metamine/visualizationNU/youngs.vue';
-import Poisson from '@/components/metamine/visualizationNU/poisson.vue';
-import Structure from '@/components/metamine/visualizationNU/structure.vue';
-import MaterialInformation from '@/components/metamine/visualizationNU/MaterialInformation.vue';
-import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue';
-import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue';
-import Dialog from '@/components/Dialog.vue';
-import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue';
-import DataInfo from '../../../components/metamine/visualizationNU/DataInfo.vue';
-import { mapState } from 'vuex';
+import Scatter from '@/components/metamine/visualizationNU/scatter.vue'
+import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
+import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
+import Youngs from '@/components/metamine/visualizationNU/youngs.vue'
+import Poisson from '@/components/metamine/visualizationNU/poisson.vue'
+import Structure from '@/components/metamine/visualizationNU/structure.vue'
+import MaterialInformation from '@/components/metamine/visualizationNU/MaterialInformation.vue'
+import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue'
+import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue'
+import Dialog from '@/components/Dialog.vue'
+import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
+import DataInfo from '../../../components/metamine/visualizationNU/DataInfo.vue'
+import { mapState } from 'vuex'
 
 export default {
-    name: 'ScatterPage',
-    components: {
-        Scatter,
-        DataSelector,
-        RangeSelector,
-        Youngs,
-        Poisson,
-        Structure,
-        MaterialInformation,
-        NeighborPanel,
-        SaveDataPanel,
-        dialogBox: Dialog,
-        VisualizationLayout,
-        DataInfo
-    },
-    data() {
-        return {
-            dialogBoxActiveSaveData: false,
-            reset: false,
-            link: {
-                to: '/mm/metamaterial_visualization_nu',
-                text: 'Visualize In Pairwise Plot'
-            }
-        };
-    },
-    computed: {
-        ...mapState('metamineNU', {
-            dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn,
-            enableKnn: (state) => state.enableKnn
-        })
-    },
-    methods: {
-        toggleEnableKnn() {
-            this.$store.dispatch('metamineNU/setEnableKnn', !this.enableKnn, {
-                root: true
-            });
-        },
-        closeDialogBox() {
-            this.$store.dispatch('metamineNU/setDialogBoxActiveKnn', false, {
-                root: true
-            });
-        },
-        toggleDialogBoxSaveData() {
-            this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData;
-        },
-        handleReset() {
-            this.$store.dispatch('metamineNU/setReset', true, {
-                root: true
-            });
-        }
+  name: 'ScatterPage',
+  components: {
+    Scatter,
+    DataSelector,
+    RangeSelector,
+    Youngs,
+    Poisson,
+    Structure,
+    MaterialInformation,
+    NeighborPanel,
+    SaveDataPanel,
+    dialogBox: Dialog,
+    VisualizationLayout,
+    DataInfo
+  },
+  data () {
+    return {
+      dialogBoxActiveSaveData: false,
+      reset: false,
+      link: {
+        to: '/mm/metamaterial_visualization_nu',
+        text: 'Visualize In Pairwise Plot'
+      }
     }
-};
+  },
+  computed: {
+    ...mapState('metamineNU', {
+      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn,
+      enableKnn: (state) => state.enableKnn
+    })
+  },
+  methods: {
+    toggleEnableKnn () {
+      this.$store.dispatch('metamineNU/setEnableKnn', !this.enableKnn, {
+        root: true
+      })
+    },
+    closeDialogBox () {
+      this.$store.dispatch('metamineNU/setDialogBoxActiveKnn', false, {
+        root: true
+      })
+    },
+    toggleDialogBoxSaveData () {
+      this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData
+    },
+    handleReset () {
+      this.$store.dispatch('metamineNU/setReset', true, {
+        root: true
+      })
+    }
+  }
+}
 </script>

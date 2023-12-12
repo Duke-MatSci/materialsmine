@@ -40,28 +40,28 @@
 
 <script>
 export default {
-    name: 'VisualizationLayout',
-    props: {
-        link: {
-            type: Object,
-            validator: (val) =>
-                Object.hasOwnProperty.call(val, 'to') &&
+  name: 'VisualizationLayout',
+  props: {
+    link: {
+      type: Object,
+      validator: (val) =>
+        Object.hasOwnProperty.call(val, 'to') &&
                 Object.hasOwnProperty.call(val, 'text'),
-            default: null
-        },
-        dense: {
-            type: Boolean,
-            default: false
-        }
+      default: null
     },
-    computed: {
-        validateLinkProp() {
-            if (!this.link || typeof this.link !== 'object') return false;
-            return (
-                Object.hasOwnProperty.call(this.link, 'to') &&
-                Object.hasOwnProperty.call(this.link, 'text')
-            );
-        }
+    dense: {
+      type: Boolean,
+      default: false
     }
-};
+  },
+  computed: {
+    validateLinkProp () {
+      if (!this.link || typeof this.link !== 'object') return false
+      return (
+        Object.hasOwnProperty.call(this.link, 'to') &&
+                Object.hasOwnProperty.call(this.link, 'text')
+      )
+    }
+  }
+}
 </script>
