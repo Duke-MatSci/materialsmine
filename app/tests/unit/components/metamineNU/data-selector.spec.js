@@ -72,6 +72,6 @@ describe('DataSelector', () => {
     await wrapper.vm.$store.commit('metamineNU/setPage', 'pairwise-plot')
     const storeSpy = jest.spyOn(wrapper.vm.$store, 'dispatch')
     await wrapper.vm.onSelect([fetchedNamesSample[0]])
-    expect(storeSpy).toHaveBeenCalledTimes(4)
+    expect(storeSpy).toHaveBeenCalledTimes(6)
   })
 })
