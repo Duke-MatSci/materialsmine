@@ -12,7 +12,9 @@ export default {
     query2: null,
     neighbors: [],
     reset: false,
-    knnUmap: 15
+    knnUmap: 15,
+    dialogBoxActiveKnn: false, 
+    enableKnn: true
   },
   getters: {
     getFetchedNames: state => state.fetchedNames,
@@ -57,7 +59,13 @@ export default {
     },
     setKnnUmap (context, payload) {
       context.commit('setKnnUmap', payload)
-    }
+    }, 
+    setDialogBoxActiveKnn (context, payload) {
+      context.commit('setDialogBoxActiveKnn', payload)
+    },
+    setEnableKnn (context, payload) {
+      context.commit('setEnableKnn', payload)
+    },
 
   },
   mutations: {
@@ -96,6 +104,12 @@ export default {
     },
     setKnnUmap (state, payload) {
       state.knnUmap = payload
+    },
+    setDialogBoxActiveKnn (state, payload) {
+      state.dialogBoxActiveKnn = payload
+    }, 
+    setEnableKnn (state, payload) {
+      state.enableKnn = payload
     }
   }
 }
