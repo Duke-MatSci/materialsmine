@@ -546,6 +546,11 @@ paths:
           schema:
             type: string
           description: Dataset ID linked to multiple curations
+        - in: query
+          name: isNew
+          schema:
+            type: boolean
+          description: query params specifying if curation is new or old curation
 
       responses:
         '200':

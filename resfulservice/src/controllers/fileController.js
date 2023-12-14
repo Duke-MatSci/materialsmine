@@ -11,6 +11,7 @@ const {
 } = require('../../config/constant');
 const minioClient = require('../utils/minio');
 const { MinioBucket, MetamineBucket } = require('../../config/constant');
+const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
 
 exports._createEmptyStream = () =>
   new PassThrough(
@@ -45,14 +46,14 @@ exports.fileContent = async (req, res, next) => {
         latency.latencyCalculator(res);
         return this._createEmptyStream().pipe(res);
       }
+
+      if (req.isInternal) return fileStream;
       latency.latencyCalculator(res);
       res.setHeader('Content-Type', SupportedFileResponseHeaders[ext]);
-      if (req.isInternal) return fileStream;
       return fileStream.pipe(res);
     }
 
     if (req.query.isStore) {
-      const bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
       const dataStream = await minioClient.getObject(bucketName, fileId);
       if (req.isInternal) return dataStream;
       if (!dataStream) {
@@ -97,14 +98,17 @@ exports.fileContent = async (req, res, next) => {
 exports.uploadFile = async (req, res, next) => {
   try {
     req.logger.info('datasetIdUpload Function Entry:');
-
     successWriter(req, { message: 'success' }, 'uploadFile');
     latency.latencyCalculator(res);
+
+    const storeLocation =
+      req.query?.isTemp === 'true' ? 'isFileStore' : 'isStore';
     const files = req.files.uploadfile.map(({ filename }) => ({
-      filename: `/api/files/${filename}?isStore=true`,
+      filename: `/api/files/${filename}?${storeLocation}=true`,
       swaggerFilename: filename,
-      isStore: true
+      isStore: storeLocation === 'isStore'
     }));
+
     return res.status(201).json({ files });
   } catch (error) {
     next(errorWriter(req, 'Error uploading files', 'uploadFile', 500));
@@ -115,11 +119,7 @@ exports.getMetamineFileNames = async (req, res, next) => {
   const foundFiles = [];
   try {
     const bucketName = MetamineBucket;
-    const objectsStream = minioClient.listObjects(
-      bucketName,
-      undefined,
-      true
-    );
+    const objectsStream = minioClient.listObjects(bucketName, undefined, true);
     objectsStream.on('data', (obj) => {
       foundFiles.push(obj.name);
     });
@@ -163,7 +163,8 @@ exports.fetchMetamineDatasets = async (req, res, next) => {
         )
       );
     }
-    const data = await DatasetFileManager.parseCSV(null, stream);
+    // TODO: Remove third argument when metamine csv is fixed
+    const data = await DatasetFileManager.parseCSV(null, stream, true);
     successWriter(req, { message: 'success' }, 'fetchDatasets');
     return res.status(200).json({ fetchedData: data });
   } catch (error) {
@@ -188,12 +189,10 @@ exports.deleteFile = async (req, res, next) => {
   const { fileId } = req.params;
   const filePath = `${filesDirectory}/${fileId}`;
   try {
-    const bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
     await minioClient.removeObject(bucketName, fileId);
+    FileManager.deleteFile(filePath, req);
 
     if (req.isInternal) return true;
-
-    FileManager.deleteFile(filePath, req);
     latency.latencyCalculator(res);
     return res.sendStatus(200);
   } catch (err) {
