@@ -81,28 +81,27 @@
                   </md-field>
                 </div>
                 <template v-if="!!searchResult.length && showDropdown">
-                  <ul
+                  <div
                     class="search-dropdown-menu u_searchimage_form-group"
                     :style="setDropdownPosition"
                   >
-                    <li
+                    <button
                       v-for="(item, index) in searchResult"
                       :key="index"
                       @click.prevent="showInputLocation(item)"
-                      class=""
+                      style="white-space: wrap"
+                      class="btn-text md-button-clean viz-u-display__show u_width--max md-card-actions search_box_form_label u_pointer"
                     >
-                      <a href="#" @click.prevent="showInputLocation(item)">
-                        <template v-for="(level, l_id) in item">
-                          <span v-if="item.length - 1 !== l_id" :key="l_id">
-                            {{ level }} >>
-                          </span>
-                          <span v-else :key="level">
-                            <strong>{{ level }}</strong></span
-                          >
-                        </template>
-                      </a>
-                    </li>
-                  </ul>
+                      <template v-for="(level, l_id) in item">
+                        <span v-if="item.length - 1 !== l_id" :key="l_id">
+                          {{ level }} >>
+                        </span>
+                        <span v-else :key="level">
+                          <strong>{{ level }}</strong></span
+                        >
+                      </template>
+                    </button>
+                  </div>
                 </template>
               </div>
 
@@ -137,7 +136,7 @@
                           item.detail.type === 'multiples'
                             ? 'md-size-80 md-medium-size-90'
                             : inputSizesm,
-                          'md-layout-item md-xsmall-size-95 u_height--auto',
+                          'md-layout-item md-xsmall-size-95 u_height--auto'
                         ]"
                       >
                         <!-- Form Input Field Name  -->
@@ -160,7 +159,13 @@
                             item.detail.type !== 'varied_multiples'
                           "
                         >
-                          <InputComponent @update-step-error="updateStepError(title, step)" :title="title" :name="item.name" :uniqueKey="item.ref" :inputObj="item.detail"/>
+                          <InputComponent
+                            @update-step-error="updateStepError(title, step)"
+                            :title="title"
+                            :name="item.name"
+                            :uniqueKey="item.ref"
+                            :inputObj="item.detail"
+                          />
                         </template>
 
                         <!-- For handling varied_multiples -->
@@ -368,7 +373,8 @@ export default {
     ...mapActions({
       fetchData: 'explorer/curation/fetchCurationData',
       fetchXlsList: 'explorer/curation/fetchXlsList',
-      submitCurationData: 'explorer/curation/submitCurationData'
+      submitCurationData: 'explorer/curation/submitCurationData',
+      generateControlID: 'explorer/curation/createControlId'
     }),
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
@@ -463,7 +469,11 @@ export default {
                 JSON.stringify(currVal.ref) === JSON.stringify([...ref])
             )
           }
-          if (matchIndex < 5 && matchIndex !== -1) { this.updateStepError(title, 1) } else if (matchIndex !== -1) { this.updateStepError(title, Math.floor(matchIndex / 5) + 1) }
+          if (matchIndex < 5 && matchIndex !== -1) {
+            this.updateStepError(title, 1)
+          } else if (matchIndex !== -1) {
+            this.updateStepError(title, Math.floor(matchIndex / 5) + 1)
+          }
         }
       }
     },
@@ -499,6 +509,11 @@ export default {
         this.loading = false
       }
     },
+    isFieldEmpty (obj) {
+      return obj.type === 'replace_nested'
+        ? !obj.values.length
+        : !obj.cellValue
+    },
     async validateForm (obj) {
       this.$store.commit('explorer/curation/setCurationFormError', {})
       const errorObj = {}
@@ -507,7 +522,7 @@ export default {
         for (let i = 0; i < arr.length; i++) {
           const detail = obj[key][i]?.detail ?? {}
           if (detail.required) {
-            if (this.hasProperty(detail, 'cellValue') && !detail?.cellValue) {
+            if (this.isFieldEmpty(detail)) {
               errorObj[key] = this.hasProperty(errorObj, key)
                 ? errorObj[key]
                 : {}
@@ -594,7 +609,6 @@ export default {
           [refData.values[length - 1]],
           parent
         )
-        console.log(title)
       }
     },
     filterData (title, obj, parent = []) {
@@ -677,7 +691,7 @@ export default {
     },
     filterCurationData () {
       this.titles = Object.keys(this.curate).filter((word) => word !== 'ID')
-      this.clearFields(this.curate.ID)
+      if (!this.isEditMode) this.clearFields(this.curate.ID)
       const objArr = {}
       const errArr = {}
       for (let i = 0; i < this.titles.length; i++) {
@@ -744,7 +758,9 @@ export default {
     }
   },
   async created () {
+    this.$store.commit('explorer/curation/setDatasetId', null)
     await this.fetchCurationData()
+    !this.isEditMode && (await this.generateControlID())
   },
   beforeRouteLeave (to, _, next) {
     let msg = ''

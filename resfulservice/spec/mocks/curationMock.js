@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 const sinon = require('sinon');
 const jsonStructure = require('../../config/xlsx.json');
 
@@ -930,7 +931,7 @@ const mockJsonObjectErrored = {
             validList: 'citation_type'
           },
           PublicationType: {
-            cellValue: null,
+            cellValue: 'research article',
             type: 'List',
             required: false,
             validList: 'publication_type'
@@ -946,7 +947,7 @@ const mockJsonObjectErrored = {
             required: false
           },
           Title: {
-            cellValue: 'Test title',
+            cellValue: 'Backend developer',
             type: 'String',
             required: false
           },
@@ -2076,7 +2077,7 @@ const mockSheetData = [
     null,
     null
   ],
-  ['Your Name', 'Akash', 'Data contributor\'s name', null],
+  ['Your Name', 'Akash', "Data contributor's name", null],
   ['Your Email', 'akash@prasad.com', null, null],
   [
     'Sample ID',
@@ -2110,7 +2111,7 @@ const mockSheetData = [
   ['Issue', null, null, null],
   ['URL', null, null, null],
   ['Language', null, null, null],
-  ['Location', null, 'please put first author\'s major affiliation here', null],
+  ['Location', null, "please put first author's major affiliation here", null],
   ['Date of citation', null, 'mm/dd/yyyy', null],
   [null, null, null, null],
   [
@@ -2138,7 +2139,7 @@ const mockSheetData2 = [
     null,
     null
   ],
-  ['Your Name', 'Akash', 'Data contributor\'s name', null],
+  ['Your Name', 'Akash', "Data contributor's name", null],
   ['Your Email', 'akash@prasad.com', null, null],
   [
     'Sample ID',
@@ -2172,7 +2173,7 @@ const mockSheetData2 = [
   ['Issue', null, null, null],
   ['URL', null, null, null],
   ['Language', null, null, null],
-  ['Location', null, 'please put first author\'s major affiliation here', null],
+  ['Location', null, "please put first author's major affiliation here", null],
   ['Date of citation', null, 'mm/dd/yyyy', null],
   [null, null, null, null],
   [
@@ -2522,11 +2523,9 @@ const mockCuratedXlsxObject = {
         YourEmail: 'john@doe.com',
         Origin: 'experiments',
         CitationType: 'lab-generated',
-        Author: [
-          {
-            'Author #1': 'Aditya Shanker Prasad'
-          }
-        ],
+        Title: 'Backend developer',
+        Author: ['Aditya Shanker Prasad'],
+        PublicationType: 'research article',
         URL: 'https://search.proquest.com/openview/eb63d4d6b84b1252971b3e3eec53b97c/1?pq-origsite=gscholar&cbl=51922&diss=y',
         Location: 'Rensselaer Polytechnic Institute'
       }

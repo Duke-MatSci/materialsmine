@@ -122,12 +122,13 @@ describe('ManageCuration.vue', () => {
     const buttonContainer = form.findAll('.search_box_form-item-2').at(1)
     expect(inputContainer.find('.form__input.form__input--flat').exists()).toBe(true)
     expect(inputContainer.find('.form__label.search_box_form_label').text()).toBe('Search Xml')
-    expect(buttonContainer.findAll('button').at(4).text()).toBe('Search Xml')
+    expect(buttonContainer.find('button').text()).toBe('Search Xml')
   })
 
   it('submits button calls the right method', async () => {
     const spy = jest.spyOn(wrapper.vm, 'submitSearch').mockImplementation(() => {})
-    const button = wrapper.find('.md-button.btn.btn--primary.btn--noradius.u--margin-pos')
+    const button = wrapper.find('.btn.btn--primary.btn--noradius.u--margin-pos')
+    expect(button.text()).toBe('Search Xml')
     await wrapper.find('.form__input.form__input--flat').setValue('TestValue')
     await button.trigger('click')
     expect(spy).toHaveBeenCalled()

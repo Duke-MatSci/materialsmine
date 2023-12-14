@@ -35,5 +35,10 @@ export default {
   },
   clearReplaceNestedRef (state) {
     state.replaceNestedRef = []
+  },
+  setControlID (state, payload) {
+    if (state.curationFormData?.Control_ID) {
+      state.curationFormData.Control_ID.cellValue = payload
+    }
   }
 }

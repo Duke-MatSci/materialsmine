@@ -3,11 +3,12 @@
     "printWidth": 80,
     "editor.formatOnSave": true,
     "proseWrap": "always",
-    "tabWidth": 4,
+    "tabWidth": 2,
     "requireConfig": false,
     "useTabs": false,
     "trailingComma": "none",
     "bracketSpacing": true,
     "jsxBracketSameLine": false,
-    "semi": true
+    "semi": true,
+    "spaceBeforeFunctionParen": true
 }

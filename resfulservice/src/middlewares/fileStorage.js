@@ -60,6 +60,9 @@ const fileMgr = multer({ storage: fileStorage, fileFilter }).fields([
 ]);
 
 const minioUpload = (req, res, next) => {
+  // Boolean flag which determines whether to upload to the object store.
+  if (req.query?.isTemp) return next();
+
   const files = req.files?.uploadfile;
   if (!files) {
     return next();
@@ -72,16 +75,15 @@ const minioUpload = (req, res, next) => {
 };
 
 const minioPutObject = (file, req) => {
-  let bucketName;
-  if (req.query?.isVisualizationCSV === 'true') {
-    bucketName = req?.env?.METAMINEBUCKET ?? MetamineBucket;
-  } else {
-    bucketName = req?.env?.MINIO_BUCKET ?? MinioBucket;
-  }
+  const bucketName = req.query?.isVisualizationCSV === 'true'
+    ? process.env?.METAMINEBUCKET ?? MetamineBucket
+    : process.env?.MINIO_BUCKET ?? MinioBucket;
+
   const metaData = {
     'Content-Type': file.mimetype,
     'X-Amz-Meta-Data': 'MaterialsMine Project'
   };
+
   minioClient.fPutObject(
     bucketName,
     file.filename,
