@@ -2,23 +2,36 @@
   <VisualizationLayout :link="link" :dense="true">
     <template #main_chart>
       <Umap />
-        <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
-          <button @click="toggleDialogBoxKnn()" class="nuplot-button"> Find Nearest Neighbors </button>
-            <dialog-box :active="dialogBoxActiveKnn" :disableClose="true">
-                <template v-slot:content> <NeighborPanel /></template>
-                <template v-slot:actions>
-                    <md-button @click.native.prevent="toggleDialogBoxKnn">Close</md-button>
-                </template>
-            </dialog-box>
-            <button @click="toggleDialogBoxSaveData()" class="nuplot-button button-primary"> Save Data </button>
-            <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
-                <template v-slot:content> <SaveDataPanel /> </template>
-                <template v-slot:actions>
-                    <md-button @click.native.prevent="toggleDialogBoxSaveData" >Close</md-button >
-                </template>
-            </dialog-box>
-            <button @click="handleReset" class="nuplot-button button-alert"> Reset </button>
-        </div>
+      <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
+        <button @click="toggleDialogBoxKnn()" class="nuplot-button">
+          Find Nearest Neighbors
+        </button>
+        <dialog-box :active="dialogBoxActiveKnn" :disableClose="true">
+          <template v-slot:content> <NeighborPanel /></template>
+          <template v-slot:actions>
+            <md-button @click.native.prevent="toggleDialogBoxKnn"
+              >Close</md-button
+            >
+          </template>
+        </dialog-box>
+        <button
+          @click="toggleDialogBoxSaveData()"
+          class="nuplot-button button-primary"
+        >
+          Save Data
+        </button>
+        <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
+          <template v-slot:content> <SaveDataPanel /> </template>
+          <template v-slot:actions>
+            <md-button @click.native.prevent="toggleDialogBoxSaveData"
+              >Close</md-button
+            >
+          </template>
+        </dialog-box>
+        <button @click="handleReset" class="nuplot-button button-alert">
+          Reset
+        </button>
+      </div>
     </template>
 
     <template #subcharts>
@@ -65,7 +78,10 @@ export default {
       dialogBoxActiveKnn: false,
       dialogBoxActiveSaveData: false,
       reset: false,
-      link: { to: '/mm/metamaterial_visualization_nu', text: 'Visualize In Pairwise Plot' }
+      link: {
+        to: '/mm/metamaterial_visualization_nu',
+        text: 'Visualize In Pairwise Plot'
+      }
     }
   },
   methods: {
@@ -76,9 +92,7 @@ export default {
       this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData
     },
     handleReset () {
-      this.$store.dispatch('metamineNU/setReset', true, {
-        root: true
-      })
+      this.$store.commit('metamineNU/setReset', true)
     }
   }
 }

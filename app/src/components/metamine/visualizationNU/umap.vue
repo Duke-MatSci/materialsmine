@@ -1,10 +1,9 @@
 <template>
-    <div ref="umapPlot"></div>
+  <div ref="umapPlot"></div>
 </template>
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
 import { StandardScaler } from '@/modules/metamine/utils/standardScaler'
 import { UMAP } from 'umap-js'
@@ -41,59 +40,15 @@ function isBrushed (brushCoords, cx, cy) {
 
 export default {
   name: 'umap-plot',
-  mounted: async function () {
-    this.$store.dispatch('metamineNU/setPage', 'umap', { root: true })
-
-    // fetch data from AWS
-    // const bucketName = 'ideal-dataset-1'
-
-    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
-      (response) => {
-        return response.json()
-      }
-    )
-    this.$store.dispatch(
-      'metamineNU/setFetchedNames',
-      fetchedNamesResponse.fetchedNames,
-      { root: true }
-    )
-
-    this.fetchedNames.map(async (info, index) => {
-      const fetchedData = await fetch(
-                `/api/files/metamine/${info.name}`
-      )
-        .then((response) => {
-          return response.json()
-        })
-        .then((data) => {
-          return data.fetchedData
-        })
-      const processedData = fetchedData.map((dataset, index) => {
-        return processData(dataset, index)
-      })
-      // Process data
-      processedData.map((p) => (p.name = info.name))
-      processedData.map((p) => (p.color = info.color))
-      this.csvData.push(...processedData)
-      this.activeData.push(...processedData)
-
-      // Set data to store
-      this.$store.dispatch('metamineNU/setDatasets', this.csvData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setActiveData', this.activeData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setDataPoint', processedData[0], {
-        root: true
-      })
-    })
-    this.container = this.$refs.umapPlot
-
+  async mounted () {
+    this.$store.commit('metamineNU/setPage', 'umap', { root: true })
     // Create svg
-    this.createSvg({
-      container: this.container
-    })
+    this.createSvg({ container: this.container })
+    // if data exists update chart
+    if (!!this.csvData.length || !!this.fetchedNames.length) {
+      return this.update({ container: this.container })
+    }
+    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   },
   computed: {
     ...mapState('metamineNU', {
@@ -104,7 +59,10 @@ export default {
       selectedData: (state) => state.selectedData,
       reset: (state) => state.reset,
       knnUmap: (state) => state.knnUmap
-    })
+    }),
+    container () {
+      return this.$refs.umapPlot
+    }
   },
   data () {
     return {
@@ -112,38 +70,19 @@ export default {
     }
   },
   watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container
-          })
-        }
-      }
-    },
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
-        if (this.svg) {
+        if (this.svg && JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
           this.update({
             container: this.container
           })
         }
-      }
-    },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container
-        })
       }
     },
     dataPoint: {
       handler (newVal, oldVal) {
-        this.$store.dispatch('metamineNU/setDataPoint', newVal, {
-          root: true
-        })
+        this.$store.commit('metamineNU/setDataPoint', newVal)
       }
     },
     reset: {
@@ -308,9 +247,7 @@ export default {
         .tickFormat((x) => `${expo(x, 2)}`)
       this.xAxisGroup.transition().duration(500).call(xAxisCall)
 
-      const yAxisCall = d3
-        .axisLeft(yScale)
-        .tickFormat((y) => `${expo(y, 2)}`)
+      const yAxisCall = d3.axisLeft(yScale).tickFormat((y) => `${expo(y, 2)}`)
       this.yAxisGroup.transition().duration(500).call(yAxisCall)
       this.xLabel.text(this.query1)
       this.yLabel.text(this.query2)
@@ -332,44 +269,36 @@ export default {
           .style('stroke', 'black')
           .style('stroke-width', 2)
           .style('fill-opacity', 1)
-        self.$store.dispatch('metamineNU/setDataPoint', d, {
-          root: true
-        })
-        tooltip
-          .style('visibility', 'visible')
-          .transition()
-          .duration(200)
+        self.$store.commit('metamineNU/setDataPoint', d)
+        tooltip.style('visibility', 'visible').transition().duration(200)
       }
 
       const mousemove = function (e, d) {
         tooltip
           .html(
             'Dataset: ' +
-                            d.name +
-                            '<br>symmetry: ' +
-                            d.symmetry +
-                            '<br>C11: ' +
-                            d.C11 +
-                            '<br>C12: ' +
-                            d.C12 +
-                            '<br>C22: ' +
-                            d.C22 +
-                            '<br>C16: ' +
-                            d.C16 +
-                            '<br>C26: ' +
-                            d.C26 +
-                            '<br>C66: ' +
-                            d.C66
+              d.name +
+              '<br>symmetry: ' +
+              d.symmetry +
+              '<br>C11: ' +
+              d.C11 +
+              '<br>C12: ' +
+              d.C12 +
+              '<br>C22: ' +
+              d.C22 +
+              '<br>C16: ' +
+              d.C16 +
+              '<br>C26: ' +
+              d.C26 +
+              '<br>C66: ' +
+              d.C66
           )
           .style('top', e.pageY + 10 + 'px')
           .style('left', e.pageX + 10 + 'px')
       }
 
       const mouseleave = function (e, d) {
-        tooltip
-          .style('visibility', 'hidden')
-          .transition()
-          .duration(200)
+        tooltip.style('visibility', 'hidden').transition().duration(200)
         const circle = d3.select(this)
         d3.select(this)
           .attr(
@@ -386,18 +315,11 @@ export default {
       const mousedown = function (e, d) {
         const inputData = ['X', 'Y'].map((c) => d[c])
         const target = d3.select(this)
-        target.classed(
-          'nuplot-selected',
-          !target.classed('nuplot-selected')
-        )
+        target.classed('nuplot-selected', !target.classed('nuplot-selected'))
 
         const selected = []
-        d3.selectAll('.nuplot-selected').each((d, i) =>
-          selected.push(d)
-        )
-        self.$store.dispatch('metamineNU/setSelectedData', selected, {
-          root: true
-        })
+        d3.selectAll('.nuplot-selected').each((d, i) => selected.push(d))
+        self.$store.commit('metamineNU/setSelectedData', selected)
 
         target.classed('nuplot-selected', true)
         self.getKnnData(inputData, finalData).then((res) => {
@@ -411,15 +333,11 @@ export default {
           d3.selectAll('.dataCircle').classed(
             'nuplot-masked',
             function (datum) {
-              return !this.getAttribute('class').includes(
-                'nuplot-highlighted'
-              )
+              return !this.getAttribute('class').includes('nuplot-highlighted')
             }
           )
 
-          const neighborElements = d3.selectAll(
-            '.nuplot-highlighted'
-          )
+          const neighborElements = d3.selectAll('.nuplot-highlighted')
           const masked = d3.selectAll('.nuplot-masked')
           masked
             .attr('fill', (d) => d.color)
@@ -429,8 +347,7 @@ export default {
           const neighbors = []
           neighborElements.each((d, i) => {
             d.outline_color = nnColorAssignment[i]
-            d.distance =
-                            distances[indices.indexOf(finalData.indexOf(d))]
+            d.distance = distances[indices.indexOf(finalData.indexOf(d))]
             neighbors.push(d)
           })
           neighbors.sort((a, b) => a.distance - b.distance)
@@ -438,9 +355,7 @@ export default {
             .attr('fill', (d) => d.outline_color)
             .attr('r', circleFocusSize)
 
-          self.$store.dispatch('metamineNU/setNeighbors', neighbors, {
-            root: true
-          })
+          self.$store.commit('metamineNU/setNeighbors', neighbors)
         })
       }
 
@@ -489,21 +404,17 @@ export default {
             .classed('nuplot-selected', function (d) {
               return (
                 d3.select(this).classed('nuplot-selected') ||
-                                isBrushed(
-                                  event.selection,
-                                  _xScale(d[query1]),
-                                  _yScale(d[query2])
-                                )
+                isBrushed(
+                  event.selection,
+                  _xScale(d[query1]),
+                  _yScale(d[query2])
+                )
               )
             })
         }
         const selected = []
-        d3.selectAll('.nuplot-selected').each((d, i) =>
-          selected.push(d)
-        )
-        self.$store.dispatch('metamineNU/setSelectedData', selected, {
-          root: true
-        })
+        d3.selectAll('.nuplot-selected').each((d, i) => selected.push(d))
+        self.$store.commit('metamineNU/setSelectedData', selected)
       })
 
       // apply zoom and brush to svg
@@ -541,16 +452,9 @@ export default {
       circles.exit().transition().attr('r', 0).remove()
       if (this.reset) {
         this.svg.call(zoom.transform, d3.zoomIdentity)
-        d3.selectAll('.nuplot-selected').classed(
-          'nuplot-selected',
-          false
-        )
-        this.$store.dispatch('metamineNU/setSelectedData', [], {
-          root: true
-        })
-        this.$store.dispatch('metamineNU/setReset', false, {
-          root: true
-        })
+        d3.selectAll('.nuplot-selected').classed('nuplot-selected', false)
+        this.$store.commit('metamineNU/setSelectedData', [])
+        this.$store.commit('metamineNU/setReset', false)
       }
     },
     async getKnnData (dataPoint, data) {

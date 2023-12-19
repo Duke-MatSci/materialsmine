@@ -1,44 +1,44 @@
 <template>
-    <div class="range-selector-wrapper">
-        <div class="md-title u--font-emph-700">
-            Property Range
-        </div>
-        <div class="slider" v-for="(name, index) in rangeList" :key="index">
-            <div class="u--layout-flex u--layout-flex-justify-sb u_centralize_items">
-                <div style="width: 20%">{{ name }}</div>
-                <div style="width: 80%;">
-                    <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
-                        <input
-                            class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
-                            type="range"
-                            v-bind:min="defaultValues[index][0]"
-                            v-bind:max="defaultValues[index][1]"
-                            step="1"
-                            v-model="values[index][0]"
-                            @change="handleMinSliderChangeFuncs($event, index)"
-                        />
-                        <input
-                            class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
-                            type="range"
-                            v-bind:min="defaultValues[index][0]"
-                            v-bind:max="defaultValues[index][1]"
-                            step="1"
-                            v-model="values[index][1]"
-                            @change="handleMaxSliderChangeFuncs($event, index)"
-                        />
-                    </div>
-                    <div class=" u--layout-flex u--layout-flex-justify-sb">
-                        <div class="u--color-grey-sec">
-                            {{ sigFigs(defaultValues[index][0], 4) }}
-                        </div>
-                        <div class="u--color-grey-sec">
-                            {{ sigFigs(defaultValues[index][1], 4) }}
-                        </div>
-                    </div>
-                </div>
+  <div class="range-selector-wrapper">
+    <div class="md-title u--font-emph-700">Property Range</div>
+    <div class="slider" v-for="(name, index) in rangeList" :key="index">
+      <div class="u--layout-flex u--layout-flex-justify-sb u_centralize_items">
+        <div style="width: 20%">{{ name }}</div>
+        <div style="width: 80%">
+          <div
+            class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel"
+          >
+            <input
+              class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
+              type="range"
+              v-bind:min="defaultValues[index][0]"
+              v-bind:max="defaultValues[index][1]"
+              step="1"
+              v-model="values[index][0]"
+              @change="handleMinSliderChangeFuncs($event, index)"
+            />
+            <input
+              class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
+              type="range"
+              v-bind:min="defaultValues[index][0]"
+              v-bind:max="defaultValues[index][1]"
+              step="1"
+              v-model="values[index][1]"
+              @change="handleMaxSliderChangeFuncs($event, index)"
+            />
+          </div>
+          <div class="u--layout-flex u--layout-flex-justify-sb">
+            <div class="u--color-grey-sec">
+              {{ sigFigs(defaultValues[index][0], 4) }}
             </div>
+            <div class="u--color-grey-sec">
+              {{ sigFigs(defaultValues[index][1], 4) }}
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
@@ -102,9 +102,9 @@ export default {
       const activeDatasetNames = this.activeData.map((d) => d.name)
       const filteredDatasets = this.datasets.filter((d, i) => {
         const filtered =
-                    d[this.rangeList[index]] >= this.values[index][0] &&
-                    d[this.rangeList[index]] <= this.values[index][1] &&
-                    activeDatasetNames.includes(d.name)
+          d[this.rangeList[index]] >= this.values[index][0] &&
+          d[this.rangeList[index]] <= this.values[index][1] &&
+          activeDatasetNames.includes(d.name)
         return filtered
       })
       let sourceItems = this.dataLibrary
@@ -114,8 +114,8 @@ export default {
       )
 
       sourceItems = sourceItems.concat(unselected)
-      this.$store.dispatch('metamineNU/setActiveData', destItems)
-      this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
+      this.$store.commit('metamineNU/setActiveData', destItems)
+      this.$store.commit('metamineNU/setDataLibrary', sourceItems)
     },
     handleMaxSliderChangeFuncs (event, index) {
       if (event.target.value < this.values[index][0]) {
@@ -124,9 +124,9 @@ export default {
       const activeDatasetNames = this.activeData.map((d) => d.name)
       const filteredDatasets = this.datasets.filter((d, i) => {
         const filtered =
-                    d[this.rangeList[index]] >= this.values[index][0] &&
-                    d[this.rangeList[index]] <= this.values[index][1] &&
-                    activeDatasetNames.includes(d.name)
+          d[this.rangeList[index]] >= this.values[index][0] &&
+          d[this.rangeList[index]] <= this.values[index][1] &&
+          activeDatasetNames.includes(d.name)
         return filtered
       })
       let sourceItems = this.dataLibrary
@@ -136,8 +136,8 @@ export default {
       )
 
       sourceItems = sourceItems.concat(unselected)
-      this.$store.dispatch('metamineNU/setActiveData', destItems)
-      this.$store.dispatch('metamineNU/setDataLibrary', sourceItems)
+      this.$store.commit('metamineNU/setActiveData', destItems)
+      this.$store.commit('metamineNU/setDataLibrary', sourceItems)
     }
   }
 }

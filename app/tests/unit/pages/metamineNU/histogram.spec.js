@@ -15,6 +15,9 @@ describe('HistogramPlot.vue', () => {
     expect(layout.findComponent('histogram-stub').exists()).toBe(true)
     expect(layout.findComponent('dataselector-stub').exists()).toBe(true)
     expect(layout.findComponent('rangeselector-stub').exists()).toBe(true)
-    expect(layout.findComponent('materialinformation-stub').exists()).toBe(true)
+    expect(layout.findComponent('materialinformation-stub').exists()).toBe(
+      true
+    )
+    expect(layout.findComponent('datainfo-stub').exists()).toBe(true)
   })
 })

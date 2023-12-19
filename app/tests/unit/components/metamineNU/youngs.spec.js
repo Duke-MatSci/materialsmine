@@ -20,19 +20,26 @@ describe('youngs.vue', () => {
     expect(wrapper.exists()).toBe(true)
     expect(wrapper.findComponent({ ref: 'youngsPlot' }).exists()).toBe(true)
     expect(newPlotSpy).toHaveBeenCalledTimes(1)
-    expect(newPlotSpy).toHaveBeenCalledWith(wrapper.vm.$refs.youngsPlot, [wrapper.vm.trace1], wrapper.vm.layout, wrapper.vm.config)
+    expect(newPlotSpy).toHaveBeenCalledWith(
+      wrapper.vm.$refs.youngsPlot,
+      [wrapper.vm.trace1],
+      wrapper.vm.layout,
+      wrapper.vm.config
+    )
   })
 
   it('has the correct initial data propertied ', () => {
     expect(wrapper.vm.layout).toEqual(layout)
     expect(wrapper.vm.config).toEqual(config)
     expect(wrapper.vm.style).toEqual(style)
-    expect(wrapper.vm.dataPoint).toEqual(wrapper.vm.$store.getters['metamineNU/getDataPoint'])
+    expect(wrapper.vm.dataPoint).toEqual(
+      wrapper.vm.$store.getters['metamineNU/getDataPoint']
+    )
   })
 
   it('watches the dataPoint for change ', async () => {
     expect(wrapper.vm.dataPoint).toEqual({})
-    await wrapper.vm.$store.dispatch('metamineNU/setDataPoint', { youngs: 55 })
+    await wrapper.vm.$store.commit('metamineNU/setDataPoint', { youngs: 55 })
     expect(wrapper.vm.dataPoint).toEqual({ youngs: 55 })
     expect(newPlotSpy).toHaveBeenCalledTimes(2)
   })

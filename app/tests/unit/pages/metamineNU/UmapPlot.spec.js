@@ -22,8 +22,11 @@ describe('UmapPlot.vue', () => {
   })
 
   it('mounts dialog box correctly', () => {
+    expect.assertions(5)
     const layout = wrapper.findComponent('visualizationlayout-stub')
-    const dialogContainer = layout.find('.tools-simulation.u--layout-flex.u--layout-flex-justify-sb')
+    const dialogContainer = layout.find(
+      '.tools-simulation.u--layout-flex.u--layout-flex-justify-sb'
+    )
     const dialogBox = dialogContainer.findAllComponents('dialog-box-stub')
     const dialogProps = [
       { minwidth: '60', disableclose: 'true' },
@@ -33,13 +36,18 @@ describe('UmapPlot.vue', () => {
     for (let i = 0; i < dialogBox.length; i++) {
       const element = dialogBox.at(i)
       expect(element.attributes('minwidth')).toBe(dialogProps[i].minwidth)
-      expect(element.attributes('disableclose')).toBe(dialogProps[i].disableclose)
+      expect(element.attributes('disableclose')).toBe(
+        dialogProps[i].disableclose
+      )
     }
   })
 
   it('renders correct number of buttons', () => {
+    expect.assertions(7)
     const layout = wrapper.findComponent('visualizationlayout-stub')
-    const btnContainer = layout.find('.tools-simulation.u--layout-flex.u--layout-flex-justify-sb')
+    const btnContainer = layout.find(
+      '.tools-simulation.u--layout-flex.u--layout-flex-justify-sb'
+    )
     const button = btnContainer.findAll('button')
     const btnProps = [
       { btnClass: 'nuplot-button', btnText: 'Find Nearest Neighbors' },

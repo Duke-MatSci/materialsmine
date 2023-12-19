@@ -19,12 +19,18 @@ describe('ScatterPlot.vue', () => {
     expect(layout.findComponent('poisson-stub').exists()).toBe(true)
     expect(layout.findComponent('dataselector-stub').exists()).toBe(true)
     expect(layout.findComponent('rangeselector-stub').exists()).toBe(true)
-    expect(layout.findComponent('materialinformation-stub').exists()).toBe(true)
+    expect(layout.findComponent('materialinformation-stub').exists()).toBe(
+      true
+    )
+    expect(layout.findComponent('datainfo-stub').exists()).toBe(true)
   })
 
   it('mounts dialog box correctly', () => {
+    expect.assertions(3)
     const layout = wrapper.findComponent('visualizationlayout-stub')
-    const dialogContainer = layout.find('.tools-simulation.u--layout-flex.u--layout-flex-justify-sb')
+    const dialogContainer = layout.find(
+      '.tools-simulation.u--layout-flex.u--layout-flex-justify-sb'
+    )
     const dialogBox = dialogContainer.findAllComponents('dialog-box-stub')
     const dialogProps = [
       { minwidth: '60', disableclose: 'true' },
@@ -38,8 +44,11 @@ describe('ScatterPlot.vue', () => {
   })
 
   it('renders correct number of buttons', () => {
+    expect.assertions(7)
     const layout = wrapper.findComponent('visualizationlayout-stub')
-    const btnContainer = layout.find('.tools-simulation.u--layout-flex.u--layout-flex-justify-sb')
+    const btnContainer = layout.find(
+      '.tools-simulation.u--layout-flex.u--layout-flex-justify-sb'
+    )
     const button = btnContainer.findAll('button')
     const btnProps = [
       { btnClass: 'nuplot-button', btnText: 'Find Nearest Neighbors' },
