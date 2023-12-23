@@ -45,17 +45,14 @@ export default {
     // Create svg
     this.createSvg({ container: this.container })
     // if data exists update chart
-    if (!!this.csvData.length || !!this.fetchedNames.length) {
-      return this.update({ container: this.container })
+    if (this.activeData.length) {
+      this.update({ container: this.container })
     }
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   },
   computed: {
     ...mapState('metamineNU', {
-      csvData: (state) => state.datasets,
       activeData: (state) => state.activeData,
       dataPoint: (state) => state.dataPoint,
-      fetchedNames: (state) => state.fetchedNames,
       selectedData: (state) => state.selectedData,
       reset: (state) => state.reset,
       knnUmap: (state) => state.knnUmap
@@ -165,46 +162,31 @@ export default {
         nNeighbors: this.knnUmap || 15
       })
       let tempData = []
-      organizedData.map((d, i) => {
-        for (const data of d.data) {
-          const tempProperties = []
-          for (const p of properties) {
-            tempProperties.push(+data[p])
-          }
-          tempData.push(tempProperties)
-        }
-      })
-
-      if (tempData.length) {
-        tempData = scaler.fitTransform(tempData)
-        umap.fit(tempData)
-      }
-
-      organizedData.map((d, i) => {
+      organizedData.forEach((d) => {
         let tempData2 = []
-        for (const data of d.data) {
-          const tempProperties = []
-          for (const p of properties) {
-            tempProperties.push(data[p])
-          }
-          data.name = d.name
-          data.color = d.color
+        d.data.forEach((data) => {
+          const tempProperties = properties.map((p) => +data[p])
+          tempData.push(tempProperties)
           tempData2.push(tempProperties)
+        })
+
+        if (tempData.length) {
+          tempData = scaler.fitTransform(tempData)
+          umap.fit(tempData)
         }
 
         tempData2 = scaler.transform(tempData2)
         const res = tempData2.length ? umap.transform(tempData2) : null
 
         if (res) {
-          res.map((p, i) => {
+          res.forEach((p, i) => {
             d.data[i].X = p[0]
             d.data[i].Y = p[1]
           })
         }
         datasets.push(d.data)
       })
-
-      const finalData = [].concat(...datasets)
+      const finalData = datasets.flat()
 
       // remove elements to avoid repeated append
       d3.select('.nuplot-tooltip').remove()

@@ -25,8 +25,6 @@ export default {
   mounted: async function () {
     this.$store.commit('metamineNU/setPage', 'hist', { root: true })
     this.createSvg({ container: this.container })
-
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   },
   computed: {
     ...mapState('metamineNU', {
@@ -46,29 +44,12 @@ export default {
     }
   },
   watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length
-        })
-      }
-    },
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
         this.update({
           container: this.container,
           maxNumDatasets: this.fetchedNames.length
-        })
-      }
-    },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container,
-          maxNumDatasets: newVal.length
         })
       }
     },
@@ -240,6 +221,7 @@ export default {
         if (x === index && y === index) {
           d3.select(this)
             .append('g')
+            .attr('id', `${query1}`)
             .attr('class', 'x-label')
             .attr('font-size', 20)
             .attr('font-family', 'sans-serif')
@@ -356,6 +338,8 @@ export default {
               histogram.exit().remove()
             }
           }
+        } else if (x !== index) {
+          d3.select(`#${columns[x]}`).remove()
         }
       })
       // draw axis

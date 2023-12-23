@@ -17,10 +17,17 @@ const MARGIN = {
   LEFT: 50
 }
 
+const vw = window.innerWidth || 800
+let wFactor = 0.6
+
+if (vw <= 1280) {
+  wFactor = 1
+}
+
 const SIDE_BAR_SIZE = 100
 
-const WIDTH = 800 - MARGIN.LEFT - MARGIN.RIGHT - SIDE_BAR_SIZE
-const HEIGHT = 700 - MARGIN.TOP - MARGIN.BOTTOM - SIDE_BAR_SIZE
+const WIDTH = vw * wFactor - MARGIN.LEFT - MARGIN.RIGHT - SIDE_BAR_SIZE
+const HEIGHT = 550 - MARGIN.TOP - MARGIN.BOTTOM - SIDE_BAR_SIZE
 
 function expo (x, f) {
   if (x < 1000 && x > -1000) return x
@@ -39,14 +46,8 @@ export default {
   name: 'scatter-plot',
   mounted: async function () {
     this.$store.commit('metamineNU/setPage', 'scatter', { root: true })
-
     // Create svg
     this.createSvg({ container: this.container })
-
-    // fetch the data
-    if (!this.csvData.length || !this.fetchedNames.length) {
-      return await this.$store.dispatch('metamineNU/fetchMetamineDataset')
-    }
   },
   computed: {
     ...mapState('metamineNU', {

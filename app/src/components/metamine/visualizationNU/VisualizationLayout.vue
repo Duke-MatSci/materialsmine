@@ -16,21 +16,24 @@
         :class="[dense ? 'vega-view' : 'u--margin-pos']"
       >
         <div
-          class="viz-u-postion__rel histogram-chart md-layout-item md-size-50 md-small-size-65 md-xsmall-size-100"
+          class="viz-u-postion__rel histogram-chart md-layout-item md-size-50 md-medium-size-100 viz-u-mgbottom-big"
         >
-          <div v-if="isLoading" class="section_loader utility-margin-top-intro">
-            <spinner text="Loading Chart Data" />
-          </div>
-          <div v-show="!isLoading">
-            <slot name="main_chart"></slot>
-          </div>
+          <slot name="main_chart">
+            <div
+              class="section_loader viz-u-postion__rel utility-margin-top-intro"
+            >
+              <spinner text="Loading Chart Data" />
+            </div>
+          </slot>
         </div>
         <div
-          class="md-layout-item md-size-20 md-small-size-35 md-xsmall-size-100 u--layout-flex u--layout-flex-column u--layout-flex-justify-fs u_centralize_items utility-roverflow"
+          class="md-layout md-layout-item md-size-20 md-medium-size-100 u--layout-flex u--layout-flex-justify-sb u_centralize_items utility-roverflow"
         >
           <slot name="subcharts"></slot>
         </div>
-        <div class="side-tools md-size-30 md-small-size-100 md-layout-item">
+        <div
+          class="side-tools md-size-30 md-medium-size-100 md-layout-item md-card-header viz-u-display__show"
+        >
           <slot name="side_tools"></slot>
         </div>
         <div class="footer md-size-100 md-layout-item">
@@ -43,7 +46,6 @@
 
 <script>
 import spinner from '@/components/Spinner'
-import { mapGetters } from 'vuex'
 export default {
   name: 'VisualizationLayout',
   components: {
@@ -63,12 +65,8 @@ export default {
     }
   },
   computed: {
-    ...mapGetters('metamineNU', {
-      csvData: 'getDatasets',
-      fetchedNames: 'getFetchedNames'
-    }),
-    isLoading () {
-      return !this.csvData.length || !this.fetchedNames.length
+    loading () {
+      return this.$store.getters['metamineNU/getLoadingState']
     },
     validateLinkProp () {
       if (!this.link || typeof this.link !== 'object') return false
@@ -77,6 +75,10 @@ export default {
         Object.hasOwnProperty.call(this.link, 'text')
       )
     }
+  },
+  async mounted () {
+    this.$store.commit('metamineNU/setRefreshStatus', true)
+    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   }
 }
 </script>

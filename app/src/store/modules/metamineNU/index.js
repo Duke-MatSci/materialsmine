@@ -18,7 +18,8 @@ export default {
     knnUmap: 15,
     dialogBoxActiveKnn: false,
     enableKnn: true,
-    refreshStatus: true
+    refreshStatus: true,
+    loadingState: true
   },
   getters: {
     getFetchedNames: (state) => state.fetchedNames,
@@ -26,7 +27,8 @@ export default {
     getActiveData: (state) => state.activeData,
     getDataLibrary: (state) => state.dataLibrary,
     getDataPoint: (state) => state.dataPoint,
-    getRefreshStatus: (state) => state.refreshStatus
+    getRefreshStatus: (state) => state.refreshStatus,
+    getLoadingState: (state) => state.loadingState
   },
   actions,
   mutations

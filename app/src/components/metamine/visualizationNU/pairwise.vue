@@ -8,25 +8,18 @@ import { mapState } from 'vuex'
 import { organizeByName } from '@/modules/metamine/utils/organizeByName'
 
 const margin = { top: 10, right: 20, bottom: 50, left: 100 }
-const vh = Math.max(
-  document.documentElement.clientHeight || 0,
-  window.innerHeight || 0
-)
 const vw = Math.max(
   document.documentElement.clientWidth || 0,
   window.innerWidth || 0
 )
-let wFactor = 0.4
+let wFactor = 0.48
 
-if (vw <= 600) {
+if (vw <= 1280) {
   wFactor = 0.9
-} else if (vw <= 960) {
-  wFactor = 0.6
 }
 
-const width = Math.min(vw * wFactor, vh * 0.8)
+const width = vw * wFactor
 const height = width
-// const width = height
 const padding = 20
 
 function expo (x, f) {
@@ -44,8 +37,6 @@ export default {
       columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
     })
     // fetch the data
-    this.$store.commit('metamineNU/setRefreshStatus', true)
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   },
   computed: {
     ...mapState('metamineNU', {
@@ -64,31 +55,9 @@ export default {
     }
   },
   watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        this.update({
-          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length,
-          router: this.$router
-        })
-      }
-    },
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
-        this.update({
-          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length,
-          router: this.$router
-        })
-      }
-    },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        if (!this.container) return
         this.update({
           columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
           container: this.container,
@@ -133,6 +102,7 @@ export default {
         .attr('width', width)
         .attr('height', height)
         .attr('viewBox', [-margin.left, -margin.top, width, height])
+        .attr('style', 'max-width: 100%;')
       // Compute the inner dimensions of the cells.
       const cellWidth =
         (width - margin.left - margin.right - (X.length - 1) * padding) /

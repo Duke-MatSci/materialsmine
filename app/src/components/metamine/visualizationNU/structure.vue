@@ -1,5 +1,5 @@
 <template>
-    <div ref="structurePlot"></div>
+  <div ref="structurePlot"></div>
 </template>
 
 <script>
@@ -12,7 +12,7 @@ const MARGIN = {
   BOTTOM: 30,
   LEFT: 30
 }
-const SIDE = 200
+const SIDE = 230
 const WIDTH = SIDE - MARGIN.LEFT - MARGIN.RIGHT
 const HEIGHT = SIDE - MARGIN.TOP - MARGIN.BOTTOM
 
@@ -43,22 +43,16 @@ export default {
       const marginLeft = dataPoint.marginLeft
         ? dataPoint.marginLeft
         : MARGIN.LEFT
-      const marginTop = dataPoint.marginTop
-        ? dataPoint.marginTop
-        : MARGIN.TOP
+      const marginTop = dataPoint.marginTop ? dataPoint.marginTop : MARGIN.TOP
       this.svg = d3
         .select(this.$refs.structurePlot)
         .append('svg')
         .attr('width', width + marginLeft * 2)
         .attr('height', height + marginTop * 2)
-        .attr('viewBox', [
-          0,
-          0,
-          width + marginLeft * 2,
-          height + marginTop * 2
-        ])
+        .attr('viewBox', [0, 0, width + marginLeft * 2, height + marginTop * 2])
         .style('z-index', 10)
-        .style('margin-top', '30px')
+        .style('margin-bottom', '20px')
+        .style('padding-bottom', '10px')
         .append('g')
         .attr('transform', `translate(${marginLeft}, ${marginTop})`)
 
@@ -67,10 +61,7 @@ export default {
         .attr('x', width / 2)
         .attr('y', 0 - marginTop / 2)
         .attr('text-anchor', 'middle')
-        .style(
-          'font-size',
-          dataPoint.fontSize ? dataPoint.fontSize : '16px'
-        )
+        .style('font-size', dataPoint.fontSize ? dataPoint.fontSize : '16px')
         .style('font-family', 'Arial, sans-serif')
         .text('Unit Cell Geometry')
 
@@ -80,10 +71,7 @@ export default {
         .attr('y', height + marginTop)
         .attr('class', 'volumn-ratio')
         .attr('text-anchor', 'middle')
-        .style(
-          'font-size',
-          dataPoint.fontSize ? dataPoint.fontSize : '16px'
-        )
+        .style('font-size', dataPoint.fontSize ? dataPoint.fontSize : '16px')
         .style('font-family', 'Arial, sans-serif')
 
       this.update(dataPoint)

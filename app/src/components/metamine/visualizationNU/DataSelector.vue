@@ -137,29 +137,6 @@ export default {
       })
     }
   },
-  watch: {
-    fetchedNames: {
-      handler: function (val, oldVal) {
-        this.data = val
-        this.selectedRowKeys = val.map((item) => item.key)
-      },
-      deep: true
-    },
-    activeData: {
-      handler: function (val, oldVal) {
-        this.selectedRowKeys = this.fetchedNames
-          .map((item) => {
-            return val.map((d) => d.name).includes(item.name) ? item.key : null
-          })
-          .filter((item) => item !== null)
-      },
-      deep: true
-    },
-    dataLibrary: {
-      handler: function (val, oldVal) {},
-      deep: true
-    }
-  },
   methods: {
     handleQuery1Change () {
       this.changeRouteQuery()

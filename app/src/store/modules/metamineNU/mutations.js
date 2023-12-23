@@ -43,5 +43,8 @@ export default {
   },
   setRefreshStatus (state, payload) {
     state.refreshStatus = payload
+  },
+  setLoadingState (state, payload) {
+    state.loadingState = payload
   }
 }
