@@ -3,30 +3,30 @@
 </template>
 
 <script>
-import * as d3 from 'd3'
-import { mapState } from 'vuex'
-import { organizeByName } from '@/modules/metamine/utils/organizeByName'
+import * as d3 from 'd3';
+import { mapState } from 'vuex';
+import { organizeByName } from '@/modules/metamine/utils/organizeByName';
 
-const padding = 10 // separation between adjacent cells, in pixels
-const marginTop = 0 // top margin, in pixels
-const marginRight = 0 // right margin, in pixels
-const marginBottom = 0 // bottom margin, in pixels
-const marginLeft = 0 // left margin, in pixels
-const width = 968 // outer width, in pixels
-const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
+const padding = 10; // separation between adjacent cells, in pixels
+const marginTop = 0; // top margin, in pixels
+const marginRight = 0; // right margin, in pixels
+const marginBottom = 0; // bottom margin, in pixels
+const marginLeft = 0; // left margin, in pixels
+const width = 968; // outer width, in pixels
+const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'];
 
-function expo (x, f) {
-  if (x < 1000 && x > -1000) return x
-  return Number(x).toExponential(f)
+function expo(x, f) {
+  if (x < 1000 && x > -1000) return x;
+  return Number(x).toExponential(f);
 }
 
 export default {
   name: 'histogram-plot',
   mounted: async function () {
-    this.$store.commit('metamineNU/setPage', 'hist', { root: true })
-    this.createSvg({ container: this.container })
+    this.$store.commit('metamineNU/setPage', 'hist', { root: true });
+    this.createSvg({ container: this.container });
 
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
+    await this.$store.dispatch('metamineNU/fetchMetamineDataset');
   },
   computed: {
     ...mapState('metamineNU', {
@@ -36,90 +36,90 @@ export default {
       fetchedNames: (state) => state.fetchedNames,
       query1: (state) => state.query1
     }),
-    container () {
-      return this.$refs.histogramPlot
+    container() {
+      return this.$refs.histogramPlot;
     }
   },
-  data () {
+  data() {
     return {
       chart: false
-    }
+    };
   },
   watch: {
     csvData: {
       deep: true,
-      handler (newVal, oldVal) {
+      handler(newVal, oldVal) {
         this.update({
           container: this.container,
           maxNumDatasets: this.fetchedNames.length
-        })
+        });
       }
     },
     activeData: {
       deep: true,
-      handler (newVal, oldVal) {
+      handler(newVal, oldVal) {
         this.update({
           container: this.container,
           maxNumDatasets: this.fetchedNames.length
-        })
+        });
       }
     },
     fetchedNames: {
-      handler (newVal, oldVal) {
+      handler(newVal, oldVal) {
         this.update({
           container: this.container,
           maxNumDatasets: newVal.length
-        })
+        });
       }
     },
     dataPoint: {
-      handler (newVal, oldVal) {
+      handler(newVal, oldVal) {
         this.$store.commit('metamineNU/setDataPoint', newVal, {
           root: true
-        })
+        });
       }
     },
     query1: {
-      handler (newVal, oldVal) {
+      handler() {
         if (this.svg) {
           this.update({
             container: this.container,
             maxNumDatasets: this.fetchedNames.length
-          })
+          });
         }
       }
     }
   },
   methods: {
-    createSvg ({ container }) {
-      const data = this.activeData
-      var x = columns
-      var y = columns
-      var z = () => 1
-      var zDomain
-      const fillOpacity = 0.7
-      const height = width
+    createSvg({ container }) {
+      const data = this.activeData;
+      var x = columns;
+      var y = columns;
+      var z = () => 1;
+      var zDomain;
+      const fillOpacity = 0.7;
+      const height = width;
 
       // Compute values (and promote column names to accessors).
       const X = d3.map(x, (x) =>
         d3.map(data, typeof x === 'function' ? x : (d) => +d[x])
-      )
+      );
       const Y = d3.map(y, (y) =>
         d3.map(data, typeof y === 'function' ? y : (d) => +d[y])
-      )
-      const Z = d3.map(data, z)
+      );
+      const Z = d3.map(data, z);
 
       // Compute default z-domain, and unique the z-domain.
-      if (zDomain === undefined) zDomain = Z
-      zDomain = new d3.InternSet(zDomain)
+      if (zDomain === undefined) zDomain = Z;
+      zDomain = new d3.InternSet(zDomain);
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
         (width - marginLeft - marginRight - (X.length - 1) * padding) /
-        X.length
+        X.length;
       const cellHeight =
         (height - marginTop - marginBottom - (Y.length - 1) * padding) /
-        Y.length
+        Y.length;
 
       const svg = d3
         .select(container)
@@ -132,7 +132,7 @@ export default {
           width,
           height + padding * 13
         ])
-        .attr('style', 'max-width: 100%; height: auto; height: intrinsic;')
+        .attr('style', 'max-width: 100%; height: auto; height: intrinsic;');
 
       const cell = svg
         .append('g')
@@ -143,20 +143,20 @@ export default {
         .attr(
           'transform',
           `translate(${cellWidth + padding},${cellHeight - 2 * marginBottom})`
-        )
+        );
 
-      this.chart = true
-      this.svg = svg
-      this.cell = cell
-      this.cellWidth = cellWidth
-      this.cellHeight = cellHeight
-      this.X = X
-      this.Y = Y
-      this.Z = Z
-      this.zDomain = zDomain
+      this.chart = true;
+      this.svg = svg;
+      this.cell = cell;
+      this.cellWidth = cellWidth;
+      this.cellHeight = cellHeight;
+      this.X = X;
+      this.Y = Y;
+      this.Z = Z;
+      this.zDomain = zDomain;
     },
 
-    update ({
+    update({
       x = columns, // array of x-accessors
       y = columns, // array of y-accessors
       z = () => 1, // given d in data, returns the (categorical) z-value
@@ -168,34 +168,36 @@ export default {
       colors = {}, // array of colors for z
       maxNumDatasets
     }) {
-      const query1 = this.query1
+      const query1 = this.query1;
 
-      const index = columns.indexOf(query1)
-      const datasets = []
-      const datasetDic = {}
-      const tooltip = []
+      const index = columns.indexOf(query1);
+      const datasets = [];
+      const datasetDic = {};
+      const tooltip = [];
       for (let i = 0; i < maxNumDatasets; i++) {
-        datasets.push([])
+        datasets.push([]);
       }
-      const data = this.activeData
-      const organizedData = organizeByName(data)
+      const data = this.activeData;
+      const organizedData = organizeByName(data);
       organizedData.map((d, i) => {
-        colors[d.name] = d.color
-        datasets[i] = d.data ? d.data : []
-        datasetDic[i] = d.name
-      })
+        colors[d.name] = d.color;
+        datasets[i] = d.data ? d.data : [];
+        datasetDic[i] = d.name;
+      });
 
-      const finalData = [].concat(...datasets)
+      const finalData = [].concat(...datasets);
 
       // clean up before updating visuals
-      d3.selectAll('.xAxisGroup').remove()
-      d3.selectAll('.yAxisGroup').remove()
-      d3.selectAll('.legend').remove()
-      d3.selectAll('.tooltip_hist').remove()
+      d3.selectAll('.xAxisGroup').remove();
+      d3.selectAll('.yAxisGroup').remove();
+      d3.selectAll('.legend').remove();
+      d3.selectAll('.tooltip_hist').remove();
+      d3.selectAll('.x-label').remove();
+      d3.selectAll('.y-label').remove();
 
       for (let i = 0; i < maxNumDatasets; i++) {
-        d3.selectAll('.group' + i).remove()
-        d3.selectAll('.mean-line' + i).remove()
+        d3.selectAll('.group' + i).remove();
+        d3.selectAll('.mean-line' + i).remove();
       }
 
       const mouseleaveRec = function (e, d) {
@@ -203,39 +205,39 @@ export default {
         d3.select(this)
           .style('stroke', 'grey')
           .style('stroke-width', 0)
-          .style('fill-opacity', 0.8)
-      }
+          .style('fill-opacity', 0.8);
+      };
 
       const mouseoverHist = function (e, d) {
         d3.select(this)
           .raise()
           .style('stroke', 'black')
           .style('stroke-width', 5)
-          .style('fill-opacity', 1)
-      }
+          .style('fill-opacity', 1);
+      };
 
       // Compute values (and promote column names to accessors).
       const X = d3.map(x, (x) =>
         d3.map(finalData, typeof x === 'function' ? x : (d) => +d[x])
-      )
+      );
       const Y = d3.map(y, (y) =>
         d3.map(finalData, typeof y === 'function' ? y : (d) => +d[y])
-      )
-      const Z = d3.map(finalData, z)
+      );
+      const Z = d3.map(finalData, z);
 
       // Compute default z-domain, and unique the z-domain.
-      if (zDomain === undefined) zDomain = Z
-      zDomain = new d3.InternSet(zDomain)
+      if (zDomain === undefined) zDomain = Z;
+      zDomain = new d3.InternSet(zDomain);
 
       // Compute the inner dimensions of the cells.
-      const cellWidth = width - marginRight - (X.length - 1) * padding
+      const cellWidth = width - marginRight - (X.length - 1) * padding;
       const cellHeight =
-        height - marginTop - marginBottom - (Y.length - 1) * padding
+        height - marginTop - marginBottom - (Y.length - 1) * padding;
 
       // Construct scales and axes.
-      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
+      const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]));
 
-      const allBins = []
+      const allBins = [];
       this.cell.each(function ([x, y]) {
         if (x === index && y === index) {
           d3.select(this)
@@ -253,7 +255,7 @@ export default {
             )
             .attr('x', padding / 2)
             .attr('y', padding / 2)
-            .text((d) => d)
+            .text((d) => d);
 
           d3.select(this)
             .append('g')
@@ -272,64 +274,64 @@ export default {
             )
             .attr('x', padding / 2)
             .attr('y', padding / 2)
-            .text((d) => d)
+            .text((d) => d);
 
           for (let i = 0; i < maxNumDatasets; i++) {
-            const a = columns
-            const b = columns
+            const a = columns;
+            const b = columns;
             const X0 = d3.map(a, (a) =>
               d3.map(datasets[i], typeof a === 'function' ? a : (d) => +d[a])
-            )
+            );
             let Y0 = d3.map(b, (b) =>
               d3.map(datasets[i], typeof b === 'function' ? b : (d) => +d[b])
-            )
-            const Z = d3.map(datasets[i], z)
+            );
+            const Z = d3.map(datasets[i], z);
 
             // Omit any data not present in the z-domain.
-            const I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
-            const thresholds = 40
-            Y0 = d3.map(Y0[index], () => 1)
+            const I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]));
+            const thresholds = 40;
+            Y0 = d3.map(Y0[index], () => 1);
             const bins = d3
               .bin()
               .thresholds(thresholds)
-              .value((i) => X0[index][i])(I0)
-            allBins.push(...bins)
-            const tempTooltip = {}
+              .value((i) => X0[index][i])(I0);
+            allBins.push(...bins);
+            const tempTooltip = {};
             if (organizedData[i]) {
-              const tempArr = organizedData[i].data.map((d, i) => d[query1])
-              tempTooltip.name = organizedData[i].name
-              tempTooltip.color = organizedData[i].color
-              tempTooltip.min = d3.min(tempArr)
-              tempTooltip.max = d3.max(tempArr)
-              tempTooltip.mean = d3.mean(tempArr)
-              tempTooltip.median = d3.median(tempArr)
-              tooltip.push(tempTooltip)
+              const tempArr = organizedData[i].data.map((d, i) => d[query1]);
+              tempTooltip.name = organizedData[i].name;
+              tempTooltip.color = organizedData[i].color;
+              tempTooltip.min = d3.min(tempArr);
+              tempTooltip.max = d3.max(tempArr);
+              tempTooltip.mean = d3.mean(tempArr);
+              tempTooltip.median = d3.median(tempArr);
+              tooltip.push(tempTooltip);
             }
 
-            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]))
+            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]));
 
             // Compute default domains.
-            const xDomain = [bins[0].x0, bins[bins.length - 1].x1]
-            const yDomain = [0, d3.max(Y1)]
+            const xDomain = [bins[0].x0, bins[bins.length - 1].x1];
+            const yDomain = [0, d3.max(Y1)];
 
             // Construct scales and axes.
-            const xRange = [0, cellWidth]
-            const yRange = [cellHeight, 0]
-            const xScale = xType(xDomain, xRange)
-            const yScale = yType(yDomain, yRange)
+            const xRange = [0, cellWidth];
+            const yRange = [cellHeight, 0];
+            const xScale = xType(xDomain, xRange);
+            const yScale = yType(yDomain, yRange);
 
-            const insetLeft = 0.5
-            const insetRight = 0.5
+            const insetLeft = 0.5;
+            const insetRight = 0.5;
 
             // when two dataset are selected, shows one color, but shows none when 1 or none are selected
 
             if (datasets[i].length === 0) {
-              d3.selectAll('.group' + i).remove()
+              d3.selectAll('.group' + i).remove();
             } else {
               const histogram = d3
                 .select(this)
                 .append('g')
-                .attr('class', 'group' + i)
+                .attr('class', 'group' + i);
               histogram
                 .selectAll('rect')
                 .data(bins)
@@ -340,37 +342,37 @@ export default {
                   bins.length === 1
                     ? 5
                     : Math.max(
-                      0,
-                      xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
-                    )
+                        0,
+                        xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
+                      )
                 )
                 .attr('y', (d, i) => yScale(Y1[i]))
                 .attr('height', (d, i) => yScale(0) - yScale(Y1[i]))
                 // .on("mouseleave", mouseleave_rec)
                 // .on("mousemove", mousemove_hist)
-                .attr('transform', `translate(${-width / 10}, ${0})`)
+                .attr('transform', `translate(${-width / 10}, ${0})`);
 
               d3.selectAll('.group' + i)
                 .on('mouseover', mouseoverHist)
-                .on('mouseleave', mouseleaveRec)
-              histogram.exit().remove()
+                .on('mouseleave', mouseleaveRec);
+              histogram.exit().remove();
             }
           }
         }
-      })
+      });
       // draw axis
       const maxBinLen = d3.max(allBins, (b) => {
-        return b.length
-      })
+        return b.length;
+      });
       const histYScales = d3
         .scaleLinear()
         .domain([0, maxBinLen])
-        .range([cellHeight, 0])
+        .range([cellHeight, 0]);
       const xAxis = d3
         .axisBottom()
         .tickFormat((x) => `${expo(x, 0)}`)
-        .ticks(3)
-      const yAxis = d3.axisLeft().ticks(3)
+        .ticks(3);
+      const yAxis = d3.axisLeft().ticks(3);
 
       const yAxisLine = this.svg
         .append('g')
@@ -379,12 +381,12 @@ export default {
         .join('g')
         .attr('transform', `translate(${padding * 6 + 5},${padding * 16 - 5})`)
         .attr('class', 'yAxisGroup')
-        .call(yAxis.scale(histYScales))
+        .call(yAxis.scale(histYScales));
 
       yAxisLine
         .selectAll('text')
         .attr('font-size', 20)
-        .attr('font-family', 'sans-serif')
+        .attr('font-family', 'sans-serif');
 
       const xAxisLine = this.svg
         .append('g')
@@ -396,23 +398,23 @@ export default {
           `translate(${width / 15}, ${width + padding * 10 + 5})`
         )
         .attr('class', 'xAxisGroup')
-        .call(xAxis.scale(xScales[index]))
+        .call(xAxis.scale(xScales[index]));
 
       xAxisLine
         .selectAll('text')
         .attr('font-size', 18)
         .attr('font-family', 'sans-serif')
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'middle');
 
-      const transitionDuration = 200
+      const transitionDuration = 200;
 
-      const exitTransition = d3.transition().duration(transitionDuration)
+      const exitTransition = d3.transition().duration(transitionDuration);
       const updateTransition = exitTransition
         .transition()
-        .duration(transitionDuration)
+        .duration(transitionDuration);
 
       tooltip.map((d, i) => {
-        const mean = tooltip[i].mean
+        const mean = tooltip[i].mean;
         this.svg
           .append('g')
           .append('line')
@@ -426,8 +428,8 @@ export default {
           .attr('stroke', colors[datasetDic[i]])
           .attr('stroke-width', 6)
           .attr('fill', 'None')
-          .style('stroke-dasharray', '5, 5')
-      })
+          .style('stroke-dasharray', '5, 5');
+      });
 
       const tooltipContent = tooltip.map(
         (d, i) =>
@@ -445,7 +447,7 @@ export default {
           '<b>Median: </b>' +
           expo(d.median, 0) +
           '<br>'
-      )
+      );
 
       d3.select(this.$refs.histogramPlot)
         .append('div')
@@ -464,8 +466,8 @@ export default {
         .style('visibility', 'visible')
         .html(tooltipContent.join('<br>'))
         .style('top', 100 + 'px')
-        .style('left', 25 + 'vw')
+        .style('left', 25 + 'vw');
     }
   }
-}
+};
 </script>

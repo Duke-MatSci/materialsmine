@@ -45,7 +45,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from 'vuex'
 
 export default {
   name: 'DataInfo',
@@ -54,5 +54,5 @@ export default {
       fetchedNames: (state) => state.fetchedNames
     })
   }
-};
+}
 </script>
