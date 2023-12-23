@@ -61,7 +61,7 @@ export default {
       }
     },
     query1: {
-      handler (newVal, oldVal) {
+      handler () {
         if (this.svg) {
           this.update({
             container: this.container,
@@ -173,6 +173,8 @@ export default {
       d3.selectAll('.yAxisGroup').remove()
       d3.selectAll('.legend').remove()
       d3.selectAll('.tooltip_hist').remove()
+      d3.selectAll('.x-label').remove()
+      d3.selectAll('.y-label').remove()
 
       for (let i = 0; i < maxNumDatasets; i++) {
         d3.selectAll('.group' + i).remove()
