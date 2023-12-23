@@ -8,7 +8,7 @@
     <template #main_chart>
       <Scatter />
       <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
-        <!-- <button
+        <button
           @click="toggleEnableKnn()"
           :class="{
             'nuplot-button': enableKnn,
@@ -16,11 +16,8 @@
           }"
         >
           Find Nearest Neighbors
-        </button> -->
-        <md-switch v-model="enableKnn" @change="toggleEnableKnn()"
-          >Find Nearest Neighbors</md-switch
-        >
-        <dialog-box :active="dialogBoxActiveKnn">
+        </button>
+        <dialog-box disableClose :active="dialogBoxActiveKnn">
           <template v-slot:content> <NeighborPanel /> </template>
           <template v-slot:actions>
             <md-button @click.native.prevent="closeDialogBox">Close</md-button>
