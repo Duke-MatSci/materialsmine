@@ -9,13 +9,11 @@
       <template v-if="!isLoading && showUmap">
         <Umap />
         <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
-          <button @click="toggleDialogBoxKnn()" class="nuplot-button">
-            Find Nearest Neighbors
-          </button>
-          <dialog-box :active="dialogBoxActiveKnn" :disableClose="true">
-            <template v-slot:content> <NeighborPanel /></template>
+          <md-switch v-model="enableKnn">Find Nearest Neighbors</md-switch>
+          <dialog-box disableClose :active="dialogBoxActiveKnn">
+            <template v-slot:content> <NeighborPanel /> </template>
             <template v-slot:actions>
-              <md-button @click.native.prevent="toggleDialogBoxKnn"
+              <md-button @click.native.prevent="closeDialogBox"
                 >Close</md-button
               >
             </template>
@@ -51,6 +49,10 @@
       <DataSelector />
       <ParamSelector />
     </template>
+
+    <template #footer>
+      <DataInfo />
+    </template>
   </VisualizationLayout>
   <div v-else class="footer_content-mobile">
     <dialog-box disableClose :minWidth="40" :active="isMiniDevice">
@@ -67,16 +69,18 @@
 </template>
 
 <script>
-import Umap from '@/components/metamine/visualizationNU/umap.vue'
-import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
-import ParamSelector from '@/components/metamine/visualizationNU/ParamSelector.vue'
-import Youngs from '@/components/metamine/visualizationNU/youngs.vue'
-import Poisson from '@/components/metamine/visualizationNU/poisson.vue'
-import Structure from '@/components/metamine/visualizationNU/structure.vue'
-import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue'
-import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue'
-import Dialog from '@/components/Dialog.vue'
-import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
+import Umap from '@/components/metamine/visualizationNU/umap.vue';
+import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue';
+import ParamSelector from '@/components/metamine/visualizationNU/ParamSelector.vue';
+import Youngs from '@/components/metamine/visualizationNU/youngs.vue';
+import Poisson from '@/components/metamine/visualizationNU/poisson.vue';
+import Structure from '@/components/metamine/visualizationNU/structure.vue';
+import NeighborPanel from '@/components/metamine/visualizationNU/NeighborPanel.vue';
+import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.vue';
+import Dialog from '@/components/Dialog.vue';
+import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue';
+import DataInfo from '@/components/metamine/visualizationNU/DataInfo.vue';
+import { mapState } from 'vuex';
 
 export default {
   name: 'ScatterPage',
@@ -90,11 +94,11 @@ export default {
     NeighborPanel,
     SaveDataPanel,
     dialogBox: Dialog,
-    VisualizationLayout
+    VisualizationLayout,
+    DataInfo
   },
-  data () {
+  data() {
     return {
-      dialogBoxActiveKnn: false,
       dialogBoxActiveSaveData: false,
       reset: false,
       windowWidth: window.innerWidth,
@@ -103,45 +107,56 @@ export default {
         text: 'Visualize In Pairwise Plot'
       },
       showUmap: false
-    }
+    };
   },
   computed: {
-    isLoading () {
-      return this.$store.getters['metamineNU/getLoadingState']
+    ...mapState('metamineNU', {
+      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn
+    }),
+    isLoading() {
+      return this.$store.getters['metamineNU/getLoadingState'];
     },
-    isMiniDevice () {
-      return this.windowWidth <= 650
+    isMiniDevice() {
+      return this.windowWidth <= 650;
+    },
+    enableKnn: {
+      get() {
+        return this.$store.state.metamineNU.enableKnn;
+      },
+      set(value) {
+        this.$store.commit('metamineNU/updateEnableKnn', value);
+      }
     }
   },
-  mounted () {
+  mounted() {
     this.$nextTick(() => {
-      window.addEventListener('resize', this.onResize)
-    })
+      window.addEventListener('resize', this.onResize);
+    });
     // Note: This is done to introduce a custom delay in the rendering of the Umap
     // Change the showUmap to true after .5 sec
     setTimeout(() => {
-      this.showUmap = true
-    }, 300)
+      this.showUmap = true;
+    }, 300);
   },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.onResize)
+  beforeDestroy() {
+    window.removeEventListener('resize', this.onResize);
   },
   methods: {
-    toggleDialogBoxKnn () {
-      this.dialogBoxActiveKnn = !this.dialogBoxActiveKnn
+    closeDialogBox() {
+      this.$store.commit('metamineNU/setDialogBoxActiveKnn', false);
     },
-    toggleDialogBoxSaveData () {
-      this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData
+    toggleDialogBoxSaveData() {
+      this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData;
     },
-    handleReset () {
-      this.$store.commit('metamineNU/setReset', true)
+    handleReset() {
+      this.$store.commit('metamineNU/setReset', true);
     },
-    goHome () {
-      this.$router.push('/mm')
+    goHome() {
+      this.$router.push('/mm');
     },
-    onResize () {
-      this.windowWidth = window.innerWidth
+    onResize() {
+      this.windowWidth = window.innerWidth;
     }
   }
-}
+};
 </script>

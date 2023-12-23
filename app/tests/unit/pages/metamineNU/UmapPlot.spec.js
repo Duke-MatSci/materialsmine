@@ -88,7 +88,7 @@ describe('UmapPlot.vue', () => {
     })
 
     it('renders correct number of buttons', async () => {
-      expect.assertions(8)
+      expect.assertions(6)
       await jest.runAllTimers()
       expect(wrapper.vm.showUmap).toBe(true)
       const layout = wrapper.findComponent('visualizationlayout-stub')
@@ -97,11 +97,10 @@ describe('UmapPlot.vue', () => {
       )
       const button = btnContainer.findAll('button')
       const btnProps = [
-        { btnClass: 'nuplot-button', btnText: 'Find Nearest Neighbors' },
         { btnClass: 'nuplot-button button-primary', btnText: 'Save Data' },
         { btnClass: 'nuplot-button button-alert', btnText: 'Reset' }
       ]
-      expect(btnProps.length).toBe(3)
+      expect(btnProps.length).toBe(2)
       for (let i = 0; i < button.length; i++) {
         const element = button.at(i)
         expect(element.attributes('class')).toBe(btnProps[i].btnClass)
