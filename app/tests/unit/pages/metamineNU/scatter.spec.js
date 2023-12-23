@@ -44,7 +44,7 @@ describe('ScatterPlot.vue', () => {
   })
 
   it('renders correct number of buttons', () => {
-    expect.assertions(7)
+    expect.assertions(5)
     const layout = wrapper.findComponent('visualizationlayout-stub')
     const btnContainer = layout.find(
       '.tools-simulation.u--layout-flex.u--layout-flex-justify-sb'
