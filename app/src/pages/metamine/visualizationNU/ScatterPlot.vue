@@ -8,18 +8,7 @@
     <template #main_chart>
       <Scatter />
       <div class="tools-simulation u--layout-flex u--layout-flex-justify-sb">
-        <!-- <button
-          @click="toggleEnableKnn()"
-          :class="{
-            'nuplot-button': enableKnn,
-            'nuplot-button-disabled': !enableKnn
-          }"
-        >
-          Find Nearest Neighbors
-        </button> -->
-        <md-switch v-model="enableKnn" @change="toggleEnableKnn()"
-          >Find Nearest Neighbors</md-switch
-        >
+        <md-switch v-model="enableKnn">Find Nearest Neighbors</md-switch>
         <dialog-box disableClose :active="dialogBoxActiveKnn">
           <template v-slot:content> <NeighborPanel /> </template>
           <template v-slot:actions>
@@ -121,9 +110,16 @@ export default {
   },
   computed: {
     ...mapState('metamineNU', {
-      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn,
-      enableKnn: (state) => state.enableKnn
+      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn
     }),
+    enableKnn: {
+      get () {
+        return this.$store.state.metamineNU.enableKnn
+      },
+      set (value) {
+        this.$store.commit('metamineNU/updateEnableKnn', value)
+      }
+    },
     isMiniDevice () {
       return this.windowWidth <= 650
     }
@@ -137,9 +133,6 @@ export default {
     window.removeEventListener('resize', this.onResize)
   },
   methods: {
-    toggleEnableKnn () {
-      this.$store.commit('metamineNU/setEnableKnn', !this.enableKnn)
-    },
     closeDialogBox () {
       this.$store.commit('metamineNU/setDialogBoxActiveKnn', false)
     },

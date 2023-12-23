@@ -38,7 +38,7 @@ export default {
   setDialogBoxActiveKnn (state, payload) {
     state.dialogBoxActiveKnn = payload
   },
-  setEnableKnn (state, payload) {
+  updateEnableKnn (state, payload) {
     state.enableKnn = payload
   },
   setRefreshStatus (state, payload) {
