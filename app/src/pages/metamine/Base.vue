@@ -115,8 +115,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
-import Drawers from '@/components/Drawer.vue';
+import { mapGetters } from 'vuex'
+import Drawers from '@/components/Drawer.vue'
 export default {
   name: 'MetamineBase',
   components: {
@@ -128,15 +128,15 @@ export default {
       displayName: 'auth/displayName'
     })
   },
-  data() {
+  data () {
     return {
       toggleMenuVisibility: false
-    };
+    }
   },
   methods: {
-    toggleMenu() {
-      this.toggleMenuVisibility = !this.toggleMenuVisibility;
+    toggleMenu () {
+      this.toggleMenuVisibility = !this.toggleMenuVisibility
     }
   }
-};
+}
 </script>
