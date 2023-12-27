@@ -48,7 +48,7 @@ export default {
     if (!uri) {
       return
     }
-    const response = await fetch(`/api/knowledge/images?uri=${uri}`, {
+    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
       method: 'GET'
     })
 
@@ -59,15 +59,16 @@ export default {
       throw error
     }
 
-    const responseData = await response.json()
-    if (Array.isArray(responseData)) return context.commit('setCurrentDataset', responseData[0])
-    return context.commit('setCurrentDataset', responseData)
+    let responseData = await response.json()
+    if (Array.isArray(responseData)) responseData = responseData[0]
+    context.commit('setCurrentDataset', responseData)
+    return responseData
   },
   async fetchDatasetThumbnail (context, uri) {
     if (!uri) {
       return
     }
-    const response = await fetch(`/api/knowledge/images?uri=${uri}`, {
+    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
       method: 'GET'
     })
 
@@ -80,7 +81,10 @@ export default {
     }
 
     const responseData = await response.json()
-    if (Array.isArray(responseData)) return context.commit('setCurrentDatasetThumbnail', responseData[0]['http://w3.org/ns/dcat#accessURL'])
-    return context.commit('setCurrentDatasetThumbnail', responseData['http://w3.org/ns/dcat#accessURL'])
+    let accessURL
+    if (Array.isArray(responseData)) accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL']
+    else accessURL = responseData['http://w3.org/ns/dcat#accessURL']
+    context.commit('setCurrentDatasetThumbnail', accessURL)
+    return accessURL
   }
 }

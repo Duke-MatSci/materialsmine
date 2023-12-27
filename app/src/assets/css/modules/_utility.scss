@@ -117,6 +117,9 @@
         }
         &-pos {
             margin: 1rem;
+            &md {
+                margin: 2rem;
+            }
         }
         &-top {
             &lg {
@@ -167,6 +170,9 @@
     &_height {
         &--max {
             height: 100% !important;
+        }
+        &--auto {
+            height: auto !important;
         }
     }
     
@@ -253,9 +259,12 @@
         &-900{
             font-weight: 900;
         }
+        &-700{
+            font-weight: 700;
+        }
         &-xl {
             font-size: $x-large-size;
-            font-weight: 700;
+            @extend .u--font-emph-700
         }
         &-l {
             font-size: $large-size;
@@ -390,6 +399,9 @@
             // Flex type content
             justify-content: center; 
         }
+        &_items {
+            align-items: center;
+        }
         &_other {
             margin: 0 auto;
         }
@@ -400,7 +412,7 @@
             margin-bottom: 0 !important;
             width: 55% !important;
             @include respond(phone){
-                width: 80%;
+                width: 80% !important;
             }
         }
         &_input {
@@ -815,4 +827,4 @@
         flex-direction: column;
         margin: 0 2rem;
     }
-} 
+}

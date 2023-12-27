@@ -1,272 +1,472 @@
 <div>
-<template>
-<div>
-    <div class="section_teams">
+  <template>
+    <div>
+      <div class="section_teams">
         <div>
-        <CurateNavBar active="New Spreadsheet" :navRoutes="navRoutes"/>
+          <CurateNavBar active="New Spreadsheet" :navRoutes="navRoutes" />
         </div>
         <div class="curate">
-            <LoginReq v-if="!auth"/>
-            <div v-else-if="!!uploadResponse">      
-                <h2 class="visualize_header-h1 u_margin-top-small u_centralize_text"> Curated XML </h2>
-                <hr>
-                <div class="md-layout">
-                    <div class="md-layout-item md-size-50">
-                        <div>Dataset Group ID: {{uploadResponse.groupId}}</div>
-                        <div>Curated by {{ optionalChaining(() => uploadResponse.user.displayName) }}</div>
-                    </div>
-                    <div class="md-layout-item md-size-50" style="text-align: right" > 
-                        <div>Status: {{uploadResponse.status}}</div>
-                        <div>Admin Approval: {{uploadResponse.isApproved ? 'Approved' : 'None'}}</div>
-                    </div>
+          <LoginReq v-if="!auth" />
+          <div v-else-if="!!uploadResponse">
+            <h2
+              class="visualize_header-h1 u_margin-top-small u_centralize_text"
+            >
+              Curated XML
+            </h2>
+            <hr />
+            <div class="md-layout">
+              <div class="md-layout-item md-size-50">
+                <div>Dataset Group ID: {{uploadResponse.groupId}}</div>
+                <div>
+                  Curated by {{ optionalChaining(() =>
+                  uploadResponse.user.displayName) }}
                 </div>
-                <XmlView :xml='optionalChaining(() => uploadResponse.xml)'/>
-
+              </div>
+              <div class="md-layout-item md-size-50" style="text-align: right">
+                <div>Status: {{uploadResponse.status}}</div>
+                <div>
+                  Admin Approval: {{uploadResponse.isApproved ? 'Approved' :
+                  'None'}}
+                </div>
+              </div>
+            </div>
+            <XmlView :xml="optionalChaining(() => uploadResponse.xml)" />
+          </div>
+          <div v-else>
+            <h2 class="visualize_header-h1">Curate single sample</h2>
+            <div
+              v-if="datasetId"
+              class="md-layout md-alignment-center-left"
+              style="margin: 0rem 1rem"
+            >
+              <span>
+                Uploading to dataset ID
+                <a @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+                  >{{datasetId}}</a
+                >
+              </span>
+              <md-button
+                id="editId"
+                class="md-icon-button"
+                @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+              >
+                <md-icon>edit</md-icon>
+              </md-button>
             </div>
             <div v-else>
-            <h2 class="visualize_header-h1">Curate single sample </h2>
-            <div v-if="datasetId" class="md-layout md-alignment-center-left" style="margin: 0rem 1rem">
-                <span>
-                Uploading to dataset ID
-                <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">{{datasetId}}</a>
-                </span>
-                <md-button id="editId" class="md-icon-button"
-                @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+              No dataset ID selected.
+              <a @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+                >Select an existing ID</a
+              >
+              , or return to the <a @click="navBack">previous page?</a>
+            </div>
+            <md-steppers
+              md-vertical
+              md-linear
+              :md-active-step.sync="active"
+              class="form__stepper"
+            >
+              <md-step
+                id="first"
+                md-label="Download blank template"
+                :md-done.sync="first"
+              >
+                <div class="utility-line-height-sm">
+                  <a href="/master_template.xlsx" download> Click here</a> to
+                  download the template spreadsheet, and fill it out with your
+                  data.
+                </div>
+                <div class="utility-line-height-sm">
+                  To curate FEA data, <a>click here</a> instead.
+                </div>
+
+                <div class="utility-line-height-sm">
+                  Skip this step if you have already downloaded the template
+                  spreadsheet.
+                </div>
+                <md-button
+                  type="submit"
+                  class="md-button_next u--margin-toplg"
+                  @click="goToStep('first', 'second')"
                 >
-                <md-icon>edit</md-icon>
+                  Next
                 </md-button>
-            </div>
-            <div v-else> No dataset ID selected.
-                <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">Select an existing ID</a>
-                , or return to the <a @click="navBack">previous page?</a>
-            </div>
-            <md-steppers md-vertical md-linear :md-active-step.sync="active" class="form__stepper">
-                <md-step id="first" md-label="Download blank template" :md-done.sync="first">
-                <div class="utility-line-height-sm"><a href="/master_template.xlsx" download>
-                    Click here</a> to download the template spreadsheet, and fill it out with your data.
-                </div>
-                <div class="utility-line-height-sm">To curate FEA data, <a>click here</a> instead.</div>
-    
-                <div class="utility-line-height-sm">Skip this step if you have already downloaded the template spreadsheet.</div>
-                <md-button type="submit" class="md-button_next u--margin-toplg"
-                    @click="goToStep('first', 'second')">
-                    Next
-                </md-button>
-                </md-step>
-                <md-step id="second" md-label="Select spreadsheet for upload" :md-done.sync="second">
-                <DropZone class="form__drop-area" @files-dropped="addSpreadsheet">
-                    <label for="file-spreadsheet-input">
-                        <div class="form__drop-area_label">
-                            <div class="explorer_page-nav-card_text">Drag the completed spreadsheet here </div>
-                            <div class="md-layout-item_para md-layout-item_para_fl" style="text-align:center">
-                                or click to browse. Accepts .xlsx
-                            </div>
-                            <input type="file" id="file-spreadsheet-input" multiple @change="onInputChange" accept=".xlsx"/>
-                        </div>
-                    </label>
+              </md-step>
+              <md-step
+                id="second"
+                md-label="Select spreadsheet for upload"
+                :md-done.sync="second"
+              >
+                <DropZone
+                  class="form__drop-area"
+                  @files-dropped="addSpreadsheet"
+                >
+                  <label for="file-spreadsheet-input">
+                    <div class="form__drop-area_label">
+                      <div class="explorer_page-nav-card_text">
+                        Drag the completed spreadsheet here
+                      </div>
+                      <div
+                        class="md-layout-item_para md-layout-item_para_fl"
+                        style="text-align: center"
+                      >
+                        or click to browse. Accepts .xlsx
+                      </div>
+                      <input
+                        type="file"
+                        id="file-spreadsheet-input"
+                        multiple
+                        @change="onInputChange"
+                        accept=".xlsx"
+                      />
+                    </div>
+                  </label>
                 </DropZone>
-    
-                <div class="md-layout" v-show="spreadsheetFiles.length">
-                    <md-list class="md-layout utility-transparentbg md-theme-default">
-                    <FilePreview v-for="file in spreadsheetFiles" :key="file.id" :file="file" tag="div" classname="md-layout-item" @remove="removeSpreadsheet" />
-                    </md-list>
+                <div class="u--margin-posmd u--color-primary teams_header">
+                  <strong>Note:</strong> Title, Author, Citation Type and
+                  Publication Year, are required entry in the master template.
                 </div>
-                <div style="color: red; margin:2rem 2rem 0; font-weight:600" v-if="renameXlsx">
-                    NOTICE: Main spreadsheet name must end with 'master_template.xlsx'. 
-                    Please rename this file and re-select.
+                <div class="md-layout" v-show="spreadsheetFiles.length">
+                  <md-list
+                    class="md-layout utility-transparentbg md-theme-default"
+                  >
+                    <FilePreview
+                      v-for="file in spreadsheetFiles"
+                      :key="file.id"
+                      :file="file"
+                      tag="div"
+                      classname="md-layout-item"
+                      @remove="removeSpreadsheet"
+                    />
+                  </md-list>
+                </div>
+                <div
+                  style="color: red; margin: 2rem 2rem 0; font-weight: 600"
+                  v-if="renameXlsx"
+                >
+                  NOTICE: Main spreadsheet name must end with
+                  'master_template.xlsx'. Please rename this file and re-select.
                 </div>
                 <div class="md-layout">
-                        <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
-                        @click="goToStep('second', 'first')">
-                        <md-icon>arrow_back</md-icon>Go Back
-                        </md-button>
-                        <md-button type="submit" :disabled="spreadsheetFiles.length < 1" class="md-layout-item md-button_next md-size-40"
-                        @click="goToStep('second', 'third')">
-                        Next<md-icon>arrow_forward</md-icon>
-                        </md-button>
-                    </div>
-                </md-step>
-                <md-step id="third" md-label="Select supplementary files for upload" :md-done.sync="third">
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('second', 'first')"
+                  >
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button
+                    type="submit"
+                    :disabled="spreadsheetFiles.length < 1"
+                    class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('second', 'third')"
+                  >
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
+                </div>
+              </md-step>
+              <md-step
+                id="third"
+                md-label="Select supplementary files for upload"
+                :md-done.sync="third"
+              >
                 <DropZone class="form__drop-area" @files-dropped="addSupp">
-                    <label for="file-supp-input">
-                        <div class="form__drop-area_label">
-                            <div class="explorer_page-nav-card_text">Add supplementary images and raw data files here </div>
-                            <div class="md-layout-item_para md-layout-item_para_fl" style="text-align:center">
-                                or click to browse.
-                            </div>
-                            <input type="file" id="file-supp-input" multiple @change="onInputChange" accept=".jpg, .jpeg, .png, .csv, .xls, .tif, .tiff"/>
-                        </div>
-                    </label>
+                  <label for="file-supp-input">
+                    <div class="form__drop-area_label">
+                      <div class="explorer_page-nav-card_text">
+                        Add supplementary images and raw data files here
+                      </div>
+                      <div
+                        class="md-layout-item_para md-layout-item_para_fl"
+                        style="text-align: center"
+                      >
+                        or click to browse.
+                      </div>
+                      <input
+                        type="file"
+                        id="file-supp-input"
+                        multiple
+                        @change="onInputChange"
+                        accept=".jpg, .jpeg, .png, .csv, .xls, .tif, .tiff"
+                      />
+                    </div>
+                  </label>
                 </DropZone>
 
                 <div class="md-layout" v-show="suppFiles.length">
-                    <md-list class="md-layout utility-transparentbg md-theme-default">
-                    <FilePreview v-for="file in suppFiles" :key="file.id" :file="file" tag="div" classname="md-layout-item" @remove="removeSupp" />
-                    </md-list>
-                </div>                
+                  <md-list
+                    class="md-layout utility-transparentbg md-theme-default"
+                  >
+                    <FilePreview
+                      v-for="file in suppFiles"
+                      :key="file.id"
+                      :file="file"
+                      tag="div"
+                      classname="md-layout-item"
+                      @remove="removeSupp"
+                    />
+                  </md-list>
+                </div>
                 <!--TODO:  Need to convert tif files, redirect to converter (add step) and allow to download-->
-                <div style="color: red; margin:2rem 2rem 0; font-weight:600" v-if="newTifs">
-                    NOTICE: One or more of your selected files was .tif/.tiff. 
-                    We recommend converting this file to .png or .jpg/.jpeg and re-selecting.
+                <div
+                  style="color: red; margin: 2rem 2rem 0; font-weight: 600"
+                  v-if="newTifs"
+                >
+                  NOTICE: One or more of your selected files was .tif/.tiff. We
+                  recommend converting this file to .png or .jpg/.jpeg and
+                  re-selecting.
                 </div>
-    
+
                 <div class="md-layout">
-                        <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
-                        @click="goToStep('third', 'second')">
-                        <md-icon>arrow_back</md-icon>Go Back
-                        </md-button>
-                        <md-button type="submit" class="md-layout-item md-button_next md-size-40"
-                        @click="goToStep('third', 'fourth')">
-                        Next<md-icon>arrow_forward</md-icon>
-                        </md-button>
-                    </div>
-                </md-step>
-                <md-step id="fourth" md-label="Additional Information" :md-done.sync="fourth">
-                <div v-if="datasetId" class="md-layout md-alignment-center-left" style="margin: 0rem 1rem">
-                    <span>
-                        Uploading to dataset ID
-                        <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">{{datasetId}}</a>
-                    </span>
-                    <md-button id="editId" class="md-icon-button"
-                        @click="renderDialog('Use a different ID?', 'datasetId', 80)"
-                    >
-                        <md-icon>edit</md-icon>
-                    </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('third', 'second')"
+                  >
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('third', 'fourth')"
+                  >
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
                 </div>
-                <div v-else> No dataset ID selected.
-                    <a @click="renderDialog('Use a different ID?', 'datasetId', 80)">Select an existing ID</a>
-                    , or <a @click="navBack">exit the form?</a>
+              </md-step>
+              <md-step
+                id="fourth"
+                md-label="Additional Information"
+                :md-done.sync="fourth"
+              >
+                <div
+                  v-if="datasetId"
+                  class="md-layout md-alignment-center-left"
+                  style="margin: 0rem 1rem"
+                >
+                  <span>
+                    Uploading to dataset ID
+                    <a
+                      @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+                      >{{datasetId}}</a
+                    >
+                  </span>
+                  <md-button
+                    id="editId"
+                    class="md-icon-button"
+                    @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+                  >
+                    <md-icon>edit</md-icon>
+                  </md-button>
+                </div>
+                <div v-else>
+                  No dataset ID selected.
+                  <a
+                    @click="renderDialog('Use a different ID?', 'datasetId', 80)"
+                    >Select an existing ID</a
+                  >
+                  , or <a @click="navBack">exit the form?</a>
                 </div>
                 <md-field style="max-width: 80%; margin: 1rem">
-                    <label>DOI</label>
-                    <md-input v-model="doi"></md-input>
-                    <span class="md-helper-text">Enter the DOI of related publication if exists (e.g., 10.1000/000)</span>
+                  <label>DOI</label>
+                  <md-input v-model="doi"></md-input>
+                  <span class="md-helper-text"
+                    >Enter the DOI of related publication if exists (e.g.,
+                    10.1000/000)</span
+                  >
                 </md-field>
                 <div class="md-layout u--margin-toplg">
-                    <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
-                    @click="goToStep('fourth', 'third')">
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('fourth', 'third')"
+                  >
                     <md-icon>arrow_back</md-icon>Go Back
-                    </md-button>
-                    <md-button type="submit" class="md-layout-item md-button_next md-size-40"
-                    @click="goToStep('fourth', 'fifth')">
+                  </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('fourth', 'fifth')"
+                  >
                     Next<md-icon>arrow_forward</md-icon>
-                    </md-button>
+                  </md-button>
                 </div>
-                </md-step>
-                <md-step id="fifth" md-label="Verify data" :md-done.sync="fifth">
-                    <h3>DOI:</h3>
-                        {{doi}}
-                    <div>&nbsp;</div>
-                    <h3>Uploaded files: </h3>
-        
-                    <h4 style="margin-top:1rem;">Spreadsheet(s)</h4>
-                    <ul style="margin-left:1rem;">
-                        <div v-for="(ss, index) in spreadsheetFiles" :key="index">
-                        {{ss.file.name}}
-                        </div>
-                    </ul>
-        
-                    <h4 style="margin-top:1rem;">Supplementary files</h4>
-                    <ul style="margin-left:1rem;">
-                        <div v-for="(suppl, index) in suppFiles" :key="index">
-                        {{suppl.file.name}}
-                        </div>
-                    </ul>
-        
-                    <div style="color: red; margin-top:2rem" v-if="spreadsheetFiles.length < 1">At least one spreadsheet is required for submission.</div>
+              </md-step>
+              <md-step id="fifth" md-label="Verify data" :md-done.sync="fifth">
+                <h3>DOI:</h3>
+                {{doi}}
+                <div>&nbsp;</div>
+                <h3>Uploaded files:</h3>
+
+                <h4 style="margin-top: 1rem">Spreadsheet(s)</h4>
+                <ul style="margin-left: 1rem">
+                  <div v-for="(ss, index) in spreadsheetFiles" :key="index">
+                    {{ss.file.name}}
+                  </div>
+                </ul>
+
+                <h4 style="margin-top: 1rem">Supplementary files</h4>
+                <ul style="margin-left: 1rem">
+                  <div v-for="(suppl, index) in suppFiles" :key="index">
+                    {{suppl.file.name}}
+                  </div>
+                </ul>
+
+                <div
+                  style="color: red; margin-top: 2rem"
+                  v-if="spreadsheetFiles.length < 1"
+                >
+                  At least one spreadsheet is required for submission.
+                </div>
                 <div class="md-layout">
-                        <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
-                        @click="goToStep('fifth', 'fourth')">
-                        <md-icon>arrow_back</md-icon>Go Back
-                        </md-button>
-                        <md-button type="submit" class="md-layout-item md-button_next md-size-40"
-                        @click="goToStep('fifth', 'sixth')">
-                        Next<md-icon>arrow_forward</md-icon>
-                        </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('fifth', 'fourth')"
+                  >
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_next md-size-40"
+                    @click="goToStep('fifth', 'sixth')"
+                  >
+                    Next<md-icon>arrow_forward</md-icon>
+                  </md-button>
                 </div>
-                </md-step>
-                <md-step id="sixth" md-label="Confirm and submit">
+              </md-step>
+              <md-step id="sixth" md-label="Confirm and submit">
                 <div class="md-layout">
-                        <md-button type="submit" class="md-layout-item md-button_prev md-size-40"
-                        @click="goToStep('sixth', 'fifth')">
-                        <md-icon>arrow_back</md-icon>Go Back
-                        </md-button>
-                    <md-button id="submit" type="submit" :disabled="(spreadsheetFiles.length < 1)" class="md-layout-item md-button_next md-size-40"
-                        @click="renderDialog('Submit files?', 'submit', 40); clearSnackbar()">
-                        Save and Submit
-                    </md-button>
+                  <md-button
+                    type="submit"
+                    class="md-layout-item md-button_prev md-size-40"
+                    @click="goToStep('sixth', 'fifth')"
+                  >
+                    <md-icon>arrow_back</md-icon>Go Back
+                  </md-button>
+                  <md-button
+                    id="submit"
+                    type="submit"
+                    :disabled="(spreadsheetFiles.length < 1)"
+                    class="md-layout-item md-button_next md-size-40"
+                    @click="renderDialog('Submit files?', 'submit', 40); clearSnackbar()"
+                  >
+                    Save and Submit
+                  </md-button>
                 </div>
-                </md-step>
+              </md-step>
             </md-steppers>
-            </div>
+          </div>
         </div>
-    </div>
-    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth" :disableClose="dialog.disableClose">
+      </div>
+      <dialogbox
+        :active="dialogBoxActive"
+        :minWidth="dialog.minWidth"
+        :disableClose="dialog.disableClose"
+      >
         <template v-slot:title>{{dialog.title}}</template>
         <template v-slot:content>
-            <div v-if="dialog.type=='submit'">
-            You are submitting {{spreadsheetFiles.length}}
-            spreadsheet<span v-if="spreadsheetFiles.length!=1">s</span>
-            and {{suppFiles.length}}
-            supplementary file<span v-if="suppFiles.length!=1">s</span>.
+          <div v-if="dialog.type=='submit'">
+            You are submitting {{spreadsheetFiles.length}} spreadsheet<span
+              v-if="spreadsheetFiles.length!=1"
+              >s</span
+            >
+            and {{suppFiles.length}} supplementary file<span
+              v-if="suppFiles.length!=1"
+              >s</span
+            >.
+          </div>
+          <div v-if="dialog.type=='datasetId'">
+            <div v-if="datasetId">
+              You are using dataset ID <b>{{datasetId}}</b>.
             </div>
-            <div v-if="dialog.type=='datasetId'">
-            <div v-if="datasetId"> You are using dataset ID <b>{{datasetId}}</b>.</div>
-            <div> To use a pre-existing ID, select from the following: </div>
+            <div>To use a pre-existing ID, select from the following:</div>
             <md-autocomplete
-                v-model="selectedDataset.label"
-                @md-selected="changeSelectedDataset"
-                :md-options="getUserDataset.datasets"
-                :md-open-on-focus="true">
-                <label>Dataset ID</label>
-                <template style="max-width: 90%;" slot="md-autocomplete-item" slot-scope="{ item }">
-                <div style="width:100%">
-                    <div style="width: 90%;
-                                overflow: hidden;
-                                -o-text-overflow: ellipsis;
-                                text-overflow: ellipsis;">
-                    <b>{{ item.title || `${item.datasetGroupId} (Untitled)`}} &nbsp;</b>
-                    </div>
-                    <span>
-                    <i>last updated {{(new Date(parseInt(item.updatedAt))).toLocaleString()}}</i>
-                    </span>
+              v-model="selectedDataset.label"
+              @md-selected="changeSelectedDataset"
+              :md-options="getUserDataset.datasets"
+              :md-open-on-focus="true"
+            >
+              <label>Dataset ID</label>
+              <template
+                style="max-width: 90%"
+                slot="md-autocomplete-item"
+                slot-scope="{ item }"
+              >
+                <div style="width: 100%">
+                  <div
+                    style="
+                      width: 90%;
+                      overflow: hidden;
+                      -o-text-overflow: ellipsis;
+                      text-overflow: ellipsis;
+                    "
+                  >
+                    <b
+                      >{{ item.title || `${item.datasetGroupId} (Untitled)`}}
+                      &nbsp;</b
+                    >
+                  </div>
+                  <span>
+                    <i
+                      >last updated {{(new
+                      Date(parseInt(item.updatedAt))).toLocaleString()}}</i
+                    >
+                  </span>
                 </div>
-                </template>
-    
-                <template style="max-width: 90%;" slot="md-autocomplete-empty" slot-scope="{ term }">
+              </template>
+
+              <template
+                style="max-width: 90%"
+                slot="md-autocomplete-empty"
+                slot-scope="{ term }"
+              >
                 <p>No dataset IDs matching "{{ term }}" were found.</p>
-                </template>
+              </template>
             </md-autocomplete>
-            </div>
-            <div v-if="dialog.type=='loading' && uploadInProgress">
-            <spinner :text="uploadInProgress"/>
-            </div>
+          </div>
+          <div v-if="dialog.type=='loading' && uploadInProgress">
+            <spinner :text="uploadInProgress" />
+          </div>
         </template>
         <template v-slot:actions>
-            <div v-if="dialog.type=='datasetId'">
+          <div v-if="dialog.type=='datasetId'">
             <div class="">
-            <md-button type="submit" class="md-button-transparent"
-                @click="toggleDialogBox()">
+              <md-button
+                type="submit"
+                class="md-button-transparent"
+                @click="toggleDialogBox()"
+              >
                 Cancel
-            </md-button>
-            <md-button type="submit" class="md-button-transparent"
-                @click="toggleDialogBox();changeDatasetId()">
+              </md-button>
+              <md-button
+                type="submit"
+                class="md-button-transparent"
+                @click="toggleDialogBox();changeDatasetId()"
+              >
                 Confirm dataset ID change
-            </md-button>
+              </md-button>
             </div>
-            </div>
-            <div v-else-if="dialog.type=='submit'">
-            <md-button type="submit" class="md-button-transparent"
-                @click="toggleDialogBox()">
-                No, continue editing
+          </div>
+          <div v-else-if="dialog.type=='submit'">
+            <md-button
+              type="submit"
+              class="md-button-transparent"
+              @click="toggleDialogBox()"
+            >
+              No, continue editing
             </md-button>
-            <md-button id="confirmSubmit" type="submit" class="md-button-transparent"
-                @click="submitFiles()">
-                Yes, submit
+            <md-button
+              id="confirmSubmit"
+              type="submit"
+              class="md-button-transparent"
+              @click="submitFiles()"
+            >
+              Yes, submit
             </md-button>
-            </div>
+          </div>
         </template>
-    </dialogbox>
-</div>
-</template>
+      </dialogbox>
+    </div>
+  </template>
 </div>

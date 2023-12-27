@@ -71,16 +71,15 @@ describe('Admin Controllers Unit Tests:', function() {
       expect(result).to.have.property('data');
     });
 
-    it.skip('should return a 500 server error', async function() {
-      req.query = { search: 'Loss' }
-
+    it('should return a 500 server error', async function() {
+      req.query = { search: 'Loss tangent' }
+      const nextSpy = sinon.spy();
       sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returns({message: 'Server Error'});
-      sinon.stub(DatasetProperty, 'find').throws('Error connecting to database');
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(DatasetProperty, 'find').throws();
 
-      const result = await getDatasetProperties(req, res, next);
-      expect(result).to.have.property('message');
-      expect(result.message).to.equal('Error connecting to database');
+      await getDatasetProperties(req, res, nextSpy);
+      sinon.assert.calledOnce(nextSpy);
     });
   })
 })

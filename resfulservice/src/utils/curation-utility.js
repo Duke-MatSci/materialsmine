@@ -10,12 +10,21 @@ const csv = require('csv-parser');
 const { deleteFile, deleteFolder } = require('../utils/fileManager');
 
 exports.xlsxFileReader = async (path, sheetName) => {
-  const sheetData = await readXlsxFile(path, { sheet: sheetName });
-  return sheetData;
+  try {
+    const sheetData = await readXlsxFile(path, { sheet: sheetName });
+    return sheetData;
+  } catch (err) {
+    err.statusCode = 500;
+    throw err;
+  }
 };
 
 exports.xmlGenerator = (curationObject) => {
-  return Xmljs.json2xml(curationObject, { compact: true, spaces: 2, ignoreDeclaration: false });
+  return Xmljs.json2xml(curationObject, {
+    compact: true,
+    spaces: 2,
+    ignoreDeclaration: false
+  });
 };
 
 exports.jsonGenerator = (xml) => {
@@ -30,17 +39,61 @@ exports.jsonSchemaToXsdGenerator = (jsonSchema) => {
   return jsonSchema2xsd(jsonSchema);
 };
 
-exports.parseCSV = async (filename) => {
+exports.parseCSV = async (filename, dataStream, isMetamine) => {
   return new Promise((resolve, reject) => {
     const jsonData = [];
-    fs.createReadStream(filename)
-      .pipe(csv())
+    let fileStream;
+
+    const isTsv = /(?=.*?(.tsv)$)/.test(filename);
+
+    let options = {
+      mapHeaders: ({ header, index }) =>
+        header === '' ? `field${index + 1}` : header,
+      quote: ''
+    };
+
+    if (isMetamine) options.quote = '"';
+
+    options = isTsv ? { ...options, separator: '\t' } : options;
+
+    if (filename) {
+      fileStream = fs.createReadStream(filename);
+    } else {
+      fileStream = dataStream;
+    }
+
+    fileStream
+      .pipe(csv(options))
       .on('data', (data) => jsonData.push(data))
       .on('end', () => {
         resolve(jsonData);
       })
       .on('error', reject);
   });
+};
+
+exports.generateCSVData = (data, req) => {
+  const headers = data?.headers ?? data?.data ?? data;
+  const rows = data?.rows ?? data?.data ?? data;
+  const dataHeaders = headers.column.map(({ _text }) => _text);
+  const dataRows = rows.row.map(({ column }) => {
+    return column.map(({ _text }) => _text);
+  });
+
+  const csvData = [[dataHeaders], ...dataRows]
+    .map((arr) => arr.join(','))
+    .join('\r\n');
+
+  const filename = `processed-${Math.floor(
+    100000000 + Math.random() * 900000000
+  )}.csv`;
+  const filePath = `mm_files/${filename}`;
+
+  fs.writeFile(filePath, csvData, (err) => {
+    if (err) console.error(err);
+  });
+
+  return `/api/files/${filename}?isFileStore=true`;
 };
 
 exports.parseXSDFile = async (req, filename) => {
@@ -53,19 +106,35 @@ exports.parseXSDFile = async (req, filename) => {
 
     lineReader.on('line', function (line) {
       const removeLine = '<xs:attribute';
+
       if (!new RegExp(removeLine, 'gm').test(line)) {
         const regex = /<xs:element/gm;
         const root = /name="PolymerNanocomposite"/gm;
         const chooseParameter = /name="ChooseParameter"/gm;
         const maxOccurs = 'maxOccurs="unbounded"';
 
-        if (chooseParameter.test(line) && !new RegExp(maxOccurs, 'gm').test(line)) {
+        if (
+          chooseParameter.test(line) &&
+          !new RegExp(maxOccurs, 'gm').test(line)
+        ) {
           const lineArray = line.split('<xs:element');
-          const modifiedLine = [lineArray[0], '<xs:element ', 'minOccurs="0"', ' ', maxOccurs, lineArray[1]].join('');
+          const modifiedLine = [
+            lineArray[0],
+            '<xs:element ',
+            'minOccurs="0"',
+            ' ',
+            maxOccurs,
+            lineArray[1]
+          ].join('');
           writeStream.write(`${modifiedLine}\r\n`);
         } else if (regex.test(line) && !root.test(line)) {
           const lineArray = line.split('<xs:element');
-          const modifiedLine = [lineArray[0], '<xs:element ', 'minOccurs="0"', lineArray[1]].join('');
+          const modifiedLine = [
+            lineArray[0],
+            '<xs:element ',
+            'minOccurs="0"',
+            lineArray[1]
+          ].join('');
           writeStream.write(`${modifiedLine}\r\n`);
         } else {
           writeStream.write(`${line}\r\n`);
@@ -99,16 +168,18 @@ exports.unZipFolder = async (req, filename) => {
 };
 
 exports.readFolder = (folderPath) => {
-  const folderContent = fs.readdirSync(folderPath)
-    .map(fileName => {
-      return path.join(folderPath, fileName);
-    });
+  const folderContent = fs.readdirSync(folderPath).map((fileName) => {
+    return path.join(folderPath, fileName);
+  });
 
-  const isFolder = fileName => {
-    return (fs.lstatSync(fileName).isDirectory() && fileName.split('/').pop() !== '__MACOSX');
+  const isFolder = (fileName) => {
+    return (
+      fs.lstatSync(fileName).isDirectory() &&
+      fileName.split('/').pop() !== '__MACOSX'
+    );
   };
 
-  const isFile = fileName => {
+  const isFile = (fileName) => {
     return fs.lstatSync(fileName).isFile();
   };
 

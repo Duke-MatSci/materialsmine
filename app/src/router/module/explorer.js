@@ -64,6 +64,18 @@ const explorerRoutes = [
         name: 'CurateBulk',
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'stepper',
+        name: 'CurationForm',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'stepper/edit',
+        name: 'EditXmlCuration',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -131,6 +143,13 @@ const explorerRoutes = [
   {
     path: 'curate/sdd',
     name: 'CurateSDD',
+    component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: 'curate/sdd/edit/:datasetId',
+    name: 'EditSDD',
+    props: true,
     component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
     meta: { requiresAuth: true }
   },

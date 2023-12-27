@@ -84,7 +84,7 @@
           <router-link :to="'/explorer/curate/spreadsheet'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Upload a Spreadsheet</md-list-item>
           </router-link>
-          <router-link :to="''" v-slot="{navigate, href}" custom>
+          <router-link :to="'/explorer/curate/stepper'" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate"  class="md-inset">Fill a Form</md-list-item>
           </router-link>
           <router-link :to="'/explorer/curate/sdd'" v-slot="{navigate, href}" custom>

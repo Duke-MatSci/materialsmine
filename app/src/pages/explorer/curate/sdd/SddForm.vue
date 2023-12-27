@@ -6,7 +6,10 @@
   </div>
   <div class="curate">
     <div>
-    <div>
+      <div class="section_loader" v-if="loading">
+        <spinner :loading="loading" text='Loading Dataset'/>
+      </div>
+    <div v-else>
       <md-card style="margin: 10px" >
         <form class="modal-content" action="" method="post"
           enctype="multipart/form-data"
@@ -35,10 +38,44 @@
               </label>
             </FileInput>
 
-            <div class="md-layout" v-show="dataset.distrFiles.length">
-              <md-list class="md-layout utility-transparentbg md-theme-default">
-              <FilePreview v-for="file in dataset.distrFiles" :key="file.id" :file="file" tag="div" classname="md-layout-item" @remove="removeDistr" />
-              </md-list>
+            <div class="u--margin-posmd" v-show="(optionalChaining(() => distrFiles.length))">
+              <h4 v-if="(optionalChaining(() => oldDistributions.length))">
+                New file(s) to upload
+              </h4>
+              <div class="md-layout">
+                <md-list class="md-layout utility-transparentbg md-theme-default">
+                <FilePreview v-for="file in distrFiles" :key="file.id" :file="file"
+                  tag="div" classname="md-layout-item" @remove="removeDistr" />
+                </md-list>
+              </div>
+            </div>
+
+            <md-divider v-if="((optionalChaining(() => distrFiles.length)) && (optionalChaining(() => oldDistributions.length)))"
+              class="u_width--max" style="border-style: solid"></md-divider>
+
+            <div class="u--margin-posmd" v-if="(optionalChaining(() => oldDistributions.length))">
+              <h4>
+                Previously uploaded file(s)
+              </h4>
+              <i> These files are already in MaterialsMine. You do not need to be re-upload them </i>
+              <div class="md-layout">
+                <md-list class="md-layout utility-transparentbg md-theme-default">
+                <div v-for="file in oldDistributions" :key="`${file.uri}_old`" classname="md-layout-item">
+                  <FilePreview :file="file" tag="div" :customActions="true" :showRemove="false">
+                    <template #custom_actions>
+                      <md-button id="downloadFile" class="md-icon-button" :href="(optionalChaining(() => file.uri))" download>
+                        <md-tooltip> Download file </md-tooltip>
+                        <md-icon>download</md-icon>
+                      </md-button>
+                      <md-button id="deleteFile" class="md-icon-button" @click.native.prevent="confirmDeletion(file)">
+                        <md-tooltip> Delete file </md-tooltip>
+                        <md-icon>delete</md-icon>
+                      </md-button>
+                    </template>
+                  </FilePreview>
+                </div>
+                </md-list>
+              </div>
             </div>
 
             <FileInput @files-dropped="previewFile()">
@@ -55,12 +92,44 @@
               </label>
             </FileInput>
 
-            <div id="depictWrapper" class="u--margin-toplg justify-center" style="visibility: hidden; height:200px;margin: 5rem; display: flex; justify-content: center">
+            <div class="md-layout md-gutter u--margin-posmd">
+              <span>
+                <div class="u--margin-posmd u--margin-rightmd u--margin-leftsm" v-if="oldDepiction">
+                  <h4 >
+                    Previously uploaded thumbnail
+                  </h4>
+                  <figure>
+                    <img v-if="oldDepiction.accessUrl" :src="oldDepiction.accessUrl" alt="Image preview..." style="height:150px">
+                    <figcaption v-if="oldDepiction.status === 'delete'">Will be deleted when edits are submitted</figcaption>
+                  </figure>
+                  <md-button id="downloadFile" class="md-icon-button" :href="oldDepiction.accessUrl" download>
+                    <md-tooltip> Download file </md-tooltip>
+                    <md-icon>download</md-icon>
+                  </md-button>
+                  <md-button v-if="oldDepiction.status === 'complete'" id="deleteFile" class="md-icon-button"
+                    @click.native.prevent="oldDepiction.status = 'delete'">
+                    <md-tooltip> Delete file </md-tooltip>
+                    <md-icon>delete</md-icon>
+                  </md-button>
+                  <md-button v-if="oldDepiction.status === 'delete'" id="undoDelete" class="md-icon-button"
+                    @click.native.prevent="oldDepiction.status = 'complete'">
+                    <md-tooltip> Undo Delete </md-tooltip>
+                    <md-icon>restore_from_trash</md-icon>
+                  </md-button>
+                </div>
+              </span>
+              <span>
+              <div id="depictWrapper" class="u--margin-posmd justify-center" style="visibility: hidden; height:200px">
+                <h4 v-if="oldDepiction">
+                  Replacement thumbnail<span v-if="depiction">: {{(optionalChaining(() => depiction.name))}}</span>
+                </h4>
               <figure>
-                <img id="depictImg" src="" alt="Image preview..." style="height:200px">
-                <figcaption v-if="dataset.depiction">{{dataset.depiction.name}}</figcaption>
+                <img id="depictImg" src="" alt="Image preview..." style="height:150px">
+                <figcaption v-if="oldDepiction">This original thumbnail will be deleted and replaced by this image</figcaption>
               </figure>
               <md-button @click="removeImage" type="button" class="close md-raised">Remove image</md-button>
+              </div>
+              </span>
             </div>
 
             </div>
@@ -90,7 +159,7 @@
               <div class="md-layout md-gutter" style="align-items: center">
 
                 <div class="md-layout-item md-size-30 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
-                  <md-field :class="{ 'md-invalid': ((invalid['second'] && !dataset.contactPoint['@id']) || invalid.orcid) }">
+                  <md-field :class="{ 'md-invalid': ((invalid['second'] && (optionalChaining(() => !dataset.contactPoint['@id']))) || invalid.orcid) }">
                     <label style="font-size:14px">ORCID Identifier (e.g., 0000-0001-2345-6789)</label>
                     <md-input v-model="orcidId" required @change="lookupOrcid" ></md-input>
                     <span class="md-error" v-if="!invalid.orcid">ORCID ID required</span>
@@ -221,33 +290,60 @@
             <md-card-header>
               <md-card-header-text>
                 <div class="md-title">Form Results</div>
-                <div class="md-subhead" v-if="dataset.depiction">Cover Image: {{dataset.depiction.name}}</div>
+                <div class="md-subhead" v-if="depiction">Cover Image: {{depiction.name}}</div>
+                <div class="md-subhead" v-else-if="oldDepiction && (oldDepiction.status !== 'delete')">
+                  Cover Image: {{oldDepiction.originalname}}
+                </div>
               </md-card-header-text>
 
-              <md-card-media md-big v-show="dataset.depiction" style="height:0px">
+              <md-card-media md-big v-show="depiction" style="height:0px">
                 <span id="depictWrapperMini" style="visibility: hidden">
-                    <figure>
-                      <img id="depictImgMini" src="" alt="Image preview...">
-                    </figure>
-                  </span>
+                  <figure>
+                    <img id="depictImgMini" src="" alt="Image preview">
+                    <figcaption v-if="oldDepiction">New thumbnail</figcaption>
+                  </figure>
+                </span>
+              </md-card-media>
+              <md-card-media md-big v-if="oldDepiction" style="height:0px">
+                <span>
+                  <figure>
+                    <img :src="oldDepiction.accessUrl" alt="Image preview">
+                    <figcaption v-if="oldDepiction.status==='delete' || !!depiction">
+                      Old thumbnail. Will be deleted when edits are submitted</figcaption>
+                  </figure>
+                </span>
               </md-card-media>
             </md-card-header>
             <md-card-content>
               <div class="u_margin-bottom-small"><h3>Title:</h3> {{ dataset.title }} </div>
-              <div v-if="dataset.refby" class="u_margin-bottom-small"><h3>DOI:</h3> {{dataset.refby}} </div>
-              <div v-if="dataset.contactPoint['@id']" class="u_margin-bottom-small">
+              <div v-if="(optionalChaining(() => dataset.refby.length))" class="u_margin-bottom-small"><h3>DOI:</h3> {{dataset.refby}} </div>
+              <div v-if="(optionalChaining(() => dataset.contactPoint['@id']))" class="u_margin-bottom-small">
                 <h3>Contact Point:</h3>
-                {{dataset.contactPoint['cpFirstName']}} {{dataset.contactPoint['cpLastName']}},
-                {{dataset.contactPoint['cpEmail']}}
+                {{(optionalChaining(() => dataset.contactPoint['cpFirstName']))}}
+                {{(optionalChaining(() => dataset.contactPoint['cpLastName']))}},
+                {{(optionalChaining(() => dataset.contactPoint['cpEmail']))}}
               </div>
               <div class="u_margin-bottom-small">
-              <h3>Selected files: </h3>
-                <div v-for="(file, index) in dataset.distrFiles" :key="index">
-                {{file.file.name}}
+              <h3>Files: </h3>
+                <div class="md-subhead" v-if="oldDistributions.length && distrFiles.length">New Uploads</div>
+                <ul>
+                  <li v-for="(file, index) in distrFiles" :key="index" class="u--margin-leftsm">
+                    {{(optionalChaining(() => file.file.name))}}
+                  </li>
+                </ul>
+                <div v-if="oldDistributions.length">
+                  <div class="md-subhead">Original Files</div>
+                  <ul>
+                    <li v-for="(file, index) in oldDistributions" :key="`${index}_old`" class="u--margin-leftsm">
+                    {{(optionalChaining(() => file.name))}}
+                    </li>
+                  </ul>
                 </div>
               </div>
               <div class="u_margin-bottom-small"><h3>Description:</h3> {{dataset.description}}</div>
-              <div v-if="dataset.datePub['@value']" class="u_margin-bottom-small"><h3>Date published:</h3> {{dataset.datePub['@value']}}</div>
+              <div v-if="dataset.datePub['@value']" class="u_margin-bottom-small">
+                <h3>Date published:</h3> {{dataset.datePub['@value']}}
+              </div>
             </md-card-content>
             <md-card-actions>
               <md-button class="md-primary" @click="submitForm">Submit</md-button>
@@ -266,13 +362,40 @@
     <div v-if="dialog.type=='loading' && uploadInProgress">
       <spinner :text="uploadInProgress"/>
     </div>
-    <div v-if="dialog.type=='success'">
-      New dataset created with ID {{generatedUUID}}
+    <div v-else-if="dialog.type=='success'">
+      <div v-if="!!datasetId"> Dataset with ID {{ datasetId }} successfully updated </div>
+      <div v-else> New dataset created with ID {{generatedUUID}} </div>
+    </div>
+    <div v-else-if="dialog.type=='deleteOld'">
+      <div> Selecting "Yes, Delete" will permanently remove the file from the MaterialsMine database for all users. </div>
+      <div> This action cannot be undone. </div>
+      <div> Selected file: <a :href="(optionalChaining(() => toDelete.uri))" download>
+        {{ (optionalChaining(() => toDelete.name)) }} </a>
+      </div>
+    </div>
+    <div v-else-if="dialog.type=='doiData'">
+      The following data was imported from DOI.org. Use to auto-fill form?
+      This will replace any fields that you may have already filled.
+      <div v-if="doiData.title"> <b>Title: </b>
+        {{ (optionalChaining(() => doiData.title[0])) }}
+      </div>
+      <div v-if="doiData.published"> <b>Date Published: </b>
+        {{ (optionalChaining(() => doiData.published['date-parts'].flat() )) }}
+      </div>
+
     </div>
   </template>
   <template v-slot:actions>
     <div v-if="dialog.type=='success'">
       <md-button @click="goToDataset">OK</md-button>
+    </div>
+    <div v-if="dialog.type=='deleteOld'">
+      <md-button @click="toggleDialogBox()">No, Cancel</md-button>
+      <md-button @click="deleteDistribution(toDelete)">Yes, Delete</md-button>
+    </div>
+    <div v-if="dialog.type=='doiData'">
+      <md-button @click="toggleDialogBox()">No, don't use</md-button>
+      <md-button @click="useDoiData()">Yes, use imported data</md-button>
     </div>
   </template>
 </dialogbox>
@@ -286,14 +409,17 @@ import Dialog from '@/components/Dialog.vue'
 import CurateNavBar from '@/components/curate/CurateNavBar.vue'
 import Spinner from '@/components/Spinner.vue'
 import useFileList from '@/modules/file-list'
-import { saveDataset, isValidOrcid } from '@/modules/whyis-dataset'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import { saveDataset, isValidOrcid, loadDataset, parseFileName, deleteFile } from '@/modules/whyis-dataset'
 import { mapGetters, mapMutations } from 'vuex'
 const { v4: uuidv4 } = require('uuid')
-const datasetId = uuidv4()
+const datasetUuid = uuidv4()
 const distrFn = useFileList()
 
 export default {
   name: 'SDDHome',
+  props: ['datasetId'],
+  mixins: [optionalChainingUtil],
   components: {
     FileInput: FileDrop,
     FilePreview,
@@ -318,15 +444,15 @@ export default {
         second: null,
         orcid: false
       },
-      generatedUUID: datasetId,
+      generatedUUID: datasetUuid,
       doi: '',
       orcidId: null,
+      distrFiles: distrFn.files,
+      depiction: null,
       dataset: {
         '@type': 'http://www.w3.org/ns/dcat#Dataset',
         // Dataset info: Step 1
         refby: '',
-        distrFiles: distrFn.files,
-        depiction: null,
         // Dataset info: Step 2
         title: '',
         contactPoint: {
@@ -343,6 +469,10 @@ export default {
           '@value': ''
         }
       },
+      // For editing existing datasets
+      oldDistributions: [],
+      toDelete: null,
+      oldDepiction: null,
       dialog: {
         title: '',
         type: null,
@@ -358,24 +488,13 @@ export default {
       orcidData: 'explorer/curation/getOrcidData'
     }),
     secondPageFilled () {
-      return !!this.dataset.title && !!this.dataset.contactPoint['@id'] &&
+      return !!this.dataset.title && !!this.dataset?.contactPoint?.['@id'] &&
       !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName &&
       !!this.dataset.contactPoint.cpEmail && !!this.dataset.description &&
       !this.invalid.orcid
     }
   },
   watch: {
-    doiData () {
-      this.dataset.refby = this.doiData?.URL
-      this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
-      if (this.doiData?.published?.['date-parts'].flat().length === 3) {
-        const dateArray = this.doiData.published['date-parts'].flat()
-        this.dataset.datePub['@value'] = dateArray[0].toString() + '-' +
-          (dateArray[1] < 10 ? '0' + dateArray[1].toString() : dateArray[1].toString()) + '-' +
-          (dateArray[2] < 10 ? '0' + dateArray[2].toString() : dateArray[2].toString())
-      }
-      // TODO: contributors
-    },
     orcidData (newValue, oldValue) {
       if (newValue === 'invalid') {
         this.invalid.orcid = true
@@ -384,6 +503,7 @@ export default {
         this.dataset.contactPoint['@id'] = this.orcidData?.['@id']
         this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
         this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
+        this.dataset.contactPoint.cpEmail = this.orcidData?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']
       }
     }
   },
@@ -396,8 +516,33 @@ export default {
     addDistr: distrFn.addFiles,
     removeDistr: distrFn.removeFile,
     modStatDistr: distrFn.modifyStatus,
+    clearFileList: distrFn.clearAllFiles,
     navBack () {
       this.$router.back()
+    },
+    async loadDataset () {
+      try {
+        const response = await loadDataset(`${window.location.origin}/explorer/dataset/${this.datasetId}`)
+        if (response[0]?.refby.length) {
+          this.doi = response[0]?.refby[0].split('.org/')[1]
+        }
+        this.dataset = response[0]
+        this.oldDistributions = response?.[1]
+        if (response?.[2]) {
+          const thumbnailResponse = await this.$store.dispatch('explorer/fetchDatasetThumbnail', response?.[2]?.[0]?.['@id'])
+          const accessUrl = thumbnailResponse[0]?.['@value'] ?? ''
+          this.oldDepiction = {
+            accessUrl,
+            originalname: parseFileName(accessUrl),
+            status: 'complete'
+          }
+        }
+        this.orcidId = response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1]
+        this.lookupOrcid(this.orcidId)
+      } catch (e) {
+        this.$store.commit('setSnackbar', { message: e })
+        this.loading = false
+      }
     },
     onInputChange (e) {
       this.addDistr(e.target.files)
@@ -406,7 +551,7 @@ export default {
     },
     goToStep (id, index) {
       this.clearSnackbar()
-      if (id === 'first' && !this.dataset.distrFiles.length) {
+      if (id === 'first' && !this.distrFiles.length && !this.oldDistributions?.length) {
         this.invalid.first = 'Missing required field'
       } else if (id === 'second' && !this.secondPageFilled) {
         this.invalid.second = 'Missing required field'
@@ -421,15 +566,30 @@ export default {
       }
     },
     async lookupOrcid (e) {
-      if (isValidOrcid(e.target.value)) {
+      const id = e?.target?.value ?? e
+      if (isValidOrcid(id)) {
         this.invalid.orcid = false
-        await this.$store.dispatch('explorer/curation/lookupOrcid', e.target.value)
+        await this.$store.dispatch('explorer/curation/lookupOrcid', id)
       } else {
         this.invalid.orcid = true
       }
     },
     async lookupDoi (e) {
       await this.$store.dispatch('explorer/curation/lookupDoi', e.target.value)
+      if (this.doiData) {
+        this.dataset.refby = this.doiData?.URL
+        this.renderDialog('Use imported DOI data?', 'doiData', 40)
+      }
+    },
+    useDoiData () {
+      this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
+      if (this.doiData?.published?.['date-parts'].flat().length === 3) {
+        const dateArray = this.doiData.published['date-parts'].flat()
+        this.dataset.datePub['@value'] = dateArray[0].toString() + '-' +
+          (dateArray[1] < 10 ? '0' + dateArray[1].toString() : dateArray[1].toString()) + '-' +
+          (dateArray[2] < 10 ? '0' + dateArray[2].toString() : dateArray[2].toString())
+      }
+      this.toggleDialogBox()
     },
     // Load a thumbnail of the representative image
     previewFile () {
@@ -439,7 +599,7 @@ export default {
       const wrapperMini = document.querySelector('#depictWrapperMini')
       const file = document.querySelector('#file-depict-input').files[0]
       const reader = new FileReader()
-      this.dataset.depiction = file
+      this.depiction = file
 
       reader.addEventListener('load', function () {
         wrapper.style.visibility = wrapperMini.style.visibility = 'visible'
@@ -454,7 +614,7 @@ export default {
       document.querySelector('#depictWrapper').style.visibility = 'hidden'
       document.querySelector('#file-depict-input').value = ''
       document.querySelector('#depictImg').src = ''
-      this.dataset.depiction = null
+      this.depiction = null
     },
     renderDialog (title, type, minWidth, disableClose = false) {
       this.dialog = {
@@ -465,21 +625,52 @@ export default {
       }
       this.toggleDialogBox()
     },
+    async deleteDistribution (file) {
+      try {
+        await deleteFile(this.file?.fileId)
+        const index = this.oldDistributions.indexOf(file)
+        if (index > -1) this.oldDistributions.splice(index, 1)
+      } catch (e) {
+        this.$store.commit('setSnackbar', { message: e })
+      }
+      this.toggleDialogBox()
+    },
+    confirmDeletion (file) {
+      this.toDelete = file
+      this.toDelete.fileId = parseFileName(file?.uri, true)
+      this.renderDialog('Delete file?', 'deleteOld', 40, false)
+    },
+    // Format files for submission
+    processFiles () {
+      return this.distrFiles.map((file) => ({ ...file, status: 'incomplete' }))
+        .concat(this.oldDistributions.map((file) => ({ ...file, status: 'complete' })))
+    },
+    // Ensure only one thumbnail is associated with the dataset
+    processDepictions () {
+      const depictions = []
+      if (this.depiction) {
+        depictions.push({ file: this.depiction, status: 'incomplete' })
+        if (this.oldDepiction) { this.oldDepiction.status = 'delete' }
+      } if (this.oldDepiction) depictions.push({ ...this.oldDepiction })
+      return depictions
+    },
     // Submit and post as nanopublication
     async submitForm () {
       this.uploadInProgress = 'Uploading files'
       this.renderDialog('Submitting dataset', 'loading', 40, true)
       this.clearSnackbar()
-      if (!this.dataset.distrFiles.length || !this.secondPageFilled) {
+      if ((!this.distrFiles.length && !this.oldDistributions?.length) || !this.secondPageFilled) {
         this.setSnackbar({
           message: 'Unable to submit, check for required fields'
         })
         this.toggleDialogBox()
-        this.invalid.first = !this.dataset.distrFiles.length ? 'Missing required field' : null
+        this.invalid.first = (!this.distrFiles.length && !this.oldDistributions?.length) ? 'Missing required field' : null
         this.invalid.second = !this.secondPageFilled ? 'Missing required field' : null
       } else {
+        const processedFiles = this.processFiles()
+        const processedImg = this.processDepictions()
         try {
-          await saveDataset(this.dataset, this.dataset.distrFiles, this.dataset.depiction, this.generatedUUID)
+          await saveDataset(this.dataset, processedFiles, processedImg, this.generatedUUID)
           this.dialog.title = 'Upload successful'
           this.dialog.type = 'success'
         } catch (err) {
@@ -489,8 +680,16 @@ export default {
       }
     },
     goToDataset () {
-      return this.$router.push(`/explorer/dataset/${this.generatedUUID}`)
+      this.toggleDialogBox()
+      const datasetId = this.datasetId ?? this.generatedUUID
+      this.clearFileList() // Reset imported module
+      return this.$router.push(`/explorer/dataset/${datasetId}`)
     }
+  },
+  async created () {
+    this.loading = true
+    if (this.datasetId) await this.loadDataset()
+    this.loading = false
   }
 }
 </script>

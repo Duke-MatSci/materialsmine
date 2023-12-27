@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const deleteFile = (path, req) => {
-  fs.unlink(path, err => {
+  fs.unlink(path, (err) => {
     if (err) return err;
     else {
       req.logger?.info('file deleted');
@@ -14,7 +14,9 @@ const deleteFolder = async (folderPath, req) => {
   fs.rm(folderPath, { recursive: true, force: true }, (err) => {
     if (err) {
       return err;
-    } else { req.logger?.info('Directory deleted successfully'); }
+    } else {
+      req.logger?.info('Directory deleted successfully');
+    }
   });
 };
 
@@ -62,7 +64,10 @@ async function findFile (req) {
     throw new Error('Internal Server Error');
   }
 
-  const { filesDirectoryValue, parsedFileName } = getDirectoryFiles(req.env?.FILES_DIRECTORY, fileId);
+  const { filesDirectoryValue, parsedFileName } = getDirectoryFiles(
+    req.env?.FILES_DIRECTORY,
+    fileId
+  );
 
   const foundFile = await selectFile(filesDirectoryValue, parsedFileName);
 
@@ -77,16 +82,4 @@ async function findFile (req) {
   return { fileStream: fs.createReadStream(filePath), ext };
 }
 
-// TODO (@tee): Remember this two functions are temporary, I'll remove later
-async function writeFile (req, filename, data) {
-  const filePath = path.join(req.env?.FILES_DIRECTORY, filename);
-  await fs.promises.writeFile(filePath, data);
-  return filePath;
-}
-
-async function readFile (req, filename) {
-  const data = await fs.promises.readFile(filename, 'utf8');
-  return data;
-}
-
-module.exports = { deleteFile, findFile, writeFile, deleteFolder, readFile, getFileExtension };
+module.exports = { deleteFile, findFile, deleteFolder, getFileExtension };

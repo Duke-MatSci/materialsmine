@@ -29,6 +29,12 @@
             <md-icon>comment</md-icon>
         </md-button>
 
+        <md-button @click.prevent="editCuration(xmlViewer.id, xmlViewer.isNewCuration)"
+        v-if="isAuth && (xmlViewer.user === userId || isAdmin)" class="md-fab md-dense md-primary btn--primary ">
+          <md-tooltip md-direction="top">Edit Curation</md-tooltip>
+            <md-icon>edit</md-icon>
+        </md-button>
+
         <md-button @click="approveCuration" v-if="isAuth && isAdmin" class="md-fab md-dense md-primary btn--primary ">
           <md-tooltip md-direction="top">Approve</md-tooltip>
             <md-icon>check</md-icon>
@@ -75,13 +81,11 @@ export default {
   computed: {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin'
+      isAdmin: 'auth/isAdmin',
+      userId: 'auth/userId'
     }),
     isSmallTabView () {
       return screen.width < 760
-    },
-    isNewCuration () {
-      return this.$route?.query?.isNewCuration === 'true'
     }
   },
   methods: {
@@ -93,6 +97,9 @@ export default {
     },
     navBack () {
       this.$router.back()
+    },
+    editCuration (id, isNew) {
+      if (!!id && typeof isNew === 'boolean') return this.$router.push({ name: 'EditXmlCuration', query: { isNew: isNew, id: id } })
     }
   },
   mounted () {
@@ -107,11 +114,11 @@ export default {
         return {
           input: {
             id: this.$route.params.id,
-            isNewCuration: this.isNewCuration
+            isNewCuration: this.$route?.query?.isNewCuration ? JSON.parse(this.$route?.query?.isNewCuration) : false
           }
         }
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'network-only',
       error (error) {
         if (error.networkError) {
           const err = error.networkError
