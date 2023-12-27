@@ -26,7 +26,7 @@ services:
       - node.name=es
       - bootstrap.memory_lock=true
       - cluster.initial_master_nodes=es
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
       - xpack.security.enabled=false
     ulimits:
       memlock:
@@ -44,8 +44,8 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - ./mockDB/minio:/data
   proxy:
@@ -107,8 +107,6 @@ services:
       - DEV_ENDPOINT=${DEV_ENDPOINT}
       - QA_SERVER_ENDPOINT=${QA_SERVER_ENDPOINT}
       - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     ports:
       - '3001:3001'
   client:
