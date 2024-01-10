@@ -19,4 +19,4 @@ RUN pip install --no-cache-dir -r requirements/prod_requirements.txt
 EXPOSE 5050
 
 # Run the application
-CMD ["gunicorn", "-w", "2", "-b", ":5050", "yourapp:app"]
+CMD ["gunicorn", "-w", "2", "-b", ":5050", "app:app"]
