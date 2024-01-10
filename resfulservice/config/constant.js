@@ -133,5 +133,8 @@ module.exports = {
         'Other_Processing'
       ]
     }
+  },
+  ManagedServiceRegister: {
+    dynamfit: '/dynamfit/extract/'
   }
 };
