@@ -13,8 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY . /usr/src/app
 
 # Installing dependencies
-RUN pip install gunicorn
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements/prod_requirements.txt
 
 # Exposing the port the app runs on
 EXPOSE 5050
