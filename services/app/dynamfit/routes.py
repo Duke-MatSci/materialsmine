@@ -2,16 +2,16 @@ from flask import request, Blueprint, jsonify, make_response
 import json
 #import time
 import datetime
-from app.config import Config
-
+# from app.config import Config
 from app.dynamfit.dynamfit2 import update_line_chart,  check_file_exists
-from app.utils.util import token_required, upload_init, request_logger
+from app.utils.util import token_required, upload_init, request_logger, log_errors
 
 dynamfit = Blueprint("dynamfit", __name__, url_prefix="/dynamfit")
 
 
 @dynamfit.route('/extract/', methods=['POST'])
-# @request_logger
+@log_errors
+@request_logger
 @token_required
 def extract_data_from_file(request_id):
     try:
@@ -68,7 +68,6 @@ def extract_data_from_file(request_id):
             }
         }
         end_time = datetime.datetime.now()
-        #latency = f"{int((end_time - start_time) * 1000)} milliseconds"
         latency = f"{((end_time - start_time)).total_seconds()} seconds"
        
         # Creating a JSON response
