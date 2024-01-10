@@ -1,4 +1,3 @@
-import { CONTACT_US_QUERY } from '@/modules/gql/contact-gql'
 import dialogBox from '@/components/Dialog.vue'
 import { mapMutations, mapGetters } from 'vuex'
 
@@ -77,17 +76,16 @@ export default {
         return
       }
       try {
-        await this.$apollo.mutate({
-          mutation: CONTACT_US_QUERY,
-          variables: {
-            input: {
-              fullName: this.name,
-              email: this.email,
-              purpose: this.contactType,
-              message: this.message
-            }
-          }
-        })
+        const payload = {
+          fullName: this.name,
+          email: this.email,
+          purpose: this.contactType,
+          message: this.message
+        }
+        const query = await this.$store.dispatch('contact/contactUs', payload)
+        if (!query) {
+          throw new Error('Failed to Submit')
+        }
         this.openDialogBox({
           type: 'Success',
           header: 'Submitted successfully',
@@ -95,11 +93,14 @@ export default {
         })
         this.resetForm()
       } catch (error) {
-        return this.openDialogBox({
-          type: 'Error',
-          header: 'Submit Error',
-          content: 'Something went wrong!' // Todo: (@tolu) Show specific error message here & try again button!
-        })
+        this.$store.commit(
+          'setSnackbar',
+          {
+            message: error?.message ?? 'Something went wrong!',
+            action: () => this.onSubmit()
+          },
+          { root: true }
+        )
       }
     },
     ...mapMutations({

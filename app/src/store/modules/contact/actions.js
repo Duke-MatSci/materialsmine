@@ -1,4 +1,8 @@
-import { CONTACT_INQUIRY_QUERY, CONTACT_UPDATE_QUERY } from '@/modules/gql/contact-gql'
+import {
+  CONTACT_INQUIRY_QUERY,
+  CONTACT_UPDATE_QUERY,
+  CONTACT_US_QUERY
+} from '@/modules/gql/contact-gql'
 import apollo from '@/modules/gql/apolloClient'
 
 export default {
@@ -8,7 +12,13 @@ export default {
     try {
       const response = await apollo.query({
         query: CONTACT_INQUIRY_QUERY,
-        variables: { input: { resolved: payload.showResolved, pageNumber: payload.page, pageSize: payload.pageSize } },
+        variables: {
+          input: {
+            resolved: payload.showResolved,
+            pageNumber: payload.page,
+            pageSize: payload.pageSize
+          }
+        },
         fetchPolicy: 'no-cache'
       })
 
@@ -47,8 +57,12 @@ export default {
           }
         }
       })
-      context.commit('setSnackbar', { message: 'Inquiry Reply Successful' }, { root: true })
-      if (payload) await context.dispatch('loadItems', context.getters.getPageNumber)
+      context.commit(
+        'setSnackbar',
+        { message: 'Inquiry Reply Successful' },
+        { root: true }
+      )
+      if (payload) { await context.dispatch('loadItems', context.getters.getPageNumber) }
       context.dispatch('renderDialog', null)
     } catch (error) {
       const snackbar = {
@@ -59,6 +73,25 @@ export default {
     } finally {
       context.commit('setContentEditable', true)
     }
+  },
+  async contactUs (context, payload) {
+    if (!payload || Object.values(payload).filter((n) => n).length !== 4) {
+      throw new Error('Provide all necessary info')
+    }
+    let queryComplete = null
+    try {
+      const { fullName, email, purpose, message } = payload
+      const req = await apollo.mutate({
+        mutation: CONTACT_US_QUERY,
+        variables: {
+          input: { fullName, email, purpose, message }
+        }
+      })
+      queryComplete = req?.data?.submitContact ?? {}
+    } catch (err) {
+      throw new Error(err?.message ?? 'Something went wrong!')
+    }
+    return queryComplete
   },
   renderDialog (context, payload) {
     context.commit('setId', payload)

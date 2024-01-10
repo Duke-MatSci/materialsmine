@@ -35,5 +35,8 @@ export default {
   },
   setCurrentDatasetThumbnail (state, payload) {
     state.datasetThumbnail = payload
+  },
+  setDynamfitData (state, payload) {
+    state.dynamfitData = payload
   }
 }
