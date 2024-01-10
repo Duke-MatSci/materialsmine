@@ -2,11 +2,23 @@ import os
 from typing import Any, Dict
 from app.config import Config
 from functools import wraps
-from flask import request, jsonify
+from flask import request, jsonify, current_app as app
 import jwt
 import pandas as pd
 import datetime
-from flask import current_app as app
+import functools
+
+
+def log_errors(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            func_name = func.__name__
+            app.logger.info(f"Error in {func_name} function: {e}")
+            raise
+    return wrapper
 
 # Function to filter missing required request input
 def filter_none(**kwargs):
@@ -19,6 +31,7 @@ def check_extension(filename):
     print("filename", filename)
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
+@log_errors
 def upload_init(file_name):
     try:
         file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
@@ -26,7 +39,7 @@ def upload_init(file_name):
         
         if extension == '.csv':
             delimiter = ','
-        elif extension == '.tsv':
+        elif extension == '.tsv' or extension == '.txt':
             delimiter = '\t'
         else:
             raise ValueError("Unsupported file extension")
@@ -36,7 +49,9 @@ def upload_init(file_name):
             raise ValueError('File is empty')
         df.columns =['Frequency', 'E Storage', 'E Loss']
         return df.to_dict("records")
-    except pd.errors.ParserError as pe:
+    except pd.errors.EmptyDataError as e:
+        raise ValueError("File is Empty")
+    except Exception as pe:
         raise ValueError("Failed to parse file content")
 
 # Decorator
@@ -68,14 +83,16 @@ def request_logger(func):
     @wraps(func)
     def decorated_function(*args, **kwargs):
         start_time = datetime.datetime.now()
-        app.logger.info(f"Entering {func.__name__} function at {start_time}. Request: {request.url}")
+        json_payload = request.get_json()
+        if json_payload:
+            app.logger.info(f"[START]: Entering {func.__name__} function at {start_time}. Request payload: {json_payload}")
         response = func(*args, **kwargs)
         end_time = datetime.datetime.now()
-        execution_time = end_time - start_time
+        execution_time = ((end_time - start_time).total_seconds()) * 1000
         # Check if a response is sent back
         if response:
-            app.logger.info(f"Exiting {func.__name__} function at {end_time}. Execution time: {execution_time}. Response sent.")
+            app.logger.info(f"[END]: Request Successful. Exiting {func.__name__} function at {end_time}. Execution time: {execution_time} miliseconds. Response sent.")
         else:
-            app.logger.info(f"Exiting {func.__name__} function at {end_time}. Execution time: {execution_time}. No response sent.")
+            app.logger.error(f"[INTERNAL ERROR]: Error in {func.__name__}. Response: {response}, Status code: {response.status_code}. Exiting at {end_time}. Execution time: {execution_time} miliseconds.")
         return response
     return decorated_function
