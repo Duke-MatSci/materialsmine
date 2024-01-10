@@ -17,7 +17,7 @@ RUN pip install gunicorn
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Exposing the port the app runs on
-EXPOSE 5000
+EXPOSE 5050
 
 # Run the application
 CMD ["gunicorn", "-w", "2", "-b", ":5050", "yourapp:app"]
