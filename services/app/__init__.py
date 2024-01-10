@@ -5,6 +5,7 @@ from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from app.config import Config
 from app.models.model import Database_Handler
+import logging
 
 # Connect Database
 db = Database_Handler(Config)
@@ -19,6 +20,14 @@ def create_app(config_class = Config):
     mail.init_app(app)
     db.init_app(app)
     CORS(app)
+    
+    # Configure logging
+    app.logger.setLevel(logging.INFO)  # Set log level to INFO
+
+    # Add a file handler
+    file_handler = logging.FileHandler('app.log')  # Log to a file named app.log
+    file_handler.setLevel(logging.INFO)  # Set log level for the file handler
+    app.logger.addHandler(file_handler) 
 
     from app.chemprops.routes import chemprops
     from app.intellicharact.routes import icharact

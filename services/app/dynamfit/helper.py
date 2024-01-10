@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
+
 # helper functions
 def real_basis(omega,tau): ##calculates N(number of relaxation time units) real basis functions evaluated at M frequency points
     omega = np.expand_dims(omega,axis=1) ##shape (M,1)
@@ -31,27 +32,17 @@ def compute_complex(data,tau,w):
 def compute_relax(tau_i,E_i):
     t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), 1000)
 
-    # t = np.expand_dims(t,axis=1) ##shape (M,1)
-    # tau_i = np.expand_dims(tau_i,axis=0) ##shape (1,N)
-    # E_i = np.expand_dims(E_i,axis=0) ##shape (1,N)
     E = 0
     for i , v in enumerate(E_i):
         E += E_i[i] * np.exp(-t/tau_i[i])
-        # Es.append(E)
-    # E = np.sum(E_i @ np.exp(-t/tau_i), axis=0)
     return pd.DataFrame(data={"Time":t, "E":E})
 
 def compute_rspectum(tau_i,E_i):
     t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), 1000)
 
-    # t = np.expand_dims(t,axis=1) ##shape (M,1)
-    # tau_i = np.expand_dims(tau_i,axis=0) ##shape (1,N)
-    # E_i = np.expand_dims(E_i,axis=0) ##shape (1,N)
     H = 0
     for i , v in enumerate(E_i):
         H += (t/tau_i[i]) * E_i[i] * np.exp(-t/tau_i[i])
-        # Es.append(E)
-    # E = np.sum(E_i @ np.exp(-t/tau_i), axis=0)
     return pd.DataFrame(data={"Time":t, "H":H})
 
 def prony_linear_fit(df, N, model):
@@ -92,4 +83,5 @@ def prony_linear_fit(df, N, model):
     # print(f'Non-Zero Weights Used: {np.count_nonzero(W)}')
     prony = compute_complex(train_data,tau,E)
     relax = compute_relax(tau,E)
+    
     return (tau, E, prony, relax)
