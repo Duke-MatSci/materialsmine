@@ -70,7 +70,7 @@ export default {
     this.currentSort = this.sortBy
   },
   methods: {
-    paginateTable (page = 1) {
+    paginateTable (page = this.currentPage) {
       const data = this.tableData ?? []
       if (data.length <= this.pageSize) return (this.paginatedData = data)
       const end = this.pageSize * page

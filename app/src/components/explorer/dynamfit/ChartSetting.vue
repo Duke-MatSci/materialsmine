@@ -19,7 +19,7 @@
             <div class="md-file">
               <input
                 @change="onInputChange"
-                accept=".csv, .tsv"
+                accept=".csv, .tsv, .txt"
                 type="file"
                 name="Viscoelastic_Data"
                 id="Viscoelastic_Data"
@@ -136,22 +136,29 @@ export default {
   },
   methods: {
     async onInputChange (e) {
-      this.$store.commit('setSnackbar', {
-        message: 'Uploading File...',
-        duration: 3000
-      })
+      this.displayInfo('Uploading File...')
       const file = [...e.target?.files]
+      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
       try {
+        const extention = file[0]?.type?.replace(/(.*)\//g, '')
+        if (!extention || !allowedTypes.includes(extention)) {
+          return this.displayInfo('Unsupported file format')
+        }
         const { fileName } = await this.$store.dispatch('uploadFile', { file })
         this.fileUpload = fileName
-        this.$store.commit('setSnackbar', {
-          message: 'Upload Successful',
-          duration: 1500
-        })
+        this.displayInfo('Upload Successful', 1500)
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(e)
+        })
+      }
+    },
+    displayInfo (msg, duration) {
+      if (msg) {
+        this.$store.commit('setSnackbar', {
+          message: msg,
+          duration: duration ?? 3000
         })
       }
     },

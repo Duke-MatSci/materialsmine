@@ -67,7 +67,7 @@ describe('ChartSetting.vue', () => {
       )
       expect(btn.attributes('for')).toBe('Viscoelastic_Data')
       expect(btn.find('p.md-body-1').text()).toBe('Upload file')
-      expect(input.attributes('accept')).toBe('.csv, .tsv')
+      expect(input.attributes('accept')).toBe('.csv, .tsv, .txt')
       expect(input.attributes('type')).toBe('file')
     })
   })
