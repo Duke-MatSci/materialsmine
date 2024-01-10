@@ -45,10 +45,8 @@ exports.getDynamfitChartData = async (req, res, next) => {
           }
         }
       );
-
       logger.info(`${appName}::${reqId}::${response.headers?.latency}`);
       if (response.status === 200) {
-        console.log(JSON.stringify(response));
         const errorObj = {};
         if (response.headers.responseid !== reqId) {
           errorObj.error = {
@@ -70,16 +68,17 @@ exports.getDynamfitChartData = async (req, res, next) => {
       }
     }
   } catch (error) {
-    // console.log(error);
+    const statusCode = error?.response?.status ?? 500;
     next(
       errorWriter(
         req,
         `${
-          error.message ??
+          error?.response?.data?.message ??
+          error?.message ??
           'This response indicates an unexpected server-side issue'
         }`,
         'getDynamfitChartData',
-        500
+        statusCode
       )
     );
   }
