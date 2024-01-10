@@ -29,13 +29,13 @@ def create_app(config_class = Config):
     file_handler.setLevel(logging.INFO)  # Set log level for the file handler
     app.logger.addHandler(file_handler) 
 
-    from chemprops.routes import chemprops
-    from intellicharact.routes import icharact
-    from otsu.routes import otsu
-    from descriptor.routes import descriptor
-    from correlation.routes import correlation
-    from dynamfit.routes import dynamfit
-    from main.routes import main
+    from app.chemprops.routes import chemprops
+    from app.intellicharact.routes import icharact
+    from app.otsu.routes import otsu
+    from app.descriptor.routes import descriptor
+    from app.correlation.routes import correlation
+    from app.dynamfit.routes import dynamfit
+    from app.main.routes import main
 
     app.register_blueprint(chemprops)
     app.register_blueprint(icharact)
