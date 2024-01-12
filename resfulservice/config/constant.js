@@ -63,7 +63,9 @@ module.exports = {
     'csv',
     'zip',
     'xls',
-    'xlsx'
+    'xlsx',
+    'tsv',
+    'txt'
   ],
   SupportedFileResponseHeaders: {
     '.csv': 'text/csv',
