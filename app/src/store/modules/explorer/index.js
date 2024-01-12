@@ -25,7 +25,13 @@ export default {
       selectedFacetFilterMaterials: {},
       dataset: null,
       datasetThumbnail: '',
-      dynamfitData: {}
+      dynamfitData: {},
+      dynamfit: {
+        range: 100,
+        fitSettings: false,
+        model: 'Linear',
+        fileUpload: ''
+      }
     }
   },
   mutations,

@@ -8,7 +8,7 @@
     </label>
     <!-- File Upload  -->
     <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
-      <label for="Viscoelastic_Data">
+      <label v-if="!dynamfit.fileUpload" for="Viscoelastic_Data">
         <div class="form__file-input">
           <div class="md-theme-default">
             <label
@@ -25,12 +25,20 @@
                 id="Viscoelastic_Data"
               />
             </div>
-            <span v-if="fileUpload" class="md-caption md-success">{{
-              fileUpload
-            }}</span>
           </div>
         </div>
       </label>
+      <template v-else>
+        <button
+          class="md-button btn btn--tertiary btn--noradius"
+          @click.prevent="resetChart"
+        >
+          Reset
+        </button>
+        <span class="md-caption md-success viz-u-display__show">{{
+          dynamfit.fileUpload
+        }}</span>
+      </template>
     </div>
     <!-- Dropdown -->
     <div>
@@ -38,7 +46,7 @@
       <div class="md-field viz-u-mgbottom-big">
         <select
           :disabled="disableInput"
-          v-model="model"
+          v-model="dynamfit.model"
           :class="[
             disableInput ? 'nuplot-masked' : '',
             'form__select u--b-rad'
@@ -55,7 +63,9 @@
 
     <!-- Slider  -->
     <div class="viz-u-mgbottom-sm">
-      <label for="prony" class="md-body-2">Select Number of Prony Terms</label>
+      <label for="prony" class="md-body-2">
+        Select Number of Prony Terms <span>[{{ dynamfit.range }}]</span>
+      </label>
       <div
         class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel"
       >
@@ -64,7 +74,7 @@
           @mouseenter="showToolTip = true"
           @mouseleave="showToolTip = false"
           name="prony"
-          v-model.lazy.number="range"
+          v-model.lazy.number="dynamfit.range"
           type="range"
           min="1"
           max="100"
@@ -72,12 +82,12 @@
           class="nuplot-range-slider u--layout-width u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
         />
         <div
-          :style="{ left: `${range - 5}%` }"
+          :style="{ left: `${dynamfit.range - 5}%` }"
           v-if="showToolTip"
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
         >
-          {{ range }}
+          {{ dynamfit.range }}
         </div>
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
@@ -91,7 +101,7 @@
       <label for="fitSettings" class="md-body-2">Additional Settings</label>
       <md-checkbox
         :disabled="disableInput"
-        v-model="fitSettings"
+        v-model="dynamfit.fitSettings"
         :class="[
           disableInput ? 'nuplot-masked' : '',
           'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm'
@@ -103,35 +113,23 @@
   </div>
 </template>
 <script>
+import { mapState } from 'vuex'
 export default {
   name: 'ChartSetting',
   data () {
     return {
-      range: 100,
       showToolTip: false,
-      fitSettings: false,
-      model: 'Linear',
-      fileUpload: ''
+      isTemp: true
     }
   },
   mounted () {},
   watch: {
-    model: function (newVal) {
-      if (!newVal) return
-      this.updateChart()
-    },
-    fileUpload: function (newVal) {
-      if (!newVal) return
-      this.$store.commit('resetSnackbar')
-      this.updateChart()
-    },
-    fitSettings: function (newVal, oldVal) {
-      if (newVal === oldVal) return
-      this.updateChart()
-    },
-    range: function (newVal) {
-      if (!newVal) return
-      this.updateChart()
+    dynamfit: {
+      handler: function (newVal) {
+        if (!newVal) return
+        this.updateChart()
+      },
+      deep: true
     }
   },
   methods: {
@@ -144,15 +142,37 @@ export default {
         if (!extention || !allowedTypes.includes(extention)) {
           return this.displayInfo('Unsupported file format')
         }
-        const { fileName } = await this.$store.dispatch('uploadFile', { file })
-        this.fileUpload = fileName
-        this.displayInfo('Upload Successful', 1500)
+        const { fileName } = await this.$store.dispatch('uploadFile', {
+          file,
+          isTemp: this.isTemp
+        })
+        if (fileName) {
+          this.dynamfit.fileUpload = fileName
+          this.displayInfo('Upload Successful', 1500)
+        }
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(e)
         })
       }
+    },
+    async resetChart () {
+      const name = this.dynamfit.fileUpload
+      if (!name) return
+
+      const { deleted, error } = await this.$store.dispatch('deleteFile', {
+        name,
+        isTemp: this.isTemp
+      })
+
+      if (!error && deleted) {
+        return this.clearDynamfitData()
+      }
+      this.$store.commit('setSnackbar', {
+        message: error ?? 'Something went wrong',
+        action: () => this.resetChart()
+      })
     },
     displayInfo (msg, duration) {
       if (msg) {
@@ -162,20 +182,27 @@ export default {
         })
       }
     },
+    clearDynamfitData () {
+      this.$store.commit('explorer/resetDynamfit')
+      this.$store.commit('explorer/resetDynamfitData')
+    },
     async updateChart () {
       const payload = {
-        fileName: this.fileUpload,
-        numberOfProny: this.range,
-        model: this.model,
-        fitSettings: this.fitSettings
+        fileName: this.dynamfit.fileUpload,
+        numberOfProny: this.dynamfit.range,
+        model: this.dynamfit.model,
+        fitSettings: this.dynamfit.fitSettings
       }
       await this.$store.dispatch('explorer/fetchDynamfitData', payload)
     }
   },
   computed: {
+    ...mapState('explorer', {
+      dynamfit: (state) => state.dynamfit
+    }),
     disableInput () {
       return (
-        !this.fileUpload ||
+        !this.dynamfit.fileUpload ||
         !this.dynamfitData ||
         !Object.keys(this.dynamfitData).length
       )

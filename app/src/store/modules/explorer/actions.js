@@ -89,7 +89,9 @@ export default {
 
     const responseData = await response.json()
     let accessURL
-    if (Array.isArray(responseData)) { accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'] } else accessURL = responseData['http://w3.org/ns/dcat#accessURL']
+    if (Array.isArray(responseData)) {
+      accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL']
+    } else accessURL = responseData['http://w3.org/ns/dcat#accessURL']
     context.commit('setCurrentDatasetThumbnail', accessURL)
     return accessURL
   },
@@ -160,9 +162,12 @@ export default {
 
       const response = (await req?.json()) ?? null
       if (!response || req.status !== 200) {
+        const statusCode = req?.status
         const message =
-          req?.status === 500 ? 'Internal Server Error' : response?.message
-        const error = new Error(message ?? 'Something went wrong!')
+          statusCode === 500 ? 'Internal Server Error' : response?.message
+        const error = new Error(message ?? 'Something went wrong!', {
+          cause: statusCode
+        })
         throw error
       }
 
@@ -180,14 +185,13 @@ export default {
       }
       commit('setDynamfitData', data)
     } catch (err) {
-      commit(
-        'setSnackbar',
-        {
-          message: err.message,
-          action: () => dispatch('fetchDynamfitData', payload)
-        },
-        { root: true }
-      )
+      const snackbar = { message: err.message }
+      if (err?.cause === 400) {
+        snackbar.duration = 3000
+      } else {
+        snackbar.action = () => dispatch('fetchDynamfitData', payload)
+      }
+      commit('setSnackbar', snackbar, { root: true })
     }
   }
 }

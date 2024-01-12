@@ -18,7 +18,8 @@ export default {
           l: 40,
           r: 40
         }
-      }
+      },
+      config: { responsive: true }
     }
   },
   mounted () {
@@ -26,20 +27,24 @@ export default {
   },
   methods: {
     createPlot () {
-      var config = { responsive: true }
-      Plotly.newPlot(this.container, [], { ...this.layout }, config)
+      if (!this.isChartInvalid) return this.updatePlot()
+      Plotly.newPlot(
+        this.container,
+        [],
+        { ...this.layout },
+        { ...this.config }
+      )
     },
     updatePlot () {
-      var config = { responsive: true }
-      if (!this.isChartInvalid) {
-        const { data = [], layout = {} } = this.chart
-        Plotly.newPlot(
-          this.container,
-          data,
-          { ...layout, ...this.layout },
-          config
-        )
-      }
+      if (this.isChartInvalid) return this.createPlot()
+
+      const { data = [], layout = {} } = this.chart
+      Plotly.newPlot(
+        this.container,
+        data,
+        { ...layout, ...this.layout },
+        { ...this.config }
+      )
     },
     generateWidth () {
       const ww = window.innerWidth
@@ -61,7 +66,7 @@ export default {
       return this.$refs.plotlyView
     },
     isChartInvalid () {
-      return !this.chart
+      return !this.chart || !Object.keys(this.chart).length
     }
   }
 }

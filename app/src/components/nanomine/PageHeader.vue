@@ -154,10 +154,10 @@
                     class="nav_menu--siblings-lists"
                     ><a>Sparql Query</a></router-link
                   >
-                  <a
-                    href="/explorer/tools/dynamfit"
+                  <router-link
+                    to="/explorer/tools/dynamfit"
                     class="nav_menu--siblings-lists"
-                    ><a>DynamFit</a></a
+                    ><a>DynamFit</a></router-link
                   >
                   <router-link
                     to="/explorer/tools"

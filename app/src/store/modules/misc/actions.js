@@ -19,5 +19,35 @@ export default {
       throw new Error(err?.message ?? 'File upload Error')
     }
     return { fileName, fileLink }
+  },
+  async deleteFile (
+    { commit, rootGetters },
+    { name = null, link = null, isTemp = true }
+  ) {
+    if (!link && !name) return
+
+    const url = !link ? `/api/files/${name}?isFileStore=${isTemp}` : link
+    const token = rootGetters['auth/token']
+
+    let deleted = false
+    let error = null
+
+    try {
+      const req = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+        method: 'DELETE'
+      })
+      if (req.status !== 200) {
+        let res
+        if (req.status === 400) res = await req.json()
+        throw new Error(res?.message ?? 'Something went wrong')
+      }
+      commit('setUploadedFile', '')
+      deleted = true
+    } catch (err) {
+      error = err?.message ?? 'Something went wrong'
+    }
+
+    return { deleted, error }
   }
 }
