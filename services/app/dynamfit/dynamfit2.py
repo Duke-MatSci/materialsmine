@@ -8,14 +8,39 @@ import plotly.graph_objects as go
 from app.dynamfit.helper import prony_linear_fit, compute_rspectum
 from app.utils.util import log_errors
 
-# check if file exists
+
 def check_file_exists(file_name):
+    """
+    Checks if a file exists.
+
+    Args:
+        file_name (str): The name of the file to check.
+
+    Returns:
+        bool: True if the file exists, False otherwise.
+    """
     file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
     return os.path.exists(file_path)
     
 
 @log_errors
 def update_line_chart(uploadData, number_of_prony, model, fit_settings):
+    """
+    Updates a line chart based on the provided data.
+
+    Parameters:
+        uploadData (pd.DataFrame): The data to be used for the chart.
+        number_of_prony (int): The number of terms in the Prony series.
+        model: The model to be used for fitting.
+        fit_settings: A flag indicating whether to use fit settings.
+
+    Returns:
+        fig1 (plotly.graph_objects.Figure): The line chart.
+        fig11 (plotly.graph_objects.Figure): The updated line chart.
+        fig2 (plotly.graph_objects.Figure): The scatter plot.
+        fig3 (plotly.graph_objects.Figure): The updated scatter plot.
+        coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
+    """
     try:
         dfl = uploadData
         model = model

@@ -28,11 +28,34 @@ def filter_none(**kwargs):
 
 
 def check_extension(filename):
+    """
+    Check if the given filename has a valid extension.
+
+    Parameters:
+        filename (str): The name of the file to check.
+
+    Returns:
+        bool: True if the filename has a valid extension, False otherwise.
+    """
     print("filename", filename)
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 @log_errors
 def upload_init(file_name):
+    """
+    Uploads a file and returns its content as a dictionary.
+    
+    Args:
+        file_name (str): The name of the file to be uploaded.
+        
+    Returns:
+        dict: The content of the file as a dictionary.
+        
+    Raises:
+        ValueError: If the file extension is not supported.
+        ValueError: If the file is empty.
+        ValueError: If there is an error parsing the file content.
+    """
     try:
         file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
         extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
@@ -56,8 +79,31 @@ def upload_init(file_name):
 
 # Decorator
 def token_required(f):
+    """
+    Decorator that requires a token for authentication.
+
+    Parameters:
+    - `f`: The function to be decorated.
+
+    Returns:
+    - The decorated function.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        """
+        Decorates a function with JWT authorization.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            The response returned by the decorated function.
+
+        Raises:
+            jwt.ExpiredSignatureError: If the token has expired.
+            jwt.InvalidTokenError: If the token is invalid.
+        """
         token = request.headers.get('Authorization')[7:]
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
@@ -80,8 +126,28 @@ def token_required(f):
 
 
 def request_logger(func):
+    """
+    Decorator function to log requests and responses for a given function.
+
+    Parameters:
+        func (function): The function to be decorated.
+
+    Returns:
+        function: The decorated function.
+
+    """
     @wraps(func)
     def decorated_function(*args, **kwargs):
+        """
+        Decorates a function to log the start and end times, request payload, execution time, and response status.
+
+        Parameters:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The response from the decorated function.
+        """
         start_time = datetime.datetime.now()
         json_payload = request.get_json()
         if json_payload:

@@ -14,6 +14,16 @@ dynamfit = Blueprint("dynamfit", __name__, url_prefix="/dynamfit")
 @request_logger
 @token_required
 def extract_data_from_file(request_id):
+    """
+    This function is the endpoint for extracting data from a file. It takes in a request ID as a parameter.
+    The function first checks if the file exists and returns a 404 error if it doesn't. It then validates the 
+    input parameters: number_of_prony, model, and fit_settings. If any of these parameters are invalid, the 
+    function returns a 400 error. Next, it checks if the file is empty and returns a 400 error if it is. 
+    The function then calls the update_line_chart function to generate the required chart data. The chart data 
+    is then structured into a dictionary and returned as a JSON response along with other metadata such as 
+    start time, end time, latency, and request ID. If any exceptions occur during the execution of the function,
+    appropriate error messages are returned as JSON responses. 
+    """
     try:
         start_time = datetime.datetime.now()
         data = request.get_json()
