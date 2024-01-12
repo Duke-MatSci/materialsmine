@@ -126,15 +126,17 @@ services:
       - /app/node_modules
       - ./app:/app
   managedservices:
-    image: local-managedservices:latest
     container_name: managedservices
     depends_on:
       - mongo
     restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./services
     ports:
       - '5050:5050'
     volumes:
-      - ./mockDB/services:/usr/src/services
+      - ./services:/usr/src/app
       - ./resfulservice/mm_files:/usr/src/files
     environment:
       - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
@@ -149,32 +151,6 @@ services:
       - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
       - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
       - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
-  # managedservices:
-  #   container_name: managedservices
-  #   depends_on:
-  #     - mongo
-  #   restart: always
-  #   build:
-  #     dockerfile: Dockerfile.dev
-  #     context: ./services
-  #   ports:
-  #     - '5050:5050'
-  #   volumes:
-  #     - ./services:/usr/src/app
-  #     - ./resfulservice/mm_files:/usr/src/files
-  #   environment:
-  #     - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-  #     - SECRET_KEY=${TKNS}
-  #     - MM_MONGO_USER=${MM_MONGO_USER}
-  #     - MM_MONGO_PWD=${MM_MONGO_PWD}
-  #     - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
-  #     - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
-  #     - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
-  #     - MONGO_ADDRESS=${MONGO_ADDRESS}
-  #     - MONGO_PORT=${MONGO_PORT}
-  #     - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
-  #     - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
-  #     - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
 #   redis:
 #     image: "redis:alpine"
 #     command: redis-server
