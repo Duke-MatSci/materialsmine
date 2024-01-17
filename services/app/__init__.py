@@ -26,7 +26,7 @@ def create_app(config_class = Config):
     app.logger.setLevel(logging.INFO)  # Set log level to INFO
 
     # Add a file handler
-    file_handler = logging.FileHandler('services_app.log')  # Log to a file named app.log
+    file_handler = logging.FileHandler('services_app.log')  # Log to a file named services_app.log
     file_handler.setLevel(logging.INFO)  # Set log level for the file handler
     app.logger.addHandler(file_handler) 
 
