@@ -133,7 +133,7 @@ services:
       - mongo
     restart: always
     ports:
-      - '5656:5050'
+      - '5050:5050'
     volumes:
       # - ./mockDB/services:/usr/src/services
       - ./resfulservice/mm_files:/usr/src/files

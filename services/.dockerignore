@@ -1,2 +1,5 @@
+server_app.log
+__pycache__
 .git
-services_app.log
+.dockerignore
+Dockerfile
