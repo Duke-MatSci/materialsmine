@@ -14,6 +14,7 @@ COPY . /services
 
 # Installing dependencies
 RUN pip install --no-cache-dir -r /services/requirements/prod_requirements.txt
+RUN pip install --upgrade pip
 
 # Exposing the port the app runs on
 EXPOSE 5050
