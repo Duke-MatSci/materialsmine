@@ -47,7 +47,7 @@ describe('ChartSetting.vue', () => {
       expect(tabs.at(2).findComponent('plotlyview-stub').exists()).toBe(true)
       expect(tabs.at(3).attributes('mdlabel')).toBe('R Spectrum, H(t)')
       expect(tabs.at(3).findComponent('plotlyview-stub').exists()).toBe(true)
-      expect(tabs.at(4).attributes('mdlabel')).toBe('Upload Data')
+      expect(tabs.at(4).attributes('mdlabel')).toBe('Uploaded Data')
       expect(tabs.at(4).findComponent('tablecomponent-stub').exists()).toBe(
         true
       )

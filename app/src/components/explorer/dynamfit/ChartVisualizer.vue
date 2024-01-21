@@ -19,7 +19,7 @@
           key="4"
         />
       </md-tab>
-      <md-tab id="tab-upload" md-label="Upload Data">
+      <md-tab id="tab-upload" md-label="Uploaded Data">
         <TableComponent :tableData="upload" sortBy="i" />
       </md-tab>
       <md-tab id="tab-Prony" md-label="Prony Coeff">

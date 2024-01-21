@@ -138,8 +138,8 @@ export default {
       const file = [...e.target?.files]
       const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
       try {
-        const extention = file[0]?.type?.replace(/(.*)\//g, '')
-        if (!extention || !allowedTypes.includes(extention)) {
+        const extension = file[0]?.type?.replace(/(.*)\//g, '')
+        if (!extension || !allowedTypes.includes(extension)) {
           return this.displayInfo('Unsupported file format')
         }
         const { fileName } = await this.$store.dispatch('uploadFile', {

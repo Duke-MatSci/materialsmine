@@ -54,7 +54,7 @@ describe('DynamFit.vue', () => {
       )
     })
 
-    it('renders dynafit-data section properly with the right component', () => {
+    it('renders dynamfit-data section properly with the right component', () => {
       const section = main.findAll('section')
       expect(section.length).toBe(1)
       expect(section.at(0).attributes('class')).toBe(

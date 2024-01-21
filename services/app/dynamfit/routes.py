@@ -1,8 +1,6 @@
 from flask import request, Blueprint, jsonify, make_response
 import json
-#import time
 import datetime
-# from app.config import Config
 from app.dynamfit.dynamfit2 import update_line_chart,  check_file_exists
 from app.utils.util import token_required, upload_init, request_logger, log_errors
 

@@ -89,7 +89,7 @@ export default {
         this.openDialogBox({
           type: 'Success',
           header: 'Submitted successfully',
-          content: 'We would get back to you shortly'
+          content: 'We will get back to you shortly'
         })
         this.resetForm()
       } catch (error) {

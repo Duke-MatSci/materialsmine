@@ -16,7 +16,7 @@ export default {
       fileName = swaggerFilename
       commit('setUploadedFile', fileName)
     } catch (err) {
-      throw new Error(err?.message ?? 'File upload Error')
+      throw new Error(err?.message ?? 'File Upload Error')
     }
     return { fileName, fileLink }
   },

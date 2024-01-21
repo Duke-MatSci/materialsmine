@@ -114,13 +114,10 @@ def token_required(f):
                 return jsonify({'message': 'Invalid token or missing field'}), 401
             # Pass the request_id field value to the function
             response = f(request_id, *args, **kwargs)
-            print(response)
             return response
         except jwt.ExpiredSignatureError:
-            print('it is an error 1')
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:
-            print('it is an error 2')
             return jsonify({'message': 'Invalid token'}), 401
     return decorated_function
 

@@ -94,7 +94,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       expect(result.message).to.equal(dynamfitErrorResponse.data.message);
     });
 
-    it('should return a 500 server error when dynamif server is not accessible', async function () {
+    it('should return a 500 server error when dynamfit server is not accessible', async function () {
       const appName = 'dynamfit';
       req.params = { appName };
       const nextSpy = sinon.spy();

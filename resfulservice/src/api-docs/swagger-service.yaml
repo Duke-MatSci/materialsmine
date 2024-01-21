@@ -1100,7 +1100,7 @@ paths:
               schema:
                 type: object
                 example:
-                  message: dynamicfit service not available
+                  message: dynamfit service not available
        
         '500':
           description: Internal Server Error
