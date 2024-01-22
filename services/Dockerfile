@@ -20,5 +20,5 @@ RUN pip install --upgrade pip
 EXPOSE 5050
 
 # Run the application
-# CMD ["gunicorn", "-w", "4", "-b", ":5050", "run:app"]
-CMD ["gunicorn", "-w", "2", "-b", ":5050", "-t", "60", "run:app"]
+CMD ["gunicorn", "-w", "4", "-b", ":5050", "run:app"]
+# CMD ["gunicorn", "-w", "2", "-b", ":5050", "-t", "60", "run:app"]
