@@ -45,6 +45,7 @@ class Database_Handler:
                     self._database_initialized = True
                 except Exception as e:
                     print(f"Error initializing database: {e}")
+                    exit(1)
 
     def _initialize_database(self):
         """
@@ -60,6 +61,7 @@ class Database_Handler:
         connection_string = self._build_connection_string()
         self.client = pymongo.MongoClient(connection_string)
         self.mgs_database = self.client[self.config.MONGO_DATABASE]
+        print("self.mgs_database: ", self.mgs_database)
 
         if self.config.MONGO_DATABASE not in self.client.list_database_names():
             self._create_managed_services_database()
@@ -100,11 +102,12 @@ class Database_Handler:
             None
         """
         try:
-            self.client[self.config.MONGO_DATABASE]
+            self.mgs_database = self.client[self.config.MONGO_DATABASE]
             self.chemprops_collection().insert_one({'test': 'data'})
             print("Connected to MongoDB, database created")
         except Exception as e:
             print(f"Error creating managed services database: {e}")
+            exit(1)
 
 
     def init_app(self, app):
