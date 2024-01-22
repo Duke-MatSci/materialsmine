@@ -1,33 +1,25 @@
 <template>
-    <div ref="pairwisePlot"></div>
+  <div ref="pairwisePlot"></div>
 </template>
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
 import { organizeByName } from '@/modules/metamine/utils/organizeByName'
 
 const margin = { top: 10, right: 20, bottom: 50, left: 100 }
-const vh = Math.max(
-  document.documentElement.clientHeight || 0,
-  window.innerHeight || 0
-)
 const vw = Math.max(
   document.documentElement.clientWidth || 0,
   window.innerWidth || 0
 )
-let wFactor = 0.4
+let wFactor = 0.48
 
-if (vw <= 600) {
+if (vw <= 1280) {
   wFactor = 0.9
-} else if (vw <= 960) {
-  wFactor = 0.6
 }
 
-const width = Math.min(vw * wFactor, vh * 0.8)
+const width = vw * wFactor
 const height = width
-// const width = height
 const padding = 20
 
 function expo (x, f) {
@@ -37,53 +29,14 @@ function expo (x, f) {
 
 export default {
   name: 'pairwise-plot',
-  mounted: async function () {
-    this.$store.dispatch('metamineNU/setPage', 'pairwise', { root: true })
-    // const bucketName = 'ideal-dataset-1'
-    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
-      (response) => {
-        return response.json()
-      }
-    )
-    this.$store.dispatch(
-      'metamineNU/setFetchedNames',
-      fetchedNamesResponse.fetchedNames,
-      { root: true }
-    )
-
-    this.fetchedNames.map(async (info, index) => {
-      const fetchedData = await fetch(
-                `/api/files/metamine/${info.name}`
-      )
-        .then((response) => {
-          return response.json()
-        })
-        .then((data) => {
-          return data.fetchedData
-        })
-      const processedData = fetchedData.map((dataset, index) => {
-        return processData(dataset, index)
-      })
-      processedData.map((p) => (p.name = info.name))
-      processedData.map((p) => (p.color = info.color))
-      this.csvData.push(...processedData)
-      this.activeData.push(...processedData)
-
-      this.$store.dispatch('metamineNU/setDatasets', this.csvData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setActiveData', this.activeData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setDataPoint', processedData[0], {
-        root: true
-      })
-    })
-    this.container = this.$refs.pairwisePlot
+  async mounted () {
+    this.$store.commit('metamineNU/setPage', 'pairwise', { root: true })
+    // Create svg
     this.createSvg({
       container: this.container,
       columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
     })
+    // fetch the data
   },
   computed: {
     ...mapState('metamineNU', {
@@ -91,7 +44,10 @@ export default {
       activeData: (state) => state.activeData,
       dataPoint: (state) => state.dataPoint,
       fetchedNames: (state) => state.fetchedNames
-    })
+    }),
+    container () {
+      return this.$refs.pairwisePlot
+    }
   },
   data () {
     return {
@@ -99,17 +55,6 @@ export default {
     }
   },
   watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        this.update({
-          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length,
-          router: this.$router
-        })
-      }
-    },
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
@@ -121,19 +66,9 @@ export default {
         })
       }
     },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        this.update({
-          columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length,
-          router: this.$router
-        })
-      }
-    },
     dataPoint: {
       handler (newVal, oldVal) {
-        this.$store.dispatch('metamineNU/setDataPoint', newVal, {
+        this.$store.commit('metamineNU/setDataPoint', newVal, {
           root: true
         })
       }
@@ -167,19 +102,14 @@ export default {
         .attr('width', width)
         .attr('height', height)
         .attr('viewBox', [-margin.left, -margin.top, width, height])
+        .attr('style', 'max-width: 100%;')
       // Compute the inner dimensions of the cells.
       const cellWidth =
-                (width -
-                    margin.left -
-                    margin.right -
-                    (X.length - 1) * padding) /
-                X.length
+        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        X.length
       const cellHeight =
-                (height -
-                    margin.top -
-                    margin.bottom -
-                    (Y.length - 1) * padding) /
-                Y.length
+        (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
+        Y.length
 
       const cell = svg
         .append('g')
@@ -190,12 +120,13 @@ export default {
         .attr(
           'transform',
           ([i, j]) =>
-                        `translate(${i * (cellWidth + padding)},${
-                            j * (cellHeight + padding)
-                        })`
+            `translate(${i * (cellWidth + padding)},${
+              j * (cellHeight + padding)
+            })`
         )
 
-      cell.append('rect')
+      cell
+        .append('rect')
         .attr('fill', 'white')
         .attr('stroke', 'grey')
         .attr('stroke-width', 2)
@@ -204,7 +135,8 @@ export default {
         .attr('class', 'cell')
 
       if (x === y) {
-        svg.append('g')
+        svg
+          .append('g')
           .attr('font-size', 14)
           .attr('font-family', 'sans-serif')
           .attr('font-weight', 'bold')
@@ -214,9 +146,9 @@ export default {
           .attr(
             'transform',
             (d, i) =>
-                            `translate(${0 - margin.left + padding * 1.5},${
-                                i * (cellHeight + padding) + margin.top * 6
-                            }) rotate(270)`
+              `translate(${0 - margin.left + padding * 1.5},${
+                i * (cellHeight + padding) + margin.top * 6
+              }) rotate(270)`
           )
           .attr('x', padding / 2)
           .attr('y', padding / 2)
@@ -225,7 +157,8 @@ export default {
       }
 
       if (x === y) {
-        svg.append('g')
+        svg
+          .append('g')
           .attr('font-size', 14)
           .attr('font-family', 'sans-serif')
           .attr('font-weight', 'bold')
@@ -235,9 +168,9 @@ export default {
           .attr(
             'transform',
             (d, i) =>
-                            `translate(${i * (cellWidth + padding)},${
-                                cellHeight * 6 + margin.bottom + padding * 4
-                            })`
+              `translate(${i * (cellWidth + padding)},${
+                cellHeight * 6 + margin.bottom + padding * 4
+              })`
           )
           .attr('x', padding / 2)
           .attr('y', padding / 2)
@@ -288,17 +221,11 @@ export default {
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
-                (width -
-                    margin.left -
-                    margin.right -
-                    (X.length - 1) * padding) /
-                X.length
+        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        X.length
       const cellHeight =
-                (height -
-                    margin.top -
-                    margin.bottom -
-                    (Y.length - 1) * padding) /
-                Y.length
+        (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
+        Y.length
 
       // Construct scales and axes.
       const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
@@ -333,9 +260,9 @@ export default {
         .attr(
           'transform',
           (d, i) =>
-                        `translate(${i * (cellWidth + padding)}, ${
-                            height - margin.bottom - margin.top
-                        })`
+            `translate(${i * (cellWidth + padding)}, ${
+              height - margin.bottom - margin.top
+            })`
         )
         .attr('class', 'xAxisGroup')
         .each(function (xScale, columns) {
@@ -427,20 +354,14 @@ export default {
           .style('stroke', 'black')
           .style('stroke-width', 2)
           .style('fill-opacity', 1)
-        self.$store.dispatch('metamineNU/setDataPoint', finalData[d], {
+        self.$store.commit('metamineNU/setDataPoint', finalData[d], {
           root: true
         })
-        tooltipCirc
-          .style('visibility', 'visible')
-          .transition()
-          .duration(200)
+        tooltipCirc.style('visibility', 'visible').transition().duration(200)
       }
 
       const mouseleaveCirc = function (e, d) {
-        tooltipCirc
-          .style('visibility', 'hidden')
-          .transition()
-          .duration(200)
+        tooltipCirc.style('visibility', 'hidden').transition().duration(200)
         d3.select(this)
           .attr('r', circleSize)
           .style('stroke', 'none')
@@ -449,10 +370,7 @@ export default {
       }
 
       const mouseleaveRec = function (e, d) {
-        tooltipHist
-          .style('visibility', 'hidden')
-          .transition()
-          .duration(200)
+        tooltipHist.style('visibility', 'hidden').transition().duration(200)
         d3.select(this)
           .style('fill', 'white')
           .style('stroke', 'grey')
@@ -465,10 +383,7 @@ export default {
           .style('stroke', 'black')
           .style('stroke-width', 5)
           .style('fill-opacity', 1)
-        tooltipHist
-          .style('visibility', 'visible')
-          .transition()
-          .duration(200)
+        tooltipHist.style('visibility', 'visible').transition().duration(200)
       }
 
       const mouseoverNonHist = function (e, d) {
@@ -480,13 +395,13 @@ export default {
 
       const mousedownNonHist = function (e, d) {
         d3.select(container.current).remove()
-        self.$store.dispatch('metamineNU/setPage', 'scatter', {
+        self.$store.commit('metamineNU/setPage', 'scatter', {
           root: true
         })
-        self.$store.dispatch('metamineNU/setQuery1', x[d[0]], {
+        self.$store.commit('metamineNU/setQuery1', x[d[0]], {
           root: true
         })
-        self.$store.dispatch('metamineNU/setQuery2', x[d[1]], {
+        self.$store.commit('metamineNU/setQuery2', x[d[1]], {
           root: true
         })
         router.push({
@@ -500,7 +415,7 @@ export default {
 
       const mousedownHist = function (e, d) {
         d3.select(container.current).remove()
-        self.$store.dispatch('metamineNU/setPage', 'hist', {
+        self.$store.commit('metamineNU/setPage', 'hist', {
           root: true
         })
         router.push({
@@ -515,9 +430,9 @@ export default {
         tooltipCirc
           .html(
             'Dataset: ' +
-                            datasetDic[Math.floor(d / datasets[0].length)] +
-                            '<br>symmetry: ' +
-                            finalData[d].symmetry
+              datasetDic[Math.floor(d / datasets[0].length)] +
+              '<br>symmetry: ' +
+              finalData[d].symmetry
           )
           .style('top', e.pageY - 85 + 'px')
           .style('left', e.pageX - 165 + 'px')
@@ -529,15 +444,15 @@ export default {
         tooltipHist
           .html(
             'Column: ' +
-                            column +
-                            '<br>Range: ' +
-                            (d3.min(tempArr) > 0 ? d3.min(tempArr) : 0) +
-                            ' to ' +
-                            (d3.max(tempArr) > 0 ? d3.max(tempArr) : 0) +
-                            '<br>Mean: ' +
-                            d3.mean(tempArr) +
-                            '<br>Median: ' +
-                            d3.median(tempArr)
+              column +
+              '<br>Range: ' +
+              (d3.min(tempArr) > 0 ? d3.min(tempArr) : 0) +
+              ' to ' +
+              (d3.max(tempArr) > 0 ? d3.max(tempArr) : 0) +
+              '<br>Mean: ' +
+              d3.mean(tempArr) +
+              '<br>Median: ' +
+              d3.median(tempArr)
           )
           .style('top', e.pageY - 110 + 'px')
           .style('left', e.pageX + 10 + 'px')
@@ -561,17 +476,11 @@ export default {
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
-                (width -
-                    margin.left -
-                    margin.right -
-                    (X.length - 1) * padding) /
-                X.length
+        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        X.length
       const cellHeight =
-                (height -
-                    margin.top -
-                    margin.bottom -
-                    (Y.length - 1) * padding) /
-                Y.length
+        (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
+        Y.length
 
       // Construct scales and axes.
       const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
@@ -588,9 +497,7 @@ export default {
 
           d3.select(this)
             .selectAll('circle')
-            .data(
-              I.filter((i) => !isNaN(X[x][i]) && !isNaN(Y[y][i]))
-            )
+            .data(I.filter((i) => !isNaN(X[x][i]) && !isNaN(Y[y][i])))
             .join('circle')
             .attr('r', circleSize)
             .attr('cx', (i) => xScales[x](X[x][i]))
@@ -613,32 +520,22 @@ export default {
             const b = columns
 
             const X0 = d3.map(a, (a) =>
-              d3.map(
-                datasets[i],
-                typeof a === 'function' ? a : (d) => +d[a]
-              )
+              d3.map(datasets[i], typeof a === 'function' ? a : (d) => +d[a])
             )
             let Y0 = d3.map(b, (b) =>
-              d3.map(
-                datasets[i],
-                typeof b === 'function' ? b : (d) => +d[b]
-              )
+              d3.map(datasets[i], typeof b === 'function' ? b : (d) => +d[b])
             )
             const Z = d3.map(datasets[i], z)
 
             // Omit any data not present in the z-domain.
-            const I0 = d3
-              .range(Z.length)
-              .filter((i) => zDomain.has(Z[i]))
+            const I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
             const thresholds = 40
             Y0 = d3.map(Y0[y], () => 1)
             const bins = d3
               .bin()
               .thresholds(thresholds)
               .value((i) => X0[x][i])(I0)
-            const Y1 = Array.from(bins, (I0) =>
-              d3.sum(I0, (i) => Y0[i])
-            )
+            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]))
 
             // Compute default domains.
             const xDomain = [bins[0].x0, bins[bins.length - 1].x1]
@@ -673,17 +570,11 @@ export default {
                     ? 5
                     : Math.max(
                       0,
-                      xScale(d.x1) -
-                                                  xScale(d.x0) -
-                                                  insetLeft -
-                                                  insetRight
+                      xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
                     )
                 )
                 .attr('y', (d, i) => yScale(Y1[i]))
-                .attr(
-                  'height',
-                  (d, i) => yScale(0) - yScale(Y1[i])
-                )
+                .attr('height', (d, i) => yScale(0) - yScale(Y1[i]))
 
               histogram.exit().remove()
             }

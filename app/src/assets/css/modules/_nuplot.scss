@@ -75,6 +75,20 @@
     }
   }
 
+  &-button-disabled {
+    @extend .nuplot-button;
+    background-color: #7a5e02; 
+    &:hover {
+      background-color: #7a5e30; // Adjust the color to make it dimmer
+    }
+
+    &:focus {
+      background-color: #7a5e50; // Adjust the color to make it darkest
+      outline: none;
+    }
+
+  }
+
   &-button-link {
     @extend .nuplot-button;
     text-align: center;

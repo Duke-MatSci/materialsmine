@@ -6,7 +6,7 @@ import { deleteChart } from '@/modules/vega-chart'
 import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
-  async createDatasetIdVuex ({ commit, dispatch }) {
+  async createDatasetIdVuex ({ commit, dispatch }, { isBulk = false }) {
     await apollo
       .mutate({
         mutation: CREATE_DATASET_ID_MUTATION
@@ -14,12 +14,14 @@ export default {
       .then((result) => {
         const datasetId = result.data.createDatasetId.datasetGroupId
         commit('setDatasetId', datasetId)
+        if (isBulk) return
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
       })
       .catch((error) => {
         if (error.message.includes('unused datasetId')) {
           const datasetId = error.message.split('-')[1]?.split(' ')[1]
           commit('setDatasetId', datasetId)
+          if (isBulk) return
           router.push({ name: 'CurateSpreadsheet', params: { datasetId } })
         } else {
           // Show error in snackbar and pass current function as callback
@@ -28,7 +30,7 @@ export default {
             {
               message: error.message,
               action: () => {
-                dispatch('createDatasetIdVuex')
+                dispatch('createDatasetIdVuex', { isBulk })
               }
             },
             { root: true }
@@ -42,7 +44,9 @@ export default {
       nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
 
     // Return if not able to retrieve chart object
-    if (!chartObject) { return new Error('Caching error. Chart object is missing') }
+    if (!chartObject) {
+      return new Error('Caching error. Chart object is missing')
+    }
 
     // Build chart instance object
     return {
@@ -203,9 +207,10 @@ export default {
     const responseData = await response.json()
     return commit('setDoiData', responseData)
   },
-  async submitBulkXml ({ commit, rootGetters }, files) {
+  async submitBulkXml ({ commit, dispatch, rootGetters }, files) {
     const token = rootGetters['auth/token']
-    const url = `${window.location.origin}/api/curate/bulk`
+    await dispatch('createDatasetIdVuex', { isBulk: true })
+    const url = `${window.location.origin}/api/curate/bulk?dataset=${rootGetters['explorer/curation/datasetId']}`
     const formData = new FormData()
     files.forEach((file) => formData.append('uploadfile', file))
     const response = await fetch(url, {
@@ -278,7 +283,7 @@ export default {
       state.curationFormData.CONTROL_ID ??
       {}
 
-    if (!cId?.cellValue) {
+    if (!cId?.cellValue && !xlsxObjectId) {
       throw new Error('Please enter Control_ID before submitting')
     }
 
@@ -299,7 +304,7 @@ export default {
       refData[lastKey] = refData[lastKey].values
     }
     const url = !xlsxObjectId
-      ? '/api/curate?isBaseObject=true'
+      ? `/api/curate?isBaseObject=true&dataset=${rootGetters['explorer/curation/datasetId']}`
       : `/api/curate?xlsxObjectId=${xlsxObjectId}&isBaseUpdate=true&isNew=${isNew}`
     const method = !xlsxObjectId ? 'POST' : 'PUT'
     const successResponse = !xlsxObjectId ? 201 : 200
@@ -355,6 +360,87 @@ export default {
         duration: 10000
       }
       return commit('setSnackbar', snackbar, { root: true })
+    }
+  },
+  async createControlId ({ rootGetters, dispatch, commit }) {
+    const url = '/api/curate/newsampleid'
+    const token = rootGetters['auth/token']
+
+    try {
+      await dispatch('createDatasetIdVuex', { isBulk: true })
+
+      const body = JSON.stringify({
+        datasetId: rootGetters['explorer/curation/datasetId']
+      })
+      const request = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body,
+        method: 'POST'
+      })
+
+      const { controlID } = await request.json()
+      commit('setControlID', controlID)
+    } catch (error) {
+      commit(
+        'setSnackbar',
+        {
+          message: error?.message ?? 'Something went wrong fetching Control_ID',
+          action: () => this.setControlID()
+        },
+        { root: true }
+      )
+    }
+  },
+  async deleteCuration ({ commit, rootGetters, dispatch }, payload) {
+    try {
+      if (!payload || !payload?.xmlId || !payload?.isNew) {
+        throw new Error('Incorrect query parameters', {
+          cause: 'Missing flag'
+        })
+      }
+      const token = rootGetters['auth/token']
+      const { xmlId, isNew } = payload
+
+      const fetchResponse = await fetch(
+        `/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          }
+        }
+      )
+
+      if (fetchResponse.status !== 200) {
+        throw new Error(
+          fetchResponse.statusText || 'Server error, Unable to delete curation'
+        )
+      }
+      const response = await fetchResponse.json()
+      const snackbar = {
+        message: response?.message ?? 'Delete Successful',
+        duration: 5000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    } catch (error) {
+      let snackbar
+      if ('cause' in error) {
+        snackbar = { message: error?.message, duration: 4000 }
+      } else {
+        snackbar = {
+          message: error?.message ?? 'Something went wrong',
+          action: () =>
+            dispatch('deleteCuration', {
+              xmlId: payload.xmlId,
+              isNew: payload.isNew
+            })
+        }
+      }
+      commit('setSnackbar', snackbar, { root: true })
     }
   },
   async searchRor ({ commit }, payload) {

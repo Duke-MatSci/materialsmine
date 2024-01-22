@@ -1,10 +1,9 @@
 <template>
-    <div ref="histogramPlot"></div>
+  <div ref="histogramPlot"></div>
 </template>
 
 <script>
 import * as d3 from 'd3'
-import { processData } from '@/modules/metamine/utils/processData'
 import { mapState } from 'vuex'
 import { organizeByName } from '@/modules/metamine/utils/organizeByName'
 
@@ -24,51 +23,8 @@ function expo (x, f) {
 export default {
   name: 'histogram-plot',
   mounted: async function () {
-    this.$store.dispatch('metamineNU/setPage', 'hist', { root: true })
-    // const bucketName = 'ideal-dataset-1'
-    const fetchedNamesResponse = await fetch('/api/files/metamine').then(
-      (response) => {
-        return response.json()
-      }
-    )
-    this.$store.dispatch(
-      'metamineNU/setFetchedNames',
-      fetchedNamesResponse.fetchedNames,
-      { root: true }
-    )
-
-    this.fetchedNames.map(async (info, index) => {
-      const fetchedData = await fetch(
-                `/api/files/metamine/${info.name}`
-      )
-        .then((response) => {
-          return response.json()
-        })
-        .then((data) => {
-          return data.fetchedData
-        })
-      const processedData = fetchedData.map((dataset, index) => {
-        return processData(dataset, index)
-      })
-      processedData.map((p) => (p.name = info.name))
-      processedData.map((p) => (p.color = info.color))
-      this.csvData.push(...processedData)
-      this.activeData.push(...processedData)
-
-      this.$store.dispatch('metamineNU/setDatasets', this.csvData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setActiveData', this.activeData, {
-        root: true
-      })
-      this.$store.dispatch('metamineNU/setDataPoint', processedData[0], {
-        root: true
-      })
-    })
-    this.container = this.$refs.histogramPlot
-    this.createSvg({
-      container: this.container
-    })
+    this.$store.commit('metamineNU/setPage', 'hist', { root: true })
+    this.createSvg({ container: this.container })
   },
   computed: {
     ...mapState('metamineNU', {
@@ -77,7 +33,10 @@ export default {
       dataPoint: (state) => state.dataPoint,
       fetchedNames: (state) => state.fetchedNames,
       query1: (state) => state.query1
-    })
+    }),
+    container () {
+      return this.$refs.histogramPlot
+    }
   },
   data () {
     return {
@@ -85,15 +44,6 @@ export default {
     }
   },
   watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container,
-          maxNumDatasets: this.fetchedNames.length
-        })
-      }
-    },
     activeData: {
       deep: true,
       handler (newVal, oldVal) {
@@ -103,23 +53,15 @@ export default {
         })
       }
     },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container,
-          maxNumDatasets: newVal.length
-        })
-      }
-    },
     dataPoint: {
       handler (newVal, oldVal) {
-        this.$store.dispatch('metamineNU/setDataPoint', newVal, {
+        this.$store.commit('metamineNU/setDataPoint', newVal, {
           root: true
         })
       }
     },
     query1: {
-      handler (newVal, oldVal) {
+      handler () {
         if (this.svg) {
           this.update({
             container: this.container,
@@ -154,11 +96,11 @@ export default {
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
-                (width - marginLeft - marginRight - (X.length - 1) * padding) /
-                X.length
+        (width - marginLeft - marginRight - (X.length - 1) * padding) /
+        X.length
       const cellHeight =
-                (height - marginTop - marginBottom - (Y.length - 1) * padding) /
-                Y.length
+        (height - marginTop - marginBottom - (Y.length - 1) * padding) /
+        Y.length
 
       const svg = d3
         .select(container)
@@ -171,10 +113,7 @@ export default {
           width,
           height + padding * 13
         ])
-        .attr(
-          'style',
-          'max-width: 100%; height: auto; height: intrinsic;'
-        )
+        .attr('style', 'max-width: 100%; height: auto; height: intrinsic;')
 
       const cell = svg
         .append('g')
@@ -184,9 +123,7 @@ export default {
         .attr('fill-opacity', fillOpacity)
         .attr(
           'transform',
-                    `translate(${cellWidth + padding},${
-                        cellHeight - 2 * marginBottom
-                    })`
+          `translate(${cellWidth + padding},${cellHeight - 2 * marginBottom})`
         )
 
       this.chart = true
@@ -236,6 +173,8 @@ export default {
       d3.selectAll('.yAxisGroup').remove()
       d3.selectAll('.legend').remove()
       d3.selectAll('.tooltip_hist').remove()
+      d3.selectAll('.x-label').remove()
+      d3.selectAll('.y-label').remove()
 
       for (let i = 0; i < maxNumDatasets; i++) {
         d3.selectAll('.group' + i).remove()
@@ -274,7 +213,7 @@ export default {
       // Compute the inner dimensions of the cells.
       const cellWidth = width - marginRight - (X.length - 1) * padding
       const cellHeight =
-                height - marginTop - marginBottom - (Y.length - 1) * padding
+        height - marginTop - marginBottom - (Y.length - 1) * padding
 
       // Construct scales and axes.
       const xScales = X.map((X) => xType(d3.extent(X), [0, cellWidth]))
@@ -284,6 +223,7 @@ export default {
         if (x === index && y === index) {
           d3.select(this)
             .append('g')
+            .attr('id', `${query1}`)
             .attr('class', 'x-label')
             .attr('font-size', 20)
             .attr('font-family', 'sans-serif')
@@ -293,8 +233,7 @@ export default {
             .join('text')
             .attr(
               'transform',
-              (d, i) =>
-                                `translate(${width / 3},${width + padding * 2})`
+              (d, i) => `translate(${width / 3},${width + padding * 2})`
             )
             .attr('x', padding / 2)
             .attr('y', padding / 2)
@@ -311,9 +250,9 @@ export default {
             .join('text')
             .attr(
               'transform',
-                            `translate(${-width / 10 - padding * 6},${
-                                cellHeight / 2 + padding
-                            }) rotate(270)`
+              `translate(${-width / 10 - padding * 6},${
+                cellHeight / 2 + padding
+              }) rotate(270)`
             )
             .attr('x', padding / 2)
             .attr('y', padding / 2)
@@ -323,23 +262,15 @@ export default {
             const a = columns
             const b = columns
             const X0 = d3.map(a, (a) =>
-              d3.map(
-                datasets[i],
-                typeof a === 'function' ? a : (d) => +d[a]
-              )
+              d3.map(datasets[i], typeof a === 'function' ? a : (d) => +d[a])
             )
             let Y0 = d3.map(b, (b) =>
-              d3.map(
-                datasets[i],
-                typeof b === 'function' ? b : (d) => +d[b]
-              )
+              d3.map(datasets[i], typeof b === 'function' ? b : (d) => +d[b])
             )
             const Z = d3.map(datasets[i], z)
 
             // Omit any data not present in the z-domain.
-            const I0 = d3
-              .range(Z.length)
-              .filter((i) => zDomain.has(Z[i]))
+            const I0 = d3.range(Z.length).filter((i) => zDomain.has(Z[i]))
             const thresholds = 40
             Y0 = d3.map(Y0[index], () => 1)
             const bins = d3
@@ -359,9 +290,7 @@ export default {
               tooltip.push(tempTooltip)
             }
 
-            const Y1 = Array.from(bins, (I0) =>
-              d3.sum(I0, (i) => Y0[i])
-            )
+            const Y1 = Array.from(bins, (I0) => d3.sum(I0, (i) => Y0[i]))
 
             // Compute default domains.
             const xDomain = [bins[0].x0, bins[bins.length - 1].x1]
@@ -396,23 +325,14 @@ export default {
                     ? 5
                     : Math.max(
                       0,
-                      xScale(d.x1) -
-                                                  xScale(d.x0) -
-                                                  insetLeft -
-                                                  insetRight
+                      xScale(d.x1) - xScale(d.x0) - insetLeft - insetRight
                     )
                 )
                 .attr('y', (d, i) => yScale(Y1[i]))
-                .attr(
-                  'height',
-                  (d, i) => yScale(0) - yScale(Y1[i])
-                )
-              // .on("mouseleave", mouseleave_rec)
-              // .on("mousemove", mousemove_hist)
-                .attr(
-                  'transform',
-                                    `translate(${-width / 10}, ${0})`
-                )
+                .attr('height', (d, i) => yScale(0) - yScale(Y1[i]))
+                // .on("mouseleave", mouseleave_rec)
+                // .on("mousemove", mousemove_hist)
+                .attr('transform', `translate(${-width / 10}, ${0})`)
 
               d3.selectAll('.group' + i)
                 .on('mouseover', mouseoverHist)
@@ -420,6 +340,8 @@ export default {
               histogram.exit().remove()
             }
           }
+        } else if (x !== index) {
+          d3.select(`#${columns[x]}`).remove()
         }
       })
       // draw axis
@@ -441,10 +363,7 @@ export default {
         .selectAll('g')
         .data([histYScales])
         .join('g')
-        .attr(
-          'transform',
-                    `translate(${padding * 6 + 5},${padding * 16 - 5})`
-        )
+        .attr('transform', `translate(${padding * 6 + 5},${padding * 16 - 5})`)
         .attr('class', 'yAxisGroup')
         .call(yAxis.scale(histYScales))
 
@@ -460,7 +379,7 @@ export default {
         .join('g')
         .attr(
           'transform',
-                    `translate(${width / 15}, ${width + padding * 10 + 5})`
+          `translate(${width / 15}, ${width + padding * 10 + 5})`
         )
         .attr('class', 'xAxisGroup')
         .call(xAxis.scale(xScales[index]))
@@ -499,19 +418,19 @@ export default {
       const tooltipContent = tooltip.map(
         (d, i) =>
           '<b>Dataset: </b>' +
-                    d.name +
-                    '<br>' +
-                    '<b>Range: </b>' +
-                    expo(d.min, 0) +
-                    ' to ' +
-                    expo(d.max, 0) +
-                    '<br>' +
-                    '<b>Mean: </b>' +
-                    expo(d.mean.toPrecision(4)) +
-                    '<br>' +
-                    '<b>Median: </b>' +
-                    expo(d.median, 0) +
-                    '<br>'
+          d.name +
+          '<br>' +
+          '<b>Range: </b>' +
+          expo(d.min, 0) +
+          ' to ' +
+          expo(d.max, 0) +
+          '<br>' +
+          '<b>Mean: </b>' +
+          expo(d.mean.toPrecision(4)) +
+          '<br>' +
+          '<b>Median: </b>' +
+          expo(d.median, 0) +
+          '<br>'
       )
 
       d3.select(this.$refs.histogramPlot)
