@@ -171,6 +171,39 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
+  async searchType (searchPhrase, searchField, type, page = 1, size = 20) {
+    // TODO: use searchField to change which field is queried
+    const phrase = this.searchSanitizer(searchPhrase);
+    const url = `http://${env.ESADDRESS}/${type}/_search?size=${size}`;
+    const response = await axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: ((page - 1) * size),
+        query: {
+          bool: {
+            should: [
+              {
+                match_phrase: {
+                  label: phrase
+                }
+              },
+              {
+                match_phrase: {
+                  description: phrase
+                }
+              }
+            ]
+          }
+        }
+      })
+    });
+    return response;
+  };
+
   async search (searchPhrase, autosuggest = false) {
     const phrase = this.searchSanitizer(searchPhrase);
     let url = `http://${env.ESADDRESS}/_all/_search?size=400`;
@@ -208,6 +241,24 @@ class ElasticSearch {
 
   async loadAllCharts (page, size) {
     const url = `http://${env.ESADDRESS}/charts/_search`;
+    return axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: ((page - 1) * size),
+        size,
+        query: {
+          match_all: {}
+        }
+      })
+    });
+  }
+
+  async loadAllDatasets (page, size) {
+    const url = `http://${env.ESADDRESS}/datasets/_search`;
     return axios({
       method: 'get',
       url,

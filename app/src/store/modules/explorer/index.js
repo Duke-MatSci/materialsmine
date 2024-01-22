@@ -5,13 +5,15 @@ import getters from './getters.js'
 import gallery from './gallery'
 import results from './results'
 import curation from './curation'
+import sddDatasets from './sddDatasets'
 
 export default {
   namespaced: true,
   modules: {
     gallery,
     results,
-    curation
+    curation,
+    sddDatasets
   },
   state () {
     return {

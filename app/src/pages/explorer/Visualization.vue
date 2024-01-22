@@ -19,8 +19,8 @@
           <div class="md-layout-item md-layout-item_card">
             <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
               <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
-                <md-icon class="explorer_page-nav-card_icon">grid_view</md-icon>
-                <span class="explorer_page-nav-card_text">Image</span>
+                <md-icon class="explorer_page-nav-card_icon">collections</md-icon>
+                <span class="explorer_page-nav-card_text">Images</span>
                 <p class="md-layout-item_para">Visit our Image Gallery to view microstructural images for nanocomposite systems stored
                   in the MaterialsMine knowledge graph, and filter by material constituents, nanoparticle geometry, and more.
                 </p>
@@ -32,7 +32,19 @@
               <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
                 <md-icon class="explorer_page-nav-card_icon">dynamic_feed</md-icon>
                 <span class="explorer_page-nav-card_text">XMLs</span>
-                <p class="md-layout-item_para">Browse a catalog of sample XMLs that have been curated into the MaterialsMine knowledge graph
+                <p class="md-layout-item_para">Browse a catalog of sample XMLs that have been curated into the
+                  MaterialsMine knowledge graph.
+                </p>
+              </div>
+            </router-link>
+          </div>
+          <div class="md-layout-item md-layout-item_card">
+            <router-link to="/explorer/dataset" v-slot="{navigate, href}" custom>
+              <div class="teams_container explorer_page-nav-card md-layout-item_card" :href="href" @click="navigate">
+                <md-icon class="explorer_page-nav-card_icon">dataset</md-icon>
+                <span class="explorer_page-nav-card_text">Datasets</span>
+                <p class="md-layout-item_para">
+                  Browse a catalog of datasets that have been curated into the MaterialsMine knowledge graph.
                 </p>
               </div>
             </router-link>

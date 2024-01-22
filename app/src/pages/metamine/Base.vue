@@ -28,6 +28,8 @@
                             <div class="nav_menu--siblings-mm">
                                 <router-link to="/explorer" class="nav_menu--siblings-mm-lists"><a>Browse Data</a></router-link>
                                 <router-link to="/mm/metamaterial_visualization_nu" class="nav_menu--siblings-mm-lists"><a>Material Visualization</a></router-link>
+                                <router-link to="/explorer/dataset" class="nav_menu--siblings-mm-lists"><a>Explore Curated Datasets</a></router-link>
+                                <router-link to="/explorer/chart" class="nav_menu--siblings-mm-lists"><a>Explore Chart Gallery</a></router-link>
                             </div>
                           </div>
                         </li>

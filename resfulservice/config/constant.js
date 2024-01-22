@@ -3,11 +3,12 @@ module.exports = {
   articles: 'about?view=instances&uri=http%3A%2F%2Fmaterialsmine.org%2Fns%2FResearchArticle',
   images: 'about?view=instances&uri=http://semanticscience.org/resource/Image',
   charts: 'about?view=instances&uri=http://semanticscience.org/resource/Chart',
+  datasets: 'about?view=instances&uri=http://www.w3.org/ns/dcat%23Dataset',
   sparql: 'sparql',
   doiApi: 'https://api.crossref.org/works/',
   doiFields: ['publisher', 'title', 'author', 'published', 'volume', 'issue', 'DOI', 'type', 'URL', 'container-title'],
   rorApi: 'https://api.ror.org/organizations',
-  rorFields: ['id', 'name', 'links', 'country', 'addresses'],
+  rorFields: ['id', 'name', 'aliases', 'links', 'country', 'addresses'],
   supportedBrowser: ['Firefox', 'Chrome', 'Canary', 'Safari', 'Opera', 'IE', 'Edge'],
   userRoles: {
     isAdmin: 'isAdmin',

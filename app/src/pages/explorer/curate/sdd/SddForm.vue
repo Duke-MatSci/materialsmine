@@ -206,7 +206,7 @@
               <div>
                 <label>Associated Organization (e.g., name of university)</label>
                 <div>
-                  <md-chip md-deletable class="u_margin-bottom-small" v-for="(element, i) in dataset.organization" 
+                  <md-chip md-deletable class="u_margin-bottom-small" v-for="(element, i) in dataset.organization"
                     @md-delete="deleteOrg(dataset.organization, i)" :key="`org_${i}`">{{ element.name }}
                   </md-chip>
                 </div>
@@ -233,7 +233,7 @@
                         {{ item.name }}
                         <span v-if="(optionalChaining(() => item.addresses[0].city))
                           || (optionalChaining(() => item.country.country_code))">
-                          ({{ (optionalChaining(() => item.addresses[0].city)) }}, 
+                          ({{ (optionalChaining(() => item.addresses[0].city)) }},
                           {{ (optionalChaining(() => item.country.country_code)) }})
                         </span>
                       </span>
@@ -384,7 +384,7 @@
                 <h3>Associated Organization(s):</h3>
                 <span v-for="(org, index) in dataset.organization" :key="`org_${index}`">
                   <span v-if="index==0">{{ org.name }}</span>
-                  <span v-else="index==0">, {{ org.name }}</span>
+                  <span v-else>, {{ org.name }}</span>
                 </span>
               </div>
               <div v-if="dataset.datePub['@value']" class="u_margin-bottom-small">
@@ -517,7 +517,7 @@ export default {
           '@type': 'date',
           '@value': ''
         },
-        organization: [],
+        organization: []
       },
       // For editing existing datasets
       oldDistributions: [],
@@ -547,8 +547,8 @@ export default {
     userInfo () {
       return {
         '@id': `https://materialsmine.org/api/user/${this.$store.getters['auth/userId']}`,
-        'firstName':  this.$store.getters['auth/user'].givenName,
-        'lastName': this.$store.getters['auth/user'].surName
+        firstName: this.$store.getters['auth/user'].givenName,
+        lastName: this.$store.getters['auth/user'].surName
       }
     }
   },
@@ -566,7 +566,7 @@ export default {
     },
     searchKeywordOrg (newVal) {
       if (newVal) {
-        this.lookupOrganization({query: newVal})
+        this.lookupOrganization({ query: newVal })
       }
       this.showDropdown = true
     }
@@ -604,15 +604,15 @@ export default {
         this.orcidId = response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1]
         this.lookupOrcid(this.orcidId)
         if (this.dataset?.organization?.length) {
-          const orgs = this.dataset.organization.map( async (org) => {
+          const orgs = this.dataset.organization.map(async (org) => {
             const rorId = org['@id'].split('https://ror.org/')[1]
-            let rorOrg = await this.$store.dispatch('explorer/curation/searchRor', {id: rorId})
+            const rorOrg = await this.$store.dispatch('explorer/curation/searchRor', { id: rorId })
             return {
               '@id': org['@id'],
               '@type': 'organization',
-              'name': rorOrg[0].name
+              name: rorOrg[0].name
             }
-          });
+          })
           this.dataset.organization = await Promise.all(orgs)
         }
       } catch (e) {
@@ -660,11 +660,11 @@ export default {
     lookupOrganization: _.debounce(function (payload) {
       this.$store.dispatch('explorer/curation/searchRor', payload)
     }, 300),
-    selectOrg(item) {
+    selectOrg (item) {
       const formatOrg = {
         '@id': item.id,
         '@type': 'organization',
-        'name': item.name
+        name: item.name
       }
       if (!this.dataset.organization.includes(formatOrg)) {
         this.dataset.organization.push(formatOrg)
@@ -778,7 +778,12 @@ export default {
         const processedFiles = this.processFiles()
         const processedImg = this.processDepictions()
         try {
-          await saveDataset(this.dataset, processedFiles, processedImg, this.generatedUUID)
+          const datasetNanopub = await saveDataset(this.dataset, processedFiles, processedImg, this.generatedUUID)
+          await this.$store.dispatch('explorer/curation/cacheNewEntityResponse', {
+            identifier: this.dataset.uri,
+            resourceNanopub: datasetNanopub,
+            type: 'datasets'
+          })
           this.dialog.title = 'Upload successful'
           this.dialog.type = 'success'
         } catch (err) {

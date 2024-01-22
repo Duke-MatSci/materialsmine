@@ -219,6 +219,29 @@ exports.getAllCharts = async (req, res, next) => {
 };
 
 /**
+ * Load dataset gallery from elastic function
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.getAllDatasets = async (req, res, next) => {
+  const page = parseInt(req?.query?.page) || 1;
+  const pageSize = parseInt(req?.query?.pageSize) || 10;
+
+  try {
+    const response = await elasticSearch.loadAllDatasets(page, pageSize);
+    successWriter(req, { message: 'success' }, 'getAllDatasets');
+    return res.status(200).json({
+      data: response?.data?.hits?.hits || [],
+      total: response?.data?.hits?.total?.value || 0
+    });
+  } catch (err) {
+    next(errorWriter(req, err, 'getAllDatasets'));
+  }
+};
+
+/**
  * Load images from knowledge graph
  * @param {*} req
  * @param {*} res

@@ -27,7 +27,7 @@
           <md-card-header class="section_md-header ">
             <md-card-header-text class="section_text-col flex-item">
               <div v-if="dataset[datasetFields['title']]" class="md-title u--margin-header">
-                {{ dataset[datasetFields['title']]?.[0]?.['@value'] || "Curated Dataset"}}
+                {{ (optionalChaining(() => dataset[datasetFields['title']][0]['@value'])) || "Curated Dataset"}}
               </div>
               <div v-if="dataset[datasetFields['doi']]">
                 DOI: <a class=" u--b-rad" @click="nav_to_doi(doi)">{{ doi }}</a>
@@ -37,8 +37,8 @@
               </div>
             </md-card-header-text>
             <div v-if="dataset[datasetFields['depiction']]" class="quicklinks_content flex-item u--padding-zero" style="max-width:20rem;">
-              <img v-if="thumbnail" :src="thumbnail?.[0]?.['@value']"
-                :alt="`${dataset[datasetFields['title']]?.[0]?.['@value']} image` || 'Dataset Thumbnail'"
+              <img v-if="thumbnail" :src="(optionalChaining(() => thumbnail[0]['@value']))"
+                :alt="`${(optionalChaining(() => dataset[datasetFields['title']][0]['@value']))} image` || 'Dataset Thumbnail'"
                 class="facet_viewport img">
             </div>
           </md-card-header>
@@ -65,7 +65,7 @@
                   :class="`charts-${index+1} charts-${index+1}-narrow`"
                   :key="`card_${index}`"
                 >
-                <a :href="(optionalChaining(() => item?.downloadLink))">
+                <a :href="(optionalChaining(() => item.downloadLink))">
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
                       <md-icon class="explorer_page-nav-card_icon u_margin-top-small">description</md-icon>
@@ -74,7 +74,7 @@
                     <md-card-area class="u_gridbg">
                       <md-card-header class="u_show_hide">
                         <span class="md-subheading">
-                          <strong>{{ item?.label || 'Dataset File'}}</strong>
+                          <strong>{{ (optionalChaining(() => item.label)) || 'Dataset File'}}</strong>
                         </span>
                         <span class="md-body-1">Click to download</span>
                       </md-card-header>
@@ -91,16 +91,31 @@
             </div>
           </div>
 
-          <div v-if="dataset" id="metadata" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
+          <div v-if="dataset" id="metadata" :class="{search_box_form: false, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.md_active, metadata:true}">
+            <div class="u--margin-pos" v-if="!!organizations.length">
+              <span class="u--font-emph-xl u--color-black">
+                Associated Organizations/Institutions:
+              </span>
+              <span v-for="(org, index) in organizations"
+                :key="`org_${index}`"
+                class="u--color-grey-sec">
+                <a v-if="index==0" :href="(optionalChaining(() => org[0].id))" target="_blank">
+                  {{ (optionalChaining(() => org[0].name)) }}
+                </a>
+                <a v-else :href="(optionalChaining(() => org[0].id))" target="_blank">
+                  , {{ (optionalChaining(() => org[0].name))  }}
+                </a>
+              </span>
+            </div>
             <div class="u--margin-pos" v-if="dataset[datasetFields['datePub']]">
               <span class="u--font-emph-xl u--color-black">
                 Date Published:
               </span>
               <span class="u--font-emph-xl u--color-grey-sec">
-                {{ dataset[datasetFields['datePub']]?.[0]?.['@value'] || 'N/A' }}
+                {{ (optionalChaining(() => dataset[datasetFields['datePub']][0]['@value'])) || 'N/A' }}
               </span>
             </div>
-            <div v-else>
+            <div v-else-if="!organizations.length">
               <span class="u--font-emph-xl u--color-grey-sec">
                 N/A
               </span>
@@ -113,12 +128,17 @@
                 Contact Point:
               </span>
               <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
-                {{ orcidData['http://schema.org/givenName']?.[0]?.['@value'] || '' }} {{ orcidData['http://schema.org/familyName']?.[0]?.['@value'] || ''}}
+                {{ (optionalChaining(() => orcidData['http://schema.org/givenName'][0]['@value'])) || '' }}
+                {{ (optionalChaining(() => orcidData['http://schema.org/familyName'][0]['@value'])) || ''}}
               </span>
-              <div>ORCiD: <a class=" u--b-rad" :href="(optionalChaining(() => orcidData?.['@id']))" target="_blank">
-                {{orcidData?.['@id'] || dataset[datasetFields.cp]?.[0]?.['@id'] || 'N/A'}}
+              <div>ORCiD: <a class=" u--b-rad" :href="(optionalChaining(() => orcidData['@id']))" target="_blank">
+                {{ (optionalChaining(() => orcidData['@id'])) ||
+                  (optionalChaining(() => dataset[datasetFields.cp][0]['@id'])) ||
+                  'N/A'}}
               </a></div>
-              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">Contact Email: {{orcidData['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']|| 'N/A'}}</div>
+              <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">
+                Contact Email: {{(optionalChaining(() => orcidData['http://www.w3.org/2006/vcard/ns#email'][0]['@value'])) || 'N/A'}}
+              </div>
             </div>
             <div class="u--margin-pos" v-else>
               <span class="u--font-emph-xl u--color-grey-sec">
@@ -162,9 +182,11 @@ export default {
         title: 'http://purl.org/dc/terms/title',
         cp: 'http://w3.org/ns/dcat#contactpoint',
         distribution: 'http://w3.org/ns/dcat#distribution',
-        depiction: 'http://xmlns.com/foaf/0.1/depiction'
+        depiction: 'http://xmlns.com/foaf/0.1/depiction',
+        organization: 'http://xmlns.com/foaf/0.1/Organization'
       },
       distributions: {},
+      organizations: [],
       loading: true
     }
   },
@@ -179,6 +201,10 @@ export default {
         const trimmedId = orcid.replace('http://orcid.org/', '')
           .replace(`${window.location.origin}/`, '')
         this.lookupOrcid(trimmedId)
+      }
+      if (newValues?.[this.datasetFields.organization]) {
+        const rorList = this.dataset[this.datasetFields.organization]
+        this.parseRorList(rorList)
       }
       if (newValues?.[this.datasetFields.depiction]) {
         const thumbnailUri = this.dataset[this.datasetFields.depiction][0]['@id']
@@ -202,7 +228,8 @@ export default {
       isAdmin: 'auth/isAdmin',
       dataset: 'explorer/getCurrentDataset',
       thumbnail: 'explorer/getDatasetThumbnail',
-      orcidData: 'explorer/curation/getOrcidData'
+      orcidData: 'explorer/curation/getOrcidData',
+      rorData: 'explorer/curation/getRorData'
     }),
     doi () {
       if (this.dataset?.[this.datasetFields.doi]) {
@@ -225,6 +252,15 @@ export default {
     },
     lookupOrcid (id) {
       this.$store.dispatch('explorer/curation/lookupOrcid', id)
+    },
+    lookupRor (id) {
+      return this.$store.dispatch('explorer/curation/searchRor', { id })
+    },
+    parseRorList (rorList) {
+      Promise.all(rorList.map((org) => {
+        const id = org?.['@id'].replace('https://ror.org/', '')
+        return this.$store.dispatch('explorer/curation/searchRor', { id })
+      })).then((results) => { this.organizations = results })
     },
     navBack () {
       this.$router.back()
