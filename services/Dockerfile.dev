@@ -2,7 +2,7 @@ FROM python:3.8-slim
 
 WORKDIR /services
 
-ENV FLASK_APP=app.py
+ENV FLASK_APP=run.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5050
 #Server will reload itself on file changes if in dev mode
