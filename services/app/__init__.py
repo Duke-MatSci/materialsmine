@@ -8,7 +8,7 @@ from app.models.model import Database_Handler
 import logging
 
 # Connect Database
-# db = Database_Handler(Config)
+db = Database_Handler(Config)
 
 # TODO (@Tee): Enable the ones we need
 # bcrypt = Bcrypt()
@@ -19,7 +19,7 @@ def create_app(config_class = Config):
     app.config.from_object(Config)
     # bcrypt.init_app(app)
     # mail.init_app(app)
-    # db.init_app(app)
+    db.init_app(app)
     CORS(app)
     
     # Configure logging
