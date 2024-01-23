@@ -51,7 +51,7 @@
         </div>
 
         <div>
-          <div id="related-images" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.ds_active}">
+          <div id="distributions" :class="{search_box_form: true, 'u--layout-flex-justify-se': true, explorer_page_header: true, 'u--layout-flex-switch': tabbed_content.ds_active}">
             <div class="search_box_form howto_item-header">
               <md-button :class="{'md-icon-button': true, 'u--layout-hide': hideAssetNavLeft}" @click.prevent="reduceAsset('prev')">
                 <md-tooltip> Show Left </md-tooltip>
@@ -252,9 +252,6 @@ export default {
     },
     lookupOrcid (id) {
       this.$store.dispatch('explorer/curation/lookupOrcid', id)
-    },
-    lookupRor (id) {
-      return this.$store.dispatch('explorer/curation/searchRor', { id })
     },
     parseRorList (rorList) {
       Promise.all(rorList.map((org) => {
