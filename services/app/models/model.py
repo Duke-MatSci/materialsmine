@@ -1,6 +1,5 @@
 import urllib.parse
 import pymongo
-from flask import current_app as app
 from app.models.constant import CHEMPROPS_COLLECTION
 import threading
 
@@ -40,12 +39,20 @@ class Database_Handler:
         """
         with self.database_lock:
             if not hasattr(self, '_database_initialized') or not self._database_initialized:
-                try:
-                    self._initialize_database()
-                    self._database_initialized = True
-                except Exception as e:
-                    print(f"Error initializing database: {e}")
-                    exit(1)
+                db_thread = threading.Thread(target=self._initialize_database_thread)
+                db_thread.start()
+                db_thread.join()  # Optionally wait for the thread to finish
+                self._database_initialized = True
+
+    def _initialize_database_thread(self):
+        """
+        This method will be run in a separate thread.
+        """
+        try:
+            self._initialize_database()
+        except Exception as e:
+            print(f"Error initializing database in thread: {e}")
+            return None
 
     def _initialize_database(self):
         """
