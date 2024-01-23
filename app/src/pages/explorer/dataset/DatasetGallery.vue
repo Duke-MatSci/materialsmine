@@ -64,7 +64,6 @@
           <span v-else>
             About {{total}} results
           </span>
-          ({{(queryTimeMillis/1000).toFixed(2)}} seconds)
         </span>
       </div>
       <template v-if="!!items && !!items.length">
@@ -160,7 +159,7 @@
 import spinner from '@/components/Spinner'
 import pagination from '@/components/explorer/Pagination'
 import Dialog from '@/components/Dialog.vue'
-import { mapGetters, mapActions, mapMutations } from 'vuex'
+import { mapGetters, mapMutations } from 'vuex'
 import reducer from '@/mixins/reduce'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import explorerQueryParams from '@/mixins/explorerQueryParams'
@@ -195,12 +194,10 @@ export default {
       items: 'explorer/sddDatasets/getAllDatasets',
       page: 'explorer/sddDatasets/getPage',
       total: 'explorer/sddDatasets/getTotal',
-      totalPages: 'explorer/sddDatasets/getTotalPages',
-      queryTimeMillis: 'explorer/sddDatasets/getQueryTimeMillis'
+      totalPages: 'explorer/sddDatasets/getTotalPages'
     })
   },
   methods: {
-    ...mapActions('explorer/sddDatasets', ['loadItems']),
     ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
     renderDialog (title, type, result, minWidth) {
       this.dialog = {
@@ -252,8 +249,16 @@ export default {
     },
     async loadItems (page = 1) {
       this.loading = true
-      await this.$store.dispatch('explorer/sddDatasets/loadDatasets', { page })
-      this.loading = false
+      try {
+        await this.$store.dispatch('explorer/sddDatasets/loadDatasets', { page })
+      } catch (error) {
+        this.$store.commit('setSnackbar', {
+          message: error || 'Something went wrong',
+          action: () => this.loadItems(page)
+        })
+      } finally {
+        this.loading = false
+      }
     },
     getDatasetId (dataset) {
       return dataset.identifier.split('dataset/')[1]

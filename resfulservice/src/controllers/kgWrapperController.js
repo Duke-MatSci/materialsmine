@@ -299,10 +299,10 @@ exports.searchRor = async (req, res, next) => {
   logger.info('_searchRor(): Function entry');
   try {
     if (req?.query?.query) {
-      const term = req?.query?.query;
+      const term = req.query.query;
       req.query.uri = `${constant.rorApi}?query=${encodeURI(term)}`;
     } else if (req?.query?.id) {
-      const term = req?.query?.id;
+      const term = req.query.id;
       req.query.uri = `${constant.rorApi}/${encodeURI(term)}`;
     } else throw new Error('Missing search value');
 
