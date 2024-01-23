@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /services
 
-COPY . /services
+COPY . .
 
 # Installing dependencies
 RUN pip install --no-cache-dir -r /services/requirements/prod_requirements.txt
@@ -14,4 +14,5 @@ RUN pip install --no-cache-dir -r /services/requirements/prod_requirements.txt
 EXPOSE 5050
 
 # Run the application
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5050", "run:app"]
+# CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5050", "run:app"]
+CMD ["flask", "run", "-h","0.0.0.0", "-p", "5050"]
