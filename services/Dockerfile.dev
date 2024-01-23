@@ -1,6 +1,6 @@
-FROM python:3.8.16-bullseye
+FROM python:3.8-slim
 
-WORKDIR /usr/src/app
+WORKDIR /services
 
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
