@@ -18,7 +18,7 @@ def create_app(config_class = Config):
     # mail.init_app(app)
 
     # Initialize database handler
-    app.db = Database_Handler(config_class)
+    # app.db = Database_Handler(config_class)
     CORS(app)
     
     # Configure logging
