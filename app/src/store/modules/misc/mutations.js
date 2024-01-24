@@ -18,5 +18,8 @@ export default {
       action: null,
       duration: 0 // Indicate reset
     }
+  },
+  setUploadedFile (state, str) {
+    state.uploadedFile = str
   }
 }

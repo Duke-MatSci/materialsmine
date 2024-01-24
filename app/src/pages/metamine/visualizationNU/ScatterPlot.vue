@@ -22,7 +22,7 @@
           Save Data
         </button>
         <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
-          <template>emplate v-slot:content> <SaveDataPanel /> </template>
+          <template v-slot:content> <SaveDataPanel /> </template>
           <template v-slot:actions>
             <md-button @click.native.prevent="toggleDialogBoxSaveData">
               Close

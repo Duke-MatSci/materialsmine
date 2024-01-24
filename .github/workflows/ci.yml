@@ -19,7 +19,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: "17.9.1"
+          node-version: '17.9.1'
       - name: Install frontend dependencies & test
         run: |
           cd app
@@ -73,6 +73,16 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  BuildManagedServices:
+    needs: [test]
+    uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
+    with:
+      myid: managedservices
+      context: ./services
+      tags: dukematsci/dev-managedservices:latest
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   BuildWhyis:
     if: github.event_name == 'push'
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
@@ -92,7 +102,7 @@ jobs:
       MONGO_TEST: ${{secrets.MONGO_TEST}}
       MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
       MM_DB: ${{secrets.MM_DB}}
-      MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
+      MONGO_ADDRESS: ${{secrets.MONGO_ADDRESS}}
       MONGO_PORT: ${{secrets.MONGO_PORT}}
       NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
       TKNS: ${{secrets.TKNS}}
@@ -107,6 +117,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download and run images
-        run : docker-compose -f docker-compose.git.yml up -d
+        run: docker-compose -f docker-compose.git.yml up -d
       - name: Kill containers
         run: docker-compose down -v
