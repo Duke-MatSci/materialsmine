@@ -1,41 +1,17 @@
-FROM python:3.8-slim-buster
+FROM python:3.8-slim
 
-WORKDIR /apps
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-COPY pyApp/requirements.txt .
-COPY chemprops/requirements.txt ./chemprop-requirements.txt
-COPY requirements/xmlconv-requirements.txt ./xmlconv-requirements.txt
-COPY requirements/dynamfit-requirements.txt ./dynamfit-requirements.txt
+WORKDIR /services
 
-COPY script/ ./script
+COPY . /services
 
-RUN pip install -r requirements.txt
-RUN pip install -r chemprop-requirements.txt
-RUN pip install -r xmlconv-requirements.txt
-RUN pip install python-datauri
-RUN pip install -r dynamfit-requirements.txt
-RUN chmod +x ./script/installer
+# Installing dependencies
+RUN pip install -r /services/requirements/prod_requirements.txt
 
-COPY . /app
+# Exposing the port the app runs on
 EXPOSE 5050
-CMD [ "/app/script/installer" ]
 
-# matplotlib==2.2.4
-# MechanicalSoup==0.12.0
-# dicttoxml==1.7.4
-# xlrd==1.2.0
-# beautifulsoup4~=4.7.1
-# lxml==4.3.4
-# mime==0.1.0
-# python-slugify
-
-
-
-# // dockerignore
-# .git
-# __pycache__
-# *.pyc
-# *.pyo
-# *.pyd
-# .Python
-# env
+# # Run the application
+CMD ["gunicorn", "-w", "4", "-b", ":5050", "-t", "60", "run:app"]

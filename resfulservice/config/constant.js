@@ -73,7 +73,9 @@ module.exports = {
     'csv',
     'zip',
     'xls',
-    'xlsx'
+    'xlsx',
+    'tsv',
+    'txt'
   ],
   SupportedFileResponseHeaders: {
     '.csv': 'text/csv',
@@ -143,5 +145,8 @@ module.exports = {
         'Other_Processing'
       ]
     }
+  },
+  ManagedServiceRegister: {
+    dynamfit: '/dynamfit/extract/'
   }
 };

@@ -16,6 +16,7 @@ const invalidRoutes = require('./routes/invalid');
 const knowledgeRoutes = require('./routes/kg-wrapper');
 const pixelatedRoutes = require('./routes/pixelated');
 const searchRoutes = require('./routes/search');
+const managedServiceRoutes = require('./routes/managed-service');
 const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
@@ -30,7 +31,11 @@ elasticSearch.ping(log);
 
 // Serve the Swagger UI
 const apiContractDocument = swaggerService(env);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(apiContractDocument, { explorer: true }));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(apiContractDocument, { explorer: true })
+);
 
 app.use('/admin', adminRoutes);
 app.use('/curate', curationRoutes);
@@ -39,6 +44,7 @@ app.use('/files', fileRoutes);
 app.use('/knowledge', knowledgeRoutes);
 app.use('/search', searchRoutes);
 app.use('/pixelated', pixelatedRoutes);
+app.use('/mn', managedServiceRoutes);
 app.use('/*', invalidRoutes);
 
 const httpServer = createHttpServer(app);
@@ -69,10 +75,13 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(`mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
+  .connect(
+    `mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`,
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    }
+  )
   .then(async () => {
     log.info('Rest server starting up...');
     await apolloServer.start();

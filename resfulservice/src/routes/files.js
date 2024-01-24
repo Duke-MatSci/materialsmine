@@ -6,7 +6,6 @@ const { latencyTimer } = require('../middlewares/latencyTimer');
 const { minioUpload } = require('../middlewares/fileStorage');
 const {
   validateImageType,
-  validateFileId,
   validateFileDownload
 } = require('../middlewares/validations');
 
@@ -25,6 +24,6 @@ router.route('/metamine/:fileName').get(fileController.fetchMetamineDatasets);
 router
   .route('/:fileId([^/]*)')
   .get(validateFileDownload, latencyTimer, fileController.fileContent)
-  .delete(isAuth, validateFileId, latencyTimer, fileController.deleteFile);
+  .delete(isAuth, latencyTimer, fileController.deleteFile);
 
 module.exports = router;

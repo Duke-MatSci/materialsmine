@@ -35,5 +35,19 @@ export default {
   },
   setCurrentDatasetThumbnail (state, payload) {
     state.datasetThumbnail = payload
+  },
+  setDynamfitData (state, payload) {
+    state.dynamfitData = payload
+  },
+  resetDynamfitData (state) {
+    state.dynamfitData = {}
+  },
+  resetDynamfit (state) {
+    state.dynamfit = {
+      range: 100,
+      fitSettings: false,
+      model: 'Linear',
+      fileUpload: ''
+    }
   }
 }
