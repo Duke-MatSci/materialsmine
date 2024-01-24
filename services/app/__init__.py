@@ -17,7 +17,12 @@ def create_app(config_class = Config):
     file_handler.setLevel(logging.INFO)  # Set log level for the file handler
     app.logger.addHandler(file_handler) 
 
+    from app.errors.handlers import error
     from app.main.routes import main
+    from app.dynamfit.routes import dynamfit
+    
+    app.register_blueprint(error)
+    app.register_blueprint(dynamfit)
     app.register_blueprint(main)
 
     return app
