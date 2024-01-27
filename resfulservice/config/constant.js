@@ -21,14 +21,7 @@ module.exports = {
     'container-title'
   ],
   rorApi: 'https://api.ror.org/organizations',
-  rorFields: [
-    'id',
-    'name',
-    'aliases',
-    'links',
-    'country',
-    'addresses'
-  ],
+  rorFields: ['id', 'name', 'aliases', 'links', 'country', 'addresses'],
   supportedBrowser: [
     'Firefox',
     'Chrome',
@@ -147,6 +140,7 @@ module.exports = {
     }
   },
   ManagedServiceRegister: {
-    dynamfit: '/dynamfit/extract/'
+    dynamfit: '/dynamfit/extract/',
+    chemprops: '/chemprops/call/'
   }
 };

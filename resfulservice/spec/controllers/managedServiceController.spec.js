@@ -5,9 +5,11 @@ const sinon = require('sinon');
 const { logger } = require('../common/utils');
 const { next } = require('../mocks');
 const {
-  getDynamfitChartData
+  manageServiceRequest,
+  chemPropsSeed
 } = require('../../src/controllers/managedServiceController');
 const latency = require('../../src/middlewares/latencyTimer');
+const { userRoles } = require('../../config/constant');
 const mockDynamfitChartData = {
   multi: true,
   response: {
@@ -54,16 +56,16 @@ describe('Manage Service Controller Unit Tests:', function () {
     json: (value) => value
   };
 
-  context('getDynamfitChartData', () => {
+  context('manageServiceRequest', () => {
     it('should return a 422 error if params appName is not in the register', async () => {
       const appName = 'dynamfits';
       req.params = { appName };
       sinon.stub(latency, 'latencyCalculator').returns(true);
-      const result = await getDynamfitChartData(req, res, next);
+      const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal(
         `${appName} service not available`,
-        'getDynamfitChartData'
+        'manageServiceRequest'
       );
     });
 
@@ -73,7 +75,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(axios, 'post').returns(dynafitSuccessResponse);
       sinon.stub(jwt, 'sign').returns('askle90lk.s409sjgl0ad.s0akng40');
-      const result = await getDynamfitChartData(req, res, next);
+      const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('appName');
       expect(result.appName).to.equal(appName);
       expect(result).to.have.property('multi');
@@ -89,7 +91,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(jwt, 'sign').returns('askle90lk.s409sjgl0ad.s0akng40');
       sinon.stub(axios, 'post').returns(dynamfitErrorResponse);
-      const result = await getDynamfitChartData(req, res, next);
+      const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal(dynamfitErrorResponse.data.message);
     });
@@ -101,7 +103,19 @@ describe('Manage Service Controller Unit Tests:', function () {
       sinon.stub(axios, 'post').throws();
       sinon.stub(latency, 'latencyCalculator').returns(true);
 
-      await getDynamfitChartData(req, res, nextSpy);
+      await manageServiceRequest(req, res, nextSpy);
+      sinon.assert.calledOnce(nextSpy);
+    });
+  });
+
+  context('chemPropsSeed', () => {
+    it('should return a 500 server error when chemprops server is not accessible', async function () {
+      req.originalUrl = '/nm/chemprops/init';
+      const nextSpy = sinon.spy();
+      sinon.stub(axios, 'post').throws();
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      await chemPropsSeed(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);
     });
   });

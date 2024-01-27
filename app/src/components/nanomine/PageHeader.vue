@@ -120,8 +120,8 @@
                     class="nav_menu--siblings-lists"
                     ><a>View XMLs</a></router-link
                   >
-                  <router-link 
-                    to="/explorer/dataset" 
+                  <router-link
+                    to="/explorer/dataset"
                     class="nav_menu--siblings-lists"
                     ><a>Dataset Gallery</a></router-link
                   >
