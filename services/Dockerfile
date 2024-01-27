@@ -5,6 +5,8 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /services
 
+
+
 COPY . /services
 
 # Installing dependencies
