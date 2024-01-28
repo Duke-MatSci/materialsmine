@@ -4,16 +4,16 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # Set the environment variable for OpenBLAS
-ENV OPENBLAS_NUM_THREADS=1
+ENV OPENBLAS_NUM_THREADS=2
 
 WORKDIR /services
 
 
 
-COPY . /services
+COPY . .
 
 # Installing dependencies
-RUN pip install -r /services/requirements/prod_requirements.txt
+RUN pip install --no-cache-dir -r /services/requirements/prod_requirements.txt
 
 # Exposing the port the app runs on
 EXPOSE 5050

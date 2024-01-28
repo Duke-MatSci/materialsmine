@@ -28,12 +28,12 @@ def create_app(config_class = Config):
 
     from app.errors.handlers import error
     from app.chemprops.routes import chemprops
-    # from app.dynamfit.routes import dynamfit
+    from app.dynamfit.routes import dynamfit
     from app.main.routes import main
 
     app.register_blueprint(error)
     app.register_blueprint(chemprops)
-    # app.register_blueprint(dynamfit)
+    app.register_blueprint(dynamfit)
     app.register_blueprint(main)
 
     return app
