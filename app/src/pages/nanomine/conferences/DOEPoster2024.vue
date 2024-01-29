@@ -13,6 +13,7 @@
         Link:
         <a href="/docs/DOE_Poster_20240129.pdf" download>DOE 2024 Poster</a>
       </div>
+      <div class="u_margin-bottom-big"><span>&nbsp;</span></div>
     </div>
   </div>
 </template>
