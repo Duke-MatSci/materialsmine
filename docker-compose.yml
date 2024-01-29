@@ -125,31 +125,31 @@ services:
     volumes:
       - /app/node_modules
       - ./app:/app
-  # managedservices:
-  #   platform: linux/x86_64
-  #   image: dukematsci/dev-managedservices
-  #   container_name: managedservices
-  #   depends_on:
-  #     - mongo
-  #   restart: always
-  #   ports:
-  #     - '5050:5050'
-  #   volumes:
-  #     # - ./mockDB/services:/usr/src/services
-  #     - ./resfulservice/mm_files:/usr/src/files
-  #   environment:
-  #     - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
-  #     - SECRET_KEY=${TKNS}
-  #     - MM_MONGO_USER=${MM_MONGO_USER}
-  #     - MM_MONGO_PWD=${MM_MONGO_PWD}
-  #     - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
-  #     - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
-  #     - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
-  #     - MONGO_ADDRESS=${MONGO_ADDRESS}
-  #     - MONGO_PORT=${MONGO_PORT}
-  #     - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
-  #     - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
-  #     - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
+  managedservices:
+    platform: linux/x86_64
+    image: dukematsci/dev-managedservices
+    container_name: managedservices
+    depends_on:
+      - mongo
+    restart: always
+    ports:
+      - '5050:5050'
+    volumes:
+      # - ./mockDB/services:/usr/src/services
+      - ./resfulservice/mm_files:/usr/src/files
+    environment:
+      - MM_RUNTIME_ENV=${MM_RUNTIME_ENV}
+      - SECRET_KEY=${TKNS}
+      - MM_MONGO_USER=${MM_MONGO_USER}
+      - MM_MONGO_PWD=${MM_MONGO_PWD}
+      - MANAGED_SERVICES_USER=${MANAGED_SERVICES_USER}
+      - MANAGED_SERVICES_PWD=${MANAGED_SERVICES_PWD}
+      - MANAGED_SERVICES_DB=${MANAGED_SERVICES_DB}
+      - MONGO_ADDRESS=${MONGO_ADDRESS}
+      - MONGO_PORT=${MONGO_PORT}
+      - FILES_WORKING_DIR=${MANAGED_SERVICES_FILES_WORKING_DIR}
+      - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
+      - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
   # managedservices:
   #   container_name: managedservices
   #   depends_on:
@@ -177,10 +177,10 @@ services:
   #     - AUTH_API_TOKEN_EMAIL=${MANAGED_SERVICES_AUTH_API_TOKEN_EMAIL}
   #     - AUTH_API_REFRESH_EMAIL=${MANAGED_SERVICES_AUTH_API_REFRESH_EMAIL}
   redis:
-    image: "redis:alpine"
+    image: 'redis:alpine'
     command: redis-server
     volumes:
-     - ./mockDB/redis-data:/var/lib/redis
+      - ./mockDB/redis-data:/var/lib/redis
   celery:
     depends_on:
       - redis
@@ -188,7 +188,9 @@ services:
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
-    command: /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody --gid=nogroup
+    command:
+      /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody
+      --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
     build: whyis
@@ -199,7 +201,9 @@ services:
     volumes:
       - ./mockDB/fuseki:/app/run
       - ./whyis/materialsmine:/app
-    command: /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody --gid=nogroup
+    command:
+      /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody
+      --gid=nogroup
     environment:
       - CHOKIDAR_USEPOLLING=true
     build: whyis
@@ -209,7 +213,9 @@ services:
       - redis
       - fuseki
     stdin_open: true
-    command: /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000
+    command:
+      /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8}
+      --timeout 0 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
       - NM_GRAPH_AUTH_SECRET=${TKNS}
@@ -222,14 +228,14 @@ services:
   fuseki:
     build: whyis
     command: /opt/venv/bin/fuseki-server --mem /ds
-# Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
-#    image: 'stain/jena-fuseki:4.0.0
+    # Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
+    #    image: 'stain/jena-fuseki:4.0.0
     restart: always
     # mem_limit: 9G
     # mem_reservation: 9G
     environment:
-#      - ADMIN_USER=admin
-#      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      #      - ADMIN_USER=admin
+      #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
       - JVM_ARGS=-Xmx4g
       - FUSEKI_BASE=/fuseki
     ports:

@@ -194,6 +194,11 @@
                     class="nav_menu--siblings-lists"
                     ><a>CSSI 2023</a></router-link
                   >
+                  <router-link
+                    to="/nm/2024-doe-poster"
+                    class="nav_menu--siblings-lists"
+                    ><a>2024 DOE Poster</a></router-link
+                  >
                 </div>
               </div>
             </li>
@@ -209,7 +214,7 @@
   </div>
 </template>
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 export default {
   name: 'Header',
   props: ['toggler'],
@@ -220,5 +225,5 @@ export default {
       displayName: 'auth/displayName'
     })
   }
-}
+};
 </script>
