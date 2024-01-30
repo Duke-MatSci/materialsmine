@@ -1,4 +1,4 @@
-import { toolRoutes, toolSetRoutes } from './tools';
+import { toolRoutes, toolSetRoutes } from './tools'
 
 const nanomineRoutes = [
   {
@@ -98,6 +98,6 @@ const nanomineRoutes = [
       ),
     meta: { requiresAuth: false }
   }
-];
+]
 
-export default nanomineRoutes;
+export default nanomineRoutes

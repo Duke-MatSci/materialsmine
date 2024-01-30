@@ -214,7 +214,7 @@
   </div>
 </template>
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 export default {
   name: 'Header',
   props: ['toggler'],
@@ -225,5 +225,5 @@ export default {
       displayName: 'auth/displayName'
     })
   }
-};
+}
 </script>
