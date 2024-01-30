@@ -117,8 +117,13 @@ exports.datasets = {
       analyzer: 'autocomplete'
     },
     organization: {
-      type: 'keyword',
-      analyzer: 'autocomplete'
+      type: 'text',
+      analyzer: 'autocomplete',
+      fields: {
+        raw: {
+          type: 'keyword'
+        }
+      }
     },
     distributions: {
       type: 'text'
