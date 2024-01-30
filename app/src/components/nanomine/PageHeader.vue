@@ -160,11 +160,6 @@
                     ><a>Sparql Query</a></router-link
                   >
                   <router-link
-                    to="/explorer/tools/dynamfit"
-                    class="nav_menu--siblings-lists"
-                    ><a>DynamFit</a></router-link
-                  >
-                  <router-link
                     to="/explorer/tools"
                     class="nav_menu--siblings-lists"
                     ><a>Module & Simulation Tools</a></router-link

@@ -52,11 +52,11 @@
 <script>
 export default {
   name: 'MRS2022',
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: 'close_fullscreen',
       name: 'DOE 2024'
-    });
+    })
   }
-};
+}
 </script>
