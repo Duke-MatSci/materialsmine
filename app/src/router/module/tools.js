@@ -54,7 +54,7 @@ const toolSetRoutes = [
       ),
     meta: { requiresAuth: false }
   }
-];
+]
 
 const toolRoutes = [
   {
@@ -174,6 +174,6 @@ const toolRoutes = [
       ),
     meta: { requiresAuth: false }
   }
-];
+]
 
-export { toolRoutes, toolSetRoutes };
+export { toolRoutes, toolSetRoutes }
