@@ -180,8 +180,12 @@ export default {
     async deleteChart (chart) {
       if (!this.isAdmin) return // temporary safeguard
       this.dialogLoading = true
-      await this.$store.dispatch('explorer/curation/deleteChartNanopub', chart.identifier)
-      await this.$store.dispatch('explorer/curation/deleteChartES', chart.identifier)
+      await this.$store.dispatch('explorer/curation/deleteEntityNanopub', chart.identifier)
+      await this.$store.dispatch('explorer/curation/deleteEntityES',
+        {
+          identifier: chart.identifier,
+          type: 'charts'
+        })
       this.toggleDialogBox()
       this.dialogLoading = false
       await this.loadItems()

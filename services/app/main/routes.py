@@ -5,7 +5,7 @@ main = Blueprint("main", __name__)
 
 @main.route("/")
 def home():
-    return jsonify({ "ManagedServices": "Trigger service on" })
+    return jsonify({"ManagedServices": "Trigger service on" })
 
 
 @main.route("/about")

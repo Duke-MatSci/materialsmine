@@ -9,7 +9,7 @@
       <div class="section_loader" v-if="loading">
         <spinner :loading="loading" text='Loading Dataset'/>
       </div>
-    <div v-else>
+    <div v-else @click="disableDropdownRender">
       <md-card style="margin: 10px" >
         <form class="modal-content" action="" method="post"
           enctype="multipart/form-data"
@@ -176,17 +176,17 @@
                 </div>
 
                 <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
-                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpFirstName) }">
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.firstName) }">
                     <label>First name</label>
-                    <md-input v-model="dataset.contactPoint.cpFirstName" required></md-input>
+                    <md-input v-model="dataset.contactPoint.firstName" required></md-input>
                     <span class="md-error">Contact point required</span>
                   </md-field>
                 </div>
 
                 <div class="md-layout-item md-size-20 md-xsmall-size-100 md-medium-size-50 u_margin-bottom-med">
-                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.cpLastName) }">
+                  <md-field :class="{ 'md-invalid': (invalid['second'] && !dataset.contactPoint.lastName) }">
                     <label>Last name</label>
-                    <md-input v-model="dataset.contactPoint.cpLastName" required></md-input>
+                    <md-input v-model="dataset.contactPoint.lastName" required></md-input>
                     <span class="md-error">Contact point required</span>
                   </md-field>
                 </div>
@@ -203,9 +203,48 @@
                 <span class="md-error">Description required</span>
               </md-field>
 
+              <div>
+                <label>Associated Organization (e.g., name of university)</label>
+                <div>
+                  <md-chip md-deletable class="u_margin-bottom-small" v-for="(element, i) in dataset.organization"
+                    @md-delete="deleteOrg(dataset.organization, i)" :key="`org_${i}`">{{ element.name }}
+                  </md-chip>
+                </div>
+                <md-field md-dense class="u--margin-none">
+                    <md-input
+                      v-model="searchKeywordOrg"
+                      name="searchKeywordOrg"
+                      id="searchKeywordOrg"
+                      placeholder="Search Organizations"
+                    ></md-input>
+                    <md-icon>search</md-icon>
+                  </md-field>
+                <template v-if="!!organizations.length && showDropdown">
+                  <ul
+                    class="search-dropdown-menu-plain"
+                    :style="setDropdownPosition()"
+                  >
+                    <li
+                      v-for="(item, index) in organizations"
+                      :key="index"
+                      @click.prevent="selectOrg(item)"
+                    >
+                      <span>
+                        {{ item.name }}
+                        <span v-if="(optionalChaining(() => item.addresses[0].city))
+                          || (optionalChaining(() => item.country.country_code))">
+                          ({{ (optionalChaining(() => item.addresses[0].city)) }},
+                          {{ (optionalChaining(() => item.country.country_code)) }})
+                        </span>
+                      </span>
+                    </li>
+                  </ul>
+                </template>
+              </div>
+
             </md-content>
 
-            <md-divider class="u_width--max" style="border-style: solid"></md-divider>
+            <!-- <md-divider class="u_width--max" style="border-style: solid"></md-divider> -->
 
             <!---------- TODO: Contributor fields -------->
             <!-- <md-content style="width: 100%; margin: 20px">
@@ -243,9 +282,9 @@
 
             <!-- -------- Publication Info fields -------- -->
             <md-content class="u_width--max" style="margin: 20px">
-              <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
+              <!-- <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
                 Publication Information
-              </div>
+              </div> -->
               <div class="u_width--max">
                 <div class="md-layout md-gutter">
                   <div class="md-layout-item md-size-50">
@@ -319,8 +358,8 @@
               <div v-if="(optionalChaining(() => dataset.refby.length))" class="u_margin-bottom-small"><h3>DOI:</h3> {{dataset.refby}} </div>
               <div v-if="(optionalChaining(() => dataset.contactPoint['@id']))" class="u_margin-bottom-small">
                 <h3>Contact Point:</h3>
-                {{(optionalChaining(() => dataset.contactPoint['cpFirstName']))}}
-                {{(optionalChaining(() => dataset.contactPoint['cpLastName']))}},
+                {{(optionalChaining(() => dataset.contactPoint['firstName']))}}
+                {{(optionalChaining(() => dataset.contactPoint['lastName']))}},
                 {{(optionalChaining(() => dataset.contactPoint['cpEmail']))}}
               </div>
               <div class="u_margin-bottom-small">
@@ -341,6 +380,13 @@
                 </div>
               </div>
               <div class="u_margin-bottom-small"><h3>Description:</h3> {{dataset.description}}</div>
+              <div v-if="dataset.organization.length" class="u_margin-bottom-small">
+                <h3>Associated Organization(s):</h3>
+                <span v-for="(org, index) in dataset.organization" :key="`org_${index}`">
+                  <span v-if="index==0">{{ org.name }}</span>
+                  <span v-else>, {{ org.name }}</span>
+                </span>
+              </div>
               <div v-if="dataset.datePub['@value']" class="u_margin-bottom-small">
                 <h3>Date published:</h3> {{dataset.datePub['@value']}}
               </div>
@@ -403,6 +449,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import FileDrop from '@/components/curate/FileDrop.vue'
 import FilePreview from '@/components/curate/FilePreview.vue'
 import Dialog from '@/components/Dialog.vue'
@@ -447,6 +494,8 @@ export default {
       generatedUUID: datasetUuid,
       doi: '',
       orcidId: null,
+      searchKeywordOrg: '',
+      showDropdown: false,
       distrFiles: distrFn.files,
       depiction: null,
       dataset: {
@@ -458,8 +507,8 @@ export default {
         contactPoint: {
           '@type': 'schemaPerson',
           '@id': null,
-          cpFirstName: '',
-          cpLastName: '',
+          firstName: '',
+          lastName: '',
           cpEmail: ''
         },
         description: '',
@@ -467,7 +516,8 @@ export default {
         datePub: {
           '@type': 'date',
           '@value': ''
-        }
+        },
+        organization: []
       },
       // For editing existing datasets
       oldDistributions: [],
@@ -485,13 +535,21 @@ export default {
     ...mapGetters({
       dialogBoxActive: 'dialogBox',
       doiData: 'explorer/curation/getDoiData',
-      orcidData: 'explorer/curation/getOrcidData'
+      orcidData: 'explorer/curation/getOrcidData',
+      organizations: 'explorer/curation/getRorData'
     }),
     secondPageFilled () {
       return !!this.dataset.title && !!this.dataset?.contactPoint?.['@id'] &&
-      !!this.dataset.contactPoint.cpFirstName && !!this.dataset.contactPoint.cpLastName &&
+      !!this.dataset.contactPoint.firstName && !!this.dataset.contactPoint.lastName &&
       !!this.dataset.contactPoint.cpEmail && !!this.dataset.description &&
       !this.invalid.orcid
+    },
+    userInfo () {
+      return {
+        '@id': `https://materialsmine.org/api/user/${this.$store.getters['auth/userId']}`,
+        firstName: this.$store.getters['auth/user'].givenName,
+        lastName: this.$store.getters['auth/user'].surName
+      }
     }
   },
   watch: {
@@ -501,10 +559,16 @@ export default {
       } else {
         this.invalid.orcid = false
         this.dataset.contactPoint['@id'] = this.orcidData?.['@id']
-        this.dataset.contactPoint.cpFirstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
-        this.dataset.contactPoint.cpLastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
+        this.dataset.contactPoint.firstName = this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
+        this.dataset.contactPoint.lastName = this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
         this.dataset.contactPoint.cpEmail = this.orcidData?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value']
       }
+    },
+    searchKeywordOrg (newVal) {
+      if (newVal) {
+        this.lookupOrganization({ query: newVal })
+      }
+      this.showDropdown = true
     }
   },
   methods: {
@@ -539,6 +603,18 @@ export default {
         }
         this.orcidId = response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1]
         this.lookupOrcid(this.orcidId)
+        if (this.dataset?.organization?.length) {
+          const orgs = this.dataset.organization.map(async (org) => {
+            const rorId = org['@id'].split('https://ror.org/')[1]
+            const rorOrg = await this.$store.dispatch('explorer/curation/searchRor', { id: rorId })
+            return {
+              '@id': org['@id'],
+              '@type': 'organization',
+              name: rorOrg[0].name
+            }
+          })
+          this.dataset.organization = await Promise.all(orgs)
+        }
       } catch (e) {
         this.$store.commit('setSnackbar', { message: e })
         this.loading = false
@@ -579,6 +655,37 @@ export default {
       if (this.doiData) {
         this.dataset.refby = this.doiData?.URL
         this.renderDialog('Use imported DOI data?', 'doiData', 40)
+      }
+    },
+    lookupOrganization: _.debounce(function (payload) {
+      this.$store.dispatch('explorer/curation/searchRor', payload)
+    }, 300),
+    selectOrg (item) {
+      const formatOrg = {
+        '@id': item.id,
+        '@type': 'organization',
+        name: item.name
+      }
+      if (!this.dataset.organization.includes(formatOrg)) {
+        this.dataset.organization.push(formatOrg)
+        this.searchKeywordOrg = ''
+        return
+      }
+      this.$store.commit('setSnackbar', {
+        message: 'Duplicate Value Entered',
+        duration: 3000
+      })
+    },
+    deleteOrg (arr, e) {
+      arr.splice(e, 1)
+    },
+    setDropdownPosition () {
+      return { position: 'relative', top: '-2rem', zIndex: 10, minHeight: 'auto' }
+    },
+    async disableDropdownRender (e) {
+      const selected = e.target.closest('.search_box')
+      if (!selected) {
+        this.showDropdown = false
       }
     },
     useDoiData () {
@@ -667,10 +774,16 @@ export default {
         this.invalid.first = (!this.distrFiles.length && !this.oldDistributions?.length) ? 'Missing required field' : null
         this.invalid.second = !this.secondPageFilled ? 'Missing required field' : null
       } else {
+        this.dataset.creator = this.userInfo
         const processedFiles = this.processFiles()
         const processedImg = this.processDepictions()
         try {
-          await saveDataset(this.dataset, processedFiles, processedImg, this.generatedUUID)
+          const datasetNanopub = await saveDataset(this.dataset, processedFiles, processedImg, this.generatedUUID)
+          await this.$store.dispatch('explorer/curation/cacheNewEntityResponse', {
+            identifier: this.dataset.uri,
+            resourceNanopub: datasetNanopub,
+            type: 'datasets'
+          })
           this.dialog.title = 'Upload successful'
           this.dialog.type = 'success'
         } catch (err) {

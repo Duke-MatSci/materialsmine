@@ -164,6 +164,13 @@ const explorerRoutes = [
     component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
     meta: { requiresAuth: true }
   },
+  // {
+  //   path: 'curate/sdd/link/:datasetId',
+  //   name: 'LinkSDD',
+  //   props: true,
+  //   component: () => import('@/pages/explorer/curate/sdd/SddLinking.vue'),
+  //   meta: { requiresAuth: true }
+  // },
   {
     path: 'chart',
     component: ChartBase,
@@ -264,11 +271,23 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'dataset/:id',
-    name: 'DatasetVisualizer',
-    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
-    props: true,
-    meta: { requiresAuth: false }
+    path: 'dataset',
+    component: ChartBase,
+    children: [
+      {
+        path: '',
+        name: 'DatasetGallery',
+        component: () => import('@/pages/explorer/dataset/DatasetGallery.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: ':id',
+        name: 'DatasetVisualizer',
+        component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      }
+    ]
   }
 ]
 

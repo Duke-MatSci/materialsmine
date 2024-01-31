@@ -120,6 +120,11 @@
                     class="nav_menu--siblings-lists"
                     ><a>View XMLs</a></router-link
                   >
+                  <router-link
+                    to="/explorer/dataset"
+                    class="nav_menu--siblings-lists"
+                    ><a>Dataset Gallery</a></router-link
+                  >
                 </div>
               </div>
             </li>
@@ -155,11 +160,6 @@
                     ><a>Sparql Query</a></router-link
                   >
                   <router-link
-                    to="/explorer/tools/dynamfit"
-                    class="nav_menu--siblings-lists"
-                    ><a>DynamFit</a></router-link
-                  >
-                  <router-link
                     to="/explorer/tools"
                     class="nav_menu--siblings-lists"
                     ><a>Module & Simulation Tools</a></router-link
@@ -188,6 +188,11 @@
                     to="/nm/cssi2023"
                     class="nav_menu--siblings-lists"
                     ><a>CSSI 2023</a></router-link
+                  >
+                  <router-link
+                    to="/nm/2024-doe-poster"
+                    class="nav_menu--siblings-lists"
+                    ><a>2024 DOE Poster</a></router-link
                   >
                 </div>
               </div>

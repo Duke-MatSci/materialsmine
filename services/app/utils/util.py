@@ -104,7 +104,7 @@ def token_required(f):
             jwt.ExpiredSignatureError: If the token has expired.
             jwt.InvalidTokenError: If the token is invalid.
         """
-        token = request.headers.get('Authorization')[7:]
+        token = request.headers.get('Authorization')[7:]	
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
         try:
@@ -146,9 +146,11 @@ def request_logger(func):
             Any: The response from the decorated function.
         """
         start_time = datetime.datetime.now()
-        json_payload = request.get_json()
-        if json_payload:
-            app.logger.info(f"[START]: Entering {func.__name__} function at {start_time}. Request payload: {json_payload}")
+        try:
+            json_payload = request.get_json()
+        except Exception:
+            json_payload = None
+        app.logger.info(f"[START]: Entering {func.__name__} function at {start_time}. Request payload: {json_payload}")
         response = func(*args, **kwargs)
         end_time = datetime.datetime.now()
         execution_time = ((end_time - start_time).total_seconds()) * 1000

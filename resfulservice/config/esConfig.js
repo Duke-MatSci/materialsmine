@@ -92,3 +92,41 @@ exports.charts = {
     }
   }
 };
+
+/**
+ * Datasets: Elastic search mappings.
+ */
+exports.datasets = {
+  properties: {
+    label: {
+      type: 'text',
+      analyzer: 'autocomplete'
+    },
+    identifier: {
+      type: 'text'
+    },
+    thumbnail: {
+      type: 'text'
+    },
+    description: {
+      type: 'text',
+      analyzer: 'autocomplete'
+    },
+    doi: {
+      type: 'text',
+      analyzer: 'autocomplete'
+    },
+    organization: {
+      type: 'text',
+      analyzer: 'autocomplete',
+      fields: {
+        raw: {
+          type: 'keyword'
+        }
+      }
+    },
+    distributions: {
+      type: 'text'
+    }
+  }
+};
