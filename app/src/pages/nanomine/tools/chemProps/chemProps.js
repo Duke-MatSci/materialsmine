@@ -1,29 +1,17 @@
 import { mapGetters, mapMutations } from 'vuex'
-// import { Auth } from '@/modules/Auth.js'
 import SmilesCanvas from '@/components/nanomine/SmilesCanvas'
 import Dialog from '@/components/Dialog'
-import MCRToolTemplate from '../MCRToolTemplate/MCRToolTemplate.vue'
-const SERVER = `${window.location.origin}/nmr/api`
-// const SERVER = `http://localhost:8000/nmr/api`
-const URL = SERVER
 
 export default {
   name: 'ChemProps',
   components: {
     SmilesCanvas,
-    ToolTemplate: MCRToolTemplate,
     dialogBox: Dialog
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
   },
   data () {
     return {
       title: 'ChemProps',
+      loading: false,
       dialog: {
         title: ''
       },
@@ -36,16 +24,10 @@ export default {
       standardName: '',
       density: '',
       uSMILES: '',
-      auth: {
-        // AUTH MOCKED because auth is not yet implemented
-        isLoggedIn: () => false,
-        isTestUser: () => false
-      },
+      tokenVisible: false,
       theme: 'dark',
       inputStr: '',
       molecularFormula: '',
-      chemPropsToken: null,
-      // https://github.com/reymond-group/smilesDrawer#options
       smilesOptions: {
         Padding: 0.0,
         atomVisualization: 'default', // 'balls',
@@ -53,41 +35,61 @@ export default {
         terminalCarbons: true,
         debug: false
       },
-      references: [
-        '10.1186/s13321-021-00502-6',
-        '10.1021/acs.jcim.7b00425'
-      ]
+      references: ['10.1186/s13321-021-00502-6', '10.1021/acs.jcim.7b00425']
     }
   },
   watch: {
-    standardName (newData, oldData) {
+    standardName (newData) {
       if (newData) {
         this.scrollToResult()
       }
     }
   },
-  beforeMount: function () {
-    // this.auth = new Auth()
-  },
-  async mounted () {
+  created () {
     if (!this.card) {
-      let result = await fetch(`${URL}/parser`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        }
+      this.$store.commit('setAppHeaderInfo', {
+        icon: 'workspaces',
+        name: 'ChemProps'
       })
-      if (result && result.status === 201) {
-        result = await result.json()
-        if (result.token) this.chemPropsToken = result.token
-      }
+    }
+  },
+  computed: {
+    ...mapGetters({
+      dialogBoxActive: 'dialogBox',
+      token: 'auth/token',
+      isAuth: 'auth/isAuthenticated'
+    }),
+    isQuickSearch () {
+      return this.pfRadios === 'pol' && this.quickSearchKeyword.trim() !== ''
     }
   },
   methods: {
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
+    showToken () {
+      if (!this.isAuth) {
+        return this.$store.commit('setSnackbar', {
+          message: 'Unauthorized User',
+          duration: 4000
+        })
+      }
+      this.tokenVisible = !this.tokenVisible
+    },
+    async copyContent () {
+      try {
+        await navigator.clipboard.writeText(this.token)
+        this.$store.commit('setSnackbar', {
+          message: 'Token copied successfully',
+          duration: 4000
+        })
+      } catch (error) {
+        this.$store.commit('setSnackbar', {
+          message: 'Something went wrong',
+          action: () => this.copyContent()
+        })
+      }
+    },
     scrollToResult () {
       const elem = document.getElementById('chemprops-displayed-result')
       if (elem) {
@@ -96,12 +98,6 @@ export default {
         }, 800)
       }
     },
-    setLoading: function () {
-      this.$store.commit('isLoading')
-    },
-    resetLoading: function () {
-      this.$store.commit('notLoading')
-    },
     resetOutput: function () {
       this.standardName = ''
       this.density = ''
@@ -109,112 +105,86 @@ export default {
         this.toggleDialogBox()
       }
     },
-    search: function () {
+    search: async function () {
       this.resetOutput()
-      if (!this.chemPropsToken) {
-        this.renderDialog(
-          'Search Error',
-          'System error, contact our system administrator'
-        )
-        return
-      }
-      if (this.pfRadios === 'pol' && this.quickSearchKeyword.trim() !== '') {
-        if (this.quickSearchKeyword === '') {
-          this.renderDialog(
-            'Input Error',
-            'Please input the quick search keyword.'
-          )
-          return
-        }
-        this.chemicalName = this.quickSearchKeyword
-        this.abbreviation = this.quickSearchKeyword
-        this.tradename = this.quickSearchKeyword
-        this.SMILES = this.quickSearchKeyword
-      }
-      if (this.chemicalName === '') {
-        this.renderDialog(
-          'Input Error',
-          'Please input the chemical name.'
-        )
-        return
-      }
-      if (this.pfRadios === '') {
-        this.renderDialog(
-          'Input Error',
-          'Please select the collection.'
-        )
-        return
+      const ChemicalName = this.isQuickSearch
+        ? this.quickSearchKeyword
+        : this.chemicalName
+      const Abbreviation = this.isQuickSearch
+        ? this.quickSearchKeyword
+        : this.abbreviation
+      const TradeName = this.isQuickSearch
+        ? this.quickSearchKeyword
+        : this.tradename
+      const SMILES = this.isQuickSearch ? this.quickSearchKeyword : this.SMILES
+      const nmId = this.references[0]
+
+      // const inputError =
+      if (!ChemicalName || !this.pfRadios) {
+        const inputError = !this.chemicalName
+          ? 'Please input the chemical name.'
+          : 'Please select the collection.'
+        return this.renderDialog('Input Error', inputError)
       }
       // TODO need to configure after nmcp API done
-      this.setLoading()
-      fetch(new URL(`${URL}/chemprops?polfil=${this.pfRadios}&nmId=restNmId&chemicalname=${this.chemicalName}&abbreviation=${this.abbreviation}&tradename=${this.tradename}&smiles=${this.SMILES}`),
-        {
-          method: 'GET',
+      try {
+        this.loading = true
+        const body = JSON.stringify({
+          polfil: this.pfRadios,
+          ChemicalName,
+          Abbreviation,
+          TradeName,
+          SMILES,
+          nmId
+        })
+        const request = await fetch('/api/mn/chemprops', {
+          method: 'POST',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + this.chemPropsToken
-          }
+            Authorization: 'Bearer ' + this.token
+          },
+          body
+        })
+        const response = await request.json()
+        if (request.status !== 200 || !response) {
+          const message = response?.message ?? 'Something went wrong'
+          throw new Error(message)
         }
-      )
-        .then(function (res) {
-          return res
-        })
-        .then(function (response) {
-          this.standardName = response.data.data.StandardName
-          this.density = parseFloat(response.data.data.density)
-          // show uSMILES if it's polymer search
-          if (this.pfRadios === 'pol') {
-            this.uSMILES = response.data.data.uSMILES
-          }
-          // check if standardName is found
-          if (this.standardName === '') {
-            this.renderDialog(
-              'Search Error',
-              'No results found. Admin will update the database soon. Please try again in a week.'
-            )
-            this.resetOutput()
-          }
-          this.resetLoading()
-        })
-        .catch(function (error) {
+
+        this.standardName = response?.data?.StandardName
+        this.density = parseFloat(response?.data?.density)
+        if (this.pfRadios === 'pol') {
+          this.uSMILES = response?.data?.uSMILES
+        }
+
+        if (this.standardName === '') {
+          this.renderDialog(
+            'Search Error',
+            'No results found. Admin will update the database soon. Please try again in a week.'
+          )
           this.resetOutput()
-          if (error.message.includes('404')) {
-            this.renderDialog(
-              'Search Error',
-              'No results found. Admin will update the database soon. Please try again in a week.'
-            )
-          } else {
-            this.renderDialog(
-              'Search Error',
-              'An exception occurred when calling the ChemProps API service.'
-            )
-          }
-          this.resetLoading()
-        })
-        .then(function () {
-        // always executed
-          this.inputStr = this.uSMILES
-          // reset input if using quick search
-          if (this.quickSearchKeyword.trim() !== '') {
-            this.chemicalName = ''
-            this.abbreviation = ''
-            this.tradename = ''
-            this.SMILES = ''
-          }
-        })
+        }
+      } catch (error) {
+        this.resetOutput()
+        if (error.message.includes('404')) {
+          this.renderDialog(
+            'Search Error',
+            'No results found. Admin will update the database soon. Please try again in a week.'
+          )
+        } else {
+          this.renderDialog('Search Error', error?.message)
+        }
+      } finally {
+        this.loading = false
+        this.inputStr = this.uSMILES
+      }
     },
     formulaUpdated (formula) {
       this.molecularFormula = formula
     },
     onError (err) {
-      let smilesMessage
-      if (err) {
-        smilesMessage = err
-      } else {
-        smilesMessage = 'Undefined error'
-      }
-      this.renderDialog('SMILES error', smilesMessage)
+      this.renderDialog('SMILES error', err ?? 'Undefined error')
     },
     renderDialog (title, content) {
       this.dialog = {
@@ -223,15 +193,5 @@ export default {
       }
       this.toggleDialogBox()
     }
-  },
-  created () {
-    if (!this.card) {
-      this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: 'ChemProps' })
-    }
-  },
-  computed: {
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox'
-    })
   }
 }

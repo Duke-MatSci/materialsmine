@@ -1,1 +1,7 @@
 node_modules
+.nyc_output
+coverage
+logs
+mm_files
+spec
+Dockerfile.dev

@@ -219,6 +219,29 @@ exports.getAllCharts = async (req, res, next) => {
 };
 
 /**
+ * Load dataset gallery from elastic function
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.getAllDatasets = async (req, res, next) => {
+  const page = parseInt(req?.query?.page) || 1;
+  const pageSize = parseInt(req?.query?.pageSize) || 10;
+
+  try {
+    const response = await elasticSearch.loadAllDatasets(page, pageSize);
+    successWriter(req, { message: 'success' }, 'getAllDatasets');
+    return res.status(200).json({
+      data: response?.data?.hits?.hits || [],
+      total: response?.data?.hits?.total?.value || 0
+    });
+  } catch (err) {
+    next(errorWriter(req, err, 'getAllDatasets'));
+  }
+};
+
+/**
  * Load images from knowledge graph
  * @param {*} req
  * @param {*} res
@@ -268,5 +291,35 @@ exports.getDoiInfo = async (req, res, next) => {
     return res.status(200).json({ ...filtered });
   } catch (err) {
     next(errorWriter(req, err, 'getDoiInfo'));
+  }
+};
+
+exports.searchRor = async (req, res, next) => {
+  const { logger } = req;
+  logger.info('_searchRor(): Function entry');
+  try {
+    if (req?.query?.query) {
+      const term = req.query.query;
+      req.query.uri = `${constant.rorApi}?query=${encodeURI(term)}`;
+    } else if (req?.query?.id) {
+      const term = req.query.id;
+      req.query.uri = `${constant.rorApi}/${encodeURI(term)}`;
+    } else throw new Error('Missing search value');
+
+    const response = await _outboundRequest(req, next);
+    successWriter(req, { message: 'success' }, 'searchRor');
+
+    const responseData = response?.data?.items ?? [response?.data];
+    const filtered = responseData.map((item) => {
+      return Object.keys(item)
+        .filter(key => constant.rorFields.includes(key))
+        .reduce((obj, key) => {
+          obj[key] = item[key];
+          return obj;
+        }, {});
+    });
+    return res.status(200).json(filtered);
+  } catch (err) {
+    next(errorWriter(req, err, 'searchRor'));
   }
 };

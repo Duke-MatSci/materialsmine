@@ -59,12 +59,40 @@ export default {
     }
   },
 
-  async deleteChartNanopub (_context, chartUri) {
-    const response = await deleteChart(chartUri)
+  async createDatasetInstanceObject (_context, nanopubPayload) {
+    const datasetObject =
+      nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
+
+    // Return if not able to retrieve chart object
+    if (!datasetObject) { return new Error('Caching error. Dataset object is missing') }
+
+    // Build chart instance object
+    return {
+      description:
+        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
+        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+      identifier: datasetObject['@id'],
+      label: datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+        datasetObject['http://purl.org/dc/terms/title']?.['@value'],
+      thumbnail: datasetObject['http://xmlns.com/foaf/0.1/depiction']?.['http://w3.org/ns/dcat#accessURL'],
+      doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
+      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org) => {
+        return org?.['http://xmlns.com/foaf/0.1/name']?.['@value']
+      }),
+      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map((dist) => {
+        return dist?.['@id']
+      })
+    }
+  },
+
+  async deleteEntityNanopub (_context, entityUri) {
+    // TODO: refactor delete function to generalize to other entity types
+    const response = await deleteChart(entityUri)
     return response
   },
 
-  async deleteChartES ({ _, __, rootGetters }, identifier) {
+  async deleteEntityES ({ _, __, rootGetters }, payload) {
+    const { identifier, type } = payload
     const url = '/api/admin/es'
     const token = rootGetters['auth/token']
     await fetch(url, {
@@ -74,22 +102,32 @@ export default {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token
       },
-      body: JSON.stringify({ doc: identifier, type: 'charts' })
+      body: JSON.stringify({ doc: identifier, type: type })
     })
   },
 
-  async cacheNewChartResponse ({ commit, dispatch, rootGetters }, payload) {
-    const { identifier, chartNanopub } = payload
+  async cacheNewEntityResponse ({ commit, dispatch, rootGetters }, payload) {
+    const { identifier, resourceNanopub, type } = payload
+
     const url = '/api/admin/es'
-    const chartInstanceObject = await dispatch(
-      'createChartInstanceObject',
-      chartNanopub
-    )
+    let resourceInstanceObject
+    if (type === 'charts') {
+      resourceInstanceObject = await dispatch(
+        'createChartInstanceObject',
+        resourceNanopub
+      )
+    } else if (type === 'datasets') {
+      resourceInstanceObject = await dispatch(
+        'createDatasetInstanceObject',
+        resourceNanopub
+      )
+    } else { return new Error('Caching error. Type parameter is missing or invalid') }
+
     const token = rootGetters['auth/token']
 
     // 1. Check if a chart with same identifier exist in ES and delete
     if (identifier) {
-      await dispatch('deleteChartES', identifier)
+      await dispatch('deleteEntityES', { identifier, type })
     }
 
     const fetchResponse = await fetch(url, {
@@ -99,17 +137,17 @@ export default {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + token
       },
-      body: JSON.stringify({ doc: chartInstanceObject, type: 'charts' })
+      body: JSON.stringify({ doc: resourceInstanceObject, type })
     })
 
     if (fetchResponse.status !== 200) {
       return new Error(
-        fetchResponse.statusText || 'Server error, cannot cache chart'
+        fetchResponse.statusText || `Server error, cannot cache ${type} object`
       )
     }
 
     const response = await fetchResponse.json()
-    return { response, identifier: chartInstanceObject.identifier }
+    return { response, identifier: resourceInstanceObject.identifier }
   },
 
   async lookupOrcid ({ commit }, orcidId) {
@@ -404,5 +442,32 @@ export default {
       }
       commit('setSnackbar', snackbar, { root: true })
     }
+  },
+  async searchRor ({ commit }, payload) {
+    const { query, id } = payload
+    let url
+    if (query) url = `/api/knowledge/ror?query=${query}`
+    else if (id) url = `/api/knowledge/ror?id=${id}`
+    else {
+      const snackbar = {
+        message: 'Missing parameter from ROR search',
+        duration: 10000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    }
+    const response = await fetch(url, {
+      method: 'GET'
+    })
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message:
+          response.message || 'Something went wrong while fetching ROR data',
+        duration: 5000
+      }
+      return commit('setSnackbar', snackbar, { root: true })
+    }
+    const responseData = await response.json()
+    commit('setRorData', responseData)
+    return responseData
   }
 }

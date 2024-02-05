@@ -5,6 +5,7 @@ module.exports = {
     'about?view=instances&uri=http%3A%2F%2Fmaterialsmine.org%2Fns%2FResearchArticle',
   images: 'about?view=instances&uri=http://semanticscience.org/resource/Image',
   charts: 'about?view=instances&uri=http://semanticscience.org/resource/Chart',
+  datasets: 'about?view=instances&uri=http://www.w3.org/ns/dcat%23Dataset',
   sparql: 'sparql',
   doiApi: 'https://api.crossref.org/works/',
   doiFields: [
@@ -19,6 +20,8 @@ module.exports = {
     'URL',
     'container-title'
   ],
+  rorApi: 'https://api.ror.org/organizations',
+  rorFields: ['id', 'name', 'aliases', 'links', 'country', 'addresses'],
   supportedBrowser: [
     'Firefox',
     'Chrome',
@@ -63,7 +66,9 @@ module.exports = {
     'csv',
     'zip',
     'xls',
-    'xlsx'
+    'xlsx',
+    'tsv',
+    'txt'
   ],
   SupportedFileResponseHeaders: {
     '.csv': 'text/csv',
@@ -133,5 +138,9 @@ module.exports = {
         'Other_Processing'
       ]
     }
+  },
+  ManagedServiceRegister: {
+    dynamfit: '/dynamfit/extract/',
+    chemprops: '/chemprops/call/'
   }
 };

@@ -214,7 +214,9 @@ export default {
       return arr.length > 3 ? arr[3].substring(0, 40) : this.inputObj.cellValue
     },
     errorRef () {
-      if (!this.title || !Object.hasOwnProperty.call(this.errors, this.title)) { return false }
+      if (!this.title || !Object.hasOwnProperty.call(this.errors, this.title)) {
+        return false
+      }
       const obj = this.errors[this.title]
       const refData = this.uniqueKey.reduce(function (o, x, idx, arr) {
         if (typeof o === 'undefined' || o === null) return o
@@ -317,16 +319,11 @@ export default {
     },
     async onInputChange (arg) {
       this.dialogActive = false
-      const formData = new FormData()
-      formData.append('uploadfile', arg[0])
       try {
-        const res = await fetch('/api/files/upload?isTemp=true', {
-          method: 'POST',
-          body: formData
+        const { fileLink } = await this.$store.dispatch('uploadFile', {
+          file: arg
         })
-        const resData = await res.json()
-        const fileName = resData?.files[0]?.filename
-        this.inputObj.cellValue = fileName
+        this.inputObj.cellValue = fileLink
         this.tempFileContainer = {}
       } catch (err) {
         this.$store.commit('setSnackbar', {

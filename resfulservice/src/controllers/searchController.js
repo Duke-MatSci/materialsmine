@@ -50,3 +50,28 @@ exports.autoSuggestSearch = async (req, res, next) => {
     next(errorWriter(req, err, 'autoSuggestSearch', 500));
   }
 };
+
+/**
+ * Search and render function for specific type of entry
+ * @param {*} req
+ * @param {*} res
+ * @param {*} next
+ * @returns {*} response
+ */
+exports.typeSearch = async (req, res, next) => {
+  const request = req?.query;
+  const { search, field, type, page, pageSize } = request;
+  try {
+    if (!request.search) {
+      successWriter(req, 'success', 'explorerSearch');
+      return res.status(201).json();
+    }
+    const response = await elasticSearch.searchType(search, field, type, page, pageSize);
+    successWriter(req, 'success', 'explorerSearch');
+    return res.status(200).json({
+      data: response.data?.hits
+    });
+  } catch (err) {
+    next(errorWriter(req, err, 'explorerSearch', 500));
+  }
+};

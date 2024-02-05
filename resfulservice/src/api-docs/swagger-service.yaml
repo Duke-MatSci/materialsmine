@@ -1029,6 +1029,89 @@ paths:
                   message:
                     type: string
                     example: 'error fetching metamine csv object'
+                    
+  /mn/{appName}:
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: A route to call a managed service application
+      description: A route to access any of the managed service applications
+      tags:
+        - Managed Services
+      parameters:
+        - in: path
+          required: true
+          name: appName
+          schema:
+            type: string
+          description: Managed Service Application Name
+      requestBody:
+        description: A payload that contains the information required by the managed service application to process the request
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                file_name: left_sloth_evie-2024-01-05T14:05:18.746Z-test.txt
+                number_of_prony: 100
+                model: Linear
+                fit_settings: false
+                
+      responses:
+        '200':
+          description: Returns the managed services application response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Succesful-Managed-Service'
+
+        '400':
+          description: Request validation Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ["File 'left_sloth_evie-2024-01-05T16:40:33.500Z-PMMA_shifted_R10_data.tx' has an invalid extension", "The number of prony must be between 1 and 100", "The Model must be one of Linear, LASSO, Ridge", "Fit settings must be one of True, False", "No file name provided"]
+
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        
+        '404':
+          description: File Not Found
+          content: 
+            application/json: 
+              schema:
+                type: object
+                example:
+                  message: File 'left_sloth_evie-2024-01-05T16:40:33.500Z-PMMA_shifted_R10_data.txt' not found
+
+        '422':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: dynamfit service not available
+       
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This response indicates an unexpected server-side issue.
 components:
   securitySchemes:
     BearerAuth:
@@ -1656,6 +1739,20 @@ components:
             youngs: '[1.79644300e+09 1.78894858e+09 1.76674163e+09 1.73065354e+09\n 1.68207157e+09 1.62292023e+09 1.55560097e+09 1.48287302e+09\n 1.40767285e+09 1.33289010e+09 1.26113555e+09 1.19454410e+09\n 1.13464819e+09 1.08233847e+09 1.03790637e+09 1.00114630e+09\n 9.71488309e+08 9.48134158e+08 9.30177967e+08 9.16701631e+08\n 9.06843125e+08 8.99840689e+08 8.95058209e+08 8.91997572e+08\n 8.90303069e+08 8.89761838e+08 8.90303069e+08 8.91997572e+08\n 8.95058209e+08 8.99840689e+08 9.06843125e+08 9.16701631e+08\n 9.30177967e+08 9.48134158e+08 9.71488309e+08 1.00114630e+09\n 1.03790637e+09 1.08233847e+09 1.13464819e+09 1.19454410e+09\n 1.26113555e+09 1.33289010e+09 1.40767285e+09 1.48287302e+09\n 1.55560097e+09 1.62292023e+09 1.68207157e+09 1.73065354e+09\n 1.76674163e+09 1.78894858e+09 1.79644300e+09 1.78894858e+09\n 1.76674163e+09 1.73065354e+09 1.68207157e+09 1.62292023e+09\n 1.55560097e+09 1.48287302e+09 1.40767285e+09 1.33289010e+09\n 1.26113555e+09 1.19454410e+09 1.13464819e+09 1.08233847e+09\n 1.03790637e+09 1.00114630e+09 9.71488309e+08 9.48134158e+08\n 9.30177967e+08 9.16701631e+08 9.06843125e+08 8.99840689e+08\n 8.95058209e+08 8.91997572e+08 8.90303069e+08 8.89761838e+08\n 8.90303069e+08 8.91997572e+08 8.95058209e+08 8.99840689e+08\n 9.06843125e+08 9.16701631e+08 9.30177967e+08 9.48134158e+08\n 9.71488309e+08 1.00114630e+09 1.03790637e+09 1.08233847e+09\n 1.13464819e+09 1.19454410e+09 1.26113555e+09 1.33289010e+09\n 1.40767285e+09 1.48287302e+09 1.55560097e+09 1.62292023e+09\n 1.68207157e+09 1.73065354e+09 1.76674163e+09 1.78894858e+09\n 1.79644300e+09]'
             poisson: '[0.1709466  0.17269735 0.17792187 0.18653445 0.1983839  0.21324171\n 0.23078664 0.25058767 0.27208825 0.29459612 0.31728455 0.33921184\n 0.35936531 0.37673353 0.39040468 0.39968067 0.40418835 0.40396314\n 0.39948237 0.39163443 0.38162531 0.37083889 0.36067654 0.35240228\n 0.34701293 0.34514384 0.34701293 0.35240228 0.36067654 0.37083889\n 0.38162531 0.39163443 0.39948237 0.40396314 0.40418835 0.39968067\n 0.39040468 0.37673353 0.35936531 0.33921184 0.31728455 0.29459612\n 0.27208825 0.25058767 0.23078664 0.21324171 0.1983839  0.18653445\n 0.17792187 0.17269735 0.1709466  0.17269735 0.17792187 0.18653445\n 0.1983839  0.21324171 0.23078664 0.25058767 0.27208825 0.29459612\n 0.31728455 0.33921184 0.35936531 0.37673353 0.39040468 0.39968067\n 0.40418835 0.40396314 0.39948237 0.39163443 0.38162531 0.37083889\n 0.36067654 0.35240228 0.34701293 0.34514384 0.34701293 0.35240228\n 0.36067654 0.37083889 0.38162531 0.39163443 0.39948237 0.40396314\n 0.40418835 0.39968067 0.39040468 0.37673353 0.35936531 0.33921184\n 0.31728455 0.29459612 0.27208825 0.25058767 0.23078664 0.21324171\n 0.1983839  0.18653445 0.17792187 0.17269735 0.1709466 ]'
             
+    Succesful-Managed-Service: 
+      type: object
+      example: 
+        appName: dynamfit
+        data:
+          multi: true
+          response:
+            complex-chart: null
+            complex-tand-chart: null
+            mytable: null
+            relaxation-chart: null
+            relaxation-spectrum-chart: null
+            upload-data: null
+            
     Sample-Files:
       type: object
       example:
@@ -1665,5 +1762,5 @@ components:
             isStore: true
           - filename: /api/files/prickly_lungfish_lesya-2023-10-17T08:35:21.143Z-lattice_2d_sample.csv?isStore=true
             swaggerFilename: prickly_lungfish_lesya-2023-10-17T08:35:21.143Z-lattice_2d_sample.csv
-            isStore: true
+            isStore: true    
         

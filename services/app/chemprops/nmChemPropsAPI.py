@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 # 06/04/2019 Bingyin Hu
-
-from pymongo import MongoClient
-import os
 import logging
 import re # for query reformat
 import string # for query reformat
@@ -21,13 +18,8 @@ class nmChemPropsAPI():
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             level = logging.INFO
                            )
-        self.loadMGconfig()
-        # mongo init
-
-        # Notice!!!!: 🔥 Mongo Initialization is no longer needed inside a module. It is now instantiated at start 🔥
-        # self.client = MongoClient('mongodb://%s:%s@localhost:27017/tracking?authSource=admin'
-        
-        self.cp = db
+        # initialize the database
+        self.cp = db.mgs_database
         self.__reset__()
 
     def __reset__(self):
@@ -37,22 +29,6 @@ class nmChemPropsAPI():
         # logging the top three candidates and accumulated wfs
         self.top3polymers = [[],[],[]]
         self.top3fillers = [[],[],[]]
-
-    # load mongo configurations
-    def loadMGconfig(self):
-        self.env = dict()
-        cpuri = os.environ.get('NM_MONGO_CHEMPROPS_URI', None)
-        if cpuri:
-            self.env['NM_MONGO_CHEMPROPS_URI'] = cpuri
-        else:
-            # read mongo.config for configurations
-            with open("mongo.config", "r") as f:
-                confs = f.read().split('\n')
-            for i in range(len(confs)):
-                kv = confs[i]
-                k = kv.split(':')[0].strip()
-                v = kv.split(':')[1].strip()
-                self.env[k] = v
 
     # a helper method to generate a bocStr for a string based on the occurrence
     # of the chars. Example: (a,b,c,...,y,z,0,1,2,3,4,5,6,7,8,9) to 101214...01
@@ -111,6 +87,22 @@ class nmChemPropsAPI():
         rptabbr = ''
         rpttrad = ''
         candidates = dict() # use '_id' as keys
+        
+        # if SMILES is provided as ChemicalName, translate it to uSMILES and search the database
+        if 'C' in keywords['ChemicalName']:
+            try:
+                rptuSMILES = keywords['ChemicalName']
+                rptuSMILES = SMILEStrans(rptuSMILES).translate()
+                print("rptuSMILES: {}".format(rptuSMILES))
+            except:
+                logging.warning("Error occurred during the SMILEStrans call for SMILES: %s" %(keywords['SMILES']))
+                pass
+            for cand in self.cp.polymer.find({'_id': rptuSMILES}):
+                if cand['_id'] not in candidates:
+                    candidates[cand['_id']] = {'data': cand, 'wf': 0, 'features': []}
+                candidates[cand['_id']]['wf'] += 1.6
+                candidates[cand['_id']]['features'].append('00')
+        
         # 0) apple to apple comparison for uSMILES (translated here from SMILES by SMILEStrans), wf 5
         if 'SMILES' in keywords:
             rptuSMILES = keywords['SMILES']

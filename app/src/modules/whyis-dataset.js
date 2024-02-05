@@ -7,12 +7,13 @@ const defaultDataset = {
   contactPoint: {
     '@type': 'schemaPerson',
     '@id': null,
-    cpFirstName: '',
-    cpLastName: '',
+    firstName: '',
+    lastName: '',
     cpEmail: ''
   },
+  creator: '',
   contributor: [],
-  author: [],
+  organization: [],
   datePub: {
     '@type': 'date',
     '@value': ''
@@ -42,13 +43,13 @@ const datasetFieldUris = {
 
   contactpoint: `${dcat}contactpoint`,
   cpemail: `${vcard}email`,
-  cpfirstname: `${schema}givenName`,
-  cplastname: `${schema}familyName`,
+  firstname: `${schema}givenName`,
+  lastname: `${schema}familyName`,
   individual: `${vcard}individual`,
   schemaperson: `${schema}Person`,
 
-  author: `${dct}creator`,
   name: `${foaf}name`,
+  creator: `${dct}creator`,
   contributor: `${dct}contributor`,
   organization: `${foaf}Organization`,
   person: `${foaf}Person`,

@@ -10,7 +10,8 @@ export default {
         icon: '',
         pagetype: 'home',
         name: 'MaterialsMine',
-        subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
+        subtitle:
+          'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
       dialogBox: false,
       snackbar: {
@@ -18,7 +19,8 @@ export default {
         action: null,
         duration: false
       },
-      countDownDate: new Date('March 22, 2023 13:30:00').getTime()
+      countDownDate: new Date('March 22, 2023 13:30:00').getTime(),
+      uploadedFile: null
     }
   },
   mutations,

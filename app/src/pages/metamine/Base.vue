@@ -54,6 +54,9 @@
                         class="nav_menu--siblings-mm-lists"
                         ><a>Material Visualization</a></router-link
                       >
+                      <router-link to="/explorer/dataset"
+                        class="nav_menu--siblings-mm-lists">
+                        <a>Explore Curated Datasets</a></router-link>
                     </div>
                   </div>
                 </li>

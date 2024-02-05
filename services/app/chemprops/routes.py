@@ -1,43 +1,89 @@
-from flask import request, Blueprint
-import json
+from flask import request, Blueprint, jsonify, make_response
 from app.chemprops.nmChemPropsAPI import nmChemPropsAPI 
+from app.utils.util import request_logger, log_errors, token_required
+from app.chemprops.nmChemPropsPrepare import nmChemPropsPrepare
+import datetime
+from app.chemprops.helper import search_and_refine_data
 
-chemprops = Blueprint("chemprops", __name__)
 
-@chemprops.route("/chemprops", methods=['GET'])
-def call_chemprops():
-    # polfil = ChemPropsDto.query.get_or_404(polfil)
-    polfil = request.args.get('polfil', None, type=str)
-    ChemicalName = request.args.get('ChemicalName', '', type=str)
-    Abbreviation = request.args.get('Abbreviation', '', type=str)
-    TradeName = request.args.get('TradeName', '', type=str)
-    SMILES = request.args.get('SMILES', '', type=str)
-    nmId = request.args.get('nmId', None, type=str)
-    
-    # polfil has only 2 options 'pol' and 'fil'
-    # ChemicalName is a required argument
-    if (polfil == None or nmId == None or polfil not in {'pol','fil'} or ChemicalName == ''):
-        # TODO (BINGYIN): Can we specify the missing field and add it to the return object.
-        return json.dumps({"error": "Missing required query params"})
+chemprops = Blueprint("chemprops", __name__, url_prefix="/chemprops/")
 
-    
-    # init nmChemPropsAPI
-    nmCPAPI = nmChemPropsAPI(nmId)
-    
-    # prepare search package, inside nmChemPropsAPI a search only takes place
-    # when input has len()>1, thus it is safe to use default value
-    keywords = {
-        'ChemicalName':ChemicalName,
-        'Abbreviation':Abbreviation,
-        'TradeName':TradeName,
-        'SMILES':SMILES
-    }
+# Route to call nmChemPropsPrepare
+@chemprops.route("init/", methods=['POST'])
+@log_errors
+@request_logger
+@token_required
+def init_chemprops(request_id):
+    try:
+        nm = nmChemPropsPrepare()
+        return jsonify(
+            {
+                "message": "nmChemPropsPrepare initialized and database seeded successfully"
+            }
+        ), 201
+    except Exception as e:
+        print(e)
+        return jsonify({"message": f"Error initializing nmChemPropsPrepare: {e}"}), 500
 
-    # call search function by polfil
-    if polfil == 'pol':
-        return json.dumps(nmCPAPI.searchPolymers(keywords))
-    elif polfil == 'fil':
-        return json.dumps(nmCPAPI.searchFillers(keywords))
+@chemprops.route("call/", methods=['POST'])
+@log_errors
+@request_logger
+@token_required
+def call_chemprops(request_id):
+    start_time = datetime.datetime.now()
+    data = request.get_json()
+    polfil = data.get('polfil', None)
+    ChemicalName = data.get('ChemicalName', None)
+    Abbreviation = data.get('Abbreviation', None)
+    TradeName = data.get('TradeName', None)
+    SMILES = data.get('SMILES', None)
+    nmId = data.get('nmId', None)
     
-    # should never reach here
-    return json.dumps({"error": "Cannot find any"})
+    if polfil is None:
+        return jsonify({"message": "polfil is required"})
+    
+    if ChemicalName is None:
+        return jsonify({"message": "ChemicalName is required"})
+    
+    if polfil not in ['pol','fil']:
+        return jsonify({"message": "polfil must be either pol or fil"})
+
+    try:
+        # init nmChemPropsAPI
+        nmCPAPI = nmChemPropsAPI(nmId)
+    
+        # call search function by polfil
+        if polfil == 'pol':
+            keywords = {
+            'ChemicalName': ChemicalName,
+            'Abbreviation': Abbreviation,
+            'TradeName': TradeName,
+            'SMILES': SMILES
+        }
+            refined_data = search_and_refine_data(nmCPAPI.searchPolymers, keywords)
+            
+        elif polfil == 'fil':
+            keywords = {
+            'ChemicalName': ChemicalName,
+            'Abbreviation': Abbreviation,
+            'TradeName': TradeName,
+        }
+            refined_data = search_and_refine_data(nmCPAPI.searchFillers, keywords, include_uSMILES=False)
+        
+        
+        
+        end_time = datetime.datetime.now()
+        latency = f"{((end_time - start_time)).total_seconds()} seconds"
+         # Creating a JSON response
+        json_response = jsonify(refined_data)
+
+        response = make_response(json_response, 200, {
+            'startTime': start_time,
+            'endTime': end_time,
+            'latency': str(latency),
+            'responseId': request_id
+        })
+        return response
+        
+    except Exception as e:
+        return jsonify({"message": str(e)})

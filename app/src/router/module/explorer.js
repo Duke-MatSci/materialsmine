@@ -34,7 +34,8 @@ const explorerRoutes = [
       {
         path: 'dynamfit',
         name: 'DynamFit',
-        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue')
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -50,31 +51,38 @@ const explorerRoutes = [
       },
       {
         path: 'spreadsheet',
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue')
+        component: () =>
+          import('@/pages/explorer/curate/spreadsheet/SpreadsheetBase.vue')
       },
       {
         path: 'spreadsheet/:datasetId',
         name: 'CurateSpreadsheet',
         props: true,
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
+        component: () =>
+          import('@/pages/explorer/curate/spreadsheet/SpreadsheetUpload.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: 'bulk',
         name: 'CurateBulk',
-        component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
+        component: () =>
+          import(
+            '@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'
+          ),
         meta: { requiresAuth: true }
       },
       {
         path: 'stepper',
         name: 'CurationForm',
-        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        component: () =>
+          import('@/pages/explorer/curate/form/CurationForm.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: 'stepper/edit',
         name: 'EditXmlCuration',
-        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        component: () =>
+          import('@/pages/explorer/curate/form/CurationForm.vue'),
         meta: { requiresAuth: true }
       }
     ]
@@ -86,7 +94,8 @@ const explorerRoutes = [
       {
         path: '',
         name: 'UserDatasets',
-        component: () => import('@/pages/explorer/curate/edit/UserDatasets.vue'),
+        component: () =>
+          import('@/pages/explorer/curate/edit/UserDatasets.vue'),
         meta: { requiresAuth: true }
       },
       {
@@ -126,12 +135,14 @@ const explorerRoutes = [
       {
         path: 'update',
         name: 'xlsUpdate',
-        component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+        component: () =>
+          import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
       },
       {
         path: 'all',
         name: 'validListAll',
-        component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue')
+        component: () =>
+          import('@/pages/explorer/curate/validlist/XlsListAll.vue')
       }
     ]
   },
@@ -153,6 +164,13 @@ const explorerRoutes = [
     component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
     meta: { requiresAuth: true }
   },
+  // {
+  //   path: 'curate/sdd/link/:datasetId',
+  //   name: 'LinkSDD',
+  //   props: true,
+  //   component: () => import('@/pages/explorer/curate/sdd/SddLinking.vue'),
+  //   meta: { requiresAuth: true }
+  // },
   {
     path: 'chart',
     component: ChartBase,
@@ -163,13 +181,12 @@ const explorerRoutes = [
         component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false }
       },
-      ...['editor/:type', 'editor/:type/:chartId(.*)']
-        .map(path => ({
-          path,
-          component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
-          props: true,
-          meta: { requiresAuth: true }
-        })),
+      ...['editor/:type', 'editor/:type/:chartId(.*)'].map((path) => ({
+        path,
+        component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
+        props: true,
+        meta: { requiresAuth: true }
+      })),
       {
         path: 'view/:chartId(.*)',
         name: 'ChartView',
@@ -180,14 +197,16 @@ const explorerRoutes = [
       {
         path: 'voyager/:chartId(.*)',
         name: 'ChartDataVoyager',
-        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        component: () =>
+          import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
         meta: { requiresAuth: false }
       },
       {
         path: 'voyager',
         name: 'NewChartDataVoyager',
-        component: () => import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
+        component: () =>
+          import('@/pages/explorer/chart/datavoyager/DataVoyagerPage.vue'),
         props: true,
         meta: { requiresAuth: false }
       }
@@ -236,10 +255,7 @@ const explorerRoutes = [
   {
     path: 'sparql',
     name: 'Sparql',
-    component: () =>
-      import(
-        '@/pages/explorer/Sparql.vue'
-      ),
+    component: () => import('@/pages/explorer/Sparql.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -255,11 +271,23 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
-    path: 'dataset/:id',
-    name: 'DatasetVisualizer',
-    component: () => import('@/pages/explorer/dataset/Dataset.vue'),
-    props: true,
-    meta: { requiresAuth: false }
+    path: 'dataset',
+    component: ChartBase,
+    children: [
+      {
+        path: '',
+        name: 'DatasetGallery',
+        component: () => import('@/pages/explorer/dataset/DatasetGallery.vue'),
+        meta: { requiresAuth: false }
+      },
+      {
+        path: ':id',
+        name: 'DatasetVisualizer',
+        component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+        props: true,
+        meta: { requiresAuth: false }
+      }
+    ]
   }
 ]
 

@@ -177,13 +177,18 @@ export default {
         if (this.$route.params.type === 'new') {
           // Save chart to MongoDB - async operation
         } else {
-          await this.$store.dispatch('explorer/curation/deleteChartES', `http://nanomine.org/viz/${this.chartId}`)
+          await this.$store.dispatch('explorer/curation/deleteEntityES', {
+            // TODO: Can we change these to a materialsmine.org uri or will that break things?
+            identifier: `http://nanomine.org/viz/${this.chartId}`,
+            type: 'charts'
+          })
           // Find in mongo and update - async operation
         }
 
-        const resp = await this.$store.dispatch('explorer/curation/cacheNewChartResponse', {
+        const resp = await this.$store.dispatch('explorer/curation/cacheNewEntityResponse', {
           identifier: this.submittedIdentifier,
-          chartNanopub
+          resourceNanopub: chartNanopub,
+          type: 'charts'
         })
 
         if (resp.identifier) {

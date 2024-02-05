@@ -28,5 +28,8 @@ export default {
   },
   getDatasetThumbnail (state) {
     return state.datasetThumbnail
+  },
+  getDynamfitData (state) {
+    return state.dynamfitData
   }
 }

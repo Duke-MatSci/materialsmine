@@ -88,6 +88,15 @@ const nanomineRoutes = [
         /* webpackChunkName: "cssi2023" */ '@/pages/nanomine/conferences/CSSI2023.vue'
       ),
     meta: { requiresAuth: false }
+  },
+  {
+    path: '2024-doe-poster',
+    name: '2024DoePoster',
+    component: () =>
+      import(
+        /* webpackChunkName: "mrs2022" */ '@/pages/nanomine/conferences/DOEPoster2024.vue'
+      ),
+    meta: { requiresAuth: false }
   }
 ]
 

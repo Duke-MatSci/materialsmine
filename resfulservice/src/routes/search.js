@@ -8,5 +8,7 @@ router.route('')
 router.route('/autosuggest')
 //   .get(getInternal, SearchController.explorerSearch) //TODO
   .get(SearchController.autoSuggestSearch);
+router.route('/filter')
+  .get(SearchController.typeSearch);
 
 module.exports = router;

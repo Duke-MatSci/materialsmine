@@ -59,3 +59,6 @@ mockDB/minio/
 app/coverage
 resfulservice/coverage
 resfulservice/.nyc_output
+
+# Ignore old service files
+old_services

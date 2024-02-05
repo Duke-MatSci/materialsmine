@@ -9,6 +9,7 @@ import logging
 import string
 import os
 from app import db
+import pandas as pd
 
 class nmChemPropsPrepare():
     def __init__(self):
@@ -17,38 +18,33 @@ class nmChemPropsPrepare():
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             level = logging.INFO
                            )
-        self.loadGSconfig()
-        self.loadMGconfig()
-        # downloadGS
+        # self.loadGSconfig()
+        #self.loadMGconfig()
         self.downloadGS()
-        # if we changed something in mongo, gsUpdate list will record these changes
-        # admins need to manually address these changes in the google spreadsheet
         self.gsUpdate = []
-        # prepare filler and polymer data
         self.filler = dict()
         self.polymer = dict()
         self.prepFiller()
         self.prepPolymer()
-        # mongo init
         
-        # Notice!!!!: 🔥 Mongo Initialization is no longer needed inside a module. It is now instantiated at start 🔥
-        # self.client = MongoClient('mongodb://%s:%s@%s:%s/tracking?authSource=admin'
+        self.updateMongoDB()
+        
 
-    # load google spreadsheet configurations
-    def loadGSconfig(self):
-        # read gs.config for configurations
-        with open("gs.config", "r") as f:
-            confs = f.read().split('\n')
-        self.url_format = confs[0]
-        self.key = confs[1]
-        self.format = "xlsx"
-        # gids
-        self.gids = dict()
-        for i in range(2,len(confs)):
-            kv = confs[i]
-            k = kv.split(':')[0].strip()
-            v = kv.split(':')[1].strip()
-            self.gids[k] = v
+    # # load google spreadsheet configurations
+    # def loadGSconfig(self):
+    #     # read gs.config for configurations
+    #     with open(os.path.join(os.path.dirname(__file__), "chemprops.gs.config"), "r") as f:
+    #         confs = f.read().split('\n')
+    #     self.url_format = confs[0]
+    #     self.key = confs[1]
+    #     self.format = "xlsx"
+    #     # gids
+    #     self.gids = dict()
+    #     for i in range(1, len(confs)):
+    #         kv = confs[i]
+    #         k = kv.split(':')[0].strip()
+    #         v = kv.split(':')[1].strip()
+    #         self.gids[k] = v
     
     # load mongo configurations
     def loadMGconfig(self):
@@ -68,19 +64,31 @@ class nmChemPropsPrepare():
 
     # download google spreadsheets
     def downloadGS(self):
-        for fname in self.gids:
-            resp = requests.get(self.url_format %(self.key,
-                                                  self.format,
-                                                  self.gids[fname]
-                                                 )
-                               )
-            with open(fname + ".xlsx", "wb") as f:
-                f.write(resp.content)
-                logging.info("%s sheet is downloaded as %s.xlsx" %(fname, fname))
+        # Load the raw_file.xlsx once
+        raw_data = pd.read_excel("raw_data.xlsx", sheet_name=None)
+
+        for sheet_name in ["MatrixRaw", "FillerRaw", "Filler"]:
+            # Check if the sheet exists in the loaded data
+            if sheet_name in raw_data:
+                sheet_data = raw_data[sheet_name]
+
+                # Perform actions with sheet_data, for example, save it to a new Excel file
+                output_file_path = f"{sheet_name}.xlsx"
+                sheet_data.to_excel(output_file_path, index=False)
+
+                logging.info(f"{sheet_name} sheet is saved as {output_file_path}")
+            else:
+                logging.warning(f"Sheet {sheet_name} not found in raw_data.xlsx")
+        # for fname in self.gids:
+        #     resp = requests.get(self.url_format.format(self.key, self.format, self.gids[fname]))
+        #     print(resp.url)
+        #     with open(fname + ".xlsx", "wb") as f:
+        #         f.write(resp.content)
+        #         logging.info("%s sheet is downloaded as %s.xlsx" %(fname, fname))
 
     # prepare ChemProps.polymer data
     def prepPolymer(self):
-        xlfile = xlrd.open_workbook("matrixRaw.xlsx") # change the filename if gs.config is changed
+        xlfile = xlrd.open_workbook("MatrixRaw.xlsx") # change the filename if gs.config is changed
         sheet = xlfile.sheets()[0] # one sheet per xlsx file
         header = sheet.row_values(0) # SMILES;uSMILES;std_name;density(g/cm3);density_std_err(g/cm3);abbreviations;synonyms;tradenames
         # create a map for headers
@@ -127,7 +135,7 @@ class nmChemPropsPrepare():
 
     # prepare ChemProps.filler data
     def prepFiller(self):
-        xlfile = xlrd.open_workbook("fillerRaw.xlsx") # change the filename if gs.config is changed
+        xlfile = xlrd.open_workbook("FillerRaw.xlsx") # change the filename if gs.config is changed
         sheet = xlfile.sheets()[0] # one sheet per xlsx file
         header = sheet.row_values(0) # nm_entry/std_name/density_g_cm3
         # create a map for headers
@@ -160,7 +168,7 @@ class nmChemPropsPrepare():
         #     if 'ChemProps' not in dbnames:
         #         initPolymer = True
         #         initFiller = True
-        cp = db
+        cp = db.mgs_database
         clctnames = cp.list_collection_names() # check if collection exists
         if 'polymer' in clctnames:
             cp.polymer.drop()
@@ -361,6 +369,7 @@ class nmChemPropsPrepare():
         for number in string.digits:
             bag.append(str(myStr.lower().count(number)))
         return ''.join(bag)
-
-if __name__ == '__main__':
-    nm = nmChemPropsPrepare()
+    
+    
+# if __name__ == '__main__':
+#     nm = nmChemPropsPrepare()

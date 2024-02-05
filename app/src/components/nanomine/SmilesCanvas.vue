@@ -4,10 +4,8 @@
     <canvas :id="canvasId" ref="wrapped-canvas"></canvas>
   </div>
 </template>
-/*
-  Uses code from: https://github.com/reymond-group/smilesDrawer
-  TODO: overrides for theme and computeOnly do not seem to be working and removed from sample
-*/
+/* Uses code from: https://github.com/reymond-group/smilesDrawer TODO: overrides
+for theme and computeOnly do not seem to be working and removed from sample */
 <script>
 // NOTE: The old repository had a CanvasWrapper.vue to manage the canvas tag.
 // It didn't seem immediately necessary, but if you're coming back to this and
@@ -93,6 +91,8 @@ export default {
     this.smilesDrawer = new SmilesDrawer.Drawer(this.smilesOptionsAdjusted)
     this.provider.context = this.$refs['wrapped-canvas'].getContext('2d')
     this.adjustDimensions()
+    this.smilesValue = this.smilesInput
+    this.setInput(this.smilesInput)
   },
   methods: {
     getMolecularFormula () {
@@ -113,23 +113,28 @@ export default {
       const vm = this
       if (inputStr) {
         vm.inputStr = inputStr
-        SmilesDrawer.parse(vm.smilesValue, function (tree) {
-          vm.smilesDrawer.draw(tree, vm.canvasId)
-          if (vm.onSuccessHandler) {
-            vm.onSuccessHandler()
+        SmilesDrawer.parse(
+          vm.smilesValue,
+          function (tree) {
+            vm.smilesDrawer.draw(tree, vm.canvasId)
+            if (vm.onSuccessHandler) {
+              vm.onSuccessHandler()
+            }
+            if (vm.formulaHandler) {
+              vm.formulaHandler(vm.getMolecularFormula())
+            }
+          },
+          function (err) {
+            if (vm.formulaHandler) {
+              vm.formulaHandler('*Error*')
+            }
+            if (vm.onErrorHandler) {
+              vm.onErrorHandler(err)
+            }
           }
-          if (vm.formulaHandler) {
-            vm.formulaHandler(vm.getMolecularFormula())
-          }
-        }, function (err) {
-          if (vm.formulaHandler) {
-            vm.formulaHandler('*Error*')
-          }
-          if (vm.onErrorHandler) {
-            vm.onErrorHandler(err)
-          }
-        })
-      } else { // clear values on empty input
+        )
+      } else {
+        // clear values on empty input
         if (vm.onSuccessHandler) {
           vm.onSuccessHandler()
         }
@@ -158,6 +163,5 @@ export default {
       this.provider.context.clearRect(0, 0, c.width, c.height)
     }
   }
-
 }
 </script>

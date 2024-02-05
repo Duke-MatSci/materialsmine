@@ -27,6 +27,7 @@ router
   .delete(
     validateXlsxObjectDelete,
     isAuth,
+    latencyTimer,
     curationController.deleteXlsxCurations
   );
 

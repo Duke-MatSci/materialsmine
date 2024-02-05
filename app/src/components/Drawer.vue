@@ -54,6 +54,9 @@
           <router-link to="/explorer/images" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate" class="md-inset">Image Gallery</md-list-item>
           </router-link>
+          <router-link to="/explorer/dataset" v-slot="{navigate, href}" custom>
+            <md-list-item :href="href" @click="navigate" class="md-inset">Dataset Gallery</md-list-item>
+          </router-link>
           <router-link to="/explorer/xmls" v-slot="{navigate, href}" custom>
             <md-list-item :href="href" @click="navigate" class="md-inset">View Xmls</md-list-item>
           </router-link>

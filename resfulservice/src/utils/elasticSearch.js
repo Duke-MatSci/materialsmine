@@ -79,7 +79,7 @@ class ElasticSearch {
   }
 
   async _putMappings (type, schema) {
-    return this.client.indices.putMapping({
+    return await this.client.indices.putMapping({
       index: type,
       // type: 'articles',
       body: {
@@ -104,17 +104,35 @@ class ElasticSearch {
     }
 
     // Remove elastic search index config from list of keys
-    let preparedKeys = Object.keys(configPayload)?.filter(e => e !== 'config');
+    let preparedKeys = Object.keys(configPayload)?.filter(
+      (e) => e !== 'config'
+    );
     if (existingIndexes.length) {
-      preparedKeys = preparedKeys.filter(preppedKey => !existingIndexes.some(existingIndex => (existingIndex?.index === preppedKey)));
-      log.info(`elasticsearch.initES(): Adding the following missing index(es) ${preparedKeys.join(',')}`);
+      preparedKeys = preparedKeys.filter(
+        (preppedKey) =>
+          !existingIndexes.some(
+            (existingIndex) => existingIndex?.index === preppedKey
+          )
+      );
+      log.info(
+        `elasticsearch.initES(): Adding the following missing index(es) ${preparedKeys.join(
+          ','
+        )}`
+      );
     }
 
     try {
       Object.entries(configPayload).forEach(async ([key, value]) => {
         if (preparedKeys.includes(key)) {
-          await this._createConfig(key);
-          await this._putMappings(key, value);
+          try {
+            await this._createConfig(key);
+            await this._putMappings(key, value);
+          } catch (error) {
+            console.log(error);
+            log.error(
+              `elasticsearch.initES(): ${error.status || 500} - ${error}`
+            );
+          }
         }
       });
 
@@ -123,7 +141,7 @@ class ElasticSearch {
       };
     } catch (err) {
       log.error(`elasticsearch.initES(): ${err.status || 500} - ${err}`);
-      throw (err);
+      throw err;
     }
   }
 
@@ -133,7 +151,7 @@ class ElasticSearch {
       const error = new Error('Category type is missing');
       error.statusCode = 400;
       log.error(`indexDocument(): ${error}`);
-      throw (error);
+      throw error;
     }
     return this.client.index({
       index: type,
@@ -148,7 +166,7 @@ class ElasticSearch {
       const error = new Error('Category type is missing');
       error.statusCode = 400;
       log.error(`refreshIndices(): ${error}`);
-      throw (error);
+      throw error;
     }
     return this.client.indices.refresh({ index: type });
   }
@@ -169,6 +187,39 @@ class ElasticSearch {
       sanitizeSearch = `${sanitizeSearch}\\*`;
     }
     return sanitizeSearch;
+  }
+
+  async searchType (searchPhrase, searchField, type, page = 1, size = 20) {
+    // TODO: use searchField to change which field is queried
+    const phrase = this.searchSanitizer(searchPhrase);
+    const url = `http://${env.ESADDRESS}/${type}/_search?size=${size}`;
+    const response = await axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: (page - 1) * size,
+        query: {
+          bool: {
+            should: [
+              {
+                match_phrase: {
+                  label: phrase
+                }
+              },
+              {
+                match_phrase: {
+                  description: phrase
+                }
+              }
+            ]
+          }
+        }
+      })
+    });
+    return response;
   }
 
   async search (searchPhrase, autosuggest = false) {
@@ -215,7 +266,25 @@ class ElasticSearch {
         'Content-Type': 'application/json'
       },
       data: JSON.stringify({
-        from: ((page - 1) * size),
+        from: (page - 1) * size,
+        size,
+        query: {
+          match_all: {}
+        }
+      })
+    });
+  }
+
+  async loadAllDatasets (page, size) {
+    const url = `http://${env.ESADDRESS}/datasets/_search`;
+    return axios({
+      method: 'get',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        from: (page - 1) * size,
         size,
         query: {
           match_all: {}

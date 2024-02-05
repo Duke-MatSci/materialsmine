@@ -90,8 +90,11 @@ export default {
     async deleteChart () {
       if (!this.isAdmin) return // temporary safeguard
       this.dialogLoading = true
-      await this.$store.dispatch('explorer/curation/deleteChartNanopub', this.chart.uri)
-      await this.$store.dispatch('explorer/curation/deleteChartES', this.chart.uri)
+      await this.$store.dispatch('explorer/curation/deleteEntityNanopub', this.chart.uri)
+      await this.$store.dispatch('explorer/curation/deleteEntityES', {
+        identifier: this.chart.uri,
+        type: 'charts'
+      })
       this.toggleDialogBox()
       this.dialogLoading = false
       this.$router.push('/explorer/chart')

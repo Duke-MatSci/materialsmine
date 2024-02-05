@@ -133,6 +133,7 @@ def result():
   "lang" :    "http://materialsmine.org/language/",
   "void" :    "http://rdfs.org/ns/void#",
   "dcat" : "http://www.w3.org/ns/dcat#",
+  "obo" : "http://purl.obolibrary.org/obo/",
   "pubchem" : "http://rdf.ncbi.nlm.nih.gov/pubchem/compound/CID",
   "dc" :    "http://purl.org/dc/terms/",
   "xsd" : "http://www.w3.org/2001/XMLSchema#"
@@ -257,7 +258,7 @@ def result():
                                                 "@type": "materialsmine:PubChemReference",
                                                 "sio:hasValue": "{{ref.text}}"
                                             }
-                                        },                         
+                                        },
                                         {
                                             "@for": "fraction in part.findall('../FillerComposition/Fraction/*')",
                                             "@do": {
