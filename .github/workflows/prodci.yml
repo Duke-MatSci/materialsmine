@@ -19,7 +19,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: "17.9.1"
+          node-version: '17.9.1'
       - name: Install frontend dependencies & test
         run: |
           cd app
@@ -55,7 +55,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: "17.9.1"
+          node-version: '17.9.1'
       - name: Install frontend dependencies & test
         run: |
           cd resfulservice
@@ -93,7 +93,7 @@ jobs:
       - name: Use NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: "18.4.0"
+          node-version: '18.4.0'
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
@@ -128,6 +128,18 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  buildMgdServicesApp:
+    if: github.event_name == 'push'
+    needs: release
+    uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
+    with:
+      myid: managedservices
+      context: ./services
+      tags: dukematsci/prod-mgdservices
+      next_ver: ${{ needs.release.outputs.version_output}}
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   buildWhyisApp:
     if: github.event_name == 'push'
     needs: release
@@ -142,14 +154,15 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
   testBuilds:
     runs-on: ubuntu-latest
-    needs: [buildFrontendApp, buildBackendApp, buildWhyisApp]
+    needs:
+      [buildFrontendApp, buildBackendApp, buildMgdServicesApp, buildWhyisApp]
     env:
       MM_MONGO_USER: ${{secrets.MM_MONGO_USER}}
       MM_MONGO_PWD: ${{secrets.MM_MONGO_PWD}}
       MONGO_TEST: ${{secrets.MONGO_TEST}}
       MONGO_TEST_PWD: ${{secrets.MONGO_TEST_PWD}}
       MM_DB: ${{secrets.MM_DB}}
-      MONGO_ADDRESS:  ${{secrets.MONGO_ADDRESS}}
+      MONGO_ADDRESS: ${{secrets.MONGO_ADDRESS}}
       MONGO_PORT: ${{secrets.MONGO_PORT}}
       NM_MONGO_DUMP: ${{secrets.NM_MONGO_DUMP}}
       TKNS: ${{secrets.TKNS}}
@@ -164,6 +177,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Download and run images
-        run : docker-compose -f docker-compose.test.git.yml up -d
+        run: docker-compose -f docker-compose.test.git.yml up -d
       - name: Kill containers
         run: docker-compose down -v
