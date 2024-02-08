@@ -1,5 +1,5 @@
-import ChartBase from '@/pages/explorer/chart/Base.vue'
-import ImageBase from '@/pages/explorer/image/Base.vue'
+import ChartBase from '@/pages/explorer/chart/Base.vue';
+import ImageBase from '@/pages/explorer/image/Base.vue';
 const explorerRoutes = [
   {
     path: '',
@@ -250,7 +250,7 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
   },
   {
     path: 'sparql',
@@ -289,6 +289,6 @@ const explorerRoutes = [
       }
     ]
   }
-]
+];
 
-export default explorerRoutes
+export default explorerRoutes;
