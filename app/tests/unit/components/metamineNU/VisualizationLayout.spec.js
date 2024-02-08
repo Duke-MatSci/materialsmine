@@ -1,21 +1,21 @@
-import createWrapper from '../../../jest/script/wrapper'
-import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils'
-import VLayour from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
-import store from '@/store/index.js'
+import createWrapper from '../../../jest/script/wrapper';
+import { enableAutoDestroy, RouterLinkStub } from '@vue/test-utils';
+import VLayour from '@/components/metamine/visualizationNU/VisualizationLayout.vue';
+import store from '@/store/index.js';
 
 describe('VisualizationLayout.vue', () => {
-  let wrapper
+  let wrapper;
   const slots = {
     main_chart: ['<header>Test Title</header>'],
     subcharts: ['<p>Testing</p>'],
     side_tools: ['<button>Test Close</button>']
-  }
+  };
   const props = {
     link: { to: '/mm', text: 'Pairwise' },
     dense: false
-  }
-  const dispatch = jest.spyOn(store, 'dispatch')
-  const commitSpy = jest.spyOn(store, 'commit')
+  };
+  const dispatch = jest.spyOn(store, 'dispatch');
+  const commitSpy = jest.spyOn(store, 'commit');
   global.fetch = jest
     .fn()
     .mockImplementationOnce(() =>
@@ -27,95 +27,114 @@ describe('VisualizationLayout.vue', () => {
     .mockImplementationOnce(() =>
       Promise.resolve({ json: () => Promise.resolve(mockValues2) })
     )
-    .mockImplementation(() => {})
+    .mockImplementation(() => {});
 
   beforeEach(async () => {
-    wrapper = await createWrapper(VLayour, { slots, props }, false)
-  })
+    wrapper = await createWrapper(VLayour, { slots, props }, false);
+  });
 
-  enableAutoDestroy(afterEach)
+  enableAutoDestroy(afterEach);
   afterEach(async () => {
-    wrapper.destroy()
-    await jest.resetAllMocks()
-  })
+    wrapper.destroy();
+    await jest.resetAllMocks();
+  });
 
   it('makes a fetch call when mounted ', () => {
-    expect.assertions(12)
-    expect(wrapper.exists()).toBe(true)
-    expect(dispatch).toHaveBeenCalledTimes(1)
-    expect(commitSpy).toHaveBeenCalledTimes(5)
+    expect.assertions(12);
+    expect(wrapper.exists()).toBe(true);
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(commitSpy).toHaveBeenCalledTimes(5);
     expect(commitSpy).toHaveBeenNthCalledWith(
       1,
       'metamineNU/setRefreshStatus',
       true
-    )
+    );
     expect(commitSpy).toHaveBeenNthCalledWith(
       2,
       'metamineNU/setLoadingState',
       true,
       undefined
-    )
+    );
     expect(commitSpy).toHaveBeenNthCalledWith(
       3,
       'metamineNU/setFetchedNames',
       [],
       undefined
-    )
+    );
     expect(commitSpy).toHaveBeenNthCalledWith(
       4,
       'metamineNU/setDataPoint',
       [],
       undefined
-    )
+    );
     expect(commitSpy).toHaveBeenNthCalledWith(
       5,
       'metamineNU/setDatasets',
       [],
       undefined
-    )
+    );
 
-    expect(fetch).toHaveBeenCalledTimes(1 + mockValues.fetchedNames.length)
+    expect(fetch).toHaveBeenCalledTimes(1 + mockValues.fetchedNames.length);
     // check initial fetch request
-    expect(fetch).toHaveBeenNthCalledWith(1, '/api/files/metamine')
+    expect(fetch).toHaveBeenNthCalledWith(1, '/api/files/metamine');
     for (let i = 0; i < mockValues.fetchedNames.length; i++) {
       expect(fetch).toHaveBeenNthCalledWith(
         i + 2,
         `/api/files/metamine/${mockValues.fetchedNames[i].name}`
-      )
+      );
     }
-  })
+  });
 
   it('renders layout properly ', () => {
-    expect(wrapper.find('div.main.tool_page').exists()).toBe(true)
-    expect(wrapper.find('div.main > div.adjust-padding').exists()).toBe(true)
-    const mainContent = wrapper.find('div.main > div.adjust-padding')
-    expect(mainContent.exists()).toBe(true)
+    expect(wrapper.find('div.main.tool_page').exists()).toBe(true);
+    expect(wrapper.find('div.main > div.adjust-padding').exists()).toBe(true);
+    const mainContent = wrapper.find('div.main > div.adjust-padding');
+    expect(mainContent.exists()).toBe(true);
 
     const mainChart = mainContent.find(
       'div.viz-u-postion__rel.histogram-chart.md-layout-item.md-size-50.md-medium-size-100.viz-u-mgbottom-big'
-    )
-    expect(mainChart.exists()).toBe(true)
-    expect(mainChart.find('header').text()).toBe('Test Title')
+    );
+    expect(mainChart.exists()).toBe(true);
+    expect(mainChart.find('header').text()).toBe('Test Title');
     const subChart = mainContent.find(
       'div.md-layout.md-layout-item.md-size-20.md-medium-size-100.u--layout-flex.u--layout-flex-justify-sb.u_centralize_items.utility-roverflow'
-    )
-    expect(subChart.exists()).toBe(true)
-    expect(subChart.find('p').text()).toBe('Testing')
+    );
+    expect(subChart.exists()).toBe(true);
+    expect(subChart.find('p').text()).toBe('Testing');
     const sideTools = mainContent.find(
       'div.side-tools.md-size-30.md-medium-size-100.md-layout-item.md-card-header.viz-u-display__show'
-    )
-    expect(sideTools.exists()).toBe(true)
-    expect(sideTools.find('button').text()).toBe('Test Close')
-  })
+    );
+    expect(sideTools.exists()).toBe(true);
+    expect(sideTools.find('button').text()).toBe('Test Close');
+  });
 
   it('renders button properly ', () => {
-    const button = wrapper.find('div.main > div.adjust-padding > div > button')
-    expect(button.exists()).toBe(true)
-    expect(button.attributes('class')).toBe('nuplot-button-link')
-    expect(button.findComponent(RouterLinkStub).props().to).toBe(props.link.to)
-    expect(button.findComponent(RouterLinkStub).text()).toBe(props.link.text)
-  })
-})
+    const button = wrapper.find('div.main > div.adjust-padding > div > button');
+    expect(button.exists()).toBe(true);
+    expect(button.attributes('class')).toBe('nuplot-button-link');
+    expect(button.findComponent(RouterLinkStub).props().to).toBe(props.link.to);
+    expect(button.findComponent(RouterLinkStub).text()).toBe(props.link.text);
+  });
+
+  it('hides side nav', async () => {
+    const commitSpy = jest.spyOn(wrapper.vm.$store, 'commit');
+    const nav = wrapper.vm.showSide;
+
+    await wrapper.vm.hideSide();
+    expect(wrapper.vm.showSide).toBe(!nav);
+    expect(commitSpy).toHaveBeenCalledTimes(3);
+    expect(commitSpy).toHaveBeenNthCalledWith(
+      2,
+      'metamineNU/setLoadingState',
+      true
+    );
+    expect(commitSpy).toHaveBeenNthCalledWith(
+      3,
+      'metamineNU/setLoadingState',
+      false
+    );
+  });
+});
 
 const mockValues = {
   fetchedNames: [
@@ -132,7 +151,7 @@ const mockValues = {
       color: '#8A8BD0'
     }
   ]
-}
+};
 
 const mockValues2 = {
   fetchedData: [
@@ -183,4 +202,4 @@ const mockValues2 = {
         '[0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731\n 0.49253731 0.49253731 0.49253731 0.49253731 0.49253731]'
     }
   ]
-}
+};
