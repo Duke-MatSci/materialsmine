@@ -99,12 +99,12 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
   props: ['toggler'],
-  data() {
-    return { showBadge: false };
+  data () {
+    return { showBadge: false }
   },
   computed: {
     ...mapGetters({
@@ -112,16 +112,16 @@ export default {
       displayName: 'auth/displayName'
     }),
     searchTerm: {
-      get() {
-        return this.$store.getters['explorer/getSearchKeyword'];
+      get () {
+        return this.$store.getters['explorer/getSearchKeyword']
       },
-      set(payload) {
-        this.$store.commit('explorer/setSearchKeyword', payload);
+      set (payload) {
+        this.$store.commit('explorer/setSearchKeyword', payload)
         if (!payload) {
-          this.$store.commit('explorer/setSearching');
+          this.$store.commit('explorer/setSearching')
         }
       }
     }
   }
-};
+}
 </script>

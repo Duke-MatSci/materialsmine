@@ -86,33 +86,33 @@
 </template>
 
 <script>
-import explorerSearch from '@/mixins/explorerSearch';
-import SearchHeader from '@/components/explorer/SearchHeader.vue';
-import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue';
+import explorerSearch from '@/mixins/explorerSearch'
+import SearchHeader from '@/components/explorer/SearchHeader.vue'
+import SearchResultsTable from '@/components/explorer/SearchResultsTable.vue'
 
 export default {
   name: 'ExplorerHome',
   mixins: [explorerSearch],
-  data() {
+  data () {
     return {
       pageNavLinks: [
         { icon: 'grid_view', text: 'Gallery', link: 'explorer/visualization' },
         { icon: 'cloud_upload', text: 'Curate', link: 'explorer/curate' },
         { icon: 'help', text: 'Help', link: 'nm/how' }
       ]
-    };
+    }
   },
   components: {
     SearchHeader,
     SearchResultsTable
   },
   methods: {
-    async disableRender(e) {
-      const selected = e.target.closest('.search_box');
+    async disableRender (e) {
+      const selected = e.target.closest('.search_box')
       if (!selected) {
-        await this.$store.commit('explorer/setEnableAutosuggest', false);
+        await this.$store.commit('explorer/setEnableAutosuggest', false)
       }
     }
   }
-};
+}
 </script>

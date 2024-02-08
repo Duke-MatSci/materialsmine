@@ -67,8 +67,8 @@
   </div>
 </template>
 <script>
-import { mapGetters } from 'vuex';
-import explorerSearch from '@/mixins/explorerSearch';
+import { mapGetters } from 'vuex'
+import explorerSearch from '@/mixins/explorerSearch'
 export default {
   name: 'SearchHeader',
   mixins: [explorerSearch],
@@ -78,14 +78,14 @@ export default {
       passTotal: 'explorer/results/getTotalGroupings',
       getTotal: 'explorer/results/getTotal'
     }),
-    imageTotal() {
-      return this.passTotal?.getImages ?? 0;
+    imageTotal () {
+      return this.passTotal?.getImages ?? 0
     }
   },
   methods: {
-    setResultsTabs(payload) {
-      return this.setResultsTab(payload);
+    setResultsTabs (payload) {
+      return this.setResultsTab(payload)
     }
   }
-};
+}
 </script>

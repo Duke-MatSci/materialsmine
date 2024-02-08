@@ -63,17 +63,17 @@
 </template>
 
 <script>
-import spinner from '@/components/Spinner';
+import spinner from '@/components/Spinner'
 export default {
   name: 'VisualizationLayout',
   components: {
     spinner
   },
-  data() {
+  data () {
     return {
       showSide: true,
       index: 1
-    };
+    }
   },
   props: {
     link: {
@@ -89,28 +89,28 @@ export default {
     }
   },
   methods: {
-    async hideSide() {
-      this.showSide = !this.showSide;
-      this.$store.commit('metamineNU/setLoadingState', true);
-      await this.$nextTick();
-      this.$store.commit('metamineNU/setLoadingState', false);
+    async hideSide () {
+      this.showSide = !this.showSide
+      this.$store.commit('metamineNU/setLoadingState', true)
+      await this.$nextTick()
+      this.$store.commit('metamineNU/setLoadingState', false)
     }
   },
   computed: {
-    loading() {
-      return this.$store.getters['metamineNU/getLoadingState'];
+    loading () {
+      return this.$store.getters['metamineNU/getLoadingState']
     },
-    validateLinkProp() {
-      if (!this.link || typeof this.link !== 'object') return false;
+    validateLinkProp () {
+      if (!this.link || typeof this.link !== 'object') return false
       return (
         Object.hasOwnProperty.call(this.link, 'to') &&
         Object.hasOwnProperty.call(this.link, 'text')
-      );
+      )
     }
   },
-  async mounted() {
-    this.$store.commit('metamineNU/setRefreshStatus', true);
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset');
+  async mounted () {
+    this.$store.commit('metamineNU/setRefreshStatus', true)
+    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
   }
-};
+}
 </script>
