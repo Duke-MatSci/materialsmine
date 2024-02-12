@@ -21,6 +21,7 @@ const XlsxCurationList = require('../models/xlsxCurationList');
 const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
 const FsFile = require('../models/fsFiles');
+const Task = require('../sw/models/task');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 
@@ -176,6 +177,20 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       dataset: datasets._id
     });
     newCurationObject.object.ID = newCurationObject._id;
+    if (processedFiles.toBeUploaded.length) {
+      processedFiles.toBeUploaded.forEach(async ({ path }) => {
+        const isTif = XlsxFileManager.isTifFile(path);
+        if (isTif) {
+          await Task.create({
+            serviceName: 'convertImageToPng',
+            info: {
+              ref: path,
+              sampleID: newCurationObject._id.toString()
+            }
+          });
+        }
+      });
+    }
     const curatedObject = await (
       await newCurationObject.save()
     ).populate('user', 'displayName');
@@ -213,7 +228,10 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (query?.isBaseObject && processedFiles.toBeUploaded.length) {
       for (const file of processedFiles.toBeUploaded) {
-        FileStorage.minioPutObject(file, req);
+        const isTif = XlsxFileManager.isTifFile(file.path);
+        if (!isTif) {
+          FileStorage.minioPutObject(file, req);
+        }
       }
     }
 
@@ -368,7 +386,12 @@ exports.bulkXlsxCurations = async (req, res, next) => {
       );
       for (const file of allfiles) {
         const filePath = `${folderPath}/${file?.path}`;
-        if (file.type === 'file' && !failedCuration.includes(filePath)) {
+        const isTif = XlsxFileManager.isTifFile(file.path);
+        if (
+          file.type === 'file' &&
+          !failedCuration.includes(filePath) &&
+          !isTif
+        ) {
           FileManager.deleteFile(filePath, req);
         }
       }
@@ -447,7 +470,10 @@ const processSingleCuration = async (
   // TODO (@tee*): Refactor to remove this and upload inside the closure function e.g. createMaterialObject
   if (toBeUploaded.length) {
     for (const file of toBeUploaded) {
-      FileStorage.minioPutObject(file, req);
+      const isTif = XlsxFileManager.isTifFile(file.path);
+      if (!isTif) {
+        FileStorage.minioPutObject(file, req);
+      }
     }
   }
 };
@@ -667,7 +693,18 @@ exports.updateXlsxCurations = async (req, res, next) => {
 
       if (processedFiles.toBeUploaded.length) {
         for (const file of processedFiles.toBeUploaded) {
-          FileStorage.minioPutObject(file, req);
+          const isTif = XlsxFileManager.isTifFile(file.path);
+          if (isTif) {
+            await Task.create({
+              serviceName: 'convertImageToPng',
+              info: {
+                ref: file.path,
+                sampleID: xlsxObjectId
+              }
+            });
+          } else {
+            FileStorage.minioPutObject(file, req);
+          }
         }
       }
 
@@ -1014,7 +1051,8 @@ exports.createMaterialObject = async (
                 BaseObjectSubstitutionMap[property] ?? property
               ] = `/api/files/${filename}?isStore=true`;
 
-              if (isParentCall) {
+              const isTif = XlsxFileManager.isTifFile(file.path);
+              if (isParentCall || isTif) {
                 processedFiles.toBeUploaded.push(fileDetails);
               } else {
                 FileStorage.minioPutObject(fileDetails, { logger });

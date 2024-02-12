@@ -19,6 +19,8 @@ exports.xlsxFileReader = async (path, sheetName) => {
   }
 };
 
+exports.isTifFile = (path) => /(?=.*?(.tiff?))/.test(path);
+
 exports.xmlGenerator = (curationObject) => {
   return Xmljs.json2xml(curationObject, {
     compact: true,

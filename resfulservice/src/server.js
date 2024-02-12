@@ -1,4 +1,5 @@
 const express = require('express');
+const cluster = require('cluster');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
 const { ApolloServer } = require('apollo-server-express');
 const mongoose = require('mongoose');
@@ -24,71 +25,80 @@ const getWsContext = require('./graphql/context/getWsContext');
 const { latencyCalculator } = require('./middlewares/latencyTimer');
 
 const env = process.env;
+if (cluster.isMaster) {
+  // Main process
+  const app = express();
+  globalMiddleWare(app);
+  elasticSearch.ping(log);
 
-const app = express();
-globalMiddleWare(app);
-elasticSearch.ping(log);
+  const httpServer = createHttpServer(app);
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: '/graphql'
+  });
+  // Serve the Swagger UI
+  const apiContractDocument = swaggerService(env);
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(apiContractDocument, { explorer: true })
+  );
 
-// Serve the Swagger UI
-const apiContractDocument = swaggerService(env);
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(apiContractDocument, { explorer: true })
-);
+  app.use('/admin', adminRoutes);
+  app.use('/curate', curationRoutes);
+  app.use('/secure', authRoutes);
+  app.use('/files', fileRoutes);
+  app.use('/knowledge', knowledgeRoutes);
+  app.use('/search', searchRoutes);
+  app.use('/pixelated', pixelatedRoutes);
+  app.use('/mn', managedServiceRoutes);
+  app.use('/*', invalidRoutes);
 
-app.use('/admin', adminRoutes);
-app.use('/curate', curationRoutes);
-app.use('/secure', authRoutes);
-app.use('/files', fileRoutes);
-app.use('/knowledge', knowledgeRoutes);
-app.use('/search', searchRoutes);
-app.use('/pixelated', pixelatedRoutes);
-app.use('/mn', managedServiceRoutes);
-app.use('/*', invalidRoutes);
+  const schema = makeExecutableSchema({ typeDefs, resolvers });
+  useWsServer({ schema, context: getWsContext }, wsServer);
 
-const httpServer = createHttpServer(app);
-const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' });
+  const apolloServer = new ApolloServer({
+    schema,
+    formatError (err) {
+      if (!err.extensions) {
+        return err;
+      }
+      const message = err.extensions.message || 'An error occurred.';
+      const code = err.extensions.code || 500;
+      return { message, status: code };
+    },
+    context: getHttpContext
+  });
 
-const schema = makeExecutableSchema({ typeDefs, resolvers });
-useWsServer({ schema, context: getWsContext }, wsServer);
+  app.use((error, req, res, next) => {
+    const status = error.statusCode || 500;
+    const message = error.message;
+    const data = error.data;
+    latencyCalculator(res);
+    res.status(status).json({ message, data });
+  });
 
-const apolloServer = new ApolloServer({
-  schema,
-  formatError (err) {
-    if (!err.extensions) {
-      return err;
-    }
-    const message = err.extensions.message || 'An error occurred.';
-    const code = err.extensions.code || 500;
-    return { message, status: code };
-  },
-  context: getHttpContext
-});
-
-app.use((error, req, res, next) => {
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  latencyCalculator(res);
-  res.status(status).json({ message, data });
-});
-
-mongoose
-  .connect(
-    `mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`,
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    }
-  )
-  .then(async () => {
-    log.info('Rest server starting up...');
-    await apolloServer.start();
-    apolloServer.applyMiddleware({ app, path: '/graphql' });
-    httpServer.listen({ port: env.PORT }, () => {
-      log.info(`Server running on port ${env.PORT}`);
-      log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
-    });
-  })
-  .catch((err) => console.log(err));
+  mongoose
+    .connect(
+      `mongodb://${env.DB_USERNAME}:${env.DB_PASSWORD}@${env.MONGO_ADDRESS}:${env.MONGO_PORT}/${env.MM_DB}`,
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      }
+    )
+    .then(async () => {
+      log.info('Rest server starting up...');
+      await apolloServer.start();
+      apolloServer.applyMiddleware({ app, path: '/graphql' });
+      httpServer.listen({ port: env.PORT }, () => {
+        log.info(`Server running on port ${env.PORT}`);
+        log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
+      });
+    })
+    .catch((err) => console.log(err));
+  // Fork the worker process
+  cluster.fork();
+} else {
+  // Worker process
+  require('./sw');
+}

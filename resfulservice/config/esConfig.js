@@ -130,3 +130,32 @@ exports.datasets = {
     }
   }
 };
+
+/**
+ * Knowledge: Elastic search mappings.
+ */
+exports.knowledge = {
+  properties: {
+    label: {
+      type: 'text',
+      analyzer: 'autocomplete'
+    },
+    response: {
+      type: 'object',
+      dynamic: true,
+      properties: {
+        head: {
+          type: 'nested', // Define head as nested object
+          dynamic: true
+        },
+        results: {
+          type: 'nested', // Define results as nested object
+          dynamic: true
+        }
+      }
+    },
+    date: {
+      type: 'date'
+    }
+  }
+};

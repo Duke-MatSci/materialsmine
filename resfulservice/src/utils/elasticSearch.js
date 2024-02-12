@@ -98,24 +98,32 @@ class ElasticSearch {
 
     // Check and ignore existing indexes before create
     const existingIndexes = await this._getExistingIndices();
-    if (existingIndexes.length >= Object.keys(configPayload).length) {
+
+    // Remove elastic search index config from list of keys
+    const preparedKeys = Object.keys(configPayload)?.filter(
+      (e) => e !== 'config'
+    );
+
+    // Create a set of existing indices
+    const existingIndicesSet = new Set(
+      existingIndexes.map((index) => index.index)
+    );
+    const nonExistingKeys = [];
+    // Check if all indices in indices exist in existingIndicesSet
+    const allIndicesExist = preparedKeys.every((index) => {
+      const exists = existingIndicesSet.has(index);
+      if (!exists) nonExistingKeys.push(index);
+      return exists;
+    });
+
+    if (allIndicesExist) {
       log.info('elasticsearch.initES(): All indexes exist in Elastic search');
       return;
     }
 
-    // Remove elastic search index config from list of keys
-    let preparedKeys = Object.keys(configPayload)?.filter(
-      (e) => e !== 'config'
-    );
-    if (existingIndexes.length) {
-      preparedKeys = preparedKeys.filter(
-        (preppedKey) =>
-          !existingIndexes.some(
-            (existingIndex) => existingIndex?.index === preppedKey
-          )
-      );
+    if (nonExistingKeys.length) {
       log.info(
-        `elasticsearch.initES(): Adding the following missing index(es) ${preparedKeys.join(
+        `elasticsearch.initES(): Adding the following missing index(es) ${nonExistingKeys.join(
           ','
         )}`
       );
@@ -123,7 +131,7 @@ class ElasticSearch {
 
     try {
       Object.entries(configPayload).forEach(async ([key, value]) => {
-        if (preparedKeys.includes(key)) {
+        if (nonExistingKeys.includes(key)) {
           try {
             await this._createConfig(key);
             await this._putMappings(key, value);
@@ -173,14 +181,19 @@ class ElasticSearch {
 
   searchSanitizer (search) {
     let sanitizeSearch = search;
-    sanitizeSearch = sanitizeSearch.split(' ').map((word, index) => { // eslint-disable-line
-      if (index < 20) {
-        if (word.length > 50) {
-          return word.substr(0, 75);
+    sanitizeSearch = sanitizeSearch
+      .split(' ')
+      // eslint-disable-next-line array-callback-return
+      .map((word, index) => {
+        // eslint-disable-line
+        if (index < 20) {
+          if (word.length > 50) {
+            return word.substr(0, 75);
+          }
+          return word;
         }
-        return word;
-      }
-    }).join(' ');
+      })
+      .join(' ');
 
     // if (sanitizeSearch.match(/"|\*|\s|\/|:|\./)) {
     if (sanitizeSearch.match(/"|\*|\/|:|\./)) {
@@ -241,12 +254,12 @@ class ElasticSearch {
           bool: {
             should: [
               {
-                match_phrase: {
+                match: {
                   label: phrase
                 }
               },
               {
-                match_phrase: {
+                match: {
                   description: phrase
                 }
               }
@@ -289,6 +302,41 @@ class ElasticSearch {
         query: {
           match_all: {}
         }
+      })
+    });
+  }
+
+  async searchKnowledgeGraph (searchPhrase) {
+    // search knowledge index for key
+    const result = await this.client.search({
+      index: 'knowledge',
+      body: {
+        query: {
+          match_phrase: {
+            label: searchPhrase
+          }
+        }
+      }
+    });
+    return result.hits.hits;
+  }
+
+  async createKnowledgeGraphDoc (_id, label, result) {
+    // create new doc under knowledge index
+    const url = `http://${env.ESADDRESS}/knowledge/_update/${_id}`;
+    return await axios({
+      method: 'post',
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        doc: {
+          label,
+          response: result,
+          date: new Date().toISOString().slice(0, 10)
+        },
+        doc_as_upsert: true
       })
     });
   }
