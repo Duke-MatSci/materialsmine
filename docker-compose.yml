@@ -82,6 +82,7 @@ services:
       - FILES_DIRECTORY=${FILES_DIRECTORY}
       - ESADDRESS=${ESADDRESS}
       - PORT=${PORT}
+      - WORKER_PORT=${WORKER_PORT}
       - MINIO_PORT=${MINIO_PORT}
       - MINIO_CONSOLE_PORT=${MINIO_CONSOLE_PORT}
       - MINIO_BUCKET=${MINIO_BUCKET}
@@ -111,6 +112,7 @@ services:
       - SYSTEM_EMAIL=${SYSTEM_EMAIL}
     ports:
       - '3001:3001'
+      - '3002:3002'
   client:
     stdin_open: true
     container_name: frontend
