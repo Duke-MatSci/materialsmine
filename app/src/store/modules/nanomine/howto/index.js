@@ -1,13 +1,14 @@
-import getters from './getters.js'
+import getters from './getters.js';
 
 export default {
-  state () {
+  state() {
     return {
       appHeaderInfo: {
         icon: '',
         type: 'home',
         name: 'MaterialsMine',
-        subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
+        subtitle:
+          'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
       videos: {
         'nanomine/visualization_tutorial': {
@@ -26,7 +27,7 @@ export default {
           text: 'This video tutorial shows overall Module Characterization and Reconstruction tool usage. (no audio)'
         }
       }
-    }
+    };
   },
   getters
-}
+};
