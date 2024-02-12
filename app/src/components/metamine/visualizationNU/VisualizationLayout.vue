@@ -11,7 +11,7 @@
           </router-link>
         </button>
         <div
-          class="u--margin-neg md-fab md-fab-top-right u_width--max u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad"
+          class="u--margin-neg md-fab md-fab-top-right u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad"
         >
           <md-button
             @click="hideSide"

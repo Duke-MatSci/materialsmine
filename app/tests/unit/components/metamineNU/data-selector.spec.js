@@ -91,7 +91,7 @@ describe('DataSelector', () => {
     const btn = container.find('label')
     expect(container.exists()).toBe(true)
     expect(btn.attributes('class')).toBe(
-      'md-button btn btn--primary u_color_white u--shadow-none'
+      'btn btn--primary u_color_white u--shadow-none'
     )
     expect(btn.attributes('for')).toBe('Viscoelastic_Data')
     expect(btn.find('p').text()).toBe('Upload file')

@@ -10,10 +10,10 @@
             <div class="form__file-input">
               <div class="md-theme-default">
                 <label
-                  class="md-button btn btn--primary u_color_white u--shadow-none"
+                  class="btn btn--primary u_color_white u--shadow-none"
                   for="Viscoelastic_Data"
                 >
-                  <p class="">Upload file</p>
+                  <p class="md-body-1">Upload file</p>
                 </label>
                 <div class="md-file">
                   <input
@@ -31,17 +31,9 @@
 
         <button
           @click.prevent="downloadFile"
-          class="md-button btn btn--tertiary u--shadow-none"
+          class="btn btn--tertiary u--shadow-none u--layout-flex u_centralize_items u--layout-flex-justify-center"
         >
-          <div
-            class="u--layout-flex u--layout-flex-justify-end u_margin-bottom-small"
-          >
-            <!-- <md-icon class="utility-navfonticon utility-color">download</md-icon> -->
-            <span class="md-icon md-icon-font u--default-size u--inline"
-              >download</span
-            >
-            <div>Download file</div>
-          </div>
+          <p class="md-body-1">Download file</p>
         </button>
       </div>
       <md-table
@@ -293,6 +285,8 @@ export default {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(e)
         })
+      } finally {
+        e.target.value = null
       }
     },
     displayInfo (msg, duration) {

@@ -115,7 +115,6 @@ describe('VisualizationLayout.vue', () => {
     expect(button.findComponent(RouterLinkStub).props().to).toBe(props.link.to)
     expect(button.findComponent(RouterLinkStub).text()).toBe(props.link.text)
   })
-
   it('hides side nav', async () => {
     const commitSpy = jest.spyOn(wrapper.vm.$store, 'commit')
     const nav = wrapper.vm.showSide
