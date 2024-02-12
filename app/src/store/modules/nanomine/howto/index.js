@@ -1,7 +1,7 @@
-import getters from './getters.js';
+import getters from './getters.js'
 
 export default {
-  state() {
+  state () {
     return {
       appHeaderInfo: {
         icon: '',
@@ -27,7 +27,7 @@ export default {
           text: 'This video tutorial shows overall Module Characterization and Reconstruction tool usage. (no audio)'
         }
       }
-    };
+    }
   },
   getters
-};
+}
