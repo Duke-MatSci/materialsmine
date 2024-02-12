@@ -64,8 +64,8 @@ describe('Manage Service Controller Unit Tests:', function () {
       const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal(
-        `${appName} service not available`,
-        'manageServiceRequest'
+        `Dynamfits service not available`,
+        'getDynamfitChartData'
       );
     });
 

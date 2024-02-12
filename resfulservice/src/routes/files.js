@@ -15,7 +15,7 @@ router
 
 router
   .route('/upload')
-  .post(latencyTimer, minioUpload, fileController.uploadFile);
+  .post(isAuth, latencyTimer, minioUpload, fileController.uploadFile);
 
 router.route('/metamine').get(fileController.getMetamineFileNames);
 

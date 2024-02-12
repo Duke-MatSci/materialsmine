@@ -27,7 +27,9 @@ exports.manageServiceRequest = async (req, res, next) => {
       return next(
         errorWriter(
           req,
-          `${appName} service not available`,
+          `${
+            appName[0].toUpperCase() + appName.slice(1)
+          } service not available`,
           'getDynamfitChartData',
           422
         )
