@@ -919,9 +919,9 @@ paths:
                     example: 'Error fetching file'
               
   /files/upload:
-    security:
-      - BearerAuth: []
     post:
+      security:
+        - BearerAuth: []
       summary: upload files to the server
       description: A route to upload files to the server
       tags:
