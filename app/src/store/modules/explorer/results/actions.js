@@ -35,7 +35,10 @@ export default {
           }
         }
       }`,
-      variables: { input: { search: 'Keyword', searchValue: payload, pageSize: 100 } }
+      variables: {
+        input: { search: 'Keyword', searchValue: payload, pageSize: 100 }
+      },
+      fetchPolicy: 'cache-first'
     })
     const requestOptions = {
       method: 'POST',
@@ -47,18 +50,20 @@ export default {
     try {
       const response = await fetch(url, requestOptions)
       if (!response || response?.statusText !== 'OK') {
-        const error = new Error(
-          response.message || 'Something went wrong!'
-        )
+        const error = new Error(response.message || 'Something went wrong!')
         throw error
       }
 
       const responseData = await response.json()
-      const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems
+      const total =
+        context.getters.getTotal + responseData?.data?.searchImages?.totalItems
       const groupTotals = context.getters.getTotalGroupings
       groupTotals.getImages = responseData?.data?.searchImages?.totalItems ?? 0
       context.commit('setTotal', total ?? 0)
-      context.commit('setImages', responseData?.data?.searchImages?.images ?? [])
+      context.commit(
+        'setImages',
+        responseData?.data?.searchImages?.images ?? []
+      )
       context.commit('setTotalGrouping', groupTotals)
     } catch (error) {
       const snackbar = {
@@ -72,14 +77,18 @@ export default {
   async getMatchedMaterials (context, payload) {
     const url = `/api/admin/populate-datasets-properties?search=${payload}`
     try {
+      const cache = await context
+        .dispatch('fetchWrapper', { url }, { root: true })
+        .then((res) => res.val)
       const response = await fetch(url, {
-        method: 'GET'
+        method: 'GET',
+        cache
       })
 
       if (!response || response.statusText !== 'OK') {
-        const error = new Error(
-          response?.message || 'Something went wrong!'
-        )
+        const error = new Error(response?.message || 'Something went wrong!', {
+          cause: url
+        })
         throw error
       }
 
@@ -94,6 +103,11 @@ export default {
       context.commit('setMaterials', responseData?.data || [])
       context.commit('setTotalGrouping', groupTotals)
     } catch (error) {
+      await context.dispatch(
+        'fetchWrapper',
+        { url: 'cause' in error },
+        { root: true }
+      )
       const snackbar = {
         message: 'Something went wrong while fetching properties!',
         action: () => context.dispatch('getMatchedMaterials', payload)
@@ -112,15 +126,17 @@ export default {
     }
 
     try {
+      const cache = await context
+        .dispatch('fetchWrapper', { url }, { root: true })
+        .then((res) => res.val)
       const response = await fetch(url, {
-        method: 'GET'
+        method: 'GET',
+        cache
       })
 
       if (!response || response.statusText !== 'OK') {
         context.commit('setIsLoading', false)
-        const error = new Error(
-          response?.message || 'Something went wrong!'
-        )
+        const error = new Error(response?.message || 'Something went wrong!')
         throw error
       }
 
@@ -159,7 +175,9 @@ export default {
     const data = responseData?.data?.hits || []
     const types = Object.create({})
     data.forEach((item) => {
-      const categoryExist = Object.keys(types)?.find(currKey => currKey === item?._index) || undefined
+      const categoryExist =
+        Object.keys(types)?.find((currKey) => currKey === item?._index) ||
+        undefined
 
       if (categoryExist) {
         types[categoryExist].push(item._source)
@@ -170,8 +188,9 @@ export default {
     const articlesLength = types?.articles?.length || 0
     const samplesLength = types?.samples?.length || 0
     const chartsLength = types?.charts?.length || 0
-    const total = [articlesLength, samplesLength, chartsLength]
-      .reduce((total, value) => total + value)
+    const total = [articlesLength, samplesLength, chartsLength].reduce(
+      (total, value) => total + value
+    )
 
     context.commit('setArticles', types?.articles || [])
     context.commit('setSamples', types?.samples || [])
@@ -189,7 +208,7 @@ export default {
 
   saveAutosuggest (context, responseData) {
     const data = responseData?.data?.hits || []
-    const suggestions = data.map(item => {
+    const suggestions = data.map((item) => {
       return item?._source?.label
     })
     context.commit('setAutosuggest', suggestions || [])

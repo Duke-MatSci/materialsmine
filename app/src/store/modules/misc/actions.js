@@ -64,5 +64,97 @@ export default {
     }
 
     return { deleted, error }
+  },
+
+  async fetchWrapper (
+    { dispatch },
+    { url = '', body = '{}', reset = false, expiresIn = 10800000 }
+  ) {
+    if (!url) {
+      // TODO: Are we ever gonna need this?
+      throw new Error('Provide Url Query')
+    }
+
+    // No need to reassign body to cBody since it's not modified
+    const hashedKey = `#${url}#${body}#`
+    const newHashedKey = await dispatch('toHash', hashedKey)
+    const date = new Date().getTime() + expiresIn
+
+    // Simplify IndexedDB access
+    const indexedDB =
+      window.indexedDB ||
+      window.mozIndexedDB ||
+      window.webkitIndexedDB ||
+      window.msIndexedDB
+    const cacheDB = 'cachedRequest'
+    const dbVersion = 2
+
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(cacheDB, dbVersion)
+
+      request.onerror = (event) => {
+        console.error('IndexedDB error:', event.target.error)
+        reject(new Error('IndexedDB error'))
+      }
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result
+        if (!db.objectStoreNames.contains('requests')) {
+          const store = db.createObjectStore('requests', {
+            keyPath: 'id',
+            autoIncrement: true
+          })
+          store.createIndex('request_hash', 'hash', { unique: true })
+        }
+      }
+
+      request.onsuccess = async (event) => {
+        const db = event.target.result
+        const transaction = db.transaction(['requests'], 'readwrite')
+        const store = transaction.objectStore('requests')
+        const hashIndex = store.index('request_hash')
+        const hashQuery = hashIndex.get(newHashedKey)
+
+        hashQuery.onsuccess = () => {
+          const result = hashQuery.result
+          if (
+            !result ||
+            reset ||
+            !result.timestamp ||
+            new Date().getTime() - result.timestamp >= expiresIn
+          ) {
+            const updateData = {
+              hash: newHashedKey,
+              timestamp: reset ? null : date
+            }
+            store.put(result ? { ...result, ...updateData } : updateData)
+            resolve({ val: 'reload' })
+          } else if (
+            result.timestamp &&
+            new Date().getTime() - result.timestamp < expiresIn
+          ) {
+            resolve({ val: 'force-cache' })
+          } else {
+            resolve({ val: 'reload' })
+          }
+        }
+
+        hashQuery.onerror = (event) => {
+          console.error('hashQuery error:', event.target.error)
+          reject(new Error('hashQuery error'))
+        }
+      }
+    })
+  },
+
+  async toHash (context, str) {
+    let hash = 0
+    if (str.length === 0) return hash
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash // Convert to 32bit integer
+    }
+    return hash.toString()
   }
 }

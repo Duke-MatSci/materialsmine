@@ -16,17 +16,37 @@ export default {
       csvData = []
       // fetch data from Minio
       try {
-        const fetchedNamesResponse = await fetch('/api/files/metamine')
+        const cache = await dispatch(
+          'fetchWrapper',
+          { url: '/api/files/metamine' },
+          { root: true }
+        ).then((res) => res.val)
+        const fetchedNamesResponse = await fetch('/api/files/metamine', {
+          cache
+        })
           .then((response) => response.json())
-          .catch((err) => {
+          .catch(async (err) => {
+            await dispatch(
+              'fetchWrapper',
+              { url: '/api/files/metamine', reset: true },
+              { root: true }
+            )
+
             throw new Error(err?.message ?? 'Something went wrong')
           })
         // set fetchedNames
         fetchedNames = fetchedNamesResponse?.fetchedNames ?? []
 
-        const getVisualizationList = fetchedNames.map(function (item) {
+        const getVisualizationList = fetchedNames.map(async function (item) {
           item.name = decodeURI(item.name)
-          return fetch(`/api/files/metamine/${encodeURI(item.name)}`)
+          const url = `/api/files/metamine/${encodeURI(item.name)}`
+          const cache = await dispatch(
+            'fetchWrapper',
+            { url },
+            { root: true }
+          ).then((res) => res.val)
+
+          return fetch(url, { cache })
         })
         await Promise.allSettled(getVisualizationList)
           .then(async (visualizationListResponse) => {
