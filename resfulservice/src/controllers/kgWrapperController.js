@@ -106,19 +106,27 @@ const _outboundRequest = async (req, next) => {
       preparedRequest.withCredentials = 'true';
     }
   }
-
-  const response = await axios(preparedRequest);
-  return {
-    type,
-    data: response?.data
-  };
+  try {
+    const response = await axios(preparedRequest);
+    return {
+      type,
+      data: response?.data
+    };
+  } catch (err) {
+    log.error(`_outboundRequest(): ${err.status || 500} - ${err}`);
+    throw err;
+  }
 };
 
 exports.outboundRequest = async (req, next) => {
   const log = req.logger;
   log.info('outboundRequest(): Function entry');
-
-  return _outboundRequest(req, next);
+  try {
+    return _outboundRequest(req, next);
+  } catch (err) {
+    log.error(`outboundRequest(): ${err.status || 500} - ${err}`);
+    throw err;
+  }
 };
 
 /**
@@ -257,7 +265,7 @@ exports.getAllDatasets = async (req, res, next) => {
   const pageSize = parseInt(req?.query?.pageSize) || 10;
 
   try {
-    const response = await elasticSearch.loadAllDatasets(page, pageSize);
+    const response = await elasticSearch.loadAllDatasets(req, page, pageSize);
     successWriter(req, { message: 'success' }, 'getAllDatasets');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
@@ -293,7 +301,8 @@ exports.getInstanceFromKnowledgeGraph = async (req, res, next) => {
           'Content-Length': response.data.length
         });
         res.send(response.data);
-      });
+      })
+      .catch((err) => next(errorWriter(req, err, 'getAllCharts')));
   } catch (err) {
     next(errorWriter(req, err, 'getAllCharts'));
   }
