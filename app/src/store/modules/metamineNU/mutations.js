@@ -46,5 +46,8 @@ export default {
   },
   setLoadingState (state, payload) {
     state.loadingState = payload
+  },
+  setRawJsonFile (state, payload) {
+    state.rawJson = payload
   }
 }

@@ -238,7 +238,9 @@ export default {
         this.xmlFinder.length === 0 ||
         !Object.keys(this.xmlFinder).length ||
         this.xmlFinder.totalItems === 0
-      ) { return true }
+      ) {
+        return true
+      }
       return false
     },
     filtersActive () {
@@ -362,7 +364,7 @@ export default {
           }
         }
       },
-      fetchPolicy: 'cache-and-network',
+      fetchPolicy: 'cache-first',
       result ({ data, loading }) {
         if (!loading && data) this.error = null
       },

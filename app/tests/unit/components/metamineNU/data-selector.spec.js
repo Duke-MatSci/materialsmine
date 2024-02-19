@@ -70,4 +70,32 @@ describe('DataSelector', () => {
     await wrapper.vm.onSelect([fetchedNamesSample[0]])
     expect(storeSpy).toHaveBeenCalledTimes(4)
   })
+
+  it('renders file upload', () => {
+    expect(wrapper.findAll('label').at(1).attributes('for')).toBe(
+      'Viscoelastic_Data'
+    )
+    expect(wrapper.find('div.form__file-input ').exists()).toBe(true)
+    expect(wrapper.find('div.md-theme-default ').exists()).toBe(true)
+    expect(wrapper.find('div.md-file > input').exists()).toBe(true)
+    expect(wrapper.find('label.btn').exists()).toBe(true)
+    expect(wrapper.find('span.md-caption').exists()).toBe(false)
+  })
+
+  it('only accepts tsv or csv file', () => {
+    const container = wrapper.find(
+      'label > .form__file-input > .md-theme-default'
+    )
+
+    const input = container.find('div.md-file > input')
+    const btn = container.find('label')
+    expect(container.exists()).toBe(true)
+    expect(btn.attributes('class')).toBe(
+      'btn btn--primary u_color_white u--shadow-none'
+    )
+    expect(btn.attributes('for')).toBe('Viscoelastic_Data')
+    expect(btn.find('p').text()).toBe('Upload file')
+    expect(input.attributes('accept')).toBe('.csv, .tsv, .txt')
+    expect(input.attributes('type')).toBe('file')
+  })
 })

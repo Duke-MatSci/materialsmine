@@ -133,9 +133,9 @@ jobs:
     needs: release
     uses: Duke-MatSci/materialsmine/.github/workflows/prodBuilder.yml@main
     with:
-      myid: managedservices
+      myid: mserv
       context: ./services
-      tags: dukematsci/prod-mgdservices
+      tags: dukematsci/prod-mserv
       next_ver: ${{ needs.release.outputs.version_output}}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

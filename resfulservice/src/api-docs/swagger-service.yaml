@@ -298,7 +298,7 @@ paths:
       security:
         - BearerAuth: []
       summary: Gets curation Base Object
-      description: A route to get the Curation Schema Base Object either base on sheetName query or returns the whole Schema
+      description: This route provides access to the Curation Schema Base Object, either by querying based on the sheetName or by retrieving the entire Schema. If the isFile query parameter is specified it returns the XSD schema as a downloadable file. Alternatively, if the isJson query parameter is specified, it returns a valid Base JSON Schema. Finally, if the getXSD query parameter is included, it returns the XSD schema as JSON.
       tags:
         - Curation
       parameters:
@@ -306,25 +306,25 @@ paths:
           name: sheetName
           schema:
             type: string
-          description: The sheetName (i.e subset) of the Schema to return. This is optional
+          description: The sheetName parameter specifies a subset of the Schema to be retrieved. This parameter is optional.
         - in: query
           name: isFile
           schema:
             type: boolean
-          description: Set query param to true to download the xsd schema as file
+          description: Specify the query parameter as **true** to download the XSD schema as a file.
         - in: query
           name: isJson
           schema:
             type: boolean
-          description: Set query param to true to  return the json schema
+          description: Specify query parameter as **true** to get the json schema
         - in: query
           name: getXSD
           schema:
             type: boolean
-          description: Set query params to true to return the xsd schema as json
+          description: Specify query parameter as **true** to get the xsd schema as json
       responses:
         '201':
-          description: Returns a base object schema or curation json schema or curation xsd or downloads the xsd as file 
+          description: It returns as either a base object schema, a curation JSON schema, or a curation XSD. It can also download the XSD as a file.
           content:
             application/json:
               schema:
@@ -337,7 +337,7 @@ paths:
                   - $ref: '#/components/schemas/Sample-XSD'
                   - $ref: '#/components/schemas/Sample-JsonSchema'
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -357,7 +357,7 @@ paths:
       security:
         - BearerAuth: [] 
       summary: Creates a new curation
-      description: Curates a new data based on a submitted spreadsheet & other files
+      description: Creates a new curation by parsing a submitted spreadsheet & other files. A new curation can also be created by submitting filled a valid Base schema object.
       tags:
         - Curation
       parameters:
@@ -370,9 +370,9 @@ paths:
           name: isBaseObject
           schema:
             type: boolean
-          description: should be set to true if curating with Base schema object
+          description: Set to **true** when curating with the Base schema object.
       requestBody:
-        description: A payload that contains the master_template xlsx file along with other files needed to create the curation
+        description: A payload containing either the master_template xlsx file and other required files for curation creation, or the Base schema object.
         required: true
         content:
           application/json:
@@ -392,14 +392,14 @@ paths:
                       format: binary
       responses:
         '201':
-          description: Returns the newly curated object
+          description: Returns the newly created curation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Successful-Curation'
 
         '400':
-          description: If user doesn't upload master template xlsx file
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -410,13 +410,13 @@ paths:
                         enum: ['Missing dataset ID in query', 'Material template files not uploaded', 'Master template xlsx file not uploaded']
 
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Unauthorized-Error'
         '403':
-          description: If user is forbidden from using the service
+          description: If user is forbidden from accessing this service
           content:
             application/json:
               schema:
@@ -430,7 +430,7 @@ paths:
                 example:
                   message: A sample must belong to a dataset. Dataset 583e3d6ae74a1d205f4e3fd3 not found
         '409':
-          description: conflict error if object already curated
+          description: Conflict error occurs if the curation already exists.
           content:
             application/json:
               schema:
@@ -453,6 +453,7 @@ paths:
       security:
         - BearerAuth: [] 
       summary: Updates existing curated data
+      description: This route updates an existing curation. whether it's newly curated data or an old curation.
       deprecated: false
       parameters:
         - in: query
@@ -464,14 +465,14 @@ paths:
           name: isBaseUpdate
           schema:
             type: boolean
-          description: query params to specify if update is through baseJson object
+          description: Set to **true** when updating with the Base schema object.
         - in: query
           name: isNew
           schema:
             type: boolean
-          description: query params specifying if curation is new or old curation
+          description: Set to **true** if curation is a new or old curation
       requestBody:
-        description: An updated curation json object
+        description: An updated curation json object or Base schema object.
         required: true
         content:
           application/json:
@@ -481,7 +482,7 @@ paths:
                 - $ref: '#/components/schemas/CurationJsonUpdate'
       responses:
         '200':
-          description: Returns the newly curated object
+          description: If **isBaseUpdate** is set to true, this returns the updated Base schema Object or the updated curated object.
           content:
             application/json:
               schema:
@@ -490,7 +491,7 @@ paths:
                   - $ref: '#/components/schemas/Sample-BaseObject'
 
         '304': 
-          description: No changes to the curation object to update
+          description: No changes have been made to the curation object provided for updating.
           content:
             application/json:
               schema:
@@ -500,7 +501,7 @@ paths:
                     type: string
                     example: 'No changes'
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -518,7 +519,7 @@ paths:
                     example: Curated sample ID 583e3d6ae74a1d205f4e3fd3 not found
 
         '500':
-          description: Elastic search upstream server response error
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -528,11 +529,10 @@ paths:
                     type: string
                     example: An error occurred
     delete:
-
       security:
         - BearerAuth: []
       summary: Deletes a curation or list of curations
-      description: A route to delete a  single curation or list of curations with similar datasetID
+      description: A route to delete a  single curation or list of curations with similar dataset ID
       tags:
         - Curation
       parameters:
@@ -540,21 +540,21 @@ paths:
           name: xlsxObjectId
           schema:
             type: string
-          description: the id of the curation to delete
+          description: Curation ID
         - in: query
           name: dataset
           schema:
             type: string
-          description: Dataset ID linked to multiple curations
+          description: ID of the dataset to which the curation(s) are associated.
         - in: query
           name: isNew
           schema:
             type: boolean
-          description: query params specifying if curation is new or old curation
+          description: Set to **true** if curation is a new or old curation
 
       responses:
         '200':
-          description: Returns a success message for deleting curations
+          description: Provides a success message confirming the deletion of curation(s).
           content:
             application/json:
               schema:
@@ -567,7 +567,7 @@ paths:
                     enum: ['Curated sample ID: 6475c82ffbeb8571b77a5991 successfully deleted', 'Curated Samples with Dataset ID: 583e3d6ae74a1d205f4e3fd3 successfully deleted']
                 
         '400':
-          description: Bad user input
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -581,7 +581,7 @@ paths:
                       param: dataset
                       location: query
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -612,14 +612,14 @@ paths:
       security:
         - BearerAuth: []
       summary: Gets a single curated data or list of curated data
-      description: A route to get a single curation or list of curations depending on if query parameter for the curation to get is set.
+      description: A route to get a single curation by using the curation ID. This route is utilized to retrieve the curation for updating or editing purposes.
       tags:
         - Curation
       parameters:
         - in: path
           required: true
           name: curationId
-          description: The ID of the curated data to return for editing
+          description: The ID of the curation to be edited.
           schema:
             type: string
             example: "64394c8032bc6325505af6f9"
@@ -628,17 +628,17 @@ paths:
           name: isNew
           schema:
             type: boolean
-          description: query params specifying if curation is new or old curation
+          description: Set to **true** if curation is a new or old curation
       responses:
         '200':
-          description: Returns the newly curated object
+          description: Retrieve the curation to be edited as base schema object.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sample-Curation'
+                $ref: '#/components/schemas/Sample-BaseObject'
 
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -669,7 +669,7 @@ paths:
       security:
         - BearerAuth: [] 
       summary: Creates bulk curations
-      description: Creates multiple curations based on multiple master template uploaded in a zip file
+      description: Creates multiple curations from several master template uploaded in a zip file
       tags:
         - Curation
       parameters:
@@ -679,7 +679,7 @@ paths:
             type: string
           description: Dataset ID
       requestBody:
-        description: A payload that contains zip file which holds all the files for separate curations in individual folders
+        description: A payload that contains zip file which holds all the neccessary files for separate curation organised into folders.
         required: true
         content:
           multipart/form-data:
@@ -693,7 +693,7 @@ paths:
                     format: binary
       responses:
         '201':
-          description: Returns the newly curated object
+          description: Returns the newly curated objects for both successful curations (bulkCurations) and unsuccessful curations (bulkErrors).
           content:
             application/json:
               schema:
@@ -712,7 +712,7 @@ paths:
                         "weibull.csv": "file not uploaded"
                         
         '400':
-          description: If user doesn't upload master template xlsx file
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -723,7 +723,7 @@ paths:
                         enum: ['Missing dataset ID in query', 'bulk curation zip file not uploaded']
 
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -752,7 +752,7 @@ paths:
   /files/{fileId}:
     get:
       summary: Download files from the server
-      description: A route to download files by specifying a boolean isFileStore query params for files saved in the directory on the server or  in database
+      description: A route for downloading files from the server, with a query parameter indicating the storage location. Files may be stored in the file store, bucket store, or database.
       tags:
         - Files
       parameters:
@@ -761,23 +761,23 @@ paths:
           schema:
             type: boolean
             example: false
-          description: a boolean value to specify if the file is stored in a directory or database
+          description: Set to **true** if the file is stored in the file directory on the server.
         - in: query
           name: isStore
           schema:
             type: boolean
             example: false
-          description: a boolean value to specify if the file is stored in a directory or database
+          description: Set to **true** if the file is stored in the bucket store
         - in: path
           required: true
           name: fileId
-          description: the id of the file to download
+          description: The ID or name of the file to be downloaded.
           schema:
             type: string
             example: 'mobile (15).png'
       responses:
         '200':
-          description: Returns the downloaded file type
+          description: Returns the downloaded file.
           content:
             application/octet-stream:
               schema:
@@ -785,7 +785,7 @@ paths:
                 format: binary
 
         '400':
-          description: Bad user input
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -813,14 +813,14 @@ paths:
       security:
         - BearerAuth: []
       summary: Deletes a file from the server
-      description: A route to delete a file by passing the fileId path params
+      description: A route for deleting a file by providing the fileId as a path parameter.
       tags:
         - Files
       parameters:
         - in: path
           required: true
           name: fileId
-          description: the id of the file to delete
+          description: The ID of the file to be deleted
           schema:
             type: string
             example: 'mobile (15).png'
@@ -829,7 +829,7 @@ paths:
           description: OK
 
         '400':
-          description: Bad user input
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -844,7 +844,7 @@ paths:
                       location: params
                       
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -863,7 +863,7 @@ paths:
                     
   /files/image_migration/{imageType}:
     get:
-      summary: Image migration routes
+      summary: Image migration route
       description: A route to fetch images of specific types only
       tags:
         - Files
@@ -871,13 +871,13 @@ paths:
         - in: path
           required: true
           name: imageType
-          description: the type of images to fetch
+          description: The type of images to retrieve. 
           schema:
             type: string
             example: 'tiff'
       responses:
         '200':
-          description: Returns the fetched image information
+          description: Returns the images of the specified type.
           content:
             application/json:
               schema:
@@ -894,7 +894,7 @@ paths:
                       size: 101196
 
         '400':
-          description: Bad user input
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -920,6 +920,8 @@ paths:
               
   /files/upload:
     post:
+      security:
+        - BearerAuth: []
       summary: upload files to the server
       description: A route to upload files to the server
       tags:
@@ -929,7 +931,12 @@ paths:
           name: isVisualizationCSV
           schema:
             type: boolean
-          description: Enable this option (as true) when uploading Metamine Visualization CSV files
+          description: Set as **true** when uploading Metamine Visualization CSV files.
+        - in: query
+          name: isTemp
+          schema:
+            type: boolean
+          description: Set as **true** if file(s) should only be uploaded to the temporary file store.
       requestBody:
         description: An array selection of files to upload
         required: true
@@ -945,14 +952,14 @@ paths:
                     format: binary
       responses:
         '201':
-          description: Uploads file distributions and provides information about the uploaded files
+          description: Uploads file and provides information about the uploaded files
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Sample-Files'
 
         '400':
-          description: User uploads unsupported files
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -961,6 +968,14 @@ paths:
                       message:
                         type: string
                         example: 'Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .zip, .xls and .xlsx format allowed!'
+  
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+  
         '500':
           description: Internal Server Error
           content:
@@ -975,12 +990,12 @@ paths:
   /files/metamine:
     get:
       summary: fetch metamine dataset files
-      description: Fetch details of uploaded metamine visualization files
+      description: Fetch details of uploaded metamine visualization files such as name of the file, bucket which file is stored, key and color.
       tags:
         - Files
       responses:
         '200':
-          description: Returns the downloaded file type
+          description: Returns details of the metamine visualization files.
           content:
             application/json:
               schema:
@@ -1000,20 +1015,20 @@ paths:
   /files/metamine/{fileName}:
     get:
       summary: Download and parse the specified metamine fileName
-      description: Download specific metamine fileName visualization file
+      description: Download specified metamine visualization file, parse the file and return in JSON
       tags:
         - Files
       parameters:
         - in: path
           required: true
           name: fileName
-          description: the filename of metamine dataset
+          description: The name of the metamine visualization file
           schema:
             type: string
             example: lattice_2d_sample.csv
       responses:
         '200':
-          description: Returns the downloaded file type
+          description: Returns the details of the specified metamine visualization file in JSON format
           content:
             application/json:
               schema:
@@ -1030,23 +1045,16 @@ paths:
                     type: string
                     example: 'error fetching metamine csv object'
                     
-  /mn/{appName}:
+  /mn/dynamfit:
     post:
       security:
         - BearerAuth: [] 
-      summary: A route to call a managed service application
-      description: A route to access any of the managed service applications
+      summary: A route to call Dynamfit Managed Service Application
+      description: A route to upload csv and tsv file and returns plotly chart data.
       tags:
         - Managed Services
-      parameters:
-        - in: path
-          required: true
-          name: appName
-          schema:
-            type: string
-          description: Managed Service Application Name
       requestBody:
-        description: A payload that contains the information required by the managed service application to process the request
+        description: A payload that contains the information required by the dynamfit application
         required: true
         content:
           application/json:
@@ -1060,14 +1068,14 @@ paths:
                 
       responses:
         '200':
-          description: Returns the managed services application response
+          description: Returns processed dynamfit chart data.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Succesful-Managed-Service'
+                $ref: '#/components/schemas/Succesful-Dynamfit-Data'
 
         '400':
-          description: Request validation Error
+          description: Invalid Request Payload
           content:
             application/json:
               schema:
@@ -1078,7 +1086,7 @@ paths:
                         enum: ["File 'left_sloth_evie-2024-01-05T16:40:33.500Z-PMMA_shifted_R10_data.tx' has an invalid extension", "The number of prony must be between 1 and 100", "The Model must be one of Linear, LASSO, Ridge", "Fit settings must be one of True, False", "No file name provided"]
 
         '401':
-          description: User not authorized for this service
+          description: Unauthorized access to this service.
           content:
             application/json:
               schema:
@@ -1094,13 +1102,129 @@ paths:
                   message: File 'left_sloth_evie-2024-01-05T16:40:33.500Z-PMMA_shifted_R10_data.txt' not found
 
         '422':
-          description: If user is forbidden from using the service
+          description: Unprocessable entity
           content:
             application/json:
               schema:
                 type: object
                 example:
-                  message: dynamfit service not available
+                  message: Dynamfit service not available
+       
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This response indicates an unexpected server-side issue.
+                    
+  /mn/chemprops:
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: A route to call a Chemprops Managed Service Application
+      description: This route collects polymer and filler info in request and returns their uSmile info.
+      tags:
+        - Managed Services
+      requestBody:
+        description: A payload that contains the information required by chemprops to process the request.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                polfil: pol
+                ChemicalName: Polystyrene
+                Abbreviation: PS
+                TradeName: Styrofoam
+                SMILES: '*CC(*)c1ccccc1'
+                nmId: L999_Someone_2020_S2
+                
+                
+      responses:
+        '200':
+          description: Returns a uSmile information related to a polymer or filler request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Chemprops-Data'
+
+        '400':
+          description: Invalid Request Payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        enum: ["Invalid Polymer Name", "Invalid Request: Ignore if not; it will be added to the database.", "polfil is required", "ChemicalName is required",  "polfil must be either pol or fil"]
+
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        
+
+        '422':
+          description: Unprocessable entity
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: Chemprops service not available
+       
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This response indicates an unexpected server-side issue.
+                    
+  /mn/chemprops/init:
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: A route to initialize the Chemprops Managed Service Application
+      description: A route to initialize the Chemprops database and seed it with data.
+      tags:
+        - Managed Services
+                
+      responses:
+        '200':
+          description: Returns a successful Initialization message
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: "nmChemPropsPrepare initialized and database seeded successfully"
+                  
+
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
        
         '500':
           description: Internal Server Error
@@ -1739,7 +1863,7 @@ components:
             youngs: '[1.79644300e+09 1.78894858e+09 1.76674163e+09 1.73065354e+09\n 1.68207157e+09 1.62292023e+09 1.55560097e+09 1.48287302e+09\n 1.40767285e+09 1.33289010e+09 1.26113555e+09 1.19454410e+09\n 1.13464819e+09 1.08233847e+09 1.03790637e+09 1.00114630e+09\n 9.71488309e+08 9.48134158e+08 9.30177967e+08 9.16701631e+08\n 9.06843125e+08 8.99840689e+08 8.95058209e+08 8.91997572e+08\n 8.90303069e+08 8.89761838e+08 8.90303069e+08 8.91997572e+08\n 8.95058209e+08 8.99840689e+08 9.06843125e+08 9.16701631e+08\n 9.30177967e+08 9.48134158e+08 9.71488309e+08 1.00114630e+09\n 1.03790637e+09 1.08233847e+09 1.13464819e+09 1.19454410e+09\n 1.26113555e+09 1.33289010e+09 1.40767285e+09 1.48287302e+09\n 1.55560097e+09 1.62292023e+09 1.68207157e+09 1.73065354e+09\n 1.76674163e+09 1.78894858e+09 1.79644300e+09 1.78894858e+09\n 1.76674163e+09 1.73065354e+09 1.68207157e+09 1.62292023e+09\n 1.55560097e+09 1.48287302e+09 1.40767285e+09 1.33289010e+09\n 1.26113555e+09 1.19454410e+09 1.13464819e+09 1.08233847e+09\n 1.03790637e+09 1.00114630e+09 9.71488309e+08 9.48134158e+08\n 9.30177967e+08 9.16701631e+08 9.06843125e+08 8.99840689e+08\n 8.95058209e+08 8.91997572e+08 8.90303069e+08 8.89761838e+08\n 8.90303069e+08 8.91997572e+08 8.95058209e+08 8.99840689e+08\n 9.06843125e+08 9.16701631e+08 9.30177967e+08 9.48134158e+08\n 9.71488309e+08 1.00114630e+09 1.03790637e+09 1.08233847e+09\n 1.13464819e+09 1.19454410e+09 1.26113555e+09 1.33289010e+09\n 1.40767285e+09 1.48287302e+09 1.55560097e+09 1.62292023e+09\n 1.68207157e+09 1.73065354e+09 1.76674163e+09 1.78894858e+09\n 1.79644300e+09]'
             poisson: '[0.1709466  0.17269735 0.17792187 0.18653445 0.1983839  0.21324171\n 0.23078664 0.25058767 0.27208825 0.29459612 0.31728455 0.33921184\n 0.35936531 0.37673353 0.39040468 0.39968067 0.40418835 0.40396314\n 0.39948237 0.39163443 0.38162531 0.37083889 0.36067654 0.35240228\n 0.34701293 0.34514384 0.34701293 0.35240228 0.36067654 0.37083889\n 0.38162531 0.39163443 0.39948237 0.40396314 0.40418835 0.39968067\n 0.39040468 0.37673353 0.35936531 0.33921184 0.31728455 0.29459612\n 0.27208825 0.25058767 0.23078664 0.21324171 0.1983839  0.18653445\n 0.17792187 0.17269735 0.1709466  0.17269735 0.17792187 0.18653445\n 0.1983839  0.21324171 0.23078664 0.25058767 0.27208825 0.29459612\n 0.31728455 0.33921184 0.35936531 0.37673353 0.39040468 0.39968067\n 0.40418835 0.40396314 0.39948237 0.39163443 0.38162531 0.37083889\n 0.36067654 0.35240228 0.34701293 0.34514384 0.34701293 0.35240228\n 0.36067654 0.37083889 0.38162531 0.39163443 0.39948237 0.40396314\n 0.40418835 0.39968067 0.39040468 0.37673353 0.35936531 0.33921184\n 0.31728455 0.29459612 0.27208825 0.25058767 0.23078664 0.21324171\n 0.1983839  0.18653445 0.17792187 0.17269735 0.1709466 ]'
             
-    Succesful-Managed-Service: 
+    Succesful-Dynamfit-Data: 
       type: object
       example: 
         appName: dynamfit
@@ -1753,6 +1877,16 @@ components:
             relaxation-spectrum-chart: null
             upload-data: null
             
+    Successful-Chemprops-Data: 
+      type: object
+      example: 
+        appName: chemprops
+        data:
+          StandardName: Polystyrene
+          density: '1.04'
+          uSMILES: C(C(C1=CC=CC=C1)[*])[*]
+      
+      
     Sample-Files:
       type: object
       example:

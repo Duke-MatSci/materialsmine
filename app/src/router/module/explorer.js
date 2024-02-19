@@ -250,7 +250,7 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
   },
   {
     path: 'sparql',
