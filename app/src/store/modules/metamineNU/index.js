@@ -19,7 +19,8 @@ export default {
     dialogBoxActiveKnn: false,
     enableKnn: true,
     refreshStatus: true,
-    loadingState: true
+    loadingState: true,
+    rawJson: null
   },
   getters: {
     getFetchedNames: (state) => state.fetchedNames,
@@ -28,7 +29,8 @@ export default {
     getDataLibrary: (state) => state.dataLibrary,
     getDataPoint: (state) => state.dataPoint,
     getRefreshStatus: (state) => state.refreshStatus,
-    getLoadingState: (state) => state.loadingState
+    getLoadingState: (state) => state.loadingState,
+    getRawJson: (state) => state.rawJson
   },
   actions,
   mutations

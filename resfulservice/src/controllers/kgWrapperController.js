@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
 const https = require('https');
 const constant = require('../../config/constant');
 const { setInternal } = require('../middlewares/isInternal');
@@ -35,7 +36,14 @@ const _outboundRequest = async (req, next) => {
   log.info('_outboundRequest(): Function entry');
 
   if (!req.env.KNOWLEDGE_ADDRESS) {
-    return next(errorWriter(req, 'Knowledge endpoint address missing', '_outboundRequest', 422));
+    return next(
+      errorWriter(
+        req,
+        'Knowledge endpoint address missing',
+        '_outboundRequest',
+        422
+      )
+    );
   }
 
   const query = req?.query;
@@ -44,7 +52,9 @@ const _outboundRequest = async (req, next) => {
   let altMethod;
 
   if (!query?.uri && !type) {
-    return next(errorWriter(req, 'Category type is missing', '_outboundRequest', 422));
+    return next(
+      errorWriter(req, 'Category type is missing', '_outboundRequest', 422)
+    );
   }
 
   if (!url) {
@@ -88,27 +98,35 @@ const _outboundRequest = async (req, next) => {
       preparedRequest.headers = {
         ...preparedRequest.headers,
         // eslint-disable-next-line quote-props
-        'Cookie': req.outboundCookie,
+        Cookie: req.outboundCookie,
         'Content-Type': 'application/ld+json',
         // eslint-disable-next-line quote-props
-        'accept': 'application/sparql-results+json'
+        accept: 'application/sparql-results+json'
       };
       preparedRequest.withCredentials = 'true';
     }
   }
-
-  const response = await axios(preparedRequest);
-  return {
-    type,
-    data: response?.data
-  };
+  try {
+    const response = await axios(preparedRequest);
+    return {
+      type,
+      data: response?.data
+    };
+  } catch (err) {
+    log.error(`_outboundRequest(): ${err.status || 500} - ${err}`);
+    throw err;
+  }
 };
 
 exports.outboundRequest = async (req, next) => {
   const log = req.logger;
   log.info('outboundRequest(): Function entry');
-
-  return _outboundRequest(req, next);
+  try {
+    return _outboundRequest(req, next);
+  } catch (err) {
+    log.error(`outboundRequest(): ${err.status || 500} - ${err}`);
+    throw err;
+  }
 };
 
 /**
@@ -141,7 +159,11 @@ exports.getFacetValues = async (req, res, next) => {
  */
 exports.getKnowledge = async (req, res, next) => {
   try {
-    successWriter(req, { message: 'Fetched graph successfully!' }, 'getKnowledge');
+    successWriter(
+      req,
+      { message: 'Fetched graph successfully!' },
+      'getKnowledge'
+    );
     return res.status(200).json({
       message: 'Fetched graph successfully!'
     });
@@ -158,10 +180,14 @@ exports.getKnowledge = async (req, res, next) => {
  * @returns {*} response.data
  */
 exports.getSparql = async (req, res, next) => {
+  const log = req.logger;
+  log.info('getSparql(): Function entry');
   const whyisPath = req.query.whyisPath;
   try {
     if (!req.env.KNOWLEDGE_ADDRESS) {
-      return next(errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422));
+      return next(
+        errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422)
+      );
     }
 
     req.query.queryString = req.body.query ?? req.query.query;
@@ -187,6 +213,15 @@ exports.getSparql = async (req, res, next) => {
 
     // Needed `isBackendCall` flag to enforce internal calls and return response
     // through the function that triggers the call.
+    if (response.data && whyisPath !== 'pub') {
+      req.knowledgeId = req.knowledgeId ?? uuidv4();
+      await elasticSearch.createKnowledgeGraphDoc(
+        log,
+        req.knowledgeId,
+        req.query.queryString,
+        response?.data
+      );
+    }
     if (req.isBackendCall) return response?.data;
 
     return res.status(200).json({ ...response?.data });
@@ -207,7 +242,7 @@ exports.getAllCharts = async (req, res, next) => {
   const pageSize = parseInt(req?.query?.pageSize) || 10;
 
   try {
-    const response = await elasticSearch.loadAllCharts(page, pageSize);
+    const response = await elasticSearch.loadAllCharts(req, page, pageSize);
     successWriter(req, { message: 'success' }, 'getAllCharts');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
@@ -230,7 +265,7 @@ exports.getAllDatasets = async (req, res, next) => {
   const pageSize = parseInt(req?.query?.pageSize) || 10;
 
   try {
-    const response = await elasticSearch.loadAllDatasets(page, pageSize);
+    const response = await elasticSearch.loadAllDatasets(req, page, pageSize);
     successWriter(req, { message: 'success' }, 'getAllDatasets');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
@@ -253,18 +288,21 @@ exports.getInstanceFromKnowledgeGraph = async (req, res, next) => {
     const view = req?.query?.view;
     let url;
     if (!view) url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
-    else url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`;
+    else {
+      url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`;
+    }
     return axios
       .get(url, {
         responseType: 'arraybuffer'
       })
-      .then(response => {
+      .then((response) => {
         res.set({
           'Content-Type': response.headers['content-type'],
           'Content-Length': response.data.length
         });
         res.send(response.data);
-      });
+      })
+      .catch((err) => next(errorWriter(req, err, 'getAllCharts')));
   } catch (err) {
     next(errorWriter(req, err, 'getAllCharts'));
   }
@@ -282,7 +320,7 @@ exports.getDoiInfo = async (req, res, next) => {
     const responseData = response?.data?.message;
 
     const filtered = Object.keys(responseData)
-      .filter(key => constant.doiFields.includes(key))
+      .filter((key) => constant.doiFields.includes(key))
       .reduce((obj, key) => {
         obj[key] = responseData[key];
         return obj;
@@ -312,7 +350,7 @@ exports.searchRor = async (req, res, next) => {
     const responseData = response?.data?.items ?? [response?.data];
     const filtered = responseData.map((item) => {
       return Object.keys(item)
-        .filter(key => constant.rorFields.includes(key))
+        .filter((key) => constant.rorFields.includes(key))
         .reduce((obj, key) => {
           obj[key] = item[key];
           return obj;

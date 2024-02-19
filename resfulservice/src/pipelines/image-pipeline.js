@@ -3,8 +3,10 @@ const Xmls = require('../models/xmlData');
 const errorFormater = require('../utils/errorFormater');
 
 const targetField = 'content.PolymerNanocomposite.MICROSTRUCTURE.ImageFile';
-const commonFields = 'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields';
-const fillerFields = 'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
+const commonFields =
+  'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields';
+const fillerFields =
+  'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
 const imgWithoutContentField = '$xml_str';
 const listCap = 1000; // Pull as many as a thousand from the generated list array
 
@@ -24,7 +26,7 @@ const imageWithoutContentQuery = (search, selectedImg) => {
   });
 
   if (search.length) {
-    search.map(query => stages.push(query));
+    search.map((query) => stages.push(query));
   }
 
   // This logic is used to select a single image. A Mongoose Object ID must be provided in the request.
@@ -40,14 +42,47 @@ const imageWithoutContentQuery = (search, selectedImg) => {
   stages.push({
     $addFields: {
       'metaData.title': {
-        $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: [imgWithoutContentField, '<Control_ID>'] }, 1] }, '</Control_ID>'] }, 0]
+        $arrayElemAt: [
+          {
+            $split: [
+              {
+                $arrayElemAt: [
+                  { $split: [imgWithoutContentField, '<Control_ID>'] },
+                  1
+                ]
+              },
+              '</Control_ID>'
+            ]
+          },
+          0
+        ]
       },
       'metaData.sampleId': {
-        $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: [imgWithoutContentField, '<ID>'] }, 1] }, '</ID>'] }, 0]
+        $arrayElemAt: [
+          {
+            $split: [
+              {
+                $arrayElemAt: [{ $split: [imgWithoutContentField, '<ID>'] }, 1]
+              },
+              '</ID>'
+            ]
+          },
+          0
+        ]
       },
       'metaData.id': '$_id',
       'metaData.doi': {
-        $arrayElemAt: [{ $split: [{ $arrayElemAt: [{ $split: [imgWithoutContentField, '<DOI>'] }, 1] }, '</DOI>'] }, 0]
+        $arrayElemAt: [
+          {
+            $split: [
+              {
+                $arrayElemAt: [{ $split: [imgWithoutContentField, '<DOI>'] }, 1]
+              },
+              '</DOI>'
+            ]
+          },
+          0
+        ]
       },
       prepFile: { $split: [imgWithoutContentField, '<ImageFile><File>'] },
       prepAuthors: { $split: [imgWithoutContentField, '<Author>'] },
@@ -64,9 +99,12 @@ const imageWithoutContentQuery = (search, selectedImg) => {
             $gt: [
               {
                 $size: '$prepKeywords'
-              }, 1
+              },
+              1
             ]
-          }, '$prepKeywords', []
+          },
+          '$prepKeywords',
+          []
         ]
       },
       authorsList: {
@@ -75,9 +113,12 @@ const imageWithoutContentQuery = (search, selectedImg) => {
             $gt: [
               {
                 $size: '$prepAuthors'
-              }, 1
+              },
+              1
             ]
-          }, '$prepAuthors', []
+          },
+          '$prepAuthors',
+          []
         ]
       }
     }
@@ -89,18 +130,15 @@ const imageWithoutContentQuery = (search, selectedImg) => {
       imageFile: {
         $map: {
           input: {
-            $slice: [
-              '$prepFile', 2, listCap
-            ]
+            $slice: ['$prepFile', 2, listCap]
           },
           as: 'currImage',
           in: {
             $arrayElemAt: [
               {
-                $split: [
-                  '$$currImage', '</File>'
-                ]
-              }, 0
+                $split: ['$$currImage', '</File>']
+              },
+              0
             ]
           }
         }
@@ -108,18 +146,15 @@ const imageWithoutContentQuery = (search, selectedImg) => {
       'metaData.keywords': {
         $map: {
           input: {
-            $slice: [
-              '$keywordsList', 2, listCap
-            ]
+            $slice: ['$keywordsList', 2, listCap]
           },
           as: 'currKeywords',
           in: {
             $arrayElemAt: [
               {
-                $split: [
-                  '$$currKeywords', '</Keyword>'
-                ]
-              }, 0
+                $split: ['$$currKeywords', '</Keyword>']
+              },
+              0
             ]
           }
         }
@@ -127,18 +162,15 @@ const imageWithoutContentQuery = (search, selectedImg) => {
       'metaData.authors': {
         $map: {
           input: {
-            $slice: [
-              '$authorsList', 1, listCap
-            ]
+            $slice: ['$authorsList', 1, listCap]
           },
           as: 'currAuthors',
           in: {
             $arrayElemAt: [
               {
-                $split: [
-                  '$$currAuthors', '</Author>'
-                ]
-              }, 0
+                $split: ['$$currAuthors', '</Author>']
+              },
+              0
             ]
           }
         }
@@ -182,7 +214,7 @@ exports.imageQuery = async (args) => {
   const stages = [];
 
   if (search.length) {
-    search.map(stage => stages.push(stage));
+    search.map((stage) => stages.push(stage));
   }
 
   // This logic is used to select a single image. A Mongoose Object ID must be provided in the request.
@@ -269,7 +301,10 @@ exports.imageQuery = async (args) => {
       {
         $facet: {
           withContent: stages,
-          withoutContent: imageWithoutContentQuery(selectImageWithContentQuery, selectedImg)
+          withoutContent: imageWithoutContentQuery(
+            selectImageWithContentQuery,
+            selectedImg
+          )
         }
       },
       {
@@ -305,10 +340,16 @@ exports.validateImageSearchOptions = (input) => {
   const searchValue = input?.searchValue || '';
 
   if (!searchValue) throw errorFormater('Search value cannot be empty', 422);
+  const regex = /(.+?)\s*(and|or)\s*(.+)/i;
+  const [, first, conjunction, second] = searchValue.match(regex) || [];
+  const operator =
+    conjunction && conjunction?.toLowerCase() === 'or' ? '$or' : '$and';
 
   // Search by year
   if (search === 'filterByYear') {
-    if (searchValue.length > 4) throw errorFormater('Year cannot exceed four digits', 422);
+    if (searchValue.length > 4) {
+      throw errorFormater('Year cannot exceed four digits', 422);
+    }
     searchQuery.push({
       $match: {
         [`${commonFields}.PublicationYear`]: {
@@ -334,13 +375,35 @@ exports.validateImageSearchOptions = (input) => {
         }
       }
     });
-    searchQuery.push({
-      $match: {
-        [fillerFields]: {
-          $elemMatch: { ChemicalName: value }
+
+    if (conjunction) {
+      const matchQuery = [
+        {
+          [fillerFields]: {
+            $elemMatch: { ChemicalName: new RegExp(first.trim(), 'gi') }
+          }
+        },
+        {
+          [fillerFields]: {
+            $elemMatch: { ChemicalName: new RegExp(second.trim(), 'gi') }
+          }
         }
-      }
-    });
+      ];
+
+      searchQuery.push({
+        $match: {
+          [operator]: matchQuery
+        }
+      });
+    } else {
+      searchQuery.push({
+        $match: {
+          [fillerFields]: {
+            $elemMatch: { ChemicalName: value }
+          }
+        }
+      });
+    }
     return searchQuery;
   }
 
@@ -354,11 +417,35 @@ exports.validateImageSearchOptions = (input) => {
         }
       }
     });
-    searchQuery.push({
-      $match: {
-        [`${targetField}.MicroscopyType`]: { $regex: value }
-      }
-    });
+
+    if (conjunction) {
+      const matchQuery = [
+        {
+          [`${targetField}.MicroscopyType`]: {
+            $regex: first.trim(),
+            $options: 'gi'
+          }
+        },
+        {
+          [`${targetField}.MicroscopyType`]: {
+            $regex: second.trim(),
+            $options: 'gi'
+          }
+        }
+      ];
+
+      searchQuery.push({
+        $match: {
+          [operator]: matchQuery
+        }
+      });
+    } else {
+      searchQuery.push({
+        $match: {
+          [`${targetField}.MicroscopyType`]: { $regex: value }
+        }
+      });
+    }
     return searchQuery;
   }
 
@@ -371,11 +458,29 @@ exports.validateImageSearchOptions = (input) => {
         }
       }
     });
-    searchQuery.push({
-      $match: {
-        [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'gi' }
-      }
-    });
+
+    if (conjunction) {
+      const matchQuery = [
+        {
+          [`${commonFields}.DOI`]: { $regex: first.trim(), $options: 'gi' }
+        },
+        {
+          [`${commonFields}.DOI`]: { $regex: second.trim(), $options: 'gi' }
+        }
+      ];
+
+      searchQuery.push({
+        $match: {
+          [operator]: matchQuery
+        }
+      });
+    } else {
+      searchQuery.push({
+        $match: {
+          [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'gi' }
+        }
+      });
+    }
     return searchQuery;
   }
 
@@ -399,11 +504,24 @@ exports.validateImageSearchOptions = (input) => {
     }
   });
 
-  searchQuery.push({
-    $match: {
-      [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'gi' }
-    }
-  });
+  if (conjunction) {
+    const matchQuery = [
+      { [`${commonFields}.Keyword`]: { $regex: first.trim(), $options: 'gi' } },
+      { [`${commonFields}.Keyword`]: { $regex: second.trim(), $options: 'gi' } }
+    ];
+
+    searchQuery.push({
+      $match: {
+        [operator]: matchQuery
+      }
+    });
+  } else {
+    searchQuery.push({
+      $match: {
+        [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'gi' }
+      }
+    });
+  }
   return searchQuery;
 };
 

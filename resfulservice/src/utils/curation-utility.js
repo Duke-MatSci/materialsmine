@@ -19,6 +19,8 @@ exports.xlsxFileReader = async (path, sheetName) => {
   }
 };
 
+exports.isTifFile = (path) => /(?=.*?(.tiff?))/.test(path);
+
 exports.xmlGenerator = (curationObject) => {
   return Xmljs.json2xml(curationObject, {
     compact: true,
@@ -73,6 +75,7 @@ exports.parseCSV = async (filename, dataStream, isMetamine) => {
 };
 
 exports.generateCSVData = (data, req) => {
+  req.logger.info('curation-utility.generateCSVData - Function Entry:');
   const headers = data?.headers ?? data?.data ?? data;
   const rows = data?.rows ?? data?.data ?? data;
   const dataHeaders = headers.column.map(({ _text }) => _text);
@@ -97,6 +100,7 @@ exports.generateCSVData = (data, req) => {
 };
 
 exports.parseXSDFile = async (req, filename) => {
+  req.logger.info('curation-utility.parseXSDFile - Function Entry:');
   return new Promise((resolve, reject) => {
     const readStream = fs.createReadStream(filename, 'utf-8');
     const parsedfilePath = path.join(req.env?.FILES_DIRECTORY, 'curation.xsd');
@@ -153,6 +157,7 @@ exports.parseXSDFile = async (req, filename) => {
 
 exports.unZipFolder = async (req, filename) => {
   const logger = req.logger;
+  logger.info('curation-utility.unZipFolder - Function Entry:');
   try {
     const folderPath = `mm_files/bulk-curation-${new Date().getTime()}`;
     const allfiles = await decompress(filename, folderPath);
@@ -167,7 +172,8 @@ exports.unZipFolder = async (req, filename) => {
   }
 };
 
-exports.readFolder = (folderPath) => {
+exports.readFolder = (folderPath, logger) => {
+  logger.info('curation-utility.readFolder - Function Entry:');
   const folderContent = fs.readdirSync(folderPath).map((fileName) => {
     return path.join(folderPath, fileName);
   });

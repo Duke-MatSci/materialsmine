@@ -57,6 +57,17 @@ module.exports = {
     DMA_Datafile: 'DynamicPropertyProfile'
   },
   ContactPagePurposeOpt: ['QUESTION', 'TICKET', 'SUGGESTION', 'COMMENT'],
+  TaskStatus: ['Awaiting', 'Failed', 'Missing', 'Disabled'],
+  TaskStatusDefault: 'Awaiting',
+  TaskStatusMap: {
+    AWAITING: 'Awaiting',
+    FAILED: 'Failed',
+    MISSING: 'Missing',
+    COMPLETED: 'Completed',
+    DISABLED: 'Disabled'
+  },
+  RunTime: ['Normal', 'Nightly'],
+  RunTimeDefault: 'Normal',
   SupportedFileTypes: [
     'png',
     'jpg',

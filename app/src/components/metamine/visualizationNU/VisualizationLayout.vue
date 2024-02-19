@@ -1,7 +1,7 @@
 <template>
   <div class="main tool_page">
     <div class="adjust-padding" style="margin: 5px 0 0 5px">
-      <div class="">
+      <div class="viz-u-postion__rel">
         <button v-if="validateLinkProp" class="nuplot-button-link">
           <router-link
             :to="link.to"
@@ -10,13 +10,30 @@
             {{ link.text }}
           </router-link>
         </button>
+        <div
+          class="u--margin-neg md-fab md-fab-top-right u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad"
+        >
+          <md-button
+            @click="hideSide"
+            class="viz-u-display__ph md-fab md-dense md-primary btn--primary"
+          >
+            <md-tooltip>
+              {{ showSide ? 'Hide Side Tools' : 'Display Side Bar' }}
+            </md-tooltip>
+            <md-icon> {{ showSide ? 'arrow_forward' : 'arrow_back' }}</md-icon>
+          </md-button>
+        </div>
       </div>
       <div
         class="main-content u_display-flex md-layout"
         :class="[dense ? 'vega-view' : 'u--margin-pos']"
       >
         <div
-          class="viz-u-postion__rel histogram-chart md-layout-item md-size-50 md-medium-size-100 viz-u-mgbottom-big"
+          id="main_chart"
+          :class="[
+            !showSide ? 'md-size-80' : ' md-size-50',
+            'viz-u-postion__rel histogram-chart md-layout-item md-medium-size-100 viz-u-mgbottom-big'
+          ]"
         >
           <slot name="main_chart">
             <div
@@ -33,6 +50,7 @@
         </div>
         <div
           class="side-tools md-size-30 md-medium-size-100 md-layout-item md-card-header viz-u-display__show"
+          :class="showSide ? 'viz-u-display__show' : 'viz-u-display__hide'"
         >
           <slot name="side_tools"></slot>
         </div>
@@ -51,6 +69,12 @@ export default {
   components: {
     spinner
   },
+  data () {
+    return {
+      showSide: true,
+      index: 1
+    }
+  },
   props: {
     link: {
       type: Object,
@@ -62,6 +86,14 @@ export default {
     dense: {
       type: Boolean,
       default: false
+    }
+  },
+  methods: {
+    async hideSide () {
+      this.showSide = !this.showSide
+      this.$store.commit('metamineNU/setLoadingState', true)
+      await this.$nextTick()
+      this.$store.commit('metamineNU/setLoadingState', false)
     }
   },
   computed: {

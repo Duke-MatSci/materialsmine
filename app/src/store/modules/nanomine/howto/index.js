@@ -7,7 +7,8 @@ export default {
         icon: '',
         type: 'home',
         name: 'MaterialsMine',
-        subtitle: 'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
+        subtitle:
+          'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
       videos: {
         'nanomine/visualization_tutorial': {

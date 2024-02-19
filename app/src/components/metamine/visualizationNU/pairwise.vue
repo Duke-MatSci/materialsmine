@@ -19,7 +19,6 @@ if (vw <= 1280) {
 }
 
 const width = vw * wFactor
-const height = width
 const padding = 20
 
 function expo (x, f) {
@@ -47,6 +46,15 @@ export default {
     }),
     container () {
       return this.$refs.pairwisePlot
+    },
+    mainChart () {
+      return document.getElementById('main_chart')
+    },
+    width () {
+      return this.mainChart?.offsetWidth ?? width
+    },
+    height () {
+      return this.width
     }
   },
   data () {
@@ -99,16 +107,16 @@ export default {
       const svg = d3
         .select(container)
         .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .attr('viewBox', [-margin.left, -margin.top, width, height])
+        .attr('width', this.width)
+        .attr('height', this.height)
+        .attr('viewBox', [-margin.left, -margin.top, this.width, this.height])
         .attr('style', 'max-width: 100%;')
       // Compute the inner dimensions of the cells.
       const cellWidth =
-        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        (this.width - margin.left - margin.right - (X.length - 1) * padding) /
         X.length
       const cellHeight =
-        (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
+        (this.height - margin.top - margin.bottom - (Y.length - 1) * padding) /
         Y.length
 
       const cell = svg
@@ -221,10 +229,10 @@ export default {
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
-        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        (this.width - margin.left - margin.right - (X.length - 1) * padding) /
         X.length
       const cellHeight =
-        (height - margin.top - margin.bottom - (Y.length - 1) * padding) /
+        (this.height - margin.top - margin.bottom - (Y.length - 1) * padding) /
         Y.length
 
       // Construct scales and axes.
@@ -261,7 +269,7 @@ export default {
           'transform',
           (d, i) =>
             `translate(${i * (cellWidth + padding)}, ${
-              height - margin.bottom - margin.top
+              this.height - margin.bottom - margin.top
             })`
         )
         .attr('class', 'xAxisGroup')
@@ -275,7 +283,7 @@ export default {
       x = columns, // array of x-accessors
       y = columns, // array of y-accessors
       z = () => 1, // given d in data, returns the (categorical) z-value
-      height = width, // outer height, in pixels
+      height = this.width, // outer height, in pixels
       xType = d3.scaleLinear, // the x-scale type
       yType = d3.scaleLinear, // the y-scale type
       zDomain, // array of z-values
@@ -476,7 +484,7 @@ export default {
 
       // Compute the inner dimensions of the cells.
       const cellWidth =
-        (width - margin.left - margin.right - (X.length - 1) * padding) /
+        (this.width - margin.left - margin.right - (X.length - 1) * padding) /
         X.length
       const cellHeight =
         (height - margin.top - margin.bottom - (Y.length - 1) * padding) /

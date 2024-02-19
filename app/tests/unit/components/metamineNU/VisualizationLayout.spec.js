@@ -14,18 +14,35 @@ describe('VisualizationLayout.vue', () => {
     link: { to: '/mm', text: 'Pairwise' },
     dense: false
   }
-  const dispatch = jest.spyOn(store, 'dispatch')
+  const originalFunction = store.dispatch
+  const dispatch = jest
+    .spyOn(store, 'dispatch')
+    .mockImplementationOnce(
+      async () => await originalFunction('metamineNU/fetchMetamineDataset')
+    )
+    .mockImplementationOnce(() => Promise.resolve({ val: 'reload' }))
+    .mockImplementationOnce(() => Promise.resolve({ val: 'force-cache' }))
+    .mockImplementationOnce(() => Promise.resolve({ val: 'reload' }))
   const commitSpy = jest.spyOn(store, 'commit')
   global.fetch = jest
     .fn()
     .mockImplementationOnce(() =>
-      Promise.resolve({ json: () => Promise.resolve(mockValues) })
+      Promise.resolve({
+        json: () => Promise.resolve(mockValues),
+        url: 'windows_url/metamine/file_1.csv'
+      })
     )
     .mockImplementationOnce(() =>
-      Promise.resolve({ json: () => Promise.resolve(mockValues2) })
+      Promise.resolve({
+        json: () => Promise.resolve(mockValues2),
+        url: 'windows_url/metamine/file_2.csv'
+      })
     )
     .mockImplementationOnce(() =>
-      Promise.resolve({ json: () => Promise.resolve(mockValues2) })
+      Promise.resolve({
+        json: () => Promise.resolve(mockValues2),
+        url: 'windows_url/metamine/file_3.csv'
+      })
     )
     .mockImplementation(() => {})
 
@@ -39,10 +56,10 @@ describe('VisualizationLayout.vue', () => {
     await jest.resetAllMocks()
   })
 
-  it('makes a fetch call when mounted ', () => {
-    expect.assertions(12)
+  it('makes a fetch call when mounted ', async () => {
+    expect.assertions(10)
     expect(wrapper.exists()).toBe(true)
-    expect(dispatch).toHaveBeenCalledTimes(1)
+    expect(dispatch).toHaveBeenCalledTimes(2)
     expect(commitSpy).toHaveBeenCalledTimes(5)
     expect(commitSpy).toHaveBeenNthCalledWith(
       1,
@@ -73,16 +90,14 @@ describe('VisualizationLayout.vue', () => {
       [],
       undefined
     )
+    expect(dispatch).toHaveBeenNthCalledWith(2, 'fetchWrapper', {
+      url: '/api/files/metamine'
+    })
 
-    expect(fetch).toHaveBeenCalledTimes(1 + mockValues.fetchedNames.length)
     // check initial fetch request
-    expect(fetch).toHaveBeenNthCalledWith(1, '/api/files/metamine')
-    for (let i = 0; i < mockValues.fetchedNames.length; i++) {
-      expect(fetch).toHaveBeenNthCalledWith(
-        i + 2,
-        `/api/files/metamine/${mockValues.fetchedNames[i].name}`
-      )
-    }
+    expect(global.fetch).toHaveBeenNthCalledWith(1, '/api/files/metamine', {
+      cache: 'reload'
+    })
   })
 
   it('renders layout properly ', () => {
@@ -114,6 +129,24 @@ describe('VisualizationLayout.vue', () => {
     expect(button.attributes('class')).toBe('nuplot-button-link')
     expect(button.findComponent(RouterLinkStub).props().to).toBe(props.link.to)
     expect(button.findComponent(RouterLinkStub).text()).toBe(props.link.text)
+  })
+  it('hides side nav', async () => {
+    const commitSpy = jest.spyOn(wrapper.vm.$store, 'commit')
+    const nav = wrapper.vm.showSide
+
+    await wrapper.vm.hideSide()
+    expect(wrapper.vm.showSide).toBe(!nav)
+    expect(commitSpy).toHaveBeenCalledTimes(3)
+    expect(commitSpy).toHaveBeenNthCalledWith(
+      2,
+      'metamineNU/setLoadingState',
+      true
+    )
+    expect(commitSpy).toHaveBeenNthCalledWith(
+      3,
+      'metamineNU/setLoadingState',
+      false
+    )
   })
 })
 

@@ -58,7 +58,14 @@ const _loadBulkElasticSearch = async (req, res, next) => {
   const data = body?.data;
 
   if (!type || !data.length) {
-    return next(errorWriter(req, 'Category type or doc array is missing', '_loadBulkElasticSearch', 422));
+    return next(
+      errorWriter(
+        req,
+        'Category type or doc array is missing',
+        '_loadBulkElasticSearch',
+        422
+      )
+    );
   }
 
   try {
@@ -71,10 +78,12 @@ const _loadBulkElasticSearch = async (req, res, next) => {
     /** Users will always pass limit & offset, if submitting multi bulk entries.
      * If it's missing in request header delete existing docs
      * Only clear if it is a one time bulk entry.
-    */
+     */
     if ((!req.query.offset || +req.query.offset === 0) && !!total) {
-      await elasticSearch.deleteIndexDocs(type);
-      log.info(`_loadBulkElasticSearch(): Successfully deleted ${type} indices`);
+      await elasticSearch.deleteIndexDocs(req, type);
+      log.info(
+        `_loadBulkElasticSearch(): Successfully deleted ${type} indices`
+      );
     } else {
       log.info(`_loadBulkElasticSearch(): Skipped deleting ${type} indexes`);
     }
@@ -83,7 +92,9 @@ const _loadBulkElasticSearch = async (req, res, next) => {
       const response = await elasticSearch.indexDocument(req, type, item);
 
       if (!response) {
-        log.debug(`_loadBulkElasticSearch()::error: rejected - ${response.statusText}`);
+        log.debug(
+          `_loadBulkElasticSearch()::error: rejected - ${response.statusText}`
+        );
         rejected = rejected + 1;
       }
     }
@@ -116,7 +127,14 @@ exports.loadElasticSearch = async (req, res, next) => {
   const doc = body?.doc;
 
   if (!type || !doc) {
-    return next(errorWriter(req, 'Category type or doc is missing', 'loadElasticSearch', 422));
+    return next(
+      errorWriter(
+        req,
+        'Category type or doc is missing',
+        'loadElasticSearch',
+        422
+      )
+    );
   }
 
   try {
@@ -125,11 +143,15 @@ exports.loadElasticSearch = async (req, res, next) => {
       validateIsAdmin(req, res, next);
 
       log.info(`loadElasticSearch(): deleting ${type} matching ${doc}`);
-      response = await elasticSearch.deleteSingleDoc(type, doc);
-      log.info(`loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`);
+      response = await elasticSearch.deleteSingleDoc(req, type, doc);
+      log.info(
+        `loadElasticSearch(): successfully deleted ${response.deleted} doc(s)`
+      );
     } else {
       response = await elasticSearch.indexDocument(req, type, doc);
-      log.info(`loadElasticSearch(): successfully added ${JSON.stringify(doc)} doc`);
+      log.info(
+        `loadElasticSearch(): successfully added ${JSON.stringify(doc)} doc`
+      );
     }
 
     await elasticSearch.refreshIndices(req, type);
@@ -182,7 +204,7 @@ exports.dataDump = async (req, res, next) => {
   try {
     if (req.method === 'DELETE') {
       const type = req.query.type;
-      await elasticSearch.deleteIndexDocs(type);
+      await elasticSearch.deleteIndexDocs(req, type);
       return res.status(200);
     }
 
@@ -245,7 +267,11 @@ exports.populateDatasetIds = async (req, res, next) => {
     const datasetId = new DatasetId({ user });
     const createdDataset = await datasetId.save();
 
-    successWriter(req, { message: `Successfully created DatasetId: ${createdDataset._id}` }, 'populateDatasetIds');
+    successWriter(
+      req,
+      { message: `Successfully created DatasetId: ${createdDataset._id}` },
+      'populateDatasetIds'
+    );
     return res.status(201).json({
       id: createdDataset._id,
       samples: createdDataset.samples,
@@ -279,13 +305,22 @@ exports.populateDatasetProperties = async (req, res, next) => {
       });
       if (response.status === 200) {
         response = response.data.results.bindings.map(
-          ({ Attribute, Label }) => ({ attribute: Attribute?.value, label: Label?.value })
+          ({ Attribute, Label }) => ({
+            attribute: Attribute?.value,
+            label: Label?.value
+          })
         );
         await DatasetProperty.insertMany(response);
       }
     }
-    successWriter(req, { message: 'Successfully updated dataset properties' }, 'populateDatasetProperties');
-    return res.status(201).json({ message: 'Successfully updated dataset properties' });
+    successWriter(
+      req,
+      { message: 'Successfully updated dataset properties' },
+      'populateDatasetProperties'
+    );
+    return res
+      .status(201)
+      .json({ message: 'Successfully updated dataset properties' });
   } catch (err) {
     next(errorWriter(req, err, 'populateDatasetProperties'));
   }
@@ -304,22 +339,43 @@ exports.getDatasetProperties = async (req, res, next) => {
   try {
     const searchQuery = req.query?.search;
     if (!searchQuery) {
-      return next(errorWriter(req, 'search query params is missing', 'getDatasetProperties', 400));
+      return next(
+        errorWriter(
+          req,
+          'search query params is missing',
+          'getDatasetProperties',
+          400
+        )
+      );
     }
     let filter = {};
     const searchQueryArr = searchQuery.split(' ');
     if (searchQueryArr.length >= 2) {
       filter = {
         $or: [
-          { label: { $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi') } },
-          { label: { $regex: new RegExp(`^${searchQueryArr[0]}|${searchQueryArr[0]}$`, 'gi') } }
+          {
+            label: {
+              $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi')
+            }
+          },
+          {
+            label: {
+              $regex: new RegExp(
+                `^${searchQueryArr[0]}|${searchQueryArr[0]}$`,
+                'gi'
+              )
+            }
+          }
         ]
       };
     } else {
-      filter = { label: { $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi') } };
+      filter = {
+        label: { $regex: new RegExp(`^${searchQuery}|${searchQuery}$`, 'gi') }
+      };
     }
-    const datasetProperties = await DatasetProperty.find(filter)
-      .select('attribute label -_id');
+    const datasetProperties = await DatasetProperty.find(filter).select(
+      'attribute label -_id'
+    );
     return res.status(200).json({ data: datasetProperties });
   } catch (err) {
     next(errorWriter(req, err, 'getDatasetProperties'));
