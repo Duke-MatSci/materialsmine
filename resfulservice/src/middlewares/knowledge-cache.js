@@ -10,6 +10,7 @@ const elasticSearch = require('../utils/elasticSearch');
  * @return {Object} - The response object with the cached knowledge or a new nightly run task
  */
 exports.isKnowledgeCached = async (req, res, next) => {
+  req.logger.info('Middleware.isKnowledgeCached - Function entry');
   const query = req.query.query ?? req.body?.query;
 
   const cacheResult = await elasticSearch.searchKnowledgeGraph(query);
@@ -44,7 +45,9 @@ exports.isKnowledgeCached = async (req, res, next) => {
         }
       }
     });
-
+    req.logger.info(
+      `Middleware.isKnowledgeCached - Created a new nightly task with id: ${_id}`
+    );
     return res.status(200).json(response);
   }
   next();

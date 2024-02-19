@@ -50,10 +50,13 @@ class ElasticSearch {
 
   /**
    * Deletes all documents of an index
+   * @param {Object} req
    * @param {String} type
    * @returns response
    */
-  async deleteIndexDocs (type) {
+  async deleteIndexDocs (req, type) {
+    const log = req.logger;
+    log.info('elasticsearch.deleteIndexDocs(): Function entry');
     return this.client.deleteByQuery({
       index: type,
       body: {
@@ -65,7 +68,9 @@ class ElasticSearch {
     });
   }
 
-  async deleteSingleDoc (type, identifier) {
+  async deleteSingleDoc (req, type, identifier) {
+    const log = req.logger;
+    log.info('elasticsearch.deleteSingleDoc(): Function entry');
     return this.client.deleteByQuery({
       index: type,
       body: {
@@ -154,6 +159,7 @@ class ElasticSearch {
   }
 
   async indexDocument (req, type, doc) {
+    req.logger.info('elasticsearch.indexDocument(): Function entry');
     const log = req.logger;
     if (!type || !doc) {
       const error = new Error('Category type is missing');
@@ -169,6 +175,7 @@ class ElasticSearch {
   }
 
   async refreshIndices (req, type) {
+    req.logger.info('elasticsearch.refreshIndices(): Function entry');
     const log = req.logger;
     if (!type) {
       const error = new Error('Category type is missing');
@@ -202,7 +209,8 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
-  async searchType (searchPhrase, searchField, type, page = 1, size = 20) {
+  async searchType (req, searchPhrase, searchField, type, page = 1, size = 20) {
+    req.logger.info('elasticsearch.searchType(): Function entry');
     // TODO: use searchField to change which field is queried
     const phrase = this.searchSanitizer(searchPhrase);
     const url = `http://${env.ESADDRESS}/${type}/_search?size=${size}`;
@@ -235,7 +243,8 @@ class ElasticSearch {
     return response;
   }
 
-  async search (searchPhrase, autosuggest = false) {
+  async search (req, searchPhrase, autosuggest = false) {
+    req.logger.info('elasticsearch.search(): Function entry');
     const phrase = this.searchSanitizer(searchPhrase);
     let url = `http://${env.ESADDRESS}/_all/_search?size=400`;
 
@@ -270,7 +279,8 @@ class ElasticSearch {
     });
   }
 
-  async loadAllCharts (page, size) {
+  async loadAllCharts (req, page, size) {
+    req.logger.info('elasticsearch.loadAllCharts(): Function entry');
     const url = `http://${env.ESADDRESS}/charts/_search`;
     return axios({
       method: 'get',
@@ -288,7 +298,8 @@ class ElasticSearch {
     });
   }
 
-  async loadAllDatasets (page, size) {
+  async loadAllDatasets (req, page, size) {
+    req.logger.info('elasticsearch.loadAllDatasets(): Function entry');
     const url = `http://${env.ESADDRESS}/datasets/_search`;
     return axios({
       method: 'get',
@@ -306,7 +317,8 @@ class ElasticSearch {
     });
   }
 
-  async searchKnowledgeGraph (searchPhrase) {
+  async searchKnowledgeGraph (req, searchPhrase) {
+    req.logger.info('elasticsearch.searchKnowledgeGraph(): Function entry');
     // search knowledge index for key
     const result = await this.client.search({
       index: 'knowledge',
@@ -321,7 +333,8 @@ class ElasticSearch {
     return result.hits.hits;
   }
 
-  async createKnowledgeGraphDoc (_id, label, result) {
+  async createKnowledgeGraphDoc (req, _id, label, result) {
+    req.logger.info('elasticsearch.createKnowledgeGraphDoc(): Function entry');
     // create new doc under knowledge index
     const url = `http://${env.ESADDRESS}/knowledge/_update/${_id}`;
     return await axios({

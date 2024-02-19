@@ -24,13 +24,6 @@ describe('Worker Services', function () {
   afterEach(() => sinon.restore());
 
   context('workerManager', () => {
-    it('should log an information when no task to handle', async () => {
-      sinon.stub(Task, 'find').returns([]);
-      const loggerSpy = sinon.spy(logger, 'info');
-      await workerManager(logger);
-      sinon.assert.calledWith(loggerSpy, 'No pending task');
-    });
-
     it('should log an error when the task serviceName is not available', async () => {
       sinon.stub(Task, 'find').returns(mockNonExistingService);
       const loggerSpy = sinon.spy(logger, 'error');

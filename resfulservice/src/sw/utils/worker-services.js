@@ -27,13 +27,12 @@ const serviceManager = {
 };
 
 async function workerManager (logger) {
-  logger.info('Worker manager is handling tasks');
+  logger.info('Worker Manager - Function Entry (Checking tasks)');
   const tasks = await Task.find({
     status: { $nin: [TaskStatusMap.MISSING, TaskStatusMap.DISABLED] }
   });
-  if (!tasks.length) {
-    logger.info('No pending task');
-  }
+
+  if (!tasks.length) return;
 
   tasks.forEach(async (task) => {
     const service = serviceManager[task.serviceName];
@@ -42,21 +41,27 @@ async function workerManager (logger) {
     } else if (service.status === false) {
       return logger.error(`Service ${task.serviceName} disabled`);
     } else {
+      if (task.whenToRun === 'Nightly' && !isNightTime()) return;
+
       const startDate = new Date().toISOString().split('T');
-      const logInfo = { status: 'p-start' };
+      const logInfo = {
+        status: `P-Start (${task.serviceName})`,
+        uuid: task._id
+      };
       logInfo.input = task.info;
       logInfo.date = startDate[0];
       logInfo.time = startDate[1].split('.')[0];
+      if (task.whenToRun === 'Nightly') logInfo.runtime = task.whenToRun;
       logger.info(JSON.stringify(logInfo));
-      if (task.whenToRun === 'Nightly' && !isNightTime()) return;
 
       const { status, isSuccess } = await service.operation(task, logger);
 
       const endDate = new Date().toISOString().split('T');
-      logInfo.status = 'p-end';
+      logInfo.status = `P-End (${task.serviceName})`;
+      logInfo.isSuccess = isSuccess;
       logInfo.date = endDate[0];
       logInfo.time = endDate[1].split('.')[0];
-      logger.info(logInfo);
+      logger.info(JSON.stringify(logInfo));
 
       if (isSuccess) {
         await Task.findOneAndDelete({ _id: task._id });
@@ -69,6 +74,7 @@ async function workerManager (logger) {
 }
 
 async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
+  logger.info('Worker-services.convertImageToPng - Function entry');
   const pngFilePath = `${ref.split(/.tiff?/)[0]}.png`;
   const pngFile = pngFilePath.split('mm_files/')[1];
   let tempFile = generateTempFileName(ref);
@@ -87,7 +93,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
   // converts the tiff image to png
   let date = new Date().toISOString().split('T');
   const logInfo = {
-    status: 'conversion-started',
+    status: 'Worker-services.Image Conversion:: Started',
     input: { ref, sampleID },
     uuid: _id,
     date: date[0],
@@ -99,7 +105,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
       await sharp(tiffImagePath).png().toFile(pngFilePath);
       FileManager.deleteFile(ref, { logger });
       const date = new Date().toISOString().split('T');
-      logInfo.status = 'conversion-completed';
+      logInfo.status = 'Worker-services.Image Conversion:: Completed';
       logInfo.date = date[0];
       logInfo.time = date[1].split('.')[0];
       logger.info(JSON.stringify(logInfo));
@@ -112,7 +118,8 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
 
   // update the curation in the database
   date = new Date().toISOString().split('T');
-  logInfo.status = 'curation-update-started';
+  logInfo.status =
+    'Worker-services.Update curation with converted file:: Started';
   logInfo.date = date[0];
   logInfo.time = date[1].split('.')[0];
   logger.info(JSON.stringify(logInfo));
@@ -125,7 +132,9 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
     try {
       const curationObject = await CuratedSamples.findOne({ _id: sampleID });
 
-      if (!curationObject) { return { isSuccess: true, status: TaskStatusMap.COMPLETED }; }
+      if (!curationObject) {
+        return { isSuccess: true, status: TaskStatusMap.COMPLETED };
+      }
       const ImageFile = curationObject?.object?.MICROSTRUCTURE?.ImageFile;
       curationObject.object.MICROSTRUCTURE.ImageFile = ImageFile.map(
         ({ File, ...rest }) => {
@@ -147,7 +156,8 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
         }
       );
       const date = new Date().toISOString().split('T');
-      logInfo.status = 'curation-update-completed';
+      logInfo.status =
+        'Worker-services.Update curation with converted file:: Completed';
       logInfo.date = date[0];
       logInfo.time = date[1].split('.')[0];
       logger.info(JSON.stringify(logInfo));
@@ -160,7 +170,8 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
 
   // uploads the converted file to the bucket
   date = new Date().toISOString().split('T');
-  logInfo.status = 'file-upload-started';
+  logInfo.status =
+    'Worker-services.Uploading converted file to object store:: Started';
   logInfo.date = date[0];
   logInfo.time = date[1].split('.')[0];
   logger.info(JSON.stringify(logInfo));
@@ -191,7 +202,8 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
     );
     FileManager.deleteFile(file.path, { logger });
     const date = new Date().toISOString().split('T');
-    logInfo.status = 'file-upload-completed';
+    logInfo.status =
+      'Worker-services.Uploading converted file to object store:: Completed';
     logInfo.date = date[0];
     logInfo.time = date[1].split('.')[0];
     logger.info(JSON.stringify(logInfo));
@@ -207,9 +219,10 @@ async function knowledgeRequest (
   { _id: uuid, info: { knowledgeId, req } },
   logger
 ) {
+  logger.info('Worker-services.knowledgeRequest - Function entry');
   let date = new Date().toISOString().split('T');
   const logInfo = {
-    status: 'knowledgeRequest-started',
+    status: 'Worker-services.knowledgeRequest:: Started',
     input: { query: req?.query, body: req?.body },
     uuid,
     date: date[0],
@@ -227,7 +240,7 @@ async function knowledgeRequest (
     const result = await KnowledgeController.getSparql(req, {}, (fn) => fn);
 
     date = new Date().toISOString().split('T');
-    logInfo.status = 'knowledgeRequest-completed';
+    logInfo.status = 'Worker-services.knowledgeRequest:: Completed';
     logInfo.date = date[0];
     logInfo.time = date[1].split('.')[0];
     logger.info(JSON.stringify(logInfo));
@@ -284,7 +297,15 @@ const generateTempFileName = (filepath) => {
   return `mm_files/failed_upload_${filename}`;
 };
 
-const isNightTime = () =>
-  new Date().getHours() >= 0 && new Date().getHours() <= 3;
+const isNightTime = () => {
+  const options = {
+    timeZone: 'America/New_York', // Specify the timezone
+    hour12: false, // Set to true for 12-hour format, false for 24-hour format
+    hour: '2-digit' // Set to '2-digit' to get the hour
+  };
+
+  const currentHour = new Date().toLocaleString('en-US', options);
+  return currentHour >= 0 && currentHour <= 3;
+};
 
 module.exports = { convertImageToPng, workerManager, knowledgeRequest };

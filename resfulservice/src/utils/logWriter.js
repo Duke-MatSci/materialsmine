@@ -28,5 +28,9 @@ exports.errorWriter = (req, error, fnName = 'N/A', code, type) => {
  * @returns
  */
 exports.successWriter = (req, message, fnName) => {
-  return req.logger?.notice(`${fnName}(): Success - ${message}`);
+  return req.logger?.notice(
+    `${fnName}(): Success - ${
+      typeof message === 'object' ? JSON.stringify(message) : message
+    }`
+  );
 };
