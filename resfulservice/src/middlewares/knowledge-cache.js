@@ -13,7 +13,7 @@ exports.isKnowledgeCached = async (req, res, next) => {
   req.logger.info('Middleware.isKnowledgeCached - Function entry');
   const query = req.query.query ?? req.body?.query;
 
-  const cacheResult = await elasticSearch.searchKnowledgeGraph(query);
+  const cacheResult = await elasticSearch.searchKnowledgeGraph(req, query);
   if (cacheResult.length) {
     const {
       _id,

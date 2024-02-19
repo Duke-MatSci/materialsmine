@@ -172,6 +172,8 @@ exports.getKnowledge = async (req, res, next) => {
  * @returns {*} response.data
  */
 exports.getSparql = async (req, res, next) => {
+  const log = req.logger;
+  log.info('getSparql(): Function entry');
   const whyisPath = req.query.whyisPath;
   try {
     if (!req.env.KNOWLEDGE_ADDRESS) {
@@ -206,6 +208,7 @@ exports.getSparql = async (req, res, next) => {
     if (response.data && whyisPath !== 'pub') {
       req.knowledgeId = req.knowledgeId ?? uuidv4();
       await elasticSearch.createKnowledgeGraphDoc(
+        log,
         req.knowledgeId,
         req.query.queryString,
         response?.data
@@ -277,7 +280,9 @@ exports.getInstanceFromKnowledgeGraph = async (req, res, next) => {
     const view = req?.query?.view;
     let url;
     if (!view) url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
-    else { url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`; }
+    else {
+      url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`;
+    }
     return axios
       .get(url, {
         responseType: 'arraybuffer'
