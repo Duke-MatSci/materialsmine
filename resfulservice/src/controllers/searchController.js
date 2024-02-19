@@ -16,7 +16,7 @@ exports.explorerSearch = async (req, res, next) => {
       successWriter(req, 'success', 'explorerSearch');
       return res.status(201).json();
     }
-    const response = await elasticSearch.search(request.search);
+    const response = await elasticSearch.search(req, request.search);
     successWriter(req, 'success', 'explorerSearch');
     return res.status(200).json({
       data: response.data?.hits
@@ -41,7 +41,7 @@ exports.autoSuggestSearch = async (req, res, next) => {
       successWriter(req, 'success', 'autoSuggestSearch');
       return res.status(201).json();
     }
-    const response = await elasticSearch.search(request.search, true);
+    const response = await elasticSearch.search(req, request.search, true);
     successWriter(req, 'success', 'autoSuggestSearch');
     return res.status(200).json({
       data: response.data?.hits
@@ -66,7 +66,14 @@ exports.typeSearch = async (req, res, next) => {
       successWriter(req, 'success', 'explorerSearch');
       return res.status(201).json();
     }
-    const response = await elasticSearch.searchType(search, field, type, page, pageSize);
+    const response = await elasticSearch.searchType(
+      req,
+      search,
+      field,
+      type,
+      page,
+      pageSize
+    );
     successWriter(req, 'success', 'explorerSearch');
     return res.status(200).json({
       data: response.data?.hits

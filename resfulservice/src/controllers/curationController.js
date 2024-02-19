@@ -411,7 +411,7 @@ exports.bulkXlsxCurations = async (req, res, next) => {
 
 const processFolders = async (bulkCurations, bulkErrors, folder, req) => {
   const { folders, masterTemplates, curationFiles } =
-    XlsxFileManager.readFolder(folder);
+    XlsxFileManager.readFolder(folder, req.logger);
   await processSingleCuration(
     masterTemplates,
     curationFiles,
