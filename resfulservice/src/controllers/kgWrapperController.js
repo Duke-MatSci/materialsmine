@@ -234,7 +234,7 @@ exports.getAllCharts = async (req, res, next) => {
   const pageSize = parseInt(req?.query?.pageSize) || 10;
 
   try {
-    const response = await elasticSearch.loadAllCharts(page, pageSize);
+    const response = await elasticSearch.loadAllCharts(req, page, pageSize);
     successWriter(req, { message: 'success' }, 'getAllCharts');
     return res.status(200).json({
       data: response?.data?.hits?.hits || [],
