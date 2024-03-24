@@ -337,6 +337,19 @@
               "required": false
             }
           }
+        },
+        "CrosslinkDensity": {
+          "description": {
+            "cellValue": "2. Material Types|[23,1]",
+            "type": "String",
+            "required": false
+          },
+          "value": {
+            "cellValue": "2. Material Types|[23,2]",
+            "type": "String",
+            "required": false,
+            "note": "Value must be between 0 and 1"
+          }
         }
       }
     },
@@ -6241,6 +6254,41 @@
         },
         "data": {
           "cellValue": "5.5 Properties-Volumetric|[11,6]",
+          "type": "File",
+          "required": false
+        }
+      },
+      "VolumetricShrinkage": {
+        "description": {
+          "cellValue": "5.5 Properties-Volumetric|[12,1]",
+          "type": "String",
+          "required": false
+        },
+        "value": {
+          "cellValue": "5.5 Properties-Volumetric|[12,2]",
+          "type": "String",
+          "required": false
+        },
+        "unit": {
+          "cellValue": "5.5 Properties-Volumetric|[12,3]",
+          "type": "String",
+          "required": false
+        },
+        "uncertainty": {
+          "uncertaintytype": {
+            "cellValue": "5.5 Properties-Volumetric|[12,4]",
+            "type": "List",
+            "required": false,
+            "validList": "uncertainty_type"
+          },
+          "value": {
+            "cellValue": "5.5 Properties-Volumetric|[12,5]",
+            "type": "String",
+            "required": false
+          }
+        },
+        "data": {
+          "cellValue": "5.5 Properties-Volumetric|[12,6]",
           "type": "File",
           "required": false
         }
