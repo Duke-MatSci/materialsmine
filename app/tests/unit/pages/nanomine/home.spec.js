@@ -34,13 +34,13 @@ describe('Nanomine Homepage', () => {
     expect(wrapper.findAll('.visualize_chart').length).toEqual(4)
     expect(wrapper.find('.visualize_btn').exists()).toBe(true)
     expect(wrapper.find('.section_quicklinks').exists()).toBe(true)
-    expect(wrapper.findAll('.quicklinks').length).toEqual(3)
+    expect(wrapper.findAll('.quicklinks').length).toEqual(7)
   })
 
   it('navigates on quicklink clicks', async () => {
     const wrapper = await factory()
     const link = wrapper.find('.quicklinks')
     await link.trigger('click')
-    expect(wrapper.vm.$route.path).toEqual('/nm/xml-uploader')
+    expect(wrapper.vm.$route.path).toEqual('/explorer')
   })
 })

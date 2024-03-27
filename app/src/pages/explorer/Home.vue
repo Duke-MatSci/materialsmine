@@ -1,6 +1,11 @@
 <template>
-  <div>
-    <div class="section_teams" v-if="!searchEnabled">
+  <div
+    class="u_height--max u--layout-flex-verticalScreen u--layout-flex-column"
+  >
+    <div
+      class="section_teams u--margin-centered-verticalScreen"
+      v-if="!searchEnabled"
+    >
       <div class="search_box">
         <h2 class="search_box_header teams_header">Welcome to MM Explorer</h2>
         <form class="form" @submit.prevent="submitSearch">
@@ -47,7 +52,10 @@
         </p>
       </div>
     </div>
-    <div class="explorer_page-container" v-if="!searchEnabled">
+    <div
+      class="explorer_page-container u_margin-top-auto"
+      v-if="!searchEnabled"
+    >
       <div class="explorer_page-nav">
         <div class="teams_list explorer_page-list">
           <ul class="utility_flex_mobile">
@@ -77,9 +85,12 @@
     </div>
     <search-header v-if="searchEnabled" />
     <search-results-table v-if="searchEnabled" />
-    <div class="explorer_page_footer">
+    <div
+      class="explorer_page_footer"
+      :class="searchEnabled && 'u_margin-top-auto'"
+    >
       <span class="explorer_page_footer-text"
-        >&copy; 2022 MaterialsMine Project</span
+        >&copy; {{ new Date().getFullYear() }} MaterialsMine Project</span
       >
     </div>
   </div>

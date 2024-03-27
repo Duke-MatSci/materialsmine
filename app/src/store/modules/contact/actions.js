@@ -62,7 +62,9 @@ export default {
         { message: 'Inquiry Reply Successful' },
         { root: true }
       )
-      if (payload) { await context.dispatch('loadItems', context.getters.getPageNumber) }
+      if (payload) {
+        await context.dispatch('loadItems', context.getters.getPageNumber)
+      }
       context.dispatch('renderDialog', null)
     } catch (error) {
       const snackbar = {
@@ -75,16 +77,16 @@ export default {
     }
   },
   async contactUs (context, payload) {
-    if (!payload || Object.values(payload).filter((n) => n).length !== 4) {
+    if (!payload) {
       throw new Error('Provide all necessary info')
     }
     let queryComplete = null
     try {
-      const { fullName, email, purpose, message } = payload
+      const { fullName, email, purpose, message, attachments } = payload
       const req = await apollo.mutate({
         mutation: CONTACT_US_QUERY,
         variables: {
-          input: { fullName, email, purpose, message }
+          input: { fullName, email, purpose, message, attachments }
         }
       })
       queryComplete = req?.data?.submitContact ?? {}

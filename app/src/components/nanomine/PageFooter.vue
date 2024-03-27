@@ -1,5 +1,5 @@
 <template>
-  <div class="section_footer">
+  <div class="section_footer u_margin-top-auto">
     <div class="wrapper">
       <div class="grid grid_col-space-right grid_gap-smaller">
         <div class="footer_content u_toggle-display-off">

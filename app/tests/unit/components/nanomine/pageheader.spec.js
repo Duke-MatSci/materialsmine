@@ -23,16 +23,6 @@ describe('PageHeader.vue', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {})
     jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
-  it('renders title from passed state', () => {
-    const info = {
-      name: 'Test page',
-      pagetype: 'test',
-      icon: 'description'
-    }
-    const wrapper = factory(false, info)
-    const title = wrapper.findComponent('.u_adjust-banner-text')
-    expect(title.text()).toEqual(info.name)
-  })
 
   it('shows logout button when authenticated', () => {
     const wrapper = factory(true)

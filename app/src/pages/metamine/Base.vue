@@ -54,9 +54,12 @@
                         class="nav_menu--siblings-mm-lists"
                         ><a>Material Visualization</a></router-link
                       >
-                      <router-link to="/explorer/dataset"
-                        class="nav_menu--siblings-mm-lists">
-                        <a>Explore Curated Datasets</a></router-link>
+                      <router-link
+                        to="/explorer/dataset"
+                        class="nav_menu--siblings-mm-lists"
+                      >
+                        <a>Explore Curated Datasets</a></router-link
+                      >
                     </div>
                   </div>
                 </li>
@@ -111,7 +114,7 @@
     <md-app-drawer :md-active.sync="toggleMenuVisibility">
       <drawers />
     </md-app-drawer>
-    <md-app-content>
+    <md-app-content class="u_height--max">
       <router-view />
     </md-app-content>
   </md-app>

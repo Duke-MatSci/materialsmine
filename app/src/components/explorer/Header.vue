@@ -1,6 +1,10 @@
 <template>
-  <div>
-    <md-app-toolbar class="md-large md-dense md-primary" id="reset_bg">
+  <div class="viz-u-postion__rel">
+    <md-app-toolbar
+      class="md-large md-dense md-primary"
+      id="reset_bg"
+      :style="[transition, !showTop && hideHeaderView]"
+    >
       <div class="md-toolbar-row">
         <div class="md-toolbar-section-start">
           <md-button class="md-icon-button" @click="toggler">
@@ -102,9 +106,12 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'ExpHeader',
-  props: ['toggler'],
+  props: ['toggler', 'showTop'],
   data () {
-    return { showBadge: false }
+    return {
+      showBadge: false,
+      scrollPosition: 0
+    }
   },
   computed: {
     ...mapGetters({
@@ -121,6 +128,15 @@ export default {
           this.$store.commit('explorer/setSearching')
         }
       }
+    },
+    searchEnabled () {
+      return this.$store.getters['explorer/getSearching']
+    },
+    hideHeaderView () {
+      return { top: `-${74}px` }
+    },
+    transition () {
+      return { transition: `all ${0.2}s linear` }
     }
   }
 }
