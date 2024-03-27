@@ -162,10 +162,10 @@
               characterization data of your choice.
             </div>
             <div
-              class="md-layout u_display-flex md-layout-responsive u_margin-top-med"
+              class="md-layout u_display-flex md-layout-responsive u_margin-none u_margin-top-med"
             >
               <div
-                class="md-layout-item md-layout-item_card md-layout-item_card-tall"
+                class="md-layout-item u--margin-header md-layout-item_card md-layout-item_card-tall"
               >
                 <router-link
                   to="/nm/tools/IntelligentCharacterize"
@@ -193,7 +193,7 @@
                 </router-link>
               </div>
               <div
-                class="md-layout-item md-layout-item_card md-layout-item_card-tall"
+                class="md-layout-item u--margin-header md-layout-item_card md-layout-item_card-tall"
               >
                 <router-link
                   to="/nm/tools/CorrelationCharacterize"
@@ -219,7 +219,7 @@
                 </router-link>
               </div>
               <div
-                class="md-layout-item md-layout-item_card md-layout-item_card-tall"
+                class="md-layout-item u--margin-header md-layout-item_card md-layout-item_card-tall"
               >
                 <router-link
                   to="/nm/tools/DescriptorCharacterize"
@@ -246,7 +246,7 @@
                 </router-link>
               </div>
               <div
-                class="md-layout-item md-layout-item_card md-layout-item_card-tall"
+                class="md-layout-item u--margin-header md-layout-item_card md-layout-item_card-tall"
               >
                 <router-link
                   to="/nm/tools/SDFCharacterize"
@@ -299,9 +299,9 @@
               your choice.
             </div>
             <div
-              class="md-layout u_display-flex md-layout-responsive u_margin-top-med"
+              class="md-layout u_display-flex md-layout-responsive u_margin-none u_margin-top-med"
             >
-              <div class="md-layout-item md-layout-item_card">
+              <div class="md-layout-item md-layout-item_card u--margin-header">
                 <a
                   href="https://ideal.mech.northwestern.edu/research/software/download/"
                   target="_blank"
@@ -323,7 +323,7 @@
                   </div>
                 </a>
               </div>
-              <div class="md-layout-item md-layout-item_card">
+              <div class="md-layout-item md-layout-item_card u--margin-header">
                 <router-link
                   to="/nm/tools/CorrelationReconstruct"
                   v-slot="{ navigate, href }"
@@ -348,7 +348,7 @@
                   </div>
                 </router-link>
               </div>
-              <div class="md-layout-item md-layout-item_card">
+              <div class="md-layout-item md-layout-item_card u--margin-header">
                 <router-link
                   to="/nm/tools/DescriptorReconstruct"
                   v-slot="{ navigate, href }"
@@ -372,7 +372,7 @@
                   </div>
                 </router-link>
               </div>
-              <div class="md-layout-item md-layout-item_card">
+              <div class="md-layout-item md-layout-item_card u--margin-header">
                 <router-link
                   to="/nm/tools/SDFReconstruct"
                   v-slot="{ navigate, href }"
