@@ -53,6 +53,10 @@
         rdfs:subClassOf materialsmine:ElectricalProperty ;
         skos:definition "Frequency dependence of dielectric permittivity under an oscillating electric field." .
 
+    materialsmine:Abaqus a owl:Class ;
+        rdfs:label "nan" ;
+        rdfs:subClassOf materialsmine:SoftwareExecution .
+
     materialsmine:Abbreviation a owl:Class ;
         rdfs:label "Abbreviation" ;
         rdfs:subClassOf sio:Name ;
@@ -65,7 +69,13 @@
         skos:definition "Gaseous medium surrounding the solid boundaries of a material." .
 
     materialsmine:AlternatingCurrent a owl:Class ;
-        rdfs:label "Alternating Current" .
+        rdfs:label "Alternating Current",
+            "nan" ;
+        rdfs:subClassOf sio:Quantity .
+
+    materialsmine:Anisotropic a owl:Class ;
+        rdfs:label "nan" ;
+        rdfs:subClassOf materialsmine:Orientation .
 
     materialsmine:Aperiodic a owl:Class ;
         rdfs:label "Aperiodic" ;
@@ -74,7 +84,7 @@
 
     materialsmine:ArcResistance a owl:Class ;
         rdfs:label "Arc Resistance" ;
-        rdfs:subClassOf _:N089fbee81e42431d8336d4737f9f121b,
+        rdfs:subClassOf _:N17eb8df446714ba48883002e1001b4e0,
             materialsmine:ElectricalProperty ;
         skos:definition "A measure of the durability of an insulating or dielectric material against the formation of conductive paths along thesurface by arc discharges." .
 
@@ -93,14 +103,14 @@
     materialsmine:AtomicForceMicroscopy a owl:Class ;
         rdfs:label "Atomic Force Microscopy" ;
         materialsmine:hasSelector "//Atomic_Force_Microscopy" ;
-        rdfs:subClassOf _:N5c27a4fe0bca434b8c73ace09cd823c7,
-            _:N8040a7cb423c43bdac20d83956195580,
+        rdfs:subClassOf _:N39c06972a0784a2e95f91cdaf86af7a5,
+            _:N4a539e6b2e3a4c92baa911772dfde7fa,
             sio:Measuring ;
         skos:definition "Nanoscale probing of material surface characteristics" .
 
     materialsmine:BallMilling a owl:Class ;
         rdfs:label "Ball Milling" ;
-        rdfs:subClassOf _:Nf1ebe9de0ae948e2b55b5a4ee16e8e7d,
+        rdfs:subClassOf _:N4d82c38e591647b083d5d0bb36c492ab,
             materialsmine:Mixing ;
         skos:definition "Grinding process with rotating cylindrical shells and ball " .
 
@@ -148,6 +158,12 @@
         rdfs:label "Book" ;
         rdfs:subClassOf sio:Document .
 
+    materialsmine:BovineSerumAlbumen a owl:Class ;
+        rdfs:label "Bovine Serum Albumen" ;
+        rdfs:subClassOf sio:Protein ;
+        skos:definition "Bovine Serum Albumin, also known as \"BSA\" or \"Fraction V\", is a protein derived from bovine blood plasma." ;
+        prov:wasQuotedFrom "https://www.capricorn-scientific.com/BSA" .
+
     materialsmine:BreakdownStrength a owl:Class ;
         rdfs:label "Breakdown Strength" ;
         rdfs:subClassOf materialsmine:ElectricalProperty ;
@@ -156,7 +172,7 @@
     materialsmine:BrittleTemperature a owl:Class ;
         rdfs:label "Brittle Temperature" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius> ;
-        rdfs:subClassOf _:Nce4d8b375ed44e34bf70dbe359730ac6,
+        rdfs:subClassOf _:Nc89a2d5caadf4a65bd4573969134fb02,
             materialsmine:ThermalProperty,
             <obo:PATO_0000146> ;
         skos:definition "Brittleness temperature is the temperature at which 50% of the tested specimens exhibit brittle failure at specified impact conditions" .
@@ -265,6 +281,12 @@
         rdfs:label "Casting" ;
         rdfs:subClassOf materialsmine:Molding .
 
+    materialsmine:CelluloseNanofibers a owl:Class ;
+        rdfs:label "Cellulose Nanofibers" ;
+        rdfs:subClassOf sio:BiologicalEntity ;
+        skos:definition "Made from wood-derived fiber (pulp) that has been defibrated to the nano level of several hundredths of a micron and smaller, cellulose nanofiber is the world's most advanced biomass material." ;
+        prov:wasQuotedFrom "https://www.nipponpapergroup.com/english/research/organize/cnf.html" .
+
     materialsmine:Centrifugation a owl:Class ;
         rdfs:label "Centrifugation" ;
         rdfs:subClassOf sio:Procedure ;
@@ -272,7 +294,7 @@
 
     materialsmine:CharpyImpactEnergy a owl:Class ;
         rdfs:label "Charpy Impact Energy" ;
-        rdfs:subClassOf _:N1d285decff8545ccae7181308437b88a,
+        rdfs:subClassOf _:N145ae4ef7ed64a558975878cbc1bc0dd,
             materialsmine:MechanicalProperty ;
         skos:definition "Energy absorbed by the sample during Charpy impact testing" .
 
@@ -296,33 +318,33 @@
     materialsmine:CompressionModulus a owl:Class ;
         rdfs:label "Compression Modulus" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/gigapascal> ;
-        rdfs:subClassOf _:Nf04c6692de924efdb2abef2e59682bb5,
+        rdfs:subClassOf _:Nfd1a81ee478e4bc0b69437869729eefa,
             materialsmine:CompressionProperty ;
         skos:definition "The ratio of compressive stress to compressive strain" .
 
     materialsmine:CompressionStressAtBreak a owl:Class ;
         rdfs:label "Compression Stress At Break" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:Nc950e60fadb4473aaf92d76972c04683,
+        rdfs:subClassOf _:N3df8c4d4097c4c82a85413f822935ad0,
             materialsmine:CompressionProperty ;
         skos:definition "Compression stress when specimen breaks" .
 
     materialsmine:CompressionStressAtYield a owl:Class ;
         rdfs:label "Compression Stress At Yield" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:N0af4c17a846e4c1e80f658d794c818cd,
+        rdfs:subClassOf _:N2769baea318d42bea15bd2750f2c1d22,
             materialsmine:CompressionProperty ;
         skos:definition "Compression stress at yield point" .
 
     materialsmine:CompressiveCreepRuptureStrength a owl:Class ;
         rdfs:label "Compressive Creep Rupture Strength" ;
-        rdfs:subClassOf _:Ne6fecf2b1b9542e5ba72e765d49637b9,
+        rdfs:subClassOf _:Ncb077f9a5c9e432bba0c62086b41cd01,
             materialsmine:CompressiveCreep ;
         skos:definition "Material strength at rupture during a compressive creep test" .
 
     materialsmine:CompressiveCreepRuptureTime a owl:Class ;
         rdfs:label "Compressive Creep Rupture Time" ;
-        rdfs:subClassOf _:N85ba6a368f534105adc7caaf71351f04,
+        rdfs:subClassOf _:Nc3c5d7ed903744169d60210291553e80,
             materialsmine:CompressiveCreep ;
         skos:definition "Time taken to rupture from applying load during a compressive creep test" .
 
@@ -356,7 +378,7 @@
     materialsmine:ConePlateRheometery a owl:Class ;
         rdfs:label "Cone-Plate Rheometry" ;
         materialsmine:hasSelector "//Rheometery[RheometerType='cone-plate']" ;
-        rdfs:subClassOf _:N6cab3a53d5ff485e821bca9e2017eedb,
+        rdfs:subClassOf _:N3f74c59daf204b25b652a05e08fd2ea5,
             materialsmine:Rheometery ;
         skos:definition "The liquid is placed on horizontal plate and a shallow cone placed into it. The angle between the surface of the cone and the plate is around 1–2 degrees but can vary depending on the types of tests being run. Typically the plate is rotated and the torque on the cone measured." .
 
@@ -375,10 +397,10 @@
 
     materialsmine:Cooling a owl:Class ;
         rdfs:label "Cooling" ;
-        rdfs:subClassOf _:N0fde5d63cc464bc690efbe652f18fa7c,
-            _:N4cc6a619031b4376961a87901a6f2289,
-            _:Na3d5544ca8a74ed8835f8760ed5cc92b,
-            _:Nfc7beb764c954d9296964ec5fc0db413,
+        rdfs:subClassOf _:N6838c0ad59354836b6749b428dd19653,
+            _:N858fd7b72ee64727890f1868aca05d4a,
+            _:Nf713c12b4883406e9dbe4c45c5356ea7,
+            _:Nf8601d6e0fe44a89a378da6deef5ae3e,
             sio:Procedure .
 
     materialsmine:Copolymer a owl:Class ;
@@ -390,6 +412,11 @@
     materialsmine:CounterRotation a owl:Class ;
         rdfs:label "Counter-Rotation" ;
         rdfs:subClassOf materialsmine:RotationMode .
+
+    materialsmine:CrosslinkDensityFraction a owl:Class ;
+        rdfs:label "Crosslink Density (Fraction)" ;
+        rdfs:subClassOf materialsmine:Thermoset ;
+        skos:definition "Ratio of the number of cross-links formed to the maximum possible cross-links that can be formed in a thermosetting system (NOTE: numeric value restricted to be between 0 and 1)" .
 
     materialsmine:CrystalPhase a owl:Class ;
         rdfs:label "Crystal Phase" ;
@@ -414,7 +441,7 @@
 
     materialsmine:CurrentDensity a owl:Class ;
         rdfs:label "Current Density" ;
-        rdfs:subClassOf _:Nebec4325aa444ce498ef60197ddc5375,
+        rdfs:subClassOf _:Nc9d9fc668ccf428cbe9f363105fccefd,
             materialsmine:ElectricalProperty ;
         skos:definition "the amount of electric current flowing per unit cross-sectional area of a material." .
 
@@ -459,7 +486,7 @@
     materialsmine:Density a owl:Class ;
         rdfs:label "Density" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/kilogramPerCubicmetre> ;
-        rdfs:subClassOf _:Nd17c15877eeb4e0293737f36dd8575fd,
+        rdfs:subClassOf _:N1c5854c444764d938999a096a5a974d4,
             materialsmine:VolumetricProperty,
             sio:Density ;
         skos:definition "The density, or more precisely, the volumetric mass density, of a substance is its mass per unit volume.",
@@ -488,21 +515,23 @@
     materialsmine:DielectricandImpedanceSpectroscopyAnalysis a owl:Class ;
         rdfs:label "Dielectric and Impedance Spectroscopy Analysis" ;
         materialsmine:hasSelector "//Dielectric_and_Impedance_Spectroscopy_Analysis" ;
-        rdfs:subClassOf _:N690f34b66ac64b3d831e9617ddf9b594,
+        rdfs:subClassOf _:N180918c0e08d4f309fc263e9ebfb605e,
             sio:Measuring ;
         skos:definition "Measurement of dielectric spectroscopy (variation of dielectric constant with frequency) " .
 
     materialsmine:DifferentialScanningCalorimetry a owl:Class ;
         rdfs:label "Differential Scanning Calorimetry" ;
         materialsmine:hasSelector "//Differential_Scanning_Calorimetry" ;
-        rdfs:subClassOf _:N381255e68128495da5cda2da9fa63cca,
-            _:N699dffe8919a4be1bb41faabc7a0efe0,
-            _:Nc2ae4b01d2a84d54a15d202dd93670a1,
+        rdfs:subClassOf _:N3182e5c7d5fd416db7dfa358d7b47188,
+            _:N7f90b109c16e463fabd8bb68b257bf98,
+            _:Nc4a6c3ee8f2a496bbc24360f10a81308,
             sio:Measuring ;
         skos:definition "Measurement of heat required to increase unit temperature in a material" .
 
     materialsmine:DirectCurrent a owl:Class ;
-        rdfs:label "Direct Current" .
+        rdfs:label "Direct Current",
+            "nan" ;
+        rdfs:subClassOf sio:Quantity .
 
     materialsmine:DispersionBandValue a owl:Class ;
         rdfs:label "Dispersion Band Value" ;
@@ -526,29 +555,29 @@
     materialsmine:DispersiveSurfaceEnergy a owl:Class ;
         rdfs:label "Dispersive Surface Energy" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
-        rdfs:subClassOf _:N43dbbee2e3584a98bb017c83a1d845e1,
+        rdfs:subClassOf _:N350fd973d21e4869a5c197f2c08063ed,
             materialsmine:SurfaceEnergy ;
         skos:definition "Interaction strength at a phase interface caused by dispersion forces." .
 
     materialsmine:Dissolving a owl:Class ;
         rdfs:label "Dissolving" ;
-        rdfs:subClassOf _:Nd18dbd26c4bf4fc2afa535d2ae120bfc,
+        rdfs:subClassOf _:Nb5ed0756a7514f78b03008439e9ecb6b,
             sio:Procedure ;
         skos:definition "Dissolving into solution without external force" .
 
     materialsmine:Drying-Evaporation a owl:Class ;
         rdfs:label "Drying Evaporation" ;
-        rdfs:subClassOf _:N2c50bde65c2c4cd7bbbe2b23b3ab7682,
-            _:N50674356f16443c6a7bc529e703cf86b,
-            _:N96d79b74f964431282329646b70b4985,
-            _:Nb1af920eb1c64b15b745f5b36f0e36b5,
+        rdfs:subClassOf _:N059a20029f3e427d8f8f8cbcc3991dfa,
+            _:N35caf9fc0d444b9fab0a7f90ea1172a8,
+            _:N679d69382e64435b88c755c720d52a45,
+            _:Na5bc41d29b2c44ff836a5ef3b1c73642,
             sio:Procedure ;
         skos:definition "Process for drying and evaporation of liquid solutions" .
 
     materialsmine:DynamicMechanicalAnalysis a owl:Class ;
         rdfs:label "Dynamic Mechanical Analysis" ;
         materialsmine:hasSelector "//Dynamic_Mechanical_Analysis" ;
-        rdfs:subClassOf _:Nc2a75fbc256c465fa46b78486a572fe6,
+        rdfs:subClassOf _:N5f43eb4f7fba49e791b2cbfa806c52e6,
             sio:Measuring ;
         skos:definition "Method to get viscoelastic behavior of materials with controlled temperature and frequency" .
 
@@ -596,34 +625,37 @@
     materialsmine:ElectricalConductivity a owl:Class ;
         rdfs:label "Electric Conductivity" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/siemensPerMetre> ;
-        rdfs:subClassOf _:N770028f290da4b858014f182ba4891a6,
+        rdfs:subClassOf _:N31f0c971afc14717b63ba2b593773eb6,
             materialsmine:ElectricalProperty ;
         skos:definition "ability of electric current to flow through a material" .
 
     materialsmine:Electrometry a owl:Class ;
         rdfs:label "Electrometry" ;
         materialsmine:hasSelector "//Electrometry" ;
-        rdfs:subClassOf _:Nf202d1b0d614427e99cdcd3c7c9fc0c9,
+        rdfs:subClassOf _:N11ed9156d97a4cb29d93e7721d47ae76,
             sio:Measuring ;
         skos:definition "Measurement of electric charge or electrical potential difference" .
+
+    materialsmine:Element a owl:Class ;
+        rdfs:label "nan" .
 
     materialsmine:ElongationAtBreak a owl:Class ;
         rdfs:label "Elongation At Break" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/percent> ;
-        rdfs:subClassOf _:N7357b329f0bf4504be805a66974c838b,
+        rdfs:subClassOf _:N6ee7cf3d8bf147049439428cc80bad43,
             materialsmine:TensileProperty ;
         skos:definition "Elongation of specimen when breaks" .
 
     materialsmine:ElongationAtYield a owl:Class ;
         rdfs:label "Elongation At Yield" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/percent> ;
-        rdfs:subClassOf _:N1d94e4ef3491490ea524279ccfaac5be,
+        rdfs:subClassOf _:N97caa89f49a64b8898941386fb06cc64,
             materialsmine:TensileProperty ;
         skos:definition "Tensile elongation corresponding to the yield (an increase in strain does not result in an increase in stress)." .
 
     materialsmine:EnergyDensity a owl:Class ;
         rdfs:label "Energy Density" ;
-        rdfs:subClassOf _:N5adcbcc6c7fc49699a22efa92d71c76c,
+        rdfs:subClassOf _:N532c9143dd774438ad4da020b8155cb4,
             materialsmine:ElectricalProperty ;
         skos:definition "amount of energy stored in a given system or region of space per unit volume or mass" .
 
@@ -636,7 +668,7 @@
 
     materialsmine:EssentialWorkOfFracture a owl:Class ;
         rdfs:label "Essential Work Of Fracture" ;
-        rdfs:subClassOf _:Nb55dd089c2dd4d74b42593b0f223b5ef,
+        rdfs:subClassOf _:N0cf784ab7d154ec2b67c69ae516ebf5c,
             materialsmine:FractureToughnessProperty ;
         skos:definition "Energy associated with cracking at the process zone" .
 
@@ -660,28 +692,28 @@
 
     materialsmine:Extrusion a owl:Class ;
         rdfs:label "Extrusion" ;
-        rdfs:subClassOf _:Na152d3b2fc45495ea311cf6fa24df040,
+        rdfs:subClassOf _:N32abe4ac8cea47eea8bc298f28c75dfc,
             sio:Procedure ;
         skos:definition "Process used to create objects of a fixed cross-sectional profile. A material is pushed through a die of the desired cross-section." .
 
     materialsmine:FiberTensileElongation a owl:Class ;
         rdfs:label "Fiber Tensile Elongation" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/percent> ;
-        rdfs:subClassOf _:N1bd96956244c4dba91407fb8b407535b,
+        rdfs:subClassOf _:N912c6b6f680f43d7a75dc9e793b9f201,
             materialsmine:TensileProperty ;
         skos:definition "Elongation along grain direction in fibers" .
 
     materialsmine:FiberTensileModulus a owl:Class ;
         rdfs:label "Fiber Tensile Modulus" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/gigapascal> ;
-        rdfs:subClassOf _:N3a5d6865efb746faa0f590ff227e59cb,
+        rdfs:subClassOf _:N618b1ad100cb434ebae760d58c1dc5fc,
             materialsmine:TensileProperty ;
         skos:definition "Tensile modulus along grain direction in fibers" .
 
     materialsmine:FiberTensileStrength a owl:Class ;
         rdfs:label "Fiber Tensile Strength" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:N3b37753f591b4723835819615f934e8a,
+        rdfs:subClassOf _:N00ce48e3d0564b6d8c030f31a85389c9,
             materialsmine:TensileProperty ;
         skos:definition "Tensile Stress along grain direction in fibers" .
 
@@ -705,6 +737,10 @@
         rdfs:label "Filler Processing" ;
         rdfs:subClassOf materialsmine:Processing .
 
+    materialsmine:FiniteElementAnalysis a owl:Class ;
+        rdfs:label "nan" ;
+        rdfs:subClassOf materialsmine:Simulation .
+
     materialsmine:FiniteMetamaterial a owl:Class ;
         rdfs:label "Finite Metamaterial" ;
         rdfs:subClassOf materialsmine:Metamaterial ;
@@ -712,13 +748,13 @@
 
     materialsmine:FlexuralCreepRuptureStrength a owl:Class ;
         rdfs:label "Flexural Creep Rupture Strength" ;
-        rdfs:subClassOf _:N295cfded62cf4b69a599c3354c4af922,
+        rdfs:subClassOf _:Na3309ccc91744f11ac9aaed78b6af878,
             materialsmine:FlexuralCreep ;
         skos:definition "Material strength at rupture during a flexural creep test" .
 
     materialsmine:FlexuralCreepRuptureTime a owl:Class ;
         rdfs:label "Flexural Creep Rupture Time" ;
-        rdfs:subClassOf _:Nc02dc449ef7c4979b37f1883149d799b,
+        rdfs:subClassOf _:N5dbbf0b66da8477391d5dfcfe80455a4,
             materialsmine:FlexuralCreep ;
         skos:definition "Time taken to rupture from applying load during a flexural creep test" .
 
@@ -735,21 +771,21 @@
     materialsmine:FlexuralModulus a owl:Class ;
         rdfs:label "Flexural Modulus" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/gigapascal> ;
-        rdfs:subClassOf _:N74ab55675f3c4d64a8337c945790e0e1,
+        rdfs:subClassOf _:N4579432564d34f9d8229f78cf4f50802,
             materialsmine:FlexuralProperty ;
         skos:definition "Ratio of stress to strain in flexural deformation, or the tendency for a material to bend" .
 
     materialsmine:FlexuralStressAtBreak a owl:Class ;
         rdfs:label "Flexural Stress At Break" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:Na350b2f6c9314d3691e27684b40b1e5c,
+        rdfs:subClassOf _:N5735299650bf40209dfc2c06a8e9639e,
             materialsmine:FlexuralProperty ;
         skos:definition "Flexural stress at the moment at which a test specimen tears" .
 
     materialsmine:FlexuralStressAtYield a owl:Class ;
         rdfs:label "Flexural Stress At Yield" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:N5adc8861f9154ccab51b0d9ccd950534,
+        rdfs:subClassOf _:N5fea12e8a7734d78bca504a6c18cfe0d,
             materialsmine:FlexuralProperty ;
         skos:definition "Flexural stress corresponding to the yield point" .
 
@@ -764,7 +800,7 @@
     materialsmine:FourierTransformInfraredSpectroscopy a owl:Class ;
         rdfs:label "Fourier Transform Infrared Spectroscopy" ;
         materialsmine:hasSelector "//Fourier_Transform_Infrared_Spectroscopy" ;
-        rdfs:subClassOf _:N6ec2f225cc5d435aabfadcb48d621dee,
+        rdfs:subClassOf _:Nea7b6a5d07b14390ab370aa751479584,
             sio:Measuring ;
         skos:definition "Measurement of infrared spectrum of absorption or emission of a solid, liquid or gas" .
 
@@ -797,10 +833,16 @@
     materialsmine:GlassTransitionTemperature a owl:Class ;
         rdfs:label "Glass Transition Temperature" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius> ;
-        rdfs:subClassOf _:N1c920843b25546389cc8f3c3c6315fd0,
+        rdfs:subClassOf _:N6554f346df704d8780e89865a6a1256a,
             materialsmine:ThermalProperty,
             <obo:PATO_0000146> ;
         skos:definition "is the temperature region where the polymer transitions from a hard, glassy material to a soft, rubbery material." .
+
+    materialsmine:Glycerol a owl:Class ;
+        rdfs:label "Glycerol" ;
+        rdfs:subClassOf sio:OrganicMolecule ;
+        skos:definition "Glycerol is a triol with a structure of propane substituted at positions 1, 2 and 3 by hydroxy groups. It has a role as an osmolyte, a solvent, a detergent, a human metabolite, an algal metabolite, a Saccharomyces cerevisiae metabolite, an Escherichia coli metabolite, a mouse metabolite and a geroprotector. It is an alditol and a triol." ;
+        prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17754" .
 
     materialsmine:GraftDensity a owl:Class ;
         rdfs:label "Graft Density" ;
@@ -854,23 +896,23 @@
     materialsmine:HeatOfCrystallization a owl:Class ;
         rdfs:label "Heat Of Crystallization" ;
         materialsmine:hasPreferredUnit <http://qudt.org/vocab/unit/j-per-gm> ;
-        rdfs:subClassOf _:N18a5eea3b1224a0da86b6507a2a69c03,
+        rdfs:subClassOf _:N9f0b2454b1fe4f29a8b1ea0804c5f8b1,
             materialsmine:ThermalProperty ;
         skos:definition "The amount of heat that must be removed from one gram of a liquid at its freezing point to freeze it with no change in temperature." .
 
     materialsmine:HeatOfFusion a owl:Class ;
         rdfs:label "Heat Of Fusion" ;
         materialsmine:hasPreferredUnit <http://qudt.org/vocab/unit/j-per-gm> ;
-        rdfs:subClassOf _:Na3a8587d2d4242ceacbcc493b654b8b0,
+        rdfs:subClassOf _:N923a02a39a464796a4706430595703cd,
             materialsmine:ThermalProperty ;
         skos:definition "change in enthalpy with energy dissipation" .
 
     materialsmine:Heating a owl:Class ;
         rdfs:label "Heating" ;
-        rdfs:subClassOf _:N324b075a9c724ffda4bf13f792005704,
-            _:N785670cc239446c981a39817555b3c65,
-            _:Nb05d829950fd48d7bd79ca4177c0347f,
-            _:Nb25faeb6fceb4470ba6affb78fe6c319,
+        rdfs:subClassOf _:N0f5557b9a18f4368bb43fdb693ac558d,
+            _:N2477e0b2e6f749408c3cd044cb356f03,
+            _:N7399d5e6d18a432383417ca7c1a1bb71,
+            _:Ndb4d2c72e7af4d109776474d326cb067,
             sio:Procedure ;
         skos:definition "Process for applying heat" .
 
@@ -890,12 +932,12 @@
     materialsmine:HighPressureCapillaryRheometery a owl:Class ;
         rdfs:label "High Pressure Capillary Rheometry" ;
         materialsmine:hasSelector "//Rheometery[RheometerType='high pressure capillary']" ;
-        rdfs:subClassOf _:Nfb5ac5e2311746488e5d205e08fccb01,
+        rdfs:subClassOf _:N02cbca53977f4a97bc0cd3e409f5243e,
             materialsmine:Rheometery .
 
     materialsmine:HighShearMixing a owl:Class ;
         rdfs:label "High Shear Mixing" ;
-        rdfs:subClassOf _:N6389f035e3d940f09efafcb98b20f82b,
+        rdfs:subClassOf _:N41fce25a6db04083a8cd9180878ccd13,
             materialsmine:Mixing ;
         skos:definition "A stator-rotator setup that disperses substance into continuous phase through high shear" .
 
@@ -925,13 +967,13 @@
 
     materialsmine:IZOD_Area a owl:Class ;
         rdfs:label "IZOD Area" ;
-        rdfs:subClassOf _:N9b040d45db294866881da80ab1a1d1c3,
+        rdfs:subClassOf _:Naa2f97ca94324c58bda9e0c940233f2f,
             materialsmine:MechanicalProperty ;
         skos:definition "Area associated in Izod impact testing" .
 
     materialsmine:IZOD_ImpactEnergy a owl:Class ;
         rdfs:label "IZOD Impact Energy" ;
-        rdfs:subClassOf _:N3b87c6c0c4e6418ba580c4c87bf9eaa5,
+        rdfs:subClassOf _:N488315167e294a439bf7f25156f5e171,
             materialsmine:MechanicalProperty ;
         skos:definition "Energy absorbed by the sample during Izod impact testing, as calculated by the height of swing arm" .
 
@@ -969,14 +1011,17 @@
 
     materialsmine:InterfacialTension a owl:Class ;
         rdfs:label "Interfacial Tension" ;
-        rdfs:subClassOf _:N1628694f33fe4029a54b2a746e6b0315,
+        rdfs:subClassOf _:Naff3fb0142a7414096c8ea47569a2d95,
             materialsmine:VolumetricProperty ;
         skos:definition "Interfacial tension is the force that holds the surfaceof a particular phase together" .
+
+    materialsmine:Interphase a owl:Class ;
+        rdfs:label "nan" .
 
     materialsmine:InterphaseThickness a owl:Class ;
         rdfs:label "Interphase Thickness" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/nanometre> ;
-        rdfs:subClassOf _:N28435a35729f42dcbf88804336651f7b,
+        rdfs:subClassOf _:N79aaf513459042de99fe54a34fbb4988,
             materialsmine:VolumetricProperty ;
         skos:definition "Thickness of matrix-particle interaction area with a gradient property as a function of distance from particle surface" .
 
@@ -997,6 +1042,10 @@
 
 """ ;
         prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Tacticity#Isotactic_polymers" .
+
+    materialsmine:Isotropic a owl:Class ;
+        rdfs:label "nan" ;
+        rdfs:subClassOf materialsmine:Orientation .
 
     materialsmine:JIntegral a owl:Class ;
         rdfs:label "J Integral" ;
@@ -1019,7 +1068,7 @@
     materialsmine:LC_PhaseTransitionTemperature a owl:Class ;
         rdfs:label "LC Phase Transition Temperature" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius> ;
-        rdfs:subClassOf _:N684fc2346fde43e1baa82f76eed881e1,
+        rdfs:subClassOf _:N77ad53e16923482e84c258887a96b90c,
             materialsmine:ThermalProperty,
             <obo:PATO_0000146> ;
         skos:definition "temperature of transition to liquid crystal phase" .
@@ -1058,7 +1107,7 @@
 
     materialsmine:LinearExpansionCoefficient a owl:Class ;
         rdfs:label "Linear Expansion Coefficient" ;
-        rdfs:subClassOf _:N074347eac5b043f3a880368a889a83f3,
+        rdfs:subClassOf _:Ndc32dbdbca924bd19e901536a4ee4b4a,
             materialsmine:VolumetricProperty ;
         skos:definition "It is the fractional change in length per degree of temperature change" .
 
@@ -1067,6 +1116,12 @@
         rdfs:subClassOf materialsmine:PhysicsModel ;
         skos:definition "A model of a system in which the change of the output is proportional to the change of the input." ;
         prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Nonlinear_system" .
+
+    materialsmine:LinoleicAcid a owl:Class ;
+        rdfs:label "Linoleic Acid" ;
+        rdfs:subClassOf sio:Lipid ;
+        skos:definition "An octadecadienoic acid in which the two double bonds are at positions 9 and 12 and have Z (cis) stereochemistry." ;
+        prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17351" .
 
     materialsmine:Location a owl:Class ;
         rdfs:label "Location" ;
@@ -1120,15 +1175,18 @@
         rdfs:label "Matrix Processing" ;
         rdfs:subClassOf materialsmine:Processing .
 
+    materialsmine:MeanNeighborDistance a owl:Class ;
+        rdfs:label "nan" .
+
     materialsmine:MechanicalMixing a owl:Class ;
         rdfs:label "Mechanical Mixing" ;
-        rdfs:subClassOf _:N2b70ec01046b4092880bc3fa501b789b,
+        rdfs:subClassOf _:N7d3fe0c63601456f90f2a80c5ce50b2a,
             materialsmine:Mixing ;
         skos:definition "Manual mixing" .
 
     materialsmine:MeltMixing a owl:Class ;
         rdfs:label "Melt Mixing" ;
-        rdfs:subClassOf _:Nf7dc38434ef04df6b3354ea2e3ffca61,
+        rdfs:subClassOf _:Ne91c8c66c047425ba52eff42328881a9,
             materialsmine:Mixing ;
         skos:definition "Mixing of polymer and nanoparticles in molten state" .
 
@@ -1145,10 +1203,13 @@
     materialsmine:MeltingTemperature a owl:Class ;
         rdfs:label "Melting Temperature" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius> ;
-        rdfs:subClassOf _:Nda5214e03f624f638abb4f427f85e619,
+        rdfs:subClassOf _:Ndbb743f2a8be470ab501aab4c8c43fb4,
             materialsmine:ThermalProperty,
             <obo:PATO_0000146> ;
         skos:definition "the temperature at which a solid turns into a liquid" .
+
+    materialsmine:Mesh a owl:Class ;
+        rdfs:label "nan" .
 
     materialsmine:MetamaterialChart a owl:Class ;
         rdfs:label "Metamaterial Chart" ;
@@ -1159,6 +1220,9 @@
         rdfs:label "Metamaterial Dataset" ;
         rdfs:subClassOf <dcat:Dataset> ;
         skos:definition "Datasets that have the primary topic of metamaterials." .
+
+    materialsmine:Microstructure a owl:Class ;
+        rdfs:label "nan" .
 
     materialsmine:MindlinReissnerPlate a owl:Class ;
         rdfs:label "Mindlin Reissner Plate" ;
@@ -1208,6 +1272,10 @@
         rdfs:subClassOf <dcat:Dataset> ;
         skos:definition "Datasets that have the primary topic of nanomaterials." .
 
+    materialsmine:NonAgglomerateFraction a owl:Class ;
+        rdfs:label "nan" ;
+        rdfs:subClassOf sio:Concentration .
+
     materialsmine:NonSpherical a owl:Class ;
         rdfs:label "Non-spherical Shape" ;
         rdfs:subClassOf sio:Shape .
@@ -1228,7 +1296,7 @@
     materialsmine:NuclearMagneticResonance a owl:Class ;
         rdfs:label "Nuclear Magnetic Resonance" ;
         materialsmine:hasSelector "//Nuclear_Magnetic_Resonance" ;
-        rdfs:subClassOf _:N613493e048c14b6d9f381c9fbc292227,
+        rdfs:subClassOf _:N6894c69d3c824ab8be20714cd987b377,
             sio:Measuring ;
         skos:definition "Molecular analysis due to observed NMR under applied magnetic field" .
 
@@ -1237,11 +1305,17 @@
         rdfs:subClassOf materialsmine:Crystallinity ;
         skos:definition "Nucleation Parameter in Avrami Equation" .
 
+    materialsmine:OleicAcid a owl:Class ;
+        rdfs:label "Oleic Acid" ;
+        rdfs:subClassOf sio:Lipid ;
+        skos:definition "An octadec-9-enoic acid in which the double bond at C-9 has Z (cis) stereochemistry." ;
+        prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:16196" .
+
     materialsmine:OpticalMicroscopy a owl:Class ;
         rdfs:label "Optical Microscopy" ;
         materialsmine:hasSelector "//OpticalMicroscopy" ;
-        rdfs:subClassOf _:Nb5f73c4c02504516b7a068bfb697d0f3,
-            _:Nf7072803a8204e4191d352ab1149f59a,
+        rdfs:subClassOf _:N3fece9760f9d4c8c9c07ff4823dd8dc4,
+            _:N72f5c0f532a7494f930365bbb1d4a894,
             sio:Measuring ;
         skos:definition "Magnification of small objects with visible light" .
 
@@ -1359,7 +1433,7 @@
     materialsmine:PlateRheometery a owl:Class ;
         rdfs:label "Plate Rheometry" ;
         materialsmine:hasSelector "//Rheometery[RheometerType='plate']" ;
-        rdfs:subClassOf _:N06723b919cc541b28e16da8e6a1cadc0,
+        rdfs:subClassOf _:Nb00b804a1f684c6e89c0e5d37f00b59d,
             materialsmine:Rheometery ;
         skos:definition "The falling plate rheometer sandwiches liquid between two solid surfaces. The top plate is fixed, and bottom plate falls under the influence of gravity, drawing out a string of the liquid" .
 
@@ -1376,7 +1450,7 @@
     materialsmine:PolarSurfaceEnergy a owl:Class ;
         rdfs:label "Polar Surface Energy" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
-        rdfs:subClassOf _:N387db3fb56344329a75ada31899f3f70,
+        rdfs:subClassOf _:Ndf5a1578ecf4403ca3125a69a8ca677e,
             materialsmine:SurfaceEnergy ;
         skos:definition "Interaction strength at a phase interface caused by polar forces." .
 
@@ -1417,7 +1491,7 @@
 
     materialsmine:PreLoad a owl:Class ;
         rdfs:label "Pre-Load" ;
-        rdfs:subClassOf _:N1260524933c44cbeae3fc109a3a96845,
+        rdfs:subClassOf _:Ne171e69fe61047f28543db5d27f1012b,
             materialsmine:Condition ;
         skos:definition "Pre-stress or pre-strain before testing" .
 
@@ -1446,7 +1520,7 @@
     materialsmine:PulsedElectroAcoustic a owl:Class ;
         rdfs:label "Pulsed Electro Acoustic" ;
         materialsmine:hasSelector "//Pulsed_Electro_Acoustic" ;
-        rdfs:subClassOf _:N90a82367424c4b0fb45e4b3457da5e34,
+        rdfs:subClassOf _:N1a7c341142994e57934a49faf56a20d9,
             sio:Measuring ;
         skos:definition "Measurement of space charge in dielectric materials" .
 
@@ -1462,13 +1536,16 @@
     materialsmine:RamanSpectroscopy a owl:Class ;
         rdfs:label "Raman Spectroscopy" ;
         materialsmine:hasSelector "//Raman_Spectroscopy" ;
-        rdfs:subClassOf _:N4bcab615079e4e67ac4f7db331c5910c,
+        rdfs:subClassOf _:Ne57d15db66014bb5893644285a9dceb8,
             sio:Measuring ;
         skos:definition "Molecular analysis with spectroscopic techniques that observe low-frequency modes in a material" .
 
     materialsmine:RelatedDOI a owl:Class ;
         rdfs:label "related DOI" ;
         rdfs:subClassOf materialsmine:DOI .
+
+    materialsmine:RepresentativeVolumeElement a owl:Class ;
+        rdfs:label "nan" .
 
     materialsmine:RepresentativeVolumeElementGeometry a owl:Class ;
         rdfs:label "Representative Volume Element Geometry" ;
@@ -1516,7 +1593,7 @@
 
     materialsmine:RollMilling a owl:Class ;
         rdfs:label "Roll Milling" ;
-        rdfs:subClassOf _:N581f2146596b4f8c97cef87e9a42dc5a,
+        rdfs:subClassOf _:N8661cf02e09e4f2789806f28fe0e8a14,
             materialsmine:Mixing ;
         skos:definition "Grinding process with a roller and flat plate" .
 
@@ -1540,12 +1617,12 @@
     materialsmine:ScanningElectronMicroscopy a owl:Class ;
         rdfs:label "Scanning Electron Microscopy" ;
         materialsmine:hasSelector "//Scanning_Electron_Microscopy" ;
-        rdfs:subClassOf _:N07ff3f1de41c4a44b8428209b72aa6c2,
-            _:N4223a410520d49e98fa9509dea548297,
-            _:N76f6ca3bf95144f3b022daaa5e02dbcf,
-            _:N7e1c8db4e5dd4902a5dff6849a47c0ee,
-            _:Nadee0f2bc71b477f9aa8f3c4ae808835,
-            _:Nddca604723114d7ea97054cb33d1988c,
+        rdfs:subClassOf _:N12fa9ff18fc14185940ae27b77c5b524,
+            _:N22cb02987b234394931c3578a76abe51,
+            _:N37c47de92a0a4827a3968e8277c4c76b,
+            _:N6bf3d21c777e4956904158203744e8cb,
+            _:N8c0e526f808c486fb400743b41a4c196,
+            _:Nf98a37cd915445948a860e64204f2849,
             sio:Measuring ;
         skos:definition "Scanning electron microscopy for obtaining microstructure at microscale" .
 
@@ -1566,21 +1643,21 @@
     materialsmine:ShearModulus a owl:Class ;
         rdfs:label "Shear Modulus" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/gigapascal> ;
-        rdfs:subClassOf _:Nc9d035c3773146138da4c40e2810af8e,
+        rdfs:subClassOf _:N3ad0807bd7364be88ac80a3b3ae5305a,
             materialsmine:ShearProperty ;
         skos:definition "Ratio of shear stress to shear strain" .
 
     materialsmine:ShearStressAtBreak a owl:Class ;
         rdfs:label "Shear Stress At Break" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:N671132b65058417f80f88eae97d383bc,
+        rdfs:subClassOf _:Nb809ef1c8f044211b135690bd9bcd128,
             materialsmine:ShearProperty ;
         skos:definition "Shear stress when specimen breaks" .
 
     materialsmine:ShearStressAtYield a owl:Class ;
         rdfs:label "Shear Stress At Yield" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:Ne21b68fcde314bbd8081b3bd1deb40f3,
+        rdfs:subClassOf _:N1cc9e8548e404e1295df1b5eb23846ac,
             materialsmine:ShearProperty ;
         skos:definition "Shear stress at yield point" .
 
@@ -1615,17 +1692,23 @@
         rdfs:label "Solvent Name" ;
         rdfs:subClassOf sio:Name .
 
+    materialsmine:Sorbitol a owl:Class ;
+        rdfs:label "Sorbitol" ;
+        rdfs:subClassOf sio:OrganicMolecule ;
+        skos:definition "A polyhydric alcohol with about half the sweetness of sucrose. Sorbitol occurs naturally and is also produced synthetically from glucose. It was formerly used as a diuretic and may still be used as a laxative and in irrigating solutions for some surgical procedures." ;
+        prov:wasQuotedFrom "https://www.drugbank.ca/drugs/DB01638" .
+
     materialsmine:SpecificHeatCapacity_Cp a owl:Class ;
         rdfs:label "Specific Heat Capacity Cp" ;
         materialsmine:hasPreferredUnit <http://materialsmine.org/ns/unit/j-gk> ;
-        rdfs:subClassOf _:Nea708767cf304c8b833a909ed3a46126,
+        rdfs:subClassOf _:Nc81b4da3443d4df98d14cb1cc522e2e4,
             materialsmine:ThermalProperty ;
         skos:definition "Cp for a gas is the change in the enthalpy (H) of the system with respect to change in temperature at a fixed pressure of the system" .
 
     materialsmine:SpecificHeatCapacity_Cv a owl:Class ;
         rdfs:label "Specific Heat Capacity Cv" ;
         materialsmine:hasPreferredUnit <http://materialsmine.org/ns/unit/j-gk> ;
-        rdfs:subClassOf _:N71372fb1740449d5872240ec51baf333,
+        rdfs:subClassOf _:N270b7f5ff7624607b3676890e6c37265,
             materialsmine:ThermalProperty ;
         skos:definition "Cv for a gas is the change in internal energy (U) of a system with respect to change in temperature at a fixed volume of the system" .
 
@@ -1642,9 +1725,16 @@
         rdfs:label "StdChemicalName" ;
         rdfs:subClassOf materialsmine:ChemicalName .
 
+    materialsmine:StearicAcid a owl:Class ;
+        rdfs:label "Stearic Acid" ;
+        rdfs:subClassOf sio:Lipid ;
+        skos:altLabel "Octadecanoic Acid" ;
+        skos:definition "Stearic acid (IUPAC systematic name: octadecanoic acid) is one of the useful types of saturated fatty acids that comes from many animal and vegetable fats and oils. It is a waxy solid." ;
+        prov:wasQuotedFrom "	https://www.drugbank.ca/drugs/DB03193" .
+
     materialsmine:Stirring a owl:Class ;
         rdfs:label "Stirring" ;
-        rdfs:subClassOf _:N5cab474cae4d492fbe43741ad12770d4,
+        rdfs:subClassOf _:Nf2f7159152b24ddd9025db0328b37546,
             materialsmine:Mixing ;
         skos:definition "Manual stirring of liquid solutions" .
 
@@ -1662,7 +1752,7 @@
     materialsmine:StrainRate a owl:Class ;
         rdfs:label "Strain Rate" ;
         materialsmine:hasPreferredUnit <http://materialsmine.org/ns/unit/1-s> ;
-        rdfs:subClassOf _:N9963baed46a34afd96c925f89d757dfd,
+        rdfs:subClassOf _:N361663838ac645f49b8d7c4e8c635dcc,
             materialsmine:Condition ;
         skos:definition "Rate of strain change",
             "see Strain Rate" .
@@ -1696,13 +1786,13 @@
     materialsmine:SurfaceResistivity a owl:Class ;
         rdfs:label "Surface Resistivity" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/ohmMetre> ;
-        rdfs:subClassOf _:N7e9fc126ece541f99aaf1599515af765,
+        rdfs:subClassOf _:N9c356411ca0e4b6e971388a433d6f16b,
             materialsmine:ElectricalProperty ;
         skos:definition "Ability to resist leakage current along the surface of an insulating material" .
 
     materialsmine:SurfaceTension a owl:Class ;
         rdfs:label "Surface Tension" ;
-        rdfs:subClassOf _:Ndab8102fcb5f4bd589821078cc4f6fc0,
+        rdfs:subClassOf _:N9b908cc3682f4c54b31200ce9dd60e62,
             materialsmine:VolumetricProperty ;
         skos:definition "the force that causes the molecules on the surface of a liquid to be pushed together and form a layer" .
 
@@ -1746,13 +1836,13 @@
 
     materialsmine:TensileCreepCompliance a owl:Class ;
         rdfs:label "Tensile Creep Compliance" ;
-        rdfs:subClassOf _:N9cc621e1e414491bab1c9ba94cb54246,
+        rdfs:subClassOf _:N77a858f4fa5741129f1eafe0388aa234,
             materialsmine:TensileCreep ;
         skos:definition "Inverse of tensile creep modulus  " .
 
     materialsmine:TensileCreepModulus a owl:Class ;
         rdfs:label "Tensile Creep Modulus" ;
-        rdfs:subClassOf _:Nc6d1cfa3dc2140d3943dfa8d18c54d8b,
+        rdfs:subClassOf _:Nbe5d0ebf12d1481f89991a2571fecddc,
             materialsmine:TensileCreep ;
         skos:definition "Elastic modulus during creep test" .
 
@@ -1763,7 +1853,7 @@
 
     materialsmine:TensileCreepRuptureStrength a owl:Class ;
         rdfs:label "Tensile Creep Rupture Strength" ;
-        rdfs:subClassOf _:Nc84a805729f34736afa01d55c0569220,
+        rdfs:subClassOf _:N1caed14b79c34a58aca0c3874e9cc05b,
             materialsmine:TensileCreep ;
         skos:definition "Material strength at rupture during a tensile creep test" .
 
@@ -1785,7 +1875,7 @@
     materialsmine:TensileModulus a owl:Class ;
         rdfs:label "Tensile Modulus" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/gigapascal> ;
-        rdfs:subClassOf _:Nfeacdc21e2ea49aeaef64e243899bc98,
+        rdfs:subClassOf _:Nb03cbfb56cac4abba65cc23dff52230a,
             materialsmine:TensileProperty ;
         skos:definition "Young's modulus, or elastic modulus, describes tensile elasticity, or the tendency of an object to deform along an axis when opposing forces are applied along that axis; it is defined as the ratio of tensile stress to tensile strain." .
 
@@ -1798,14 +1888,14 @@
     materialsmine:TensileStressAtBreak a owl:Class ;
         rdfs:label "Tensile Stress At Break" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:N824e28d6fd60416698c22ed948d34394,
+        rdfs:subClassOf _:N930ab831616b493ab3515b0ac6b995d1,
             materialsmine:TensileProperty ;
         skos:definition "Tensile stress at the moment at which a test specimen tears" .
 
     materialsmine:TensileStressAtYield a owl:Class ;
         rdfs:label "Tensile Stress At Yield" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/megapascal> ;
-        rdfs:subClassOf _:Ne8240a0258ef4443a5709f81f1ae729b,
+        rdfs:subClassOf _:Ne461a4e1123d48648e1591edc42cfb0c,
             materialsmine:TensileProperty ;
         skos:definition "Tensile stress corresponding to the yield point (an increase in strain does not result in an increase in stress)." .
 
@@ -1817,28 +1907,28 @@
     materialsmine:ThermalConductivity a owl:Class ;
         rdfs:label "Thermal Conductivity" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/wattPerMetreKelvin> ;
-        rdfs:subClassOf _:N027e48d1c5954e38a034852af9ef5928,
+        rdfs:subClassOf _:N9fd92089677a4c1cadf1d6b1eb07b8f2,
             materialsmine:ThermalProperty ;
         skos:definition "a measure of the ability of a substance to conduct heat, determined by the rate of heat flownormally through an area in the substance divided by the area and by minus the component of the temperaturegradient in the direction of flow" .
 
     materialsmine:ThermalDecompositionTemperature a owl:Class ;
         rdfs:label "Thermal Decomposition Temperature" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius> ;
-        rdfs:subClassOf _:N730b7fe9b66a4042a9b7680a18f046d9,
+        rdfs:subClassOf _:N1840dd02f6ae4236876f388b8e9a0edb,
             materialsmine:ThermalProperty,
             <obo:PATO_0000146> ;
         skos:definition "Thermal decomposition temperature of a substance is the temperature at which the substance chemically decomposes by heat" .
 
     materialsmine:ThermalDiffusivity a owl:Class ;
         rdfs:label "Thermal Diffusivity" ;
-        rdfs:subClassOf _:N4b19153724504131a9afcf75251b1574,
+        rdfs:subClassOf _:N5057c28d3e7948bbacca6592cf2c68e6,
             materialsmine:ThermalProperty ;
         skos:definition "thermal diffusivity is the thermal conductivity divided by density and specific heat capacity at constant pressure. It measures the rate of transfer of heat of a material from the hot side to the cold side" .
 
     materialsmine:ThermogravimetricAnalysis a owl:Class ;
         rdfs:label "Thermogravimetric Analysis" ;
         materialsmine:hasSelector "//Thermogravimetric_Analysis" ;
-        rdfs:subClassOf _:N4660f35642f848799fee0916a6038b81,
+        rdfs:subClassOf _:Nee172ee107e746fb85964a7c0118172c,
             sio:Measuring ;
         skos:definition "Thermal analysis of material properties as function of temperature and time" .
 
@@ -1847,12 +1937,6 @@
         rdfs:subClassOf materialsmine:Plastic ;
         skos:definition "a plastic material, a polymer, that becomes pliable or moldable above a specific temperature and solidifies upon cooling." ;
         prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermoplastic" .
-
-    materialsmine:Thermoset a owl:Class ;
-        rdfs:label "Thermoset" ;
-        rdfs:subClassOf materialsmine:Plastic ;
-        skos:definition "a cured thermosetting resin. A thermosetting resin is a prepolymer in a soft solid or viscous liquid state that changes irreversibly into an infusible, insoluble polymer network by curing." ;
-        prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermosetting_polymer" .
 
     materialsmine:TimoshenkoBeam a owl:Class ;
         rdfs:label "Timoshenko Beam" ;
@@ -1875,12 +1959,12 @@
     materialsmine:TransmissionElectronMicroscopy a owl:Class ;
         rdfs:label "Transmission Electron Microscopy" ;
         materialsmine:hasSelector "//Transmission_Electron_Microscopy" ;
-        rdfs:subClassOf _:N286cfe2ef7994209876a78324925007e,
-            _:N681c8817b7464d7fbce4caf3dd75868c,
-            _:N924d7e41fd384ef394df4fb8754459eb,
-            _:Nd53232bd98f84afd8cdd945468a49c8c,
-            _:Ndaaacd54516e4ac8ace22e31207fdf6e,
-            _:Ne58c0dcce2384bb8982f0071ecf758e4,
+        rdfs:subClassOf _:N1852c19286544a7cbe44ab1e87e4eabc,
+            _:N20d50c2f86f04c4388e2d8215e6126d7,
+            _:N596cfd056d524517819c13727233d412,
+            _:N69260ad0624e46b6931c1256b6c1594d,
+            _:N8be0faad9fde43859333d2d4aa4ecd84,
+            _:Nc1e9a56ad52547329fcb66b161ba65d2,
             sio:Measuring ;
         skos:definition "Transmission electron microscopy for obtaining microstructure at nanoscale" .
 
@@ -1895,7 +1979,7 @@
 
     materialsmine:Ultra-sonication a owl:Class ;
         rdfs:label "Ultra Sonication" ;
-        rdfs:subClassOf _:Nd53ca20088454ac1a590564f63bbef70,
+        rdfs:subClassOf _:N9fdf9e1cc20d4104acca646260d96680,
             materialsmine:Mixing ;
         skos:definition "The irradiation of a liquid sample with ultrasonic (>20 kHz) waves resulting in agitation" .
 
@@ -1953,7 +2037,7 @@
 
     materialsmine:VolumeExpansionCoefficient a owl:Class ;
         rdfs:label "Volume Expansion Coefficient" ;
-        rdfs:subClassOf _:N5f27c5af9e924a279bc53914bd06ec83,
+        rdfs:subClassOf _:N76e8fd9cb25b4a6683cf301ccbf6cf21,
             materialsmine:VolumetricProperty ;
         skos:definition "volumetric coefficient of thermal expansion" .
 
@@ -1965,9 +2049,14 @@
     materialsmine:VolumeResistivity a owl:Class ;
         rdfs:label "Volume Resistivity" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/ohmMetre> ;
-        rdfs:subClassOf _:N90a0924a9e54496b8a7a714d6465353b,
+        rdfs:subClassOf _:Ne18f0ac0d3954ee5958b3e86dd236b1f,
             materialsmine:ElectricalProperty ;
         skos:definition "Ability to oppose the flow of electric current." .
+
+    materialsmine:VolumetricShrinkage a owl:Class ;
+        rdfs:label "Volumetric Shrinkage" ;
+        rdfs:subClassOf materialsmine:VolumetricProperty ;
+        skos:definition "The amount of reduction by volume (%) experienced in a thermoset due to crosslinking between the monomer(s) and curing agent(s)" .
 
     materialsmine:Voxel a owl:Class ;
         rdfs:label "Voxel" ;
@@ -2009,28 +2098,28 @@
     materialsmine:WorkOfAdhesion a owl:Class ;
         rdfs:label "Work of Adhesion" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
-        rdfs:subClassOf _:N79fbad7a6d4b47f8996cfd77b0439aa0,
+        rdfs:subClassOf _:N1a304ed5aa5a4989903130dc42921782,
             materialsmine:PhysicalProperty ;
         skos:definition "The work required to separate two surfaces or phases that are adhered." .
 
     materialsmine:WorkOfSpreading a owl:Class ;
         rdfs:label "Work of Spreading" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
-        rdfs:subClassOf _:Nde13684dff204c31adc386402c7f0d8b,
+        rdfs:subClassOf _:N0469600dfd974a05b34854472ec093bf,
             materialsmine:PhysicalProperty ;
         skos:definition "The energy required to spread a liquid over a surface." .
 
     materialsmine:XRayDiffractionAndScattering a owl:Class ;
         rdfs:label "XRay Diffraction and Scattering" ;
         materialsmine:hasSelector "//XRay_Diffraction_and_Scattering" ;
-        rdfs:subClassOf _:Ncf1c130b35314ca5af4bda83ce05ebde,
+        rdfs:subClassOf _:N8935691a03934441b5581e79e78ba9ad,
             sio:Measuring ;
         skos:definition "Non-destructive X-ray measurement for crystal structure, chemical composition, and physical properties" .
 
     materialsmine:XRayPhotoelectronSpectroscopy a owl:Class ;
         rdfs:label "X-Ray Photoelectron Spectroscopy" ;
         materialsmine:hasSelector "//XRay_Photoelectron_Spectroscopy" ;
-        rdfs:subClassOf _:N727ad95d758d45219afdd9d73ee697a6,
+        rdfs:subClassOf _:Nadcdc3b97b834680b5e78b8b7ce08599,
             sio:Measuring .
 
     materialsmine:XRay_Photoelectron_Spectroscopy a owl:Class ;
@@ -2352,7 +2441,7 @@
     materialsmine:DielectricBreakdownStrength a owl:Class ;
         rdfs:label "Dielectric Breakdown Strength" ;
         materialsmine:hasPreferredUnit <http://materialsmine.org/ns/unit/kv-mm> ;
-        rdfs:subClassOf _:Ndc954b565b6b479781dcdfcb4f8f265a,
+        rdfs:subClassOf _:Nde08be232bfd4aa09e62abbfa822539d,
             materialsmine:ElectricalProperty ;
         skos:definition "Maximum voltage required to produce a dielectric breakdown through the material and is expressed as Volts per unit thickness." .
 
@@ -2430,7 +2519,7 @@
 
     materialsmine:RotationalFrequency a owl:Class ;
         rdfs:label "Rotational Frequency" ;
-        rdfs:subClassOf _:Nbb7849bad5ab4de48f67776fd1d42829,
+        rdfs:subClassOf _:Nd52ee8ece925452bb637b989d87ead9c,
             sio:Frequency ;
         skos:definition """The number of rotations of an object around an axis per unit time.
 """ .
@@ -2451,10 +2540,22 @@
         rdfs:label "Screw Length" ;
         rdfs:subClassOf sio:Length .
 
+    materialsmine:Simulation a owl:Class ;
+        rdfs:label "nan" .
+
+    materialsmine:SoftwareExecution a owl:Class ;
+        rdfs:label "nan" .
+
     materialsmine:Stress a owl:Class ;
         rdfs:label "Stress" ;
         rdfs:subClassOf materialsmine:MechanicalProperty ;
         skos:definition "When a material is loaded with a force, it produces a stress, which then causes a material to deform. " .
+
+    materialsmine:Thermoset a owl:Class ;
+        rdfs:label "Thermoset" ;
+        rdfs:subClassOf materialsmine:Plastic ;
+        skos:definition "a cured thermosetting resin. A thermosetting resin is a prepolymer in a soft solid or viscous liquid state that changes irreversibly into an infusible, insoluble polymer network by curing." ;
+        prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermosetting_polymer" .
 
     materialsmine:Throughput a owl:Class ;
         rdfs:label "Throughput" ;
@@ -2476,7 +2577,7 @@
     materialsmine:WettingAngle a owl:Class ;
         rdfs:label "Wetting Angle" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/degree> ;
-        rdfs:subClassOf _:Nb361845b73204eecac98a304c231386e,
+        rdfs:subClassOf _:N927166818f45483b91828f56211e624f,
             materialsmine:PhysicalProperty ;
         skos:definition "The angle formed between a liquid droplet and a solid surface. It is a measure of the thermodynamic compatablity between the liquid and the solid, and is influenced by factors such as surface energy and surface tension." .
 
@@ -2609,6 +2710,9 @@
         skos:definition "materials of which a single unit is sized (in at least one dimension) between 1 and 1000 nanometres (10−9 meter) but is usually 1—100 nm" ;
         prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Nanomaterials" .
 
+    materialsmine:Orientation a owl:Class ;
+        rdfs:label "nan" .
+
     materialsmine:Periodicity a owl:Class ;
         rdfs:label "Periodicity" ;
         skos:definition "The character of being periodic." .
@@ -2629,7 +2733,7 @@
 
     materialsmine:Solvent a owl:Class ;
         rdfs:label "Solvent" ;
-        rdfs:subClassOf _:N7ed29909b8f440d78852d27ba5e9a801,
+        rdfs:subClassOf _:N0d8bf8f854aa44bda3c9d07e62b6c204,
             sio:ChemicalEntity ;
         skos:definition "Solvent used in composite synthesis" .
 
@@ -2641,7 +2745,7 @@
     materialsmine:SurfaceEnergy a owl:Class ;
         rdfs:label "Surface Energy" ;
         materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/joulePerSquareMetre> ;
-        rdfs:subClassOf _:N057e1e285dd8461c90511d892bf14244,
+        rdfs:subClassOf _:N8d2b28ee1fbf4d58b1bdcfe212338657,
             materialsmine:PhysicalProperty ;
         skos:definition "Interaction strength of two phases at a phase interface." .
 
@@ -2701,25 +2805,25 @@
 
     materialsmine:Extruder a owl:Class ;
         rdfs:label "Extruder" ;
-        rdfs:subClassOf _:N2b578cc5b81b43edb44a5754b8849356,
-            _:N3a3fa69623ef49beacf8cfdea6894a89,
-            _:N49e7d54b08954de48d91387707716bf3,
-            _:N555657edeebc4d7f9b22f5ff38ca1a15,
-            _:N600e1af246e8437886196671ec1f6e48,
-            _:N70ce6c91480f40cea199d933d0fa9fb5,
-            _:N70f23b3339ed4123a21ddb0769180f0a,
-            _:N781686e320b447fa99e996e81c3f68d5,
-            _:N91ace91a34334945876fa5244ac5a410,
-            _:Nb8b0ef447d594edea317a8b71552f01e,
-            _:Nc0c1fb8d5f094053a9136e10e848264f,
-            _:Nc4040cd0c7e44c1aa305cb9a7e44e6db,
-            _:Nc6773cad32584cd0af79fa54b21e27a0,
-            _:Ncf26ea3f9842422caa34c46e2415a672,
-            _:Nddff12b2f9db46ca947e13f2fc22717d,
-            _:Ndfea080981c34a80baf88348ca43b18e,
-            _:Ne0846039a62849f59916aa99407c9cf3,
-            _:Ne14991248c314c9dad24f96932a97aa5,
-            _:Nee779c9f2b1a4eaa9e778ee602501189,
+        rdfs:subClassOf _:N00a4f690a2164d8785d4dbfcf6c2efed,
+            _:N0437c651c05740c2867825cdcdcdbb11,
+            _:N0dba25691d6c4411bf317debf2de330e,
+            _:N124981ee55de4f248dce85d9d919a323,
+            _:N252fc6c04a994e54961e2346d099f72e,
+            _:N2e1edf4d1c8d4e8d9bfecac07df8f80e,
+            _:N404b507d9ec54610a837e330d29e6831,
+            _:N48bf6e4e83e2469187e034a3fcd78b5d,
+            _:N63589edb07de4cd8b2f913dad4e776fb,
+            _:N678b4e073a704a90bf00c70c69ca1144,
+            _:N6e63b9bc45bb4745995ec0fbd760dfd9,
+            _:N972df2c9037b45778d29f9b5c532d936,
+            _:N9d99873cc2ed40c9810ab0388b8dd869,
+            _:Naf9f54d73f4143aebf8595ca392886f2,
+            _:Nbb30e60b63b042d38993aae7e209222a,
+            _:Nc542be01aa8d4c27978ee631377599ec,
+            _:Ncf5c226414ec4390a3ad7eee13b1697a,
+            _:Ndcf263c2d21d4029866b7b8f644b1626,
+            _:Neac9c784163a4f03ad59459986941188,
             sio:Device .
 
     materialsmine:FlexuralCreep a owl:Class ;
@@ -2750,8 +2854,8 @@
     materialsmine:Rheometery a owl:Class ;
         rdfs:label "Rheometry" ;
         materialsmine:hasSelector "//Rheometery" ;
-        rdfs:subClassOf _:N00fd6fc694de45e4ad8b1e875e458a24,
-            _:N5da9687c7b534771931c571beece5f39,
+        rdfs:subClassOf _:N4bc3ae9d98834d85bac6d2e1c87e6fb7,
+            _:Nfb0e1b77b41b43d6b770ba27fa9d1c07,
             sio:Measuring ;
         skos:definition "Measurement of the quantitative and qualitative relationships between deformations and stresses and their derivatives" .
 
@@ -2838,10 +2942,10 @@
 
     materialsmine:Molding a owl:Class ;
         rdfs:label "Molding" ;
-        rdfs:subClassOf _:N20e5a68695364673b87367074ab469b5,
-            _:N43992c40dfc545678aa91f9e47ae3f7c,
-            _:N6470e4f500714fc8ad5239267ddf9a20,
-            _:Nbe185ee0f1cd4276b1c67ba473be964a,
+        rdfs:subClassOf _:N6cfc289919c8430e9132d2674f6fe31b,
+            _:Nd2e41c6fa75945e3905174c87ce343a1,
+            _:Nd5bf15c1f2e1450e93fd9e6e5e8eb077,
+            _:Nd6b939d6bf1a4127a2924147fa811fc9,
             sio:Procedure ;
         skos:definition "Methods to shape final composite" .
 
@@ -2915,7 +3019,7 @@
 
     materialsmine:Additive a owl:Class ;
         rdfs:label "Additive" ;
-        rdfs:subClassOf _:N1bfc25fa254b49cdbf9629d13d05e262,
+        rdfs:subClassOf _:Nc60d3a838673495fbc28681c414c4282,
             sio:ChemicalEntity,
             sio:ChemicalSubstance ;
         skos:definition "A chemical substance that is blended in to a polymer to acheive a desired effect.",
@@ -2942,9 +3046,9 @@
 
     materialsmine:Mixing a owl:Class ;
         rdfs:label "Mixing" ;
-        rdfs:subClassOf _:N831fbec9dd5346b6903ee701fb53b882,
-            _:Ndfc56760f1cb4476aa06db4c81bfc931,
-            _:Nfc513337f7c9443ba3a06c50853c96ed,
+        rdfs:subClassOf _:N37229a07eadd4240b5228953a5a891c0,
+            _:N64427b0c000b41638c6a4e9bc8e61b2f,
+            _:N79e373cbaa36415786f4069d7517a0f7,
             sio:Procedure ;
         skos:definition "Processes for mixing of multiple substances" .
 
@@ -2989,592 +3093,592 @@
         rdfs:label "Procedure" ;
         rdfs:subClassOf sio:Process .
 
-    sio:Quantity a owl:Class ;
-        rdfs:label "Amount" ;
-        rdfs:subClassOf sio:MeasurementValue .
-
     materialsmine:ElectricalProperty a owl:Class ;
         rdfs:label "Electrical Property" ;
         rdfs:subClassOf sio:Quantity ;
         skos:definition "A materials property describing the material's behavior under some applied electrical field." .
 
+    sio:Quantity a owl:Class ;
+        rdfs:label "Amount" ;
+        rdfs:subClassOf sio:MeasurementValue .
+
     sio:UnitOfMeasurement a owl:Class ;
         rdfs:label "unit of measurement" ;
         rdfs:subClassOf sio:Quantity .
 
-    _:N00fd6fc694de45e4ad8b1e875e458a24 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:CapillarySize .
-
-    _:N027e48d1c5954e38a034852af9ef5928 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/w-m-k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N057e1e285dd8461c90511d892bf14244 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N06723b919cc541b28e16da8e6a1cadc0 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:N074347eac5b043f3a880368a889a83f3 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m-k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N07ff3f1de41c4a44b8428209b72aa6c2 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:AcceleratingVoltage .
-
-    _:N089fbee81e42431d8336d4737f9f121b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N0af4c17a846e4c1e80f658d794c818cd a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N0fde5d63cc464bc690efbe652f18fa7c a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0000146> .
-
-    _:N1260524933c44cbeae3fc109a3a96845 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N1628694f33fe4029a54b2a746e6b0315 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N18a5eea3b1224a0da86b6507a2a69c03 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N1bd96956244c4dba91407fb8b407535b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N1bfc25fa254b49cdbf9629d13d05e262 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:Quantity .
-
-    _:N1c920843b25546389cc8f3c3c6315fd0 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N1d285decff8545ccae7181308437b88a a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N1d94e4ef3491490ea524279ccfaac5be a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N20e5a68695364673b87367074ab469b5 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0001025> .
-
-    _:N28435a35729f42dcbf88804336651f7b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/nm> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N286cfe2ef7994209876a78324925007e a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:ExposureTime .
-
-    _:N295cfded62cf4b69a599c3354c4af922 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N2b578cc5b81b43edb44a5754b8849356 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:Amperage .
-
-    _:N2b70ec01046b4092880bc3fa501b789b a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:N2c50bde65c2c4cd7bbbe2b23b3ab7682 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0000146> .
-
-    _:N324b075a9c724ffda4bf13f792005704 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0000146> .
-
-    _:N381255e68128495da5cda2da9fa63cca a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:CoolingRate .
-
-    _:N387db3fb56344329a75ada31899f3f70 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N3a3fa69623ef49beacf8cfdea6894a89 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:DLRatio .
-
-    _:N3a5d6865efb746faa0f590ff227e59cb a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N3b37753f591b4723835819615f934e8a a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N3b87c6c0c4e6418ba580c4c87bf9eaa5 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N4223a410520d49e98fa9509dea548297 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:EmissionCurrent .
-
-    _:N43992c40dfc545678aa91f9e47ae3f7c a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0000146> .
-
-    _:N43dbbee2e3584a98bb017c83a1d845e1 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N4660f35642f848799fee0916a6038b81 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ThermalProperty .
-
-    _:N49e7d54b08954de48d91387707716bf3 a owl:Restriction ;
+    _:N00a4f690a2164d8785d4dbfcf6c2efed a owl:Restriction ;
         owl:onProperty sio:hasAttribute ;
         owl:someValuesFrom materialsmine:PressureAtDie .
 
-    _:N4b19153724504131a9afcf75251b1574 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m-2-s> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N4bcab615079e4e67ac4f7db331c5910c a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:Spectroscopy .
-
-    _:N4cc6a619031b4376961a87901a6f2289 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:AmbientCondition .
-
-    _:N50674356f16443c6a7bc529e703cf86b a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:AmbientCondition .
-
-    _:N555657edeebc4d7f9b22f5ff38ca1a15 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ChannelDepth .
-
-    _:N581f2146596b4f8c97cef87e9a42dc5a a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:N5adc8861f9154ccab51b0d9ccd950534 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N5adcbcc6c7fc49699a22efa92d71c76c a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-3> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N5c27a4fe0bca434b8c73ace09cd823c7 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:MechanicalProperty .
-
-    _:N5cab474cae4d492fbe43741ad12770d4 a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Solvent .
-
-    _:N5da9687c7b534771931c571beece5f39 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:N5f27c5af9e924a279bc53914bd06ec83 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m-3-k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N600e1af246e8437886196671ec1f6e48 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:FlightClearance .
-
-    _:N613493e048c14b6d9f381c9fbc292227 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:Spectroscopy .
-
-    _:N6389f035e3d940f09efafcb98b20f82b a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:N6470e4f500714fc8ad5239267ddf9a20 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:AmbientCondition .
-
-    _:N671132b65058417f80f88eae97d383bc a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N681c8817b7464d7fbce4caf3dd75868c a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:WorkingDistance .
-
-    _:N684fc2346fde43e1baa82f76eed881e1 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N690f34b66ac64b3d831e9617ddf9b594 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ElectricalProperty .
-
-    _:N699dffe8919a4be1bb41faabc7a0efe0 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:HeatingRate .
-
-    _:N6cab3a53d5ff485e821bca9e2017eedb a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:N6ec2f225cc5d435aabfadcb48d621dee a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:Spectroscopy .
-
-    _:N70ce6c91480f40cea199d933d0fa9fb5 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:Throughput .
-
-    _:N70f23b3339ed4123a21ddb0769180f0a a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ScrewLength .
-
-    _:N71372fb1740449d5872240ec51baf333 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N727ad95d758d45219afdd9d73ee697a6 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:Spectroscopy .
-
-    _:N730b7fe9b66a4042a9b7680a18f046d9 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N7357b329f0bf4504be805a66974c838b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N74ab55675f3c4d64a8337c945790e0e1 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N76f6ca3bf95144f3b022daaa5e02dbcf a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:ExposureTime .
-
-    _:N770028f290da4b858014f182ba4891a6 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/s-m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N781686e320b447fa99e996e81c3f68d5 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ResidenceTime .
-
-    _:N785670cc239446c981a39817555b3c65 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0001025> .
-
-    _:N79fbad7a6d4b47f8996cfd77b0439aa0 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N7e1c8db4e5dd4902a5dff6849a47c0ee a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ElectricalProperty .
-
-    _:N7e9fc126ece541f99aaf1599515af765 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/ohm-m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N7ed29909b8f440d78852d27ba5e9a801 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:Quantity .
-
-    _:N8040a7cb423c43bdac20d83956195580 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:N824e28d6fd60416698c22ed948d34394 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N831fbec9dd5346b6903ee701fb53b882 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:TimeInterval .
-
-    _:N85ba6a368f534105adc7caaf71351f04 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N90a0924a9e54496b8a7a714d6465353b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/ohm-m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N90a82367424c4b0fb45e4b3457da5e34 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ElectricalProperty .
-
-    _:N91ace91a34334945876fa5244ac5a410 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:Torque .
-
-    _:N924d7e41fd384ef394df4fb8754459eb a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ElectricalProperty .
-
-    _:N96d79b74f964431282329646b70b4985 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:TimeInterval .
-
-    _:N9963baed46a34afd96c925f89d757dfd a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/1-s> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N9b040d45db294866881da80ab1a1d1c3 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:N9cc621e1e414491bab1c9ba94cb54246 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/1-pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Na152d3b2fc45495ea311cf6fa24df040 a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Extruder .
-
-    _:Na350b2f6c9314d3691e27684b40b1e5c a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Na3a8587d2d4242ceacbcc493b654b8b0 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Na3d5544ca8a74ed8835f8760ed5cc92b a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:TimeInterval .
-
-    _:Nadee0f2bc71b477f9aa8f3c4ae808835 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:Magnification .
-
-    _:Nb05d829950fd48d7bd79ca4177c0347f a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:AmbientCondition .
-
-    _:Nb1af920eb1c64b15b745f5b36f0e36b5 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0001025> .
-
-    _:Nb25faeb6fceb4470ba6affb78fe6c319 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:TimeInterval .
-
-    _:Nb361845b73204eecac98a304c231386e a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/degrees> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nb55dd089c2dd4d74b42593b0f223b5ef a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nb5f73c4c02504516b7a068bfb697d0f3 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:Nb8b0ef447d594edea317a8b71552f01e a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:Dimension .
-
-    _:Nbb7849bad5ab4de48f67776fd1d42829 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/materialsmine-revolutions-per-minute> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nbe185ee0f1cd4276b1c67ba473be964a a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom sio:TimeInterval .
-
-    _:Nc02dc449ef7c4979b37f1883149d799b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nc0c1fb8d5f094053a9136e10e848264f a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ScrewLead .
-
-    _:Nc2a75fbc256c465fa46b78486a572fe6 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:Nc2ae4b01d2a84d54a15d202dd93670a1 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ThermalProperty .
-
-    _:Nc4040cd0c7e44c1aa305cb9a7e44e6db a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ScrewChannelWidth .
-
-    _:Nc6773cad32584cd0af79fa54b21e27a0 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:Voltage .
-
-    _:Nc6d1cfa3dc2140d3943dfa8d18c54d8b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nc84a805729f34736afa01d55c0569220 a owl:Restriction ;
+    _:N00ce48e3d0564b6d8c030f31a85389c9 a owl:Restriction ;
         owl:hasValue <http://materialsmine.org/ns/unit/n> ;
         owl:onProperty sio:hasUnit .
 
-    _:Nc950e60fadb4473aaf92d76972c04683 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nc9d035c3773146138da4c40e2810af8e a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nce4d8b375ed44e34bf70dbe359730ac6 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Ncf1c130b35314ca5af4bda83ce05ebde a owl:Restriction ;
+    _:N02cbca53977f4a97bc0cd3e409f5243e a owl:Restriction ;
         owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:Spectroscopy .
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
 
-    _:Ncf26ea3f9842422caa34c46e2415a672 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:MeltTemperature .
-
-    _:Nd17c15877eeb4e0293737f36dd8575fd a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/kg-m-3> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nd18dbd26c4bf4fc2afa535d2ae120bfc a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Solvent .
-
-    _:Nd53232bd98f84afd8cdd945468a49c8c a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:AcceleratingVoltage .
-
-    _:Nd53ca20088454ac1a590564f63bbef70 a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:Nda5214e03f624f638abb4f427f85e619 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Ndaaacd54516e4ac8ace22e31207fdf6e a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:EmissionCurrent .
-
-    _:Ndab8102fcb5f4bd589821078cc4f6fc0 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Ndc954b565b6b479781dcdfcb4f8f265a a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/v-m> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nddca604723114d7ea97054cb33d1988c a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:WorkingDistance .
-
-    _:Nddff12b2f9db46ca947e13f2fc22717d a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ScrewDiameter .
-
-    _:Nde13684dff204c31adc386402c7f0d8b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Ndfc56760f1cb4476aa06db4c81bfc931 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom <obo:PATO_0000146> .
-
-    _:Ndfea080981c34a80baf88348ca43b18e a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:FlightWidth .
-
-    _:Ne0846039a62849f59916aa99407c9cf3 a owl:Restriction ;
-        owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ExtrusionTemperature .
-
-    _:Ne14991248c314c9dad24f96932a97aa5 a owl:Restriction ;
+    _:N0437c651c05740c2867825cdcdcdbb11 a owl:Restriction ;
         owl:onProperty sio:hasAttribute ;
         owl:someValuesFrom materialsmine:InnerBarrelDiameter .
 
-    _:Ne21b68fcde314bbd8081b3bd1deb40f3 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+    _:N0469600dfd974a05b34854472ec093bf a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
         owl:onProperty sio:hasUnit .
 
-    _:Ne58c0dcce2384bb8982f0071ecf758e4 a owl:Restriction ;
-        owl:onProperty prov:used ;
-        owl:someValuesFrom materialsmine:Magnification .
-
-    _:Ne6fecf2b1b9542e5ba72e765d49637b9 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Ne8240a0258ef4443a5709f81f1ae729b a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nea708767cf304c8b833a909ed3a46126 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/j-k> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nebec4325aa444ce498ef60197ddc5375 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/c-m-2> ;
-        owl:onProperty sio:hasUnit .
-
-    _:Nee779c9f2b1a4eaa9e778ee602501189 a owl:Restriction ;
+    _:N059a20029f3e427d8f8f8cbcc3991dfa a owl:Restriction ;
         owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:ChannelsPerScrew .
+        owl:someValuesFrom <obo:PATO_0000146> .
 
-    _:Nf04c6692de924efdb2abef2e59682bb5 a owl:Restriction ;
-        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+    _:N0cf784ab7d154ec2b67c69ae516ebf5c a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
         owl:onProperty sio:hasUnit .
 
-    _:Nf1ebe9de0ae948e2b55b5a4ee16e8e7d a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:Nf202d1b0d614427e99cdcd3c7c9fc0c9 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ElectricalProperty .
-
-    _:Nf7072803a8204e4191d352ab1149f59a a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:MechanicalProperty .
-
-    _:Nf7dc38434ef04df6b3354ea2e3ffca61 a owl:Restriction ;
-        owl:onProperty sio:hasInput ;
-        owl:someValuesFrom materialsmine:Additive .
-
-    _:Nfb5ac5e2311746488e5d205e08fccb01 a owl:Restriction ;
-        owl:onProperty prov:generated ;
-        owl:someValuesFrom materialsmine:ViscoelasticProperty .
-
-    _:Nfc513337f7c9443ba3a06c50853c96ed a owl:Restriction ;
+    _:N0d8bf8f854aa44bda3c9d07e62b6c204 a owl:Restriction ;
         owl:onProperty sio:hasAttribute ;
-        owl:someValuesFrom materialsmine:RotationalFrequency .
+        owl:someValuesFrom sio:Quantity .
 
-    _:Nfc7beb764c954d9296964ec5fc0db413 a owl:Restriction ;
+    _:N0dba25691d6c4411bf317debf2de330e a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:MeltTemperature .
+
+    _:N0f5557b9a18f4368bb43fdb693ac558d a owl:Restriction ;
         owl:onProperty sio:hasAttribute ;
         owl:someValuesFrom <obo:PATO_0001025> .
 
-    _:Nfeacdc21e2ea49aeaef64e243899bc98 a owl:Restriction ;
+    _:N11ed9156d97a4cb29d93e7721d47ae76 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ElectricalProperty .
+
+    _:N124981ee55de4f248dce85d9d919a323 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ScrewChannelWidth .
+
+    _:N12fa9ff18fc14185940ae27b77c5b524 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:WorkingDistance .
+
+    _:N145ae4ef7ed64a558975878cbc1bc0dd a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N17eb8df446714ba48883002e1001b4e0 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N180918c0e08d4f309fc263e9ebfb605e a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ElectricalProperty .
+
+    _:N1840dd02f6ae4236876f388b8e9a0edb a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N1852c19286544a7cbe44ab1e87e4eabc a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:WorkingDistance .
+
+    _:N1a304ed5aa5a4989903130dc42921782 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N1a7c341142994e57934a49faf56a20d9 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ElectricalProperty .
+
+    _:N1c5854c444764d938999a096a5a974d4 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/kg-m-3> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N1caed14b79c34a58aca0c3874e9cc05b a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N1cc9e8548e404e1295df1b5eb23846ac a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N20d50c2f86f04c4388e2d8215e6126d7 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:AcceleratingVoltage .
+
+    _:N22cb02987b234394931c3578a76abe51 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:ExposureTime .
+
+    _:N2477e0b2e6f749408c3cd044cb356f03 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0000146> .
+
+    _:N252fc6c04a994e54961e2346d099f72e a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ExtrusionTemperature .
+
+    _:N270b7f5ff7624607b3676890e6c37265 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N2769baea318d42bea15bd2750f2c1d22 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N2e1edf4d1c8d4e8d9bfecac07df8f80e a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ChannelDepth .
+
+    _:N3182e5c7d5fd416db7dfa358d7b47188 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ThermalProperty .
+
+    _:N31f0c971afc14717b63ba2b593773eb6 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/s-m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N32abe4ac8cea47eea8bc298f28c75dfc a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Extruder .
+
+    _:N350fd973d21e4869a5c197f2c08063ed a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N35caf9fc0d444b9fab0a7f90ea1172a8 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:TimeInterval .
+
+    _:N361663838ac645f49b8d7c4e8c635dcc a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/1-s> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N37229a07eadd4240b5228953a5a891c0 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:TimeInterval .
+
+    _:N37c47de92a0a4827a3968e8277c4c76b a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ElectricalProperty .
+
+    _:N39c06972a0784a2e95f91cdaf86af7a5 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:N3ad0807bd7364be88ac80a3b3ae5305a a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N3df8c4d4097c4c82a85413f822935ad0 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N3f74c59daf204b25b652a05e08fd2ea5 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:N3fece9760f9d4c8c9c07ff4823dd8dc4 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:MechanicalProperty .
+
+    _:N404b507d9ec54610a837e330d29e6831 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ScrewLead .
+
+    _:N41fce25a6db04083a8cd9180878ccd13 a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:N4579432564d34f9d8229f78cf4f50802 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N488315167e294a439bf7f25156f5e171 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N48bf6e4e83e2469187e034a3fcd78b5d a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:FlightWidth .
+
+    _:N4a539e6b2e3a4c92baa911772dfde7fa a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:MechanicalProperty .
+
+    _:N4bc3ae9d98834d85bac6d2e1c87e6fb7 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:N4d82c38e591647b083d5d0bb36c492ab a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:N5057c28d3e7948bbacca6592cf2c68e6 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m-2-s> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N532c9143dd774438ad4da020b8155cb4 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-3> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N5735299650bf40209dfc2c06a8e9639e a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N596cfd056d524517819c13727233d412 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:Magnification .
+
+    _:N5dbbf0b66da8477391d5dfcfe80455a4 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N5f43eb4f7fba49e791b2cbfa806c52e6 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:N5fea12e8a7734d78bca504a6c18cfe0d a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N618b1ad100cb434ebae760d58c1dc5fc a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N63589edb07de4cd8b2f913dad4e776fb a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:FlightClearance .
+
+    _:N64427b0c000b41638c6a4e9bc8e61b2f a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:RotationalFrequency .
+
+    _:N6554f346df704d8780e89865a6a1256a a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N678b4e073a704a90bf00c70c69ca1144 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:Dimension .
+
+    _:N679d69382e64435b88c755c720d52a45 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:AmbientCondition .
+
+    _:N6838c0ad59354836b6749b428dd19653 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:AmbientCondition .
+
+    _:N6894c69d3c824ab8be20714cd987b377 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:Spectroscopy .
+
+    _:N69260ad0624e46b6931c1256b6c1594d a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ElectricalProperty .
+
+    _:N6bf3d21c777e4956904158203744e8cb a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:Magnification .
+
+    _:N6cfc289919c8430e9132d2674f6fe31b a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0001025> .
+
+    _:N6e63b9bc45bb4745995ec0fbd760dfd9 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ScrewLength .
+
+    _:N6ee7cf3d8bf147049439428cc80bad43 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N72f5c0f532a7494f930365bbb1d4a894 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:N7399d5e6d18a432383417ca7c1a1bb71 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:TimeInterval .
+
+    _:N76e8fd9cb25b4a6683cf301ccbf6cf21 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m-3-k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N77a858f4fa5741129f1eafe0388aa234 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/1-pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N77ad53e16923482e84c258887a96b90c a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N79aaf513459042de99fe54a34fbb4988 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/nm> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N79e373cbaa36415786f4069d7517a0f7 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0000146> .
+
+    _:N7d3fe0c63601456f90f2a80c5ce50b2a a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:N7f90b109c16e463fabd8bb68b257bf98 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:HeatingRate .
+
+    _:N858fd7b72ee64727890f1868aca05d4a a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:TimeInterval .
+
+    _:N8661cf02e09e4f2789806f28fe0e8a14 a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:N8935691a03934441b5581e79e78ba9ad a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:Spectroscopy .
+
+    _:N8be0faad9fde43859333d2d4aa4ecd84 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:ExposureTime .
+
+    _:N8c0e526f808c486fb400743b41a4c196 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:EmissionCurrent .
+
+    _:N8d2b28ee1fbf4d58b1bdcfe212338657 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N912c6b6f680f43d7a75dc9e793b9f201 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N923a02a39a464796a4706430595703cd a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N927166818f45483b91828f56211e624f a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/degrees> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N930ab831616b493ab3515b0ac6b995d1 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N972df2c9037b45778d29f9b5c532d936 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:Amperage .
+
+    _:N97caa89f49a64b8898941386fb06cc64 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N9b908cc3682f4c54b31200ce9dd60e62 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N9c356411ca0e4b6e971388a433d6f16b a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/ohm-m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N9d99873cc2ed40c9810ab0388b8dd869 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:Throughput .
+
+    _:N9f0b2454b1fe4f29a8b1ea0804c5f8b1 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N9fd92089677a4c1cadf1d6b1eb07b8f2 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/w-m-k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:N9fdf9e1cc20d4104acca646260d96680 a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:Na3309ccc91744f11ac9aaed78b6af878 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Na5bc41d29b2c44ff836a5ef3b1c73642 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0001025> .
+
+    _:Naa2f97ca94324c58bda9e0c940233f2f a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nadcdc3b97b834680b5e78b8b7ce08599 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:Spectroscopy .
+
+    _:Naf9f54d73f4143aebf8595ca392886f2 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ResidenceTime .
+
+    _:Naff3fb0142a7414096c8ea47569a2d95 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/n> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nb00b804a1f684c6e89c0e5d37f00b59d a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ViscoelasticProperty .
+
+    _:Nb03cbfb56cac4abba65cc23dff52230a a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nb5ed0756a7514f78b03008439e9ecb6b a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Solvent .
+
+    _:Nb809ef1c8f044211b135690bd9bcd128 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nbb30e60b63b042d38993aae7e209222a a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ScrewDiameter .
+
+    _:Nbe5d0ebf12d1481f89991a2571fecddc a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nc1e9a56ad52547329fcb66b161ba65d2 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:EmissionCurrent .
+
+    _:Nc3c5d7ed903744169d60210291553e80 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/s> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nc4a6c3ee8f2a496bbc24360f10a81308 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:CoolingRate .
+
+    _:Nc542be01aa8d4c27978ee631377599ec a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:ChannelsPerScrew .
+
+    _:Nc60d3a838673495fbc28681c414c4282 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:Quantity .
+
+    _:Nc81b4da3443d4df98d14cb1cc522e2e4 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nc89a2d5caadf4a65bd4573969134fb02 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nc9d9fc668ccf428cbe9f363105fccefd a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/c-m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ncb077f9a5c9e432bba0c62086b41cd01 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ncf5c226414ec4390a3ad7eee13b1697a a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:Voltage .
+
+    _:Nd2e41c6fa75945e3905174c87ce343a1 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0000146> .
+
+    _:Nd52ee8ece925452bb637b989d87ead9c a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/materialsmine-revolutions-per-minute> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Nd5bf15c1f2e1450e93fd9e6e5e8eb077 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:AmbientCondition .
+
+    _:Nd6b939d6bf1a4127a2924147fa811fc9 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom sio:TimeInterval .
+
+    _:Ndb4d2c72e7af4d109776474d326cb067 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:AmbientCondition .
+
+    _:Ndbb743f2a8be470ab501aab4c8c43fb4 a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ndc32dbdbca924bd19e901536a4ee4b4a a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/m-k> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ndcf263c2d21d4029866b7b8f644b1626 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:DLRatio .
+
+    _:Nde08be232bfd4aa09e62abbfa822539d a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/v-m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ndf5a1578ecf4403ca3125a69a8ca677e a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/j-m-2> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ne171e69fe61047f28543db5d27f1012b a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ne18f0ac0d3954ee5958b3e86dd236b1f a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/ohm-m> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ne461a4e1123d48648e1591edc42cfb0c a owl:Restriction ;
+        owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
+        owl:onProperty sio:hasUnit .
+
+    _:Ne57d15db66014bb5893644285a9dceb8 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:Spectroscopy .
+
+    _:Ne91c8c66c047425ba52eff42328881a9 a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Additive .
+
+    _:Nea7b6a5d07b14390ab370aa751479584 a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:Spectroscopy .
+
+    _:Neac9c784163a4f03ad59459986941188 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom materialsmine:Torque .
+
+    _:Nee172ee107e746fb85964a7c0118172c a owl:Restriction ;
+        owl:onProperty prov:generated ;
+        owl:someValuesFrom materialsmine:ThermalProperty .
+
+    _:Nf2f7159152b24ddd9025db0328b37546 a owl:Restriction ;
+        owl:onProperty sio:hasInput ;
+        owl:someValuesFrom materialsmine:Solvent .
+
+    _:Nf713c12b4883406e9dbe4c45c5356ea7 a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0000146> .
+
+    _:Nf8601d6e0fe44a89a378da6deef5ae3e a owl:Restriction ;
+        owl:onProperty sio:hasAttribute ;
+        owl:someValuesFrom <obo:PATO_0001025> .
+
+    _:Nf98a37cd915445948a860e64204f2849 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:AcceleratingVoltage .
+
+    _:Nfb0e1b77b41b43d6b770ba27fa9d1c07 a owl:Restriction ;
+        owl:onProperty prov:used ;
+        owl:someValuesFrom materialsmine:CapillarySize .
+
+    _:Nfd1a81ee478e4bc0b69437869729eefa a owl:Restriction ;
         owl:hasValue <http://materialsmine.org/ns/unit/pa> ;
         owl:onProperty sio:hasUnit .
 }

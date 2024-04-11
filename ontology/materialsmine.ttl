@@ -1,9 +1,8 @@
 @prefix : <http://materialsmine.org/> .
 @prefix bibo: <http://purl.org/ontology/bibo/> .
-@prefix dc: <http://purl.org/dc/terms/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix materialsmine: <http://materialsmine.org/ns/> .
 @prefix np: <http://www.nanopub.org/nschema#> .
-@prefix ns1: <http://materialsmine.org/ontology/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -12,7 +11,7 @@
 
 :ns a owl:Ontology ;
     rdfs:label "Materialsmine Ontology" ;
-    dc:contributor <https://orcid.org/0000-0001-5296-4440>,
+    dcterms:contributor <https://orcid.org/0000-0001-5296-4440>,
         <https://orcid.org/0000-0001-7037-4567>,
         <https://orcid.org/0000-0001-8995-0050>,
         <https://orcid.org/0000-0001-9081-6334>,
@@ -53,6 +52,10 @@ materialsmine:AC_DielectricDispersion a owl:Class ;
     rdfs:subClassOf materialsmine:ElectricalProperty ;
     skos:definition "Frequency dependence of dielectric permittivity under an oscillating electric field." .
 
+materialsmine:Abaqus a owl:Class ;
+    rdfs:label "nan" ;
+    rdfs:subClassOf materialsmine:SoftwareExecution .
+
 materialsmine:Abbreviation a owl:Class ;
     rdfs:label "Abbreviation" ;
     rdfs:subClassOf sio:Name ;
@@ -63,6 +66,15 @@ materialsmine:Air a owl:Class ;
     rdfs:label "Air" ;
     rdfs:subClassOf materialsmine:AmbientCondition ;
     skos:definition "Gaseous medium surrounding the solid boundaries of a material." .
+
+materialsmine:AlternatingCurrent a owl:Class ;
+    rdfs:label "Alternating Current",
+        "nan" ;
+    rdfs:subClassOf sio:Quantity .
+
+materialsmine:Anisotropic a owl:Class ;
+    rdfs:label "nan" ;
+    rdfs:subClassOf materialsmine:Orientation .
 
 materialsmine:Aperiodic a owl:Class ;
     rdfs:label "Aperiodic" ;
@@ -152,6 +164,12 @@ materialsmine:BinaryMaterialPropertyField a owl:Class ;
 materialsmine:Book a owl:Class ;
     rdfs:label "Book" ;
     rdfs:subClassOf sio:Document .
+
+materialsmine:BovineSerumAlbumen a owl:Class ;
+    rdfs:label "Bovine Serum Albumen" ;
+    rdfs:subClassOf sio:Protein ;
+    skos:definition "Bovine Serum Albumin, also known as \"BSA\" or \"Fraction V\", is a protein derived from bovine blood plasma." ;
+    prov:wasQuotedFrom "https://www.capricorn-scientific.com/BSA" .
 
 materialsmine:BreakdownStrength a owl:Class ;
     rdfs:label "Breakdown Strength" ;
@@ -271,6 +289,12 @@ materialsmine:CartesianVector a owl:Class ;
 materialsmine:Casting a owl:Class ;
     rdfs:label "Casting" ;
     rdfs:subClassOf materialsmine:Molding .
+
+materialsmine:CelluloseNanofibers a owl:Class ;
+    rdfs:label "Cellulose Nanofibers" ;
+    rdfs:subClassOf sio:BiologicalEntity ;
+    skos:definition "Made from wood-derived fiber (pulp) that has been defibrated to the nano level of several hundredths of a micron and smaller, cellulose nanofiber is the world's most advanced biomass material." ;
+    prov:wasQuotedFrom "https://www.nipponpapergroup.com/english/research/organize/cnf.html" .
 
 materialsmine:Centrifugation a owl:Class ;
     rdfs:label "Centrifugation" ;
@@ -401,13 +425,13 @@ materialsmine:Cooling a owl:Class ;
             owl:someValuesFrom materialsmine:AmbientCondition ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0001025> ],
+            owl:someValuesFrom sio:TimeInterval ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
+            owl:someValuesFrom <obo:PATO_0001025> ],
         sio:Procedure .
 
 materialsmine:Copolymer a owl:Class ;
@@ -419,6 +443,11 @@ materialsmine:Copolymer a owl:Class ;
 materialsmine:CounterRotation a owl:Class ;
     rdfs:label "Counter-Rotation" ;
     rdfs:subClassOf materialsmine:RotationMode .
+
+materialsmine:CrosslinkDensityFraction a owl:Class ;
+    rdfs:label "Crosslink Density (Fraction)" ;
+    rdfs:subClassOf materialsmine:Thermoset ;
+    skos:definition "Ratio of the number of cross-links formed to the maximum possible cross-links that can be formed in a thermosetting system (NOTE: numeric value restricted to be between 0 and 1)" .
 
 materialsmine:CrystalPhase a owl:Class ;
     rdfs:label "Crystal Phase" ;
@@ -531,16 +560,21 @@ materialsmine:DifferentialScanningCalorimetry a owl:Class ;
     rdfs:label "Differential Scanning Calorimetry" ;
     materialsmine:hasSelector "//Differential_Scanning_Calorimetry" ;
     rdfs:subClassOf [ a owl:Restriction ;
+            owl:onProperty prov:generated ;
+            owl:someValuesFrom materialsmine:ThermalProperty ],
+        [ a owl:Restriction ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:HeatingRate ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:CoolingRate ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:generated ;
-            owl:someValuesFrom materialsmine:ThermalProperty ],
         sio:Measuring ;
     skos:definition "Measurement of heat required to increase unit temperature in a material" .
+
+materialsmine:DirectCurrent a owl:Class ;
+    rdfs:label "Direct Current",
+        "nan" ;
+    rdfs:subClassOf sio:Quantity .
 
 materialsmine:DispersionBandValue a owl:Class ;
     rdfs:label "Dispersion Band Value" ;
@@ -582,16 +616,16 @@ materialsmine:Drying-Evaporation a owl:Class ;
     rdfs:label "Drying Evaporation" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0001025> ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:AmbientCondition ],
+            owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom sio:TimeInterval ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0000146> ],
+            owl:someValuesFrom materialsmine:AmbientCondition ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom <obo:PATO_0001025> ],
         sio:Procedure ;
     skos:definition "Process for drying and evaporation of liquid solutions" .
 
@@ -622,11 +656,6 @@ materialsmine:DynamicViscosity a owl:Class ;
 materialsmine:Editor a owl:Class ;
     rdfs:label "Editor" ;
     rdfs:subClassOf prov:Agent .
-
-materialsmine:Eigenfrequency a owl:Class ;
-    rdfs:label "Eigenfrequency" ;
-    rdfs:subClassOf sio:Frequency ;
-    skos:definition "The eigenvalue associated with a solution to the wave equation. This is the inverse time component of the dispersion relation." .
 
 materialsmine:Eigenvector a owl:Class ;
     rdfs:label "Eigenvector" ;
@@ -667,6 +696,9 @@ materialsmine:Electrometry a owl:Class ;
             owl:someValuesFrom materialsmine:ElectricalProperty ],
         sio:Measuring ;
     skos:definition "Measurement of electric charge or electrical potential difference" .
+
+materialsmine:Element a owl:Class ;
+    rdfs:label "nan" .
 
 materialsmine:ElongationAtBreak a owl:Class ;
     rdfs:label "Elongation At Break" ;
@@ -782,6 +814,10 @@ materialsmine:FillerProcessing a owl:Class ;
     rdfs:label "Filler Processing" ;
     rdfs:subClassOf materialsmine:Processing .
 
+materialsmine:FiniteElementAnalysis a owl:Class ;
+    rdfs:label "nan" ;
+    rdfs:subClassOf materialsmine:Simulation .
+
 materialsmine:FiniteMetamaterial a owl:Class ;
     rdfs:label "Finite Metamaterial" ;
     rdfs:subClassOf materialsmine:Metamaterial ;
@@ -893,6 +929,12 @@ materialsmine:GlassTransitionTemperature a owl:Class ;
         <obo:PATO_0000146> ;
     skos:definition "is the temperature region where the polymer transitions from a hard, glassy material to a soft, rubbery material." .
 
+materialsmine:Glycerol a owl:Class ;
+    rdfs:label "Glycerol" ;
+    rdfs:subClassOf sio:OrganicMolecule ;
+    skos:definition "Glycerol is a triol with a structure of propane substituted at positions 1, 2 and 3 by hydroxy groups. It has a role as an osmolyte, a solvent, a detergent, a human metabolite, an algal metabolite, a Saccharomyces cerevisiae metabolite, an Escherichia coli metabolite, a mouse metabolite and a geroprotector. It is an alditol and a triol." ;
+    prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17754" .
+
 materialsmine:GraftDensity a owl:Class ;
     rdfs:label "Graft Density" ;
     rdfs:subClassOf sio:Density ;
@@ -964,13 +1006,13 @@ materialsmine:Heating a owl:Class ;
     rdfs:label "Heating" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
+            owl:someValuesFrom <obo:PATO_0001025> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0001025> ],
+            owl:someValuesFrom sio:TimeInterval ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:AmbientCondition ],
@@ -1086,6 +1128,9 @@ materialsmine:InterfacialTension a owl:Class ;
         materialsmine:VolumetricProperty ;
     skos:definition "Interfacial tension is the force that holds the surfaceof a particular phase together" .
 
+materialsmine:Interphase a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:InterphaseThickness a owl:Class ;
     rdfs:label "Interphase Thickness" ;
     materialsmine:hasPreferredUnit <http://www.ontology-of-units-of-measure.org/resource/om-2/nanometre> ;
@@ -1112,6 +1157,10 @@ materialsmine:Isotactic a owl:Class ;
 
 """ ;
     prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Tacticity#Isotactic_polymers" .
+
+materialsmine:Isotropic a owl:Class ;
+    rdfs:label "nan" ;
+    rdfs:subClassOf materialsmine:Orientation .
 
 materialsmine:JIntegral a owl:Class ;
     rdfs:label "J Integral" ;
@@ -1187,6 +1236,12 @@ materialsmine:LinearPhysicsModel a owl:Class ;
     skos:definition "A model of a system in which the change of the output is proportional to the change of the input." ;
     prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Nonlinear_system" .
 
+materialsmine:LinoleicAcid a owl:Class ;
+    rdfs:label "Linoleic Acid" ;
+    rdfs:subClassOf sio:Lipid ;
+    skos:definition "An octadecadienoic acid in which the two double bonds are at positions 9 and 12 and have Z (cis) stereochemistry." ;
+    prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:17351" .
+
 materialsmine:Location a owl:Class ;
     rdfs:label "Location" ;
     skos:definition "Position within a space. " .
@@ -1239,6 +1294,9 @@ materialsmine:MatrixProcessing a owl:Class ;
     rdfs:label "Matrix Processing" ;
     rdfs:subClassOf materialsmine:Processing .
 
+materialsmine:MeanNeighborDistance a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:MechanicalMixing a owl:Class ;
     rdfs:label "Mechanical Mixing" ;
     rdfs:subClassOf [ a owl:Restriction ;
@@ -1275,6 +1333,9 @@ materialsmine:MeltingTemperature a owl:Class ;
         <obo:PATO_0000146> ;
     skos:definition "the temperature at which a solid turns into a liquid" .
 
+materialsmine:Mesh a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:MetamaterialChart a owl:Class ;
     rdfs:label "Metamaterial Chart" ;
     rdfs:subClassOf sio:Chart ;
@@ -1284,6 +1345,9 @@ materialsmine:MetamaterialDataset a owl:Class ;
     rdfs:label "Metamaterial Dataset" ;
     rdfs:subClassOf <dcat:Dataset> ;
     skos:definition "Datasets that have the primary topic of metamaterials." .
+
+materialsmine:Microstructure a owl:Class ;
+    rdfs:label "nan" .
 
 materialsmine:MindlinReissnerPlate a owl:Class ;
     rdfs:label "Mindlin Reissner Plate" ;
@@ -1333,6 +1397,10 @@ materialsmine:NanomaterialDataset a owl:Class ;
     rdfs:subClassOf <dcat:Dataset> ;
     skos:definition "Datasets that have the primary topic of nanomaterials." .
 
+materialsmine:NonAgglomerateFraction a owl:Class ;
+    rdfs:label "nan" ;
+    rdfs:subClassOf sio:Concentration .
+
 materialsmine:NonSpherical a owl:Class ;
     rdfs:label "Non-spherical Shape" ;
     rdfs:subClassOf sio:Shape .
@@ -1363,6 +1431,12 @@ materialsmine:NucleationParameterOfAvramiEquation a owl:Class ;
     rdfs:label "Nucleation Parameter Of Avrami Equation" ;
     rdfs:subClassOf materialsmine:Crystallinity ;
     skos:definition "Nucleation Parameter in Avrami Equation" .
+
+materialsmine:OleicAcid a owl:Class ;
+    rdfs:label "Oleic Acid" ;
+    rdfs:subClassOf sio:Lipid ;
+    skos:definition "An octadec-9-enoic acid in which the double bond at C-9 has Z (cis) stereochemistry." ;
+    prov:wasQuotedFrom "https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:16196" .
 
 materialsmine:OpticalMicroscopy a owl:Class ;
     rdfs:label "Optical Microscopy" ;
@@ -1611,6 +1685,9 @@ materialsmine:RelatedDOI a owl:Class ;
     rdfs:label "related DOI" ;
     rdfs:subClassOf materialsmine:DOI .
 
+materialsmine:RepresentativeVolumeElement a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:RepresentativeVolumeElementGeometry a owl:Class ;
     rdfs:label "Representative Volume Element Geometry" ;
     rdfs:subClassOf materialsmine:Geometry ;
@@ -1619,6 +1696,11 @@ materialsmine:RepresentativeVolumeElementGeometry a owl:Class ;
 materialsmine:ResearchArticle a owl:Class ;
     rdfs:label "Research Article" ;
     rdfs:subClassOf bibo:AcademicArticle .
+
+materialsmine:ResonanceFrequency a owl:Class ;
+    rdfs:label "Resonance Frequency" ;
+    rdfs:subClassOf sio:Frequency ;
+    skos:definition "When an oscillating force is applied at a resonant frequency of a dynamic system, the system will oscillate at a higher amplitude than when the same force is applied at other, non-resonant frequencies." .
 
 materialsmine:ReviewArticle a owl:Class ;
     rdfs:label "Review Article" ;
@@ -1680,22 +1762,22 @@ materialsmine:ScanningElectronMicroscopy a owl:Class ;
     materialsmine:hasSelector "//Scanning_Electron_Microscopy" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:EmissionCurrent ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
             owl:someValuesFrom materialsmine:WorkingDistance ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:Magnification ],
+            owl:someValuesFrom materialsmine:ExposureTime ],
         [ a owl:Restriction ;
             owl:onProperty prov:generated ;
             owl:someValuesFrom materialsmine:ElectricalProperty ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:ExposureTime ],
+            owl:someValuesFrom materialsmine:Magnification ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:EmissionCurrent ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
         sio:Measuring ;
     skos:definition "Scanning electron microscopy for obtaining microstructure at microscale" .
 
@@ -1771,6 +1853,12 @@ materialsmine:SolventName a owl:Class ;
     rdfs:label "Solvent Name" ;
     rdfs:subClassOf sio:Name .
 
+materialsmine:Sorbitol a owl:Class ;
+    rdfs:label "Sorbitol" ;
+    rdfs:subClassOf sio:OrganicMolecule ;
+    skos:definition "A polyhydric alcohol with about half the sweetness of sucrose. Sorbitol occurs naturally and is also produced synthetically from glucose. It was formerly used as a diuretic and may still be used as a laxative and in irrigating solutions for some surgical procedures." ;
+    prov:wasQuotedFrom "https://www.drugbank.ca/drugs/DB01638" .
+
 materialsmine:SpecificHeatCapacity_Cp a owl:Class ;
     rdfs:label "Specific Heat Capacity Cp" ;
     materialsmine:hasPreferredUnit <http://materialsmine.org/ns/unit/j-gk> ;
@@ -1801,6 +1889,13 @@ materialsmine:SquareGeometry a owl:Class ;
 materialsmine:StdChemicalName a owl:Class ;
     rdfs:label "StdChemicalName" ;
     rdfs:subClassOf materialsmine:ChemicalName .
+
+materialsmine:StearicAcid a owl:Class ;
+    rdfs:label "Stearic Acid" ;
+    rdfs:subClassOf sio:Lipid ;
+    skos:altLabel "Octadecanoic Acid" ;
+    skos:definition "Stearic acid (IUPAC systematic name: octadecanoic acid) is one of the useful types of saturated fatty acids that comes from many animal and vegetable fats and oils. It is a waxy solid." ;
+    prov:wasQuotedFrom "	https://www.drugbank.ca/drugs/DB03193" .
 
 materialsmine:Stirring a owl:Class ;
     rdfs:label "Stirring" ;
@@ -2036,12 +2131,6 @@ materialsmine:Thermoplastic a owl:Class ;
     skos:definition "a plastic material, a polymer, that becomes pliable or moldable above a specific temperature and solidifies upon cooling." ;
     prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermoplastic" .
 
-materialsmine:Thermoset a owl:Class ;
-    rdfs:label "Thermoset" ;
-    rdfs:subClassOf materialsmine:Plastic ;
-    skos:definition "a cured thermosetting resin. A thermosetting resin is a prepolymer in a soft solid or viscous liquid state that changes irreversibly into an infusible, insoluble polymer network by curing." ;
-    prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermosetting_polymer" .
-
 materialsmine:TimoshenkoBeam a owl:Class ;
     rdfs:label "Timoshenko Beam" ;
     skos:definition "A mathematical model of a beam undergoing large deflections accounting for shear deformations. " .
@@ -2065,7 +2154,13 @@ materialsmine:TransmissionElectronMicroscopy a owl:Class ;
     materialsmine:hasSelector "//Transmission_Electron_Microscopy" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:EmissionCurrent ],
+            owl:someValuesFrom materialsmine:WorkingDistance ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:Magnification ],
         [ a owl:Restriction ;
             owl:onProperty prov:generated ;
             owl:someValuesFrom materialsmine:ElectricalProperty ],
@@ -2074,13 +2169,7 @@ materialsmine:TransmissionElectronMicroscopy a owl:Class ;
             owl:someValuesFrom materialsmine:ExposureTime ],
         [ a owl:Restriction ;
             owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:Magnification ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:AcceleratingVoltage ],
-        [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:WorkingDistance ],
+            owl:someValuesFrom materialsmine:EmissionCurrent ],
         sio:Measuring ;
     skos:definition "Transmission electron microscopy for obtaining microstructure at nanoscale" .
 
@@ -2174,6 +2263,11 @@ materialsmine:VolumeResistivity a owl:Class ;
             owl:onProperty sio:hasUnit ],
         materialsmine:ElectricalProperty ;
     skos:definition "Ability to oppose the flow of electric current." .
+
+materialsmine:VolumetricShrinkage a owl:Class ;
+    rdfs:label "Volumetric Shrinkage" ;
+    rdfs:subClassOf materialsmine:VolumetricProperty ;
+    skos:definition "The amount of reduction by volume (%) experienced in a thermoset due to crosslinking between the monomer(s) and curing agent(s)" .
 
 materialsmine:Voxel a owl:Class ;
     rdfs:label "Voxel" ;
@@ -2303,7 +2397,11 @@ materialsmine:uSMILES a owl:Class ;
     rdfs:label "Parts per million per degree centigrade" ;
     skos:notation "ppm/C" .
 
-ns1:nanopublication a np:Nanopublication ;
+<http://materialsmine.org/ns/unit/v-mm> a sio:UnitOfMeasurement ;
+    rdfs:label "Kilovolt per Millimeter" ;
+    skos:notation "kV/mm" .
+
+<http://materialsmine.org/ontology/nanopublication> a np:Nanopublication ;
     np:hasAssertion :ontology .
 
 <http://purl.obolibrary.org/obo/NCIT_C70469> a sio:UnitOfMeasurement ;
@@ -2668,10 +2766,22 @@ materialsmine:ScrewLength a owl:Class ;
     rdfs:label "Screw Length" ;
     rdfs:subClassOf sio:Length .
 
+materialsmine:Simulation a owl:Class ;
+    rdfs:label "nan" .
+
+materialsmine:SoftwareExecution a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:Stress a owl:Class ;
     rdfs:label "Stress" ;
     rdfs:subClassOf materialsmine:MechanicalProperty ;
     skos:definition "When a material is loaded with a force, it produces a stress, which then causes a material to deform. " .
+
+materialsmine:Thermoset a owl:Class ;
+    rdfs:label "Thermoset" ;
+    rdfs:subClassOf materialsmine:Plastic ;
+    skos:definition "a cured thermosetting resin. A thermosetting resin is a prepolymer in a soft solid or viscous liquid state that changes irreversibly into an infusible, insoluble polymer network by curing." ;
+    prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Thermosetting_polymer" .
 
 materialsmine:Throughput a owl:Class ;
     rdfs:label "Throughput" ;
@@ -2830,6 +2940,9 @@ materialsmine:Nanomaterial a owl:Class ;
     skos:definition "materials of which a single unit is sized (in at least one dimension) between 1 and 1000 nanometres (10−9 meter) but is usually 1—100 nm" ;
     prov:wasQuotedFrom "https://en.wikipedia.org/wiki/Nanomaterials" .
 
+materialsmine:Orientation a owl:Class ;
+    rdfs:label "nan" .
+
 materialsmine:Periodicity a owl:Class ;
     rdfs:label "Periodicity" ;
     skos:definition "The character of being periodic." .
@@ -2928,34 +3041,28 @@ materialsmine:Extruder a owl:Class ;
     rdfs:label "Extruder" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Voltage ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ChannelsPerScrew ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ExtrusionTemperature ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:PressureAtDie ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:DLRatio ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:InnerBarrelDiameter ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Throughput ],
+            owl:someValuesFrom materialsmine:MeltTemperature ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:Torque ],
+            owl:someValuesFrom materialsmine:ScrewChannelWidth ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ResidenceTime ],
+            owl:someValuesFrom materialsmine:ExtrusionTemperature ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:ChannelDepth ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ScrewLead ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:FlightWidth ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:FlightClearance ],
@@ -2964,25 +3071,31 @@ materialsmine:Extruder a owl:Class ;
             owl:someValuesFrom materialsmine:Dimension ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:FlightWidth ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewLead ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:ScrewLength ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:Amperage ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:ScrewChannelWidth ],
+            owl:someValuesFrom materialsmine:Throughput ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:ResidenceTime ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:ScrewDiameter ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:MeltTemperature ],
+            owl:someValuesFrom materialsmine:ChannelsPerScrew ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:Voltage ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:DLRatio ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom materialsmine:Torque ],
         sio:Device .
 
 materialsmine:FlexuralCreep a owl:Class ;
@@ -3014,11 +3127,11 @@ materialsmine:Rheometery a owl:Class ;
     rdfs:label "Rheometry" ;
     materialsmine:hasSelector "//Rheometery" ;
     rdfs:subClassOf [ a owl:Restriction ;
-            owl:onProperty prov:used ;
-            owl:someValuesFrom materialsmine:CapillarySize ],
-        [ a owl:Restriction ;
             owl:onProperty prov:generated ;
             owl:someValuesFrom materialsmine:ViscoelasticProperty ],
+        [ a owl:Restriction ;
+            owl:onProperty prov:used ;
+            owl:someValuesFrom materialsmine:CapillarySize ],
         sio:Measuring ;
     skos:definition "Measurement of the quantitative and qualitative relationships between deformations and stresses and their derivatives" .
 
@@ -3107,16 +3220,16 @@ materialsmine:Molding a owl:Class ;
     rdfs:label "Molding" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
+            owl:someValuesFrom <obo:PATO_0001025> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0000146> ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom <obo:PATO_0001025> ],
+            owl:someValuesFrom materialsmine:AmbientCondition ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom materialsmine:AmbientCondition ],
+            owl:someValuesFrom sio:TimeInterval ],
         sio:Procedure ;
     skos:definition "Methods to shape final composite" .
 
@@ -3221,13 +3334,13 @@ materialsmine:Mixing a owl:Class ;
     rdfs:label "Mixing" ;
     rdfs:subClassOf [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
+            owl:someValuesFrom sio:TimeInterval ],
+        [ a owl:Restriction ;
+            owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom materialsmine:RotationalFrequency ],
         [ a owl:Restriction ;
             owl:onProperty sio:hasAttribute ;
             owl:someValuesFrom <obo:PATO_0000146> ],
-        [ a owl:Restriction ;
-            owl:onProperty sio:hasAttribute ;
-            owl:someValuesFrom sio:TimeInterval ],
         sio:Procedure ;
     skos:definition "Processes for mixing of multiple substances" .
 
@@ -3272,14 +3385,14 @@ sio:Procedure a owl:Class ;
     rdfs:label "Procedure" ;
     rdfs:subClassOf sio:Process .
 
-sio:Quantity a owl:Class ;
-    rdfs:label "Amount" ;
-    rdfs:subClassOf sio:MeasurementValue .
-
 materialsmine:ElectricalProperty a owl:Class ;
     rdfs:label "Electrical Property" ;
     rdfs:subClassOf sio:Quantity ;
     skos:definition "A materials property describing the material's behavior under some applied electrical field." .
+
+sio:Quantity a owl:Class ;
+    rdfs:label "Amount" ;
+    rdfs:subClassOf sio:MeasurementValue .
 
 sio:UnitOfMeasurement a owl:Class ;
     rdfs:label "unit of measurement" ;
