@@ -8,26 +8,35 @@
     </label>
     <!-- File Upload  -->
     <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
-      <label v-if="!dynamfit.fileUpload" for="Viscoelastic_Data">
-        <div class="form__file-input">
-          <div class="md-theme-default">
-            <label
-              class="btn btn--primary md-button u--b-rad"
-              for="Viscoelastic_Data"
-              ><p class="md-body-1">Upload file</p></label
-            >
-            <div class="md-file">
-              <input
-                @change="onInputChange"
-                accept=".csv, .tsv, .txt"
-                type="file"
-                name="Viscoelastic_Data"
-                id="Viscoelastic_Data"
-              />
+      <template v-if="!dynamfit.fileUpload">
+        <label for="Viscoelastic_Data" class="u--inline">
+          <div class="form__file-input">
+            <div class="md-theme-default">
+              <label
+                class="btn btn--primary md-button u--b-rad"
+                for="Viscoelastic_Data"
+                ><p class="md-body-1">Upload file</p></label
+              >
+              <div class="md-file">
+                <input
+                  @change="onInputChange"
+                  accept=".csv, .tsv, .txt"
+                  type="file"
+                  name="Viscoelastic_Data"
+                  id="Viscoelastic_Data"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </label>
+        </label>
+        <a
+          class="btn btn--primary md-button u--inline u--margin-leftsm"
+          style="border-radius: 0% !important"
+          href="/dynamfit-template.tsv"
+          download
+          ><span class="md-body-1">Template</span></a
+        >
+      </template>
       <template v-else>
         <button
           class="md-button btn btn--tertiary btn--noradius"
