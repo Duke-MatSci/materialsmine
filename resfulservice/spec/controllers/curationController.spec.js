@@ -507,6 +507,81 @@ describe('Curation Controller', function () {
     });
   });
 
+  context('Duplicate curations', () => {
+    it('should return 404 not found error if req.params ID is invalid', async () => {
+      req.params = { curationId: 'a90w49a40ao4094k4aed' };
+      req.query = { isNew: 'true' };
+      sinon.stub(XlsxObject, 'findOne').returns(null);
+      const result = await XlsxController.duplicateXlsxCuration(req, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Curation sample not found');
+    });
+
+    it('should return 404 not found error if req.param ID is invalid', async () => {
+      req.params = { curationId: 'a90w49a40ao4094k4aed' };
+      req.query = { isNew: 'false' };
+      sinon.stub(XmlData, 'findOne').returns(null);
+      const result = await XlsxController.duplicateXlsxCuration(req, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Sample xml not found');
+    });
+
+    it('returns a duplicate curation id  when a valid req.param ID is provided', async () => {
+      req.params = { curationId: 'a90w49a40ao4094k4aed' };
+      req.query = { isNew: 'true' };
+      sinon.stub(res, 'status').returnsThis();
+      sinon
+        .stub(res, 'json')
+        .returns({ _id: '5d8f6a9a1b7f7c0b0b0b0b0b', isNew: true });
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
+      sinon.stub(DatasetId, 'find').returns([mockDatasetId]);
+      sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
+      sinon
+        .stub(XlsxObject.prototype, 'save')
+        .callsFake(() => fetchedCuratedXlsxObject);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      const result = await XlsxController.duplicateXlsxCuration(req, res, next);
+
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('_id');
+      expect(result).to.have.property('isNew');
+    });
+
+    it('should return duplicate curation id when an it is an old curation', async () => {
+      req.params = { curationId: 'a90w49a40ao4094k4aed' };
+      req.query = { isNew: 'false' };
+      sinon.stub(res, 'status').returnsThis();
+      sinon
+        .stub(res, 'json')
+        .returns({ _id: '5d8f6a9a1b7f7c0b0b0b0b0b', isNew: false });
+      sinon.stub(XmlData, 'findOne').returns(mockXmlData);
+      sinon.stub(DatasetId, 'find').returns([mockDatasetId]);
+      sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
+      sinon
+        .stub(XmlData, 'create')
+        .returns({ ...mockXmlData, _id: '5d8f6a9a1b7f7c0b0b0b0b0b' });
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      const result = await XlsxController.duplicateXlsxCuration(req, res, next);
+
+      expect(result).to.be.an('Object');
+      expect(result).to.have.property('_id');
+      expect(result).to.have.property('isNew');
+    });
+
+    it('should return a 500 server error when database throws an error', async function () {
+      req.query = { curationId: 'a90w49a40ao4094k4aed', isNew: 'true' };
+      const nextSpy = sinon.spy();
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(XlsxObject, 'findOne').throws();
+
+      await XlsxController.duplicateXlsxCuration(req, res, nextSpy);
+      sinon.assert.calledOnce(nextSpy);
+    });
+  });
+
   context('Retrieve curation XSD', () => {
     it('should return json Schema Definition when "isJson" query params is passed', async () => {
       req.query = { isJson: true, isFile: false };
