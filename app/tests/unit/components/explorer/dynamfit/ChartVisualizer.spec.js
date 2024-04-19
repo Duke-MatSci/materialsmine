@@ -29,7 +29,7 @@ describe('ChartSetting.vue', () => {
 
     it('renders tabs with custom class', () => {
       expect(tabsWrapper.attributes('class')).toBe(
-        'form__stepper form__stepper-curate dialog-box_content'
+        'form__stepper form__stepper-curate dialog-box_content u-reset-transform'
       )
     })
 
@@ -45,7 +45,7 @@ describe('ChartSetting.vue', () => {
       expect(tabs.at(1).findComponent('plotlyview-stub').exists()).toBe(true)
       expect(tabs.at(2).attributes('mdlabel')).toBe('Relaxation, E(t)')
       expect(tabs.at(2).findComponent('plotlyview-stub').exists()).toBe(true)
-      expect(tabs.at(3).attributes('mdlabel')).toBe('R Spectrum, H(t)')
+      expect(tabs.at(3).attributes('mdlabel')).toBe('R Spectrum, H(𝜏)')
       expect(tabs.at(3).findComponent('plotlyview-stub').exists()).toBe(true)
       expect(tabs.at(4).attributes('mdlabel')).toBe('Uploaded Data')
       expect(tabs.at(4).findComponent('tablecomponent-stub').exists()).toBe(
