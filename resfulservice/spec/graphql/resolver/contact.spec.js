@@ -1,9 +1,13 @@
 const chai = require('chai');
 const sinon = require('sinon');
-const Contact = require('../../../src/models/contact')
+const Contact = require('../../../src/models/contact');
 const graphQlSchema = require('../../../src/graphql');
-const { Mutation: { submitContact, updateContact }, Query: { getUserContacts, contacts } } = require('../../../src/graphql/resolver');
+const {
+  Mutation: { submitContact, updateContact },
+  Query: { getUserContacts, contacts }
+} = require('../../../src/graphql/resolver');
 const { userRoles } = require('../../../config/constant');
+const FileController = require('../../../src/controllers/fileController');
 
 const { expect } = chai;
 
@@ -11,28 +15,31 @@ const mockContact = {
   fullName: 'test user',
   email: 'test@example.com',
   purpose: 'QUESTION',
-  message: 'test message'
-}
+  message: 'test message',
+  attachments: [
+    '/api/files/strategic_beetle_joelle-2024-02-15T09:25:42.264Z-master_template (5).xlsx?isStore=true',
+    '/api/files/strategic_beetle_joelle-2024-02-15T09:27:07.905Z-master_template.xlsx?isStore=true'
+  ]
+};
 
 const mockUpdatedContact = {
   ...mockContact,
   resolved: true,
-  response: "Thanks for reaching out. We are working on it",
-}
+  response: 'Thanks for reaching out. We are working on it'
+};
 
 describe('Contact Resolver Unit Tests:', function () {
-
   afterEach(() => sinon.restore());
 
-  this.timeout(10000)
+  this.timeout(10000);
 
   const input = {
     contactId: 'akdn9wqkn',
     resolved: mockUpdatedContact.resolved,
-    response: mockUpdatedContact.response,
-  }
+    response: mockUpdatedContact.response
+  };
 
-  const req = { logger: { info: (_message) => { }, error: (_message) => { } } }
+  const req = { logger: { info: (_message) => {}, error: (_message) => {} } };
 
   context('submitContact', () => {
     it('should have createContact(...) as a Mutation resolver', async function () {
@@ -42,7 +49,9 @@ describe('Contact Resolver Unit Tests:', function () {
     });
 
     it('should save new contact information', async () => {
-      sinon.stub(Contact.prototype, 'save').callsFake(() => ({...mockContact, _id: 'akdn9wqkn'}))
+      sinon
+        .stub(Contact.prototype, 'save')
+        .callsFake(() => ({ ...mockContact, _id: 'akdn9wqkn' }));
 
       const contact = await submitContact({}, { input }, { req });
 
@@ -55,35 +64,46 @@ describe('Contact Resolver Unit Tests:', function () {
       const result = await submitContact({}, { input }, { req });
 
       expect(result).to.have.property('extensions');
-      expect(result.extensions.code).to.be.equal(500)
+      expect(result.extensions.code).to.be.equal(500);
     });
-  })
+  });
 
   context('updateContact', () => {
     it('should update a contact', async function () {
       sinon.stub(Contact, 'findOne').returns(mockContact);
       sinon.stub(Contact, 'findOneAndUpdate').returns(mockUpdatedContact);
+      sinon.stub(FileController, 'deleteFile').returns(true);
 
-      const contact = await updateContact({}, { input: { ...input, } }, { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true }); 
+      const contact = await updateContact(
+        {},
+        { input: { ...input } },
+        { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true }
+      );
       expect(contact).to.have.property('email');
       expect(contact).to.have.property('resolved');
       expect(contact).to.have.property('response');
       expect(contact.resolved).to.equal(true);
     });
 
-    it("should throw a 401, not authenticated error", async () => {
-
-      const error = await updateContact({}, { input }, { req, user: { isAdmin: false }, isAuthenticated: false }); 
+    it('should throw a 401, not authenticated error', async () => {
+      const error = await updateContact(
+        {},
+        { input },
+        { req, user: { isAdmin: false }, isAuthenticated: false }
+      );
 
       expect(error).to.have.property('extensions');
       expect(error.extensions.code).to.be.equal(401);
     });
 
-
-    it("should throw a 404, not authenticated error", async () => {
+    it('should throw a 404, not authenticated error', async () => {
       sinon.stub(Contact, 'findOne').returns(null);
 
-      const error = await updateContact({}, { input }, { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true }); 
+      const error = await updateContact(
+        {},
+        { input },
+        { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true }
+      );
 
       expect(error).to.have.property('extensions');
       expect(error.extensions.code).to.be.equal(404);
@@ -92,13 +112,16 @@ describe('Contact Resolver Unit Tests:', function () {
     it('should throw a 500 error', async () => {
       sinon.stub(Contact, 'findOne').throws();
 
-      const result = await updateContact({}, { input }, { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true });
+      const result = await updateContact(
+        {},
+        { input },
+        { req, user: { roles: userRoles.isAdmin }, isAuthenticated: true }
+      );
 
       expect(result).to.have.property('extensions');
-      expect(result.extensions.code).to.be.equal(500)
+      expect(result.extensions.code).to.be.equal(500);
     });
-  })
-
+  });
 
   context('getUserContacts', () => {
     const mockUserContact = {
@@ -108,22 +131,29 @@ describe('Contact Resolver Unit Tests:', function () {
       purpose: 'QUESTION',
       message: 'test message',
       lean: () => this
-    }
+    };
 
     it("should return paginated lists of a user's contacts", async () => {
       sinon.stub(Contact, 'countDocuments').returns(1);
       sinon.stub(Contact, 'find').returns(mockUserContact);
       sinon.stub(mockUserContact, 'lean').returnsThis();
 
-      const userContacts = await getUserContacts({}, { input }, { req, isAuthenticated: true });
+      const userContacts = await getUserContacts(
+        {},
+        { input },
+        { req, isAuthenticated: true }
+      );
 
       expect(userContacts).to.have.property('data');
       expect(userContacts.totalItems).to.equal(1);
     });
 
-    it("should throw a 401, not authenticated error", async () => {
-
-      const error = await getUserContacts({}, { input }, { req, isAuthenticated: false }); 
+    it('should throw a 401, not authenticated error', async () => {
+      const error = await getUserContacts(
+        {},
+        { input },
+        { req, isAuthenticated: false }
+      );
       expect(error).to.have.property('extensions');
       expect(error.extensions.code).to.be.equal(401);
     });
@@ -131,30 +161,40 @@ describe('Contact Resolver Unit Tests:', function () {
     it('should return a 500 error', async () => {
       sinon.stub(Contact, 'countDocuments').throws();
 
-      const result = await getUserContacts({}, { input }, { req, isAuthenticated: true });
+      const result = await getUserContacts(
+        {},
+        { input },
+        { req, isAuthenticated: true }
+      );
 
       expect(result).to.have.property('extensions');
-      expect(result.extensions.code).to.be.equal(500)
+      expect(result.extensions.code).to.be.equal(500);
     });
-  })
-
+  });
 
   context('contacts', () => {
-    it("should throw a 401, not authenticated error", async () => {
-
-      const error = await contacts({}, { input }, { req, isAuthenticated: false }); 
+    it('should throw a 401, not authenticated error', async () => {
+      const error = await contacts(
+        {},
+        { input },
+        { req, isAuthenticated: false }
+      );
       expect(error).to.have.property('extensions');
       expect(error.extensions.code).to.be.equal(401);
     });
 
     it('should return a 500 error', async () => {
       sinon.stub(Contact, 'countDocuments').returns(1);
-      sinon.stub(Contact, 'find').throws()
+      sinon.stub(Contact, 'find').throws();
 
-      const result = await contacts({}, { input }, { req, isAuthenticated: true });
+      const result = await contacts(
+        {},
+        { input },
+        { req, isAuthenticated: true }
+      );
 
       expect(result).to.have.property('extensions');
-      expect(result.extensions.code).to.be.equal(401)
+      expect(result.extensions.code).to.be.equal(401);
     });
-  })
-}); 
+  });
+});

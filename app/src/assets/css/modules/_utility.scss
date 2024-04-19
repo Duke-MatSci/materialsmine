@@ -170,6 +170,12 @@
     }
     &-centered {
       margin: auto;
+
+      &-verticalScreen {
+        @include respond(vertical-screen) {
+          margin: auto;
+        }
+      }
     }
   }
 
@@ -206,6 +212,11 @@
       display: flex;
       &-column {
         flex-direction: column;
+      }
+      &-verticalScreen {
+        @include respond(vertical-screen) {
+          display: flex;
+        }
       }
     }
     &-flex-justify-se {
@@ -345,6 +356,9 @@
     &-med {
       margin-top: 3.2rem !important;
     }
+    &-auto {
+      margin-top: auto;
+    }
   }
 
   &_margin-none {
@@ -383,6 +397,19 @@
 
   &_toggle-display-off {
     @include respond(phone) {
+      display: none;
+    }
+  }
+
+  &_vertical-only-display {
+    display: none;
+    @include respond(vertical-screen) {
+      display: block;
+    }
+  }
+
+  &_vertical-only-hide {
+    @include respond(vertical-screen) {
       display: none;
     }
   }
