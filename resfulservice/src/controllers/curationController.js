@@ -14,7 +14,8 @@ const {
   XSDJsonPlaceholder,
   userRoles,
   SupportedFileResponseHeaders,
-  CurationStateSubstitutionMap
+  CurationStateSubstitutionMap,
+  CurationStateDefault
 } = require('../../config/constant');
 const CuratedSamples = require('../models/curatedSamples');
 const XlsxCurationList = require('../models/xlsxCurationList');
@@ -310,7 +311,7 @@ const generateControlSampleId = async (requiredFields, user, datasetId) => {
     // L325_S1_Test_2015
     citationType = citationType === 'lab-generated' ? 'E' : 'L';
     publicationYear = publicationYear ?? new Date().getFullYear();
-    author = author?.length ? author[0].split(' ')[0] : 'unknown';
+    author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
     const sampleIndex = userDatasets?.samples?.length;
     const datasetIndex = existingDatasets?.length ?? 1;
 
@@ -542,6 +543,94 @@ exports.getXlsxCurations = async (req, res, next) => {
       logger
     );
     return res.status(200).json(baseCuratedObject);
+  } catch (err) {
+    next(errorWriter(req, err, 'getXlsxCurations', 500));
+  }
+};
+
+exports.duplicateXlsxCuration = async (req, res, next) => {
+  const { logger, query, params, user } = req;
+
+  logger.info('duplicateXlsxCurations Function Entry:');
+
+  const { curationId } = params;
+  const { isNew } = query;
+
+  try {
+    let duplicateCuration;
+    if (isNew === 'true') {
+      const xlsxObject = await CuratedSamples.findOne(
+        { _id: curationId },
+        null,
+        { lean: true }
+      );
+      if (!xlsxObject) {
+        return next(
+          errorWriter(
+            req,
+            'Curation sample not found',
+            'duplicateXlsxCurations',
+            404
+          )
+        );
+      }
+      const { _id, ...duplicatedObject } = xlsxObject;
+      const uniqueFields = getCurationUniqueFields(duplicatedObject.object);
+      duplicatedObject.object.Control_ID = await generateControlSampleId(
+        uniqueFields,
+        user,
+        duplicatedObject.dataset
+      );
+      const duplicateCurationObject = new CuratedSamples({
+        ...duplicatedObject,
+        curationState: CurationStateDefault
+      });
+      duplicateCurationObject.object.ID = duplicateCurationObject._id;
+      duplicateCuration = await duplicateCurationObject.save();
+    } else {
+      const xmlData = await XmlData.findOne({ _id: curationId }, null, {
+        lean: true
+      });
+      if (!xmlData) {
+        return next(
+          errorWriter(
+            req,
+            'Sample xml not found',
+            'duplicateXlsxCurations',
+            404
+          )
+        );
+      }
+      const { _id, xml_str: xmlStr, ...duplicatedObject } = xmlData;
+      const xmlJson = XlsxFileManager.jsonGenerator(xmlStr);
+      const xmlObject = JSON.parse(xmlJson);
+      const parsedCurationObject = parseXmlDataToBaseSchema(
+        xmlObject.PolymerNanocomposite
+      );
+      const uniqueFields = getCurationUniqueFields(parsedCurationObject);
+      const controlID = await generateControlSampleId(
+        uniqueFields,
+        user,
+        duplicatedObject.datasetId
+      );
+      parsedCurationObject.Control_ID = controlID;
+      parsedCurationObject.ID = controlID;
+      let xml = XlsxFileManager.xmlGenerator(
+        JSON.stringify({ PolymerNanocomposite: parsedCurationObject })
+      );
+      xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
+      console.log('duplicatedObject', duplicatedObject);
+      duplicateCuration = await XmlData.create({
+        ...duplicatedObject,
+        xml_str: xml,
+        iduser: user._id,
+        title: controlID
+      });
+    }
+    latency.latencyCalculator(res);
+    return res
+      .status(200)
+      .json({ _id: duplicateCuration._id, isNew: isNew === 'true' });
   } catch (err) {
     next(errorWriter(req, err, 'getXlsxCurations', 500));
   }
@@ -1309,6 +1398,10 @@ const parseXmlDataToBaseSchema = (xmlJson) => {
       filteredObject[property] = {
         ...propertyValue.headers,
         ...propertyValue.rows
+      };
+    } else if (propertyValue?.column && propertyValue?.row) {
+      filteredObject[property] = {
+        ...propertyValue
       };
     } else if (Object.getOwnPropertyDescriptor(propertyValue, '_text')) {
       filteredObject[property] = propertyValue._text;
