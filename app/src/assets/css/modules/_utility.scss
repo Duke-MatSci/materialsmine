@@ -1,830 +1,832 @@
 .wrapper {
-    padding-left: 1.1875rem;
-    padding-right: 1.1875rem;
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
+  padding-left: 1.1875rem;
+  padding-right: 1.1875rem;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 
-    @include respond(tab-port){
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
+  @include respond(tab-port) {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 
-    &--medium {
-        max-width: 80%;
-    }
+  &--medium {
+    max-width: 80%;
+  }
 
-    .md-layout-item{
-        height: fit-content;
-    }
+  .md-layout-item {
+    height: fit-content;
+  }
 
-    .wrapper {
-        padding-left: 0;
-        padding-right: 0;
-    }
+  .wrapper {
+    padding-left: 0;
+    padding-right: 0;
+  }
 }
 
 .u {
-    &_width--xs{
-        width: 4.5rem;
-        border-width: 0 0 1px 0;
-        margin-left: 1rem;
-        padding-left: 1rem;
+  &-reset-transform {
+    div.md-button-content {
+      text-transform: none !important;
     }
+  }
+  &_width--xs {
+    width: 4.5rem;
+    border-width: 0 0 1px 0;
+    margin-left: 1rem;
+    padding-left: 1rem;
+  }
 
-    &_width--small {
-        width: 15rem;
+  &_width--small {
+    width: 15rem;
+  }
+
+  &--bg {
+    background-color: $primary !important;
+    color: $primary-white !important;
+
+    &-grey {
+      background-color: $secondary-grey;
     }
+  }
 
-    &--bg {
-        background-color: $primary !important;
-        color: $primary-white !important;
-
-        &-grey {
-            background-color: $secondary-grey
-        }
+  &_display {
+    &-flex {
+      display: flex;
     }
+  }
 
-    &_display {
-        &-flex {
-            display: flex;
-        }
-    }
+  &--alt-bg {
+    background-color: $tertiary !important;
+    color: $primary !important;
+  }
 
-    &--alt-bg {
-        background-color: $tertiary !important;
-        color: $primary !important
-    }
+  &-clear {
+    @include clearfix;
+  }
 
-    &-clear {
-        @include clearfix;
-    }
-
-    &_divider {
-        // height: .1rem;
-        height: .2rem; //TODO-check 06/16/2022
-        width: 50%;
-        margin: 0 auto;
-        background-color: rgba($primary-grey, .3);
-
-        &-fullspan { //TODO-check 06/16/2022
-            width: 100%;
-            margin-bottom: 2rem;
-            background-color: rgba($primary, .7);
-        }
-    }
+  &_divider {
+    // height: .1rem;
+    height: 0.2rem; //TODO-check 06/16/2022
+    width: 50%;
+    margin: 0 auto;
+    background-color: rgba($primary-grey, 0.3);
 
     &-fullspan {
-        height: .5rem;
-        width: 100%;
-        margin: 0 auto;
-        margin-bottom: 1rem;
-        background-color: rgba($primary-black, .9);
+      //TODO-check 06/16/2022
+      width: 100%;
+      margin-bottom: 2rem;
+      background-color: rgba($primary, 0.7);
+    }
+  }
+
+  &-fullspan {
+    height: 0.5rem;
+    width: 100%;
+    margin: 0 auto;
+    margin-bottom: 1rem;
+    background-color: rgba($primary-black, 0.9);
+  }
+
+  &--padding {
+    &-zero {
+      padding: 0 !important;
+    }
+    &-zero-mobile {
+      @include respond(phone) {
+        padding: 0 !important;
+      }
+    }
+    &-rl-xs {
+      padding: 0 5px;
+    }
+  }
+
+  &--margin {
+    &-none {
+      @include respond(phone) {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+    }
+    &-neg-all {
+      margin: -1rem;
+    }
+    &-neg {
+      margin-top: -1rem !important;
+      &lg {
+        margin-top: -6rem !important;
+      }
+      &-left {
+        margin-left: -1rem !important;
+      }
+    }
+    &-pos {
+      margin: 1rem;
+      &md {
+        margin: 2rem;
+      }
+    }
+    &-top {
+      &lg {
+        margin-top: 5rem;
+      }
+      &xl {
+        margin-top: 7rem;
+      }
+    }
+    &-bottom {
+      &md {
+        margin-bottom: 5rem !important;
+      }
+    }
+    &-right {
+      &sm {
+        margin-right: 2rem;
+      }
+      &md {
+        margin-right: 5rem;
+      }
+      &ml {
+        margin-right: 8rem;
+      }
+      &lg {
+        margin-right: 10rem;
+      }
+    }
+    &-left {
+      &sm {
+        margin-left: 3rem !important;
+        @include respond(phone) {
+          margin-left: 1.2rem !important;
+        }
+      }
+      &-auto {
+        margin-left: auto !important;
+      }
+    }
+    &-header {
+      margin: 2rem 0 !important;
+    }
+    &-centered {
+      margin: auto;
+    }
+  }
+
+  &_height {
+    &--max {
+      height: 100% !important;
+    }
+    &--auto {
+      height: auto !important;
+    }
+  }
+
+  &_width {
+    &--max {
+      width: 100% !important;
+    }
+  }
+
+  &--padding-lg {
+    padding: 0 10rem;
+  }
+
+  &--shadow {
+    &-none {
+      box-shadow: none !important;
+    }
+  }
+
+  &--layout {
+    &-width {
+      width: 99% !important;
+    }
+    &-flex {
+      display: flex;
+      &-column {
+        flex-direction: column;
+      }
+    }
+    &-flex-justify-se {
+      justify-content: space-evenly;
+    }
+    &-flex-justify-sb {
+      justify-content: space-between;
+    }
+    &-flex-justify-fs {
+      justify-content: flex-start;
+    }
+    &-flex-switch {
+      display: none;
+    }
+    &-flex-justify-end {
+      justify-content: end;
+    }
+  }
+
+  &--dimension {
+    &-size-m {
+      width: 96%;
+    }
+  }
+
+  &--color {
+    &-grey {
+      color: $primary-grey !important;
+    }
+    &-grey-sec {
+      color: $secondary-grey !important;
+    }
+    &-primary {
+      color: $primary !important;
+    }
+    &-secondary {
+      color: $secondary !important;
+    }
+    &-black {
+      color: $primary-black;
+    }
+    &-tertiary {
+      color: $tertiary !important;
+      & > *,
+      & .md-button-content {
+        color: $tertiary !important;
+      }
+    }
+    &-success {
+      color: green !important;
+    }
+    &-error {
+      color: $error !important;
+    }
+  }
+  &--font-emph {
+    &-900 {
+      font-weight: 900;
+    }
+    &-700 {
+      font-weight: 700;
+    }
+    &-xl {
+      font-size: $x-large-size;
+      @extend .u--font-emph-700;
+    }
+    &-l {
+      font-size: $large-size;
+      font-weight: 500;
+    }
+    &-m {
+      font-size: $medium-mid-size;
+      font-weight: 300;
+    }
+    &-smm {
+      font-size: 1.3rem;
+      font-weight: 500;
+    }
+    &-sl {
+      font-weight: 200 !important;
+      font-size: $medium-size !important;
+    }
+  }
+  &--b-rad {
+    border-radius: 3px;
+  }
+
+  &--inline {
+    display: inline-block;
+  }
+  &--default-size {
+    font-size: $default-size !important;
+
+    @include respond(tab-land) {
+      font-size: $medium-mid-size !important;
+    }
+  }
+  &_adjust-banner-text {
+    position: relative;
+    top: -26px;
+    font-size: 5rem;
+
+    @include respond(laptop) {
+      font-size: 4rem;
     }
 
-    &--padding {
-        &-zero {
-            padding: 0 !important;
-        }
-        &-zero-mobile {
-            @include respond(phone) {
-                padding: 0 !important;
-            }
-        }
-        &-rl-xs {
-            padding: 0 5px;
-        }
+    @include respond(tab-land) {
+      top: 0px;
+      font-size: 3.5rem;
+    }
+    @include respond(tab-port) {
+      top: 0;
+      font-size: 3rem;
+    }
+    @include respond(phone) {
+      top: -10px !important;
+      font-size: 2.3rem;
+    }
+    &_subtitle {
+      font-size: 2.5rem;
+      @include respond(tab-land) {
+        font-size: 2.3rem;
+      }
+      @include respond(tab-port) {
+        font-size: 1.9rem;
+      }
+      @include respond(phone) {
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  &_margin-top {
+    &-small {
+      margin-top: 1rem !important;
+    }
+    &-med {
+      margin-top: 3.2rem !important;
+    }
+  }
+
+  &_margin-none {
+    margin: 0 !important;
+  }
+
+  &_margin-right {
+    &-small {
+      margin-right: 1.5rem;
+      @include respond(tab-land) {
+        margin-right: 0.5rem;
+      }
+
+      @include respond(tab-port) {
+        margin-right: 0.2rem;
+      }
+    }
+  }
+
+  &_margin-bottom {
+    &-big {
+      margin-bottom: 7rem;
+      @include respond(phone) {
+        margin-bottom: 0.4rem;
+      }
     }
 
-    &--margin {
-        &-none {
-            @include respond(phone) {
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-            }
-        }
-        &-neg-all {
-            margin: -1rem;
-        }
-        &-neg {
-            margin-top: -1rem !important;
-            &lg {
-              margin-top: -6rem !important
-            }
-            &-left {
-                margin-left: -1rem !important;
-            }
-        }
-        &-pos {
-            margin: 1rem;
-            &md {
-                margin: 2rem;
-            }
-        }
-        &-top {
-            &lg {
-                margin-top: 5rem;
-            }
-            &xl{
-                margin-top: 7rem;
-            }
-        }
-        &-bottom {
-            &md {
-                margin-bottom: 5rem !important;
-            }
-        }
-        &-right {
-            &sm {
-                margin-right: 2rem;
-            }
-            &md {
-                margin-right: 5rem;
-            }
-            &ml {
-                margin-right: 8rem;
-            }
-            &lg {
-                margin-right: 10rem;
-            }
-        }
-        &-left {
-            &sm {
-                margin-left: 3rem !important;
-                @include respond(phone) {
-                    margin-left: 1.2rem !important;
-                }
-            }
-            &-auto {
-                margin-left: auto !important;
-            }
-        }
-        &-header {
-            margin: 2rem 0 !important;
-        }
-        &-centered {
-            margin: auto
-        }
+    &-med {
+      margin-bottom: 3rem !important;
     }
 
-    &_height {
-        &--max {
-            height: 100% !important;
-        }
-        &--auto {
-            height: auto !important;
-        }
+    &-small {
+      margin-bottom: 1rem !important;
     }
-    
-    &_width {
-        &--max {
-            width: 100% !important;
-        }
+  }
+
+  &_toggle-display-off {
+    @include respond(phone) {
+      display: none;
+    }
+  }
+
+  &_pointer {
+    cursor: pointer !important;
+
+    &--ew {
+      cursor: ew-resize !important;
+    }
+  }
+
+  &_centralize {
+    &_text {
+      text-align: center;
+    }
+    &_content {
+      // Flex type content
+      justify-content: center;
+    }
+    &_items {
+      align-items: center;
+    }
+    &_other {
+      margin: 0 auto;
+    }
+  }
+
+  &_searchimage {
+    &_form-group {
+      margin-bottom: 0 !important;
+      width: 55% !important;
+      @include respond(phone) {
+        width: 80% !important;
+      }
+    }
+    &_input {
+      padding: 0.2rem !important;
+    }
+  }
+
+  &_myprofile {
+    position: relative;
+    margin: 0.4rem;
+
+    &--container {
+      position: absolute;
+      left: 50%;
+      right: 50%;
+      transform: translate(-50%, -50%);
+    }
+    &--image {
+      height: 12rem;
+    }
+  }
+  &_gridicon {
+    position: absolute;
+    right: 0.3rem;
+    z-index: 10000000;
+
+    & > div {
+      display: inline-block;
+
+      & > i {
+        font-size: 1.5rem !important;
+        cursor: pointer;
+      }
+    }
+    & > div:hover {
+      // Todo (ticket xx): This requires a rewrite. We can use existing utils
+      background-color: $primary-light;
+      & > i,
+      & > p {
+        color: $secondary-light !important;
+      }
     }
 
-    &--padding-lg {
-        padding: 0 10rem;
-    }
+    &-single {
+      position: absolute;
+      right: 0.05rem;
+      z-index: 10000000;
+      top: 0.05rem;
+      @include respond(tab-land) {
+        top: 0.2rem;
+        right: 0.3rem;
+      }
 
-    &--shadow {
-        &-none {
-            box-shadow: none !important;
-        }
-    }
-
-    &--layout {
-        &-width {
-            width: 99% !important;
-        }
-        &-flex{
-            display: flex;
-            &-column{
-                flex-direction: column;
-            }
-        }
-        &-flex-justify-se {
-            justify-content: space-evenly;
-        }
-        &-flex-justify-sb {
-            justify-content: space-between;
-        }
-        &-flex-justify-fs {
-            justify-content: flex-start;
-        }
-        &-flex-switch {
-            display: none;
-        }
-        &-flex-justify-end {
-            justify-content: end;
-        }
-    }
-
-    &--dimension {
-        &-size-m {
-            width: 96%;
-        }
-    }
-
-    &--color{
-        &-grey {
-            color: $primary-grey !important;
-        }
-        &-grey-sec {
-            color: $secondary-grey !important;
-        }
-        &-primary {
-            color: $primary !important;
-        }
-        &-secondary {
-            color: $secondary !important;
-        }
-        &-black {
-            color: $primary-black;
-        }
-        &-tertiary {
-            color: $tertiary !important;
-            & > *,
-            & .md-button-content {
-                color: $tertiary !important;
-            }
-        }
-        &-success {
-            color: green !important;
-        }
-        &-error {
-            color: $error !important;
-        }
-    }
-    &--font-emph {
-        &-900{
-            font-weight: 900;
-        }
-        &-700{
-            font-weight: 700;
-        }
-        &-xl {
-            font-size: $x-large-size;
-            @extend .u--font-emph-700
-        }
-        &-l {
-            font-size: $large-size;
-            font-weight: 500;
-        }
-        &-m {
-            font-size: $medium-mid-size;
-            font-weight: 300;
-        }
-        &-smm {
-            font-size: 1.3rem;
-            font-weight: 500;
-        }
-        &-sl {
-            font-weight: 200!important;
-            font-size: $medium-size!important;
-        }
-
-
-    }
-    &--b-rad {
-        border-radius: 3px;
-    }
-
-    &--inline {
+      & > div {
         display: inline-block;
+      }
     }
-    &--default-size {
-        font-size: $default-size !important;
-
-        @include respond(tab-land){
-            font-size: $medium-mid-size !important;
-        }
-    }
-    &_adjust-banner-text {
-        position: relative;
-        top: -26px;
-        font-size: 5rem;
-
-        @include respond(laptop){
-            font-size: 4rem;
-        }
-
-        @include respond(tab-land){
-            top: 0px;
-            font-size: 3.5rem;
-        }
-        @include respond(tab-port){
-            top: 0;
-            font-size: 3rem;
-        }
-        @include respond(phone){
-            top: -10px !important;
-            font-size: 2.3rem;
-        }
-        &_subtitle {
-            font-size: 2.5rem;
-            @include respond(tab-land){
-                font-size: 2.3rem;
-            }
-            @include respond(tab-port){
-                font-size: 1.9rem;
-            }
-            @include respond(phone){
-                font-size: 1.5rem;
-            }
-        }
+  }
+  &_show_hide {
+    & > span.md-body-1 {
+      display: none !important;
+      visibility: hidden !important;
+      transition: all 3s ease-in-out;
     }
 
-    &_margin-top {
-        &-small {
-            margin-top: 1rem !important;
-        }
-        &-med {
-            margin-top: 3.2rem !important;
-        }
+    &:hover {
+      & > span.md-body-1 {
+        display: block !important;
+        visibility: visible !important;
+      }
     }
+  }
+  &_content__result {
+    font-size: 0.8rem;
+    color: lightslategray;
+    margin: 0 0 0.5rem 0;
+    padding: 0.6rem;
+  }
+  &_color {
+    color: $primary !important;
 
-    &_margin-none {
-        margin: 0 !important;
+    &_white {
+      color: $primary-white !important;
+      & .md-button-content {
+        color: $primary-white !important;
+      }
     }
-
-    &_margin-right {
-        &-small {
-            margin-right: 1.5rem;
-            @include respond(tab-land) {
-                margin-right: .5rem;
-            }
-
-            @include respond(tab-port) {
-                margin-right: .2rem;
-            }
-        }
+  }
+  &_gridbg {
+    background-color: rgba($primary-black, 0.7) !important;
+    border: 1px solid $primary !important;
+  }
+  &_icon_mobile {
+    &_lg {
+      @include respond(phone) {
+        height: 72px;
+        font-size: 72px !important;
+      }
     }
-
-    &_margin-bottom {
-        &-big {
-            margin-bottom: 7rem;
-            @include respond(phone){
-                margin-bottom: 0.4rem;
-            }
-        }
-
-        &-med {
-            margin-bottom: 3rem !important;
-        }
-
-        &-small {
-            margin-bottom: 1rem !important;
-        }
-    }
-
-    &_toggle-display-off {
-        @include respond(phone){
-            display: none;
-        }
-    }
-
-    &_pointer {
-        cursor: pointer !important;
-
-        &--ew {
-            cursor: ew-resize !important;
-        }
-    }
-
-    &_centralize {
-        &_text {
-            text-align: center;
-        }
-        &_content {
-            // Flex type content
-            justify-content: center; 
-        }
-        &_items {
-            align-items: center;
-        }
-        &_other {
-            margin: 0 auto;
-        }
-    }
-
-    &_searchimage {
-        &_form-group {
-            margin-bottom: 0 !important;
-            width: 55% !important;
-            @include respond(phone){
-                width: 80% !important;
-            }
-        }
-        &_input {
-            padding: .2rem !important;
-        }
-    }
-
-    &_myprofile {
-        position: relative;
-        margin: .4rem;
-
-        &--container{
-            position: absolute;
-            left: 50%;
-            right: 50%;
-            transform: translate(-50%, -50%);
-        }
-        &--image {
-            height: 12rem;
-        }
-    }
-    &_gridicon {
-        position: absolute;
-        right: .3rem;
-        z-index: 10000000;
-
-        & > div {
-            display: inline-block;
-
-            & > i {
-                font-size: 1.5rem !important;
-                cursor: pointer;
-            }
-        }
-        & > div:hover{ // Todo (ticket xx): This requires a rewrite. We can use existing utils
-            background-color: $primary-light;
-            & > i, & > p {
-                color: $secondary-light !important;
-            }
-        }
-
-        &-single{
-            position: absolute;
-            right: .05rem;
-            z-index: 10000000;
-            top: .05rem;
-            @include respond(tab-land){
-                top: .2rem;
-                right: .3rem;
-            }
-
-            & > div {
-                display: inline-block;
-            }
-        }
-    }
-    &_show_hide {
-        & > span.md-body-1 {
-            display: none !important;
-            visibility: hidden !important;
-            transition: all 3s ease-in-out;
-        }
-
-        &:hover {
-            & > span.md-body-1 {
-                display: block !important;
-                visibility: visible !important;
-            }
-        }
-    }
-    &_content__result {
-        font-size: .8rem;
-        color: lightslategray;
-        margin: 0 0 .5rem 0;
-        padding: .6rem;
-    }
-    &_color {
-        color: $primary !important;
-
-        &_white {
-            color: $primary-white !important;
-            & .md-button-content {
-                color: $primary-white !important;
-            }
-        }
-    }
-    &_gridbg {
-        background-color: rgba($primary-black, 0.7) !important;
-        border: 1px solid $primary !important;
-    }
-    &_icon_mobile { 
-        &_lg {
-            @include respond(phone){
-                height: 72px;
-                font-size: 72px!important;
-            }
-        }
-    }
+  }
 }
 
 .dialog-box {
-    .md-dialog-container{
-        @include respond(tab-port) {
-            min-width: 0 !important;
-        }
+  .md-dialog-container {
+    @include respond(tab-port) {
+      min-width: 0 !important;
     }
-    &_size {
-        &-sm {
-            .md-dialog-container{
-                min-width: 40vh;
-            }
-        }
-        &-md {
-            .md-dialog-container{
-                min-width: 65vw;
-            }
-        }
-        &-lg {
-            .md-dialog-container{
-                min-width: 80vh;
-            }
-        }    
+  }
+  &_size {
+    &-sm {
+      .md-dialog-container {
+        min-width: 40vh;
+      }
     }
-    
-    &_header {
-        background-color: $primary !important;
-        color: $primary-white !important;
-        padding: 1rem 1.5rem !important;
+    &-md {
+      .md-dialog-container {
+        min-width: 65vw;
+      }
+    }
+    &-lg {
+      .md-dialog-container {
+        min-width: 80vh;
+      }
+    }
+  }
 
-        & > span {
-            padding: 0rem !important;
-        }
+  &_header {
+    background-color: $primary !important;
+    color: $primary-white !important;
+    padding: 1rem 1.5rem !important;
+
+    & > span {
+      padding: 0rem !important;
     }
-    &_content {
-        overflow: auto;
+  }
+  &_content {
+    overflow: auto;
+  }
+  &_close {
+    .md-icon {
+      background-color: $primary !important;
+      color: $primary-white !important;
     }
-    &_close {
-        .md-icon {
-            background-color: $primary !important;
-            color: $primary-white !important;
-        }
-        position:absolute; 
-        top: 0.5rem; 
-        right: 0;
-        width: 2rem; 
-        height: 2rem;
-        min-width: 2rem;
-    }
+    position: absolute;
+    top: 0.5rem;
+    right: 0;
+    width: 2rem;
+    height: 2rem;
+    min-width: 2rem;
+  }
 }
 
 .utility {
-    &-line-height {
-        &-sm {
-            line-height: 1.5 !important;
-        }
+  &-line-height {
+    &-sm {
+      line-height: 1.5 !important;
     }
-    &-align--right {
-        text-align: right;
+  }
+  &-align--right {
+    text-align: right;
+  }
+  &-gridbg {
+    background-color: rgba($primary-black, 0.7) !important;
+    border: 1px solid $primary !important;
+  }
+  &-gridborder {
+    border: 1px solid $primary !important;
+  }
+  &-float-icon {
+    background-color: $primary !important;
+  }
+  &-filter {
+    transform: translate(10px, 10px) !important;
+    transition: all 95000s ease-out !important;
+  }
+  &-margin {
+    margin: 1rem 0.2rem;
+    span {
+      display: block;
+      margin-bottom: 0.4rem;
     }
-    &-gridbg {
-        background-color: rgba($primary-black, 0.7) !important;
-        border: 1px solid $primary !important;
-    }
-    &-gridborder {
-        border: 1px solid $primary !important;
-    }
-    &-float-icon {
-        background-color: $primary !important;
-    }
-    &-filter {
-        transform: translate(10px, 10px) !important;
-        transition: all 95000s ease-out !important;
-    }
-    &-margin {
-        margin: 1rem .2rem;
-        span {
-            display: block;
-            margin-bottom: .4rem;
-        }
 
-        &-big {
-            margin: 3.2rem .2rem .2rem .2rem;
-        }
+    &-big {
+      margin: 3.2rem 0.2rem 0.2rem 0.2rem;
+    }
 
-        &-top {
-            margin-top: .5rem;
-        }
+    &-top {
+      margin-top: 0.5rem;
+    }
 
-        &-right {
-            margin-right: 1.5rem;
-        }
+    &-right {
+      margin-right: 1.5rem;
+    }
 
-        &-top-intro {
-            margin-top: 15rem;
-            margin-bottom: 1rem;
-        }
+    &-top-intro {
+      margin-top: 15rem;
+      margin-bottom: 1rem;
     }
-    &-content__result {
-        font-size: .8rem;
-        color: lightslategray;
-        margin: 0 0 2.5rem 0;
-        padding: 1rem;
+  }
+  &-content__result {
+    font-size: 0.8rem;
+    color: lightslategray;
+    margin: 0 0 2.5rem 0;
+    padding: 1rem;
+  }
+  // &-bckg {
+  //     background-color: $primary !important;
+  //     font-size: .8rem !important;
+  // }
+  &-roverflow {
+    overflow: hidden !important;
+  }
+  &-color {
+    color: $primary !important;
+  }
+  &-navfont#css-adjust-navfont {
+    font-size: 1rem !important;
+  }
+  &-navfonticon {
+    font-size: 2rem !important;
+  }
+  &-absolute {
+    &-input {
+      position: absolute;
+      right: 2rem;
+      @include respond(tab-land) {
+        right: 2rem;
+      }
     }
-    // &-bckg {
-    //     background-color: $primary !important;
-    //     font-size: .8rem !important;
-    // }
-    &-roverflow {
-        overflow: hidden !important;
+  }
+  &-gridicon {
+    position: absolute;
+    right: 4.5rem;
+    top: 16rem;
+    z-index: 10000000;
+    @include respond(tab-land) {
+      right: 2.5rem;
+      top: 19rem;
     }
-    &-color {
-        color: $primary !important
+    @include respond(phone) {
+      top: 15rem;
     }
-    &-navfont#css-adjust-navfont {
-        font-size: 1rem !important;
+    & > div {
+      display: inline-block;
     }
-    &-navfonticon {
-        font-size: 2rem !important;
+    .md-icon-button {
+      width: 3rem !important;
+      min-width: 3rem !important;
     }
-    &-absolute {
-        &-input {
-            position: absolute;
-            right: 2rem;
-            @include respond(tab-land){
-                right: 2rem;
-            }
-        }
+    .md-icon {
+      font-size: 2.5rem !important;
+      width: 2.5rem !important;
+      min-width: 2.5rem !important;
+      height: 2.5rem !important;
+      cursor: pointer;
     }
-    &-gridicon {
-        position: absolute;
-        right: 4.5rem;
-        top: 16rem;
-        z-index: 10000000;
-        @include respond(tab-land){
-            right: 2.5rem;
-            top: 19rem;
-        }
-        @include respond(phone) {
-            top: 15rem;
-        }
-        & > div {
-            display: inline-block;
-        }
-        .md-icon-button {
-            width: 3rem !important;
-            min-width: 3rem !important
-        }
-        .md-icon {
-            font-size: 2.5rem !important;
-            width: 2.5rem !important;
-            min-width: 2.5rem !important;
-            height: 2.5rem !important; 
-            cursor: pointer;
-        }
 
-        &_explorer {
-            position: absolute;
-            right: 0.5rem;
-            z-index: 10000000;
-            & > div {
-                display: inline-block;
-                & > i {
-                    font-size: 2rem !important;
-                    cursor: pointer;
-                }
-            }
+    &_explorer {
+      position: absolute;
+      right: 0.5rem;
+      z-index: 10000000;
+      & > div {
+        display: inline-block;
+        & > i {
+          font-size: 2rem !important;
+          cursor: pointer;
         }
-
-
-        &-single{
-            position: absolute;
-            right: .05rem;
-            z-index: 10000000;
-            top: .05rem;
-            @include respond(tab-land){
-                top: .2rem;
-                right: .3rem;
-            }
-
-            & > div {
-                display: inline-block;
-            }
-        }
+      }
     }
-    &-navadjust {
+
+    &-single {
+      position: absolute;
+      right: 0.05rem;
+      z-index: 10000000;
+      top: 0.05rem;
+      @include respond(tab-land) {
+        top: 0.2rem;
+        right: 0.3rem;
+      }
+
+      & > div {
+        display: inline-block;
+      }
+    }
+  }
+  &-navadjust {
+    color: $primary !important;
+    margin-bottom: 1.6rem;
+    cursor: pointer;
+    & > button,
+    & > div {
+      color: $primary !important;
+      & > div > i {
         color: $primary !important;
-        margin-bottom: 1.6rem;
-        cursor: pointer;
-        & > button,
-        & > div {
-            color: $primary !important;
-            & > div > i {
-                color: $primary !important;
-            }
-        }
-
-        &:hover {
-            background-color: $primary !important;
-            & > button,
-            & > div {
-                color: $primary-white !important;
-
-                & > div > i {
-                    color: $primary-white !important;
-                }
-            }
-
-        }
-    }
-    &-show_hide {
-        & > span.md-body-1 {
-            display: none !important;
-            visibility: hidden !important;
-            transition: all 3s ease-in-out;
-        }
-
-        &:hover {
-            & > span.md-body-1 {
-                display: block !important;
-                visibility: visible !important;
-            }
-        }
-    }
-    &-transparentbg {
-        background-color: transparent !important;
-    }
-    &-space {
-        height: 2rem;
-        width: 100%;
-    }
-    &-cursor {
-        cursor: pointer;
+      }
     }
 
-    /** Theme Adjustment */
-    &-content__result-dark {
-        font-size: .8rem;
-        color: $primary-white;
-        margin: 0 0 .5rem 0;
-        padding: .6rem;
-    }
-    &-color-dark {
-        color: $primary-black !important
-    }
-    &-float-icon-dark {
-        background-color: #222222 !important;
+    &:hover {
+      background-color: $primary !important;
+      & > button,
+      & > div {
         color: $primary-white !important;
-        & > div > div > i {
-            color: $primary-white !important;
-        }
-    }
-    &-gridborder-dark {
-        border: 1px solid $primary-black !important;
-    }
-    &-bg {
-        &-dark {
-            background-color: $primary-black !important;
-            background: $primary-black !important;
-            color: $primary-white !important;
-        }
 
-        &_border {
-            &-dark {
-                border: .1rem solid #385979 !important;
-            }
+        & > div > i {
+          color: $primary-white !important;
         }
+      }
     }
-    &-navadjust-dark {
+  }
+  &-show_hide {
+    & > span.md-body-1 {
+      display: none !important;
+      visibility: hidden !important;
+      transition: all 3s ease-in-out;
+    }
+
+    &:hover {
+      & > span.md-body-1 {
+        display: block !important;
+        visibility: visible !important;
+      }
+    }
+  }
+  &-transparentbg {
+    background-color: transparent !important;
+  }
+  &-space {
+    height: 2rem;
+    width: 100%;
+  }
+  &-cursor {
+    cursor: pointer;
+  }
+
+  /** Theme Adjustment */
+  &-content__result-dark {
+    font-size: 0.8rem;
+    color: $primary-white;
+    margin: 0 0 0.5rem 0;
+    padding: 0.6rem;
+  }
+  &-color-dark {
+    color: $primary-black !important;
+  }
+  &-float-icon-dark {
+    background-color: #222222 !important;
+    color: $primary-white !important;
+    & > div > div > i {
+      color: $primary-white !important;
+    }
+  }
+  &-gridborder-dark {
+    border: 1px solid $primary-black !important;
+  }
+  &-bg {
+    &-dark {
+      background-color: $primary-black !important;
+      background: $primary-black !important;
+      color: $primary-white !important;
+    }
+
+    &_border {
+      &-dark {
+        border: 0.1rem solid #385979 !important;
+      }
+    }
+  }
+  &-navadjust-dark {
+    color: $primary-black !important;
+    margin-bottom: 1.6rem;
+    cursor: pointer;
+
+    & > button,
+    & > div {
+      color: $primary-black !important;
+
+      & > div > i {
         color: $primary-black !important;
-        margin-bottom: 1.6rem;
-        cursor: pointer;
-
-        & > button,
-        & > div {
-            color: $primary-black !important;
-
-
-            & > div > i {
-                color: $primary-black !important;
-            }
-        }
-
-        &:active
-        &:hover {
-            background-color: $primary-black !important;
-            & > button,
-            & > div {
-                color: $primary-white !important;
-
-                & > div > i {
-                    color: $primary-white !important;
-                }
-            }
-        }
-    }
-    &_flex_mobile {
-        @include respond(phone) {
-            display: flex !important;
-            flex-direction: column !important;
-        }
+      }
     }
 
-    &-phone_margin {
-        @include respond(phone){
-            margin: 0 auto !important;
+    &:active &:hover {
+      background-color: $primary-black !important;
+      & > button,
+      & > div {
+        color: $primary-white !important;
+
+        & > div > i {
+          color: $primary-white !important;
         }
+      }
     }
+  }
+  &_flex_mobile {
+    @include respond(phone) {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+  }
+
+  &-phone_margin {
+    @include respond(phone) {
+      margin: 0 auto !important;
+    }
+  }
 }
 
 .metadata {
-    @include respond(phone) {
-        flex-direction: column;
-        margin: 0 2rem;
-    }
+  @include respond(phone) {
+    flex-direction: column;
+    margin: 0 2rem;
+  }
 }
