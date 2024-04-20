@@ -323,6 +323,37 @@ const generateControlSampleId = async (requiredFields, user, datasetId) => {
   }
 };
 
+const generateDuplicateControlID = async (currentValue, isNew) => {
+  const currentNumber = parseInt(currentValue.match(/_S(\d+)_/)[1]);
+
+  // Replace the numeric part after 'S' with the incremented value
+  const nextValue = currentValue.replace(
+    /(_S)(\d+)(_)/,
+    (_, prefix, num) => `${prefix}${currentNumber + 1}_`
+  );
+
+  // Check if the next value already exists in the database
+  let existingRecord;
+  if (isNew === 'true') {
+    existingRecord = await CuratedSamples.findOne({
+      'object.Control_ID': nextValue
+    });
+  } else {
+    existingRecord = await XmlData.findOne({ title: `${nextValue}.xml` });
+  }
+
+  // If the next value exists, recursively call the function with the incremented number
+  if (existingRecord) {
+    return await generateDuplicateControlID(
+      currentValue.replace(/_S(\d+)_/, `_S${currentNumber + 1}_`),
+      isNew
+    );
+  }
+
+  // If the next value does not exist, return it
+  return nextValue;
+};
+
 exports.getControlSampleId = async (req, res, next) => {
   const { user, logger, body } = req;
   try {
@@ -575,12 +606,11 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
         );
       }
       const { _id, ...duplicatedObject } = xlsxObject;
-      const uniqueFields = getCurationUniqueFields(duplicatedObject.object);
-      duplicatedObject.object.Control_ID = await generateControlSampleId(
-        uniqueFields,
-        user,
-        duplicatedObject.dataset
+      const controlID = await generateDuplicateControlID(
+        duplicatedObject.object.Control_ID,
+        isNew
       );
+      duplicatedObject.object.Control_ID = controlID;
       const duplicateCurationObject = new CuratedSamples({
         ...duplicatedObject,
         curationState: CurationStateDefault
@@ -601,17 +631,15 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
           )
         );
       }
-      const { _id, xml_str: xmlStr, ...duplicatedObject } = xmlData;
+      const { _id, xml_str: xmlStr, title, ...duplicatedObject } = xmlData;
       const xmlJson = XlsxFileManager.jsonGenerator(xmlStr);
       const xmlObject = JSON.parse(xmlJson);
       const parsedCurationObject = parseXmlDataToBaseSchema(
         xmlObject.PolymerNanocomposite
       );
-      const uniqueFields = getCurationUniqueFields(parsedCurationObject);
-      const controlID = await generateControlSampleId(
-        uniqueFields,
-        user,
-        duplicatedObject.datasetId
+      const controlID = await generateDuplicateControlID(
+        title.split('.xml')[0],
+        isNew
       );
       parsedCurationObject.Control_ID = controlID;
       parsedCurationObject.ID = controlID;
@@ -619,12 +647,11 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
         JSON.stringify({ PolymerNanocomposite: parsedCurationObject })
       );
       xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
-      console.log('duplicatedObject', duplicatedObject);
       duplicateCuration = await XmlData.create({
         ...duplicatedObject,
         xml_str: xml,
         iduser: user._id,
-        title: controlID
+        title: `${controlID}.xml`
       });
     }
     latency.latencyCalculator(res);
@@ -632,7 +659,7 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
       .status(200)
       .json({ _id: duplicateCuration._id, isNew: isNew === 'true' });
   } catch (err) {
-    next(errorWriter(req, err, 'getXlsxCurations', 500));
+    next(errorWriter(req, err, 'duplicateXlsxCurations', 500));
   }
 };
 

@@ -533,7 +533,14 @@ describe('Curation Controller', function () {
       sinon
         .stub(res, 'json')
         .returns({ _id: '5d8f6a9a1b7f7c0b0b0b0b0b', isNew: true });
-      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
+      sinon
+        .stub(XlsxObject, 'findOne')
+        .onFirstCall()
+        .returns(fetchedCuratedXlsxObject)
+        .onSecondCall()
+        .returns(fetchedCuratedXlsxObject)
+        .onThirdCall()
+        .returns(null);
       sinon.stub(DatasetId, 'find').returns([mockDatasetId]);
       sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
       sinon
@@ -555,7 +562,14 @@ describe('Curation Controller', function () {
       sinon
         .stub(res, 'json')
         .returns({ _id: '5d8f6a9a1b7f7c0b0b0b0b0b', isNew: false });
-      sinon.stub(XmlData, 'findOne').returns(mockXmlData);
+      sinon
+        .stub(XmlData, 'findOne')
+        .onFirstCall()
+        .returns(mockXmlData)
+        .onSecondCall()
+        .returns(mockXmlData)
+        .onThirdCall()
+        .returns(null);
       sinon.stub(DatasetId, 'find').returns([mockDatasetId]);
       sinon.stub(DatasetId, 'findOne').returns(mockDatasetId);
       sinon
