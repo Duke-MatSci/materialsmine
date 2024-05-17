@@ -94,7 +94,7 @@ describe('DataSelector', () => {
       'btn btn--primary u_color_white u--shadow-none'
     )
     expect(btn.attributes('for')).toBe('Viscoelastic_Data')
-    expect(btn.find('p').text()).toBe('Upload file')
+    expect(btn.find('span').text()).toBe('Upload file')
     expect(input.attributes('accept')).toBe('.csv, .tsv, .txt')
     expect(input.attributes('type')).toBe('file')
   })

@@ -43,6 +43,10 @@ router
     curationController.getXlsxCurations
   );
 
+router
+  .route('/duplicate/:curationId')
+  .post(isAuth, latencyTimer, curationController.duplicateXlsxCuration);
+
 router.route('/admin').post(isAuth, curationController.approveCuration);
 
 router

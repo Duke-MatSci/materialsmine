@@ -57,8 +57,8 @@ describe('Xml.vue', () => {
       expect(wrapper.vm.isAuth).toBeTruthy()
       for (let i = 0; i < cards.length; i++) {
         if (xmldata[i].user === 'userId') {
-          expect(cards.at(i).findAll(iconClass).length).toBe(3)
-          expect(cards.at(i).findAll(iconClass).at(1).text()).toContain(
+          expect(cards.at(i).findAll(iconClass).length).toBe(4)
+          expect(cards.at(i).findAll(iconClass).at(2).text()).toContain(
             'delete'
           )
         } else {
@@ -67,10 +67,42 @@ describe('Xml.vue', () => {
       }
     })
 
+    it('conditionally shows the duplicate button and icon if auth and card author is logged in', () => {
+      const cards = wrapper.findAll('div.md-card.btn--animated.gallery-item')
+      const xmldata = xmlFinder.xmlData
+      const iconClass = '.md-icon.md-icon-font.md-theme-default'
+
+      // user is logged in
+      expect(wrapper.vm.isAuth).toBeTruthy()
+      for (let i = 0; i < cards.length; i++) {
+        if (xmldata[i].user === 'userId') {
+          expect(cards.at(i).findAll(iconClass).at(1).text()).toContain(
+            'content_copy'
+          )
+        } else {
+          expect(cards.at(i).findAll(iconClass).length).toBe(1)
+        }
+      }
+    })
+
+    it('calls duplicateCuration function when duplicate button is clicked', async () => {
+      const xmldata = xmlFinder.xmlData
+      const cards = wrapper.findAll('div.md-card.btn--animated.gallery-item')
+      const duplicateBtn = cards.at(0).find('.u_gridicon').findAll('div').at(2)
+
+      const spy = jest
+        .spyOn(wrapper.vm, 'duplicateCuration')
+        .mockImplementation(() => {})
+      await duplicateBtn.trigger('click')
+
+      expect(spy).toHaveBeenCalled()
+      expect(spy).toHaveBeenCalledWith(xmldata[0].id, xmldata[0].isNewCuration)
+    })
+
     it('opens dialog box when delete button is clicked ', async () => {
       const xmldata = xmlFinder.xmlData
       const cards = wrapper.findAll('div.md-card.btn--animated.gallery-item')
-      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(2)
+      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(3)
 
       const spy = jest
         .spyOn(wrapper.vm, 'openDialogBox')
@@ -84,7 +116,7 @@ describe('Xml.vue', () => {
     it('opens dialog box when delete button is clicked ', async () => {
       const xmldata = xmlFinder.xmlData
       const cards = wrapper.findAll('div.md-card.btn--animated.gallery-item')
-      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(2)
+      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(3)
 
       const spy = jest
         .spyOn(wrapper.vm, 'openDialogBox')
@@ -124,7 +156,7 @@ describe('Xml.vue', () => {
     it('confirmAction method calls the right method', async () => {
       const xmldata = xmlFinder.xmlData
       const cards = wrapper.findAll('div.md-card.btn--animated.gallery-item')
-      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(2)
+      const deleteBtn = cards.at(0).find('.u_gridicon').findAll('div').at(3)
       const openDialogBox = jest.spyOn(wrapper.vm, 'openDialogBox')
       const toggleDialogBox = jest.spyOn(wrapper.vm, 'toggleDialogBox')
       const deleteXmlCuration = jest

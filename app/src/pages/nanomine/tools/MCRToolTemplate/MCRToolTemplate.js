@@ -87,17 +87,11 @@ export default {
         submitted: false,
         downloading: false
       },
-      auth: {
-        // AUTH MOCKED because auth is not yet implemented
-        isLoggedIn: () => false,
-        isTestUser: () => false
-      },
       cardSlots: ['image', 'title', 'content', 'actions']
     }
   },
   beforeMount: function () {
-    // this.auth = new Auth()
-    if (!this.auth.isLoggedIn()) {
+    if (!this.$store.getters['auth/token']) {
       this.renderDialog({
         title: 'Authorization Error',
         content: 'Login is required, please log in',
@@ -117,7 +111,10 @@ export default {
   methods: {
     resetContent () {
       if (!this.card && this.header) {
-        this.$store.commit('setAppHeaderInfo', { icon: 'workspaces', name: this.header })
+        this.$store.commit('setAppHeaderInfo', {
+          icon: 'workspaces',
+          name: this.header
+        })
       }
     },
     ...mapMutations({
@@ -136,9 +133,11 @@ export default {
     successDlg () {
       let contentSockets
       if (this.job.useWebsocket) {
-        contentSockets = 'Please stay on this page. Results may take up to a few minutes to load.'
+        contentSockets =
+          'Please stay on this page. Results may take up to a few minutes to load.'
       } else {
-        contentSockets = 'You should receive an email with a link to the job output.'
+        contentSockets =
+          'You should receive an email with a link to the job output.'
       }
       this.renderDialog({
         title: `${this.job.jobTitle} Job Submitted Successfully`,
@@ -178,11 +177,16 @@ export default {
 
         var base64Image = await getBase64(image)
 
-        jszipObj.file('output-' + (i + 1) + '.jpg', base64Image.split(',').pop(), { base64: true })
+        jszipObj.file(
+          'output-' + (i + 1) + '.jpg',
+          base64Image.split(',').pop(),
+          { base64: true }
+        )
       }
 
       // create zip file & download
-      jszipObj.generateAsync({ type: 'base64', compression: 'DEFLATE' })
+      jszipObj
+        .generateAsync({ type: 'base64', compression: 'DEFLATE' })
         .then(function (base64) {
           var downloadFile = 'data:application/zip;base64,' + base64
           var link = document.createElement('a')
@@ -234,12 +238,17 @@ export default {
       const jm = new JobMgr()
       jm.setJobType(this.job.submitJobTitle)
 
-      var jobParameters = { InputType: this.files.fileType, useWebsocket: this.useWebsocket } // Figure out which file type
+      var jobParameters = {
+        InputType: this.files.fileType,
+        useWebsocket: this.useWebsocket
+      } // Figure out which file type
       for (var key in this.selectedOptions) {
         if (key === 'phase') {
           jobParameters[key] = this.phaseToString(this.selectedOptions[key])
         } else if (key === 'dimensions') {
-          jobParameters[key] = this.dimensionToString(this.selectedOptions[key])
+          jobParameters[key] = this.dimensionToString(
+            this.selectedOptions[key]
+          )
         } else {
           jobParameters[key] = this.selectedOptions[key]
         }
@@ -251,21 +260,24 @@ export default {
 
       jm.addInputFile(this.files.name, this.files.url)
 
-      return jm.submitJob(function (jobId) {
-        this.$socket.emit('newJob', jobId)
-        this.results.submitted = true
-        this.results.obtained = false
-        this.toolId = jobId
-        this.resetLoading()
-        this.successDlg = true
-      }, function (errCode, errMsg) {
-        this.renderDialog({
-          title: 'Job Error',
-          content: `error: ${errCode} msg: ${errMsg}`,
-          reason: `jobError-${errCode}`
-        })
-        this.resetLoading()
-      })
+      return jm.submitJob(
+        function (jobId) {
+          this.$socket.emit('newJob', jobId)
+          this.results.submitted = true
+          this.results.obtained = false
+          this.toolId = jobId
+          this.resetLoading()
+          this.successDlg = true
+        },
+        function (errCode, errMsg) {
+          this.renderDialog({
+            title: 'Job Error',
+            content: `error: ${errCode} msg: ${errMsg}`,
+            reason: `jobError-${errCode}`
+          })
+          this.resetLoading()
+        }
+      )
     },
 
     phaseToString: function (phaseObj) {

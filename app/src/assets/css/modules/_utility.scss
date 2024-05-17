@@ -25,6 +25,11 @@
 }
 
 .u {
+  &-reset-transform {
+    div.md-button-content {
+      text-transform: none !important;
+    }
+  }
   &_width--xs {
     width: 4.5rem;
     border-width: 0 0 1px 0;

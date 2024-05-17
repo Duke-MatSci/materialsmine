@@ -1,4 +1,4 @@
-from flask import request, Blueprint, jsonify, make_response
+from flask import request, Blueprint, jsonify,  Response
 import json
 import datetime
 from app.dynamfit.dynamfit2 import update_line_chart,  check_file_exists
@@ -78,15 +78,16 @@ def extract_data_from_file(request_id):
         end_time = datetime.datetime.now()
         latency = f"{((end_time - start_time)).total_seconds()} seconds"
        
-        # Creating a JSON response
-        json_response = jsonify(data)
+        # Manually serialize JSON to ensure order is maintained
+        json_data = json.dumps(data, indent=4)  # data is your dictionary
 
-        response = make_response(json_response, 200, {
-            'startTime': start_time,
-            'endTime': end_time,
-            'latency': str(latency),
-            'responseId': request_id
-        })
+        # Create a Flask response
+        response = Response(json_data, content_type='application/json; charset=utf-8', status=200)
+        response.headers['startTime'] = start_time
+        response.headers['endTime'] = end_time
+        response.headers['latency'] = str(latency)
+        response.headers['responseId'] = request_id
+
         return response
     except ValueError as ve:
         return jsonify({'message': str(ve)}), 400
