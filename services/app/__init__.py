@@ -1,12 +1,7 @@
-from flask import Flask
-from flask_cors import CORS
+from flask import Flask # type: ignore
+from flask_cors import CORS # type: ignore
 from app.config import Config
 import logging
-from app.models.model import Database_Handler
-
-
-# Connect Database
-db = Database_Handler(Config)
 
 
 # TODO (@Tee): Enable the ones we need
@@ -22,7 +17,9 @@ def create_app(config_class = Config):
     app.logger.setLevel(logging.INFO)
 
     # Add a file handler
-    file_handler = logging.FileHandler('services_app.log')  # Log to a file
+    file_handler = logging.FileHandler('/services/services_app.log')  # Log to a file
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
     file_handler.setLevel(logging.INFO)  # Set log level for the file handler
     app.logger.addHandler(file_handler) 
 
@@ -35,5 +32,6 @@ def create_app(config_class = Config):
     app.register_blueprint(chemprops)
     app.register_blueprint(dynamfit)
     app.register_blueprint(main)
+    
 
     return app

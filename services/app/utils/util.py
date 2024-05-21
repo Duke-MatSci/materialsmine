@@ -2,11 +2,13 @@ import os
 from typing import Any, Dict
 from app.config import Config
 from functools import wraps
-from flask import request, jsonify, current_app as app
-import jwt
-import pandas as pd
+from flask import request, jsonify, current_app as app # type: ignore
+import jwt # type: ignore
+import pandas as pd # type: ignore
 import datetime
 import functools
+import jwt # type: ignore
+import uuid
 
 
 def log_errors(func):
@@ -161,3 +163,41 @@ def request_logger(func):
             app.logger.error(f"[INTERNAL ERROR]: Error in {func.__name__}. Response: {response}, Status code: {response.status_code}. Exiting at {end_time}. Execution time: {execution_time} miliseconds.")
         return response
     return decorated_function
+
+
+# generate JWT with secret key
+def generate_jwt(expires_in: int = 600):
+    """
+    Generates JWT with the payload containing the data
+
+    Args:
+        data (dict): The data to be encoded in the JWT
+        expires_in (int): The time in seconds after which the JWT expires
+
+    Returns:
+        The JWT generated
+    """
+    # Add expiration time to the payload
+    request_id =  str(uuid.uuid4())
+    data = {"requestid": request_id}
+    data.update({"exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)})
+    return jwt.encode(data, Config.SECRET_KEY, algorithm='HS256'), request_id
+
+
+# decode JWT with secret key
+def decode_jwt(token: str):
+    """
+    Decodes JWT with the secret key
+
+    Args:
+        token (str): The JWT to be decoded
+
+    Returns:
+        The decoded JWT
+    """
+    try:
+        return jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return "Token has expired"
+    except jwt.InvalidTokenError:
+        return "Invalid token"

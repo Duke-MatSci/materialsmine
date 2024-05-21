@@ -62,3 +62,5 @@ resfulservice/.nyc_output
 
 # Ignore old service files
 old_services
+venv/
+__pycache__/
