@@ -13,4 +13,4 @@ class Config:
     EMAIL_REFRESH_TOKEN = os.environ.get('AUTH_API_REFRESH_EMAIL', '')
     FILES_DIRECTORY = os.environ.get('FILES_WORKING_DIR', '/usr/src/files')
     ALLOWED_EXTENSIONS = set(['tsv', 'csv'])
-    API_SERVICES = os.environ.get('DEV_ENDPOINT', 'http://restful:3001')
+    API_SERVICES = os.environ.get('API_URL', 'http://restful:3001')
