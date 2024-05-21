@@ -16,7 +16,7 @@ from app.utils.db_utils import seedDatabase
 class nmChemPropsPrepare():
     def __init__(self):
         # load logger
-        logging.basicConfig(filename='app/logs/nmChemPropsPrepare.log',
+        logging.basicConfig(filename='/services/services_app.log',
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             level = logging.INFO
                            )

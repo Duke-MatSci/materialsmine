@@ -5,11 +5,19 @@ WORKDIR /services
 ENV FLASK_APP=run.py
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5050
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
 #Server will reload itself on file changes if in dev mode
 ENV FLASK_ENV=development
 
-COPY requirements/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+COPY requirements/prod_requirements.txt requirements.txt
+
+# Installing dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Exposing the port the app runs on
+EXPOSE 5050
 
 COPY . .
 CMD ["flask", "run"]

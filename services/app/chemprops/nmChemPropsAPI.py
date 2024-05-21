@@ -13,7 +13,7 @@ class nmChemPropsAPI():
         # input the NanoMine ID, example: L999_Someone_2020_S2
         self.nmid = nmid
         # load logger
-        logging.basicConfig(filename='app/logs/nmChemPropsInteract.log',
+        logging.basicConfig(filename='/services/services_app.log',
                             format='%(asctime)s - %(levelname)s - %(message)s',
                             level = logging.INFO
                            )
