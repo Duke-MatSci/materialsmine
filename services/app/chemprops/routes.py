@@ -1,4 +1,4 @@
-from flask import request, Blueprint, jsonify, make_response
+from flask import request, Blueprint, jsonify, make_response # type: ignore
 from app.chemprops.nmChemPropsAPI import nmChemPropsAPI 
 from app.utils.util import request_logger, log_errors, token_required
 from app.chemprops.nmChemPropsPrepare import nmChemPropsPrepare
