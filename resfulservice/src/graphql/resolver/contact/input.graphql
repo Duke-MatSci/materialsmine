@@ -3,7 +3,7 @@ Input schema for fetching a single contact
 """
 input userContactQueryInput {
   """
-  email of user whose contact to fetch. 
+  email of user whose contact to fetch.
   This field is a required field for fetching all contacts made by a user.
   """
   email: String!
@@ -32,10 +32,10 @@ input contactsQueryInput {
   """
   Date and time input filter options
   """
-  datetime: CreatedBetween 
+  datetime: CreatedBetween
 
   """
-  Number of contacts per page. 
+  Number of contacts per page.
   Pagination option for specifying how the server should group the contacts.
   Defaults to 1 if none is specified.
   """
@@ -76,6 +76,11 @@ input createContactInput {
   Details of the reason or purpose for requesting contact
   """
   message: String!
+
+  """
+  List of uploaded files attachments neccessary for resolving the contact
+  """
+  attachments: [String]
 }
 
 input updateContactInput {
@@ -107,7 +112,7 @@ enum Purpose {
 
   "I have to make a suggestion"
   SUGGESTION
-  
+
   "I want to make a comment"
   COMMENT
 }

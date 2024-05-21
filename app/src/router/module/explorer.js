@@ -136,13 +136,15 @@ const explorerRoutes = [
         path: 'update',
         name: 'xlsUpdate',
         component: () =>
-          import('@/pages/explorer/curate/validlist/UpdateXlsList.vue')
+          import('@/pages/explorer/curate/validlist/UpdateXlsList.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: 'all',
         name: 'validListAll',
         component: () =>
-          import('@/pages/explorer/curate/validlist/XlsListAll.vue')
+          import('@/pages/explorer/curate/validlist/XlsListAll.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -250,7 +252,7 @@ const explorerRoutes = [
       import(
         '@/pages/explorer/parameterized-query/parameterized-query-page.vue'
       ),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   },
   {
     path: 'sparql',

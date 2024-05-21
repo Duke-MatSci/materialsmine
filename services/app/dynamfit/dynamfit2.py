@@ -223,6 +223,10 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings):
             coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
             # df.reset_index(inplace=True)
             coef_df = coef_df.rename(columns = {'index':'i'})
+            figs = [fig1, fig11, fig2, fig3]
+            for fig in figs:
+                fig.update_xaxes(exponentformat = 'power')
+                fig.update_yaxes(exponentformat = 'power')
 
             return fig1, fig11, fig2, fig3, coef_df.to_dict("records")
     except Exception as e:

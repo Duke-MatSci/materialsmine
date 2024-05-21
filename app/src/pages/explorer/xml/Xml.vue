@@ -131,6 +131,13 @@
           </div>
           <div
             v-if="isAuthorized(xml.user)"
+            @click.prevent="duplicateCuration(xml.id, xml.isNewCuration)"
+          >
+            <md-tooltip md-direction="top">Duplicate Curation</md-tooltip>
+            <md-icon>content_copy</md-icon>
+          </div>
+          <div
+            v-if="isAuthorized(xml.user)"
             @click.prevent="openDialogBox(xml.id, xml.isNewCuration)"
           >
             <md-tooltip md-direction="top">Delete Curation</md-tooltip>
@@ -318,7 +325,7 @@ export default {
     editCuration (id, isNew) {
       this.$router.push({
         name: 'EditXmlCuration',
-        query: { isNew: isNew, id: id }
+        query: { isNew, id }
       })
     },
     selectFilters (e) {
@@ -343,6 +350,15 @@ export default {
           isNew: isNew
         })
         await this.$apollo.queries.xmlFinder.refetch()
+      }
+    },
+    async duplicateCuration (id, isNew) {
+      const response = await this.$store.dispatch('explorer/duplicateXml', {
+        id,
+        isNew
+      })
+      if (response?.id) {
+        this.editCuration(response.id, response.isNew)
       }
     }
   },

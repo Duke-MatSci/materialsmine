@@ -5,6 +5,15 @@
         class="u--layout-flex u_searchimage_input u_centralize_items u--layout-flex-justify-sb"
       >
         <div class="article_metadata_strong md-title">Data</div>
+        <!-- Get template button -->
+        <a
+          href="/2D-Sample-Template.csv"
+          download
+          class="btn btn--tertiary u--shadow-none u--layout-flex u_centralize_items u--layout-flex-justify-center"
+        >
+          <span class="md-body-1">Get Template</span>
+        </a>
+        <!-- Upload button -->
         <div>
           <label for="Viscoelastic_Data">
             <div class="form__file-input">
@@ -13,7 +22,7 @@
                   class="btn btn--primary u_color_white u--shadow-none"
                   for="Viscoelastic_Data"
                 >
-                  <p class="md-body-1">Upload file</p>
+                  <span class="md-body-1">Upload file</span>
                 </label>
                 <div class="md-file">
                   <input
@@ -28,13 +37,6 @@
             </div>
           </label>
         </div>
-
-        <button
-          @click.prevent="downloadFile"
-          class="btn btn--tertiary u--shadow-none u--layout-flex u_centralize_items u--layout-flex-justify-center"
-        >
-          <p class="md-body-1">Download file</p>
-        </button>
       </div>
       <md-table
         class="u_width--max u_divider-fullspan utility-transparentbg viz-u-postion__rel viz-u-zIndex__min"
@@ -63,6 +65,15 @@
           </md-table-row>
         </template>
       </md-table>
+      <!-- Dowload button -->
+      <div class="u_myprofile u--margin-bottommd">
+        <button
+          @click.prevent="downloadFile"
+          class="utility-gridicon-single btn btn--tertiary u--shadow-none u--layout-flex u_centralize_items u--layout-flex-justify-center u_margin-bottom-small"
+        >
+          <span class="md-body-1">Download files</span>
+        </button>
+      </div>
     </div>
     <div v-if="page === 'scatter'">
       <div class="u--layout-flex u--layout-flex-column" style="margin: 5px 0px">

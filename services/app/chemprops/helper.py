@@ -14,4 +14,5 @@ def search_and_refine_data(api_function, keywords, include_uSMILES=True):
             refined_data['data']['uSMILES'] = original_data['_id']
         return refined_data
     except Exception as e:
-        raise ValueError("Invalid Request: but dont worry if it is not, it will be included in the database")
+        print("error", e)
+        raise ValueError(str(e))

@@ -1,7 +1,7 @@
 <template>
   <div class="u_width--max utility-bg_border-dark u--b-rad">
     <md-tabs
-      class="form__stepper form__stepper-curate dialog-box_content"
+      class="form__stepper form__stepper-curate dialog-box_content u-reset-transform"
       md-dynamic-height
     >
       <md-tab id="tab-home" md-label="Complex, E*(iω)">
@@ -13,7 +13,7 @@
       <md-tab id="tab-relax" md-label="Relaxation, E(t)">
         <PlotlyView :chart="dynamfitData['relaxation-chart']" key="3" />
       </md-tab>
-      <md-tab id="tab-spec" md-label="R Spectrum, H(t)">
+      <md-tab id="tab-spec" md-label="R Spectrum, H(𝜏)">
         <PlotlyView
           :chart="dynamfitData['relaxation-spectrum-chart']"
           key="4"

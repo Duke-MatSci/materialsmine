@@ -664,6 +664,65 @@ paths:
                     type: string
                     example: An error occurred
   
+  /curate/duplicate/{curationId}:
+    post:
+      security:
+        - BearerAuth: []
+      summary: Creates a duplicate of an existing curation
+      description: A route to create duplicate of a curation by using the curation ID. This route is utilized to create duplicate of an existing curation.
+      tags:
+        - Curation
+      parameters:
+        - in: path
+          required: true
+          name: curationId
+          description: The ID of the curation to be edited.
+          schema:
+            type: string
+            example: "64394c8032bc6325505af6f9"
+  
+        - in: query
+          name: isNew
+          schema:
+            type: boolean
+          description: Set to **true** if curation is a new or old curation
+      responses:
+        '200':
+          description: Returns the duplicate curation object details
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  _id: "64394c8032bc7325505af6f9"
+                  isNew: true
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    enum: ['Curation sample not found', 'Sample xml not found']
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  
   /curate/bulk:
      post:
       security:

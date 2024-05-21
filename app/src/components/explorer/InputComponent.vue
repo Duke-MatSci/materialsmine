@@ -89,11 +89,12 @@
         >
           <p class="md-body-2" :class="[fileError ? 'u--color-error' : '']">
             {{ reduceCellValue }}.....
+            <md-tooltip md-direction="top">{{ downloadLink }}</md-tooltip>
           </p>
 
           <md-button
             class="md-icon-button"
-            @click="downloadImage(inputObj.cellValue)"
+            @click="downloadImage(downloadLink)"
           >
             <md-icon>download</md-icon>
             <md-tooltip md-direction="top">Click to download file</md-tooltip>
@@ -212,6 +213,13 @@ export default {
     reduceCellValue () {
       const arr = this.inputObj.cellValue.split('/')
       return arr.length > 3 ? arr[3].substring(0, 40) : this.inputObj.cellValue
+    },
+    downloadLink () {
+      if (this.inputObj.cellValue.includes('nmr/blob')) {
+        // http:localhost/api/files/583e05f1e74a1d205f4e218c
+        return `/api/files/${this.inputObj.cellValue.split('id=')?.pop()}`
+      }
+      return this.inputObj.cellValue
     },
     errorRef () {
       if (!this.title || !Object.hasOwnProperty.call(this.errors, this.title)) {

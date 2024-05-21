@@ -193,5 +193,33 @@ export default {
       }
       commit('setSnackbar', snackbar, { root: true })
     }
+  },
+  async duplicateXml ({ commit, _dispatch, rootGetters }, payload) {
+    const uri = `/api/curate/duplicate/${payload.id}?isNew=${payload.isNew}`
+    const token = rootGetters['auth/token']
+    try {
+      const request = await fetch(uri, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        }
+      })
+      const response = await request.json()
+      if (!response || !response._id) {
+        const error = new Error('Something went wrong!')
+        throw error
+      }
+      return { id: response._id, isNew: response.isNew }
+    } catch (err) {
+      commit(
+        'setSnackbar',
+        {
+          message: err.message
+        },
+        { root: true }
+      )
+    }
   }
 }

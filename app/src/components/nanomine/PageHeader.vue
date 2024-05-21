@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :style="xFlow">
     <md-app-toolbar class="md-dense md-primary" id="reset_bg">
       <div class="md-toolbar-row viz-u-postion__rel">
         <div class="md-toolbar-section-start">
@@ -28,22 +28,22 @@
               </li>
             </ul>
           </div>
-          <div class="u--inline">
-            <div v-if="isAuth" class="nav_menu--container">
+          <div class="u--inline nav_menu">
+            <ul v-if="isAuth" class="nav_menu--container">
               <a
                 class="u--default-size nav_menu--handler"
                 style="color: #fff; font-size: 1.2rem !important"
               >
                 Hi {{ displayName }}
               </a>
-              <div class="nav_menu--siblings nav_menu--sibheader">
+              <div class="nav_menu--siblings">
                 <span
                   class="nav_menu--siblings-lists"
                   @click="$store.dispatch('auth/logout')"
                   ><a id="authmenu">Logout</a></span
                 >
               </div>
-            </div>
+            </ul>
             <div v-else>
               <a
                 class="btn btn--tertiary btn--noradius"
@@ -56,156 +56,6 @@
         </div>
       </div>
     </md-app-toolbar>
-    <div
-      :class="[
-        'section_banner',
-        info.pagetype == 'home' ? '' : 'section_banner__misc'
-      ]"
-    >
-      <div class="section_banner__text">
-        <div
-          v-if="info.pagetype == 'home'"
-          class="section_banner__text-content"
-        >
-          <span class="u_adjust-banner-text u_adjust-banner-text-home">{{
-            info.name
-          }}</span>
-          <p class="u_adjust-banner-text_subtitle">{{ info.subtitle }}</p>
-        </div>
-        <div v-else class="section_banner__text-content">
-          <i class="material-icons">{{ info.icon }}</i>
-          <span class="u_adjust-banner-text">{{ info.name }}</span>
-        </div>
-      </div>
-      <div class="section_banner__nav">
-        <nav class="nav_menu">
-          <ul>
-            <li class="u_margin-right-small">
-              <div class="nav_menu--container">
-                <a class="u--default-size nav_menu--handler" href="#">About</a>
-                <div class="nav_menu--siblings">
-                  <router-link to="/nm/about" class="nav_menu--siblings-lists"
-                    ><a>About Us</a></router-link
-                  >
-                  <router-link to="/nm/how" class="nav_menu--siblings-lists"
-                    ><a>How To</a></router-link
-                  >
-                  <router-link to="/nm/news" class="nav_menu--siblings-lists"
-                    ><a>Research + News</a></router-link
-                  >
-                </div>
-              </div>
-            </li>
-            <li class="u_margin-right-small">
-              <div class="nav_menu--container">
-                <a class="u--default-size nav_menu--handler" href="#"
-                  >Visualize</a
-                >
-                <div class="nav_menu--siblings">
-                  <router-link to="/explorer" class="nav_menu--siblings-lists"
-                    ><a>Browse Data</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/chart"
-                    class="nav_menu--siblings-lists"
-                    ><a>Chart Gallery</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/images"
-                    class="nav_menu--siblings-lists"
-                    ><a>Image Gallery</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/xmls"
-                    class="nav_menu--siblings-lists"
-                    ><a>View XMLs</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/dataset"
-                    class="nav_menu--siblings-lists"
-                    ><a>Dataset Gallery</a></router-link
-                  >
-                </div>
-              </div>
-            </li>
-            <li class="u_margin-right-small">
-              <div class="nav_menu--container">
-                <a class="u--default-size nav_menu--handler" href="#">Upload</a>
-                <div class="nav_menu--siblings">
-                  <a
-                    href="/explorer/curate/spreadsheet"
-                    class="nav_menu--siblings-lists"
-                    ><a>Spreadsheet Upload</a></a
-                  >
-                  <router-link
-                    to="/explorer/curate/sdd"
-                    class="nav_menu--siblings-lists"
-                    ><a>Upload with SDD</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/curate/stepper"
-                    class="nav_menu--siblings-lists"
-                    ><a>Form Curation</a></router-link
-                  >
-                </div>
-              </div>
-            </li>
-            <li class="u_margin-right-small">
-              <div class="nav_menu--container">
-                <a class="u--default-size nav_menu--handler" href="#">Tools</a>
-                <div class="nav_menu--siblings">
-                  <router-link
-                    to="/explorer/sparql"
-                    class="nav_menu--siblings-lists"
-                    ><a>Sparql Query</a></router-link
-                  >
-                  <router-link
-                    to="/explorer/tools"
-                    class="nav_menu--siblings-lists"
-                    ><a>Module & Simulation Tools</a></router-link
-                  >
-                  <router-link
-                    to="/nm/tools/plot-curation"
-                    class="nav_menu--siblings-lists"
-                    ><a>Easy CSV Plotter</a></router-link
-                  >
-                  <a href="/api/api-docs/" class="nav_menu--siblings-lists"
-                    ><a>Api Docs</a></a
-                  >
-                </div>
-              </div>
-            </li>
-            <li class="u_margin-right-small">
-              <div class="nav_menu--container">
-                <a class="u--default-size nav_menu--handler" href="#"
-                  >Conferences</a
-                >
-                <div class="nav_menu--siblings">
-                  <router-link to="/nm/mrs2022" class="nav_menu--siblings-lists"
-                    ><a>MRS 2022</a></router-link
-                  >
-                  <router-link
-                    to="/nm/cssi2023"
-                    class="nav_menu--siblings-lists"
-                    ><a>CSSI 2023</a></router-link
-                  >
-                  <router-link
-                    to="/nm/2024-doe-poster"
-                    class="nav_menu--siblings-lists"
-                    ><a>2024 DOE Poster</a></router-link
-                  >
-                </div>
-              </div>
-            </li>
-            <li class="u_margin-right-small" v-if="isAuth">
-              <div class="nav_menu--container">
-                <a class="u--default-size" href="/mypage">My Portal</a>
-              </div>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
   </div>
 </template>
 <script>
@@ -218,7 +68,10 @@ export default {
       info: 'appHeaderInfo',
       isAuth: 'auth/isAuthenticated',
       displayName: 'auth/displayName'
-    })
+    }),
+    xFlow () {
+      return { overflowX: 'clip' }
+    }
   }
 }
 </script>

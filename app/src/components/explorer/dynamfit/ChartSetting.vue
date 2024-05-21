@@ -8,26 +8,35 @@
     </label>
     <!-- File Upload  -->
     <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
-      <label v-if="!dynamfit.fileUpload" for="Viscoelastic_Data">
-        <div class="form__file-input">
-          <div class="md-theme-default">
-            <label
-              class="btn btn--primary md-button u--b-rad"
-              for="Viscoelastic_Data"
-              ><p class="md-body-1">Upload file</p></label
-            >
-            <div class="md-file">
-              <input
-                @change="onInputChange"
-                accept=".csv, .tsv, .txt"
-                type="file"
-                name="Viscoelastic_Data"
-                id="Viscoelastic_Data"
-              />
+      <template v-if="!dynamfit.fileUpload">
+        <label for="Viscoelastic_Data" class="u--inline">
+          <div class="form__file-input">
+            <div class="md-theme-default">
+              <label
+                class="btn btn--primary md-button u--b-rad"
+                for="Viscoelastic_Data"
+                ><p class="md-body-1">Upload file</p></label
+              >
+              <div class="md-file">
+                <input
+                  @change="onInputChange"
+                  accept=".csv, .tsv, .txt"
+                  type="file"
+                  name="Viscoelastic_Data"
+                  id="Viscoelastic_Data"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </label>
+        </label>
+        <a
+          class="btn btn--primary md-button u--inline u--margin-leftsm"
+          style="border-radius: 0% !important"
+          href="/dynamfit-template.tsv"
+          download
+          ><span class="md-body-1">Template</span></a
+        >
+      </template>
       <template v-else>
         <button
           class="md-button btn btn--tertiary btn--noradius"
@@ -113,103 +122,105 @@
   </div>
 </template>
 <script>
-import { mapState } from 'vuex'
+import { mapState } from 'vuex';
 export default {
   name: 'ChartSetting',
-  data () {
+  data() {
     return {
       showToolTip: false,
       isTemp: true
-    }
+    };
   },
-  mounted () {},
+  mounted() {},
   watch: {
     dynamfit: {
       handler: function (newVal) {
-        if (!newVal) return
-        this.updateChart()
+        if (!newVal) return;
+        this.updateChart();
       },
       deep: true
     }
   },
   methods: {
-    async onInputChange (e) {
-      this.displayInfo('Uploading File...')
-      const file = [...e.target?.files]
-      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
+    async onInputChange(e) {
+      this.displayInfo('Uploading File...');
+      const file = [...e.target?.files];
+      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
       try {
-        const extension = file[0]?.type?.replace(/(.*)\//g, '')
+        const extension =
+          file[0]?.type?.replace(/(.*)\//, '') ||
+          file[0]?.name.split('.').pop();
         if (!extension || !allowedTypes.includes(extension)) {
-          return this.displayInfo('Unsupported file format')
+          return this.displayInfo('Unsupported file format');
         }
         const { fileName } = await this.$store.dispatch('uploadFile', {
           file,
           isTemp: this.isTemp
-        })
+        });
         if (fileName) {
-          this.dynamfit.fileUpload = fileName
-          this.displayInfo('Upload Successful', 1500)
+          this.dynamfit.fileUpload = fileName;
+          this.displayInfo('Upload Successful', 1500);
         }
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(e)
-        })
+        });
       }
     },
-    async resetChart () {
-      const name = this.dynamfit.fileUpload
-      if (!name) return
+    async resetChart() {
+      const name = this.dynamfit.fileUpload;
+      if (!name) return;
 
       const { deleted, error } = await this.$store.dispatch('deleteFile', {
         name,
         isTemp: this.isTemp
-      })
+      });
 
       if (!error && deleted) {
-        return this.clearDynamfitData()
+        return this.clearDynamfitData();
       }
       this.$store.commit('setSnackbar', {
         message: error ?? 'Something went wrong',
         action: () => this.resetChart()
-      })
+      });
     },
-    displayInfo (msg, duration) {
+    displayInfo(msg, duration) {
       if (msg) {
         this.$store.commit('setSnackbar', {
           message: msg,
           duration: duration ?? 3000
-        })
+        });
       }
     },
-    clearDynamfitData () {
-      this.$store.commit('explorer/resetDynamfit')
-      this.$store.commit('explorer/resetDynamfitData')
+    clearDynamfitData() {
+      this.$store.commit('explorer/resetDynamfit');
+      this.$store.commit('explorer/resetDynamfitData');
     },
-    async updateChart () {
+    async updateChart() {
       const payload = {
         fileName: this.dynamfit.fileUpload,
         numberOfProny: this.dynamfit.range,
         model: this.dynamfit.model,
         fitSettings: this.dynamfit.fitSettings
-      }
-      await this.$store.dispatch('explorer/fetchDynamfitData', payload)
+      };
+      await this.$store.dispatch('explorer/fetchDynamfitData', payload);
     }
   },
   computed: {
     ...mapState('explorer', {
       dynamfit: (state) => state.dynamfit
     }),
-    disableInput () {
+    disableInput() {
       return (
         !this.dynamfit.fileUpload ||
         !this.dynamfitData ||
         !Object.keys(this.dynamfitData).length
-      )
+      );
     },
-    dynamfitData () {
-      return this.$store.getters['explorer/getDynamfitData']
+    dynamfitData() {
+      return this.$store.getters['explorer/getDynamfitData'];
     }
   }
-}
+};
 </script>

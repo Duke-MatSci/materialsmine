@@ -40,9 +40,34 @@ describe('ContactUsPage.vue', () => {
     })
     await wrapper.vm.$nextTick()
     expect(wrapper.findComponent('#name').element.value).toBe('test name')
-    expect(wrapper.findComponent('#message').element.value).toBe('test message')
-    expect(wrapper.findComponent('#email').element.value).toBe('kzunigac@uvm.edu')
+    expect(wrapper.findComponent('#message').element.value).toBe(
+      'test message'
+    )
+    expect(wrapper.findComponent('#email').element.value).toBe(
+      'kzunigac@uvm.edu'
+    )
     expect(wrapper.findComponent('#nanomine').element.value).toBe('nanomine')
+  })
+
+  it('makes the right call on submit', async () => {
+    await wrapper.setData({
+      name: 'test name',
+      email: 'kzunigac@uvm.edu',
+      message: 'test message',
+      platform: 'nanomine',
+      contactType: 'SUGGESTION'
+    })
+    await wrapper.vm.$nextTick()
+    const submit = wrapper.findComponent({ ref: 'contactForm' })
+    const onSubmit = jest.spyOn(wrapper.vm, 'onSubmit')
+    const validateForm = jest.spyOn(wrapper.vm, 'validateForm')
+    const dispatch = jest
+      .spyOn(wrapper.vm.$store, 'dispatch')
+      .mockImplementation(() => {})
+    await submit.trigger('submit.prevent')
+    expect(onSubmit).toHaveBeenCalled()
+    expect(validateForm).toHaveBeenCalled()
+    expect(dispatch).toHaveBeenCalled()
   })
 
   it('render dialog component properly', async () => {
