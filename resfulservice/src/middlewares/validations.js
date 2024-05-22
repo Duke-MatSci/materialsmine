@@ -90,7 +90,7 @@ exports.validateXlsxObjectUpdate = [
   validationErrorHandler
 ];
 
-function validationErrorHandler(req, res, next) {
+function validationErrorHandler (req, res, next) {
   req.logger.info('Middleware.validationErrorHandler: Function entry');
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -134,13 +134,13 @@ exports.managedServiceDBCall = [
     .isString()
     .isIn(['polymer', 'filler', 'ukpolymer', 'ukfiller'])
     .withMessage(
-      "the collectionName should be one of 'polymers', 'fillers', 'ukpolymers', 'ukfillers'"
+      'the collectionName should be one of \'polymers\', \'fillers\', \'ukpolymers\', \'ukfillers\''
     ),
   body('action')
     .isString()
     .isIn(['INSERT', 'READ', 'UPDATE', 'DELETE', 'INSERTMANY', 'SEARCH'])
     .withMessage(
-      "the action should be one of 'INSERT', 'READ', 'UPDATE', 'DELETE', 'INSERTMANY' or 'SEARCH'"
+      'the action should be one of \'INSERT\', \'READ\', \'UPDATE\', \'DELETE\', \'INSERTMANY\' or \'SEARCH\''
     ),
   body('payload')
     .optional()
