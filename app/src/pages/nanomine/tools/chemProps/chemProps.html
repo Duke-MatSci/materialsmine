@@ -9,15 +9,15 @@
         <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
       </template>
     </dialog-box>
-    <div class="team_header u_margin-bottom-med">
+    <div class="team_header u_margin-bottom-med u_margin-top-small">
       <h1 class="visualize_header-h1 teams_header">
         ChemProps - A growing polymer name and filler name standardization
         database
       </h1>
     </div>
-    <div class="u_margin-bottom-small utility-navfonticon">
+    <div class="u_margin-bottom-small">
       <h3 class="u_margin-bottom-small">Description</h3>
-      <p class="utility-navfonticon utility-line-height-sm">
+      <p class="u_margin-top-small search_box_link utility-line-height-sm">
         ChemProps is a growing polymer name and filler name standardization
         database. Polymer names and filler names can have many alias, impeding
         the queries to collect all relevant data by a chemical name as the
@@ -27,6 +27,7 @@
         name regardless of how they were originally reported. You can find more
         details in our paper
         <a
+          class="u_color"
           href="https://jcheminf.biomedcentral.com/articles/10.1186/s13321-021-00502-6"
           target="_blank"
           >"ChemProps: A RESTful API enabled database for composite polymer name
@@ -35,7 +36,7 @@
       </p>
     </div>
     <div>
-      <p class="utility-navfonticon utility-line-height-sm">
+      <p class="u_margin-top-small search_box_link utility-line-height-sm">
         This webapp is designed for one-time search. For batch jobs, please use
         the ChemProps API. A token is required to use the API. You must be
         logged in to request the ChemProps API token.
@@ -63,12 +64,12 @@
         class="u_centralize_content md-card-header u_display-flex u_margin-bottom-med"
       >
         <md-button
-          class="md-primary md-raised u_centralize_other"
+          class="md-primary md-raised u_centralize_other btn--primary"
           @click="showToken"
           >Request API Token</md-button
         >
       </div>
-      <div>
+      <div class="utility-line-height-sm">
         <h3>Instructions</h3>
         <form
           @submit.prevent="search"
