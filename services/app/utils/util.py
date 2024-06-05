@@ -1,4 +1,5 @@
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 from typing import Any, Dict
 from app.config import Config
 from functools import wraps

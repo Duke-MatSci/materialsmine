@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 import json
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 from app.utils.util import filter_none
 
 # print("request args", request.args)
