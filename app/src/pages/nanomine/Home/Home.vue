@@ -74,7 +74,7 @@
           </div>
           <div
             class="quicklinks quicklinks-border"
-            @click.prevent="navigateFunction('/explorer/curate/spreadsheet')"
+            @click.prevent="navigateFunction('/explorer/curate')"
           >
             <div class="quicklinks_content">
               <h2>Upload your data</h2>
@@ -120,7 +120,7 @@
 
           <div
             class="quicklinks u_vertical-only-hide"
-            @click.prevent="navigateFunction('/explorer/curate/spreadsheet')"
+            @click.prevent="navigateFunction('/explorer/curate')"
           >
             <div class="quicklinks_content">
               <h2>Upload your data</h2>
@@ -163,12 +163,12 @@
 </template>
 
 <script>
-import reducer from '@/mixins/reduce'
+import reducer from '@/mixins/reduce';
 
 export default {
   name: 'HomeNM',
   mixins: [reducer],
-  data () {
+  data() {
     return {
       assetItems: [
         {
@@ -199,19 +199,19 @@ export default {
       ],
       pushedAssetItem: [],
       screen: 0
-    }
+    };
   },
   methods: {
-    navigateFunction (arg) {
-      this.$router.push(arg)
+    navigateFunction(arg) {
+      this.$router.push(arg);
     }
   },
-  created () {
+  created() {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       pagetype: 'home',
       name: 'Welcome to MaterialsMine! An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
-    })
+    });
   }
-}
+};
 </script>
