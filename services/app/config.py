@@ -1,4 +1,5 @@
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 from dotenv import load_dotenv # type: ignore
 
 load_dotenv(".env")
