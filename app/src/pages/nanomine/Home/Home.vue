@@ -74,7 +74,7 @@
           </div>
           <div
             class="quicklinks quicklinks-border"
-            @click.prevent="navigateFunction('/nm/xml-uploader')"
+            @click.prevent="navigateFunction('/explorer/curate/spreadsheet')"
           >
             <div class="quicklinks_content">
               <h2>Upload your data</h2>
@@ -120,7 +120,7 @@
 
           <div
             class="quicklinks u_vertical-only-hide"
-            @click.prevent="navigateFunction('/nm/xml-uploader')"
+            @click.prevent="navigateFunction('/explorer/curate/spreadsheet')"
           >
             <div class="quicklinks_content">
               <h2>Upload your data</h2>
@@ -132,7 +132,8 @@
           </div>
           <div
             class="quicklinks quicklinks-border"
-            @click.prevent="navigateFunction('/tools')"
+            @click.prevent="navigateFunction('/explorer/tools')"
+            data-test="navigate-tools"
           >
             <div class="quicklinks_content">
               <h2>Use custom tools</h2>
@@ -142,7 +143,11 @@
               </div>
             </div>
           </div>
-          <div class="quicklinks" @click.prevent="navigateFunction('/news')">
+          <div
+            class="quicklinks"
+            @click.prevent="navigateFunction('/nm/news')"
+            data-test="navigate-news"
+          >
             <div class="quicklinks_content">
               <h2>Learn more</h2>
               <i class="material-icons">emoji_objects</i>
