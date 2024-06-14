@@ -20,6 +20,12 @@
                 <md-icon>edit</md-icon>
               </md-button>
             </div>
+            <div v-if="isAuth && isAdmin">
+              <md-button class="md-icon-button" @click.native.prevent="linkDataset">
+                <md-tooltip> Link to SDD </md-tooltip>
+                <md-icon>link</md-icon>
+              </md-button>
+            </div>
           </div>
         </div>
 
@@ -276,6 +282,9 @@ export default {
     },
     editDataset () {
       this.$router.push(`/explorer/curate/sdd/edit/${this.id}`)
+    },
+    linkDataset () {
+      this.$router.push(`/explorer/curate/sdd/link/${this.id}`)
     }
   },
   created () {

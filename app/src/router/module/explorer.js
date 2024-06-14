@@ -166,13 +166,13 @@ const explorerRoutes = [
     component: () => import('@/pages/explorer/curate/sdd/SddForm.vue'),
     meta: { requiresAuth: true }
   },
-  // {
-  //   path: 'curate/sdd/link/:datasetId',
-  //   name: 'LinkSDD',
-  //   props: true,
-  //   component: () => import('@/pages/explorer/curate/sdd/SddLinking.vue'),
-  //   meta: { requiresAuth: true }
-  // },
+  {
+    path: 'curate/sdd/link/:datasetId',
+    name: 'LinkSDD',
+    props: true,
+    component: () => import('@/pages/explorer/curate/sdd/SddLinking.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: 'chart',
     component: ChartBase,
