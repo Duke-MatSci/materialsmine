@@ -104,3 +104,4 @@ if (cluster.isMaster) {
   require('./sw');
 }
 process.on('SIGINT', onExit(mongoose, log));
+process.on('uncaughtException', onExit(mongoose, log));
