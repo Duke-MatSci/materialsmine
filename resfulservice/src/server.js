@@ -23,6 +23,7 @@ const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
 const getWsContext = require('./graphql/context/getWsContext');
 const { latencyCalculator } = require('./middlewares/latencyTimer');
+const { onExit } = require('./utils/exit-utils');
 
 const env = process.env;
 if (cluster.isMaster) {
@@ -59,7 +60,7 @@ if (cluster.isMaster) {
 
   const apolloServer = new ApolloServer({
     schema,
-    formatError (err) {
+    formatError(err) {
       if (!err.extensions) {
         return err;
       }
@@ -95,10 +96,11 @@ if (cluster.isMaster) {
         log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => log.error(err));
   // Fork the worker process
   cluster.fork();
 } else {
   // Worker process
   require('./sw');
 }
+process.on('SIGINT', onExit(mongoose, log));
