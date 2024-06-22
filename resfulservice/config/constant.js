@@ -153,5 +153,12 @@ module.exports = {
   ManagedServiceRegister: {
     dynamfit: '/dynamfit/extract/',
     chemprops: '/chemprops/call/'
+  },
+  MGD_SVC_ERR_CODE: {
+    default: {
+      code: 'MM00010',
+      description: `This upload has been identified as potentially untrusted. 
+            We were unable to verify its origin from the anticipated source`
+    }
   }
 };
