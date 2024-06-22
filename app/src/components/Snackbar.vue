@@ -1,16 +1,27 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration" class="md-snackbar-adjust">
-      {{message}}
+    <md-snackbar
+      :md-position="position"
+      :md-active.sync="show"
+      :md-duration="!snackbar.duration ? Infinity : snackbar.duration"
+      class="md-snackbar-adjust"
+    >
+      {{ snackbar.message }}
       <span>
-        <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
+        <md-button
+          v-if="snackbar.action && !snackbar.duration"
+          id="snackbarAction"
+          class="md-primary"
+          @click.native="snackBarAction"
+          >{{ snackbar.callToActionText }}</md-button
+        >
       </span>
     </md-snackbar>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 export default {
   name: 'Snackbar',
   props: {
@@ -20,13 +31,10 @@ export default {
       default: 'left'
     }
   },
-  data () {
+  data() {
     return {
-      show: false,
-      message: '',
-      action: null,
-      duration: false
-    }
+      show: false
+    };
   },
   computed: {
     ...mapGetters({
@@ -34,43 +42,30 @@ export default {
     })
   },
   methods: {
-    refresh () {
-      this.$router.go(0)
+    resetSnackbar() {
+      this.show = false;
     },
-    // If an action has been passed through vuex as a callback, call it
-    callAction () {
-      if (this.action) {
-        // Toggle the snackbar before calling the action to reload it's timer
-        this.show = false
-        this.action()
-        this.show = false
+    async snackBarAction() {
+      if (this.snackbar.action) {
+        this.show = false;
+        return await this.snackbar.action();
       }
-    },
-    resetSnackbar () {
-      this.show = false
-      this.message = ''
-      this.action = null
-      this.duration = false
+      this.show = false;
     }
   },
   watch: {
-    snackbar (val, oldVal) {
+    snackbar(val, oldVal) {
       if (val.message) {
-        this.show = true
-        this.message = this.snackbar.message
-        this.action = this.snackbar.action || null
-        this.duration = val.duration ? val.duration : false
-        // Reset
-        this.$store.commit('setSnackbar', '')
+        this.show = true;
       } else if (val.duration === 0) {
-        this.resetSnackbar()
+        this.resetSnackbar();
       }
     },
-    '$route' (newValue, oldValue) {
+    $route(newValue, oldValue) {
       if (newValue !== oldValue) {
-        this.resetSnackbar()
+        this.resetSnackbar();
       }
     }
   }
-}
+};
 </script>
