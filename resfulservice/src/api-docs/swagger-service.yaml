@@ -1124,6 +1124,7 @@ paths:
                 number_of_prony: 100
                 model: Linear
                 fit_settings: false
+                useSample: false
                 
       responses:
         '200':
