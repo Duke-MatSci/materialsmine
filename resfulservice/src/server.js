@@ -96,12 +96,24 @@ if (cluster.isMaster) {
         log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
       });
     })
-    .catch((err) => log.error(err));
+    .catch((err) => onExit(err, log));
   // Fork the worker process
   cluster.fork();
 } else {
   // Worker process
   require('./sw');
 }
-process.on('SIGINT', onExit);
-process.on('uncaughtException', onExit);
+
+// Handle SIGINT signal (sent by Docker on container stop with Ctrl+C)
+process.on('SIGINT', (e) => onExit(e, log));
+
+// Handle SIGTERM signal (sent by Docker on container stop)
+process.on('SIGTERM', () => onExit(e, log));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (e) => onExit(e, log));
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) =>
+  onExit({ reason, promise }, log)
+);
