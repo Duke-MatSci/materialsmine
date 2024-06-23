@@ -1,10 +1,11 @@
 const axios = require('axios');
 const { Client } = require('@elastic/elasticsearch');
 const configPayload = require('../../config/esConfig');
+const { stringifyError } = require('./exit-utils');
 const env = process.env;
 
 class ElasticSearch {
-  constructor () {
+  constructor() {
     this.client = new Client({ node: `http://${env?.ESADDRESS}` });
     this.initES = this.initES.bind(this);
     this.search = this.search.bind(this);
@@ -14,7 +15,7 @@ class ElasticSearch {
    * Check if ES is up & running
    * @returns {Boolean} ping
    */
-  async ping (log, waitTime = 50000) {
+  async ping(log, waitTime = 50000) {
     log.info('elasticsearch.ping(): Function entry');
     try {
       return new Promise((resolve, reject) => {
@@ -23,15 +24,15 @@ class ElasticSearch {
           clearTimeout(timer);
           if (!response) {
             const error = new Error('Elastic Search Service Not Available');
-            log.error(`elasticsearch.ping(): 500 - ${error}`);
+            log.error(`elasticsearch.ping = () => ${stringifyError(error)}`);
             reject(error);
           }
-          log.debug(`elasticsearch.ping(): response ${response}`);
+          log.debug(`elasticsearch.ping = () => response ${response}`);
           resolve(response);
         }, waitTime);
       });
     } catch (err) {
-      log.error(`elasticsearch.ping(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.ping = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -41,7 +42,7 @@ class ElasticSearch {
    * @param {String} type
    * @returns {Object} response
    */
-  async _createConfig (type, log) {
+  async _createConfig(type, log) {
     log.info('elasticsearch._createConfig(): Function entry');
     try {
       const configResponse = await axios({
@@ -54,7 +55,7 @@ class ElasticSearch {
       });
       return configResponse;
     } catch (err) {
-      log.error(`elasticsearch._createConfig(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch._createConfig = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -65,7 +66,7 @@ class ElasticSearch {
    * @param {String} type
    * @returns response
    */
-  async deleteIndexDocs (req, type) {
+  async deleteIndexDocs(req, type) {
     const log = req.logger;
     log.info('elasticsearch.deleteIndexDocs(): Function entry');
     try {
@@ -79,14 +80,12 @@ class ElasticSearch {
         timeout: '5m' // Todo: Increase when data becomes larger
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.deleteIndexDocs(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.deleteIndexDocs = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async deleteSingleDoc (req, type, identifier) {
+  async deleteSingleDoc(req, type, identifier) {
     const log = req.logger;
     log.info('elasticsearch.deleteSingleDoc(): Function entry');
     try {
@@ -101,14 +100,12 @@ class ElasticSearch {
         }
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.deleteSingleDoc(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.deleteSingleDoc = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async _putMappings (type, schema, log) {
+  async _putMappings(type, schema, log) {
     log.info('elasticsearch._putMappings(): Function entry');
     try {
       return await this.client.indices.putMapping({
@@ -119,24 +116,24 @@ class ElasticSearch {
         }
       });
     } catch (err) {
-      log.error(`elasticsearch._putMappings(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch._putMappings = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async _getExistingIndices (log) {
+  async _getExistingIndices(log) {
     log.info('elasticsearch._getExistingIndices(): Function entry');
     try {
       return await this.client.cat.indices({ format: 'json' });
     } catch (err) {
       log.error(
-        `elasticsearch._getExistingIndices(): ${err.status || 500} - ${err}`
+        `elasticsearch._getExistingIndices = () => ${stringifyError(err)}`
       );
       throw err;
     }
   }
 
-  async initES (req) {
+  async initES(req) {
     const log = req.logger;
     log.info('elasticsearch.initES(): Function entry');
     try {
@@ -162,12 +159,14 @@ class ElasticSearch {
 
       if (allIndicesExist) {
         log.info('elasticsearch.initES(): All indexes exist in Elastic search');
-        return;
+        return {
+          status: 'No new config mapping!'
+        };
       }
 
       if (nonExistingKeys.length) {
-        log.info(
-          `elasticsearch.initES(): Adding the following missing index(es) ${nonExistingKeys.join(
+        log.error(
+          `elasticsearch.initES = () => Adding the following missing index(es) ${nonExistingKeys.join(
             ','
           )}`
         );
@@ -175,14 +174,8 @@ class ElasticSearch {
 
       Object.entries(configPayload).forEach(async ([key, value]) => {
         if (nonExistingKeys.includes(key)) {
-          try {
-            await this._createConfig(key, log);
-            await this._putMappings(key, value, log);
-          } catch (error) {
-            log.error(
-              `elasticsearch.initES(): ${error.status || 500} - ${error}`
-            );
-          }
+          await this._createConfig(key, log);
+          await this._putMappings(key, value, log);
         }
       });
 
@@ -190,18 +183,18 @@ class ElasticSearch {
         status: 'Successfully configured schemas!'
       };
     } catch (err) {
-      log.error(`elasticsearch.initES(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.initES = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async indexDocument (req, type, doc) {
+  async indexDocument(req, type, doc) {
     const log = req.logger;
     log.info('elasticsearch.indexDocument(): Function entry');
     if (!type || !doc) {
       const error = new Error('Category type is missing');
       error.statusCode = 400;
-      log.error(`indexDocument(): ${error}`);
+      log.error(`elasticsearch.indexDocument = () => ${stringifyError(error)}`);
       throw error;
     }
     try {
@@ -211,12 +204,12 @@ class ElasticSearch {
         document: { ...doc }
       });
     } catch (err) {
-      log.error(`elasticsearch.indexDocument(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.indexDocument = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async refreshIndices (req, type) {
+  async refreshIndices(req, type) {
     const log = req.logger;
     log.info('elasticsearch.refreshIndices(): Function entry');
     if (!type) {
@@ -235,7 +228,7 @@ class ElasticSearch {
     }
   }
 
-  searchSanitizer (search) {
+  searchSanitizer(search) {
     let sanitizeSearch = search;
     sanitizeSearch = sanitizeSearch
       .split(' ')
@@ -258,7 +251,7 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
-  async searchType (req, searchPhrase, searchField, type, page = 1, size = 20) {
+  async searchType(req, searchPhrase, searchField, type, page = 1, size = 20) {
     const log = req.logger;
     log.info('elasticsearch.searchType(): Function entry');
 
@@ -299,7 +292,7 @@ class ElasticSearch {
     }
   }
 
-  async search (req, searchPhrase, autosuggest = false) {
+  async search(req, searchPhrase, autosuggest = false) {
     const log = req.logger;
     log.info('elasticsearch.search(): Function entry');
     try {
@@ -335,12 +328,12 @@ class ElasticSearch {
         })
       });
     } catch (err) {
-      log.error(`elasticsearch.search(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.search = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async loadAllCharts (req, page, size) {
+  async loadAllCharts(req, page, size) {
     const log = req.logger;
     log.info('elasticsearch.loadAllCharts(): Function entry');
     try {
@@ -355,17 +348,22 @@ class ElasticSearch {
           from: (page - 1) * size,
           size,
           query: {
-            match_all: {}
+            ...(req.query.chartIds && {
+              terms: {
+                'identifier.keyword': chartIds
+              }
+            }),
+            ...(!req.query.chartIds && { match_all: {} })
           }
         })
       });
     } catch (err) {
-      log.error(`elasticsearch.loadAllCharts(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.loadAllCharts = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async loadAllDatasets (req, page, size) {
+  async loadAllDatasets(req, page, size) {
     const log = req.logger;
     log.info('elasticsearch.loadAllDatasets(): Function entry');
     const url = `http://${env.ESADDRESS}/datasets/_search`;
@@ -385,14 +383,12 @@ class ElasticSearch {
         })
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.loadAllDatasets(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.loadAllDatasets = () => ${stringifyError(err)}`);
       throw err;
     }
   }
 
-  async searchKnowledgeGraph (req, searchPhrase) {
+  async searchKnowledgeGraph(req, searchPhrase) {
     const log = req.logger;
     log.info('elasticsearch.searchKnowledgeGraph(): Function entry');
     // search knowledge index for key
@@ -409,14 +405,12 @@ class ElasticSearch {
       });
       return result.hits.hits;
     } catch (err) {
-      log.error(
-        `elasticsearch.searchKnowledgeGraph(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.searchKnowledgeGraph(): ${JSON.stringify(err)}`);
       throw err;
     }
   }
 
-  async createKnowledgeGraphDoc (log, _id, label, result) {
+  async createKnowledgeGraphDoc(log, _id, label, result) {
     log.info('elasticsearch.createKnowledgeGraphDoc(): Function entry');
     // create new doc under knowledge index
     const url = `http://${env.ESADDRESS}/knowledge/_update/${_id}`;
