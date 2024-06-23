@@ -1,4 +1,3 @@
-import { watch } from 'vue';
 import { mapMutations, mapGetters, mapActions, mapState } from 'vuex';
 
 export default {
@@ -14,8 +13,9 @@ export default {
       isAdmin: 'auth/isAdmin'
     }),
     isProduction() {
-      // The expectation of version toggling is only enabled for production and not lower environment.
+      // Version toggling is only enabled for production and not lower environment.
       return new URL(window.location.origin)?.host === 'materialsmine.org';
+      // return new URL(window.location.origin)?.host === 'localhost';
     },
     ...mapState('portal', [
       'isSuccess',

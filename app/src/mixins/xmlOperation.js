@@ -3,6 +3,7 @@ import { mapGetters, mapMutations } from 'vuex';
 import { XML_FINDER } from '@/modules/gql/xml-gql';
 import dialogBox from '@/components/Dialog.vue';
 
+const NULL_INIT = null;
 export default {
   data() {
     return {
@@ -11,7 +12,7 @@ export default {
       pageSize: 20,
       filterParams: {},
       error: null,
-      dialogBoxAction: null
+      dialogBoxAction: NULL_INIT
     };
   },
   components: {
@@ -25,14 +26,13 @@ export default {
       dialogBoxActive: 'dialogBox'
     })
   },
-
   mixins: [explorerQueryParams],
   methods: {
     ...mapMutations({
       toggleDialogBox: 'setDialogBox'
     }),
-    isAuthorized(xmlUser) {
-      return this.isAuth && (xmlUser === this.userId || this.isAdmin);
+    isOwner(xmlUser) {
+      return this.isAuth && xmlUser === this.userId;
     },
     editCuration(id, isNew) {
       this.$router.push({
@@ -42,26 +42,21 @@ export default {
     },
     confirmAction() {
       if (this.dialogBoxAction) {
-        this.dialogBoxAction();
+        // TODO (@tee): Check if xml is not ingested into KG before calling `this.dialogBoxAction()` to delete
+        // this.dialogBoxAction();
         this.closeDialogBox();
       }
     },
-    openDialogBox(id, isNew, func = null) {
+    openDialogBox(id, isNew) {
       if (!id) return;
-      this.dialogBoxAction = !func
-        ? () => this.deleteXmlCuration(id, isNew)
-        : func;
-      if (!this.dialogBoxActive) {
-        this.toggleDialogBox();
-      }
+      this.dialogBoxAction = this.deleteXmlCuration(id, isNew);
+      this.toggleDialogBox();
     },
     closeDialogBox() {
-      if (this.dialogBoxActive) {
-        this.toggleDialogBox();
-      }
-      this.dialogBoxAction = null;
+      this.dialogBoxAction = NULL_INIT;
+      this.toggleDialogBox();
     },
-    async deleteXmlCuration(id, isNew = null) {
+    async deleteXmlCuration(id, isNew = NULL_INIT) {
       if (id && isNew !== null) {
         await this.$store.dispatch('explorer/curation/deleteCuration', {
           xmlId: id,
@@ -70,21 +65,8 @@ export default {
         await this.$apollo.queries.xmlFinder.refetch();
       }
     },
-    setApprovalStatus() {
-      // return approvalStatus
-      switch (this.$route.name) {
-        case 'CuratedXML':
-          return 'Not_Approved';
-        case 'ApprovedCuration':
-          return 'Approved';
-        default:
-          return null;
-      }
-    },
     updateFilterParams() {
-      if (!this.isAdmin) {
-        this.filterParams = { user: this.userId };
-      }
+      return this.isAuth && (this.filterParams = { user: this.userId });
     }
   },
   apollo: {
@@ -99,15 +81,19 @@ export default {
             filter: {
               param: this.$route.query?.q,
               ...this.filterParams,
-              status: this.setApprovalStatus()
+              // User Portal Page: Show curation based on status depending on a route a user entered.
+              ...(this.$route.name === 'ApprovedCuration'
+                ? { status: 'Approved' }
+                : { status: 'Not_Approved' })
             }
           }
         };
       },
       fetchPolicy: 'cache-first',
       result({ data, loading }) {
-        if (!loading && data) this.error = null;
+        if (!loading && data) this.error = NULL_INIT;
       },
+      // TODO (@tee): Put this in the global store action as it is reusable for other gql calls
       error(error) {
         if (error.networkError) {
           const err = error.networkError;
