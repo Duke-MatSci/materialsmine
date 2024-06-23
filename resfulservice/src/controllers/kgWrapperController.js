@@ -1,10 +1,10 @@
 const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
 const https = require('https');
 const constant = require('../../config/constant');
 const { setInternal } = require('../middlewares/isInternal');
 const elasticSearch = require('../utils/elasticSearch');
 const { errorWriter, successWriter } = require('../utils/logWriter');
+const { cacheKnowledge } = require('../middlewares/knowledge-cache');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -211,17 +211,8 @@ exports.getSparql = async (req, res, next) => {
 
     successWriter(req, { message: 'success' }, 'getSparql');
 
-    // Needed `isBackendCall` flag to enforce internal calls and return response
-    // through the function that triggers the call.
-    if (response.data && whyisPath !== 'pub') {
-      req.knowledgeId = req.knowledgeId ?? uuidv4();
-      await elasticSearch.createKnowledgeGraphDoc(
-        log,
-        req.knowledgeId,
-        req.query.queryString,
-        response?.data
-      );
-    }
+    // Caching starts...
+    await cacheKnowledge(req, res, next, response?.data);
     if (req.isBackendCall) return response?.data;
 
     return res.status(200).json({ ...response?.data });
@@ -245,7 +236,7 @@ exports.getAllCharts = async (req, res, next) => {
     const response = await elasticSearch.loadAllCharts(req, page, pageSize);
     successWriter(req, { message: 'success' }, 'getAllCharts');
     return res.status(200).json({
-      data: response?.data?.hits?.hits || [],
+      data: response?.data?.hits?.hits,
       total: response?.data?.hits?.total?.value || 0
     });
   } catch (err) {
@@ -285,12 +276,13 @@ exports.getAllDatasets = async (req, res, next) => {
  */
 exports.getInstanceFromKnowledgeGraph = async (req, res, next) => {
   try {
-    const view = req?.query?.view;
+    const view = req.query?.view;
     let url;
     if (!view) url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}`;
     else {
       url = `${req.env.KNOWLEDGE_ADDRESS}/about?uri=${req.query.uri}&view=${view}`;
     }
+
     return axios
       .get(url, {
         responseType: 'arraybuffer'
