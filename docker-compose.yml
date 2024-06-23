@@ -110,6 +110,9 @@ services:
       - PROD_SERVER_ENDPOINT=${PROD_SERVER_ENDPOINT}
       - MANAGED_SERVICE_ADDRESS=${MANAGED_SERVICE_ADDRESS}
       - SYSTEM_EMAIL=${SYSTEM_EMAIL}
+      - DEPLOYMENT_ADDRESS=${DEPLOYMENT_ADDRESS}
+      - DOCKER_HUB_ADDRESS=${DOCKER_HUB_ADDRESS}
+      - DEPLOYMENT_SECRET=${DEPLOYMENT_SECRET}
       - DYNAMFIT_TEST_FILE=${DYNAMFIT_TEST_FILE}
     ports:
       - '3001:3001'
@@ -223,6 +226,8 @@ services:
       - ./mockDB/fuseki:/app/run
     ports:
       - '8000:8000'
+    mem_limit: 2048m
+    cpus: '0.25'
   fuseki:
     build: whyis
     command: /opt/venv/bin/fuseki-server --mem /ds
@@ -240,6 +245,8 @@ services:
       - '3030:3030'
     volumes:
       - ./mockDB/fuseki:/fuseki
+    mem_limit: 3072m
+    cpus: '0.45'
 
 volumes:
   mockDB:
