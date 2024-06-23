@@ -6,14 +6,14 @@ module.exports = {
       if (error.reason) {
         log.info('*** Closing Application ***');
         log.error(
-          'Unhandled Rejection at:',
-          error.promise,
-          'reason:',
-          error.reason
+          `Unhandled Rejection at:
+          ${stringifyError(error.promise)},
+          reason:
+          ${stringifyError(error.reason)}`
         );
       } else {
         log.info('*** Closing Application ***');
-        log.error(error);
+        log.error(stringifyError(error));
       }
 
       // Disconnect from database
@@ -26,8 +26,30 @@ module.exports = {
         process.exit(1);
       }, 5000);
     } catch (error) {
-      log.error(error);
+      log.error(stringifyError(error));
       process.exit(1);
     }
-  }
+  },
+  stringifyError
 };
+
+function stringifyError(obj) {
+  try {
+    return JSON.stringify(
+      obj,
+      (_key, value) => {
+        if (value instanceof Error) {
+          return {
+            message: value.message,
+            stack: value.stack,
+            ...value
+          };
+        }
+        return value;
+      },
+      2
+    );
+  } catch (error) {
+    return String(obj);
+  }
+}

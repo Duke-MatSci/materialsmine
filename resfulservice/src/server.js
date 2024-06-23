@@ -108,12 +108,12 @@ if (cluster.isMaster) {
 process.on('SIGINT', (e) => onExit(e, log));
 
 // Handle SIGTERM signal (sent by Docker on container stop)
-process.on('SIGTERM', () => onExit(e, log));
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (e) => onExit(e, log));
+process.on('SIGTERM', (e) => onExit(e, log));
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) =>
   onExit({ reason, promise }, log)
 );
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (e) => onExit(e, log));
