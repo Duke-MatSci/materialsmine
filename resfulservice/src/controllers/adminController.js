@@ -6,6 +6,8 @@ const DatasetProperty = require('../models/datasetProperty');
 const { default: axios } = require('axios');
 const { successWriter, errorWriter } = require('../utils/logWriter');
 const { validateIsAdmin } = require('../middlewares/validations');
+const { setInternal } = require('../middlewares/isInternal');
+const latency = require('../middlewares/latencyTimer');
 /**
  * Initialize Elastic Search
  * @param {*} req
@@ -379,5 +381,123 @@ exports.getDatasetProperties = async (req, res, next) => {
     return res.status(200).json({ data: datasetProperties });
   } catch (err) {
     next(errorWriter(req, err, 'getDatasetProperties'));
+  }
+};
+
+exports.deploymentTags = async (req, res, next) => {
+  const log = req.logger;
+  log.info('deploymentTags(): Function entry');
+  try {
+    const url = req.env.DOCKER_HUB_ADDRESS;
+    const { data, status } = await makeRequest(req, url, 'deploymentTags');
+    if (status !== 200) {
+      return res.status(status).json({ message: data });
+    }
+
+    const { results } = data;
+    const tags = results.map((result) => result.name);
+    successWriter(req, JSON.stringify(tags), 'deploymentTags');
+    latency.latencyCalculator(res);
+    return res.status(status).json(tags);
+  } catch (error) {
+    next(errorWriter(req, error, 'deploymentTags'));
+  }
+};
+
+exports.generalDeployment = async (req, res, next) => {
+  const log = req.logger;
+  log.info('generalDeployment(): Function entry');
+  const { version } = req.body;
+  try {
+    const url = `${req.env.DEPLOYMENT_ADDRESS}/deploy/general/${version}`;
+    const result = await makeRequest(req, url, 'generalDeployment');
+
+    successWriter(req, { message: 'success' }, 'generalDeployment');
+    latency.latencyCalculator(res);
+    if (result.status !== 200) {
+      return res.status(result.status).json({ message: result.data });
+    }
+    return res.status(result.status).json(result.data);
+  } catch (error) {
+    next(errorWriter(req, error, 'generalDeployment'));
+  }
+};
+
+exports.ontologyDeployment = async (req, res, next) => {
+  const log = req.logger;
+  log.info('ontologyDeployment(): Function entry');
+  const { version } = req.body;
+  try {
+    const url = `${req.env.DEPLOYMENT_ADDRESS}/deploy/ontology/${version}`;
+    const result = await makeRequest(req, url, 'ontologyDeployment');
+
+    successWriter(req, { message: 'success' }, 'ontologyDeployment');
+    latency.latencyCalculator(res);
+    if (result.status !== 200) {
+      return res.status(result.status).json({ message: result.data });
+    }
+    return res.status(result.status).json(result.data);
+  } catch (error) {
+    next(errorWriter(req, error, 'ontologyDeployment'));
+  }
+};
+
+exports.deploymentStatus = async (req, res, next) => {
+  const log = req.logger;
+  const { deploymentType } = req.params;
+  log.info('deploymentStatus(): Function entry');
+  try {
+    const url = `${req.env.DEPLOYMENT_ADDRESS}/deploy/status/${deploymentType}`;
+    const result = await makeRequest(req, url, 'deploymentStatus');
+
+    successWriter(req, { message: 'success' }, 'deploymentStatus');
+    latency.latencyCalculator(res);
+    if (result.status !== 200) {
+      return res.status(result.status).json({ message: result.data });
+    }
+    return res.status(result.status).json(result.data);
+  } catch (error) {
+    next(errorWriter(req, error, 'deploymentStatus'));
+  }
+};
+
+const makeRequest = async (req, url, caller) => {
+  const { logger: log, method } = req;
+  log.info('makeRequest(): Function entry');
+
+  const token = setInternal(req, { apiKey: req.env.DEPLOYMENT_SECRET });
+  const headers =
+    caller === 'deploymentTags'
+      ? { 'Content-Type': 'application/json' }
+      : {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        };
+  try {
+    const response = await axios.request({
+      method,
+      url,
+      headers
+    });
+
+    return {
+      status: response.status,
+      data: response.data
+    };
+  } catch (error) {
+    errorWriter(req, error, caller, 500);
+    if (error.response) {
+      return {
+        status: 500,
+        data: 'Cannot not process this request at this time'
+      };
+    } else if (error.request) {
+      return {
+        status: 500,
+        data: 'No response received from the server'
+      };
+    } else {
+      throw error;
+    }
   }
 };
