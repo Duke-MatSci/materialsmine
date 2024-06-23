@@ -61,8 +61,8 @@ export default {
     const displayName = res.displayName ?? null;
     const surName = res.surName ?? null;
     const givenName = res.givenName ?? null;
-    // const isAdmin = res.isAdmin ?? false;
-    const isAdmin = false;
+    const isAdmin = res.isAdmin ?? false;
+    // const isAdmin = false;
     const expiresIn = 9000 * 60 * 60;
     const expirationDate = new Date().getTime() + expiresIn;
 
@@ -80,7 +80,7 @@ export default {
       }, expiresIn);
     }
 
-    context.commit('setUser', {
+    return context.commit('setUser', {
       token,
       userId,
       displayName,
@@ -92,7 +92,7 @@ export default {
     // TODO (xxx): We should re-route to the page where user left off
     // if (this.router.path !== context.getters['lastPageVisited']) {
     // }
-    return router.push(context.getters.lastPageVisited);
+    // return router.push(context.getters.lastPageVisited);
   },
 
   tryLogin(context) {
@@ -101,8 +101,12 @@ export default {
     const displayName = localStorage.getItem('displayName');
     const surName = localStorage.getItem('surName');
     const givenName = localStorage.getItem('givenName');
-    const isAdmin = localStorage.getItem('isAdmin');
+    const localStorageIsAdmin = localStorage.getItem('isAdmin');
     const tokenExpiration = localStorage.getItem('tokenExpiration');
+
+    // Required since local storage return booleans as string
+    const isAdmin =
+      localStorageIsAdmin === 'true' || localStorageIsAdmin === true;
 
     const expiresIn = +tokenExpiration - new Date().getTime();
 

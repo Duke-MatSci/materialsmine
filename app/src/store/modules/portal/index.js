@@ -6,15 +6,14 @@ export default {
   namespaced: true,
   state() {
     return {
-      // allItems: null,
-      items: null,
-      pageSize: 50,
-      page: 1,
-      queryTimeMillis: 0,
-      total: 0,
-      totalFavorites: 0,
-      missingCharts: [],
-      favoriteChartItems: []
+      dockerVersions: [],
+      currentVersion: 'latest',
+      deploy: null,
+      deploymentStatus: null,
+      isSuccess: false,
+      isError: false,
+      isLoading: false,
+      loadingMessage: ''
     };
   },
   mutations,

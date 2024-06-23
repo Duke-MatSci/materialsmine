@@ -64,24 +64,35 @@ export default {
       nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
 
     // Return if not able to retrieve chart object
-    if (!datasetObject) { return new Error('Caching error. Dataset object is missing') }
+    if (!datasetObject) {
+      return new Error('Caching error. Dataset object is missing')
+    }
 
     // Build chart instance object
     return {
       description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+        datasetObject['http://purl.org/dc/terms/description']?.[0]?.[
+          '@value'
+        ] ?? datasetObject['http://purl.org/dc/terms/description']?.['@value'],
       identifier: datasetObject['@id'],
-      label: datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+      label:
+        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
         datasetObject['http://purl.org/dc/terms/title']?.['@value'],
-      thumbnail: datasetObject['http://xmlns.com/foaf/0.1/depiction']?.['http://w3.org/ns/dcat#accessURL'],
+      thumbnail:
+        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+          'http://w3.org/ns/dcat#accessURL'
+        ],
       doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org) => {
+      organization: datasetObject[
+        'http://xmlns.com/foaf/0.1/Organization'
+      ]?.map((org) => {
         return org?.['http://xmlns.com/foaf/0.1/name']?.['@value']
       }),
-      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map((dist) => {
-        return dist?.['@id']
-      })
+      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map(
+        (dist) => {
+          return dist?.['@id']
+        }
+      )
     }
   },
 
@@ -121,7 +132,9 @@ export default {
         'createDatasetInstanceObject',
         resourceNanopub
       )
-    } else { return new Error('Caching error. Type parameter is missing or invalid') }
+    } else {
+      return new Error('Caching error. Type parameter is missing or invalid')
+    }
 
     const token = rootGetters['auth/token']
 
@@ -274,6 +287,8 @@ export default {
     const response = await fetchResponse.json()
     commit('setCurationFormData', response)
   },
+
+  // Curation Form Page Submit Function
   async submitCurationData (
     { state, commit, rootGetters },
     { xlsxObjectId = null, isNew = true } = {}
