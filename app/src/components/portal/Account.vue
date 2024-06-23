@@ -1,5 +1,5 @@
 <template>
-  <div class="">
+  <div>
     <div>
       <div class="md-card-header contactus_radios md-card-header-flex">
         <div class="md-card-header-text">

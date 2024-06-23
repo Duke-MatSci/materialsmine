@@ -33,7 +33,7 @@
           <span class="md-list-item-text utility-navfont">Chart</span>
           <md-list slot="md-expand">
             <router-link
-              to="/portal/user/favorite-chart"
+              to="/portal/user/favorite-charts"
               v-slot="{ navigate, href }"
               custom
             >
@@ -50,22 +50,24 @@
           <span class="md-list-item-text utility-navfont">My Curations</span>
           <md-list slot="md-expand">
             <router-link
-              :to="'/portal/user/approved-curation'"
+              :to="'/portal/user/approved-curations'"
               v-slot="{ navigate, href }"
               custom
             >
-              <md-list-item :href="href" @click="navigate" class="md-inset"
-                >Approved Curation</md-list-item
+              <md-list-item :href="href" @click="navigate" class="md-inset">
+                <md-icon class="utility-navfonticon">thumb_up_alt</md-icon
+                >Approved Curations</md-list-item
               >
             </router-link>
             <router-link
-              to="/portal/user/curated-xml"
+              to="/portal/user/unapproved-curations"
               v-slot="{ navigate, href }"
               custom
             >
-              <md-list-item :href="href" @click="navigate" class="md-inset"
-                >Curated XML</md-list-item
-              >
+              <md-list-item :href="href" @click="navigate" class="md-inset">
+                <md-icon class="utility-navfonticon">hive</md-icon>Unapproved
+                Curations
+              </md-list-item>
             </router-link>
           </md-list>
         </md-list-item>
