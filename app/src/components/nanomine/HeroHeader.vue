@@ -90,6 +90,11 @@
                   class="nav_menu--siblings-lists"
                   ><a>Form Curation</a></router-link
                 >
+                <router-link
+                  to="/explorer/chart/editor/new"
+                  class="nav_menu--siblings-lists"
+                  ><a>Create Chart</a></router-link
+                >
               </div>
             </div>
           </li>
@@ -139,8 +144,15 @@
             </div>
           </li>
           <li class="u_margin-right-small" v-if="isAuth">
-            <div class="nav_menu--container">
-              <a class="u--default-size" href="/mypage">My Portal</a>
+            <div v-if="!isAdmin" class="nav_menu--container">
+              <router-link class="u--default-size" to="/portal/user">
+                <span>My Portal</span></router-link
+              >
+            </div>
+            <div v-else class="nav_menu--container">
+              <router-link class="u--default-size" to="/portal">
+                <span>Admin Center</span></router-link
+              >
             </div>
           </li>
         </ul>
@@ -150,7 +162,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 export default {
   name: 'HeroHeader',
   props: ['toggler'],
@@ -158,8 +170,9 @@ export default {
     ...mapGetters({
       info: 'appHeaderInfo',
       isAuth: 'auth/isAuthenticated',
+      isAdmin: 'auth/isAdmin',
       displayName: 'auth/displayName'
     })
   }
-}
+};
 </script>
