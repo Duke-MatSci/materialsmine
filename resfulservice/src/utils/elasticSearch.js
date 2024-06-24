@@ -105,6 +105,24 @@ class ElasticSearch {
     }
   }
 
+  async deleteIndex(req, type) {
+    const log = req.logger;
+    log.info('elasticsearch.deleteIndex(): Function entry');
+    try {
+      // Delete the specified index
+      const response = await client.indices.delete({ index: type });
+      log.info(`Index ${type} deleted:`, response.body);
+    } catch (error) {
+      if (error.meta && error.meta.body) {
+        // Handle specific error response from Elasticsearch
+        log.error(`Error deleting index ${type}:`, error.meta.body.error);
+      } else {
+        // Handle generic error
+        log.error(`Error deleting index ${type}:`, error);
+      }
+    }
+  }
+
   async _putMappings(type, schema, log) {
     log.info('elasticsearch._putMappings(): Function entry');
     try {
@@ -151,11 +169,15 @@ class ElasticSearch {
       );
       const nonExistingKeys = [];
       // Check if all indices in indices exist in existingIndicesSet
-      const allIndicesExist = preparedKeys.every((index) => {
+      preparedKeys.map((index) => {
         const exists = existingIndicesSet.has(index);
         if (!exists) nonExistingKeys.push(index);
         return exists;
       });
+
+      // Remove default index and compare
+      const allIndicesExist =
+        existingIndexes.length - 1 === preparedKeys.length;
 
       if (allIndicesExist) {
         log.info('elasticsearch.initES(): All indexes exist in Elastic search');
@@ -197,11 +219,12 @@ class ElasticSearch {
       log.error(`elasticsearch.indexDocument = () => ${stringifyError(error)}`);
       throw error;
     }
+    const document = { ...doc };
     try {
       return this.client.index({
         index: type,
         refresh: true,
-        document: { ...doc }
+        document
       });
     } catch (err) {
       log.error(`elasticsearch.indexDocument = () => ${stringifyError(err)}`);
