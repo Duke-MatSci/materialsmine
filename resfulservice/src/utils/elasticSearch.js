@@ -350,7 +350,7 @@ class ElasticSearch {
           query: {
             ...(req.query.chartIds && {
               terms: {
-                'identifier.keyword': chartIds
+                'identifier.keyword': req.query.chartIds
               }
             }),
             ...(!req.query.chartIds && { match_all: {} })
