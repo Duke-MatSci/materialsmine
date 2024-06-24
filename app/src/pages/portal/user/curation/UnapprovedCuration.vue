@@ -72,16 +72,16 @@
   </div>
 </template>
 <script>
-import xmlOperation from '@/mixins/xmlOperation';
+import xmlOperation from '@/mixins/xmlOperation'
 
 export default {
   name: 'UnApprovedCuratedXML',
   mixins: [xmlOperation],
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: 'Unapproved Curated XML'
-    });
+    })
   }
-};
+}
 </script>

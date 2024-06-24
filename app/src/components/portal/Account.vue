@@ -62,13 +62,13 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 export default {
   name: 'Account',
-  data() {
+  data () {
     return {
       hours: 0
-    };
+    }
   },
   computed: {
     ...mapGetters({
@@ -78,45 +78,45 @@ export default {
     })
   },
   methods: {
-    async copyContent() {
+    async copyContent () {
       try {
-        await navigator.clipboard.writeText(this.token);
+        await navigator.clipboard.writeText(this.token)
         this.$store.commit('setSnackbar', {
           message: 'Token copied successfully',
           duration: 4000
-        });
+        })
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: 'Something went wrong',
           action: () => this.copyContent()
-        });
+        })
       }
     },
-    countDown() {
-      const tokenExpiration = localStorage.getItem('tokenExpiration');
+    countDown () {
+      const tokenExpiration = localStorage.getItem('tokenExpiration')
       if (!tokenExpiration) {
-        this.hours = 'Token already expired';
-        return;
+        this.hours = 'Token already expired'
+        return
       }
 
       const expiresIn =
-        new Date(+tokenExpiration).getTime() - new Date().getTime();
+        new Date(+tokenExpiration).getTime() - new Date().getTime()
       if (expiresIn <= 0) {
-        this.hours = 'Token already expired';
-        return;
+        this.hours = 'Token already expired'
+        return
       }
 
       this.hours = `Expires in ${
         Math.round((expiresIn / (60 * 60 * 1000)) * 100) / 100
-      } hours`;
+      } hours`
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: 'Account Information'
-    });
-    this.countDown();
+    })
+    this.countDown()
   }
-};
+}
 </script>

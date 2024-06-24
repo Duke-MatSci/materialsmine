@@ -65,12 +65,12 @@
 </template>
 
 <script>
-import PageHeader from '@/components/portal/Header.vue';
-import SideNav from '@/components/portal/SideNav.vue';
-import ProfileHeader from '@/components/portal/ProfileHeader.vue';
-import Drawer from '@/components/Drawer.vue';
-import UserSideBar from '@/components/portal/UserSideBar.vue';
-import { mapGetters } from 'vuex';
+import PageHeader from '@/components/portal/Header.vue'
+import SideNav from '@/components/portal/SideNav.vue'
+import ProfileHeader from '@/components/portal/ProfileHeader.vue'
+import Drawer from '@/components/Drawer.vue'
+import UserSideBar from '@/components/portal/UserSideBar.vue'
+import { mapGetters } from 'vuex'
 export default {
   name: 'PortalBase',
   components: {
@@ -80,14 +80,14 @@ export default {
     ProfileHeader,
     UserSideBar
   },
-  data() {
+  data () {
     return {
       menuVisible: false
-    };
+    }
   },
   methods: {
-    toggleMenuVisibility() {
-      this.menuVisible = !this.menuVisible;
+    toggleMenuVisibility () {
+      this.menuVisible = !this.menuVisible
     }
   },
   computed: {
@@ -97,5 +97,5 @@ export default {
       isAuth: 'auth/isAuthenticated'
     })
   }
-};
+}
 </script>

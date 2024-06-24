@@ -119,7 +119,7 @@
 <script>
 export default {
   name: 'SideNav',
-  data() {
+  data () {
     return {
       sideBar: false,
       links: [
@@ -198,7 +198,7 @@ export default {
           ]
         }
       ]
-    };
+    }
   }
-};
+}
 </script>

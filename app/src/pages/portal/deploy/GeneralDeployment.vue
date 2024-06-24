@@ -121,9 +121,9 @@
 </template>
 
 <script>
-import dialogBox from '@/components/Dialog.vue';
-import Spinner from '@/components/Spinner';
-import deployVersion from '@/mixins/deployVersion';
+import dialogBox from '@/components/Dialog.vue'
+import Spinner from '@/components/Spinner'
+import deployVersion from '@/mixins/deployVersion'
 export default {
   name: 'GeneralDeployment',
   mixins: [deployVersion],
@@ -131,12 +131,12 @@ export default {
     dialogBox,
     Spinner
   },
-  created() {
-    this.isProduction && this.fetchVersions();
+  created () {
+    this.isProduction && this.fetchVersions()
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: 'General Deployment'
-    });
+    })
   }
-};
+}
 </script>

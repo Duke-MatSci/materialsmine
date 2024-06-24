@@ -87,9 +87,9 @@
 </template>
 
 <script>
-import dialogBox from '@/components/Dialog.vue';
-import Spinner from '@/components/Spinner';
-import deployVersion from '@/mixins/deployVersion';
+import dialogBox from '@/components/Dialog.vue'
+import Spinner from '@/components/Spinner'
+import deployVersion from '@/mixins/deployVersion'
 export default {
   mixins: [deployVersion],
   name: 'OntologyDeployment',
@@ -97,12 +97,12 @@ export default {
     dialogBox,
     Spinner
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: 'Ontology Deployment'
-    });
-    this.$store.commit('portal/setCurrentVersion', 'latest');
+    })
+    this.$store.commit('portal/setCurrentVersion', 'latest')
   }
-};
+}
 </script>

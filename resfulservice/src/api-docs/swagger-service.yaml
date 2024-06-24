@@ -293,12 +293,207 @@ paths:
                   message:
                     type: string
                     example: An error occurred
+  /admin/es/delete-index/{type}:
+    delete:
+      security:
+        - BearerAuth: []
+      summary: Delete an ElasticSearch index
+      description: Deletes a specified ElasticSearch index.
+      operationId: deleteElasticSearchIndex
+      tags:
+        - Admin
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The type of index to delete.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: object
+                    description: The response from the ElasticSearch delete operation.
+                    properties:
+                      acknowledged:
+                        type: boolean
+                        description: Acknowledgement of the delete operation.
+                        example: true
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '403':
+          description: If user is forbidden from using the service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden-Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+                    example: Internal Server Error
+  /knowledge/charts/favorites:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Retrieve favorite charts
+      description: Retrieves the favorite charts for the authenticated user.
+      operationId: getFavoriteCharts
+      tags:
+        - Knowledge
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 1
+          description: Page number for pagination.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 10
+          description: Number of items per page.
+      responses:
+        '200':
+          description: Successful retrieval of favorite charts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      description: Favorite chart data.
+                  total:
+                    type: integer
+                    description: Total number of favorite charts.
+                    example: 10
+                  missingCharts:
+                    type: array
+                    items:
+                      type: string
+                    description: List of missing chart IDs.
+                    example: [chart456, chart789]
+        '401':
+          description: User not authorized for this service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    post:
+      summary: Add a favorite chart
+      security:
+        - BearerAuth: []
+      description: Adds a favorite chart for the authenticated user.
+      operationId: addFavoriteChart
+      tags:
+        - Knowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chartId:
+                  type: string
+                  description: The ID of the chart to add.
+                  example: chart123
+      responses:
+        '200':
+          description: Chart added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This chart is now added to your favourite list successfully.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+    delete:
+      security:
+        - BearerAuth: []
+      summary: Remove a favorite chart
+      description: Removes a favorite chart for the authenticated user.
+      operationId: removeFavoriteChart
+      tags:
+        - Knowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chartId:
+                  type: string
+                  description: The ID of the chart to remove.
+                  example: chart123
+      responses:
+        '200':
+          description: Chart removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This chart is now removed from your favourite list successfully.
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /curate:
     get:
       security:
         - BearerAuth: []
       summary: Gets curation Base Object
-      description: This route provides access to the Curation Schema Base Object, either by querying based on the sheetName or by retrieving the entire Schema. If the isFile query parameter is specified it returns the XSD schema as a downloadable file. Alternatively, if the isJson query parameter is specified, it returns a valid Base JSON Schema. Finally, if the getXSD query parameter is included, it returns the XSD schema as JSON.
+      description: This route provides access to the Curation Schema Base Object, either by querying based on the sheetName or by retrieving the entire Schema.
       tags:
         - Curation
       parameters:
@@ -306,36 +501,22 @@ paths:
           name: sheetName
           schema:
             type: string
-          description: The sheetName parameter specifies a subset of the Schema to be retrieved. This parameter is optional.
-        - in: query
-          name: isFile
-          schema:
-            type: boolean
-          description: Specify the query parameter as **true** to download the XSD schema as a file.
-        - in: query
-          name: isJson
-          schema:
-            type: boolean
-          description: Specify query parameter as **true** to get the json schema
-        - in: query
-          name: getXSD
-          schema:
-            type: boolean
-          description: Specify query parameter as **true** to get the xsd schema as json
+          description: The sheetName parameter specifies a subset of the schema to be retrieved. This parameter is optional.
       responses:
-        '201':
-          description: It returns as either a base object schema, a curation JSON schema, or a curation XSD. It can also download the XSD as a file.
+        '200':
+          description: It returns either a partial or the entire base object schema.
           content:
             application/json:
               schema:
-                anyOf:
-                  - type: object
-                    example: 
-                      data origin: {}
-                      material types: {}
-                      synthesis and processing: {}
-                  - $ref: '#/components/schemas/Sample-XSD'
-                  - $ref: '#/components/schemas/Sample-JsonSchema'
+                type: object
+                properties:
+                  data origin:
+                    type: object
+                  material types:
+                    type: object
+                  synthesis and processing:
+                    type: object
+
         '401':
           description: Unauthorized access to this service.
           content:
@@ -807,7 +988,51 @@ paths:
                   message:
                     type: string
                     example: An error occurred
-                    
+            
+  /curate/schema:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Gets XSD  Schema
+      description: This route provides access to retrieving the XSD Schema. If the isFile query parameter is specified it returns the XSD schema as a downloadable file. Alternatively, if the isJson query parameter is specified, it returns a valid Base JSON Schema. Finally, if the getXSD query parameter is included, it returns the XSD schema as JSON.
+      tags:
+        - Curation
+      parameters:
+        - in: query
+          name: isFile
+          schema:
+            type: boolean
+          description: Specify the query parameter as **true** to download the XSD schema as a file.
+        - in: query
+          name: isJson
+          schema:
+            type: boolean
+          description: Specify query parameter as **true** to get the json schema
+        - in: query
+          name: getXSD
+          schema:
+            type: boolean
+          description: Specify query parameter as **true** to get the xsd schema as json
+      responses:
+        '201':
+          description: It returns as either a curation JSON schema, or a curation XSD. It can also download the XSD as a file.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/Sample-XSD'
+                  - $ref: '#/components/schemas/Sample-JsonSchema'
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
   /files/{fileId}:
     get:
       summary: Download files from the server

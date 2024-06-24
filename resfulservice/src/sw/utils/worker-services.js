@@ -26,7 +26,7 @@ const serviceManager = {
   }
 };
 
-async function workerManager(logger) {
+async function workerManager (logger) {
   const tasks = await Task.find({
     status: { $nin: [TaskStatusMap.MISSING, TaskStatusMap.DISABLED] }
   });
@@ -72,7 +72,7 @@ async function workerManager(logger) {
   });
 }
 
-async function convertImageToPng({ _id, info: { ref, sampleID } }, logger) {
+async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
   logger.info('Worker-services.convertImageToPng - Function entry');
   const pngFilePath = `${ref.split(/.tiff?/)[0]}.png`;
   const pngFile = pngFilePath.split('mm_files/')[1];
@@ -214,7 +214,7 @@ async function convertImageToPng({ _id, info: { ref, sampleID } }, logger) {
   }
 }
 
-async function knowledgeRequest(
+async function knowledgeRequest (
   { _id: uuid, info: { knowledgeId, req } },
   logger
 ) {
@@ -267,7 +267,7 @@ const isObjectExistInMinio = async (bucketName, fileName) => {
   }
 };
 
-async function checkFileExistence(filePath) {
+async function checkFileExistence (filePath) {
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     return true;

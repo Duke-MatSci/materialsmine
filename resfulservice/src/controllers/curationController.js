@@ -6,7 +6,7 @@ const fs = require('fs');
 const XlsxFileManager = require('../utils/curation-utility');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
-const { errorWriter } = require('../utils/logWriter');
+const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
 const {
   BaseObjectSubstitutionMap,
@@ -23,6 +23,7 @@ const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
 const FsFile = require('../models/fsFiles');
 const Task = require('../sw/models/task');
+const ChangeLog = require('../models/changeLog');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 
@@ -312,10 +313,10 @@ const generateControlSampleId = async (requiredFields, user, datasetId) => {
     citationType = citationType === 'lab-generated' ? 'E' : 'L';
     publicationYear = publicationYear ?? new Date().getFullYear();
     author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
-    const sampleIndex = userDatasets?.samples?.length;
+    const sampleIndex = userDatasets?.samples?.length ?? 1;
     const datasetIndex = existingDatasets?.length ?? 1;
 
-    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}`;
+    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}.xml`;
   } catch (error) {
     const err = new Error(error);
     err.functionName = 'generateControlSampleId';
@@ -784,7 +785,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
           {
             $set: {
               object: filteredObject,
-              curationState: CurationStateSubstitutionMap.Review
+              curationState: CurationStateSubstitutionMap.Edit
             }
           },
           {
@@ -800,7 +801,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
             $set: {
               content: { PolymerNanocomposite: { ...filteredObject } },
               xml_str: xml,
-              curateState: CurationStateSubstitutionMap.Review
+              curateState: 'Edit'
             }
           },
           { new: true, lean: true }
@@ -846,18 +847,45 @@ exports.deleteXlsxCurations = async (req, res, next) => {
   logger.info('deleteXlsxCurations Function Entry:');
 
   const { xlsxObjectId, dataset, isNew } = query;
-  const userFilter =
-    isNew === 'true' ? { user: user._id } : { iduser: user._id };
+  const isNewCuration = isNew === 'true';
+  const userFilter = isNewCuration ? { user: user._id } : { iduser: user._id };
   const filter = user?.roles !== userRoles.isAdmin ? userFilter : {};
-
+  const entityState = isNewCuration ? 'Approved' : 'IngestSuccess';
   try {
     if (xlsxObjectId) {
-      let xlsxObject;
-      if (isNew === 'true') {
-        xlsxObject = await CuratedSamples.findOneAndDelete(
-          { _id: xlsxObjectId, ...filter },
-          { lean: true }
+      const model = isNewCuration ? CuratedSamples : XmlData;
+      const curation = await model.findOne(
+        { _id: xlsxObjectId, ...filter },
+        null,
+        {
+          lean: true
+        }
+      );
+      if (!curation) {
+        return next(
+          errorWriter(
+            req,
+            'Curation sample not found',
+            'deleteXlsxCurations',
+            404
+          )
         );
+      }
+      if (curation.entityState === entityState) {
+        return next(
+          errorWriter(
+            req,
+            'Curation is already approved and pushed to fuseki database',
+            'deleteXlsxCurations',
+            403
+          )
+        );
+      }
+      let xlsxObject = await model.findOneAndDelete(
+        { _id: xlsxObjectId, ...filter },
+        { lean: true }
+      );
+      if (isNewCuration) {
         const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
         if (imageFiles) {
           imageFiles.forEach(async ({ File }) => {
@@ -869,34 +897,17 @@ exports.deleteXlsxCurations = async (req, res, next) => {
             await FileController.deleteFile(newReq, {}, (fn) => fn);
           });
         }
-      } else {
-        xlsxObject = await XmlData.findOneAndDelete(
-          { _id: xlsxObjectId, ...filter },
-          { lean: true }
-        );
-        if (xlsxObject?.xml_str) {
-          const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
-          const xmlObject = JSON.parse(xmlJson);
-          xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
-          const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
-          if (imageFiles) {
-            imageFiles.forEach(async ({ File }) => {
-              const blobId = File.split('?id=').pop();
-              await FsFile.findOneAndDelete({ _id: blobId });
-            });
-          }
+      } else if (xlsxObject?.xml_str) {
+        const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
+        const xmlObject = JSON.parse(xmlJson);
+        xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
+        const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
+        if (imageFiles) {
+          imageFiles.forEach(async ({ File }) => {
+            const blobId = File.split('?id=').pop();
+            await FsFile.findOneAndDelete({ _id: blobId });
+          });
         }
-      }
-
-      if (!xlsxObject) {
-        return next(
-          errorWriter(
-            req,
-            'Curation sample not found',
-            'deleteXlsxCurations',
-            404
-          )
-        );
       }
 
       await DatasetId.findOneAndUpdate(
@@ -1461,7 +1472,117 @@ exports.getCurationSchemaObject = async (req, res, next) => {
   return res.status(200).json(result);
 };
 
-exports.approveCuration = async (req, res, next) => {};
+exports.approveCuration = async (req, res, next) => {
+  const { logger, body, user } = req;
+  logger.info('approveCuration Function Entry:');
+  const { curationId, isNew } = body;
+
+  try {
+    const isAdmin = user?.roles === userRoles.isAdmin;
+    const model = isNew ? CuratedSamples : XmlData;
+    const entityState = isAdmin ? (isNew ? 'Approved' : 'IngestSuccess') : null;
+    const curationState = isAdmin
+      ? CurationStateSubstitutionMap.Curated
+      : CurationStateSubstitutionMap.Review;
+
+    const update = {
+      $set: {
+        ...(entityState && { entityState }),
+        [isNew ? 'curationState' : 'curateState']: curationState
+      }
+    };
+
+    const options = { new: true, lean: true };
+    const curation = await model.findOneAndUpdate(
+      { _id: curationId },
+      update,
+      options
+    );
+
+    if (!curation) {
+      return next(
+        errorWriter(
+          req,
+          `Curation with ID: ${curationId} not found`,
+          'approveCuration',
+          404
+        )
+      );
+    }
+
+    return res.status(200).json(curation);
+  } catch (error) {
+    return next(errorWriter(req, error, 'approveCuration', 500));
+  }
+};
+
+exports.createChangeLog = async (req, res, next) => {
+  const { logger, body, user } = req;
+  logger.info('createChangeLog(): Function entry');
+  const userId = user._id;
+  const { resourceId, change, published } = body;
+
+  try {
+    const filter = { resourceID: resourceId };
+    const update = {
+      $push: {
+        changes: { change, date: new Date(), published, user: userId }
+      }
+    };
+    const options = {
+      upsert: true,
+      new: true
+    };
+
+    const changeLog = await ChangeLog.findOneAndUpdate(filter, update, options);
+
+    successWriter(req, JSON.stringify(changeLog), 'createChangeLog');
+    latency.latencyCalculator(res);
+    return res.status(201).json(changeLog);
+  } catch (err) {
+    next(errorWriter(req, err, 'createChangeLog', 500));
+  }
+};
+
+exports.getChangeLogs = async (req, res, next) => {
+  const { logger, params, query } = req;
+  logger.info('getChangeLogs(): Function entry');
+
+  const { resourceId } = params;
+  const page = parseInt(query?.page) || 1;
+  const pageSize = parseInt(query?.pageSize) || 10;
+  const published = query?.published;
+
+  try {
+    const resourceChangeLog = await ChangeLog.findOne({
+      resourceID: resourceId
+    });
+
+    if (!resourceChangeLog) {
+      // return next(errorWriter(req, 'Change log not found', 'getChangeLogs', 404));
+      return res.status(200).json({});
+    }
+
+    let changeLogs;
+
+    if (published) {
+      const publishedChanges = resourceChangeLog.changes.filter(
+        (change) => change.published
+      );
+      changeLogs = publishedChanges[publishedChanges.length - 1];
+    } else {
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      changeLogs = resourceChangeLog.changes.slice(startIndex, endIndex);
+    }
+
+    successWriter(req, JSON.stringify(changeLogs), 'getChangeLogs');
+    latency.latencyCalculator(res);
+    return res.status(200).json(changeLogs);
+  } catch (err) {
+    next(errorWriter(req, err, 'getChangeLogs', 500));
+  }
+};
 
 exports.curationRehydration = async (req, res, next) => {};
 

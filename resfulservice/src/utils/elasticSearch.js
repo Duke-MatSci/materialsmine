@@ -5,7 +5,7 @@ const { stringifyError } = require('./exit-utils');
 const env = process.env;
 
 class ElasticSearch {
-  constructor() {
+  constructor () {
     this.client = new Client({ node: `http://${env?.ESADDRESS}` });
     this.initES = this.initES.bind(this);
     this.search = this.search.bind(this);
@@ -15,7 +15,7 @@ class ElasticSearch {
    * Check if ES is up & running
    * @returns {Boolean} ping
    */
-  async ping(log, waitTime = 50000) {
+  async ping (log, waitTime = 50000) {
     log.info('elasticsearch.ping(): Function entry');
     try {
       return new Promise((resolve, reject) => {
@@ -42,7 +42,7 @@ class ElasticSearch {
    * @param {String} type
    * @returns {Object} response
    */
-  async _createConfig(type, log) {
+  async _createConfig (type, log) {
     log.info('elasticsearch._createConfig(): Function entry');
     try {
       const configResponse = await axios({
@@ -66,7 +66,7 @@ class ElasticSearch {
    * @param {String} type
    * @returns response
    */
-  async deleteIndexDocs(req, type) {
+  async deleteIndexDocs (req, type) {
     const log = req.logger;
     log.info('elasticsearch.deleteIndexDocs(): Function entry');
     try {
@@ -85,7 +85,7 @@ class ElasticSearch {
     }
   }
 
-  async deleteSingleDoc(req, type, identifier) {
+  async deleteSingleDoc (req, type, identifier) {
     const log = req.logger;
     log.info('elasticsearch.deleteSingleDoc(): Function entry');
     try {
@@ -105,12 +105,12 @@ class ElasticSearch {
     }
   }
 
-  async deleteIndex(req, type) {
+  async deleteIndex (req, type) {
     const log = req.logger;
     log.info('elasticsearch.deleteIndex(): Function entry');
     try {
       // Delete the specified index
-      const response = await client.indices.delete({ index: type });
+      const response = await this.client.indices.delete({ index: type });
       log.info(`Index ${type} deleted:`, response.body);
     } catch (error) {
       if (error.meta && error.meta.body) {
@@ -123,7 +123,7 @@ class ElasticSearch {
     }
   }
 
-  async _putMappings(type, schema, log) {
+  async _putMappings (type, schema, log) {
     log.info('elasticsearch._putMappings(): Function entry');
     try {
       return await this.client.indices.putMapping({
@@ -139,7 +139,7 @@ class ElasticSearch {
     }
   }
 
-  async _getExistingIndices(log) {
+  async _getExistingIndices (log) {
     log.info('elasticsearch._getExistingIndices(): Function entry');
     try {
       return await this.client.cat.indices({ format: 'json' });
@@ -151,7 +151,7 @@ class ElasticSearch {
     }
   }
 
-  async initES(req) {
+  async initES (req) {
     const log = req.logger;
     log.info('elasticsearch.initES(): Function entry');
     try {
@@ -210,7 +210,7 @@ class ElasticSearch {
     }
   }
 
-  async indexDocument(req, type, doc) {
+  async indexDocument (req, type, doc) {
     const log = req.logger;
     log.info('elasticsearch.indexDocument(): Function entry');
     if (!type || !doc) {
@@ -232,7 +232,7 @@ class ElasticSearch {
     }
   }
 
-  async refreshIndices(req, type) {
+  async refreshIndices (req, type) {
     const log = req.logger;
     log.info('elasticsearch.refreshIndices(): Function entry');
     if (!type) {
@@ -251,7 +251,7 @@ class ElasticSearch {
     }
   }
 
-  searchSanitizer(search) {
+  searchSanitizer (search) {
     let sanitizeSearch = search;
     sanitizeSearch = sanitizeSearch
       .split(' ')
@@ -274,7 +274,7 @@ class ElasticSearch {
     return sanitizeSearch;
   }
 
-  async searchType(req, searchPhrase, searchField, type, page = 1, size = 20) {
+  async searchType (req, searchPhrase, searchField, type, page = 1, size = 20) {
     const log = req.logger;
     log.info('elasticsearch.searchType(): Function entry');
 
@@ -315,7 +315,7 @@ class ElasticSearch {
     }
   }
 
-  async search(req, searchPhrase, autosuggest = false) {
+  async search (req, searchPhrase, autosuggest = false) {
     const log = req.logger;
     log.info('elasticsearch.search(): Function entry');
     try {
@@ -356,7 +356,7 @@ class ElasticSearch {
     }
   }
 
-  async loadAllCharts(req, page, size) {
+  async loadAllCharts (req, page, size) {
     const log = req.logger;
     log.info('elasticsearch.loadAllCharts(): Function entry');
     try {
@@ -371,11 +371,7 @@ class ElasticSearch {
           from: (page - 1) * size,
           size,
           query: {
-            ...(req.query.chartIds && {
-              terms: {
-                'identifier.keyword': req.query.chartIds
-              }
-            }),
+            ...(req.query.chartIds && { ...req.query.chartIds }),
             ...(!req.query.chartIds && { match_all: {} })
           }
         })
@@ -386,7 +382,7 @@ class ElasticSearch {
     }
   }
 
-  async loadAllDatasets(req, page, size) {
+  async loadAllDatasets (req, page, size) {
     const log = req.logger;
     log.info('elasticsearch.loadAllDatasets(): Function entry');
     const url = `http://${env.ESADDRESS}/datasets/_search`;
@@ -407,56 +403,6 @@ class ElasticSearch {
       });
     } catch (err) {
       log.error(`elasticsearch.loadAllDatasets = () => ${stringifyError(err)}`);
-      throw err;
-    }
-  }
-
-  async searchKnowledgeGraph(req, searchPhrase) {
-    const log = req.logger;
-    log.info('elasticsearch.searchKnowledgeGraph(): Function entry');
-    // search knowledge index for key
-    try {
-      const result = await this.client.search({
-        index: 'knowledge',
-        body: {
-          query: {
-            match_phrase: {
-              label: searchPhrase
-            }
-          }
-        }
-      });
-      return result.hits.hits;
-    } catch (err) {
-      log.error(`elasticsearch.searchKnowledgeGraph(): ${JSON.stringify(err)}`);
-      throw err;
-    }
-  }
-
-  async createKnowledgeGraphDoc(log, _id, label, result) {
-    log.info('elasticsearch.createKnowledgeGraphDoc(): Function entry');
-    // create new doc under knowledge index
-    const url = `http://${env.ESADDRESS}/knowledge/_update/${_id}`;
-    try {
-      return await axios({
-        method: 'post',
-        url,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: JSON.stringify({
-          doc: {
-            label,
-            response: result,
-            date: new Date().toISOString().slice(0, 10)
-          },
-          doc_as_upsert: true
-        })
-      });
-    } catch (err) {
-      log.error(
-        `elasticsearch.createKnowledgeGraphDoc(): ${err.status || 500} - ${err}`
-      );
       throw err;
     }
   }

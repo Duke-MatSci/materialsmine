@@ -212,7 +212,15 @@ exports.getSparql = async (req, res, next) => {
     successWriter(req, { message: 'success' }, 'getSparql');
 
     // Caching starts...
-    await cacheKnowledge(req, res, next, response?.data);
+    if (response.data?.results?.bindings.length) {
+      await cacheKnowledge(req, res, next, response?.data);
+    } else {
+      log.info(
+        `getSparql = () => Empty knowledge response (${JSON.stringify(
+          response.data
+        )})`
+      );
+    }
     if (req.isBackendCall) return response?.data;
 
     return res.status(200).json({ ...response?.data });

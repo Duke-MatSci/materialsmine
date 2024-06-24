@@ -1,24 +1,27 @@
 export default {
-  setDockerVersions(state, payload) {
-    state.dockerVersions = payload;
+  setDockerVersions (state, payload) {
+    state.dockerVersions = payload
   },
-  setCurrentVersion(state, payload) {
-    state.currentVersion = payload;
+  setCurrentVersion (state, payload) {
+    state.currentVersion = payload
   },
-  setSuccess(state, payload) {
-    state.isSuccess = payload;
+  setSuccess (state, payload) {
+    state.isSuccess = payload
   },
-  setError(state, payload) {
-    state.isError = payload;
+  setError (state, payload) {
+    state.isError = payload
   },
-  setLoading(state) {
-    state.isLoading = !state.isLoading;
+  setLoading (state) {
+    state.isLoading = !state.isLoading
   },
-  setLoadingMessage(state, { message }) {
-    state.loadingMessage = message;
+  setLoadingMessage (state, { message }) {
+    state.loadingMessage = message
   },
-  resetDeploymentStatus(state) {
-    state.isError = false;
-    state.isSuccess = false;
+  resetDeploymentStatus (state) {
+    state.isError = false
+    state.isSuccess = false
+  },
+  setXsd (state, payload) {
+    state.xsd = payload
   }
-};
+}

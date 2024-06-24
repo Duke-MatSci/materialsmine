@@ -162,7 +162,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 export default {
   name: 'HeroHeader',
   props: ['toggler'],
@@ -174,5 +174,5 @@ export default {
       displayName: 'auth/displayName'
     })
   }
-};
+}
 </script>

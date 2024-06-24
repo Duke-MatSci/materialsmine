@@ -4952,6 +4952,7 @@ const fetchedCuratedXlsxObject = {
     givenName: 'Akash',
     surName: 'Prasad'
   },
+  entityState: 'Not Approved',
   _id: '642561166202628c4aff8d59',
   createdAt: '2023-03-30T10:14:46.072Z',
   updatedAt: '2023-03-30T10:14:46.072Z',
@@ -5099,7 +5100,8 @@ const mockXmlData = {
     PolymerNanocomposite: {
       ...mockCuratedXlsxObject
     }
-  }
+  },
+  entityState: 'IngestFailed'
 };
 
 const user = {
@@ -5261,6 +5263,22 @@ const mockRes = {
   }
 };
 
+const mockChangeLogs = {
+  _id: '6672990bb1245c68667ab5ed',
+  resourceID: '5e971bb5500a3868efbd8b88',
+  changes: [
+    {
+      user: '65b8ec85c3d3b2ed82fe4029',
+      change: ['3a52855056347800'],
+      date: '2024-06-19T08:38:35.134Z',
+      published: true,
+      _id: '6672990be242eb96af7333d6'
+    }
+  ],
+  createdAt: '2024-06-19T08:38:35.136Z',
+  updatedAt: '2024-06-19T08:38:35.136Z'
+};
+
 module.exports = {
   user,
   correctXlsxFile,
@@ -5298,5 +5316,6 @@ module.exports = {
   mockCurationStream,
   mockReadFolder,
   mockProcessedFiles,
+  mockChangeLogs,
   mockRes
 };

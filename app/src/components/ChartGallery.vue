@@ -15,7 +15,13 @@
         </span>
       </div>
       <template v-if="!!galleryChartItems && !!galleryChartItems.length">
-        <div class="gallery-grid grid grid_col-5">
+        <div
+          :class="
+            isFavourite
+              ? 'gallery-grid grid grid_col-3'
+              : 'gallery-grid grid grid_col-5'
+          "
+        >
           <md-card
             v-for="(result, index) in galleryChartItems"
             :key="index"
@@ -125,14 +131,14 @@
 </template>
 
 <script>
-import spinner from '@/components/Spinner';
-import pagination from '@/components/explorer/Pagination';
-import Dialog from '@/components/Dialog.vue';
-import defaultImg from '@/assets/img/rdf_flyer.svg';
-import { toChartId } from '@/modules/vega-chart';
-import { mapGetters, mapActions, mapMutations } from 'vuex';
-import reducer from '@/mixins/reduce';
-import explorerQueryParams from '@/mixins/explorerQueryParams';
+import spinner from '@/components/Spinner'
+import pagination from '@/components/explorer/Pagination'
+import Dialog from '@/components/Dialog.vue'
+import defaultImg from '@/assets/img/rdf_flyer.svg'
+import { toChartId } from '@/modules/vega-chart'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
+import reducer from '@/mixins/reduce'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 
 export default {
   name: 'ChartGallery',
@@ -147,7 +153,7 @@ export default {
       default: () => false
     }
   },
-  data() {
+  data () {
     return {
       loading: false,
       loadError: false,
@@ -159,7 +165,7 @@ export default {
         title: 'Test'
       },
       dialogLoading: false
-    };
+    }
   },
   components: {
     pagination,
@@ -180,11 +186,11 @@ export default {
       favoriteChartItems: 'explorer/gallery/favoriteChartItems',
       missingCharts: 'explorer/gallery/missingCharts'
     }),
-    galleryChartItems() {
+    galleryChartItems () {
       if (!this.isFavourite) {
-        return this.items;
+        return this.items
       } else {
-        return this.favoriteChartItems;
+        return this.favoriteChartItems
       }
     }
   },
@@ -195,129 +201,129 @@ export default {
       'fetchFavoriteCharts'
     ]),
     ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
-    renderDialog(title, type, result, minWidth) {
+    renderDialog (title, type, result, minWidth) {
       this.dialog = {
         title,
         type,
         minWidth,
         chart: result
-      };
-      this.toggleDialogBox();
+      }
+      this.toggleDialogBox()
     },
-    async deleteChart(chart, retry = false) {
+    async deleteChart (chart, retry = false) {
       try {
-        if (!this.isAdmin) return; // temporary safeguard
+        if (!this.isAdmin) return // temporary safeguard
 
         // Retry is a flag to determine if the function is called from retry action
         if (!retry) {
-          this.dialogLoading = true;
+          this.dialogLoading = true
         }
         await this.$store.dispatch(
           'explorer/curation/deleteEntityNanopub',
           chart.identifier
-        );
+        )
         await this.$store.dispatch('explorer/curation/deleteEntityES', {
           identifier: chart.identifier,
           type: 'charts'
-        });
-        await this.loadItems();
+        })
+        await this.loadItems()
         if (!retry) {
-          this.toggleDialogBox();
-          this.dialogLoading = false;
+          this.toggleDialogBox()
+          this.dialogLoading = false
         }
-        return;
+        return
       } catch (error) {
         if (!retry) {
-          this.toggleDialogBox();
-          this.dialogLoading = false;
+          this.toggleDialogBox()
+          this.dialogLoading = false
         }
         this.$store.commit('setSnackbar', {
           message: error || 'Something went wrong',
           action: () => this.deleteChart(chart, true)
-        });
+        })
       }
     },
-    editChart(chart) {
+    editChart (chart) {
       return this.$router.push(
         `/explorer/chart/editor/edit/${this.getChartId(chart)}`
-      );
+      )
     },
-    async bookmark(chart) {
-      await this.bookmarkChart({ chart });
+    async bookmark (chart) {
+      await this.bookmarkChart({ chart })
     },
-    async localSearchMethod() {
-      await this.loadItems(this.pageNumber);
+    async localSearchMethod () {
+      await this.loadItems(this.pageNumber)
     },
-    async loadItems(page = 1) {
+    async loadItems (page = 1) {
       try {
-        this.loading = true;
-        await this.$store.dispatch('explorer/gallery/loadItems', { page });
-        this.loading = false;
+        this.loading = true
+        await this.$store.dispatch('explorer/gallery/loadItems', { page })
+        this.loading = false
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: error || 'Something went wrong',
           action: () => this.loadItems(page)
-        });
-        return (this.loading = false);
+        })
+        return (this.loading = false)
       }
     },
-    getChartId(chart) {
-      return toChartId(chart.identifier);
+    getChartId (chart) {
+      return toChartId(chart.identifier)
     },
-    formatMissingFavouriteText() {
-      const message = `${this.missingCharts.length} out of your favourite charts `;
+    formatMissingFavouriteText () {
+      const message = `${this.missingCharts.length} out of your favourite charts `
       return this.missingCharts.length === 1
         ? `${message}is no longer available and has been removed from your favourite list.`
-        : `${message}are no longer available and have been removed from your favourite list.`;
+        : `${message}are no longer available and have been removed from your favourite list.`
     },
-    checkAndRenderDialog() {
-      if (!this.missingCharts.length) return;
-      else this.renderDialog('Missing Charts', 'missingChart', '', 80);
+    checkAndRenderDialog () {
+      if (!this.missingCharts.length) return null
+      else this.renderDialog('Missing Charts', 'missingChart', '', 80)
     },
-    async loadFavorites() {
-      this.loading = true;
+    async loadFavorites () {
+      this.loading = true
       if (!this.favoriteChartItems.length) {
-        await this.fetchFavoriteCharts(false);
+        await this.fetchFavoriteCharts(false)
       }
-      this.loading = false;
-      return this.checkAndRenderDialog();
+      this.loading = false
+      return this.checkAndRenderDialog()
     },
-    async loadRegularCharts() {
-      const query = this.$route.query;
+    async loadRegularCharts () {
+      const query = this.$route.query
       if (query?.page) {
-        await this.loadParams(this.$route.query, false);
+        await this.loadParams(this.$route.query, false)
       } else {
-        await this.loadItems();
+        await this.loadItems()
       }
     }
   },
-  async mounted() {
+  async mounted () {
     if (this.isFavourite) {
-      await this.loadFavorites();
+      await this.loadFavorites()
     } else {
-      return await this.loadRegularCharts();
+      return await this.loadRegularCharts()
     }
   },
   watch: {
-    newChartExist() {
+    newChartExist () {
       if (!this.isFavourite) {
-        this.$store.commit('explorer/curation/setNewChartExist', false);
-        return this.loadItems();
+        this.$store.commit('explorer/curation/setNewChartExist', false)
+        return this.loadItems()
       }
     },
-    dialogBoxActive() {
+    dialogBoxActive () {
       if (this.dialogBoxActive === false && this.isFavourite) {
         this.$store.commit('explorer/gallery/setMissingCharts', [], {
           root: true
-        });
+        })
       }
     }
   },
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: this.sender
-    });
+    })
   }
-};
+}
 </script>

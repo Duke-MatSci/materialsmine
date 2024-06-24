@@ -1,10 +1,10 @@
-import mutations from './mutations.js';
-import actions from './actions.js';
-import getters from './getters.js';
+import mutations from './mutations.js'
+import actions from './actions.js'
+import getters from './getters.js'
 
 export default {
   namespaced: true,
-  state() {
+  state () {
     return {
       // allItems: null,
       items: null,
@@ -15,9 +15,9 @@ export default {
       totalFavorites: 0,
       missingCharts: [],
       favoriteChartItems: []
-    };
+    }
   },
   mutations,
   actions,
   getters
-};
+}

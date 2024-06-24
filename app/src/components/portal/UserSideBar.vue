@@ -90,18 +90,18 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'UserSideBar',
-  data() {
+  data () {
     return {
       sideDrawerVisiblity: true
-    };
+    }
   },
   methods: {
-    toggleSideDrawerVisibility() {
-      this.sideDrawerVisiblity = !this.sideDrawerVisiblity;
+    toggleSideDrawerVisibility () {
+      this.sideDrawerVisiblity = !this.sideDrawerVisiblity
     }
   },
   computed: {
@@ -111,5 +111,5 @@ export default {
       name: 'auth/displayName'
     })
   }
-};
+}
 </script>

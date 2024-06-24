@@ -1,6 +1,7 @@
 const FavoriteChart = require('../models/favoriteChart');
 const elasticSearch = require('../utils/elasticSearch');
 const latency = require('../middlewares/latencyTimer');
+const mongoose = require('mongoose');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 /**
  * Adds a favorite chart for a user.
@@ -78,7 +79,7 @@ exports.getFavoriteCharts = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const favoriteCharts = await FavoriteChart.findOne(
-      { user: userId },
+      { user: mongoose.Types.ObjectId(userId) },
       { chartIds: 1 }
     );
     const chartIds = favoriteCharts?.chartIds;
@@ -88,7 +89,12 @@ exports.getFavoriteCharts = async (req, res, next) => {
     }
 
     // If user have favourite chart, load it from ES
-    req.query.chartIds = chartIds;
+    const should = chartIds.map((el) => ({ match: { identifier: el } }));
+    req.query.chartIds = {
+      bool: {
+        should
+      }
+    };
     const resp = await elasticSearch.loadAllCharts(req, page, pageSize);
     const charts = resp?.data?.hits?.hits ?? [];
 
@@ -96,6 +102,7 @@ exports.getFavoriteCharts = async (req, res, next) => {
       charts.map((chart) => chart._source.identifier)
     );
     const missingCharts = chartIds.filter((id) => !receivedChartIdsSet.has(id));
+    req.logger.info('tee3', missingCharts);
 
     // If some chart not present anylonger in ES, call removeFavoriteChart for each missing chart ID
     if (missingCharts.length > 0) {

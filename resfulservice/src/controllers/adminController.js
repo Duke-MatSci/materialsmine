@@ -231,6 +231,32 @@ exports.bulkElasticSearchImport = (req, res, next) => {
 };
 
 /**
+ * Deletes an index from Elastic Search based on the provided type.
+ *
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next function to call
+ * @return {Object} JSON object containing the response
+ */
+exports.deleteElasticSearchIndex = async (req, res, next) => {
+  const log = req.logger;
+  log.info('deleteElasticSearchIndex(): Function entry');
+  const type = req.params.type;
+
+  validateIsAdmin(req, res, next);
+
+  try {
+    await elasticSearch.deleteIndex(req, type);
+    successWriter(req, 'success', 'deleteElasticSearchIndex');
+    return res.status(200).json({
+      message: 'success'
+    });
+  } catch (error) {
+    next(errorWriter(req, error, 'deleteElasticSearchIndex', 500));
+  }
+};
+
+/**
  * Populate datasetId table with existing data from datasets table
  * @param {*} req
  * @param {*} res

@@ -159,7 +159,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from 'vuex';
+import { mapState, mapGetters, mapActions } from 'vuex'
 
 export default {
   name: 'InputComponent',
@@ -181,7 +181,7 @@ export default {
       required: false
     }
   },
-  data() {
+  data () {
     return {
       loading: !!this.listValue,
       error: false,
@@ -192,7 +192,7 @@ export default {
       dialogActive: false,
       tempFileContainer: {},
       inFocus: false
-    };
+    }
   },
   computed: {
     ...mapGetters({
@@ -201,69 +201,69 @@ export default {
     ...mapState({
       errors: (state) => state.explorer.curation.curationFormError
     }),
-    unitOfMeasureExists() {
-      return Object.hasOwnProperty.call(this.inputObj, 'unitofmeasurement');
+    unitOfMeasureExists () {
+      return Object.hasOwnProperty.call(this.inputObj, 'unitofmeasurement')
     },
-    noteExists() {
-      return Object.hasOwnProperty.call(this.inputObj, 'note');
+    noteExists () {
+      return Object.hasOwnProperty.call(this.inputObj, 'note')
     },
-    reduceSpacing() {
-      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 };
+    reduceSpacing () {
+      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 }
     },
-    reduceCellValue() {
-      const arr = this.inputObj.cellValue.split('/');
-      return arr.length > 3 ? arr[3].substring(0, 40) : this.inputObj.cellValue;
+    reduceCellValue () {
+      const arr = this.inputObj.cellValue.split('/')
+      return arr.length > 3 ? arr[3].substring(0, 40) : this.inputObj.cellValue
     },
-    downloadLink() {
+    downloadLink () {
       if (this.inputObj.cellValue.includes('nmr/blob')) {
         // http:localhost/api/files/583e05f1e74a1d205f4e218c
-        return `/api/files/${this.inputObj.cellValue.split('id=')?.pop()}`;
+        return `/api/files/${this.inputObj.cellValue.split('id=')?.pop()}`
       }
-      return this.inputObj.cellValue;
+      return this.inputObj.cellValue
     },
-    errorRef() {
+    errorRef () {
       if (!this.title || !Object.hasOwnProperty.call(this.errors, this.title)) {
-        return false;
+        return false
       }
-      const obj = this.errors[this.title];
+      const obj = this.errors[this.title]
       const refData = this.uniqueKey.reduce(function (o, x, idx, arr) {
-        if (typeof o === 'undefined' || o === null) return o;
+        if (typeof o === 'undefined' || o === null) return o
         if (Array.isArray(o[x])) {
           for (let i = 0; i < o[x].length; i++) {
             if (Object.hasOwnProperty.call(o[x][i], arr[idx + 1])) {
-              return o[x][i];
+              return o[x][i]
             }
           }
         }
-        return o[x];
-      }, obj);
-      return !!refData;
+        return o[x]
+      }, obj)
+      return !!refData
     },
-    inputError() {
-      return this.errorRef && !this.inputObj.cellValue;
+    inputError () {
+      return this.errorRef && !this.inputObj.cellValue
     },
-    fileError() {
-      return this.errorRef;
+    fileError () {
+      return this.errorRef
     },
-    isEditMode() {
-      return !!Object.keys(this.$route.query).length;
+    isEditMode () {
+      return !!Object.keys(this.$route.query).length
     },
-    parent() {
-      return this.uniqueKey.slice(0, this.uniqueKey.length - 1).join(' > ');
+    parent () {
+      return this.uniqueKey.slice(0, this.uniqueKey.length - 1).join(' > ')
     },
-    stringInputVal() {
-      if (typeof this.inputObj !== 'object') return false;
+    stringInputVal () {
+      if (typeof this.inputObj !== 'object') return false
       return (
         Object.hasOwnProperty.call(this.inputObj, 'cellValue') &&
         this.inputObj.cellValue !== null &&
         this.inputObj.cellValue.trim() === ''
-      );
+      )
     }
   },
   watch: {
-    stringInputVal(newVal) {
+    stringInputVal (newVal) {
       if (newVal === true) {
-        this.inputObj.cellValue = null;
+        this.inputObj.cellValue = null
       }
     }
   },
@@ -271,120 +271,120 @@ export default {
     ...mapActions({
       fetchXlsList: 'explorer/curation/fetchXlsList'
     }),
-    hasProperty(obj, prop) {
-      return Object.hasOwnProperty.call(obj, prop);
+    hasProperty (obj, prop) {
+      return Object.hasOwnProperty.call(obj, prop)
     },
-    async fetchValues() {
+    async fetchValues () {
       // set error and loading state
-      this.loading = true;
-      this.error = false;
+      this.loading = true
+      this.error = false
       try {
         const result = await this.fetchXlsList({
           field: this.inputObj.validList
-        });
-        this.listItem = result?.columns[0]?.values || [];
+        })
+        this.listItem = result?.columns[0]?.values || []
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: error || 'Something went wrong',
           action: () => this.fetchValues()
-        });
-        this.error = true;
+        })
+        this.error = true
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    toggleDialog() {
-      this.dialogActive = !this.dialogActive;
+    toggleDialog () {
+      this.dialogActive = !this.dialogActive
     },
-    confirmUpload(e) {
-      if (!e) return;
-      this.tempFileContainer = e.target?.files ? [...e.target?.files] : [];
-      this.dialogTitle = 'Confirm Upload';
-      this.dialogText = 'Are you sure you want to upload this file';
-      this.dialogAction = null;
-      this.dialogActive = true;
-      e.target.value = null;
+    confirmUpload (e) {
+      if (!e) return
+      this.tempFileContainer = e.target?.files ? [...e.target?.files] : []
+      this.dialogTitle = 'Confirm Upload'
+      this.dialogText = 'Are you sure you want to upload this file'
+      this.dialogAction = null
+      this.dialogActive = true
+      e.target.value = null
     },
-    confirmDelete() {
-      this.dialogTitle = 'Confirm Data Removal';
+    confirmDelete () {
+      this.dialogTitle = 'Confirm Data Removal'
       const msg =
-        'Removing this file would clear all fields in this block. Please confirm your action';
-      const altMsg = 'This file would be permanently deleted from our server.';
-      this.dialogText = this.isEditMode ? altMsg : msg;
-      this.dialogAction = () => this.removeImage();
-      this.dialogActive = true;
+        'Removing this file would clear all fields in this block. Please confirm your action'
+      const altMsg = 'This file would be permanently deleted from our server.'
+      this.dialogText = this.isEditMode ? altMsg : msg
+      this.dialogAction = () => this.removeImage()
+      this.dialogActive = true
     },
-    onCancel(e) {
-      this.dialogTitle = '';
-      this.dialogText = '';
-      this.dialogAction = null;
-      this.dialogActive = false;
-      this.tempFileContainer = {};
+    onCancel (e) {
+      this.dialogTitle = ''
+      this.dialogText = ''
+      this.dialogAction = null
+      this.dialogActive = false
+      this.tempFileContainer = {}
     },
-    onConfirm() {
-      if (!this.dialogAction) return this.onInputChange(this.tempFileContainer);
-      return this.dialogAction();
+    onConfirm () {
+      if (!this.dialogAction) return this.onInputChange(this.tempFileContainer)
+      return this.dialogAction()
     },
-    async onInputChange(arg) {
-      this.dialogActive = false;
+    async onInputChange (arg) {
+      this.dialogActive = false
       try {
         const { fileLink } = await this.$store.dispatch('uploadFile', {
           file: arg
-        });
-        this.inputObj.cellValue = fileLink;
-        this.tempFileContainer = {};
+        })
+        this.inputObj.cellValue = fileLink
+        this.tempFileContainer = {}
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(arg)
-        });
+        })
       } finally {
-        this.dialogAction = null;
+        this.dialogAction = null
       }
     },
-    async removeImage() {
+    async removeImage () {
       try {
-        let fetchLink;
+        let fetchLink
         if (this.inputObj.cellValue.includes('/nmr/')) {
-          const blobId = this.inputObj.cellValue.split('=')[1];
-          fetchLink = `/api/files/${blobId}`;
+          const blobId = this.inputObj.cellValue.split('=')[1]
+          fetchLink = `/api/files/${blobId}`
         } else {
-          fetchLink = this.inputObj.cellValue;
+          fetchLink = this.inputObj.cellValue
         }
 
         const res = await fetch(fetchLink, {
           headers: { Authorization: `Bearer ${this.token}` },
           method: 'DELETE'
-        });
+        })
         if (res.status === 200) {
           // 06/20/2024
           // Removing below code to allow complete removal of image data when an image is deleted on the curation form
           // if (this.isEditMode) return (this.inputObj.cellValue = '');
-          this.$emit('data-file-deleted', this.inputObj.cellValue);
-          this.inputObj.cellValue = '';
-          this.onCancel();
+          this.$emit('data-file-deleted', this.inputObj.cellValue)
+          this.inputObj.cellValue = ''
+          this.onCancel()
         }
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.removeImage()
-        });
+        })
       }
     },
-    async downloadImage(arg) {
-      const baseUrl = window.location.origin;
-      const fileUrl = `${baseUrl}${arg}`;
-      const encodedUrl = encodeURI(fileUrl);
-      const fileLink = document.createElement('a');
-      fileLink.href = encodedUrl;
-      const name = arg?.split('?')[0];
-      fileLink.setAttribute('download', name);
-      document.body.appendChild(fileLink);
-      fileLink.click();
+    async downloadImage (arg) {
+      const baseUrl = window.location.origin
+      const fileUrl = `${baseUrl}${arg}`
+      const encodedUrl = encodeURI(fileUrl)
+      const fileLink = document.createElement('a')
+      fileLink.href = encodedUrl
+      const name = arg?.split('?')[0]
+      fileLink.setAttribute('download', name)
+      document.body.appendChild(fileLink)
+      fileLink.click()
     }
   },
-  mounted() {
-    if (this.inputError || this.fileError) this.$emit('update-step-error');
+  mounted () {
+    if (this.inputError || this.fileError) this.$emit('update-step-error')
   }
-};
+}
 </script>

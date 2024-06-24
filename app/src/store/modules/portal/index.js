@@ -1,10 +1,10 @@
-import mutations from './mutations.js';
-import actions from './actions.js';
-import getters from './getters.js';
+import mutations from './mutations.js'
+import actions from './actions.js'
+import getters from './getters.js'
 
 export default {
   namespaced: true,
-  state() {
+  state () {
     return {
       dockerVersions: [],
       currentVersion: 'latest',
@@ -13,10 +13,11 @@ export default {
       isSuccess: false,
       isError: false,
       isLoading: false,
-      loadingMessage: ''
-    };
+      loadingMessage: '',
+      xsd: null
+    }
   },
   mutations,
   actions,
   getters
-};
+}

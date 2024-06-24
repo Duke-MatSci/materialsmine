@@ -50,7 +50,13 @@ describe('Manage Service Controller Unit Tests:', function () {
   afterEach(() => sinon.restore());
 
   const req = {
-    logger
+    logger,
+    body: {
+      useSample: true
+    },
+    env: {
+      DYNAMFIT_TEST_FILE: 'test_file.txt'
+    }
   };
 
   const res = {

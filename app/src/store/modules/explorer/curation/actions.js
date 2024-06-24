@@ -2,7 +2,7 @@ import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/material-gql.js'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
-import { deleteChart } from '@/modules/vega-chart'
+import { deleteChart, saveXml } from '@/modules/vega-chart'
 import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
@@ -484,5 +484,98 @@ export default {
     const responseData = await response.json()
     commit('setRorData', responseData)
     return responseData
+  },
+
+  async approveCuration ({ commit, rootGetters }, xmlViewer) {
+    const isAdmin = rootGetters['auth/isAdmin']
+    const token = rootGetters['auth/token']
+    if (!isAdmin) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'This action is only available to administrator',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+    commit(
+      'setSnackbar',
+      {
+        message: 'Submitting your curation...',
+        duration: 2000
+      },
+      { root: true }
+    )
+    try {
+      await saveXml(xmlViewer, token)
+      // TODO: FIX THIS LATER!
+      // commit('resetSnackbar', {}, { root: true });
+      commit('setDialogBox', true, { root: true })
+    } catch (error) {
+      commit(
+        'setSnackbar',
+        {
+          message: 'An error occurred during submission',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+  },
+
+  async requestApproval (
+    { commit, rootGetters, dispatch },
+    { curationId, isNew }
+  ) {
+    const isAdmin = rootGetters['auth/isAdmin']
+    const token = rootGetters['auth/token']
+    if (isAdmin) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'This action is only available to non administrator',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+    try {
+      const response = await fetch('/api/curate/approval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ curationId, isNew })
+      })
+      if (!response || response.status !== 200) {
+        return commit(
+          'setSnackbar',
+          {
+            message: 'Something went wrong during the request',
+            action: () => dispatch('requestApproval', { curationId, isNew })
+          },
+          { root: true }
+        )
+      }
+      return commit(
+        'setSnackbar',
+        {
+          message: 'Approval request is successful',
+          duration: 7000
+        },
+        { root: true }
+      )
+    } catch (error) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'Something went wrong during the request',
+          action: () => dispatch('requestApproval', { curationId, isNew })
+        },
+        { root: true }
+      )
+    }
   }
 }

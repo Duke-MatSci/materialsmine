@@ -27,6 +27,10 @@ router
   .put(isAuth, AdminController.loadElasticSearch)
   .delete(isAuth, AdminController.loadElasticSearch);
 
+router
+  .route('/es/delete-index/:type')
+  .delete(isAuth, AdminController.deleteElasticSearchIndex);
+
 router.route('/store').get(AdminController.loadObjectStore);
 
 router

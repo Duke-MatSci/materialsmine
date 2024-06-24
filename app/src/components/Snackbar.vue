@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters } from 'vuex'
 export default {
   name: 'Snackbar',
   props: {
@@ -31,10 +31,10 @@ export default {
       default: 'left'
     }
   },
-  data() {
+  data () {
     return {
       show: false
-    };
+    }
   },
   computed: {
     ...mapGetters({
@@ -42,30 +42,30 @@ export default {
     })
   },
   methods: {
-    resetSnackbar() {
-      this.show = false;
+    resetSnackbar () {
+      this.show = false
     },
-    async snackBarAction() {
+    async snackBarAction () {
       if (this.snackbar.action) {
-        this.show = false;
-        return await this.snackbar.action();
+        this.show = false
+        return await this.snackbar.action()
       }
-      this.show = false;
+      this.show = false
     }
   },
   watch: {
-    snackbar(val, oldVal) {
+    snackbar (val, oldVal) {
       if (val.message) {
-        this.show = true;
+        this.show = true
       } else if (val.duration === 0) {
-        this.resetSnackbar();
+        this.resetSnackbar()
       }
     },
-    $route(newValue, oldValue) {
+    $route (newValue, oldValue) {
       if (newValue !== oldValue) {
-        this.resetSnackbar();
+        this.resetSnackbar()
       }
     }
   }
-};
+}
 </script>

@@ -6,8 +6,8 @@ const transformMetaData = (el) => {
     typeof el?.keywords === 'object'
       ? el.keywords
       : typeof el?.keywords === 'string'
-      ? el.keywords.split(',')
-      : [];
+        ? el.keywords.split(',')
+        : [];
 
   metaData.sampleID = el.sampleId ? el.sampleId.split('.')[0] : undefined;
   return metaData;

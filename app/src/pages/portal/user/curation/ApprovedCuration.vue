@@ -75,16 +75,16 @@
   </div>
 </template>
 <script>
-import xmlOperation from '@/mixins/xmlOperation';
+import xmlOperation from '@/mixins/xmlOperation'
 
 export default {
   name: 'ApprovedCuration',
   mixins: [xmlOperation],
-  created() {
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       name: 'Approved Curation'
-    });
+    })
   }
-};
+}
 </script>

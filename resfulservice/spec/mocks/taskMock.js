@@ -139,16 +139,81 @@ const mockElasticSearchResult = [
   }
 ];
 
-const mockElasticSearchSameDateResult = [
-  {
-    _source: {
-      label:
-        '\r\nPREFIX sio: <http://semanticscience.org/resource/>\r\nPREFIX mm: <http://materialsmine.org/ns/>\r\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\r\nSELECT DISTINCT ?Sample ?Filler ?VolumeFraction ?Matrix ?ElasticModulus ?UnitOfMeasure WHERE {\n  VALUES (?Filler ?Matrix ?AmountType ?AttributeType) {\n    ("Silicon dioxide" "DGEBA Epoxy Resin" <http://materialsmine.org/ns/VolumeFraction> <http://materialsmine.org/ns/TensileModulus>)\n  }\n\r\n  ?Sample a mm:PolymerNanocomposite ;\r\n          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;\r\n                                 a [ rdfs:label ?Filler ] ;\r\n                                 sio:hasAttribute [ a ?AmountType ;\r\n                                                    sio:hasValue ?VolumeFraction] ] ,\r\n                               [ sio:hasRole [ a mm:Matrix ] ;\r\n                                 a [ rdfs:label ?Matrix ] ] ;\r\n          sio:hasAttribute  ?Attr .\r\n  ?Attr a ?AttributeType ;\r\n     sio:hasValue ?ElasticModulus .\r\n  OPTIONAL { ?Attr sio:hasUnit ?UnitOfMeasure }\r\n}\r\n',
-      response: mockSparqlResult,
-      date: new Date().toISOString().slice(0, 10)
+const searchedKnowledgeGraph = {
+  data: {
+    hits: {
+      hits: mockElasticSearchResult
     }
   }
-];
+};
+
+const mockElasticSearchSameDateResult = {
+  data: {
+    hits: {
+      hits: [
+        {
+          _source: {
+            label:
+              '\r\nPREFIX sio: <http://semanticscience.org/resource/>\r\nPREFIX mm: <http://materialsmine.org/ns/>\r\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\r\nSELECT DISTINCT ?Sample ?Filler ?VolumeFraction ?Matrix ?ElasticModulus ?UnitOfMeasure WHERE {\n  VALUES (?Filler ?Matrix ?AmountType ?AttributeType) {\n    ("Silicon dioxide" "DGEBA Epoxy Resin" <http://materialsmine.org/ns/VolumeFraction> <http://materialsmine.org/ns/TensileModulus>)\n  }\n\r\n  ?Sample a mm:PolymerNanocomposite ;\r\n          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;\r\n                                 a [ rdfs:label ?Filler ] ;\r\n                                 sio:hasAttribute [ a ?AmountType ;\r\n                                                    sio:hasValue ?VolumeFraction] ] ,\r\n                               [ sio:hasRole [ a mm:Matrix ] ;\r\n                                 a [ rdfs:label ?Matrix ] ] ;\r\n          sio:hasAttribute  ?Attr .\r\n  ?Attr a ?AttributeType ;\r\n     sio:hasValue ?ElasticModulus .\r\n  OPTIONAL { ?Attr sio:hasUnit ?UnitOfMeasure }\r\n}\r\n',
+            response: mockSparqlResult,
+            date: new Date().toISOString().slice(0, 10)
+          }
+        }
+      ]
+    }
+  }
+};
+
+const mockFavoriteChart = {
+  chartIds: ['chart1'],
+  user: 'testuser'
+};
+
+const mockElasticSearchChartsResult = {
+  data: [
+    {
+      _index: 'charts',
+      _type: '_doc',
+      _id: 'jDWFKYcBURBt_YNUTQdw',
+      _score: 1,
+      _source: {
+        description:
+          'Experiments often report multiple modalities of materials characterization. Provenance metadata for characterization results, linked to the article DOI, are stored in the knowledge graph and include the type of characterization and equipment used. This interactive radial plot links pairs of characterization methods based on the number of DOIs shared by each pair. Highlighting a segment reveals the other methods linked to the selection and displays the percent overlap in a tooltip.',
+        identifier: 'http://nanomine.org/viz/1eeea9b71ebb10b7',
+        label:
+          'Which Characterization Methods Are Typically Performed Together?',
+        thumbnail: 'http://nanomine.org/viz/1eeea9b71ebb10b7_depiction'
+      }
+    },
+    {
+      _index: 'charts',
+      _type: '_doc',
+      _id: 'kTWFKYcBURBt_YNUTQeg',
+      _score: 1,
+      _source: {
+        description:
+          'This geographic display shows the locations of partner universities developing MaterialsMine with grant funding provided by the NSF CSSI program. The topoJSON map is referenced from the vega-datasets Github repository. Hover over a point to show a tooltip with the university and city!',
+        identifier: 'http://nanomine.org/viz/330733156368f4cd',
+        label: 'MaterialsMine on a Map',
+        thumbnail: 'http://nanomine.org/viz/330733156368f4cd_depiction'
+      }
+    },
+    {
+      _index: 'charts',
+      _type: '_doc',
+      _id: 'mDWFKYcBURBt_YNUTQfb',
+      _score: 1,
+      _source: {
+        description:
+          'These linked histograms show the distribution of samples in NanoMine, with a focus on mechanical properties data. The histograms enable dynamic crossfiltering, where selection of a range in one chart highlights corresponding samples from accompanying charts that fall within the specified interval of the selected chart. Hold down Shift to pan and zoom within a histogram, and double-click to reset.',
+        identifier: 'http://nanomine.org/viz/1dfd29527da82466',
+        label: 'Mechanical Properties with Crossfiltering',
+        thumbnail: 'http://nanomine.org/viz/1dfd29527da82466_depiction'
+      }
+    }
+  ],
+  total: 2
+};
 
 const fetchedCuration = {
   object: {
@@ -190,5 +255,8 @@ module.exports = {
   mockSparqlResult,
   mockElasticSearchResult,
   mockElasticSearchSameDateResult,
+  searchedKnowledgeGraph,
+  mockElasticSearchChartsResult,
+  mockFavoriteChart,
   fetchedCuration
 };

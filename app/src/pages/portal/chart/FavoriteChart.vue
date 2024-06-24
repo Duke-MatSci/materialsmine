@@ -2,8 +2,8 @@
   <chart-gallery sender="Favourite Chart" :isFavourite="isAuth" />
 </template>
 <script>
-import { mapGetters } from 'vuex';
-import ChartGallery from '@/components/ChartGallery.vue';
+import { mapGetters } from 'vuex'
+import ChartGallery from '@/components/ChartGallery.vue'
 export default {
   name: 'FavouriteChart',
   components: {
@@ -14,5 +14,5 @@ export default {
       isAuth: 'auth/isAuthenticated'
     })
   }
-};
+}
 </script>

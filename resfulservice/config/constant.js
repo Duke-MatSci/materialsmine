@@ -36,7 +36,7 @@ module.exports = {
     member: 'member'
   },
   commentTypes: ['xml', 'charts', 'images'],
-  CurationStates: ['Editing', 'Completed'],
+  CurationStates: ['Editing', 'Review', 'Completed'],
   CurationStateDefault: 'Editing',
   CurationEntityStates: ['Approved', 'Not Approved'],
   CurationEntityStateDefault: 'Not Approved',

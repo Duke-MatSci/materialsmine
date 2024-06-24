@@ -90,7 +90,7 @@ exports.validateXlsxObjectUpdate = [
   validationErrorHandler
 ];
 
-function validationErrorHandler(req, res, next) {
+function validationErrorHandler (req, res, next) {
   req.logger.info('Middleware.validationErrorHandler: Function entry');
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -134,13 +134,13 @@ exports.managedServiceDBCall = [
     .isString()
     .isIn(['polymer', 'filler', 'ukpolymer', 'ukfiller'])
     .withMessage(
-      "the collectionName should be one of 'polymers', 'fillers', 'ukpolymers', 'ukfillers'"
+      'the collectionName should be one of \'polymers\', \'fillers\', \'ukpolymers\', \'ukfillers\''
     ),
   body('action')
     .isString()
     .isIn(['INSERT', 'READ', 'UPDATE', 'DELETE', 'INSERTMANY', 'SEARCH'])
     .withMessage(
-      "the action should be one of 'INSERT', 'READ', 'UPDATE', 'DELETE', 'INSERTMANY' or 'SEARCH'"
+      'the action should be one of \'INSERT\', \'READ\', \'UPDATE\', \'DELETE\', \'INSERTMANY\' or \'SEARCH\''
     ),
   body('payload')
     .optional()
@@ -160,5 +160,62 @@ exports.validateFavoriteChart = [
     .withMessage('chart id required')
     .isString()
     .withMessage('chart id should be string'),
+  validationErrorHandler
+];
+
+exports.validateCreateChangeLog = [
+  body('resourceId')
+    .isString()
+    .notEmpty()
+    .withMessage('resourceId must be a non-empty string'),
+  body('change')
+    .isArray({ max: 1 })
+    .withMessage('change must be a non-empty array of a string')
+    .custom((value) => {
+      if (!value.every((item) => typeof item === 'string')) {
+        throw new Error('change must be an array of a string');
+      }
+      return true;
+    }),
+  body('published').isBoolean().withMessage('published must be a boolean'),
+  validationErrorHandler
+];
+
+exports.validateGetChangeLogs = [
+  query('published')
+    .optional()
+    .customSanitizer((value) =>
+      value === 'true' || value === 'false' ? JSON.parse(value) : value
+    )
+    .isBoolean()
+    .withMessage('published must be a boolean value'),
+  query('page')
+    .optional()
+    .customSanitizer((value) => parseInt(value))
+    .isInt({ min: 1 })
+    .withMessage('page must be an integer greater than 0'),
+  query('pageSize')
+    .optional()
+    .customSanitizer((value) => parseInt(value))
+    .isInt({ min: 1 })
+    .withMessage('pageSize must be an integer greater than 0'),
+  validationErrorHandler
+];
+
+exports.validateApproveCuration = [
+  body('curationId')
+    .not()
+    .isEmpty()
+    .withMessage('curationId is required')
+    .bail()
+    .isMongoId()
+    .withMessage('curationId should be a valid mongodb id'),
+  body('isNew')
+    .not()
+    .isEmpty()
+    .withMessage('isNew is required')
+    .bail()
+    .isBoolean()
+    .withMessage('isNew should be a boolean'),
   validationErrorHandler
 ];

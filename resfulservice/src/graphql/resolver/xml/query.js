@@ -5,6 +5,7 @@ const errorFormater = require('../../../utils/errorFormater');
 const paginator = require('../../../utils/paginator');
 const CuratedSamples = require('../../../models/curatedSamples');
 const { curationSearchQuery } = require('../../../pipelines/curation-pipeline');
+const { CurationStateSubstitutionMap } = require('../../../../config/constant');
 
 const xmlFinderQuery = {
   xmlFinder: async (_, { input }, { req }) => {
@@ -26,11 +27,13 @@ const xmlFinderQuery = {
       if (isNewCuration) {
         const curationSample = await CuratedSamples.findOne(
           { _id: id },
-          { object: 1, user: 1 },
+          { object: 1, user: 1, entityState: 1, curationState: 1 },
           { lean: true }
         );
 
-        if (!curationSample) { return errorFormater('curationSample not found', 404); }
+        if (!curationSample) {
+          return errorFormater('curationSample not found', 404);
+        }
 
         let xml = XlsxFileManager.xmlGenerator(
           JSON.stringify({ PolymerNanocomposite: curationSample.object })
@@ -42,12 +45,14 @@ const xmlFinderQuery = {
           title: curationSample.object.DATA_SOURCE.Citation.CommonFields.Title,
           xmlString: xml,
           isNewCuration,
-          user: curationSample.user
+          user: curationSample.user,
+          status: curationSample.entityState,
+          curationState: curationSample.curationState
         };
       } else {
         const xmlData = await XmlData.findOne(
           { _id: id },
-          { title: 1, xml_str: 1, iduser: 1 },
+          { title: 1, xml_str: 1, iduser: 1, entityState: 1, curateState: 1 },
           { lean: true }
         );
 
@@ -61,7 +66,14 @@ const xmlFinderQuery = {
           title: xmlData.title,
           xmlString,
           isNewCuration,
-          user: xmlData.iduser
+          user: xmlData.iduser,
+          status:
+            xmlData.entityState === 'IngestSuccess'
+              ? 'Approved'
+              : 'Not Approved',
+          curationState:
+            CurationStateSubstitutionMap[xmlData.curateState] ??
+            xmlData.curateState
         };
       }
     } catch (error) {

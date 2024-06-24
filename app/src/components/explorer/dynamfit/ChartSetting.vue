@@ -220,10 +220,11 @@ export default {
         return this.clearDynamfitData()
       }
 
-      this.$store.commit('setSnackbar', {
-        message: error ?? 'Something went wrong',
-        action: () => this.resetChart()
-      })
+      // TODO: WILL NEED TO FIX THIS LATER!
+      // this.$store.commit('setSnackbar', {
+      //   message: error ?? 'Something went wrong',
+      //   action: () => this.resetChart()
+      // })
     },
     displayInfo (msg, duration) {
       if (msg) {

@@ -91,6 +91,6 @@ const portalRoutes = [
     component: () => import('@/pages/portal/user/Home.vue'),
     meta: { requiresAuth: true }
   }
-];
+]
 
-export default portalRoutes;
+export default portalRoutes
