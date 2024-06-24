@@ -104,7 +104,6 @@ describe('Favourites Controllers Unit Tests:', function () {
       .returns(mockElasticSearchChartsResult);
     sinon.stub(latency, 'latencyCalculator').returns(true);
     const result = await getFavoriteCharts(req, res, next);
-    console.log(result);
     expect(result).to.be.an('Object');
     expect(result).to.have.property('data');
     expect(result).to.have.property('total');
