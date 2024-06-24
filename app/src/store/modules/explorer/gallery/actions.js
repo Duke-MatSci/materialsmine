@@ -1,3 +1,4 @@
+import router from '@/router';
 export default {
   async loadItems({ commit, getters, dispatch }, { page = 1 } = {}) {
     if (getters.totalPages > 0) {
@@ -45,7 +46,7 @@ export default {
       if (!token) return;
 
       // Route the user to the correct route depending on isAdmin status
-      const favoriteUrl = isAdmin ? '/favorite-chart' : '/user/favorite-chart';
+      const favoriteUrl = isAdmin ? '/favoritechart' : '/user/favorite-charts';
 
       const response = await fetch(
         '/api/knowledge/charts/favorites?pageSize=50',
@@ -70,7 +71,7 @@ export default {
       commit('setMissingCharts', responseData.missingCharts);
 
       if (!root) return;
-      const faveLength = responseData.data.length;
+      const faveLength = responseData.total;
       commit(
         'setSnackbar',
         {
