@@ -76,8 +76,7 @@ const router = new VueRouter({
   }
 });
 
-router.beforeEach(async function (to, from, next) {
-  store.commit('auth/setLastPageVisit', from?.fullPath);
+router.beforeEach(async function (to, _, next) {
   if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
     if (!store.getters['auth/isAuthenticated']) {
       store.commit(

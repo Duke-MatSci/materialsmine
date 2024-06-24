@@ -47,6 +47,9 @@ export default {
 
   async authProcessor(context, payload) {
     const res = payload ? JSON.parse(payload) : {};
+    // Reroute to home page
+    router.push('/nm');
+
     context.commit(
       'setSnackbar',
       {
