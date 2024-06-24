@@ -62,7 +62,6 @@ export default {
     const surName = res.surName ?? null;
     const givenName = res.givenName ?? null;
     const isAdmin = res.isAdmin ?? false;
-    // const isAdmin = false;
     const expiresIn = 9000 * 60 * 60;
     const expirationDate = new Date().getTime() + expiresIn;
 

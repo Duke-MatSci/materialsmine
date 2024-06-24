@@ -14,10 +14,10 @@
           ({{ (queryTimeMillis / 1000).toFixed(2) }} seconds)
         </span>
       </div>
-      <template v-if="!!items && !!items.length">
+      <template v-if="!!galleryChartItems && !!galleryChartItems.length">
         <div class="gallery-grid grid grid_col-5">
           <md-card
-            v-for="(result, index) in items"
+            v-for="(result, index) in galleryChartItems"
             :key="index"
             class="btn--animated gallery-item"
           >
@@ -149,7 +149,7 @@ export default {
   },
   data() {
     return {
-      loading: true,
+      loading: false,
       loadError: false,
       otherArgs: null,
       pageNumber: 1,
@@ -179,7 +179,14 @@ export default {
       newChartExist: 'explorer/curation/getNewChartExist',
       favoriteChartItems: 'explorer/gallery/favoriteChartItems',
       missingCharts: 'explorer/gallery/missingCharts'
-    })
+    }),
+    galleryChartItems() {
+      if (!this.isFavourite) {
+        return this.items;
+      } else {
+        return this.favoriteChartItems;
+      }
+    }
   },
   methods: {
     ...mapActions('explorer/gallery', [
@@ -268,6 +275,7 @@ export default {
       else this.renderDialog('Missing Charts', 'missingChart', '', 80);
     },
     async loadFavorites() {
+      this.loading = true;
       if (!this.favoriteChartItems.length) {
         await this.fetchFavoriteCharts(false);
       }
@@ -285,7 +293,7 @@ export default {
   },
   async mounted() {
     if (this.isFavourite) {
-      return await this.loadFavorites();
+      await this.loadFavorites();
     } else {
       return await this.loadRegularCharts();
     }
