@@ -89,7 +89,7 @@ exports.getFavoriteCharts = async (req, res, next) => {
     }
 
     // If user have favourite chart, load it from ES
-    const should = chartIds.map((el) => ({ match: { identifier: el } }));
+    const should = chartIds.map((el) => ({ match_phrase: { identifier: el } }));
     req.query.chartIds = {
       bool: {
         should
@@ -102,7 +102,6 @@ exports.getFavoriteCharts = async (req, res, next) => {
       charts.map((chart) => chart._source.identifier)
     );
     const missingCharts = chartIds.filter((id) => !receivedChartIdsSet.has(id));
-    req.logger.info('tee3', missingCharts);
 
     // If some chart not present anylonger in ES, call removeFavoriteChart for each missing chart ID
     if (missingCharts.length > 0) {
