@@ -1,3 +1,4 @@
+require('web-streams-polyfill/dist/polyfill.js');
 const chai = require('chai');
 const sinon = require('sinon');
 const axios = require('axios');
