@@ -9,7 +9,7 @@
     ],
     "private": true,
     "dependencies": {
-        "@elastic/elasticsearch": "^8.1.0",
+        "@elastic/elasticsearch": "^8.14.0",
         "@graphql-tools/graphql-file-loader": "^7.3.14",
         "@graphql-tools/load": "^7.5.13",
         "@graphql-tools/schema": "^8.3.13",

@@ -163,12 +163,12 @@
 </template>
 
 <script>
-import reducer from '@/mixins/reduce';
+import reducer from '@/mixins/reduce'
 
 export default {
   name: 'HomeNM',
   mixins: [reducer],
-  data() {
+  data () {
     return {
       assetItems: [
         {
@@ -199,19 +199,19 @@ export default {
       ],
       pushedAssetItem: [],
       screen: 0
-    };
-  },
-  methods: {
-    navigateFunction(arg) {
-      this.$router.push(arg);
     }
   },
-  created() {
+  methods: {
+    navigateFunction (arg) {
+      this.$router.push(arg)
+    }
+  },
+  created () {
     this.$store.commit('setAppHeaderInfo', {
       icon: '',
       pagetype: 'home',
       name: 'Welcome to MaterialsMine! An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
-    });
+    })
   }
-};
+}
 </script>
