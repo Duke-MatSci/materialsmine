@@ -43,4 +43,18 @@ describe('Nanomine Homepage', () => {
     await link.trigger('click')
     expect(wrapper.vm.$route.path).toEqual('/explorer')
   })
+
+  it('navigates on quicklink click for tools', async () => {
+    const wrapper = await factory()
+    const link = wrapper.find('[data-test="navigate-tools"]')
+    await link.trigger('click')
+    expect(wrapper.vm.$route.path).toEqual('/explorer/tools')
+  })
+
+  it('navigates on quicklink click for news', async () => {
+    const wrapper = await factory()
+    const link = wrapper.find('[data-test="navigate-news"]')
+    await link.trigger('click')
+    expect(wrapper.vm.$route.path).toEqual('/nm/news')
+  })
 })

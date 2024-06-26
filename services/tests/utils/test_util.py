@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, mock_open
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import pandas as pd
 import sys
 import jwt

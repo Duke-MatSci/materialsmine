@@ -9,6 +9,7 @@ from pymongo import MongoClient # type: ignore
 import logging
 import string
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 # from app import db
 import pandas as pd # type: ignore
 from app.utils.db_utils import seedDatabase
