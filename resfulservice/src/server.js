@@ -1,3 +1,4 @@
+require('web-streams-polyfill/dist/polyfill.js');
 const express = require('express');
 const cluster = require('cluster');
 const { makeExecutableSchema } = require('@graphql-tools/schema');
