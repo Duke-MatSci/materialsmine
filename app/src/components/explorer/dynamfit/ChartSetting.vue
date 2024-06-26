@@ -126,7 +126,7 @@
           ><md-icon
             v-if="!dynamfit.fileUpload.length"
             class="u_superscript-icon utility-color"
-            title="An example set of E', E data for PMMA which can be used to explore the Prony Series fitting and conversion tool."
+            :title="sampleTitle()"
             >help_outline</md-icon
           ></span
         >
@@ -142,7 +142,7 @@
         <span
           ><md-icon
             class="u_superscript-icon utility-color"
-            title="An example tsv file of 3 columns containing: frequency, E', E; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool."
+            :title="downloadTitle()"
             >help_outline</md-icon
           ></span
         >
@@ -171,6 +171,14 @@ export default {
     }
   },
   methods: {
+    sampleTitle () {
+      // eslint-disable-next-line
+      return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
+    },
+    downloadTitle () {
+      // eslint-disable-next-line
+      return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
+    },
     async onInputChange (e) {
       this.useSample = false
       this.displayInfo('Uploading File...')
