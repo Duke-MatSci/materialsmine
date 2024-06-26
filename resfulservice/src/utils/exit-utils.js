@@ -33,7 +33,7 @@ module.exports = {
   stringifyError
 };
 
-function stringifyError(obj) {
+function stringifyError (obj) {
   try {
     return JSON.stringify(
       obj,
