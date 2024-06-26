@@ -887,7 +887,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       );
       if (isNewCuration) {
         const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
-        if (imageFiles) {
+        if (imageFiles?.length) {
           imageFiles.forEach(async ({ File }) => {
             const file = File.split('/api/files/').pop();
             const newReq = {
@@ -902,7 +902,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
         const xmlObject = JSON.parse(xmlJson);
         xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
         const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
-        if (imageFiles) {
+        if (imageFiles?.length) {
           imageFiles.forEach(async ({ File }) => {
             const blobId = File.split('?id=').pop();
             await FsFile.findOneAndDelete({ _id: blobId });

@@ -411,7 +411,7 @@ export default {
   },
   async deleteCuration ({ commit, rootGetters, dispatch }, payload) {
     try {
-      if (!payload || !payload?.xmlId || !payload?.isNew) {
+      if (!payload || !payload?.xmlId) {
         throw new Error('Incorrect query parameters', {
           cause: 'Missing flag'
         })
