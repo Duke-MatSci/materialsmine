@@ -56,7 +56,7 @@ describe('Admin Controllers Unit Tests:', function () {
       expect(result.message).to.equal('search query params is missing');
     });
 
-    it.skip('should return a list of filtered dataset properties', async function () {
+    it('should return a list of filtered dataset properties', async function () {
       req.query = { search: 'Loss' };
       sinon.stub(DatasetProperty, 'find').returns(fetchedDatasetProperties);
       const result = await getDatasetProperties(req, res, next);
@@ -80,7 +80,7 @@ describe('Admin Controllers Unit Tests:', function () {
       env: { DOCKER_HUB_ADDRESS: 'https://hub.docker.com' }
     };
 
-    it.skip('should return a list of tags', async function () {
+    it('should return a list of tags', async function () {
       axiosStub.resolves({ status: 200, data: mockDeployment });
 
       sinon.stub(latency, 'latencyCalculator').returns(true);
@@ -168,12 +168,10 @@ describe('Admin Controllers Unit Tests:', function () {
   });
 
   context('deleteElasticSearchIndex', () => {
-    it.skip('should delete an ElasticSearch index and return a 200 status', async function () {
+    it('should delete an ElasticSearch index and return a 200 status', async function () {
       req.params.type = 'testType';
       const responseMock = { acknowledged: true };
 
-      sinon.stub(res, 'status').returnsThis();
-      sinon.stub(res, 'json').returnsThis();
       sinon.stub(elasticSearch, 'deleteIndex').resolves(responseMock);
 
       await deleteElasticSearchIndex(req, res, next);

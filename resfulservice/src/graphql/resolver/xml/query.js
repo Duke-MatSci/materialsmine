@@ -40,9 +40,14 @@ const xmlFinderQuery = {
         );
         xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
 
+        const title = curationSample.object.Control_ID
+          ? curationSample.object.Control_ID.endsWith('.xml')
+            ? curationSample.object.Control_ID
+            : `${curationSample.object.Control_ID}.xml`
+          : curationSample.object.DATA_SOURCE.Citation.CommonFields.Title;
         return {
           id: curationSample._id,
-          title: curationSample.object.DATA_SOURCE.Citation.CommonFields.Title,
+          title,
           xmlString: xml,
           isNewCuration,
           user: curationSample.user,
@@ -63,7 +68,9 @@ const xmlFinderQuery = {
 
         return {
           id: xmlData._id,
-          title: xmlData.title,
+          title: xmlData.title.endsWith('.xml')
+            ? xmlData.title
+            : `${xmlData.title}.xml`,
           xmlString,
           isNewCuration,
           user: xmlData.iduser,

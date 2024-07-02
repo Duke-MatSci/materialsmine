@@ -165,54 +165,47 @@ const mockElasticSearchSameDateResult = {
 };
 
 const mockFavoriteChart = {
-  chartIds: ['chart1'],
+  chartIds: [
+    'http://nanomine.org/viz/1eeea9b71ebb10b7',
+    'http://nanomine.org/viz/1dfd29527da82466'
+  ],
   user: 'testuser'
 };
 
 const mockElasticSearchChartsResult = {
-  data: [
-    {
-      _index: 'charts',
-      _type: '_doc',
-      _id: 'jDWFKYcBURBt_YNUTQdw',
-      _score: 1,
-      _source: {
-        description:
-          'Experiments often report multiple modalities of materials characterization. Provenance metadata for characterization results, linked to the article DOI, are stored in the knowledge graph and include the type of characterization and equipment used. This interactive radial plot links pairs of characterization methods based on the number of DOIs shared by each pair. Highlighting a segment reveals the other methods linked to the selection and displays the percent overlap in a tooltip.',
-        identifier: 'http://nanomine.org/viz/1eeea9b71ebb10b7',
-        label:
-          'Which Characterization Methods Are Typically Performed Together?',
-        thumbnail: 'http://nanomine.org/viz/1eeea9b71ebb10b7_depiction'
-      }
-    },
-    {
-      _index: 'charts',
-      _type: '_doc',
-      _id: 'kTWFKYcBURBt_YNUTQeg',
-      _score: 1,
-      _source: {
-        description:
-          'This geographic display shows the locations of partner universities developing MaterialsMine with grant funding provided by the NSF CSSI program. The topoJSON map is referenced from the vega-datasets Github repository. Hover over a point to show a tooltip with the university and city!',
-        identifier: 'http://nanomine.org/viz/330733156368f4cd',
-        label: 'MaterialsMine on a Map',
-        thumbnail: 'http://nanomine.org/viz/330733156368f4cd_depiction'
-      }
-    },
-    {
-      _index: 'charts',
-      _type: '_doc',
-      _id: 'mDWFKYcBURBt_YNUTQfb',
-      _score: 1,
-      _source: {
-        description:
-          'These linked histograms show the distribution of samples in NanoMine, with a focus on mechanical properties data. The histograms enable dynamic crossfiltering, where selection of a range in one chart highlights corresponding samples from accompanying charts that fall within the specified interval of the selected chart. Hold down Shift to pan and zoom within a histogram, and double-click to reset.',
-        identifier: 'http://nanomine.org/viz/1dfd29527da82466',
-        label: 'Mechanical Properties with Crossfiltering',
-        thumbnail: 'http://nanomine.org/viz/1dfd29527da82466_depiction'
-      }
+  data: {
+    hits: {
+      hits: [
+        {
+          _index: 'charts',
+          _type: '_doc',
+          _id: 'jDWFKYcBURBt_YNUTQdw',
+          _score: 1,
+          _source: {
+            description:
+              'Experiments often report multiple modalities of materials characterization. Provenance metadata for characterization results, linked to the article DOI, are stored in the knowledge graph and include the type of characterization and equipment used. This interactive radial plot links pairs of characterization methods based on the number of DOIs shared by each pair. Highlighting a segment reveals the other methods linked to the selection and displays the percent overlap in a tooltip.',
+            identifier: 'http://nanomine.org/viz/1eeea9b71ebb10b7',
+            label:
+              'Which Characterization Methods Are Typically Performed Together?',
+            thumbnail: 'http://nanomine.org/viz/1eeea9b71ebb10b7_depiction'
+          }
+        },
+        {
+          _index: 'charts',
+          _type: '_doc',
+          _id: 'kTWFKYcBURBt_YNUTQeg',
+          _score: 1,
+          _source: {
+            description:
+              'This geographic display shows the locations of partner universities developing MaterialsMine with grant funding provided by the NSF CSSI program. The topoJSON map is referenced from the vega-datasets Github repository. Hover over a point to show a tooltip with the university and city!',
+            identifier: 'http://nanomine.org/viz/330733156368f4cd',
+            label: 'MaterialsMine on a Map',
+            thumbnail: 'http://nanomine.org/viz/330733156368f4cd_depiction'
+          }
+        }
+      ]
     }
-  ],
-  total: 2
+  }
 };
 
 const fetchedCuration = {

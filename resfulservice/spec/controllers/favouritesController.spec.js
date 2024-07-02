@@ -45,7 +45,7 @@ describe('Favourites Controllers Unit Tests:', function () {
 
     it('should return error when chart is not added to favorites and throws error', async () => {
       req.body = { chart: 'chart1' };
-      req.user = { _id: 'testuser' };
+      req.user = { _id: '60d5ec4f8e621e2d4c3d1c85' };
       const error = new Error();
       const nextSpy = sinon.spy();
       sinon.stub(latency, 'latencyCalculator').returns(true);
@@ -82,9 +82,9 @@ describe('Favourites Controllers Unit Tests:', function () {
     });
   });
 
-  context.skip('getFavoriteCharts', () => {
+  context('getFavoriteCharts', () => {
     it('should return success and empty chart list when no favorite charts', async () => {
-      req.user = { _id: 'testuser' };
+      req.user = { _id: '60d5ec4f8e621e2d4c3d1c85' };
 
       sinon.stub(FavoriteChart, 'findOne').returns(null);
       sinon.stub(latency, 'latencyCalculator').returns(true);
@@ -95,13 +95,14 @@ describe('Favourites Controllers Unit Tests:', function () {
     });
   });
 
-  it.skip('should return success and list of user favorite charts', async () => {
-    req.user = { _id: 'testuser' };
+  it('should return success and list of user favorite charts', async () => {
+    req.user = { _id: '60d5ec4f8e621e2d4c3d1c85' };
 
     sinon.stub(FavoriteChart, 'findOne').returns(mockFavoriteChart);
     sinon
       .stub(elasticSearch, 'loadAllCharts')
       .returns(mockElasticSearchChartsResult);
+    sinon.stub(FavoriteChart, 'findOneAndUpdate').returns(true);
     sinon.stub(latency, 'latencyCalculator').returns(true);
     const result = await getFavoriteCharts(req, res, next);
     expect(result).to.be.an('Object');

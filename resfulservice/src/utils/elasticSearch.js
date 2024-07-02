@@ -112,6 +112,16 @@ class ElasticSearch {
       // Delete the specified index
       const response = await this.client.indices.delete({ index: type });
       log.info(`Index ${type} deleted:`, response.body);
+
+      const schema = configPayload[type];
+      if (schema) {
+        await this._createConfig(type, log);
+        const mappings = await this._putMappings(type, schema, log);
+        log.info(
+          `successfully created mappings for index ${type}`,
+          JSON.stringify(mappings)
+        );
+      }
     } catch (error) {
       if (error.meta && error.meta.body) {
         // Handle specific error response from Elasticsearch
@@ -280,7 +290,10 @@ class ElasticSearch {
 
     try {
       // TODO: use searchField to change which field is queried
-      const phrase = this.searchSanitizer(searchPhrase);
+      const phrase =
+        type === 'knowledge'
+          ? searchPhrase
+          : this.searchSanitizer(searchPhrase);
       const url = `http://${env.ESADDRESS}/${type}/_search?size=${size}`;
       const response = await axios({
         method: 'get',

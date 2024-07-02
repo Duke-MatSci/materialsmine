@@ -31,6 +31,7 @@ exports.isKnowledgeCached = async (req, res, next) => {
     'label',
     'knowledge'
   );
+
   if (cacheResult.data.hits.hits.length) {
     const {
       _id,
@@ -71,6 +72,7 @@ exports.isKnowledgeCached = async (req, res, next) => {
 };
 
 exports.cacheKnowledge = async (req, res, next, data) => {
+  req.logger.info('cacheKnowledge Function Entry');
   const query = req.query.query ?? req.body?.query;
   // 1. NOT caching curation submissions
   if (req.query.whyisPath === 'pub') return;
@@ -95,7 +97,7 @@ exports.cacheKnowledge = async (req, res, next, data) => {
         response.data.hits.hits[0]._id
       );
       req.logger.info(
-        `Middleware.isKnowledgeCached - Deleted document: ${result.deleted}`
+        `Middleware.cacheKnowledge - Deleted document: ${result.deleted}`
       );
     }
   }

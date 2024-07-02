@@ -147,7 +147,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       }
     }
     const requiredFields = getCurationUniqueFields(result);
-    result.Control_ID = await generateControlSampleId(
+    result.Control_ID = await generateControlId(
       requiredFields,
       user,
       query?.dataset
@@ -291,38 +291,115 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   };
 };
 
-const generateControlSampleId = async (requiredFields, user, datasetId) => {
-  try {
-    let [existingDatasets, userDatasets] = await Promise.all([
-      DatasetId.find({ user: user._id }),
-      DatasetId.findOne({
-        user: user._id,
-        _id: datasetId
-      })
-    ]);
+// const generateControlSampleId = async (requiredFields, user, datasetId) => {
+//   try {
+//     let [existingDatasets, userDatasets] = await Promise.all([
+//       DatasetId.find({ user: user._id }),
+//       DatasetId.findOne({
+//         user: user._id,
+//         _id: datasetId
+//       })
+//     ]);
 
-    if (!userDatasets && !existingDatasets?.length) {
-      userDatasets = await DatasetId.create({ user });
-    } else {
-      userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+//     if (!userDatasets && !existingDatasets?.length) {
+//       userDatasets = await DatasetId.create({ user });
+//     } else {
+//       userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+//     }
+
+//     let { citationType, publicationYear, author } = requiredFields;
+
+//     // L325_S1_Test_2015
+//     citationType = citationType === 'lab-generated' ? 'E' : 'L';
+//     publicationYear = publicationYear ?? new Date().getFullYear();
+//     author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
+//     const sampleIndex = userDatasets?.samples?.length + 1;
+//     const datasetIndex = existingDatasets?.length + 1;
+
+//     return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}.xml`;
+//   } catch (error) {
+//     const err = new Error(error);
+//     err.functionName = 'generateControlSampleId';
+//     throw err;
+//   }
+// };
+
+async function generateControlId(requiredFields, user, datasetId) {
+  try {
+    // Find or create userDataset from MongoDB
+    let userDataset = await DatasetId.findOne({
+      user: user._id,
+      _id: datasetId
+    });
+
+    if (!userDataset) {
+      // If userDataset does not exist, create one
+      userDataset = await DatasetId.create({ user });
     }
 
     let { citationType, publicationYear, author } = requiredFields;
 
-    // L325_S1_Test_2015
-    citationType = citationType === 'lab-generated' ? 'E' : 'L';
-    publicationYear = publicationYear ?? new Date().getFullYear();
-    author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
-    const sampleIndex = userDatasets?.samples?.length ?? 1;
-    const datasetIndex = existingDatasets?.length ?? 1;
+    // Determine citationPrefix
+    const citationPrefix = citationType === 'lab-generated' ? 'E' : 'L';
 
-    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}.xml`;
+    // Determine publicationYear
+    publicationYear = publicationYear ?? new Date().getFullYear();
+
+    // Determine author
+    const authorName = author?.length
+      ? author[0].split(/[,\s]+/)[0]
+      : 'unknown';
+
+    // Find curations for datasetIndex
+    const regex = new RegExp(
+      `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
+      'i'
+    );
+    // const regex = new RegExp(`^${citationPrefix}.*${authorName}.*\\.xml?$`, 'i');
+    let curations = await CuratedSamples.find({
+      user: user._id,
+      'object.Control_ID': { $regex: regex }
+    });
+
+    // Determine datasetIndex
+    let datasetIndex, sampleIndex;
+    if (curations.length === 0) {
+      curations = await CuratedSamples.find({ user: user._id });
+      if (curations.length) {
+        let highestIndex = 0;
+        curations.forEach((curation) => {
+          if (curation.object.Control_ID.startsWith(citationPrefix)) {
+            const match = curation.object.Control_ID.match(/\d+/);
+            if (match) {
+              const num = parseInt(match[0], 10);
+              if (num > highestIndex) {
+                highestIndex = num;
+              }
+            }
+          }
+        });
+        datasetIndex = highestIndex + 1;
+        sampleIndex = 1;
+      } else {
+        datasetIndex = 1;
+        sampleIndex = 1;
+      }
+    } else {
+      const match = curations[0].object.Control_ID.match(/\d+/);
+      datasetIndex = match ? parseInt(match[0], 10) : 1;
+      sampleIndex = curations.length + 1;
+    }
+
+    // Construct controlId
+    const controlId = `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
+
+    return controlId;
   } catch (error) {
     const err = new Error(error);
-    err.functionName = 'generateControlSampleId';
+    err.functionName = 'generateControlId';
     throw err;
   }
-};
+}
 
 const generateDuplicateControlID = async (currentValue, isNew) => {
   const currentNumber = parseInt(currentValue.match(/_S(\d+)_/)[1]);
@@ -360,11 +437,7 @@ exports.getControlSampleId = async (req, res, next) => {
   try {
     logger.info('getControlSampleId Function Entry:');
 
-    const controlID = await generateControlSampleId(
-      body,
-      user,
-      body?.datasetId
-    );
+    const controlID = await generateControlId(body, user, body?.datasetId);
 
     latency.latencyCalculator(res);
     return res.status(201).json({ controlID });
@@ -888,14 +961,20 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       if (isNewCuration) {
         const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
         if (imageFiles?.length) {
-          imageFiles.forEach(async ({ File }) => {
+          for (const { File } of imageFiles) {
             const file = File.split('/api/files/').pop();
-            const newReq = {
-              params: { fileId: file.split('?')[0] },
-              isInternal: true
-            };
-            await FileController.deleteFile(newReq, {}, (fn) => fn);
-          });
+            const otherCurationCount = await model.countDocuments({
+              'object.MICROSTRUCTURE.ImageFile.File': File,
+              _id: { $ne: xlsxObjectId }
+            });
+            if (otherCurationCount === 0) {
+              const newReq = {
+                params: { fileId: file.split('?')[0] },
+                isInternal: true
+              };
+              await FileController.deleteFile(newReq, {}, (fn) => fn);
+            }
+          }
         }
       } else if (xlsxObject?.xml_str) {
         const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
@@ -903,10 +982,17 @@ exports.deleteXlsxCurations = async (req, res, next) => {
         xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
         const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
         if (imageFiles?.length) {
-          imageFiles.forEach(async ({ File }) => {
+          for (const { File } of imageFiles) {
             const blobId = File.split('?id=').pop();
-            await FsFile.findOneAndDelete({ _id: blobId });
-          });
+            const otherCurationCount = await model.countDocuments({
+              'MICROSTRUCTURE.ImageFile.File': File,
+              _id: { $ne: xlsxObjectId }
+            });
+
+            if (otherCurationCount === 0) {
+              await FsFile.findOneAndDelete({ _id: blobId });
+            }
+          }
         }
       }
 
@@ -915,6 +1001,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
         { $pull: { samples: xlsxObject?._id } },
         { new: true }
       );
+      latency.latencyCalculator(res);
       return res.status(200).json({
         message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
       });
@@ -936,6 +1023,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       }
 
       await CuratedSamples.deleteMany({ _id: { $in: datasets.samples } });
+      latency.latencyCalculator(res);
       return res
         .status(200)
         .json({ message: `Dataset ID: ${query.dataset} successfully deleted` });

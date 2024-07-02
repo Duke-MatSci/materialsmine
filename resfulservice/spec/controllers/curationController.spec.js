@@ -309,6 +309,18 @@ describe('Curation Controller', function () {
     });
   });
 
+  context('getControlSampleId', () => {
+    it('should return a 500 server error when database throws an error', async function () {
+      const nextSpy = sinon.spy();
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(DatasetId, 'findOne').throws();
+
+      await XlsxController.getControlSampleId(req, res, nextSpy);
+      sinon.assert.calledOnce(nextSpy);
+    });
+  });
+
   context('bulkXlsxCurations', () => {
     it('should return a 400 error if zip file is not uploaded', async function () {
       req.files.uploadfile = wrongXlsxFile;
@@ -972,7 +984,9 @@ describe('Curation Controller', function () {
       });
       sinon.stub(XmlData, 'findOne').returns(mockXmlData);
       sinon.stub(XmlData, 'findOneAndDelete').returns(mockXmlData);
+      sinon.stub(XmlData, 'countDocuments').returns(0);
       sinon.stub(FsFile, 'findOneAndDelete').returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(DatasetId, 'findOneAndUpdate').returns(mockDatasetId);
       const result = await XlsxController.deleteXlsxCurations(req, res, next);
 
@@ -993,8 +1007,10 @@ describe('Curation Controller', function () {
       sinon
         .stub(XlsxObject, 'findOneAndDelete')
         .returns(fetchedCuratedXlsxObject);
+      sinon.stub(XlsxObject, 'countDocuments').returns(0);
       sinon.stub(DatasetId, 'findOneAndUpdate').returns(mockDatasetId);
       sinon.stub(FileController, 'deleteFile').returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
       const result = await XlsxController.deleteXlsxCurations(req, res, next);
 
       expect(result).to.be.an('Object');
@@ -1012,6 +1028,7 @@ describe('Curation Controller', function () {
       });
       sinon.stub(DatasetId, 'findOneAndDelete').returns(mockDatasetId);
       sinon.stub(XlsxObject, 'deleteMany').returns(true);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
       const result = await XlsxController.deleteXlsxCurations(req, res, next);
 
       expect(result).to.be.an('Object');

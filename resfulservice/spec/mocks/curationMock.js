@@ -2725,9 +2725,10 @@ const mockCuratedXlsxObject = {
     }
   },
   MICROSTRUCTURE: {
-    Imagefile: [
+    ImageFile: [
       {
         Description: '40000x magnification',
+        File: '/api/files/socialist_scallop_germaine-2023-09-27T15:18:58.422Z-real_permittivity.csv?isStore=true',
         MicroscopyType: 'TEM',
         Type: 'grayscale',
         Dimension: {

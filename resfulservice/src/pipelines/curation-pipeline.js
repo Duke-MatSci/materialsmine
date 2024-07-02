@@ -44,7 +44,13 @@ exports.curationSearchQuery = async (input) => {
     {
       $project: {
         id: '$_id',
-        title: 1,
+        title: {
+          $cond: {
+            if: { $not: { $regexMatch: { input: '$title', regex: /\.xml$/ } } },
+            then: { $concat: ['$title', '.xml'] },
+            else: '$title'
+          }
+        },
         sequence: '$dsSeq',
         isNewCuration: { $literal: false },
         status: {
@@ -66,10 +72,22 @@ exports.curationSearchQuery = async (input) => {
             $project: {
               id: '$_id',
               title: {
-                $ifNull: [
-                  '$object.Control_ID',
-                  '$object.DATA_SOURCE.Citation.CommonFields.Title'
-                ]
+                $cond: {
+                  if: { $ne: ['$object.Control_ID', null] },
+                  then: {
+                    $cond: {
+                      if: {
+                        $regexMatch: {
+                          input: '$object.Control_ID',
+                          regex: /\.xml$/
+                        }
+                      },
+                      then: '$object.Control_ID',
+                      else: { $concat: ['$object.Control_ID', '.xml'] }
+                    }
+                  },
+                  else: '$object.DATA_SOURCE.Citation.CommonFields.Title'
+                }
               },
               object: 1,
               isNewCuration: { $literal: true },
