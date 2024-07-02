@@ -11,7 +11,10 @@ export default {
       pageSize: 50,
       page: 1,
       queryTimeMillis: 0,
-      total: 0
+      total: 0,
+      totalFavorites: 0,
+      missingCharts: [],
+      favoriteChartItems: []
     }
   },
   mutations,

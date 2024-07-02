@@ -43,7 +43,6 @@ export default {
     },
     adjustHeader () {
       const scrollHeight = this.getBody.scrollTop
-      console.log(window.innerWidth)
       if (window.innerWidth < 650) return
       this.showTop = !(scrollHeight > 100)
       const offset = scrollHeight > 100 ? '-74px' : '0px'

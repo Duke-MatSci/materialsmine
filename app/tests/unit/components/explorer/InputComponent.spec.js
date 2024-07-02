@@ -7,7 +7,9 @@ const reduceSpacing =
 
 describe('Validate input component', () => {
   it('InputComponent.vue without the required props', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {})
 
     const wrapper = createWrapper(InputComponent, {}, false)
     var layout = wrapper.find('div.md-card-actions.viz-u-display__show')
@@ -256,7 +258,7 @@ describe('InputComponent.vue with input type replace_nested', () => {
     expect(chips.find('span.md-error').text()).toBe('Input Required')
     expect(chips.attributes('mdplaceholder')).toBe(`Enter ${name}`)
     expect(chips.attributes('mdautoinsert')).toBe('true')
-    expect(button.find('md-tooltip-stub').text()).toBe(`Click to add ${name}`)
+    expect(button.find('md-tooltip-stub').text()).toBe(`Add New ${name}`)
     expect(button.find('md-tooltip-stub').attributes('mddirection')).toBe(
       'top'
     )

@@ -1,9 +1,20 @@
 <template>
   <div>
-    <md-snackbar :md-position="position" :md-active.sync="show" :md-duration="!duration ? Infinity : duration" class="md-snackbar-adjust">
-      {{message}}
+    <md-snackbar
+      :md-position="position"
+      :md-active.sync="show"
+      :md-duration="!snackbar.duration ? Infinity : snackbar.duration"
+      class="md-snackbar-adjust"
+    >
+      {{ snackbar.message }}
       <span>
-        <md-button v-if="action && !duration" id="snackbarAction" class="md-primary" @click.native="callAction">Retry</md-button>
+        <md-button
+          v-if="snackbar.action && !snackbar.duration"
+          id="snackbarAction"
+          class="md-primary"
+          @click.native="snackBarAction"
+          >{{ snackbar.callToActionText }}</md-button
+        >
       </span>
     </md-snackbar>
   </div>
@@ -22,10 +33,7 @@ export default {
   },
   data () {
     return {
-      show: false,
-      message: '',
-      action: null,
-      duration: false
+      show: false
     }
   },
   computed: {
@@ -34,39 +42,26 @@ export default {
     })
   },
   methods: {
-    refresh () {
-      this.$router.go(0)
-    },
-    // If an action has been passed through vuex as a callback, call it
-    callAction () {
-      if (this.action) {
-        // Toggle the snackbar before calling the action to reload it's timer
-        this.show = false
-        this.action()
-        this.show = false
-      }
-    },
     resetSnackbar () {
       this.show = false
-      this.message = ''
-      this.action = null
-      this.duration = false
+    },
+    async snackBarAction () {
+      if (this.snackbar.action) {
+        this.show = false
+        return await this.snackbar.action()
+      }
+      this.show = false
     }
   },
   watch: {
     snackbar (val, oldVal) {
       if (val.message) {
         this.show = true
-        this.message = this.snackbar.message
-        this.action = this.snackbar.action || null
-        this.duration = val.duration ? val.duration : false
-        // Reset
-        this.$store.commit('setSnackbar', '')
       } else if (val.duration === 0) {
         this.resetSnackbar()
       }
     },
-    '$route' (newValue, oldValue) {
+    $route (newValue, oldValue) {
       if (newValue !== oldValue) {
         this.resetSnackbar()
       }

@@ -6,7 +6,10 @@ const { latencyTimer } = require('../middlewares/latencyTimer');
 const {
   validateXlsxObjectUpdate,
   validateXlsxObjectDelete,
-  validateXlsxObjectGet
+  validateXlsxObjectGet,
+  validateApproveCuration,
+  validateCreateChangeLog,
+  validateGetChangeLogs
 } = require('../middlewares/validations');
 
 router
@@ -31,6 +34,18 @@ router
     curationController.deleteXlsxCurations
   );
 
+router.route('/schema').get(latencyTimer, curationController.getCurationXSD);
+
+router
+  .route('/changelogs/:resourceId')
+  .post(
+    validateCreateChangeLog,
+    isAuth,
+    latencyTimer,
+    curationController.createChangeLog
+  )
+  .get(validateGetChangeLogs, latencyTimer, curationController.getChangeLogs);
+
 router
   .route('/bulk')
   .post(isAuth, latencyTimer, curationController.bulkXlsxCurations);
@@ -47,7 +62,14 @@ router
   .route('/duplicate/:curationId')
   .post(isAuth, latencyTimer, curationController.duplicateXlsxCuration);
 
-router.route('/admin').post(isAuth, curationController.approveCuration);
+router
+  .route('/approval')
+  .post(
+    validateApproveCuration,
+    isAuth,
+    latencyTimer,
+    curationController.approveCuration
+  );
 
 router
   .route('/newsampleid')

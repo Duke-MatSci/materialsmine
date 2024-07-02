@@ -349,7 +349,7 @@ export default {
           xmlId: id,
           isNew: isNew
         })
-        await this.$apollo.queries.xmlFinder.refetch()
+        return await this.$apollo.queries.xmlFinder.refetch()
       }
     },
     async duplicateCuration (id, isNew) {

@@ -2,7 +2,10 @@ const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 const { errorWriter } = require('../utils/logWriter');
-const { ManagedServiceRegister } = require('../../config/constant');
+const {
+  ManagedServiceRegister,
+  MGD_SVC_ERR_CODE
+} = require('../../config/constant');
 const { signToken, decodeToken } = require('../utils/jwtService');
 const latency = require('../middlewares/latencyTimer');
 const { validateIsAdmin } = require('../middlewares/validations');
@@ -20,7 +23,7 @@ exports.manageServiceRequest = async (req, res, next) => {
     params: { appName },
     body
   } = req;
-  logger.info('getDynamfitChartData Function Entry:');
+  logger.info(':::manageServiceRequest Function Entry');
   const reqId = uuidv4();
   logger.info(`${appName}::${JSON.stringify({ ...body, reqId })}`);
   try {
@@ -67,11 +70,11 @@ exports.manageServiceRequest = async (req, res, next) => {
 exports.chemPropsSeed = async (req, res, next) => {
   validateIsAdmin(req, res, next);
   const { logger } = req;
-  logger.info('chemPropsSeed(): Function entry');
+  logger.info('::::chemPropsSeed Function entry');
   req.params.appName = req.originalUrl.split('/mn').pop();
   req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${req.params.appName}/`;
   req.reqId = uuidv4();
-  logger.info(`chemProps::${JSON.stringify({ reqId: req.reqId })}`);
+
   try {
     return await _managedServiceCall(req, res);
   } catch (error) {
@@ -101,29 +104,40 @@ const _managedServiceCall = async (req, res) => {
   } = req;
   req.timer = '1m';
   const token = signToken(req, { reqId });
-  const response = await axios.post(url, body, {
+
+  // Check if user wants to use our sample file
+  let reqBody = body;
+  if (body.useSample) {
+    // overwrite req.body.file_name with test file
+    const { useSample, ...remainingBody } = body;
+    reqBody = remainingBody;
+    reqBody.file_name = req.env.DYNAMFIT_TEST_FILE;
+  }
+
+  const response = await axios.post(url, reqBody, {
     headers: {
       Authorization: `Bearer ${token}`
     }
   });
-  logger.info(`${appName}::${reqId}::${response.headers?.latency}`);
+
+  // mgdsvc = managed services
+  logger.info(
+    `mgdsvc.${appName} = (${reqId}) => response.status(${response.status})`
+  );
   if (response.status === 200) {
     const errorObj = {};
     if (response.headers.responseid !== reqId) {
       errorObj.error = {
-        code: 'MM00010',
-        email: undefined,
-        description: `This upload has been identified as potentially untrusted. 
-              We were unable to verify its origin from the anticipated source`
+        ...MGD_SVC_ERR_CODE.default,
+        email: undefined
       };
+
       errorObj.systemEmail = req.env?.SYSTEM_EMAIL;
     }
     const output = { ...errorObj, ...response.data, appName };
-    logger.notice(`${appName}::${reqId}::${response.data}`);
     latency.latencyCalculator(res);
     return res.status(200).json(output);
   } else {
-    logger.notice(`${appName}::${reqId}::${response.data}`);
     latency.latencyCalculator(res);
     return res.status(response.status).json(response.data);
   }

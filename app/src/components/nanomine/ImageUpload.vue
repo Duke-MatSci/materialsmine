@@ -13,41 +13,60 @@
 -->
 
 <template>
-  <div class="md-layout-item md-size-100 md-layout md-alignment-top-left section_imageUpload">
-
+  <div
+    class="md-layout-item md-size-100 md-layout md-alignment-top-left section_imageUpload"
+  >
     <!-- file upload button -->
     <div class="md-layout-item fileButtonWrapper">
-      <md-button class="md-primary fileButton" @click='$refs.myUpload.click()'>Browse files</md-button>
-      <input type="file" style="display: none" :accept="acceptFileTypes" ref="myUpload" @change="uploadFiles">
+      <md-button class="md-primary fileButton" @click="$refs.myUpload.click()"
+        >Browse files</md-button
+      >
+      <input
+        type="file"
+        style="display: none"
+        :accept="acceptFileTypes"
+        ref="myUpload"
+        @change="uploadFiles"
+      />
     </div>
 
     <!-- image dimension input section -->
-    <div v-if="fileUploaded && collectDimensions && filesEditable" class="md-layout-item md-size-100">
+    <div
+      v-if="fileUploaded && collectDimensions && filesEditable"
+      class="md-layout-item md-size-100"
+    >
+      <h4 class="subheader">Image Dimensions</h4>
 
-      <h4 class='subheader'>Image Dimensions</h4>
-
-      <div class='imageDimensionsWrapper'>
-
-        <div class='imgDimWidth'>
+      <div class="imageDimensionsWrapper">
+        <div class="imgDimWidth">
           <md-field>
             <label>Width</label>
-            <md-input v-model='inputtedDimensions.width' @change="userDimensionsCallback"></md-input>
+            <md-input
+              v-model="inputtedDimensions.width"
+              @change="userDimensionsCallback"
+            ></md-input>
           </md-field>
         </div>
 
         <h3>x</h3>
 
-        <div class='imgDimHeight'>
+        <div class="imgDimHeight">
           <md-field>
             <label>Height</label>
-            <md-input v-model='inputtedDimensions.height' @change="userDimensionsCallback"></md-input>
+            <md-input
+              v-model="inputtedDimensions.height"
+              @change="userDimensionsCallback"
+            ></md-input>
           </md-field>
         </div>
 
-        <div class='imgDimUnits'>
+        <div class="imgDimUnits">
           <md-field>
             <label>Units</label>
-            <md-select v-model="inputtedDimensions.units" @change="userDimensionsCallback">
+            <md-select
+              v-model="inputtedDimensions.units"
+              @change="userDimensionsCallback"
+            >
               <md-option value="nanometers">Nanometers (nm)</md-option>
               <md-option value="micrometers">Micrometers (µM)</md-option>
               <md-option value="millimeters">Millimeters (mm)</md-option>
@@ -55,44 +74,67 @@
           </md-field>
         </div>
 
-        <md-button v-if='filesEditable' class='imgDimButton md-primary' @click="openImageEditor(0, 'calibrate')">
+        <md-button
+          v-if="filesEditable"
+          class="imgDimButton md-primary"
+          @click="openImageEditor(0, 'calibrate')"
+        >
           Scale Bar Calibration Tool
         </md-button>
       </div>
-
     </div>
 
     <!-- parameters that are specific to job type -->
-    <div v-if="fileUploaded && (selects && selects.length > 0)" class="md-layout-item md-size-100">
+    <div
+      v-if="fileUploaded && selects && selects.length > 0"
+      class="md-layout-item md-size-100"
+    >
+      <h4 class="subheader">Parameters</h4>
 
-      <h4 class='subheader'>Parameters</h4>
-
-      <div class='selectDropdownsWrapper'>
-        <div class='singleSelectDropdown' v-for="(select, index) in selects" :key='index'>
-
+      <div class="selectDropdownsWrapper">
+        <div
+          class="singleSelectDropdown"
+          v-for="(select, index) in selects"
+          :key="index"
+        >
           <md-field v-if="'options' in select">
             <label>{{ select.title }}</label>
-            <md-select :label="select.title" v-model="selectedOptions[select.submitJobTitle]"
-              @change="$emit('set-selectors', selectedOptions)">
-              <md-option v-for="option of select.options" :key="option" :value="option">{{ option }}</md-option>
+            <md-select
+              :label="select.title"
+              v-model="selectedOptions[select.submitJobTitle]"
+              @change="$emit('set-selectors', selectedOptions)"
+            >
+              <md-option
+                v-for="option of select.options"
+                :key="option"
+                :value="option"
+                >{{ option }}</md-option
+              >
             </md-select>
           </md-field>
 
           <div v-else>
             <md-field @change="$emit('set-selectors', selectedOptions)">
               <label>{{ select.title }}</label>
-              <md-input v-model="selectedOptions[select.submitJobTitle]"></md-input>
+              <md-input
+                v-model="selectedOptions[select.submitJobTitle]"
+              ></md-input>
             </md-field>
           </div>
-
         </div>
       </div>
-
     </div>
 
     <!-- image cropper & phase selection modal -->
-    <EditImage v-model='imageEditorOpen' :file='imageEditorData' :aspectRatio='aspectRatio' :type='editImageType'
-      @setCroppedImage="cropCallback" @setPhase="phaseCallback" @setCalibration="calibrationCallback"></EditImage>
+    <EditImage
+      v-model="imageEditorOpen"
+      :file="imageEditorData"
+      :aspectRatio="aspectRatio"
+      :type="editImageType"
+      @setCroppedImage="cropCallback"
+      @setPhase="phaseCallback"
+      @setCalibration="calibrationCallback"
+    ></EditImage>
 
     <!-- table of uploaded images -->
     <!-- <div v-if="fileUploaded" class='imageTable md-layout-item md-size-100'>
@@ -134,12 +176,10 @@
       </div>
 
     </div> -->
-
   </div>
 </template>
 
 <script>
-
 import EditImage from './EditImage.vue' // image cropping modal
 import Jszip from 'jszip' // for unzipping and rezipping files
 
@@ -159,50 +199,61 @@ export default {
 
   data () {
     return {
-
       submissionFile: {},
       displayedFiles: [],
       selectedOptions: {},
 
       filesEditable: true,
-      errorAlert: { count: 0, text: 'Error: selected phase for one or more images falls outside the image(s). This is likely due to cropping the image after setting the phase.' },
+      errorAlert: {
+        count: 0,
+        text: 'Error: selected phase for one or more images falls outside the image(s). This is likely due to cropping the image after setting the phase.'
+      },
 
       dimensionsEntered: false,
       inputtedDimensions: { units: null, width: 0, height: 0 },
 
       imageEditorOpen: false,
-      imageEditorData: { url: null, name: null, phase: { x_offset: null, y_offset: null } },
+      imageEditorData: {
+        url: null,
+        name: null,
+        phase: { x_offset: null, y_offset: null }
+      },
       editImageType: 'crop'
-
     }
   },
 
   computed: {
-
     fileUploaded: function () {
       if (this.displayedFiles.length > 0) {
         return true
       }
       return false
     }
-
   },
 
   methods: {
-
     // process uploaded files
     uploadFiles: function (e) {
       // initial variable declaration and input validation
       const inputFile = e.target.files[0]
-      if (inputFile === undefined) { return }
+      if (inputFile === undefined) {
+        return
+      }
 
       // reset file information
       this.submissionFile = {}
       this.displayedFiles = []
       this.filesEditable = true
-      if ('phase' in this.selectedOptions) { delete this.selectedOptions.phase }
+      if ('phase' in this.selectedOptions) {
+        delete this.selectedOptions.phase
+      }
       if ('dimensions' in this.selectedOptions) {
-        this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: parseInt(this.inputtedDimensions.width), height: parseInt(this.inputtedDimensions.height), ratio: null }
+        this.selectedOptions.dimensions = {
+          units: this.inputtedDimensions.units,
+          width: parseInt(this.inputtedDimensions.width),
+          height: parseInt(this.inputtedDimensions.height),
+          ratio: null
+        }
       }
       this.$emit('set-selectors', this.selectedOptions)
 
@@ -224,18 +275,22 @@ export default {
           this.unzipUploadedFiles(inputFile) // function unzips contents, sets editable status and gets image dimensions
         } else {
           var lowerCaseName = inputFile.name.toLowerCase()
-          this.displayedFiles = [{
-            name: lowerCaseName,
-            originalName: lowerCaseName,
-            url: fr.result,
-            fileType: lowerCaseName.split('.').pop(),
-            size: { width: 0, height: 0, units: null },
-            pixelSize: { width: 0, height: 0 },
-            phase: { x_offset: 0, y_offset: 0 },
-            errors: { size: false }
-          }]
+          this.displayedFiles = [
+            {
+              name: lowerCaseName,
+              originalName: lowerCaseName,
+              url: fr.result,
+              fileType: lowerCaseName.split('.').pop(),
+              size: { width: 0, height: 0, units: null },
+              pixelSize: { width: 0, height: 0 },
+              phase: { x_offset: 0, y_offset: 0 },
+              errors: { size: false }
+            }
+          ]
           this.getInitialDimensions(0) // set pixel dimensions for image
-          if (this.displayableFileType(0) === false) { this.filesEditable = false } // set displayable status for image
+          if (this.displayableFileType(0) === false) {
+            this.filesEditable = false
+          } // set displayable status for image
           this.pushPhase(0)
           this.pushImageDimensions()
           // console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
@@ -244,14 +299,22 @@ export default {
     },
 
     getInitialDimensions: function (index) {
-      if (this.displayableFileType(index) === false) { return }
+      if (this.displayableFileType(index) === false) {
+        return
+      }
 
       var img = new Image()
       img.src = this.displayedFiles[index].url
       const vm = this
       img.onload = function () {
-        vm.displayedFiles[index].pixelSize = { width: img.width, height: img.height }
-        vm.displayedFiles[index].originalSize = { width: img.width, height: img.height }
+        vm.displayedFiles[index].pixelSize = {
+          width: img.width,
+          height: img.height
+        }
+        vm.displayedFiles[index].originalSize = {
+          width: img.width,
+          height: img.height
+        }
         vm.updateUserDimensions(index)
         vm.displayedFiles[index].name += ' '
         vm.pushImageDimensions()
@@ -264,33 +327,38 @@ export default {
       const jszipObj = new Jszip()
 
       // unzip
-      jszipObj.loadAsync(inputFile)
-        .then(async function (zip) {
-          // transform contents to base64
-          Object.keys(zip.files).forEach(function (filename) {
-            zip.files[filename].async('base64')
-              .then(function (fileData) {
-                var lowerCaseName = filename.toLowerCase()
-                var filetype = lowerCaseName.split('.').pop()
-                this.displayedFiles.push({
-                  name: lowerCaseName,
-                  originalName: lowerCaseName,
-                  url: 'data:image/' + filetype + ';base64,' + fileData,
-                  fileType: filetype,
-                  size: { width: 0, height: 0, units: null },
-                  pixelSize: { width: 0, height: 0 },
-                  phase: { x_offset: 0, y_offset: 0 },
-                  errors: { size: false }
-                })
+      jszipObj.loadAsync(inputFile).then(async function (zip) {
+        // transform contents to base64
+        Object.keys(zip.files).forEach(function (filename) {
+          zip.files[filename]
+            .async('base64')
+            .then(function (fileData) {
+              var lowerCaseName = filename.toLowerCase()
+              var filetype = lowerCaseName.split('.').pop()
+              this.displayedFiles.push({
+                name: lowerCaseName,
+                originalName: lowerCaseName,
+                url: 'data:image/' + filetype + ';base64,' + fileData,
+                fileType: filetype,
+                size: { width: 0, height: 0, units: null },
+                pixelSize: { width: 0, height: 0 },
+                phase: { x_offset: 0, y_offset: 0 },
+                errors: { size: false }
               })
-              .then(function () {
-                this.getInitialDimensions(this.displayedFiles.length - 1) // get image dimensions
-                this.pushPhase(this.displayedFiles.length - 1)
-                this.pushImageDimensions()
-                if (this.displayableFileType(this.displayedFiles.length - 1) === false) { this.filesEditable = false } // reduce functionality if image is tif or mat
-              })
-          })
+            })
+            .then(function () {
+              this.getInitialDimensions(this.displayedFiles.length - 1) // get image dimensions
+              this.pushPhase(this.displayedFiles.length - 1)
+              this.pushImageDimensions()
+              if (
+                this.displayableFileType(this.displayedFiles.length - 1) ===
+                false
+              ) {
+                this.filesEditable = false
+              } // reduce functionality if image is tif or mat
+            })
         })
+      })
     },
 
     calibrationCallback: function (...args) {
@@ -302,9 +370,15 @@ export default {
 
     // callback function for when users enter data into the image dimensions section
     userDimensionsCallback: function () {
-      if (this.inputtedDimensions.units !== null && parseInt(this.inputtedDimensions.width) > 0 && parseInt(this.inputtedDimensions.height) > 0) {
+      if (
+        this.inputtedDimensions.units !== null &&
+        parseInt(this.inputtedDimensions.width) > 0 &&
+        parseInt(this.inputtedDimensions.height) > 0
+      ) {
         this.dimensionsEntered = true
-        for (let i = 0; i < this.displayedFiles.length; i++) { this.updateUserDimensions(i) }
+        for (let i = 0; i < this.displayedFiles.length; i++) {
+          this.updateUserDimensions(i)
+        }
         this.pushImageDimensions()
       }
     },
@@ -312,7 +386,9 @@ export default {
     // emit image dimensions data back to parent
     pushImageDimensions: function () {
       if (this.displayableFileType(0) === true) {
-        var ratio = this.displayedFiles[0].size.width / this.displayedFiles[0].pixelSize.width
+        var ratio =
+          this.displayedFiles[0].size.width /
+          this.displayedFiles[0].pixelSize.width
 
         if (this.inputtedDimensions.units === 'nanometers') {
           ratio = ratio / 1000000000
@@ -322,9 +398,19 @@ export default {
           ratio = ratio / 1000
         }
 
-        this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: this.displayedFiles[0].size.width, height: this.displayedFiles[0].size.height, ratio: ratio }
+        this.selectedOptions.dimensions = {
+          units: this.inputtedDimensions.units,
+          width: this.displayedFiles[0].size.width,
+          height: this.displayedFiles[0].size.height,
+          ratio: ratio
+        }
       } else {
-        this.selectedOptions.dimensions = { units: this.inputtedDimensions.units, width: parseInt(this.inputtedDimensions.width), height: parseInt(this.inputtedDimensions.height), ratio: null }
+        this.selectedOptions.dimensions = {
+          units: this.inputtedDimensions.units,
+          width: parseInt(this.inputtedDimensions.width),
+          height: parseInt(this.inputtedDimensions.height),
+          ratio: null
+        }
       }
       this.$emit('set-selectors', this.selectedOptions)
     },
@@ -332,8 +418,16 @@ export default {
     // scale user inputted dimensions by how much user has cropped the images
     updateUserDimensions: function (index) {
       this.displayedFiles[index].size.units = this.inputtedDimensions.units
-      this.displayedFiles[index].size.width = parseInt((parseInt(this.inputtedDimensions.width) / this.displayedFiles[index].originalSize.width) * this.displayedFiles[index].pixelSize.width)
-      this.displayedFiles[index].size.height = parseInt((parseInt(this.inputtedDimensions.height) / this.displayedFiles[index].originalSize.height) * this.displayedFiles[index].pixelSize.height)
+      this.displayedFiles[index].size.width = parseInt(
+        (parseInt(this.inputtedDimensions.width) /
+          this.displayedFiles[index].originalSize.width) *
+          this.displayedFiles[index].pixelSize.width
+      )
+      this.displayedFiles[index].size.height = parseInt(
+        (parseInt(this.inputtedDimensions.height) /
+          this.displayedFiles[index].originalSize.height) *
+          this.displayedFiles[index].pixelSize.height
+      )
     },
 
     // args: [fileName, phase]
@@ -357,10 +451,12 @@ export default {
 
     pushPhase: function (index) {
       if ('phase' in this.selectedOptions) {
-        this.selectedOptions.phase[this.displayedFiles[index].originalName] = this.displayedFiles[index].phase
+        this.selectedOptions.phase[this.displayedFiles[index].originalName] =
+          this.displayedFiles[index].phase
       } else {
         this.selectedOptions.phase = {}
-        this.selectedOptions.phase[this.displayedFiles[index].originalName] = this.displayedFiles[index].phase
+        this.selectedOptions.phase[this.displayedFiles[index].originalName] =
+          this.displayedFiles[index].phase
       }
       this.$emit('set-selectors', this.selectedOptions)
     },
@@ -387,7 +483,9 @@ export default {
         this.$emit('setFiles', this.submissionFile)
       }
       this.pushImageDimensions()
-      for (let i = 0; i < this.displayedFiles.length; i++) { this.pushPhase(i) }
+      for (let i = 0; i < this.displayedFiles.length; i++) {
+        this.pushPhase(i)
+      }
     },
 
     // crops a single image: update the image, the image's phase, and the image dimensions
@@ -395,7 +493,7 @@ export default {
       function awaitImageCrop (image) {
         return new Promise((resolve, reject) => {
           image.onload = function () {
-            ctx.drawImage(image, (-1) * coordinates.left, (-1) * coordinates.top)
+            ctx.drawImage(image, -1 * coordinates.left, -1 * coordinates.top)
             this.displayedFiles[index].url = canvas.toDataURL()
             resolve()
           }
@@ -418,15 +516,24 @@ export default {
       }
 
       // update the phase based on new top left of image
-      if (this.displayedFiles[index].phase.x_offset !== 0 || this.displayedFiles[index].phase.y_offset !== 0) {
+      if (
+        this.displayedFiles[index].phase.x_offset !== 0 ||
+        this.displayedFiles[index].phase.y_offset !== 0
+      ) {
         this.displayedFiles[index].phase.x_offset -= coordinates.left
         this.displayedFiles[index].phase.y_offset -= coordinates.top
 
         // validate that new phase is still within the image
-        if (this.displayedFiles[index].phase.x_offset < 0 || this.displayedFiles[index].phase.y_offset < 0) {
+        if (
+          this.displayedFiles[index].phase.x_offset < 0 ||
+          this.displayedFiles[index].phase.y_offset < 0
+        ) {
           this.errorAlert.count += 1
           this.displayedFiles[index].errors.size = true
-        } else if (this.displayedFiles[index].phase.x_offset > coordinates.width || this.displayedFiles[index].phase.y_offset > coordinates.height) {
+        } else if (
+          this.displayedFiles[index].phase.x_offset > coordinates.width ||
+          this.displayedFiles[index].phase.y_offset > coordinates.height
+        ) {
           this.errorAlert.count += 1
           this.displayedFiles[index].errors.size = true
         }
@@ -447,11 +554,16 @@ export default {
 
       // add images to zip file
       for (let i = 0; i < this.displayedFiles.length; i++) {
-        jszipObj.file(this.displayedFiles[i].originalName, this.displayedFiles[i].url.split(',').pop(), { base64: true })
+        jszipObj.file(
+          this.displayedFiles[i].originalName,
+          this.displayedFiles[i].url.split(',').pop(),
+          { base64: true }
+        )
       }
 
       // create zip file
-      jszipObj.generateAsync({ type: 'base64', compression: 'DEFLATE' })
+      jszipObj
+        .generateAsync({ type: 'base64', compression: 'DEFLATE' })
         .then(function (base64) {
           this.submissionFile.url = 'data:application/zip;base64,' + base64
           this.$emit('setFiles', this.submissionFile)
@@ -466,9 +578,12 @@ export default {
     },
 
     displayableFileType: function (index) {
-      if (this.displayedFiles === []) {
+      if (!this.displayedFiles.length) {
         return false
-      } else if (this.displayedFiles[index].fileType === 'mat' || this.displayedFiles[index].fileType === 'tif') {
+      } else if (
+        this.displayedFiles[index].fileType === 'mat' ||
+        this.displayedFiles[index].fileType === 'tif'
+      ) {
         return false
       }
       return true
@@ -480,7 +595,8 @@ export default {
       if (newValue) {
         this.$emit('fileTypeAlert', {
           title: 'File Type Alert',
-          content: 'Note: due to browser limitations, image editing functionality and pulling data about image dimensions ' +
+          content:
+            'Note: due to browser limitations, image editing functionality and pulling data about image dimensions ' +
             'is not available for mat and tif file types. But, these file types can still be submitted for jobs.',
           reason: 'fileTypeAlert'
         })

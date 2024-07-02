@@ -13,6 +13,13 @@ const {
 const isAuth = require('../middlewares/isAuth');
 const { getInternal } = require('../middlewares/isInternal');
 const { isKnowledgeCached } = require('../middlewares/knowledge-cache');
+const { validateFavoriteChart } = require('../middlewares/validations');
+const { latencyTimer } = require('../middlewares/latencyTimer');
+const {
+  addFavoriteChart,
+  getFavoriteCharts,
+  removeFavoriteChart
+} = require('../controllers/favoritesController');
 
 /**
  * Internal KG Wrapper Routes
@@ -32,6 +39,13 @@ router
 router.route('/facets').put(isAuth, getInternal, getKnowledge);
 
 router.route('/charts').get(getAllCharts);
+
+router
+  .route('/charts/favorites')
+  .all(latencyTimer)
+  .post(isAuth, validateFavoriteChart, addFavoriteChart)
+  .get(isAuth, getFavoriteCharts)
+  .delete(isAuth, removeFavoriteChart);
 
 router.route('/datasets').get(getAllDatasets);
 

@@ -27,7 +27,6 @@ const serviceManager = {
 };
 
 async function workerManager (logger) {
-  logger.info('Worker Manager - Function Entry (Checking tasks)');
   const tasks = await Task.find({
     status: { $nin: [TaskStatusMap.MISSING, TaskStatusMap.DISABLED] }
   });

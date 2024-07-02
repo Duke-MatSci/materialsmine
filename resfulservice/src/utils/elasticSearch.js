@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { Client } = require('@elastic/elasticsearch');
 const configPayload = require('../../config/esConfig');
+const { stringifyError } = require('./exit-utils');
 const env = process.env;
 
 class ElasticSearch {
@@ -23,15 +24,15 @@ class ElasticSearch {
           clearTimeout(timer);
           if (!response) {
             const error = new Error('Elastic Search Service Not Available');
-            log.error(`elasticsearch.ping(): 500 - ${error}`);
+            log.error(`elasticsearch.ping = () => ${stringifyError(error)}`);
             reject(error);
           }
-          log.debug(`elasticsearch.ping(): response ${response}`);
+          log.debug(`elasticsearch.ping = () => response ${response}`);
           resolve(response);
         }, waitTime);
       });
     } catch (err) {
-      log.error(`elasticsearch.ping(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.ping = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -54,7 +55,7 @@ class ElasticSearch {
       });
       return configResponse;
     } catch (err) {
-      log.error(`elasticsearch._createConfig(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch._createConfig = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -79,9 +80,7 @@ class ElasticSearch {
         timeout: '5m' // Todo: Increase when data becomes larger
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.deleteIndexDocs(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.deleteIndexDocs = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -101,10 +100,36 @@ class ElasticSearch {
         }
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.deleteSingleDoc(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.deleteSingleDoc = () => ${stringifyError(err)}`);
       throw err;
+    }
+  }
+
+  async deleteIndex (req, type) {
+    const log = req.logger;
+    log.info('elasticsearch.deleteIndex(): Function entry');
+    try {
+      // Delete the specified index
+      const response = await this.client.indices.delete({ index: type });
+      log.info(`Index ${type} deleted:`, response.body);
+
+      const schema = configPayload[type];
+      if (schema) {
+        await this._createConfig(type, log);
+        const mappings = await this._putMappings(type, schema, log);
+        log.info(
+          `successfully created mappings for index ${type}`,
+          JSON.stringify(mappings)
+        );
+      }
+    } catch (error) {
+      if (error.meta && error.meta.body) {
+        // Handle specific error response from Elasticsearch
+        log.error(`Error deleting index ${type}:`, error.meta.body.error);
+      } else {
+        // Handle generic error
+        log.error(`Error deleting index ${type}:`, error);
+      }
     }
   }
 
@@ -119,7 +144,7 @@ class ElasticSearch {
         }
       });
     } catch (err) {
-      log.error(`elasticsearch._putMappings(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch._putMappings = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -130,7 +155,7 @@ class ElasticSearch {
       return await this.client.cat.indices({ format: 'json' });
     } catch (err) {
       log.error(
-        `elasticsearch._getExistingIndices(): ${err.status || 500} - ${err}`
+        `elasticsearch._getExistingIndices = () => ${stringifyError(err)}`
       );
       throw err;
     }
@@ -154,20 +179,26 @@ class ElasticSearch {
       );
       const nonExistingKeys = [];
       // Check if all indices in indices exist in existingIndicesSet
-      const allIndicesExist = preparedKeys.every((index) => {
+      preparedKeys.map((index) => {
         const exists = existingIndicesSet.has(index);
         if (!exists) nonExistingKeys.push(index);
         return exists;
       });
 
+      // Remove default index and compare
+      const allIndicesExist =
+        existingIndexes.length - 1 === preparedKeys.length;
+
       if (allIndicesExist) {
         log.info('elasticsearch.initES(): All indexes exist in Elastic search');
-        return;
+        return {
+          status: 'No new config mapping!'
+        };
       }
 
       if (nonExistingKeys.length) {
-        log.info(
-          `elasticsearch.initES(): Adding the following missing index(es) ${nonExistingKeys.join(
+        log.error(
+          `elasticsearch.initES = () => Adding the following missing index(es) ${nonExistingKeys.join(
             ','
           )}`
         );
@@ -175,14 +206,8 @@ class ElasticSearch {
 
       Object.entries(configPayload).forEach(async ([key, value]) => {
         if (nonExistingKeys.includes(key)) {
-          try {
-            await this._createConfig(key, log);
-            await this._putMappings(key, value, log);
-          } catch (error) {
-            log.error(
-              `elasticsearch.initES(): ${error.status || 500} - ${error}`
-            );
-          }
+          await this._createConfig(key, log);
+          await this._putMappings(key, value, log);
         }
       });
 
@@ -190,7 +215,7 @@ class ElasticSearch {
         status: 'Successfully configured schemas!'
       };
     } catch (err) {
-      log.error(`elasticsearch.initES(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.initES = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -201,17 +226,18 @@ class ElasticSearch {
     if (!type || !doc) {
       const error = new Error('Category type is missing');
       error.statusCode = 400;
-      log.error(`indexDocument(): ${error}`);
+      log.error(`elasticsearch.indexDocument = () => ${stringifyError(error)}`);
       throw error;
     }
+    const document = { ...doc };
     try {
       return this.client.index({
         index: type,
         refresh: true,
-        document: { ...doc }
+        document
       });
     } catch (err) {
-      log.error(`elasticsearch.indexDocument(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.indexDocument = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -264,7 +290,10 @@ class ElasticSearch {
 
     try {
       // TODO: use searchField to change which field is queried
-      const phrase = this.searchSanitizer(searchPhrase);
+      const phrase =
+        type === 'knowledge'
+          ? searchPhrase
+          : this.searchSanitizer(searchPhrase);
       const url = `http://${env.ESADDRESS}/${type}/_search?size=${size}`;
       const response = await axios({
         method: 'get',
@@ -335,7 +364,7 @@ class ElasticSearch {
         })
       });
     } catch (err) {
-      log.error(`elasticsearch.search(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.search = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -355,12 +384,13 @@ class ElasticSearch {
           from: (page - 1) * size,
           size,
           query: {
-            match_all: {}
+            ...(req.query.chartIds && { ...req.query.chartIds }),
+            ...(!req.query.chartIds && { match_all: {} })
           }
         })
       });
     } catch (err) {
-      log.error(`elasticsearch.loadAllCharts(): ${err.status || 500} - ${err}`);
+      log.error(`elasticsearch.loadAllCharts = () => ${stringifyError(err)}`);
       throw err;
     }
   }
@@ -385,61 +415,7 @@ class ElasticSearch {
         })
       });
     } catch (err) {
-      log.error(
-        `elasticsearch.loadAllDatasets(): ${err.status || 500} - ${err}`
-      );
-      throw err;
-    }
-  }
-
-  async searchKnowledgeGraph (req, searchPhrase) {
-    const log = req.logger;
-    log.info('elasticsearch.searchKnowledgeGraph(): Function entry');
-    // search knowledge index for key
-    try {
-      const result = await this.client.search({
-        index: 'knowledge',
-        body: {
-          query: {
-            match_phrase: {
-              label: searchPhrase
-            }
-          }
-        }
-      });
-      return result.hits.hits;
-    } catch (err) {
-      log.error(
-        `elasticsearch.searchKnowledgeGraph(): ${err.status || 500} - ${err}`
-      );
-      throw err;
-    }
-  }
-
-  async createKnowledgeGraphDoc (log, _id, label, result) {
-    log.info('elasticsearch.createKnowledgeGraphDoc(): Function entry');
-    // create new doc under knowledge index
-    const url = `http://${env.ESADDRESS}/knowledge/_update/${_id}`;
-    try {
-      return await axios({
-        method: 'post',
-        url,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: JSON.stringify({
-          doc: {
-            label,
-            response: result,
-            date: new Date().toISOString().slice(0, 10)
-          },
-          doc_as_upsert: true
-        })
-      });
-    } catch (err) {
-      log.error(
-        `elasticsearch.createKnowledgeGraphDoc(): ${err.status || 500} - ${err}`
-      );
+      log.error(`elasticsearch.loadAllDatasets = () => ${stringifyError(err)}`);
       throw err;
     }
   }

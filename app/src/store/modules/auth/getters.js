@@ -19,5 +19,8 @@ export default {
   },
   user (state) {
     return state.user
+  },
+  lastPageVisited (state) {
+    return state.lastPageVisited
   }
 }

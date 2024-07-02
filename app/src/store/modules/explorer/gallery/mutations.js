@@ -13,5 +13,14 @@ export default {
   },
   setQueryTimeMillis (state, queryTimeMillis) {
     state.queryTimeMillis = queryTimeMillis
+  },
+  setfavoriteChartItems (state, items) {
+    state.favoriteChartItems = items
+  },
+  setMissingCharts (state, payload) {
+    state.missingCharts = payload
+  },
+  setTotalFavorites (state, totalFavorites) {
+    state.totalFavorites = totalFavorites
   }
 }

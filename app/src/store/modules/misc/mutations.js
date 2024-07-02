@@ -5,18 +5,23 @@ export default {
   setDialogBox (state) {
     state.dialogBox = !state.dialogBox
   },
-  setSnackbar (state, { message, action = null, duration = false }) {
+  setSnackbar (
+    state,
+    { message, action = null, duration = false, callToActionText = 'Retry' }
+  ) {
     state.snackbar = {
       message,
       action,
-      duration
+      duration,
+      callToActionText
     }
   },
   resetSnackbar (state) {
     state.snackbar = {
       message: '',
       action: null,
-      duration: 0 // Indicate reset
+      duration: 0, // Indicate reset
+      callToActionText: 'Retry'
     }
   },
   setUploadedFile (state, str) {

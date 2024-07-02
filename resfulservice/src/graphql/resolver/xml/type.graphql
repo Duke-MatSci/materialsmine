@@ -14,14 +14,16 @@ type ReadXml {
   xmlString: String
   isNewCuration: Boolean
   user: String
+  status: String!
+  curationState: String!
 }
 
 type XmlDataList {
   "Total number of XmlCatalogs found"
   totalItems: Int
-  
+
   """
-  Number of xmldata per page. 
+  Number of xmldata per page.
   Pagination option for specifying how the server should group the XmlCatalogs.
   Defaults to 1 if none is specified.
   """

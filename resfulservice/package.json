@@ -9,7 +9,7 @@
     ],
     "private": true,
     "dependencies": {
-        "@elastic/elasticsearch": "^8.1.0",
+        "@elastic/elasticsearch": "^8.11.0",
         "@graphql-tools/graphql-file-loader": "^7.3.14",
         "@graphql-tools/load": "^7.5.13",
         "@graphql-tools/schema": "^8.3.13",
@@ -40,6 +40,7 @@
         "ua-parser-js": "^1.0.33",
         "unique-names-generator": "^4.7.1",
         "uuid": "^9.0.1",
+        "web-streams-polyfill": "^4.0.0",
         "winston": "^3.5.1",
         "ws": "^8.7.0",
         "xlsx": "^0.18.5",

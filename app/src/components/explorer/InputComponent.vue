@@ -77,7 +77,7 @@
           <span class="md-error">Input Required</span>
         </md-chips>
         <md-button class="md-icon-button md-dense">
-          <md-tooltip md-direction="top">Click to add {{ name }}</md-tooltip>
+          <md-tooltip md-direction="top">Add New {{ name }}</md-tooltip>
           <md-icon>add</md-icon>
         </md-button>
       </div>
@@ -88,7 +88,7 @@
           class="md-layout md-alignment-center-space-between"
         >
           <p class="md-body-2" :class="[fileError ? 'u--color-error' : '']">
-            {{ reduceCellValue }}.....
+            {{ reduceCellValue }}...
             <md-tooltip md-direction="top">{{ downloadLink }}</md-tooltip>
           </p>
 
@@ -100,7 +100,7 @@
             <md-tooltip md-direction="top">Click to download file</md-tooltip>
           </md-button>
           <md-button class="md-icon-button" @click="confirmDelete">
-            <md-icon>close</md-icon>
+            <md-icon>delete_forever</md-icon>
             <md-tooltip md-direction="top">Click to remove file</md-tooltip>
           </md-button>
         </div>
@@ -344,12 +344,22 @@ export default {
     },
     async removeImage () {
       try {
-        const res = await fetch(`${this.inputObj.cellValue}`, {
+        let fetchLink
+        if (this.inputObj.cellValue.includes('/nmr/')) {
+          const blobId = this.inputObj.cellValue.split('=')[1]
+          fetchLink = `/api/files/${blobId}`
+        } else {
+          fetchLink = this.inputObj.cellValue
+        }
+
+        const res = await fetch(fetchLink, {
           headers: { Authorization: `Bearer ${this.token}` },
           method: 'DELETE'
         })
         if (res.status === 200) {
-          if (this.isEditMode) return (this.inputObj.cellValue = '')
+          // 06/20/2024
+          // Removing below code to allow complete removal of image data when an image is deleted on the curation form
+          // if (this.isEditMode) return (this.inputObj.cellValue = '');
           this.$emit('data-file-deleted', this.inputObj.cellValue)
           this.inputObj.cellValue = ''
           this.onCancel()

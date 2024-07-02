@@ -15,7 +15,6 @@ describe('Debouncer', () => {
   it('debounce', () => {
     const spy = sinon.spy();
     const func = function () {
-      console.log('eventually debounced was called!');
       spy();
     };
     const debouncedFunc = Debouncer.debounce(func, 1000);

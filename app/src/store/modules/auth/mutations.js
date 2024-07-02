@@ -8,6 +8,13 @@ export default {
     state.user = { surName: payload?.surName, givenName: payload?.givenName }
   },
   setAutoLogout (state) {
-    state.didAutoLogout = true
+    return (state.didAutoLogout = true)
+  },
+  setLastPageVisit (state, payload) {
+    const regex = /\/auth\//
+    if (!regex.test(decodeURI(payload)) || payload !== '/') {
+      return (state.lastPageVisited = payload)
+    }
+    return (state.lastPageVisited = 'payload')
   }
 }

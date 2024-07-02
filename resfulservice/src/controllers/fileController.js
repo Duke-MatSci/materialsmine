@@ -7,7 +7,8 @@ const FileManager = require('../utils/fileManager');
 const DatasetFileManager = require('../utils/curation-utility');
 const {
   SupportedFileResponseHeaders,
-  colorAssignment
+  colorAssignment,
+  SupportedFileTypes
 } = require('../../config/constant');
 const minioClient = require('../utils/minio');
 const { MinioBucket, MetamineBucket } = require('../../config/constant');
@@ -38,7 +39,7 @@ exports.imageMigration = async (req, res, next) => {
 exports.fileContent = async (req, res, next) => {
   const { fileId } = req.params;
   try {
-    if (req.query.isFileStore) {
+    if (req.query.isFileStore && req.query.isFileStore === 'true') {
       const { fileStream, ext } = await FileManager.findFile(req);
 
       if (!fileStream) {
@@ -53,7 +54,7 @@ exports.fileContent = async (req, res, next) => {
       return fileStream.pipe(res);
     }
 
-    if (req.query.isStore) {
+    if (req.query.isStore && req.query.isStore === 'true') {
       const dataStream = await minioClient.getObject(bucketName, fileId);
       if (req.isInternal) return dataStream;
       if (!dataStream) {
@@ -189,8 +190,16 @@ exports.deleteFile = async (req, res, next) => {
   const { fileId } = req.params;
   const filePath = `${filesDirectory}/${fileId}`;
   try {
-    await minioClient.removeObject(bucketName, fileId);
-    FileManager.deleteFile(filePath, req);
+    const isStoreFiles = SupportedFileTypes.some((storeFileType) =>
+      fileId.includes(storeFileType)
+    );
+    if (!isStoreFiles) {
+      const _id = new mongoose.Types.ObjectId(fileId);
+      await fsFiles.findByIdAndDelete(_id);
+    } else {
+      await minioClient.removeObject(bucketName, fileId);
+      FileManager.deleteFile(filePath, req);
+    }
 
     if (req.isInternal) return true;
     latency.latencyCalculator(res);

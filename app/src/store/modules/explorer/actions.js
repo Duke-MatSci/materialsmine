@@ -145,7 +145,8 @@ export default {
       file_name: payload.fileName,
       number_of_prony: payload?.numberOfProny,
       model: payload?.model,
-      fit_settings: payload?.fitSettings
+      fit_settings: payload?.fitSettings,
+      useSample: payload?.useSample
     })
     const url = '/api/mn/dynamfit'
     const token = rootGetters['auth/token']

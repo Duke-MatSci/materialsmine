@@ -2,12 +2,19 @@ const mongoose = require('mongoose');
 const Xmls = require('../models/xmlData');
 const errorFormater = require('../utils/errorFormater');
 
+// Targets old curation sample collection fields
 const targetField = 'content.PolymerNanocomposite.MICROSTRUCTURE.ImageFile';
 const commonFields =
   'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields';
 const fillerFields =
   'content.PolymerNanocomposite.MATERIALS.Filler.FillerComponent';
 const imgWithoutContentField = '$xml_str';
+
+// Targets new curation sample collection fields
+const newSampleTargetField = 'object.MICROSTRUCTURE.ImageFile';
+const newSampleCommonFields = 'object.DATA_SOURCE.Citation.CommonFields';
+const newSampleFillerFields = 'object.MATERIALS.Filler.FillerComponent';
+
 const listCap = 1000; // Pull as many as a thousand from the generated list array
 
 const imageWithoutContentQuery = (search, selectedImg) => {
@@ -127,10 +134,10 @@ const imageWithoutContentQuery = (search, selectedImg) => {
   // Generate list based on verifed prepped list
   stages.push({
     $addFields: {
-      imageFile: {
+      imageFiles: {
         $map: {
           input: {
-            $slice: ['$prepFile', 2, listCap]
+            $slice: ['$prepFile', 0, listCap]
           },
           as: 'currImage',
           in: {
@@ -179,6 +186,25 @@ const imageWithoutContentQuery = (search, selectedImg) => {
   });
 
   stages.push({
+    $addFields: {
+      imageFile: {
+        $filter: {
+          input: '$imageFiles',
+          as: 'urlLinks',
+          cond: {
+            $regexMatch: {
+              input: '$$urlLinks',
+              // Old xml files are stored in mongo with this prefix
+              regex: 'http://localhost/nmr',
+              options: 'i'
+            }
+          }
+        }
+      }
+    }
+  });
+
+  stages.push({
     $unwind: {
       path: '$imageFile',
       preserveNullAndEmptyArrays: false
@@ -211,15 +237,24 @@ exports.imageQuery = async (args) => {
   const selectedImg = args?.selectedImg ?? false;
   const selectImageWithContentQuery = args?.selectedImgWithoutContent ?? false;
 
-  const stages = [];
+  const stages = []; // Old xml collection sample stage
+  const newSampleStages = []; // New sample stage
 
-  if (search.length) {
-    search.map((stage) => stages.push(stage));
+  if (search && search.searchQuery?.length) {
+    const { newSampleSearchQuery, searchQuery: oldSampleSearchQuery } = search;
+    oldSampleSearchQuery.map((queries) => stages.push(queries));
+    newSampleSearchQuery.map((queries) => newSampleStages.push(queries));
   }
 
   // This logic is used to select a single image. A Mongoose Object ID must be provided in the request.
   if (selectedImg) {
     stages.push({
+      $match: {
+        _id: mongoose.Types.ObjectId(selectedImg)
+      }
+    });
+
+    newSampleStages.push({
       $match: {
         _id: mongoose.Types.ObjectId(selectedImg)
       }
@@ -234,9 +269,24 @@ exports.imageQuery = async (args) => {
     }
   });
 
+  newSampleStages.push({
+    $match: {
+      [newSampleTargetField]: {
+        $exists: true
+      }
+    }
+  });
+
   stages.push({
     $unwind: {
       path: `$${targetField}`,
+      preserveNullAndEmptyArrays: false
+    }
+  });
+
+  newSampleStages.push({
+    $unwind: {
+      path: `$${newSampleTargetField}`,
       preserveNullAndEmptyArrays: false
     }
   });
@@ -254,6 +304,19 @@ exports.imageQuery = async (args) => {
     }
   });
 
+  newSampleStages.push({
+    $addFields: {
+      [`${newSampleTargetField}.metaData`]: {
+        title: `$${newSampleCommonFields}.Title`,
+        id: '$_id',
+        doi: `$${newSampleCommonFields}.DOI`,
+        keywords: `$${newSampleCommonFields}.Keyword`,
+        authors: `$${newSampleCommonFields}.Author`,
+        sampleId: '$object.Control_ID'
+      }
+    }
+  });
+
   stages.push({
     $group: {
       _id: 'null',
@@ -263,7 +326,23 @@ exports.imageQuery = async (args) => {
     }
   });
 
+  newSampleStages.push({
+    $group: {
+      _id: 'null',
+      image: {
+        $push: `$${newSampleTargetField}`
+      }
+    }
+  });
+
   stages.push({
+    $unwind: {
+      path: '$image',
+      preserveNullAndEmptyArrays: false
+    }
+  });
+
+  newSampleStages.push({
     $unwind: {
       path: '$image',
       preserveNullAndEmptyArrays: false
@@ -278,6 +357,15 @@ exports.imageQuery = async (args) => {
           'image.MicroscopyType': { $regex: input.searchValue, $options: 'gi' }
         }
       });
+
+      newSampleStages.push({
+        $match: {
+          'image.MicroscopyType': {
+            $regex: input.searchValue,
+            $options: 'gi'
+          }
+        }
+      });
     }
   }
 
@@ -289,7 +377,21 @@ exports.imageQuery = async (args) => {
     }
   });
 
+  newSampleStages.push({
+    $match: {
+      'image.File': { $not: /undefined/ },
+      'image.Description': { $not: /test/ }
+    }
+  });
+
   stages.push({
+    $project: {
+      _id: 0,
+      images: '$image'
+    }
+  });
+
+  newSampleStages.push({
     $project: {
       _id: 0,
       images: '$image'
@@ -308,9 +410,25 @@ exports.imageQuery = async (args) => {
         }
       },
       {
+        $lookup: {
+          from: 'curatedsamples',
+          let: {},
+          pipeline: [
+            { $facet: { withContent: newSampleStages } },
+            { $unwind: '$withContent' }, // Flatten the nested array
+            { $replaceRoot: { newRoot: '$withContent' } }
+          ],
+          as: 'newSamplesWithContent'
+        }
+      },
+      {
         $project: {
           concantenatedQueryResponse: {
-            $concatArrays: ['$withContent', '$withoutContent']
+            $concatArrays: [
+              '$withContent',
+              '$withoutContent',
+              '$newSamplesWithContent'
+            ]
           }
         }
       },
@@ -336,6 +454,7 @@ exports.imageQuery = async (args) => {
 
 exports.validateImageSearchOptions = (input) => {
   const searchQuery = [];
+  const newSampleSearchQuery = [];
   const search = input?.search;
   const searchValue = input?.searchValue || '';
 
@@ -362,7 +481,21 @@ exports.validateImageSearchOptions = (input) => {
         [`${commonFields}.PublicationYear`]: parseInt(searchValue)
       }
     });
-    return searchQuery;
+
+    // Push Similar for new curation pipeline
+    newSampleSearchQuery.push({
+      $match: {
+        [`${newSampleCommonFields}.PublicationYear`]: {
+          $exists: true
+        }
+      }
+    });
+    newSampleSearchQuery.push({
+      $match: {
+        [`${newSampleCommonFields}.PublicationYear`]: parseInt(searchValue)
+      }
+    });
+    return { searchQuery, newSampleSearchQuery };
   }
 
   // Search by filler
@@ -371,6 +504,15 @@ exports.validateImageSearchOptions = (input) => {
     searchQuery.push({
       $match: {
         [fillerFields]: {
+          $exists: true
+        }
+      }
+    });
+
+    newSampleSearchQuery.push({
+      // Push Similar for new curation pipeline
+      $match: {
+        [`${newSampleFillerFields}`]: {
           $exists: true
         }
       }
@@ -395,6 +537,26 @@ exports.validateImageSearchOptions = (input) => {
           [operator]: matchQuery
         }
       });
+
+      // Push Similar for new curation pipeline
+      const newSampleMatchQuery = [
+        {
+          [`${newSampleFillerFields}`]: {
+            $elemMatch: { ChemicalName: new RegExp(first.trim(), 'gi') }
+          }
+        },
+        {
+          [`${newSampleFillerFields}`]: {
+            $elemMatch: { ChemicalName: new RegExp(second.trim(), 'gi') }
+          }
+        }
+      ];
+
+      newSampleSearchQuery.push({
+        $match: {
+          [operator]: newSampleMatchQuery
+        }
+      });
     } else {
       searchQuery.push({
         $match: {
@@ -403,8 +565,18 @@ exports.validateImageSearchOptions = (input) => {
           }
         }
       });
+
+      newSampleSearchQuery.push({
+        // Push Similar for new curation pipeline
+        $match: {
+          [`${newSampleFillerFields}`]: {
+            $elemMatch: { ChemicalName: value }
+          }
+        }
+      });
     }
-    return searchQuery;
+
+    return { searchQuery, newSampleSearchQuery };
   }
 
   // Search by microscopy type
@@ -413,6 +585,15 @@ exports.validateImageSearchOptions = (input) => {
     searchQuery.push({
       $match: {
         [`${targetField}.MicroscopyType`]: {
+          $exists: true
+        }
+      }
+    });
+
+    // Push Similar for new curation pipeline
+    newSampleSearchQuery.push({
+      $match: {
+        [`${newSampleTargetField}.MicroscopyType`]: {
           $exists: true
         }
       }
@@ -439,14 +620,43 @@ exports.validateImageSearchOptions = (input) => {
           [operator]: matchQuery
         }
       });
+
+      // Push Similar for new curation pipeline
+      const newSampleMatchQuery = [
+        {
+          [`${newSampleTargetField}.MicroscopyType`]: {
+            $regex: first.trim(),
+            $options: 'gi'
+          }
+        },
+        {
+          [`${newSampleTargetField}.MicroscopyType`]: {
+            $regex: second.trim(),
+            $options: 'gi'
+          }
+        }
+      ];
+
+      newSampleSearchQuery.push({
+        $match: {
+          [operator]: newSampleMatchQuery
+        }
+      });
     } else {
       searchQuery.push({
         $match: {
           [`${targetField}.MicroscopyType`]: { $regex: value }
         }
       });
+
+      // Push Similar for new curation pipeline
+      newSampleSearchQuery.push({
+        $match: {
+          [`${newSampleTargetField}.MicroscopyType`]: { $regex: value }
+        }
+      });
     }
-    return searchQuery;
+    return { searchQuery, newSampleSearchQuery };
   }
 
   // Search by DOI
@@ -454,6 +664,15 @@ exports.validateImageSearchOptions = (input) => {
     searchQuery.push({
       $match: {
         [`${commonFields}.DOI`]: {
+          $exists: true
+        }
+      }
+    });
+
+    // Push Similar for new curation pipeline
+    newSampleSearchQuery.push({
+      $match: {
+        [`${newSampleCommonFields}.DOI`]: {
           $exists: true
         }
       }
@@ -474,14 +693,46 @@ exports.validateImageSearchOptions = (input) => {
           [operator]: matchQuery
         }
       });
+
+      // Push Similar for new curation pipeline
+      const newSampleMatchQuery = [
+        {
+          [`${newSampleCommonFields}.DOI`]: {
+            $regex: first.trim(),
+            $options: 'gi'
+          }
+        },
+        {
+          [`${newSampleCommonFields}.DOI`]: {
+            $regex: second.trim(),
+            $options: 'gi'
+          }
+        }
+      ];
+
+      newSampleSearchQuery.push({
+        $match: {
+          [operator]: newSampleMatchQuery
+        }
+      });
     } else {
       searchQuery.push({
         $match: {
           [`${commonFields}.DOI`]: { $regex: searchValue, $options: 'gi' }
         }
       });
+
+      // Push Similar for new curation pipeline
+      newSampleSearchQuery.push({
+        $match: {
+          [`${newSampleCommonFields}.DOI`]: {
+            $regex: searchValue,
+            $options: 'gi'
+          }
+        }
+      });
     }
-    return searchQuery;
+    return { searchQuery, newSampleSearchQuery };
   }
 
   // Search by Sample ID
@@ -491,7 +742,14 @@ exports.validateImageSearchOptions = (input) => {
         title: { $regex: searchValue, $options: 'gi' }
       }
     });
-    return searchQuery;
+
+    // Push Similar for new curation pipeline
+    newSampleSearchQuery.push({
+      $match: {
+        'object.Control_ID': { $regex: searchValue, $options: 'gi' }
+      }
+    });
+    return { searchQuery, newSampleSearchQuery };
   }
 
   // Search by sentence
@@ -499,6 +757,15 @@ exports.validateImageSearchOptions = (input) => {
   searchQuery.push({
     $match: {
       [`${commonFields}.Keyword`]: {
+        $exists: true
+      }
+    }
+  });
+
+  // Push Similar Search by sentence for new curation pipeline
+  newSampleSearchQuery.push({
+    $match: {
+      [`${newSampleCommonFields}.Keyword`]: {
         $exists: true
       }
     }
@@ -515,14 +782,46 @@ exports.validateImageSearchOptions = (input) => {
         [operator]: matchQuery
       }
     });
+
+    // Push Similar for new curation pipeline
+    const newSampleMatchQuery = [
+      {
+        [`${newSampleCommonFields}.Keyword`]: {
+          $regex: first.trim(),
+          $options: 'gi'
+        }
+      },
+      {
+        [`${newSampleCommonFields}.Keyword`]: {
+          $regex: second.trim(),
+          $options: 'gi'
+        }
+      }
+    ];
+
+    newSampleSearchQuery.push({
+      $match: {
+        [operator]: newSampleMatchQuery
+      }
+    });
   } else {
     searchQuery.push({
       $match: {
         [`${commonFields}.Keyword`]: { $regex: searchValue, $options: 'gi' }
       }
     });
+
+    // Push Similar for new curation pipeline
+    newSampleSearchQuery.push({
+      $match: {
+        [`${newSampleCommonFields}.Keyword`]: {
+          $regex: searchValue,
+          $options: 'gi'
+        }
+      }
+    });
   }
-  return searchQuery;
+  return { searchQuery, newSampleSearchQuery };
 };
 
 exports.validateImageSearchOptionsForUndefinedContent = (input) => {

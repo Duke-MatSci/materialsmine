@@ -136,26 +136,44 @@ exports.datasets = {
  */
 exports.knowledge = {
   properties: {
-    label: {
-      type: 'text',
-      analyzer: 'autocomplete'
-    },
+    name: { type: 'keyword' },
+    date: { type: 'date' },
     response: {
-      type: 'object',
-      dynamic: true,
       properties: {
         head: {
-          type: 'nested', // Define head as nested object
-          dynamic: true
+          properties: {
+            vars: { type: 'keyword' }
+          }
         },
         results: {
-          type: 'nested', // Define results as nested object
-          dynamic: true
+          properties: {
+            bindings: {
+              type: 'nested',
+              properties: {
+                sub: {
+                  properties: {
+                    type: { type: 'keyword' },
+                    value: { type: 'keyword' }
+                  }
+                },
+                pred: {
+                  properties: {
+                    type: { type: 'keyword' },
+                    value: { type: 'keyword' }
+                  }
+                },
+                obj: {
+                  properties: {
+                    type: { type: 'keyword' },
+                    value: { type: 'text' },
+                    datatype: { type: 'keyword' }
+                  }
+                }
+              }
+            }
+          }
         }
       }
-    },
-    date: {
-      type: 'date'
     }
   }
 };
