@@ -419,6 +419,8 @@ export default {
       const token = rootGetters['auth/token']
       const { xmlId, isNew } = payload
 
+      await dispatch('deleteEntityNanopub', xmlId)
+
       const fetchResponse = await fetch(
         `/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`,
         {
