@@ -91,9 +91,11 @@ exports.validateXlsxObjectUpdate = [
 ];
 
 function validationErrorHandler (req, res, next) {
-  req.logger.info('Middleware.validationErrorHandler: Function entry');
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    req.logger.info(
+      `Middleware.validationErrorHandler = () => ${errors.array()}`
+    );
     return res.status(400).json({
       success: false,
       message: 'validation error',

@@ -46,7 +46,7 @@ const defaultChart = {
 
 const chartType = 'http://semanticscience.org/resource/Chart'
 // const lodPrefix = window.location.origin
-const chartUriPrefix = 'http://nanomine.org/viz/'
+const chartUriPrefix = 'http://nanomine.org/explorer/chart/view/'
 const foafDepictionUri = 'http://xmlns.com/foaf/0.1/depiction'
 const hasContentUri = 'http://vocab.rpi.edu/whyis/hasContent'
 
@@ -141,7 +141,9 @@ function buildXmlLd (xmlData, xmlId) {
             '@id': `${nmRdfLodPrefix}/api/curate/${dataset}/${dsSeq}`,
             '@type': 'schema:Dataset',
             'schema:distribution': [
-              { '@id': `${nmRdfLodPrefix}/api/curate/title/${xmlTitle}` }
+              {
+                '@id': `${nmRdfLodPrefix}/explorer/xml/visualizer/${xmlData.id}?isNewCuration=${xmlData.isNewCuration}`
+              }
             ]
           }
         ]
@@ -279,6 +281,7 @@ async function saveXml (xml, token) {
         changeLogPromise
       ])
 
+      // TODO: What happens if one fail & one passes?
       if (!approvalResponse.ok) {
         throw new Error(
           `Failed to approve a curation: ${approvalResponse.statusText}`
