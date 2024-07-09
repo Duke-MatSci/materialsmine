@@ -87,7 +87,7 @@ export default {
       userId,
       displayName,
       isAdmin,
-      surName: context.getters.lastPageVisited,
+      surName,
       givenName
     })
     // Reroute to home page

@@ -8,9 +8,16 @@
         <!-- TODO TIME TO RESULT -->
         <span class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="otherArgs != null">{{ otherArgs }}</strong>
-          <span v-if="total === 0"> No results </span>
-          <span v-else-if="total === 1"> 1 result </span>
-          <span v-else> About {{ total }} results </span>
+          <template v-if="isFavourite">
+            <span v-if="totalFavorites === 0"> No favorite results </span>
+            <span v-else-if="totalFavorites === 1"> 1 favorite result </span>
+            <span v-else> About {{ totalFavorites }} favorite results </span>
+          </template>
+          <template v-else>
+            <span v-if="total === 0"> No results </span>
+            <span v-else-if="total === 1"> 1 result </span>
+            <span v-else> About {{ total }} results </span>
+          </template>
           ({{ (queryTimeMillis / 1000).toFixed(2) }} seconds)
         </span>
       </div>
@@ -184,6 +191,7 @@ export default {
       queryTimeMillis: 'explorer/gallery/queryTimeMillis',
       newChartExist: 'explorer/curation/getNewChartExist',
       favoriteChartItems: 'explorer/gallery/favoriteChartItems',
+      totalFavorites: 'explorer/gallery/totalFavorites',
       missingCharts: 'explorer/gallery/missingCharts'
     }),
     galleryChartItems () {
