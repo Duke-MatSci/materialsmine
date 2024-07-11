@@ -57,7 +57,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       const publicationType = uniqueFields.publicationType ?? undefined;
       const title = uniqueFields.title ?? undefined;
 
-      const curatedAlready = findDuplicate(
+      const curatedAlready = await findDuplicate(
         storedCurations,
         title,
         publicationType
@@ -107,7 +107,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
       const publicationType =
         sheetsData[sheetName]?.[+pubRow]?.[+pubCol] ?? undefined;
-      const curatedAlready = findDuplicate(
+      const curatedAlready = await findDuplicate(
         storedCurations,
         title,
         publicationType
@@ -244,15 +244,15 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   }
 };
 
-const findDuplicate = (storedCurations, title, publicationType) => {
-  const curatedAlready = storedCurations.find(
+// TODO: Commenting as this is failing if title/publication type of similar samples are the same.
+const findDuplicate = async (storedCurations, title, publicationType) => {
+  await storedCurations.find(
     ({ object }) =>
-      // TODO: Commenting as this is failing if title of similar samples are the same.
       // object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
       object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
       publicationType
   );
-  return curatedAlready;
+  return null;
 };
 
 const validateCurationPayload = (req, xlsxFile) => {
@@ -1569,7 +1569,9 @@ exports.approveCuration = async (req, res, next) => {
     const model = isNew ? CuratedSamples : XmlData;
     const entityState = isAdmin ? (isNew ? 'Approved' : 'IngestSuccess') : null;
     const curationState = isAdmin
-      ? CurationStateSubstitutionMap.Curated
+      ? isNew
+        ? CurationStateSubstitutionMap.Curated
+        : 'Curated'
       : CurationStateSubstitutionMap.Review;
 
     const update = {

@@ -57,6 +57,13 @@
         <label>Curating User</label>
         <md-input v-model="user"></md-input>
       </md-field>
+      <md-field
+        v-if="selectedFilters.includes('author')"
+        style="max-width: 100%"
+      >
+        <label>Author</label>
+        <md-input v-model="author"></md-input>
+      </md-field>
     </template>
 
     <template #action_buttons>
@@ -77,6 +84,7 @@
           <option value="curationState::Edit">Editing State</option>
           <option value="curationState::Review">Reviewing State</option>
           <option value="curationState::Curated">Curated</option>
+          <option value="author">Author</option>
           <option value="user">Curating User</option>
           <option value="isNew::Yes">New curation</option>
           <option value="isNew::No">Old Curation</option>
@@ -221,6 +229,7 @@ export default {
       apprStatus: null,
       curationState: null,
       user: null,
+      author: null,
       isNew: null,
       filterParams: {},
       error: null,
@@ -252,7 +261,11 @@ export default {
     },
     filtersActive () {
       return (
-        !!this.apprStatus || !!this.curationState || !!this.user || !!this.isNew
+        !!this.apprStatus ||
+        !!this.curationState ||
+        !!this.user ||
+        !!this.isNew ||
+        !!this.author
       )
     }
   },
@@ -292,7 +305,8 @@ export default {
           : null,
         status: this?.apprStatus,
         curationState: this?.curationState,
-        user: this?.user
+        user: this?.user,
+        author: this?.author
       }
       for (const key in filterParams) {
         if (filterParams[key] === null) delete filterParams[key]
@@ -317,6 +331,7 @@ export default {
       this.curationState = null
       this.user = null
       this.isNew = null
+      this.author = null
       this.selectedFilters = []
       this.filterParams = {}
       this.error = null

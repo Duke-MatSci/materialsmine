@@ -10,6 +10,7 @@ exports.curationSearchQuery = async (input) => {
   const isNewCuration = input?.filter?.isNewCuration;
   const curationState = input?.filter?.curationState;
   const user = input?.filter?.user;
+  const author = input?.filter?.author;
   const xmlDataFilter = param
     ? { title: { $regex: new RegExp(param.toString(), 'gi') } }
     : {};
@@ -27,6 +28,17 @@ exports.curationSearchQuery = async (input) => {
       CurationStateSubstitutionMap[curationState];
   }
 
+  if (author) {
+    xmlDataFilter[
+      'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author'
+    ] = {
+      $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    };
+    curationSampleFilter['object.DATA_SOURCE.Citation.CommonFields.Author'] = {
+      $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    };
+  }
+
   if (user) {
     xmlDataFilter.iduser = ObjectId.isValid(user) ? ObjectId(user) : user;
     curationSampleFilter.user = ObjectId.isValid(user) ? ObjectId(user) : user;
@@ -39,8 +51,40 @@ exports.curationSearchQuery = async (input) => {
   if (status) filter.status = status.replace('_', ' ');
   if (typeof isNewCuration === 'boolean') filter.isNewCuration = isNewCuration;
 
+  const authorRegex = author
+    ? new RegExp(`<Author>\\s*${author}\\b[^<]*</Author>`, 'gi')
+    : null;
+
+  const xmlDataFacet = {
+    xmlDataFilterPipeline: [{ $match: xmlDataFilter }]
+  };
+
+  if (authorRegex) {
+    const noContentMatch = {
+      content: { $eq: null },
+      xml_str: { $regex: authorRegex }
+    };
+
+    if (param) {
+      noContentMatch.title = { $regex: new RegExp(param.toString(), 'gi') };
+    }
+
+    xmlDataFacet.noContentPipeline = [{ $match: noContentMatch }];
+  }
+
   const data = await XmlData.aggregate([
-    { $match: xmlDataFilter },
+    { $facet: xmlDataFacet },
+    {
+      $project: {
+        combinedResults: {
+          $concatArrays: authorRegex
+            ? ['$xmlDataFilterPipeline', '$noContentPipeline']
+            : ['$xmlDataFilterPipeline']
+        }
+      }
+    },
+    { $unwind: '$combinedResults' },
+    { $replaceRoot: { newRoot: '$combinedResults' } },
     {
       $project: {
         id: '$_id',
