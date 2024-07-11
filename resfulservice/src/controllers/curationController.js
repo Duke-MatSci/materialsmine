@@ -247,9 +247,10 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 const findDuplicate = (storedCurations, title, publicationType) => {
   const curatedAlready = storedCurations.find(
     ({ object }) =>
-      object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
+      // TODO: Commenting as this is failing if title of similar samples are the same.
+      // object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
       object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
-        publicationType
+      publicationType
   );
   return curatedAlready;
 };
