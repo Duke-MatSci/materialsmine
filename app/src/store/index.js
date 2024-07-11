@@ -7,6 +7,7 @@ import vegaModule from './modules/vega/index.js'
 import nanomine from './modules/nanomine/index.js'
 import metamineNU from './modules/metamineNU/index.js'
 import contact from './modules/contact/index.js'
+import portal from './modules/portal/index.js'
 
 Vue.use(Vuex)
 
@@ -18,6 +19,7 @@ export default new Vuex.Store({
     vega: vegaModule,
     nanomine,
     metamineNU,
-    contact
+    contact,
+    portal
   }
 })

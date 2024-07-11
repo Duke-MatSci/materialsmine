@@ -17,20 +17,32 @@ function makeNanopubId () {
 }
 
 async function listNanopubs (uri) {
-  const response = await querySparql('', { whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}` })
+  const response = await querySparql('', {
+    whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}`
+  })
   return Object.values(response)
 }
 
-const postNewNanopub = async (pubData, context) => {
-  const nanopub = getNanopubSkeleton()
-  if (context) {
-    nanopub['@context'] = { ...nanopub['@context'], ...context }
+const postNewNanopub = async (pubData, isXSD, context) => {
+  let nanopub
+  if (!isXSD) {
+    nanopub = getNanopubSkeleton()
+    if (context) {
+      nanopub['@context'] = { ...nanopub['@context'], ...context }
+    }
+    nanopub['@graph']['np:hasAssertion']['@graph'].push(pubData)
+  } else {
+    nanopub = pubData
   }
-  nanopub['@graph']['np:hasAssertion']['@graph'].push(pubData)
 
   // This returns an empty response body from Whyis & Fuseki.
   // Ignore response as long as its not an error.
-  await querySparql('', { body: nanopub, method: 'POST', whyisPath: 'pub', headers: { 'Content-Type': 'application/json' } })
+  await querySparql('', {
+    body: nanopub,
+    method: 'POST',
+    whyisPath: 'pub',
+    headers: { 'Content-Type': 'application/json' }
+  })
   return nanopub
 }
 
@@ -70,9 +82,4 @@ function getNanopubSkeleton () {
   }
 }
 
-export {
-  deleteNanopub,
-  postNewNanopub,
-  listNanopubs,
-  lodPrefix
-}
+export { deleteNanopub, postNewNanopub, listNanopubs, lodPrefix }

@@ -2,58 +2,43 @@ const { datasetTransform, filesetsTransform } = require('./datasets');
 
 const transformMetaData = (el) => {
   const metaData = el || {};
-  metaData.keywords = typeof el?.keywords === 'object'
-    ? el.keywords
-    : typeof el?.keywords === 'string'
-      ? el.keywords.split(',')
-      : [];
+  metaData.keywords =
+    typeof el?.keywords === 'object'
+      ? el.keywords
+      : typeof el?.keywords === 'string'
+        ? el.keywords.split(',')
+        : [];
 
   metaData.sampleID = el.sampleId ? el.sampleId.split('.')[0] : undefined;
   return metaData;
 };
 
-exports.imageTransformer = (imageArray) => {
-  const getBase = '/api/files/';
-  const images = [];
-  if (imageArray.length) {
-    imageArray.map(el => images.push({
-      file: getBase + el?.images.File?.split('=')[1] ?? '',
-      description: el?.images.Description ?? '',
-      microscopyType: el?.images.MicroscopyType ?? '',
-      type: el?.images.Type ?? '',
-      dimension: el?.images.Dimension ?? {},
-      metaData: transformMetaData(el?.images.metaData)
-    }));
+const fileExtract = (fileLink) => {
+  // A curation will only have files stored in either mongo or object store (i.e. isStore)
+  if (fileLink.includes('isStore=true')) {
+    // fileLink already include base
+    return fileLink;
+  } else {
+    const getLinkId = fileLink?.split('=')[1] ?? '';
+    return `/api/files/${getLinkId}`;
   }
-  return images;
 };
 
-exports.pixelDataTransformer = (unitcell) => {
-  if (unitcell === 'TEN') {
-    return [{
-      symmetry: 'C4v',
-      unit_cell_x_pixels: '10',
-      unit_cell_y_pixels: '10',
-      geometry_condensed: '000000000001001',
-      geometry_full: '1010000101000000000010000000010000000000000000000000000000000000000000100000000100000000001010000101',
-      condition: 'Plane Strain',
-      C11: '2963290579',
-      C12: '1459531181',
-      C22: '2963290579'
-    }];
-  } else {
-    return [{
-      symmetry: 'C2v',
-      unit_cell_x_pixels: '50',
-      unit_cell_y_pixels: '50',
-      geometry_condensed: '',
-      geometry_full: '0000000000001111100000000000000001111100000000000000000000000011111000000000000000011111000000000000000000000000111110000000000000000111110000000000000000000000001111100000000000000001111100000000000000000000001',
-      condition: 'Plane Strain',
-      C11: '567844532.27',
-      C12: '86951532.93',
-      C22: '683684174.39'
-    }];
-  };
+exports.imageTransformer = (imageArray) => {
+  const images = [];
+  if (imageArray.length) {
+    imageArray.map((el) =>
+      images.push({
+        file: fileExtract(el?.images.File),
+        description: el?.images.Description ?? '',
+        microscopyType: el?.images.MicroscopyType ?? '',
+        type: el?.images.Type ?? '',
+        dimension: el?.images.Dimension ?? {},
+        metaData: transformMetaData(el?.images.metaData)
+      })
+    );
+  }
+  return images;
 };
 
 exports.datasetTransformer = datasetTransform;

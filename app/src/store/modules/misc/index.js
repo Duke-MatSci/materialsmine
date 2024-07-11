@@ -17,7 +17,8 @@ export default {
       snackbar: {
         message: '',
         action: null,
-        duration: false
+        duration: false,
+        callToActionText: 'Retry'
       },
       countDownDate: new Date('March 22, 2023 13:30:00').getTime(),
       uploadedFile: null

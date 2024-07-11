@@ -23,37 +23,27 @@ const routes = [
   {
     path: '/nm',
     component: NanomineBase,
-    children: [
-      ...nanomineRoutes
-    ]
+    children: [...nanomineRoutes]
   },
   {
     path: '/mm',
     component: MetamineBase,
-    children: [
-      ...metamineRoutes
-    ]
+    children: [...metamineRoutes]
   },
   {
     path: '/explorer',
     component: ExplorerBase,
-    children: [
-      ...explorerRoutes
-    ]
+    children: [...explorerRoutes]
   },
   {
     path: '/xsd',
     component: XsdBase,
-    children: [
-      ...xsdRoutes
-    ]
+    children: [...xsdRoutes]
   },
   {
     path: '/portal',
     component: PortalBase,
-    children: [
-      ...portalRoutes
-    ]
+    children: [...portalRoutes]
   },
   {
     path: '/auth/:auth',
@@ -89,10 +79,14 @@ const router = new VueRouter({
 router.beforeEach(async function (to, _, next) {
   if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
     if (!store.getters['auth/isAuthenticated']) {
-      store.commit('setSnackbar', {
-        message: 'Re-authenticating...',
-        duration: 1500
-      }, { root: true })
+      store.commit(
+        'setSnackbar',
+        {
+          message: 'Re-authenticating...',
+          duration: 1500
+        },
+        { root: true }
+      )
 
       await store.dispatch('auth/tryLogin')
       if (store.getters['auth/isAuthenticated']) {

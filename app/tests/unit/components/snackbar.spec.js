@@ -6,7 +6,7 @@ describe('@/components/Snackbar.vue', () => {
   const testMessage = 'Test snack message'
   let wrapper
   beforeEach(() => {
-    wrapper = createWrapper(Snackbar, { }, false)
+    wrapper = createWrapper(Snackbar, {}, false)
     wrapper.setData({ show: true })
   })
 
@@ -69,6 +69,6 @@ describe('@/components/Snackbar.vue', () => {
     await wrapper.vm.$store.commit('resetSnackbar', {})
     wrapper.vm.$nextTick()
     expect(wrapper.vm.show).toBe(false)
-    expect(wrapper.vm.message).toBe('')
+    expect(wrapper.vm.message).toBe(undefined)
   })
 })
