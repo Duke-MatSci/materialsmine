@@ -390,10 +390,8 @@ async function generateControlId(requiredFields, user, datasetId) {
       sampleIndex = curations.length + 1;
     }
 
-    // Construct controlId
-    const controlId = `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
-
-    return controlId;
+    // Construct controlId & return
+    return `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
   } catch (error) {
     const err = new Error(error);
     err.functionName = 'generateControlId';
