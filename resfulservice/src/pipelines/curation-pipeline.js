@@ -72,86 +72,93 @@ exports.curationSearchQuery = async (input) => {
     xmlDataFacet.noContentPipeline = [{ $match: noContentMatch }];
   }
 
-  const data = await XmlData.aggregate([
-    { $facet: xmlDataFacet },
-    {
-      $project: {
-        combinedResults: {
-          $concatArrays: authorRegex
-            ? ['$xmlDataFilterPipeline', '$noContentPipeline']
-            : ['$xmlDataFilterPipeline']
+  const data = await XmlData.aggregate(
+    [
+      { $facet: xmlDataFacet },
+      {
+        $project: {
+          combinedResults: {
+            $concatArrays: authorRegex
+              ? ['$xmlDataFilterPipeline', '$noContentPipeline']
+              : ['$xmlDataFilterPipeline']
+          }
+        }
+      },
+      { $unwind: '$combinedResults' },
+      { $replaceRoot: { newRoot: '$combinedResults' } },
+      {
+        $project: {
+          id: '$_id',
+          title: {
+            $cond: {
+              if: {
+                $not: { $regexMatch: { input: '$title', regex: /\.xml$/ } }
+              },
+              then: { $concat: ['$title', '.xml'] },
+              else: '$title'
+            }
+          },
+          sequence: '$dsSeq',
+          isNewCuration: { $literal: false },
+          status: {
+            $cond: [
+              { $eq: ['$entityState', 'IngestSuccess'] },
+              'Approved',
+              'Not Approved'
+            ]
+          },
+          user: '$iduser'
+        }
+      },
+      {
+        $unionWith: {
+          coll: 'curatedsamples',
+          pipeline: [
+            { $match: curationSampleFilter },
+            {
+              $project: {
+                id: '$_id',
+                title: {
+                  $cond: {
+                    if: { $ne: ['$object.Control_ID', null] },
+                    then: {
+                      $cond: {
+                        if: {
+                          $regexMatch: {
+                            input: '$object.Control_ID',
+                            regex: /\.xml$/
+                          }
+                        },
+                        then: '$object.Control_ID',
+                        else: { $concat: ['$object.Control_ID', '.xml'] }
+                      }
+                    },
+                    else: '$object.DATA_SOURCE.Citation.CommonFields.Title'
+                  }
+                },
+                object: 1,
+                isNewCuration: { $literal: true },
+                status: '$entityState',
+                user: 1
+              }
+            }
+          ]
+        }
+      },
+      { $match: filter },
+      {
+        $group: { _id: null, count: { $sum: 1 }, xmlData: { $push: '$$ROOT' } }
+      },
+      {
+        $project: {
+          _id: 0,
+          count: 1,
+          xmlData: { $slice: ['$xmlData', skip, pageSize] }
         }
       }
-    },
-    { $unwind: '$combinedResults' },
-    { $replaceRoot: { newRoot: '$combinedResults' } },
-    {
-      $project: {
-        id: '$_id',
-        title: {
-          $cond: {
-            if: { $not: { $regexMatch: { input: '$title', regex: /\.xml$/ } } },
-            then: { $concat: ['$title', '.xml'] },
-            else: '$title'
-          }
-        },
-        sequence: '$dsSeq',
-        isNewCuration: { $literal: false },
-        status: {
-          $cond: [
-            { $eq: ['$entityState', 'IngestSuccess'] },
-            'Approved',
-            'Not Approved'
-          ]
-        },
-        user: '$iduser'
-      }
-    },
-    {
-      $unionWith: {
-        coll: 'curatedsamples',
-        pipeline: [
-          { $match: curationSampleFilter },
-          {
-            $project: {
-              id: '$_id',
-              title: {
-                $cond: {
-                  if: { $ne: ['$object.Control_ID', null] },
-                  then: {
-                    $cond: {
-                      if: {
-                        $regexMatch: {
-                          input: '$object.Control_ID',
-                          regex: /\.xml$/
-                        }
-                      },
-                      then: '$object.Control_ID',
-                      else: { $concat: ['$object.Control_ID', '.xml'] }
-                    }
-                  },
-                  else: '$object.DATA_SOURCE.Citation.CommonFields.Title'
-                }
-              },
-              object: 1,
-              isNewCuration: { $literal: true },
-              status: '$entityState',
-              user: 1
-            }
-          }
-        ]
-      }
-    },
-    { $match: filter },
-    { $group: { _id: null, count: { $sum: 1 }, xmlData: { $push: '$$ROOT' } } },
-    {
-      $project: {
-        _id: 0,
-        count: 1,
-        xmlData: { $slice: ['$xmlData', skip, pageSize] }
-      }
-    }
-  ]);
+    ],
+    { allowDiskUse: true }
+  );
   const xmlData = data[0]?.xmlData ?? [];
   const count = data[0]?.count ?? 0;
   return { xmlData, count };
