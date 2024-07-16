@@ -3,9 +3,9 @@ const {
 } = require('mongoose');
 const XmlData = require('../models/xmlData');
 const { CurationStateSubstitutionMap } = require('../../config/constant');
-const oldXmlAuthorLocation =
-  'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author';
-const newXmlAuthorLocation = 'object.DATA_SOURCE.Citation.CommonFields.Author';
+// const oldXmlAuthorLocation =
+//   'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author';
+// const newXmlAuthorLocation = 'object.DATA_SOURCE.Citation.CommonFields.Author';
 
 exports.curationSearchQuery = async (input) => {
   const status = input?.filter?.status;
@@ -31,14 +31,14 @@ exports.curationSearchQuery = async (input) => {
       CurationStateSubstitutionMap[curationState];
   }
 
-  // if (author) {
-  //   xmlDataFilter[oldXmlAuthorLocation] = {
-  //     $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
-  //   };
-  //   curationSampleFilter[newXmlAuthorLocation] = {
-  //     $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
-  //   };
-  // }
+  if (author) {
+    // xmlDataFilter[oldXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
+    // curationSampleFilter[newXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
+  }
 
   if (user) {
     xmlDataFilter.iduser = ObjectId.isValid(user) ? ObjectId(user) : user;
