@@ -3,6 +3,9 @@ const {
 } = require('mongoose');
 const XmlData = require('../models/xmlData');
 const { CurationStateSubstitutionMap } = require('../../config/constant');
+// const oldXmlAuthorLocation =
+//   'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author';
+// const newXmlAuthorLocation = 'object.DATA_SOURCE.Citation.CommonFields.Author';
 
 exports.curationSearchQuery = async (input) => {
   const status = input?.filter?.status;
@@ -29,14 +32,12 @@ exports.curationSearchQuery = async (input) => {
   }
 
   if (author) {
-    xmlDataFilter[
-      'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author'
-    ] = {
-      $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
-    };
-    curationSampleFilter['object.DATA_SOURCE.Citation.CommonFields.Author'] = {
-      $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
-    };
+    // xmlDataFilter[oldXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
+    // curationSampleFilter[newXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
   }
 
   if (user) {
@@ -51,40 +52,8 @@ exports.curationSearchQuery = async (input) => {
   if (status) filter.status = status.replace('_', ' ');
   if (typeof isNewCuration === 'boolean') filter.isNewCuration = isNewCuration;
 
-  const authorRegex = author
-    ? new RegExp(`<Author>\\s*${author}\\b[^<]*</Author>`, 'gi')
-    : null;
-
-  const xmlDataFacet = {
-    xmlDataFilterPipeline: [{ $match: xmlDataFilter }]
-  };
-
-  if (authorRegex) {
-    const noContentMatch = {
-      content: { $eq: null },
-      xml_str: { $regex: authorRegex }
-    };
-
-    if (param) {
-      noContentMatch.title = { $regex: new RegExp(param.toString(), 'gi') };
-    }
-
-    xmlDataFacet.noContentPipeline = [{ $match: noContentMatch }];
-  }
-
   const data = await XmlData.aggregate([
-    { $facet: xmlDataFacet },
-    {
-      $project: {
-        combinedResults: {
-          $concatArrays: authorRegex
-            ? ['$xmlDataFilterPipeline', '$noContentPipeline']
-            : ['$xmlDataFilterPipeline']
-        }
-      }
-    },
-    { $unwind: '$combinedResults' },
-    { $replaceRoot: { newRoot: '$combinedResults' } },
+    { $match: xmlDataFilter },
     {
       $project: {
         id: '$_id',
