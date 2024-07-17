@@ -7,6 +7,7 @@ rest of the applications.
 
 ## Table of Contents
 
+- [Installation](#installation)
 - [Setting up and Starting Managed Services](#setting-up-and-starting-managed-services)
 - [How to locally access the app](#how-to-locally-access-the-app)
 - [API Endpoints](#api-endpoints)
@@ -22,6 +23,25 @@ rest of the applications.
   - [Example of Adding Another Route](#example-of-adding-another-route)
   - [Set Environment Variables](#set-environment-variables)
 - [Contact](#contact)
+
+## Installation
+
+1. Mac Users:
+   - Make sure to install [docker](https://docs.docker.com/get-docker/) on your
+     machine first, then `git clone` the repo
+
+For Windows OS: - Be sure to run the Docker installer as an administrator - If
+the Docker engine fails to start, install the latest WSL2 Linux kernel update
+package by following Step 4
+[here](https://docs.microsoft.com/en-us/windows/wsl/install-manual#step-4---download-the-linux-kernel-update-package)
+
+2. > _IMPORTANT NOTICE:_ Install nvm. For windows PC click
+   > [windows](https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-windows#install-nvm-windows-nodejs-and-npm),
+   > for Mac `brew install nvm`
+3. Copy and run the command below:
+   ```bash
+   nvm install 16.20.0 && nvm use 16.20.0
+   ```
 
 ## Setting up and Starting Managed Services
 
