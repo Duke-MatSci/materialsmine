@@ -3,6 +3,9 @@ const {
 } = require('mongoose');
 const XmlData = require('../models/xmlData');
 const { CurationStateSubstitutionMap } = require('../../config/constant');
+// const oldXmlAuthorLocation =
+//   'content.PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields.Author';
+// const newXmlAuthorLocation = 'object.DATA_SOURCE.Citation.CommonFields.Author';
 
 exports.curationSearchQuery = async (input) => {
   const status = input?.filter?.status;
@@ -10,6 +13,7 @@ exports.curationSearchQuery = async (input) => {
   const isNewCuration = input?.filter?.isNewCuration;
   const curationState = input?.filter?.curationState;
   const user = input?.filter?.user;
+  const author = input?.filter?.author;
   const xmlDataFilter = param
     ? { title: { $regex: new RegExp(param.toString(), 'gi') } }
     : {};
@@ -25,6 +29,15 @@ exports.curationSearchQuery = async (input) => {
     xmlDataFilter.curateState = curationState;
     curationSampleFilter.curationState =
       CurationStateSubstitutionMap[curationState];
+  }
+
+  if (author) {
+    // xmlDataFilter[oldXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
+    // curationSampleFilter[newXmlAuthorLocation] = {
+    //   $elemMatch: { $regex: new RegExp(author.toString(), 'gi') }
+    // };
   }
 
   if (user) {
@@ -44,7 +57,13 @@ exports.curationSearchQuery = async (input) => {
     {
       $project: {
         id: '$_id',
-        title: 1,
+        title: {
+          $cond: {
+            if: { $not: { $regexMatch: { input: '$title', regex: /\.xml$/ } } },
+            then: { $concat: ['$title', '.xml'] },
+            else: '$title'
+          }
+        },
         sequence: '$dsSeq',
         isNewCuration: { $literal: false },
         status: {
@@ -66,10 +85,22 @@ exports.curationSearchQuery = async (input) => {
             $project: {
               id: '$_id',
               title: {
-                $ifNull: [
-                  '$object.Control_ID',
-                  '$object.DATA_SOURCE.Citation.CommonFields.Title'
-                ]
+                $cond: {
+                  if: { $ne: ['$object.Control_ID', null] },
+                  then: {
+                    $cond: {
+                      if: {
+                        $regexMatch: {
+                          input: '$object.Control_ID',
+                          regex: /\.xml$/
+                        }
+                      },
+                      then: '$object.Control_ID',
+                      else: { $concat: ['$object.Control_ID', '.xml'] }
+                    }
+                  },
+                  else: '$object.DATA_SOURCE.Citation.CommonFields.Title'
+                }
               },
               object: 1,
               isNewCuration: { $literal: true },

@@ -2,7 +2,7 @@ import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql'
 import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/material-gql.js'
 import router from '@/router'
 import apollo from '@/modules/gql/apolloClient'
-import { deleteChart } from '@/modules/vega-chart'
+import { deleteChart, saveXml } from '@/modules/vega-chart'
 import { isValidOrcid } from '@/modules/whyis-dataset'
 
 export default {
@@ -64,24 +64,35 @@ export default {
       nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0]
 
     // Return if not able to retrieve chart object
-    if (!datasetObject) { return new Error('Caching error. Dataset object is missing') }
+    if (!datasetObject) {
+      return new Error('Caching error. Dataset object is missing')
+    }
 
     // Build chart instance object
     return {
       description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+        datasetObject['http://purl.org/dc/terms/description']?.[0]?.[
+          '@value'
+        ] ?? datasetObject['http://purl.org/dc/terms/description']?.['@value'],
       identifier: datasetObject['@id'],
-      label: datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+      label:
+        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
         datasetObject['http://purl.org/dc/terms/title']?.['@value'],
-      thumbnail: datasetObject['http://xmlns.com/foaf/0.1/depiction']?.['http://w3.org/ns/dcat#accessURL'],
+      thumbnail:
+        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+          'http://w3.org/ns/dcat#accessURL'
+        ],
       doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org) => {
+      organization: datasetObject[
+        'http://xmlns.com/foaf/0.1/Organization'
+      ]?.map((org) => {
         return org?.['http://xmlns.com/foaf/0.1/name']?.['@value']
       }),
-      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map((dist) => {
-        return dist?.['@id']
-      })
+      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map(
+        (dist) => {
+          return dist?.['@id']
+        }
+      )
     }
   },
 
@@ -121,7 +132,9 @@ export default {
         'createDatasetInstanceObject',
         resourceNanopub
       )
-    } else { return new Error('Caching error. Type parameter is missing or invalid') }
+    } else {
+      return new Error('Caching error. Type parameter is missing or invalid')
+    }
 
     const token = rootGetters['auth/token']
 
@@ -274,6 +287,8 @@ export default {
     const response = await fetchResponse.json()
     commit('setCurationFormData', response)
   },
+
+  // Curation Form Page Submit Function
   async submitCurationData (
     { state, commit, rootGetters },
     { xlsxObjectId = null, isNew = true } = {}
@@ -396,13 +411,15 @@ export default {
   },
   async deleteCuration ({ commit, rootGetters, dispatch }, payload) {
     try {
-      if (!payload || !payload?.xmlId || !payload?.isNew) {
+      if (!payload || !payload?.xmlId) {
         throw new Error('Incorrect query parameters', {
           cause: 'Missing flag'
         })
       }
       const token = rootGetters['auth/token']
       const { xmlId, isNew } = payload
+
+      await dispatch('deleteEntityNanopub', xmlId)
 
       const fetchResponse = await fetch(
         `/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`,
@@ -469,5 +486,98 @@ export default {
     const responseData = await response.json()
     commit('setRorData', responseData)
     return responseData
+  },
+
+  async approveCuration ({ commit, rootGetters }, xmlViewer) {
+    const isAdmin = rootGetters['auth/isAdmin']
+    const token = rootGetters['auth/token']
+    if (!isAdmin) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'This action is only available to administrator',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+    commit(
+      'setSnackbar',
+      {
+        message: 'Submitting your curation...',
+        duration: 2000
+      },
+      { root: true }
+    )
+    try {
+      await saveXml(xmlViewer, token)
+      // TODO: FIX THIS LATER!
+      // commit('resetSnackbar', {}, { root: true });
+      commit('setDialogBox', true, { root: true })
+    } catch (error) {
+      commit(
+        'setSnackbar',
+        {
+          message: 'An error occurred during submission',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+  },
+
+  async requestApproval (
+    { commit, rootGetters, dispatch },
+    { curationId, isNew }
+  ) {
+    const isAdmin = rootGetters['auth/isAdmin']
+    const token = rootGetters['auth/token']
+    if (isAdmin) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'This action is only available to non administrator',
+          duration: 7000
+        },
+        { root: true }
+      )
+    }
+    try {
+      const response = await fetch('/api/curate/approval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: JSON.stringify({ curationId, isNew })
+      })
+      if (!response || response.status !== 200) {
+        return commit(
+          'setSnackbar',
+          {
+            message: 'Something went wrong during the request',
+            action: () => dispatch('requestApproval', { curationId, isNew })
+          },
+          { root: true }
+        )
+      }
+      return commit(
+        'setSnackbar',
+        {
+          message: 'Approval request is successful',
+          duration: 7000
+        },
+        { root: true }
+      )
+    } catch (error) {
+      return commit(
+        'setSnackbar',
+        {
+          message: 'Something went wrong during the request',
+          action: () => dispatch('requestApproval', { curationId, isNew })
+        },
+        { root: true }
+      )
+    }
   }
 }

@@ -203,8 +203,8 @@
                     },
                     { "@if" : "not isempty(row.unit)",
                       "@type" : "owl:Restriction",
-                      "owl:onProperty" : { "@id":"sio:hasUnit"},
-                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:UnitOfMeasurement" }
+                      "owl:onProperty" : { "@id":"sio:SIO_000221"},
+                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:SIO_000074" }
                     }
                 ]
 	}]
@@ -240,14 +240,14 @@
                     },
                     { "@if" : "not isempty(row.unit)",
                       "@type" : "owl:Restriction",
-                      "owl:onProperty" : { "@id":"sio:hasUnit"},
-                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:UnitOfMeasurement" }
+                      "owl:onProperty" : { "@id":"sio:SIO_000221"},
+                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:SIO_000074" }
                     },
                     { "@if" : "not isempty(row.hasInput)",
                         "@for" : "input in row.hasInput.split(', ')",
                         "@do" : {
                             "@type" : "owl:Restriction",
-                            "owl:onProperty" : { "@id":"sio:hasInput"},
+                            "owl:onProperty" : { "@id":"sio:SIO_000230"},
                             "owl:someValuesFrom" : { "@id": "{{input}}" }
                         }
                     },
@@ -255,7 +255,7 @@
                         "@for" : "attr in row.hasAttribute.split(', ')",
                         "@do" : {
                             "@type" : "owl:Restriction",
-                            "owl:onProperty" : { "@id":"sio:hasAttribute"},
+                            "owl:onProperty" : { "@id":"sio:SIO_000008"},
                             "owl:someValuesFrom" : { "@id": "{{attr}}" }
                         }
                     },
@@ -263,7 +263,7 @@
                         "@for" : "attr in row.duration.split(', ')",
                         "@do" : {
                             "@type" : "owl:Restriction",
-                            "owl:onProperty" : { "@id":"sio:hasAttribute"},
+                            "owl:onProperty" : { "@id":"sio:SIO_000008"},
                             "owl:someValuesFrom" : { "@id": "{{attr}}" }
                         }
                     }
@@ -301,8 +301,8 @@
                     },
                     { "@if" : "not isempty(row.unit)",
                       "@type" : "owl:Restriction",
-                      "owl:onProperty" : { "@id":"sio:hasUnit"},
-                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:UnitOfMeasurement" }
+                      "owl:onProperty" : { "@id":"sio:SIO_000221"},
+                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:SIO_000074" }
                     }
                 ]
 	}]
@@ -328,7 +328,7 @@
         "@graph": [{
             "@id": "{{row.uri}}",
             "@type" : [
-                "sio:UnitOfMeasurement",
+                "sio:SIO_000074",
                 {"@if" : "row.absolute == 'y'", "@id" : "materialsmine:AbsoluteUnitOfMeasurement"}
             ],
             "rdfs:label" : "{{row.label}}",
@@ -426,8 +426,8 @@
                     },
                     { "@if" : "not isempty(row.unit)",
                       "@type" : "owl:Restriction",
-                      "owl:onProperty" : { "@id":"sio:hasUnit"},
-                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:UnitOfMeasurement" }
+                      "owl:onProperty" : { "@id":"sio:SIO_000221"},
+                      "owl:hasValue" : { "@id": "materialsmine:unit/{{slugify(row.unit)}}", "rdfs:label" : "{{row.unit}}", "@type" : "sio:SIO_000074" }
                     }
                 ]
 	}]

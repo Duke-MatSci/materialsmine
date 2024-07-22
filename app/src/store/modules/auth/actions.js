@@ -47,14 +47,17 @@ export default {
 
   async authProcessor (context, payload) {
     const res = payload ? JSON.parse(payload) : {}
-
     // Reroute to home page
-    // TODO (xxx): We should re-route to the page where user left off
     router.push('/nm')
-    context.commit('setSnackbar', {
-      message: 'Authenticating...',
-      duration: 3000
-    }, { root: true })
+
+    context.commit(
+      'setSnackbar',
+      {
+        message: 'Authenticating...',
+        duration: 3000
+      },
+      { root: true }
+    )
 
     const token = res.token ?? null
     const userId = res.userId ?? null
@@ -79,7 +82,19 @@ export default {
       }, expiresIn)
     }
 
-    context.commit('setUser', { token, userId, displayName, isAdmin, surName, givenName })
+    return context.commit('setUser', {
+      token,
+      userId,
+      displayName,
+      isAdmin,
+      surName,
+      givenName
+    })
+    // Reroute to home page
+    // TODO (xxx): We should re-route to the page where user left off
+    // if (this.router.path !== context.getters['lastPageVisited']) {
+    // }
+    // return router.push(context.getters.lastPageVisited);
   },
 
   tryLogin (context) {
@@ -88,8 +103,12 @@ export default {
     const displayName = localStorage.getItem('displayName')
     const surName = localStorage.getItem('surName')
     const givenName = localStorage.getItem('givenName')
-    const isAdmin = localStorage.getItem('isAdmin')
+    const localStorageIsAdmin = localStorage.getItem('isAdmin')
     const tokenExpiration = localStorage.getItem('tokenExpiration')
+
+    // Required since local storage return booleans as string
+    const isAdmin =
+      localStorageIsAdmin === 'true' || localStorageIsAdmin === true
 
     const expiresIn = +tokenExpiration - new Date().getTime()
 
@@ -103,7 +122,14 @@ export default {
     }, expiresIn)
 
     if (token && userId && displayName) {
-      context.commit('setUser', { token, userId, displayName, isAdmin, surName, givenName })
+      context.commit('setUser', {
+        token,
+        userId,
+        displayName,
+        isAdmin,
+        surName,
+        givenName
+      })
     }
   },
 
@@ -140,9 +166,13 @@ export default {
   },
 
   notifyUser (context) {
-    context.commit('setSnackbar', {
-      message: 'This page requires login to access',
-      duration: 5000
-    }, { root: true })
+    context.commit(
+      'setSnackbar',
+      {
+        message: 'This page requires login to access',
+        duration: 5000
+      },
+      { root: true }
+    )
   }
 }

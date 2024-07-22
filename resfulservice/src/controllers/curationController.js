@@ -6,7 +6,7 @@ const fs = require('fs');
 const XlsxFileManager = require('../utils/curation-utility');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
-const { errorWriter } = require('../utils/logWriter');
+const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
 const {
   BaseObjectSubstitutionMap,
@@ -23,6 +23,7 @@ const XmlData = require('../models/xmlData');
 const DatasetId = require('../models/datasetId');
 const FsFile = require('../models/fsFiles');
 const Task = require('../sw/models/task');
+const ChangeLog = require('../models/changeLog');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 
@@ -56,7 +57,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       const publicationType = uniqueFields.publicationType ?? undefined;
       const title = uniqueFields.title ?? undefined;
 
-      const curatedAlready = findDuplicate(
+      const curatedAlready = await findDuplicate(
         storedCurations,
         title,
         publicationType
@@ -106,7 +107,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
       const publicationType =
         sheetsData[sheetName]?.[+pubRow]?.[+pubCol] ?? undefined;
-      const curatedAlready = findDuplicate(
+      const curatedAlready = await findDuplicate(
         storedCurations,
         title,
         publicationType
@@ -146,7 +147,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       }
     }
     const requiredFields = getCurationUniqueFields(result);
-    result.Control_ID = await generateControlSampleId(
+    result.Control_ID = await generateControlId(
       requiredFields,
       user,
       query?.dataset
@@ -243,14 +244,15 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
   }
 };
 
-const findDuplicate = (storedCurations, title, publicationType) => {
-  const curatedAlready = storedCurations.find(
+// TODO: Commenting as this is failing if title/publication type of similar samples are the same.
+const findDuplicate = async (storedCurations, title, publicationType) => {
+  await storedCurations.find(
     ({ object }) =>
-      object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
+      // object?.DATA_SOURCE?.Citation?.CommonFields?.Title === title &&
       object?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType ===
-        publicationType
+      publicationType
   );
-  return curatedAlready;
+  return null;
 };
 
 const validateCurationPayload = (req, xlsxFile) => {
@@ -290,38 +292,113 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   };
 };
 
-const generateControlSampleId = async (requiredFields, user, datasetId) => {
-  try {
-    let [existingDatasets, userDatasets] = await Promise.all([
-      DatasetId.find({ user: user._id }),
-      DatasetId.findOne({
-        user: user._id,
-        _id: datasetId
-      })
-    ]);
+// const generateControlSampleId = async (requiredFields, user, datasetId) => {
+//   try {
+//     let [existingDatasets, userDatasets] = await Promise.all([
+//       DatasetId.find({ user: user._id }),
+//       DatasetId.findOne({
+//         user: user._id,
+//         _id: datasetId
+//       })
+//     ]);
 
-    if (!userDatasets && !existingDatasets?.length) {
-      userDatasets = await DatasetId.create({ user });
-    } else {
-      userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+//     if (!userDatasets && !existingDatasets?.length) {
+//       userDatasets = await DatasetId.create({ user });
+//     } else {
+//       userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
+//     }
+
+//     let { citationType, publicationYear, author } = requiredFields;
+
+//     // L325_S1_Test_2015
+//     citationType = citationType === 'lab-generated' ? 'E' : 'L';
+//     publicationYear = publicationYear ?? new Date().getFullYear();
+//     author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
+//     const sampleIndex = userDatasets?.samples?.length + 1;
+//     const datasetIndex = existingDatasets?.length + 1;
+
+//     return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}.xml`;
+//   } catch (error) {
+//     const err = new Error(error);
+//     err.functionName = 'generateControlSampleId';
+//     throw err;
+//   }
+// };
+
+async function generateControlId(requiredFields, user, datasetId) {
+  try {
+    // Find or create userDataset from MongoDB
+    let userDataset = await DatasetId.findOne({
+      user: user._id,
+      _id: datasetId
+    });
+
+    if (!userDataset) {
+      // If userDataset does not exist, create one
+      userDataset = await DatasetId.create({ user });
     }
 
     let { citationType, publicationYear, author } = requiredFields;
 
-    // L325_S1_Test_2015
-    citationType = citationType === 'lab-generated' ? 'E' : 'L';
-    publicationYear = publicationYear ?? new Date().getFullYear();
-    author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
-    const sampleIndex = userDatasets?.samples?.length;
-    const datasetIndex = existingDatasets?.length ?? 1;
+    // Determine citationPrefix
+    const citationPrefix = citationType === 'lab-generated' ? 'E' : 'L';
 
-    return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}`;
+    // Determine publicationYear
+    publicationYear = publicationYear ?? new Date().getFullYear();
+
+    // Determine author
+    const authorName = author?.length
+      ? author[0].split(/[,\s]+/)[0]
+      : 'unknown';
+
+    // Find curations for datasetIndex
+    const regex = new RegExp(
+      `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
+      'i'
+    );
+    // const regex = new RegExp(`^${citationPrefix}.*${authorName}.*\\.xml?$`, 'i');
+    let curations = await CuratedSamples.find({
+      user: user._id,
+      'object.Control_ID': { $regex: regex }
+    });
+
+    // Determine datasetIndex
+    let datasetIndex, sampleIndex;
+    if (curations.length === 0) {
+      curations = await CuratedSamples.find({ user: user._id });
+      if (curations.length) {
+        let highestIndex = 0;
+        curations.forEach((curation) => {
+          if (curation.object.Control_ID.startsWith(citationPrefix)) {
+            const match = curation.object.Control_ID.match(/\d+/);
+            if (match) {
+              const num = parseInt(match[0], 10);
+              if (num > highestIndex) {
+                highestIndex = num;
+              }
+            }
+          }
+        });
+        datasetIndex = highestIndex + 1;
+        sampleIndex = 1;
+      } else {
+        datasetIndex = 1;
+        sampleIndex = 1;
+      }
+    } else {
+      const match = curations[0].object.Control_ID.match(/\d+/);
+      datasetIndex = match ? parseInt(match[0], 10) : 1;
+      sampleIndex = curations.length + 1;
+    }
+
+    // Construct controlId & return
+    return `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
   } catch (error) {
     const err = new Error(error);
-    err.functionName = 'generateControlSampleId';
+    err.functionName = 'generateControlId';
     throw err;
   }
-};
+}
 
 const generateDuplicateControlID = async (currentValue, isNew) => {
   const currentNumber = parseInt(currentValue.match(/_S(\d+)_/)[1]);
@@ -359,11 +436,7 @@ exports.getControlSampleId = async (req, res, next) => {
   try {
     logger.info('getControlSampleId Function Entry:');
 
-    const controlID = await generateControlSampleId(
-      body,
-      user,
-      body?.datasetId
-    );
+    const controlID = await generateControlId(body, user, body?.datasetId);
 
     latency.latencyCalculator(res);
     return res.status(201).json({ controlID });
@@ -784,7 +857,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
           {
             $set: {
               object: filteredObject,
-              curationState: CurationStateSubstitutionMap.Review
+              curationState: CurationStateSubstitutionMap.Edit
             }
           },
           {
@@ -800,7 +873,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
             $set: {
               content: { PolymerNanocomposite: { ...filteredObject } },
               xml_str: xml,
-              curateState: CurationStateSubstitutionMap.Review
+              curateState: 'Edit'
             }
           },
           { new: true, lean: true }
@@ -846,49 +919,21 @@ exports.deleteXlsxCurations = async (req, res, next) => {
   logger.info('deleteXlsxCurations Function Entry:');
 
   const { xlsxObjectId, dataset, isNew } = query;
-  const userFilter =
-    isNew === 'true' ? { user: user._id } : { iduser: user._id };
+  const isNewCuration = isNew === 'true';
+  const userFilter = isNewCuration ? { user: user._id } : { iduser: user._id };
   const filter = user?.roles !== userRoles.isAdmin ? userFilter : {};
-
+  const entityState = isNewCuration ? 'Approved' : 'IngestSuccess';
   try {
     if (xlsxObjectId) {
-      let xlsxObject;
-      if (isNew === 'true') {
-        xlsxObject = await CuratedSamples.findOneAndDelete(
-          { _id: xlsxObjectId, ...filter },
-          { lean: true }
-        );
-        const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
-        if (imageFiles) {
-          imageFiles.forEach(async ({ File }) => {
-            const file = File.split('/api/files/').pop();
-            const newReq = {
-              params: { fileId: file.split('?')[0] },
-              isInternal: true
-            };
-            await FileController.deleteFile(newReq, {}, (fn) => fn);
-          });
+      const model = isNewCuration ? CuratedSamples : XmlData;
+      const curation = await model.findOne(
+        { _id: xlsxObjectId, ...filter },
+        null,
+        {
+          lean: true
         }
-      } else {
-        xlsxObject = await XmlData.findOneAndDelete(
-          { _id: xlsxObjectId, ...filter },
-          { lean: true }
-        );
-        if (xlsxObject?.xml_str) {
-          const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
-          const xmlObject = JSON.parse(xmlJson);
-          xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
-          const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
-          if (imageFiles) {
-            imageFiles.forEach(async ({ File }) => {
-              const blobId = File.split('?id=').pop();
-              await FsFile.findOneAndDelete({ _id: blobId });
-            });
-          }
-        }
-      }
-
-      if (!xlsxObject) {
+      );
+      if (!curation) {
         return next(
           errorWriter(
             req,
@@ -898,12 +943,64 @@ exports.deleteXlsxCurations = async (req, res, next) => {
           )
         );
       }
+      if (curation.entityState === entityState) {
+        return next(
+          errorWriter(
+            req,
+            'Curation is already approved and pushed to fuseki database',
+            'deleteXlsxCurations',
+            403
+          )
+        );
+      }
+      let xlsxObject = await model.findOneAndDelete(
+        { _id: xlsxObjectId, ...filter },
+        { lean: true }
+      );
+      if (isNewCuration) {
+        const imageFiles = xlsxObject?.object?.MICROSTRUCTURE?.ImageFile;
+        if (imageFiles?.length) {
+          for (const { File } of imageFiles) {
+            const file = File.split('/api/files/').pop();
+            const otherCurationCount = await model.countDocuments({
+              'object.MICROSTRUCTURE.ImageFile.File': File,
+              _id: { $ne: xlsxObjectId }
+            });
+            if (otherCurationCount === 0) {
+              const newReq = {
+                params: { fileId: file.split('?')[0] },
+                isInternal: true
+              };
+              await FileController.deleteFile(newReq, {}, (fn) => fn);
+            }
+          }
+        }
+      } else if (xlsxObject?.xml_str) {
+        const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
+        const xmlObject = JSON.parse(xmlJson);
+        xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
+        const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
+        if (imageFiles?.length) {
+          for (const { File } of imageFiles) {
+            const blobId = File.split('?id=').pop();
+            const otherCurationCount = await model.countDocuments({
+              'MICROSTRUCTURE.ImageFile.File': File,
+              _id: { $ne: xlsxObjectId }
+            });
+
+            if (otherCurationCount === 0) {
+              await FsFile.findOneAndDelete({ _id: blobId });
+            }
+          }
+        }
+      }
 
       await DatasetId.findOneAndUpdate(
         { _id: xlsxObject?.dataset }, // TODO (@tee): Check if this is correct. Should we be calling this if value can be undefined?
         { $pull: { samples: xlsxObject?._id } },
         { new: true }
       );
+      latency.latencyCalculator(res);
       return res.status(200).json({
         message: `Curated sample ID: ${xlsxObjectId} successfully deleted`
       });
@@ -925,6 +1022,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
       }
 
       await CuratedSamples.deleteMany({ _id: { $in: datasets.samples } });
+      latency.latencyCalculator(res);
       return res
         .status(200)
         .json({ message: `Dataset ID: ${query.dataset} successfully deleted` });
@@ -1461,7 +1559,119 @@ exports.getCurationSchemaObject = async (req, res, next) => {
   return res.status(200).json(result);
 };
 
-exports.approveCuration = async (req, res, next) => {};
+exports.approveCuration = async (req, res, next) => {
+  const { logger, body, user } = req;
+  logger.info('approveCuration Function Entry:');
+  const { curationId, isNew } = body;
+
+  try {
+    const isAdmin = user?.roles === userRoles.isAdmin;
+    const model = isNew ? CuratedSamples : XmlData;
+    const entityState = isAdmin ? (isNew ? 'Approved' : 'IngestSuccess') : null;
+    const curationState = isAdmin
+      ? isNew
+        ? CurationStateSubstitutionMap.Curated
+        : 'Curated'
+      : CurationStateSubstitutionMap.Review;
+
+    const update = {
+      $set: {
+        ...(entityState && { entityState }),
+        [isNew ? 'curationState' : 'curateState']: curationState
+      }
+    };
+
+    const options = { new: true, lean: true };
+    const curation = await model.findOneAndUpdate(
+      { _id: curationId },
+      update,
+      options
+    );
+
+    if (!curation) {
+      return next(
+        errorWriter(
+          req,
+          `Curation with ID: ${curationId} not found`,
+          'approveCuration',
+          404
+        )
+      );
+    }
+
+    return res.status(200).json(curation);
+  } catch (error) {
+    return next(errorWriter(req, error, 'approveCuration', 500));
+  }
+};
+
+exports.createChangeLog = async (req, res, next) => {
+  const { logger, body, user } = req;
+  logger.info('createChangeLog(): Function entry');
+  const userId = user._id;
+  const { resourceId, change, published } = body;
+
+  try {
+    const filter = { resourceID: resourceId };
+    const update = {
+      $push: {
+        changes: { change, date: new Date(), published, user: userId }
+      }
+    };
+    const options = {
+      upsert: true,
+      new: true
+    };
+
+    const changeLog = await ChangeLog.findOneAndUpdate(filter, update, options);
+
+    successWriter(req, JSON.stringify(changeLog), 'createChangeLog');
+    latency.latencyCalculator(res);
+    return res.status(201).json(changeLog);
+  } catch (err) {
+    next(errorWriter(req, err, 'createChangeLog', 500));
+  }
+};
+
+exports.getChangeLogs = async (req, res, next) => {
+  const { logger, params, query } = req;
+  logger.info('getChangeLogs(): Function entry');
+
+  const { resourceId } = params;
+  const page = parseInt(query?.page) || 1;
+  const pageSize = parseInt(query?.pageSize) || 10;
+  const published = query?.published;
+
+  try {
+    const resourceChangeLog = await ChangeLog.findOne({
+      resourceID: resourceId
+    });
+
+    if (!resourceChangeLog) {
+      // return next(errorWriter(req, 'Change log not found', 'getChangeLogs', 404));
+      return res.status(200).json({});
+    }
+
+    let changeLogs;
+
+    if (published) {
+      const publishedChanges = resourceChangeLog.changes.filter(
+        (change) => change.published
+      );
+      changeLogs = publishedChanges[publishedChanges.length - 1];
+    } else {
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      changeLogs = resourceChangeLog.changes.slice(startIndex, endIndex);
+    }
+
+    successWriter(req, JSON.stringify(changeLogs), 'getChangeLogs');
+    latency.latencyCalculator(res);
+    return res.status(200).json(changeLogs);
+  } catch (err) {
+    next(errorWriter(req, err, 'getChangeLogs', 500));
+  }
+};
 
 exports.curationRehydration = async (req, res, next) => {};
 

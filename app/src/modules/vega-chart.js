@@ -1,5 +1,6 @@
 import { querySparql, parseSparql } from '@/modules/sparql'
 import { deleteNanopub, listNanopubs, postNewNanopub } from './whyis-utils'
+import { deleteResources } from './whyis-dataset'
 
 const defaultQuery = `
 PREFIX sio: <http://semanticscience.org/resource/>
@@ -38,13 +39,14 @@ const defaultChart = {
   baseSpec: defaultSpec,
   query: defaultQuery,
   title: 'Example Bar Chart',
-  description: 'An example chart that looks up the frequency for each class in the knowledge graph.',
+  description:
+    'An example chart that looks up the frequency for each class in the knowledge graph.',
   depiction: null
 }
 
 const chartType = 'http://semanticscience.org/resource/Chart'
 // const lodPrefix = window.location.origin
-const chartUriPrefix = 'http://nanomine.org/viz/'
+const chartUriPrefix = 'http://nanomine.org/explorer/chart/view/'
 const foafDepictionUri = 'http://xmlns.com/foaf/0.1/depiction'
 const hasContentUri = 'http://vocab.rpi.edu/whyis/hasContent'
 
@@ -58,12 +60,14 @@ const chartFieldPredicates = {
 
 const chartIdLen = 16
 
-function generateChartId () {
+function generateChartId (isXml) {
   const intArr = new Uint8Array(chartIdLen / 2)
   window.crypto.getRandomValues(intArr)
-  const chartId = Array.from(intArr, (dec) => ('0' + dec.toString(16)).substr(-2)).join('')
+  const chartId = Array.from(intArr, (dec) =>
+    ('0' + dec.toString(16)).substr(-2)
+  ).join('')
 
-  return `${chartUriPrefix}${chartId}`
+  return isXml ? chartId : `${chartUriPrefix}${chartId}`
 }
 
 function buildChartLd (chart) {
@@ -84,6 +88,105 @@ function buildChartLd (chart) {
     })
   return chartLd
 }
+function matchValidXmlTitle (title) {
+  const rv = title.match(
+    /^[A-Z]([0-9]+)[_][S]([0-9]+)[_]([\S]+)[_](\d{4})([.][Xx][Mm][Ll])?$/
+  ) // e.g. L183_S12_Poetschke_2003.xml
+  return rv
+}
+
+function buildXmlLd (xmlData, xmlId) {
+  const nmRdfLodPrefix = `${new URL(window.location)?.host}`
+  const xmlTitle = xmlData.title
+  const b64XmlData = str2b64(xmlData.xmlString)
+  const whyisId = xmlId
+  const tileArray = matchValidXmlTitle(xmlTitle)
+  const dataset = tileArray[1]
+  const dsSeq = tileArray[2]
+
+  return {
+    '@context': {
+      '@base': `${nmRdfLodPrefix}`,
+      schema: 'http://schema.org/',
+      xsd: 'http://www.w3.org/2001/XMLSchema#',
+      whyis: 'http://vocab.rpi.edu/whyis/',
+      np: 'http://www.nanopub.org/nschema#',
+      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+      sio: 'http://semanticscience.org/resource/',
+      dc: 'http://purl.org/dc/terms/',
+      prov: 'http://www.w3.org/ns/prov#',
+      mt: 'https://www.iana.org/assignments/media-types/'
+    },
+    '@id': `urn:${whyisId}`,
+    '@graph': {
+      '@id': `urn:${whyisId}`,
+      '@type': 'np:Nanopublication',
+      'np:hasAssertion': {
+        '@id': `urn:${whyisId}_assertion`,
+        '@type': 'np:Assertion',
+        '@graph': [
+          {
+            '@id': `${nmRdfLodPrefix}/explorer/xml/visualizer/${xmlData.id}?isNewCuration=${xmlData.isNewCuration}`,
+            '@type': [
+              'schema:DataDownload',
+              'mt:text/xml',
+              'http://nanomine.org/ns/NanomineXMLFile'
+            ],
+            'whyis:hasContent': `data:text/xml;charset=UTF-8;base64,${b64XmlData}`,
+            'dc:conformsTo': {
+              '@id': `${nmRdfLodPrefix}/api/curate/schema?getXSD=true`
+            }
+          },
+          {
+            '@id': `${nmRdfLodPrefix}/api/curate/${dataset}/${dsSeq}`,
+            '@type': 'schema:Dataset',
+            'schema:distribution': [
+              {
+                '@id': `${nmRdfLodPrefix}/explorer/xml/visualizer/${xmlData.id}?isNewCuration=${xmlData.isNewCuration}`
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
+
+function buildXsdLd (xsdData, xsdId, schemaName) {
+  const nmRdfLodPrefix = `${new URL(window.location)?.host}`
+  const schemaText = xsdData.replace(/[\n]/g, '')
+  const b64SchemaData = str2b64(schemaText)
+  return {
+    '@context': {
+      '@base': `${nmRdfLodPrefix}`,
+      schema: 'http://schema.org/',
+      xsd: 'http://www.w3.org/2001/XMLSchema#',
+      whyis: 'http://vocab.rpi.edu/whyis/',
+      np: 'http://www.nanopub.org/nschema#',
+      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+      sio: 'http://semanticscience.org/resource/',
+      dc: 'http://purl.org/dc/terms/',
+      prov: 'http://www.w3.org/ns/prov#',
+      mt: 'https://www.iana.org/assignments/media-types/'
+    },
+    '@id': `urn:${xsdId}`,
+    '@graph': {
+      '@id': `urn:${xsdId}`,
+      '@type': 'np:Nanopublication',
+      'np:hasAssertion': {
+        '@id': `urn:${xsdId}_assertion`,
+        '@type': 'np:Assertion',
+        '@graph': [
+          {
+            '@id': `${nmRdfLodPrefix}/nmr/schema/${schemaName}`,
+            '@type': ['mt:text/xml', 'http://www.w3.org/2001/XMLSchema'],
+            'whyis:hasContent': `data:text/xml;charset=UTF-8;base64,${b64SchemaData}`
+          }
+        ]
+      }
+    }
+  }
+}
 
 function getDefaultChart () {
   return Object.assign({}, defaultChart)
@@ -102,11 +205,12 @@ function copyChart (sourceChart) {
 }
 
 async function deleteChart (chartUri) {
-  return listNanopubs(chartUri)
-    .then(nanopubs => {
-      if (!nanopubs || !nanopubs.length) return
-      return Promise.all(nanopubs.map(async nanopub => await deleteNanopub(nanopub.np)))
-    })
+  return listNanopubs(chartUri).then((nanopubs) => {
+    if (!nanopubs || !nanopubs.length) return
+    return Promise.all(
+      nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np))
+    )
+  })
 }
 
 async function saveChart (chart) {
@@ -118,6 +222,118 @@ async function saveChart (chart) {
 
   const chartLd = buildChartLd(chart)
   return await postNewNanopub(chartLd)
+}
+
+async function saveXml (xml, token) {
+  let xmlId
+  try {
+    const changeLogResponse = await fetch(
+      `/api/curate/changelogs/${xml.id}?published=true`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+    if (changeLogResponse.ok) {
+      const latestPublishedXml = await changeLogResponse.json()
+      const latestPublishedXmlUri = latestPublishedXml?.change?.[0]
+      if (latestPublishedXmlUri) {
+        await deleteResources(latestPublishedXmlUri)
+        xmlId = latestPublishedXmlUri
+      } else {
+        xmlId = generateChartId(true)
+      }
+    } else {
+      throw new Error(
+        `Failed to get latest published xml: ${changeLogResponse.statusText}`
+      )
+    }
+    const xmlLd = buildXmlLd(xml, xmlId)
+    const nanopub = await postNewNanopub(xmlLd, true)
+
+    if (nanopub) {
+      const approvalPromise = fetch('/api/curate/approval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ curationId: xml.id, isNew: xml.isNewCuration })
+      })
+
+      const changeLogPromise = fetch(`/api/curate/changelogs/${xml.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          resourceId: xml.id,
+          change: [xmlId],
+          published: true
+        })
+      })
+
+      const [approvalResponse, changeLogResponse] = await Promise.all([
+        approvalPromise,
+        changeLogPromise
+      ])
+
+      // TODO: What happens if one fail & one passes?
+      if (!approvalResponse.ok) {
+        throw new Error(
+          `Failed to approve a curation: ${approvalResponse.statusText}`
+        )
+      }
+      if (!changeLogResponse.ok) {
+        throw new Error(
+          `Failed to post change log: ${changeLogResponse.statusText}`
+        )
+      }
+    }
+
+    return { whyisId: xmlId, controlID: xml.title, status: 'ok' }
+  } catch (error) {
+    throw new Error(`Error in saveXml: ${error.message}`)
+  }
+}
+
+async function publishXSD (xsd, token) {
+  const xsdId = generateChartId(true)
+  const schemaName = `Schema_${xsdId}_${new Date()
+    .toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    .replace(/\//g, '')}`
+
+  const xsdLd = buildXsdLd(xsd, xsdId, schemaName)
+  const nanopub = await postNewNanopub(xsdLd, true)
+
+  if (nanopub) {
+    const publishResponse = await fetch('/api/curate/changelogs/schema_id', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        resourceId: 'schema_id',
+        change: [xsdId],
+        published: true
+      })
+    })
+
+    if (!publishResponse.ok) {
+      throw new Error(
+        `Failed to publish schema: ${publishResponse.statusText}`
+      )
+    }
+  }
+  return nanopub
 }
 
 const chartQuery = `
@@ -155,7 +371,10 @@ async function loadChart (chartUri) {
   }
 
   const valuesBlock = `\n  VALUES (?uri) { (<${chartUrl}>) }`
-  const singleChartQuery = chartQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
+  const singleChartQuery = chartQuery.replace(
+    /(where\s*{)/i,
+    '$1' + valuesBlock
+  )
   const { results } = await querySparql(singleChartQuery)
   const rows = results.bindings
 
@@ -168,13 +387,14 @@ async function loadChart (chartUri) {
 
 async function readChartSparqlRow (chartResult) {
   const chart = {}
-  Object.entries(chartResult)
-    .forEach(([field, value]) => { chart[field] = value.value })
+  Object.entries(chartResult).forEach(([field, value]) => {
+    chart[field] = value.value
+  })
   if (chart.baseSpec) {
     chart.baseSpec = JSON.parse(chart.baseSpec)
-  // } else if (chart.downloadUrl) {
-  //   const { data } = await axios.get(`/about?uri=${chart.uri}`)
-  //   chart.baseSpec = data
+    // } else if (chart.downloadUrl) {
+    //   const { data } = await axios.get(`/about?uri=${chart.uri}`)
+    //   chart.baseSpec = data
   }
   return chart
 }
@@ -211,7 +431,9 @@ function toChartId (chartUri) {
 
 function toChartUri (chartId) {
   if (chartId.includes('viz')) {
-    return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(chartId)}`
+    return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(
+      chartId
+    )}`
   }
 
   return chartUriPrefix + chartId
@@ -221,4 +443,20 @@ function shareableChartUri (chartId) {
   return `${window.location.origin}/explorer/chart/view/${chartId}`
 }
 
-export { getDefaultChart, saveChart, deleteChart, loadChart, copyChart, buildSparqlSpec, buildCsvSpec, toChartId, toChartUri, shareableChartUri, chartUriPrefix }
+const str2b64 = (str) => Buffer.from(str).toString('base64')
+
+export {
+  getDefaultChart,
+  saveChart,
+  saveXml,
+  publishXSD,
+  deleteChart,
+  loadChart,
+  copyChart,
+  buildSparqlSpec,
+  buildCsvSpec,
+  toChartId,
+  toChartUri,
+  shareableChartUri,
+  chartUriPrefix
+}

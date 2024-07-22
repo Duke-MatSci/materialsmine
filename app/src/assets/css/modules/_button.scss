@@ -1,165 +1,187 @@
 a.btn,
 .btn {
-    &,
-    &:link,
-    &:visited {
-        text-transform: uppercase;
-        text-decoration: none;
-        padding: 1rem 1.8rem;
-        display: inline-block;
-        border-radius: 10rem;
-        transition: all .2s;
-        position: relative;
-        font-size: $medium-size;
-        font-weight: bold;
-        text-decoration: none !important;
+  &,
+  &:link,
+  &:visited {
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 1rem 1.8rem;
+    display: inline-block;
+    border-radius: 10rem;
+    transition: all 0.2s;
+    position: relative;
+    font-size: $medium-size;
+    font-weight: bold;
+    text-decoration: none !important;
 
-        //Change for the <button> element
-        border: none;
-        cursor: pointer;
-    }
+    //Change for the <button> element
+    border: none;
+    cursor: pointer;
+  }
 
-    &:hover:not([disabled="disabled"]) {
-        box-shadow: 0 1rem 2rem rgba($primary-black,.2);
-        transform: scaleX(1.1) scaleY(1.1);
-    }
+  &:hover:not([disabled='disabled']) {
+    box-shadow: 0 1rem 2rem rgba($primary-black, 0.2);
+    transform: scaleX(1.1) scaleY(1.1);
+  }
 
-    &[disabled="disabled"] {
-        background-color: #DCDCDC;
-        color:#A5A5A5;
-        cursor: default;
-    }
+  &[disabled='disabled'] {
+    background-color: #dcdcdc;
+    color: #a5a5a5;
+    cursor: default;
+  }
 
-    &:is(:active, :focus):not([disabled="disabled"]) {
-        outline: none;
-        transform: translateY(-1px);
-        box-shadow: 0 .5rem 1rem rgba($primary-black,.2);
-    }
+  &:is(:active, :focus):not([disabled='disabled']) {
+    outline: none;
+    transform: translateY(-1px);
+    box-shadow: 0 0.5rem 1rem rgba($primary-black, 0.2);
+  }
 
-    &--white {
-        background-color: $primary-white;
-        color: $primary-light;
-
-        &::after {
-            background-color: $primary-white;
-        }
-    }
-
-    &--primary {
-        background-color: $primary !important;
-        color: $primary-white;
-
-        &::after:not([disabled="disabled"]) {
-            background-color: $primary;
-        }
-    }
-
-    &--tertiary {
-        background-color: $tertiary;
-        color: $primary !important;
-
-        &::after {
-            background-color: $tertiary;
-        }
-    }
-
-    &--normal,
-    &--normal::after {
-        border-radius: 1.14rem !important;
-        padding: .5rem 1rem !important;
-        font-weight: 300;
-
-        @include respond(tab-land){
-            font-size: .8rem !important;
-        }
-    }
-
-    &--noradius,
-    &--noradius::after {
-        border-radius: .1rem !important;
-        padding: .5rem 1rem !important;
-        font-weight: 300;
-
-        @include respond(tab-land){
-            font-size: .8rem !important;
-        }
-    }
+  &--white {
+    background-color: $primary-white;
+    color: $primary-light;
 
     &::after {
-        content: "";
-        display: inline-block;
-        height: 100%;
-        width: 100%;
-        border-radius: 10rem;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: -1;
-        transition: all .4s;
+      background-color: $primary-white;
     }
+  }
 
-    &--animated {
-        animation: moveInBottom .5s ease-out .75s;
-        animation-fill-mode: backwards;
+  &--primary {
+    background-color: $primary !important;
+    color: $primary-white;
+
+    &::after:not([disabled='disabled']) {
+      background-color: $primary;
     }
+  }
+
+  &--tertiary {
+    background-color: $tertiary;
+    color: $primary !important;
+
+    &::after {
+      background-color: $tertiary;
+    }
+  }
+
+  &--normal,
+  &--normal::after {
+    border-radius: 1.14rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 300;
+
+    @include respond(tab-land) {
+      font-size: 0.8rem !important;
+    }
+  }
+
+  &--noradius,
+  &--noradius::after {
+    border-radius: 0.1rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 300;
+
+    @include respond(tab-land) {
+      font-size: 0.8rem !important;
+    }
+  }
+
+  &::after {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    width: 100%;
+    border-radius: 10rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    transition: all 0.4s;
+  }
+
+  &--animated {
+    animation: moveInBottom 0.5s ease-out 0.75s;
+    animation-fill-mode: backwards;
+  }
 }
 
 a.btn-text,
 .btn-text {
-    &:link,
-    &:visited {
-        font-size: $default-size;
-        color: $primary;
-        display: inline-block;
-        text-decoration: none;
-        border-bottom: 1px solid $primary;
-        padding: 3px;
-        transition: all .2s;
-        text-decoration: none;
-    }
+  &:link,
+  &:visited {
+    font-size: $default-size;
+    color: $primary;
+    display: inline-block;
+    text-decoration: none;
+    border-bottom: 1px solid $primary;
+    padding: 3px;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
 
-    &:hover {
-        background-color: $primary;
-        color: $primary-white !important;
-        box-shadow: 0 1rem 2rem rgba($primary-black, .15);
-        transform: translateY(-2px);
-        border-bottom: 1px solid $primary-light;
-        padding: 1rem 2rem;
-    }
+  &:hover {
+    background-color: $primary;
+    color: $primary-white !important;
+    box-shadow: 0 1rem 2rem rgba($primary-black, 0.15);
+    transform: translateY(-2px);
+    border-bottom: 1px solid $primary-light;
+    padding: 1rem 2rem;
+  }
 
-    &:active {
-        box-shadow: 0 .5rem 1rem rgba($primary-black, .15);
-        transform: translateY(0);
-    }
+  &:active {
+    box-shadow: 0 0.5rem 1rem rgba($primary-black, 0.15);
+    transform: translateY(0);
+  }
 }
 
 .md-icon-button.large {
-    width: 140px;
-    min-width: 120px;
-    text-align: right;
-    @include respond(tab-land){
-        width: 120px;
-        min-width: 100px;
-    }
+  width: 140px;
+  min-width: 120px;
+  text-align: right;
+  @include respond(tab-land) {
+    width: 120px;
+    min-width: 100px;
+  }
 
-    &:hover {
-        text-decoration: none;
-        cursor: pointer;
-    }
+  &:hover {
+    text-decoration: none;
+    cursor: pointer;
+  }
 }
 
 .viz-tab__button {
-    display: inline-flex;
-    padding: 0.8rem 0.8rem 0.4rem;
-    font-size: 1.3rem;
-    font-weight: 500;
-    color: $secondary-grey !important;
-    cursor: pointer;
+  display: inline-flex;
+  padding: 0.8rem 0.8rem 0.4rem;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: $secondary-grey !important;
+  cursor: pointer;
 
-    &:hover{
-        text-decoration: none !important;
-    }
-    &.active{
-        border-bottom: 0.2rem solid $primary;
-    }
+  &:hover {
+    text-decoration: none !important;
+  }
+  &.active {
+    border-bottom: 0.2rem solid $primary;
+  }
+}
+
+.return-btn {
+  background-color: #fff !important;
+  border: 2px solid $primary;
+  border-radius: 50%;
+  cursor: pointer;
+  width: fit-content;
+  color: $primary !important;
+
+  &:hover {
+    background-color: $primary !important;
+    color: #fff !important;
+  }
+}
+
+// Remove this
+.return-btn-text {
+  color: $primary !important;
+  &:hover {
+    color: #fff !important;
+  }
 }

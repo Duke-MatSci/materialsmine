@@ -5,7 +5,7 @@ let wrapper
 
 describe('PageHeader.vue', () => {
   beforeEach(async () => {
-    wrapper = createWrapper(ProfileHeader, { }, false)
+    wrapper = createWrapper(ProfileHeader, {}, false)
   })
 
   afterEach(() => {
@@ -18,9 +18,23 @@ describe('PageHeader.vue', () => {
   })
 
   it('renders the proper layout', () => {
-    expect(wrapper.find('.u_margin-top-small > .u_display-flex.u--layout-flex-justify-fs > .viz-sample__loading').exists()).toBeTruthy()
-    expect(wrapper.find('.u_margin-top-small > .u_display-flex.u--layout-flex-justify-fs > .u--margin-pos').exists()).toBeTruthy()
-    expect(wrapper.find('.u_margin-top-small > .u_margin-top-small').exists()).toBeTruthy()
+    expect(
+      wrapper
+        .find(
+          '.u_margin-top-small > .u_display-flex.u--layout-flex-justify-fs > .viz-sample__loading'
+        )
+        .exists()
+    ).toBeTruthy()
+    expect(
+      wrapper
+        .find(
+          '.u_margin-top-small > .u_display-flex.u--layout-flex-justify-fs > .u--margin-pos'
+        )
+        .exists()
+    ).toBeTruthy()
+    expect(
+      wrapper.find('.u_margin-top-small > .u_margin-top-small').exists()
+    ).toBeTruthy()
   })
 
   it('renders avatar container correctly', () => {
@@ -29,8 +43,12 @@ describe('PageHeader.vue', () => {
     expect(routerLink.attributes().class).toBe('viz-sample__loading')
     expect(routerLink.props().to).toEqual({ name: 'PortalHome' })
     expect(avatar.findComponent('md-ripple-stub').exists()).toBeTruthy()
-    expect(avatar.attributes().class).toBe('md-avatar-icon md-large md-primary u_margin-none u--bg utility-gridborder')
-    expect(avatar.findComponent('md-ripple-stub').attributes().class).toBe('md-title')
+    expect(avatar.attributes().class).toBe(
+      'md-avatar-icon md-large md-primary u_margin-none u--bg utility-gridborder'
+    )
+    expect(avatar.findComponent('md-ripple-stub').attributes().class).toBe(
+      'md-title'
+    )
   })
 
   it('renders divider ', () => {
@@ -44,7 +62,7 @@ describe('PageHeader.vue', () => {
     const text = textContainer.findAll('p')
     expect(text.length).toBe(2)
     expect(text.at(0).attributes().class).toBe('u--color-primary md-body-1')
-    expect(text.at(1).text()).toBe('Your Admin Center')
+    expect(text.at(1).text()).toBe('MaterialsMine')
     expect(text.at(1).attributes().class).toBe('u--color-grey md-caption')
   })
 })

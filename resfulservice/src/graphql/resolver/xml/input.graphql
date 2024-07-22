@@ -22,7 +22,7 @@ input Filters {
   A boolean value indicating whether the curation is newly created
   """
   isNewCuration: Boolean
-  
+
   """
   Enumerable values representing the possible states of curation for selection during querying
   """
@@ -32,9 +32,14 @@ input Filters {
   Identifier corresponding to the user who initiated the curation
   """
   user: String
+
+  """
+  The name of curation author who which is used to find samples
+  """
+  author: String
 }
 
-enum CurationState { 
+enum CurationState {
   Edit
   Review
   Curated
