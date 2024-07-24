@@ -91,12 +91,12 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         publicationType: publicationTypeCellLocation
       } = getCurationUniqueFields(BaseSchemaObject);
       const [sheetName, titleRow, titleCol] = titleCellLocation
-        .replace(/[[\]]/g, '')
-        .split(/\||,/);
+        ?.replace(/[[\]]/g, '')
+        ?.split(/\||,/);
 
       const [, pubRow, pubCol] = publicationTypeCellLocation
-        .replace(/[[\]]/g, '')
-        .split(/\||,/);
+        ?.replace(/[[\]]/g, '')
+        ?.split(/\||,/);
 
       sheetsData[sheetName] = await XlsxFileManager.xlsxFileReader(
         xlsxFile.path,
@@ -873,45 +873,49 @@ exports.curateXml = async (req, res, next) => {
     const xmlStringsArray = await readXmlFiles(req, uploadedFiles, next);
 
     const _processXmlString = async (xmlStr) => {
-      const xmlJson = JSON.parse(XlsxFileManager.jsonGenerator(xmlStr));
-      const curationObject = getKeyCaseInsensitive(
-        xmlJson,
-        'PolymerNanocomposite'
-      );
-      const parsedCurationObject = parseXmlDataToBaseSchema(
-        curationObject ?? xmlJson
-      );
+      try {
+        const xmlJson = JSON.parse(XlsxFileManager.jsonGenerator(xmlStr));
+        const curationObject = getKeyCaseInsensitive(
+          xmlJson,
+          'PolymerNanocomposite'
+        );
+        const parsedCurationObject = parseXmlDataToBaseSchema(
+          curationObject ?? xmlJson
+        );
 
-      const baseCuratedObject = createBaseSchema(
-        BaseSchemaObject,
-        parsedCurationObject,
-        logger
-      );
+        const baseCuratedObject = createBaseSchema(
+          BaseSchemaObject,
+          parsedCurationObject,
+          logger
+        );
 
-      const { author } = getCurationUniqueFields(parsedCurationObject);
-      baseCuratedObject.DATA_SOURCE.Citation.CommonFields = {
-        ...baseCuratedObject.DATA_SOURCE.Citation.CommonFields,
-        Author: author,
-        Keyword:
-          baseCuratedObject.DATA_SOURCE.Citation.CommonFields?.Keyword.values
-      };
+        const { author } = getCurationUniqueFields(parsedCurationObject);
+        baseCuratedObject.DATA_SOURCE.Citation.CommonFields = {
+          ...baseCuratedObject.DATA_SOURCE.Citation.CommonFields,
+          Author: author,
+          Keyword:
+            baseCuratedObject.DATA_SOURCE.Citation.CommonFields?.Keyword.values
+        };
 
-      const newReq = { ...req };
-      newReq.isParentFunction = true;
-      newReq.body = { curatedjsonObject: baseCuratedObject };
-      newReq.query = { isBaseObject: true };
+        const newReq = { ...req };
+        newReq.isParentFunction = true;
+        newReq.body = { curatedjsonObject: baseCuratedObject };
+        newReq.query = { isBaseObject: true };
 
-      const nextFnCallBack = (fn) => fn;
-      const result = await this.curateXlsxSpreadsheet(
-        newReq,
-        {},
-        nextFnCallBack
-      );
+        const nextFnCallBack = (fn) => fn;
+        const result = await this.curateXlsxSpreadsheet(
+          newReq,
+          {},
+          nextFnCallBack
+        );
 
-      if (result?.fieldError) {
-        fieldErrors.push({ fieldError: result.fieldError });
-      } else if (result?.message) {
-        unprocessableError.push(result?.message);
+        if (result?.fieldError) {
+          fieldErrors.push({ fieldError: result.fieldError });
+        } else if (result?.message) {
+          unprocessableError.push(result?.message);
+        }
+      } catch (error) {
+        fieldErrors.push({ fieldError: error });
       }
     };
 
