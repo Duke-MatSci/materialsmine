@@ -579,5 +579,53 @@ export default {
         { root: true }
       )
     }
+  },
+  async submitXmlFiles ({ commit, rootGetters }, files) {
+    const token = rootGetters['auth/token']
+    try {
+      const formData = new FormData()
+      files.forEach(({ file }) => formData.append('uploadfile', file))
+
+      const response = await fetch('/api/curate/xml', {
+        method: 'POST',
+        headers: {
+          // 'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        },
+        body: formData
+      })
+
+      if (response || response.status === 201) {
+        const { totalXMLFiles, failedXML } = await response.json()
+        if (failedXML === 0) {
+          commit(
+            'setSnackbar',
+            {
+              message: 'Your XML has been successfully submitted.',
+              duration: 10000
+            },
+            { root: true }
+          )
+          return router.push('/explorer/xmls')
+        } else {
+          return commit(
+            'setSnackbar',
+            {
+              message: `Submission failed for ${failedXML} out of ${totalXMLFiles} entries`,
+              duration: 10000,
+              callToActionText: 'Click to view',
+              action: () => router.push('/explorer/xmls')
+            },
+            { root: true }
+          )
+        }
+      }
+    } catch (error) {
+      return commit(
+        'setSnackbar',
+        { message: error.message ?? 'Something went wrong during the request' },
+        { root: true }
+      )
+    }
   }
 }
