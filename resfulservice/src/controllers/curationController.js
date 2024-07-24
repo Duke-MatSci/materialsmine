@@ -819,6 +819,7 @@ const getKeyCaseInsensitive = (obj, key) => {
   const lowerCaseKey = key.toLowerCase();
 
   for (const k in obj) {
+    // eslint-disable-next-line
     if (obj.hasOwnProperty(k) && k.toLowerCase() === lowerCaseKey) {
       return obj[k];
     }
