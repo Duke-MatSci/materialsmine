@@ -73,8 +73,12 @@
           </li>
           <li class="u_margin-right-small">
             <div class="nav_menu--container">
-              <a class="u--default-size nav_menu--handler" href="#">Curate</a>
-              <div class="nav_menu--siblings">
+              <a
+                class="u--default-size nav_menu--handler"
+                href="/explorer/curate"
+                >Curate</a
+              >
+              <!-- <div class="nav_menu--siblings">
                 <a
                   href="/explorer/curate/spreadsheet"
                   class="nav_menu--siblings-lists"
@@ -95,7 +99,7 @@
                   class="nav_menu--siblings-lists"
                   ><a>Create Chart</a></router-link
                 >
-              </div>
+              </div> -->
             </div>
           </li>
           <li class="u_margin-right-small">
@@ -162,7 +166,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters } from 'vuex';
 export default {
   name: 'HeroHeader',
   props: ['toggler'],
@@ -174,5 +178,5 @@ export default {
       displayName: 'auth/displayName'
     })
   }
-}
+};
 </script>
