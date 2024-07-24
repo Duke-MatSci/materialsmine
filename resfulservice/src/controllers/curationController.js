@@ -155,9 +155,34 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     let datasets;
     if (query.dataset) {
+      // TODO: Deprecate, as dataset will no longer be available in query
       datasets = await DatasetId.findOne({ _id: query.dataset });
     } else {
-      datasets = await DatasetId.create({ user });
+      // If Dataset not provide in req, search existing samples
+      // Control_ID Example = L1_S1_Hareesh_2023.xml
+      const citationPrefix = result.Control_ID?.charAt(0);
+      const pubYear = result.Control_ID.match(/_(\d{4})\.xml/)?.[1];
+      const authorName = result.Control_ID?.match(/S\d+_(.*?)_\d{4}\.xml/)?.[1];
+
+      // Find curations for datasetIndex
+      const regex = new RegExp(
+        `^${citationPrefix}\\d*_S\\d*_${authorName}_${pubYear}`,
+        'i'
+      );
+
+      const existingCuration = await CuratedSamples.findOne({
+        user: user._id,
+        'object.Control_ID': { $regex: regex },
+        'object.DATA_SOURCE.Citation.CommonFields.Title': requiredFields?.title
+      });
+
+      if (existingCuration) {
+        datasets = await DatasetId.findOne({ _id: existingCuration.dataset });
+      }
+
+      if (!datasets) {
+        datasets = await DatasetId.create({ user });
+      }
     }
 
     if (!datasets) {
@@ -271,12 +296,22 @@ const validateCurationPayload = (req, xlsxFile) => {
 };
 
 const getCurationUniqueFields = (BaseSchemaObject) => {
+  // TODO: Check why we are checking cellValue for some and not others
   const controlID = BaseSchemaObject?.Control_ID;
-  const title =
-    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title?.cellValue;
-  const publicationType =
-    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType
+  // With Xml Curation titles are stored directly and not inside cellValue
+  const title1 = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Title;
+  const title2 =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Title?.cellValue;
+  const title = title2 ?? title1;
+
+  // With Xml Curation publicationType are stored directly and not inside cellValue
+  const pubType1 =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType
       ?.cellValue;
+  const pubType2 =
+    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType;
+  const publicationType = pubType1 ?? pubType2;
+
   const author = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Author;
   const citationType =
     BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.CitationType;
@@ -327,25 +362,24 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
 
 async function generateControlId(requiredFields, user, datasetId) {
   try {
+    // TODO: Remove dataset index as it doesn't seem it is been used
     // Find or create userDataset from MongoDB
-    let userDataset = await DatasetId.findOne({
-      user: user._id,
-      _id: datasetId
-    });
+    // let userDataset = await DatasetId.findOne({
+    //   user: user._id,
+    //   _id: datasetId
+    // });
 
-    if (!userDataset) {
-      // If userDataset does not exist, create one
-      userDataset = await DatasetId.create({ user });
-    }
+    // if (!userDataset) {
+    //   // If userDataset does not exist, create one
+    //   userDataset = await DatasetId.create({ user });
+    // }
 
-    let { citationType, publicationYear, author } = requiredFields;
+    let { citationType, publicationYear, author, title } = requiredFields;
 
     // Determine citationPrefix
     const citationPrefix = citationType === 'lab-generated' ? 'E' : 'L';
-
     // Determine publicationYear
     publicationYear = publicationYear ?? new Date().getFullYear();
-
     // Determine author
     const authorName = author?.length
       ? author[0].split(/[,\s]+/)[0]
@@ -356,10 +390,11 @@ async function generateControlId(requiredFields, user, datasetId) {
       `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
       'i'
     );
-    // const regex = new RegExp(`^${citationPrefix}.*${authorName}.*\\.xml?$`, 'i');
+
     let curations = await CuratedSamples.find({
       user: user._id,
-      'object.Control_ID': { $regex: regex }
+      'object.Control_ID': { $regex: regex },
+      'object.DATA_SOURCE.Citation.CommonFields.Title': title
     });
 
     // Determine datasetIndex
@@ -773,6 +808,126 @@ exports.getCurationXSD = async (req, res, next) => {
     return res.status(201).json({ xsd });
   } catch (error) {
     next(errorWriter(req, error, 'getCurationXSD', 500));
+  }
+};
+
+const getKeyCaseInsensitive = (obj, key) => {
+  if (typeof obj !== 'object' || obj === null) {
+    return undefined;
+  }
+
+  const lowerCaseKey = key.toLowerCase();
+
+  for (const k in obj) {
+    if (obj.hasOwnProperty(k) && k.toLowerCase() === lowerCaseKey) {
+      return obj[k];
+    }
+  }
+
+  return undefined;
+};
+
+const readXmlFiles = async (req, uploadedFiles, next) => {
+  const processedXmlFiles = [];
+  const readErrors = [];
+  try {
+    const readPromises = [];
+    uploadedFiles.forEach(({ path }) => {
+      const readPromise = fs.promises
+        .readFile(path, 'utf8')
+        .then((data) => {
+          processedXmlFiles.push(data);
+        })
+        .catch((_err) => {
+          readErrors.push(path);
+        });
+      readPromises.push(readPromise);
+    });
+
+    await Promise.all(readPromises);
+    // Remove processed files from filestore
+    uploadedFiles.forEach(({ path }) => FileManager.deleteFile(path, req));
+    if (readErrors.length) {
+      const error = new Error(`${readErrors.join(', ')}`);
+      return next(errorWriter(req, error, 'readXmlFiles', 400));
+    }
+    return processedXmlFiles;
+  } catch (error) {
+    // Clean up and throw Error processing files
+    uploadedFiles.forEach(({ path }) => FileManager.deleteFile(path, req));
+    next(errorWriter(req, error, 'readXmlFiles', 500));
+  }
+};
+
+exports.curateXml = async (req, res, next) => {
+  const { logger } = req;
+  logger.info('curateXml(): Function entry');
+
+  try {
+    const uploadedFiles = req.files?.uploadfile;
+    if (uploadedFiles.length < 1) {
+      const error = new Error('Missing xml files upload');
+      return next(errorWriter(req, error, 'curateXml', 422));
+    }
+    const xmlStringsArray = await readXmlFiles(req, uploadedFiles, next);
+
+    const _processXmlString = async (xmlStr) => {
+      const xmlJson = JSON.parse(XlsxFileManager.jsonGenerator(xmlStr));
+      const curationObject = getKeyCaseInsensitive(
+        xmlJson,
+        'PolymerNanocomposite'
+      );
+      const parsedCurationObject = parseXmlDataToBaseSchema(
+        curationObject ?? xmlJson
+      );
+
+      const baseCuratedObject = createBaseSchema(
+        BaseSchemaObject,
+        parsedCurationObject,
+        logger
+      );
+
+      const { author } = getCurationUniqueFields(parsedCurationObject);
+      baseCuratedObject.DATA_SOURCE.Citation.CommonFields = {
+        ...baseCuratedObject.DATA_SOURCE.Citation.CommonFields,
+        Author: author,
+        Keyword:
+          baseCuratedObject.DATA_SOURCE.Citation.CommonFields?.Keyword.values
+      };
+
+      const newReq = { ...req };
+      newReq.isParentFunction = true;
+      newReq.body = { curatedjsonObject: baseCuratedObject };
+      newReq.query = { isBaseObject: true };
+
+      const nextFnCallBack = (fn) => fn;
+      const result = await this.curateXlsxSpreadsheet(
+        newReq,
+        {},
+        nextFnCallBack
+      );
+
+      if (result?.fieldError) {
+        fieldErrors.push({ fieldError: result.fieldError });
+      } else if (result?.message) {
+        unprocessableError.push(result?.message);
+      }
+    };
+
+    const fieldErrors = [];
+    const unprocessableError = [];
+    if (xmlStringsArray.length) {
+      for (const xmlString of xmlStringsArray) {
+        await _processXmlString(xmlString);
+      }
+    }
+    const totalXMLFiles = xmlStringsArray.length ?? 0;
+    const failedXML = fieldErrors.length + unprocessableError.length;
+
+    latency.latencyCalculator(res);
+    return res.status(201).json({ totalXMLFiles, failedXML });
+  } catch (error) {
+    next(errorWriter(req, error, 'curateXml', 500));
   }
 };
 
@@ -1421,7 +1576,7 @@ const createJsonObject = async (
             const file = propertyValue.cellValue.split('/').pop();
             const newReq = {
               params: { fileId: file.split('?')[0] },
-              query: { isFileStore: true },
+              query: { isFileStore: 'true' },
               isInternal: true,
               env: process.env // TODO: Fix later, there is already a middleware that parses env var
             };
