@@ -216,5 +216,5 @@
 <script>
 export default {
   name: 'CurateHome'
-};
+}
 </script>
