@@ -488,7 +488,7 @@ export default {
     return responseData
   },
 
-  async approveCuration ({ commit, rootGetters }, xmlViewer) {
+  async approveCuration ({ commit, rootGetters }, { xmlViewer, callbackFn }) {
     const isAdmin = rootGetters['auth/isAdmin']
     const token = rootGetters['auth/token']
     if (!isAdmin) {
@@ -514,6 +514,7 @@ export default {
       // TODO: FIX THIS LATER!
       // commit('resetSnackbar', {}, { root: true });
       commit('setDialogBox', true, { root: true })
+      return callbackFn()
     } catch (error) {
       commit(
         'setSnackbar',
@@ -612,7 +613,6 @@ export default {
             'setSnackbar',
             {
               message: `Submission failed for ${failedXML} out of ${totalXMLFiles} entries`,
-              duration: 10000,
               callToActionText: 'Click to view',
               action: () => router.push('/explorer/xmls')
             },

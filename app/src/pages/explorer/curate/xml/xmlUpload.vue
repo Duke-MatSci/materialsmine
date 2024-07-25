@@ -6,7 +6,10 @@
     <div class="curate">
       <LoginReq v-if="!isAuth" />
       <div v-else-if="loading" class="section_loader">
-        <spinner :text="uploadInProgress" v-if="!submitted" />
+        <spinner :text="uploadInProgress" />
+      </div>
+      <div v-else-if="submitted" class="section_loader">
+        <h2 class="visualize_header-h1">XML Samples Submitted</h2>
       </div>
       <div v-else>
         <h2 class="visualize_header-h1">Upload XML Samples</h2>
@@ -176,7 +179,7 @@ export default {
       await this.submitXML(this.xmlFiles)
       this.loading = false
       this.submitted = true
-      return (this.uploadInProgress = null)
+      this.uploadInProgress = null
     }
   },
   computed: {

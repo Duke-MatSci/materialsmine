@@ -112,7 +112,7 @@
         </md-button>
 
         <md-button
-          @click="approveCuration(xmlViewer)"
+          @click="approveCuration({ xmlViewer, reloadXml })"
           v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -194,6 +194,9 @@ export default {
           query: { isNew: isNew, id: id }
         })
       }
+    },
+    async reloadXml () {
+      return await this.$apollo.queries.xmlFinder.refetch()
     }
   },
   mounted () {

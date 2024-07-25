@@ -301,16 +301,20 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   // With Xml Curation titles are stored directly and not inside cellValue
   const title1 = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Title;
   const title2 =
-    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Title?.cellValue;
-  const title = title2 ?? title1;
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title?.cellValue;
+  const title3 =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.Title;
+  const title = title2 ?? title1 ?? title3;
 
   // With Xml Curation publicationType are stored directly and not inside cellValue
   const pubType1 =
-    BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType
       ?.cellValue;
   const pubType2 =
     BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.PublicationType;
-  const publicationType = pubType1 ?? pubType2;
+  const pubType3 =
+    BaseSchemaObject?.['DATA ORIGIN']?.Citation?.CommonFields?.PublicationType;
+  const publicationType = pubType1 ?? pubType2 ?? pubType3;
 
   const author = BaseSchemaObject?.DATA_SOURCE?.Citation?.CommonFields?.Author;
   const citationType =
@@ -326,39 +330,6 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
     controlID
   };
 };
-
-// const generateControlSampleId = async (requiredFields, user, datasetId) => {
-//   try {
-//     let [existingDatasets, userDatasets] = await Promise.all([
-//       DatasetId.find({ user: user._id }),
-//       DatasetId.findOne({
-//         user: user._id,
-//         _id: datasetId
-//       })
-//     ]);
-
-//     if (!userDatasets && !existingDatasets?.length) {
-//       userDatasets = await DatasetId.create({ user });
-//     } else {
-//       userDatasets = !userDatasets ? existingDatasets.at(-1) : userDatasets;
-//     }
-
-//     let { citationType, publicationYear, author } = requiredFields;
-
-//     // L325_S1_Test_2015
-//     citationType = citationType === 'lab-generated' ? 'E' : 'L';
-//     publicationYear = publicationYear ?? new Date().getFullYear();
-//     author = author?.length ? author[0].split(/[,\s]+/)[0] : 'unknown';
-//     const sampleIndex = userDatasets?.samples?.length + 1;
-//     const datasetIndex = existingDatasets?.length + 1;
-
-//     return `${citationType}${sampleIndex}_S${datasetIndex}_${author}_${publicationYear}.xml`;
-//   } catch (error) {
-//     const err = new Error(error);
-//     err.functionName = 'generateControlSampleId';
-//     throw err;
-//   }
-// };
 
 async function generateControlId(requiredFields, user, datasetId) {
   try {
