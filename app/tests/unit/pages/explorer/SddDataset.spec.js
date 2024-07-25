@@ -104,10 +104,10 @@ describe('Dataset.vue', () => {
     expect(dists.length).toBe(2)
     for (let i = 0; i < dists.length; i++) {
       expect(dists.at(i).text()).toContain(
-        parseFileName(testDataset['http://www.w3.org/ns/dcat#contactpoint'][i]['@id']))
+        parseFileName(testDataset['http://www.w3.org/ns/dcat#distribution'][i]['@id']))
       expect(dists.at(i).find('a').exists()).toBe(true)
       expect(dists.at(i).find('a').attributes('href'))
-        .toBe(testDataset['http://www.w3.org/ns/dcat#contactpoint'][i]['@id'])
+        .toBe(testDataset['http://www.w3.org/ns/dcat#distribution'][i]['@id'])
     }
   })
 

@@ -61,7 +61,7 @@ describe('SddLinking.vue', () => {
   it('asks for delimiters for csv files', () => {
     const step3 = wrapper.findAll('.md-stepper').at(2)
     expect(step3.text()).toContain('delimiter')
-    const numCsvs = testDataset['http://www.w3.org/ns/dcat#contactpoint']
+    const numCsvs = testDataset['http://www.w3.org/ns/dcat#distribution']
       .filter(file => file['@id'].includes('csv')).length
     const inputFields = step3.findAll('.md-field')
     expect(inputFields.length).toBe(numCsvs)

@@ -186,8 +186,8 @@ export default {
         doi: 'http://purl.org/dc/terms/isReferencedBy',
         datePub: 'http://purl.org/dc/terms/issued',
         title: 'http://purl.org/dc/terms/title',
-        cp: 'http://w3.org/ns/dcat#contactpoint',
-        distribution: 'http://w3.org/ns/dcat#distribution',
+        cp: 'http://www.w3.org/ns/dcat#contactpoint',
+        distribution: 'http://www.w3.org/ns/dcat#distribution',
         depiction: 'http://xmlns.com/foaf/0.1/depiction',
         organization: 'http://xmlns.com/foaf/0.1/Organization'
       },
