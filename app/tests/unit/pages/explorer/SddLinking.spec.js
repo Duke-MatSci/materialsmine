@@ -61,7 +61,7 @@ describe('SddLinking.vue', () => {
   it('asks for delimiters for csv files', () => {
     const step3 = wrapper.findAll('.md-stepper').at(2)
     expect(step3.text()).toContain('delimiter')
-    const numCsvs = testDataset['http://w3.org/ns/dcat#distribution']
+    const numCsvs = testDataset['http://www.w3.org/ns/dcat#contactpoint']
       .filter(file => file['@id'].includes('csv')).length
     const inputFields = step3.findAll('.md-field')
     expect(inputFields.length).toBe(numCsvs)
@@ -70,7 +70,7 @@ describe('SddLinking.vue', () => {
   it('asks about SDD files', async () => {
     const step4 = wrapper.findAll('.md-stepper').at(3)
     expect(step4.text()).toContain('SDD')
-    const numFiles = testDataset['http://w3.org/ns/dcat#distribution'].length
+    const numFiles = testDataset['http://www.w3.org/ns/dcat#distribution'].length
     expect(step4.findAll('.md-checkbox').length).toBe(numFiles + 2)
     await step4.findAll('input').at(2).trigger('click')
     wrapper.vm.$nextTick()

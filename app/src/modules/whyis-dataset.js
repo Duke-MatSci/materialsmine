@@ -35,7 +35,7 @@ const defaultDataset = {
   }
 }
 
-const dcat = 'http://w3.org/ns/dcat#'
+const dcat = 'http://www.w3.org/ns/dcat#'
 const dct = 'http://purl.org/dc/terms/'
 const vcard = 'http://www.w3.org/2006/vcard/ns#'
 const foaf = 'http://xmlns.com/foaf/0.1/'
@@ -258,7 +258,7 @@ async function saveDatasetFiles (fileList) {
       body: formData,
       redirect: 'follow',
       headers: {
-        Authorization: store.getters['auth/token']
+        Authorization: 'Bearer ' + store.getters['auth/token']
       }
     })
     return await result.json()
@@ -307,7 +307,7 @@ function buildDepictionLd (file, uri) {
     '@type': 'http://purl.org/net/provenance/ns#File',
     'http://www.w3.org/2000/01/rdf-schema#label':
       file?.swaggerFilename ?? file.originalname,
-    'http://w3.org/ns/dcat#accessURL':
+    'http://www.w3.org/ns/dcat#accessURL':
       file?.accessUrl ?? `${window.location.origin}${file.filename}`
   }
   return depictionLd

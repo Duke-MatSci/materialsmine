@@ -3,8 +3,8 @@ export const testDataset = {
   'http://purl.org/dc/terms/description': [{ '@value': 'This is a descriptive description' }],
   'http://purl.org/dc/terms/title': [{ '@value': 'Test Dataset' }],
   'http://purl.org/dc/terms/issued': [{ '@value': '2023-06-19' }],
-  'http://w3.org/ns/dcat#contactpoint': [{ '@id': 'http://orcid.org/0000-0000-0000-0000' }],
-  'http://w3.org/ns/dcat#distribution': [
+  'http://www.w3.org/ns/dcat#contactpoint': [{ '@id': 'http://orcid.org/0000-0000-0000-0000' }],
+  'http://www.w3.org/ns/dcat#distribution': [
     { '@id': 'http://materialsmine.org/files/test_file1.csv?isStore=true' },
     { '@id': 'http://materialsmine.org/files/test_file2.csv?isStore=true' },
     { '@id': 'http://materialsmine.org/files/test_sdd.xlsx?isStore=true' }

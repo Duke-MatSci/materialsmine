@@ -12,8 +12,8 @@ const testDataset = {
   'http://purl.org/dc/terms/creator': [{ '@id': 'https://materialsmine.org/api/user/123' }],
   'http://purl.org/dc/terms/description': [{ '@value': 'A dataset of generated materials' }],
   'http://purl.org/dc/terms/title': [{ '@value': 'Test Dataset' }],
-  'http://w3.org/ns/dcat#contactpoint': [{ '@id': 'http://orcid.org/0000-0001-0002-0003' }],
-  'http://w3.org/ns/dcat#distribution': [
+  'http://www.w3.org/ns/dcat#contactpoint': [{ '@id': 'http://orcid.org/0000-0001-0002-0003' }],
+  'http://www.w3.org/ns/dcat#distribution': [
     { '@id': 'http://materialsmine.org/api/files/fake_file.csv?isStore=true' },
     { '@id': 'http://materialsmine.org/api/files/another_file.txt?isStore=true' }
   ],
@@ -104,10 +104,10 @@ describe('Dataset.vue', () => {
     expect(dists.length).toBe(2)
     for (let i = 0; i < dists.length; i++) {
       expect(dists.at(i).text()).toContain(
-        parseFileName(testDataset['http://w3.org/ns/dcat#distribution'][i]['@id']))
+        parseFileName(testDataset['http://www.w3.org/ns/dcat#contactpoint'][i]['@id']))
       expect(dists.at(i).find('a').exists()).toBe(true)
       expect(dists.at(i).find('a').attributes('href'))
-        .toBe(testDataset['http://w3.org/ns/dcat#distribution'][i]['@id'])
+        .toBe(testDataset['http://www.w3.org/ns/dcat#contactpoint'][i]['@id'])
     }
   })
 
