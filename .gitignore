@@ -28,6 +28,7 @@ package-lock.json
 **/**/*.log
 
 # Fuseki
+mockDB/old-fuseki/
 mockDB/fuseki/shiro.ini
 mockDB/fuseki/backups/
 mockDB/fuseki/databases/
@@ -38,6 +39,7 @@ mockDB/fuseki/templates/
 mockDB/fuseki/log4j2.properties
 mockDB/materialsmine_backup/
 mockDB/fuseki/files/
+mockDB/fuseki/
 
 #Sync DB
 mockDB/restore/mongodump/
