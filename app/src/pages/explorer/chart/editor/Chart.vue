@@ -181,13 +181,13 @@ export default {
       querySparql(vm.chart.query)
         .then(this.onQuerySuccess)
         .then((this.loading = false))
+        .catch((this.loading = false))
     },
     onQuerySuccess (results) {
       this.results = results
     },
     onSpecJsonError () {
       // console.log('bad', arguments)
-
     },
     async onNewVegaView (view) {
       const blob = await view
