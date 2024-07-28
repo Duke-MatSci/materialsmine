@@ -1,5 +1,22 @@
 <template>
   <div class="xmlLoader">
+    <dialog-box :minWidth="40" :active="dialogBoxActive">
+      <template v-slot:title>Success</template>
+      <template v-slot:content>
+        <div class="u_display-flex u_centralize_items u--margin-posmd">
+          <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
+            >check_circle</md-icon
+          >
+          <span
+            >XML has been approved and successfully ingested into the knowledge
+            graph</span
+          >
+        </div>
+      </template>
+      <template v-slot:actions>
+        <md-button @click.native.prevent="closeDialogBox">Ok</md-button>
+      </template>
+    </dialog-box>
     <section
       class="u_width--max viz-u-postion__rel utility-roverflow"
       v-if="!!Object.keys(xmlViewer).length && xmlViewer.xmlString"
@@ -21,19 +38,46 @@
         </md-button>
       </md-drawer>
 
-      <md-content
-        class="u_width--max md-app-side-drawer md-app-container md-scrollbar"
-      >
-        <div :class="[isSmallTabView ? 'u_margin-top-med' : '']">
-          <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
-            {{ optionalChaining(() => xmlViewer.title) }}
-          </h2>
-        </div>
-        <!-- xml viewer  -->
-        <div class="wrapper">
-          <XmlView :xml="optionalChaining(() => xmlViewer.xmlString)" />
-        </div>
-      </md-content>
+      <div class="u_width--max viz-u-postion__rel utility-roverflow">
+        <md-content
+          class="u_width--max md-app-side-drawer md-app-container md-scrollbar u_margin-none"
+        >
+          <div :class="[isSmallTabView ? 'u_myprofile--container' : '']">
+            <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
+              {{ optionalChaining(() => xmlViewer.title) }}
+            </h2>
+          </div>
+          <!-- xml viewer  -->
+          <div class="wrapper">
+            <XmlView :xml="optionalChaining(() => xmlViewer.xmlString)" />
+          </div>
+        </md-content>
+
+        <md-content class="u_margin-bottom-small">
+          <md-button
+            class="md-primary md-raised btn--primary"
+            :class="[
+              isLargeTabView
+                ? 'viz-u-display__show u--margin-centered'
+                : 'viz-u-postion__abs utility-absolute-input visualize--link-bottom'
+            ]"
+            @click="
+              requestApproval({
+                curationId: xmlViewer.id,
+                isNew: xmlViewer.isNewCuration
+              })
+            "
+            v-if="
+              isAuth &&
+              !isAdmin &&
+              xmlViewer.status === 'Not Approved' &&
+              xmlViewer.curationState === 'Editing'
+            "
+          >
+            Request Approval
+          </md-button>
+        </md-content>
+      </div>
       <div
         :class="[
           isSmallTabView
@@ -68,8 +112,8 @@
         </md-button>
 
         <md-button
-          @click="approveCuration"
-          v-if="isAuth && isAdmin"
+          @click="approveCuration({ xmlViewer, reloadXml })"
+          v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
           <md-tooltip md-direction="top">Approve</md-tooltip>
@@ -99,14 +143,17 @@ import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
 import XmlView from '@/components/explorer/XmlView'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
+import dialogBox from '@/components/Dialog.vue'
+
 export default {
   name: 'XmlVisualizer',
   mixins: [optionalChainingUtil],
   components: {
     Comment,
     spinner,
-    XmlView
+    XmlView,
+    dialogBox
   },
   data () {
     return {
@@ -119,18 +166,23 @@ export default {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
       isAdmin: 'auth/isAdmin',
-      userId: 'auth/userId'
+      userId: 'auth/userId',
+      dialogBoxActive: 'dialogBox'
     }),
     isSmallTabView () {
       return screen.width < 760
+    },
+    isLargeTabView () {
+      return screen.width < 1024
     }
   },
   methods: {
-    approveCuration () {
-      this.$store.commit('setSnackbar', {
-        message: 'Something went wrong',
-        action: () => this.approveCuration()
-      })
+    ...mapMutations({
+      toggleDialogBox: 'setDialogBox'
+    }),
+    ...mapActions('explorer/curation', ['approveCuration', 'requestApproval']),
+    closeDialogBox () {
+      this.toggleDialogBox()
     },
     navBack () {
       this.$router.back()
@@ -142,6 +194,9 @@ export default {
           query: { isNew: isNew, id: id }
         })
       }
+    },
+    async reloadXml () {
+      return await this.$apollo.queries.xmlFinder.refetch()
     }
   },
   mounted () {

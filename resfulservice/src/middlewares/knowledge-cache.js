@@ -10,15 +10,33 @@ const elasticSearch = require('../utils/elasticSearch');
  * @return {Object} - The response object with the cached knowledge or a new nightly run task
  */
 exports.isKnowledgeCached = async (req, res, next) => {
-  req.logger.info('Middleware.isKnowledgeCached - Function entry');
   const query = req.query.query ?? req.body?.query;
+  // 1. NOT caching curation submissions
+  if (req.query.whyisPath === 'pub') return next();
 
-  const cacheResult = await elasticSearch.searchKnowledgeGraph(req, query);
-  if (cacheResult.length) {
+  // 2. NOT Caching for nanopub listing. Usually this is used for deleting nanopublications
+  if (req.query.whyisPath?.includes('about?view=nanopublications&uri=')) {
+    return next();
+  }
+
+  // 3. NOT Caching empty query strings
+  if (!query) return next();
+
+  req.logger.info(':::middleware.isKnowledgeCached Function Entry');
+
+  // TODO: (Redo) There is an existing search implementation in ES. This new one is not required
+  const cacheResult = await elasticSearch.searchType(
+    req,
+    query,
+    'label',
+    'knowledge'
+  );
+
+  if (cacheResult.data.hits.hits.length) {
     const {
       _id,
       _source: { response, date }
-    } = cacheResult[0];
+    } = cacheResult.data.hits.hits[0];
 
     // Get today's date in string format (YYYY-MM-DD);
     const todayDate = new Date().toISOString().slice(0, 10);
@@ -51,4 +69,43 @@ exports.isKnowledgeCached = async (req, res, next) => {
     return res.status(200).json(response);
   }
   next();
+};
+
+exports.cacheKnowledge = async (req, res, next, data) => {
+  req.logger.info('cacheKnowledge Function Entry');
+  const query = req.query.query ?? req.body?.query;
+  // 1. NOT caching curation submissions
+  if (req.query.whyisPath === 'pub') return;
+
+  // 2. NOT Caching for nanopub listing. Usually this is used for deleting nanopublications
+  if (req.query.whyisPath?.includes('about?view=nanopublications&uri=')) return;
+
+  // 3. NOT Caching empty query strings
+  if (!query) return;
+
+  if (req.isBackendCall) {
+    const response = await elasticSearch.searchType(
+      req,
+      query,
+      'label',
+      'knowledge'
+    );
+    if (response.data.hits.hits.length) {
+      const result = await elasticSearch.deleteSingleDoc(
+        req,
+        'knowledge',
+        response.data.hits.hits[0]._id
+      );
+      req.logger.info(
+        `Middleware.cacheKnowledge - Deleted document: ${result.deleted}`
+      );
+    }
+  }
+
+  const cacheItem = {
+    label: query,
+    response: data,
+    date: new Date().toISOString().slice(0, 10)
+  };
+  return await elasticSearch.indexDocument(req, 'knowledge', cacheItem);
 };

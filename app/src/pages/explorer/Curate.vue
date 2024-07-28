@@ -64,11 +64,28 @@
                   <md-icon class="explorer_page-nav-card_icon"
                     >done_outline</md-icon
                   >
-                  <span class="explorer_page-nav-card_text"
-                    >Submit with SDD</span
-                  >
+                  <span class="explorer_page-nav-card_text">Submit SDD</span>
                   <p class="md-layout-item_para md-layout-item_para_fl">
                     Submit files that use a semantic data dictionary (SDD).
+                  </p>
+                </div>
+              </router-link>
+            </div>
+            <div class="md-layout-item md-layout-item_card">
+              <router-link
+                to="/explorer/curate/xml"
+                v-slot="{ navigate, href }"
+                custom
+              >
+                <div
+                  class="teams_container explorer_page-nav-card md-layout-item_card"
+                  :href="href"
+                  @click="navigate"
+                >
+                  <md-icon class="explorer_page-nav-card_icon">upload</md-icon>
+                  <span class="explorer_page-nav-card_text">Upload an XML</span>
+                  <p class="md-layout-item_para md-layout-item_para_fl">
+                    Directly upload XML files.
                   </p>
                 </div>
               </router-link>

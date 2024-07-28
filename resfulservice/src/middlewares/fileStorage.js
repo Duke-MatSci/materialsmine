@@ -42,13 +42,18 @@ const fileFilter = (req, file, cb) => {
     file.mimetype === 'application/x-zip-compressed' ||
     file.mimetype === 'application/octet-stream' ||
     file.mimetype === 'text/tab-separated-values' ||
-    file.mimetype === 'text/plain'
+    file.mimetype === 'text/plain' ||
+    file.mimetype === 'text/xml' ||
+    file.mimetype === 'application/xml'
   ) {
     cb(null, true);
   } else {
+    req.logger.error(
+      `fileFilter () => Files with ${file.mimetype} mimetype not acceptable`
+    );
     cb(
       new Error(
-        'Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .zip, .xls and .xlsx format allowed!'
+        'Only .png, .jpg, .jpeg, .tiff, .tif, .csv, .zip, .xls, .xml and .xlsx format allowed!'
       ),
       false
     );
@@ -75,9 +80,10 @@ const minioUpload = (req, res, next) => {
 };
 
 const minioPutObject = (file, req) => {
-  const bucketName = req.query?.isVisualizationCSV === 'true'
-    ? process.env?.METAMINEBUCKET ?? MetamineBucket
-    : process.env?.MINIO_BUCKET ?? MinioBucket;
+  const bucketName =
+    req.query?.isVisualizationCSV === 'true'
+      ? process.env?.METAMINEBUCKET ?? MetamineBucket
+      : process.env?.MINIO_BUCKET ?? MinioBucket;
 
   const metaData = {
     'Content-Type': file.mimetype,

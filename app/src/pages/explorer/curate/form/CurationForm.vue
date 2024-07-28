@@ -219,7 +219,7 @@
                               class="md-icon-button u_margin-bottom-med"
                             >
                               <md-tooltip md-direction="top"
-                                >Click to add {{ item.name }}</md-tooltip
+                                >Add New {{ item.name }}</md-tooltip
                               >
                               <md-icon>add</md-icon>
                             </md-button>
@@ -802,6 +802,7 @@ export default {
       return !!Object.keys(this.$route.query).length
     },
     navRoutes () {
+      // TODO (@tee) FE: The below if statement returns entire array. Refactor!
       if (this.isEditMode) return [...this.editRouteParent]
       return [this.editRouteParent[0]]
     }

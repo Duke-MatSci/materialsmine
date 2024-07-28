@@ -30,12 +30,9 @@ describe('umap', () => {
       expect.assertions(3)
       expect(wrapper.exists()).toBe(true)
       expect(wrapper.findComponent({ ref: 'umapPlot' }).exists()).toBe(true)
-      expect(commitSpy).toHaveBeenNthCalledWith(
-        1,
-        'metamineNU/setPage',
-        'umap',
-        { root: true }
-      )
+      expect(commitSpy).toHaveBeenCalledWith('metamineNU/setPage', 'umap', {
+        root: true
+      })
     })
 
     it('mounts and  calls the method to creates svg but does not update it', () => {

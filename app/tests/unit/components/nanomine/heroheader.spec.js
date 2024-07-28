@@ -37,6 +37,6 @@ describe('Drawer.vue', () => {
     expect(wrapper.findAll('.u--default-size.nav_menu--handler').length).toBe(
       5
     )
-    expect(wrapper.findAll('.nav_menu--siblings').length).toBe(5)
+    expect(wrapper.findAll('.nav_menu--siblings').length).toBe(4)
   })
 })

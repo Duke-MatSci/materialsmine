@@ -11,7 +11,8 @@ export default {
       displayName: null,
       isAdmin: false,
       didAutoLogout: false,
-      user: {}
+      user: {},
+      lastPageVisited: '/nm'
     }
   },
   mutations,

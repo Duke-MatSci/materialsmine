@@ -29,13 +29,6 @@
             </div>
           </div>
         </label>
-        <a
-          class="btn btn--primary md-button u--inline u--margin-leftsm"
-          style="border-radius: 0% !important"
-          href="/dynamfit-template.tsv"
-          download
-          ><span class="md-body-1">Template</span></a
-        >
       </template>
       <template v-else>
         <button
@@ -119,6 +112,42 @@
         Show Basis Functions
       </md-checkbox>
     </div>
+    <div class="grid grid_col-2">
+      <div class="">
+        <a
+          v-if="!dynamfit.fileUpload.length"
+          class="btn-text"
+          style="border-radius: 0% !important"
+          href="#"
+          v-on:click="useSampleFile"
+          ><span class="md-body-1">Use Sample </span></a
+        >
+        <span
+          ><md-icon
+            v-if="!dynamfit.fileUpload.length"
+            class="u_superscript-icon utility-color"
+            :title="sampleTitle()"
+            >help_outline</md-icon
+          ></span
+        >
+      </div>
+      <div class="utility-align--right">
+        <a
+          class="btn-text"
+          style="border-radius: 0% !important"
+          href="/dynamfit-template.tsv"
+          download
+          ><span class="md-body-1">Download Template</span></a
+        >
+        <span
+          ><md-icon
+            class="u_superscript-icon utility-color"
+            :title="downloadTitle()"
+            >help_outline</md-icon
+          ></span
+        >
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -128,10 +157,10 @@ export default {
   data () {
     return {
       showToolTip: false,
-      isTemp: true
+      isTemp: true,
+      useSample: false
     }
   },
-  mounted () {},
   watch: {
     dynamfit: {
       handler: function (newVal) {
@@ -142,7 +171,16 @@ export default {
     }
   },
   methods: {
+    sampleTitle () {
+      // eslint-disable-next-line
+      return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
+    },
+    downloadTitle () {
+      // eslint-disable-next-line
+      return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
+    },
     async onInputChange (e) {
+      this.useSample = false
       this.displayInfo('Uploading File...')
       const file = [...e.target?.files]
       const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
@@ -168,22 +206,33 @@ export default {
         })
       }
     },
+    async useSampleFile () {
+      this.useSample = true
+      this.displayInfo('Using sample file', 1500)
+      this.dynamfit.fileUpload = 'test.tsv'
+    },
     async resetChart () {
       const name = this.dynamfit.fileUpload
       if (!name) return
 
-      const { deleted, error } = await this.$store.dispatch('deleteFile', {
-        name,
-        isTemp: this.isTemp
-      })
-
-      if (!error && deleted) {
+      // DO NOT call BE to delete for sample file
+      if (!this.useSample) {
+        const { deleted, error } = await this.$store.dispatch('deleteFile', {
+          name,
+          isTemp: this.isTemp
+        })
+        if (!error && deleted) {
+          return this.clearDynamfitData()
+        }
+      } else {
         return this.clearDynamfitData()
       }
-      this.$store.commit('setSnackbar', {
-        message: error ?? 'Something went wrong',
-        action: () => this.resetChart()
-      })
+
+      // TODO: WILL NEED TO FIX THIS LATER!
+      // this.$store.commit('setSnackbar', {
+      //   message: error ?? 'Something went wrong',
+      //   action: () => this.resetChart()
+      // })
     },
     displayInfo (msg, duration) {
       if (msg) {
@@ -194,6 +243,8 @@ export default {
       }
     },
     clearDynamfitData () {
+      // First reset useSample flag if in use
+      this.useSample = false
       this.$store.commit('explorer/resetDynamfit')
       this.$store.commit('explorer/resetDynamfitData')
     },
@@ -202,7 +253,8 @@ export default {
         fileName: this.dynamfit.fileUpload,
         numberOfProny: this.dynamfit.range,
         model: this.dynamfit.model,
-        fitSettings: this.dynamfit.fitSettings
+        fitSettings: this.dynamfit.fitSettings,
+        useSample: this.useSample
       }
       await this.$store.dispatch('explorer/fetchDynamfitData', payload)
     }

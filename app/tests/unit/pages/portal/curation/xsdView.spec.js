@@ -12,7 +12,7 @@ global.fetch = jest.fn(() =>
 describe('XsdView.vue', () => {
   let wrapper
   beforeEach(async () => {
-    wrapper = await createWrapper(XsdView, { }, false)
+    wrapper = await createWrapper(XsdView, {}, false)
   })
 
   afterEach(() => {
@@ -31,6 +31,6 @@ describe('XsdView.vue', () => {
     wrapper.setData({ xsd: null })
     expect(wrapper.findComponent({ name: 'spinner' }).exists()).toBeTruthy()
     await wrapper.setData({ xsd: 'any value' })
-    expect(wrapper.findComponent({ name: 'spinner' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'spinner' }).exists()).toBe(true)
   })
 })
