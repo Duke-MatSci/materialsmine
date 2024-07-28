@@ -67,6 +67,7 @@ if (cluster.isMaster) {
       }
       const message = err.extensions.message || 'An error occurred.';
       const code = err.extensions.code || 500;
+      log.error(`GQL Error: ${JSON.stringify(err)}`);
       return { message, status: code };
     },
     context: getHttpContext
