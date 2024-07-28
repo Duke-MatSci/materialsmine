@@ -215,10 +215,12 @@ export default {
         this.actionType = 'Restore Chart'
         this.reloadRestored()
       }
-      getChartPromise.then((chart) => {
-        this.chart = chart
-        return this.getSparqlData()
-      })
+      getChartPromise
+        .then((chart) => {
+          this.chart = chart
+          return this.getSparqlData()
+        })
+        .catch((this.loading = false))
     },
     async reloadRestored () {
       // 1. Fetch backup from mongo
