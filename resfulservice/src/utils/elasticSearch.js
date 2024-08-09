@@ -32,8 +32,9 @@ class ElasticSearch {
         }, waitTime);
       });
     } catch (err) {
-      log.error(`elasticsearch.ping = () => ${stringifyError(err)}`);
-      throw err;
+      return log.error(`elasticsearch.ping = () => ${stringifyError(err)}`);
+      // TODO: Check - temporarily stopping this error from blowing up the server
+      // throw err;
     }
   }
 
