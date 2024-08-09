@@ -35,7 +35,7 @@ const defaultDataset = {
   }
 }
 
-const dcat = 'http://w3.org/ns/dcat#'
+const dcat = 'http://www.w3.org/ns/dcat#'
 const dct = 'http://purl.org/dc/terms/'
 const vcard = 'http://www.w3.org/2006/vcard/ns#'
 const foaf = 'http://xmlns.com/foaf/0.1/'
@@ -258,7 +258,7 @@ async function saveDatasetFiles (fileList) {
       body: formData,
       redirect: 'follow',
       headers: {
-        Authorization: store.getters['auth/token']
+        Authorization: 'Bearer ' + store.getters['auth/token']
       }
     })
     return await result.json()
@@ -296,7 +296,20 @@ function buildDistrLd (fileList) {
       '@type': 'http://purl.org/net/provenance/ns#File',
       'http://www.w3.org/2000/01/rdf-schema#label': fileName
     }
-    if (fileList[x]?.status === 'complete') { distrLDs[x]['@id'] = fileList[x].uri } else { distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}` }
+    if (fileList[x]?.status === 'complete') {
+      distrLDs[x]['@id'] = fileList[x].uri
+    } else {
+      distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}`
+    }
+
+    // Note: When testing SDD linking locally enable below logic and comment above if statement
+    // if (fileList[x]?.status === 'complete') {
+    //   distrLDs[x]['@id'] = fileList[x].uri
+    // } else {
+    //   distrLDs[x]['@id'] = `http://restful:3001/${
+    //     fileList[x].filename?.split('/api/')?.[1]
+    //   }`
+    // }
   })
   return distrLDs
 }
@@ -307,7 +320,7 @@ function buildDepictionLd (file, uri) {
     '@type': 'http://purl.org/net/provenance/ns#File',
     'http://www.w3.org/2000/01/rdf-schema#label':
       file?.swaggerFilename ?? file.originalname,
-    'http://w3.org/ns/dcat#accessURL':
+    'http://www.w3.org/ns/dcat#accessURL':
       file?.accessUrl ?? `${window.location.origin}${file.filename}`
   }
   return depictionLd

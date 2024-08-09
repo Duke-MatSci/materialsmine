@@ -80,7 +80,7 @@ export default {
         datasetObject['http://purl.org/dc/terms/title']?.['@value'],
       thumbnail:
         datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
-          'http://w3.org/ns/dcat#accessURL'
+          'http://www.w3.org/ns/dcat#accessURL'
         ],
       doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
       organization: datasetObject[
@@ -88,7 +88,7 @@ export default {
       ]?.map((org) => {
         return org?.['http://xmlns.com/foaf/0.1/name']?.['@value']
       }),
-      distribution: datasetObject['http://w3.org/ns/dcat#distribution']?.map(
+      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map(
         (dist) => {
           return dist?.['@id']
         }
