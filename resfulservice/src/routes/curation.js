@@ -75,6 +75,8 @@ router
   .route('/newsampleid')
   .post(isAuth, latencyTimer, curationController.getControlSampleId);
 
+router.route('/xml').post(isAuth, latencyTimer, curationController.curateXml);
+
 router.route('rehydrate').patch(isAuth, curationController.curationRehydration);
 
 module.exports = router;

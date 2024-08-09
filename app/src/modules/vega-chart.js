@@ -379,7 +379,7 @@ async function loadChart (chartUri) {
   const rows = results.bindings
 
   if (rows.length < 1) {
-    throw new Error(`No chart found for uri: ${chartUrl}`)
+    throw new Error(`No data found for the specified chart URI: ${chartUrl}`)
   }
 
   return await readChartSparqlRow(rows[0])

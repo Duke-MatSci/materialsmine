@@ -84,6 +84,10 @@ const explorerRoutes = [
         component: () =>
           import('@/pages/explorer/curate/form/CurationForm.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'xml',
+        component: () => import('@/pages/explorer/curate/xml/xmlUpload.vue')
       }
     ]
   },

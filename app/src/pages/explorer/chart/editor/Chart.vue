@@ -181,13 +181,13 @@ export default {
       querySparql(vm.chart.query)
         .then(this.onQuerySuccess)
         .then((this.loading = false))
+        .catch((this.loading = false))
     },
     onQuerySuccess (results) {
       this.results = results
     },
     onSpecJsonError () {
       // console.log('bad', arguments)
-
     },
     async onNewVegaView (view) {
       const blob = await view
@@ -215,10 +215,12 @@ export default {
         this.actionType = 'Restore Chart'
         this.reloadRestored()
       }
-      getChartPromise.then((chart) => {
-        this.chart = chart
-        return this.getSparqlData()
-      })
+      getChartPromise
+        .then((chart) => {
+          this.chart = chart
+          return this.getSparqlData()
+        })
+        .catch((this.loading = false))
     },
     async reloadRestored () {
       // 1. Fetch backup from mongo
