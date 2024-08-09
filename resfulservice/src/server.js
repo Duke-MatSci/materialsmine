@@ -12,7 +12,7 @@ const { globalMiddleWare, log, swaggerService } = require('./middlewares');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/authService');
 const curationRoutes = require('./routes/curation');
-const elasticSearch = require('./utils/elasticSearch');
+// const elasticSearch = require('./utils/elasticSearch');
 const fileRoutes = require('./routes/files');
 const invalidRoutes = require('./routes/invalid');
 const knowledgeRoutes = require('./routes/kg-wrapper');
@@ -31,7 +31,8 @@ if (cluster.isMaster) {
   // Main process
   const app = express();
   globalMiddleWare(app);
-  elasticSearch.ping(log);
+  // TODO: Check - temporarily stopping this error from blowing up the server
+  // elasticSearch.ping(log);
 
   const httpServer = createHttpServer(app);
   const wsServer = new WebSocketServer({
