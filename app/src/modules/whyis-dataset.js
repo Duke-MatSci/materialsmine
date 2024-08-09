@@ -296,7 +296,20 @@ function buildDistrLd (fileList) {
       '@type': 'http://purl.org/net/provenance/ns#File',
       'http://www.w3.org/2000/01/rdf-schema#label': fileName
     }
-    if (fileList[x]?.status === 'complete') { distrLDs[x]['@id'] = fileList[x].uri } else { distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}` }
+    if (fileList[x]?.status === 'complete') {
+      distrLDs[x]['@id'] = fileList[x].uri
+    } else {
+      distrLDs[x]['@id'] = `${window.location.origin}${fileList[x].filename}`
+    }
+
+    // Note: When testing SDD linking locally enable below logic and comment above if statement
+    // if (fileList[x]?.status === 'complete') {
+    //   distrLDs[x]['@id'] = fileList[x].uri
+    // } else {
+    //   distrLDs[x]['@id'] = `http://restful:3001/${
+    //     fileList[x].filename?.split('/api/')?.[1]
+    //   }`
+    // }
   })
   return distrLDs
 }

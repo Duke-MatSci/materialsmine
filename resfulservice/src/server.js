@@ -65,7 +65,8 @@ if (cluster.isMaster) {
       if (!err.extensions) {
         return err;
       }
-      const message = err.extensions.message || 'An error occurred.';
+      const message =
+        err.message ?? err.extensions.exception.message ?? 'An error occurred.';
       const code = err.extensions.code || 500;
       return { message, status: code };
     },
