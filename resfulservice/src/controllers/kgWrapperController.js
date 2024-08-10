@@ -5,6 +5,7 @@ const { setInternal } = require('../middlewares/isInternal');
 const elasticSearch = require('../utils/elasticSearch');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const { cacheKnowledge } = require('../middlewares/knowledge-cache');
+const { stringifyError } = require('../utils/exit-utils');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -216,8 +217,8 @@ exports.getSparql = async (req, res, next) => {
       await cacheKnowledge(req, res, next, response?.data);
     } else {
       log.info(
-        `getSparql = () => Empty knowledge response (${JSON.stringify(
-          response.data
+        `getSparql = () => Empty knowledge response (${stringifyError(
+          response.data?.results
         )})`
       );
     }
