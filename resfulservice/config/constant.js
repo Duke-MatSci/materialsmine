@@ -160,5 +160,9 @@ module.exports = {
       description: `This upload has been identified as potentially untrusted. 
             We were unable to verify its origin from the anticipated source`
     }
+  },
+  SEARCH_FIELD: {
+    label: 'label',
+    description: 'description'
   }
 };

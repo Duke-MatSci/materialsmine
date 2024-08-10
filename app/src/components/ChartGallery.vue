@@ -3,7 +3,7 @@
     <div class="section_loader" v-if="loading">
       <spinner :loading="loading" text="Loading Charts" />
     </div>
-    <div class="" v-else>
+    <div v-else>
       <div class="u_content__result">
         <!-- TODO TIME TO RESULT -->
         <span class="u_color utility-navfont" id="css-adjust-navfont">

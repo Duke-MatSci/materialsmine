@@ -90,8 +90,14 @@ export default {
     const responseData = await response.json()
     let accessURL
     if (Array.isArray(responseData)) {
-      accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL']
-    } else accessURL = responseData['http://w3.org/ns/dcat#accessURL']
+      accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL']
+      // Note: Initial sets of SDD curations are missing 'www'
+      if (!accessURL) { accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'] }
+    } else {
+      accessURL = responseData['http://www.w3.org/ns/dcat#accessURL']
+      // Note: Initial sets of SDD curations are missing 'www'
+      if (!accessURL) { accessURL = responseData['http://w3.org/ns/dcat#accessURL'] }
+    }
     context.commit('setCurrentDatasetThumbnail', accessURL)
     return accessURL
   },

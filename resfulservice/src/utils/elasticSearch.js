@@ -305,25 +305,40 @@ class ElasticSearch {
           from: (page - 1) * size,
           query: {
             bool: {
-              should: [
-                {
-                  match_phrase: {
-                    label: phrase
+              ...(!searchField && {
+                should: [
+                  {
+                    match_phrase: {
+                      label: phrase
+                    }
+                  },
+                  {
+                    match_phrase: {
+                      description: phrase
+                    }
                   }
-                },
-                {
-                  match_phrase: {
-                    description: phrase
+                ]
+              }),
+              ...(!!searchField && {
+                should: [
+                  {
+                    match_phrase: {
+                      [searchField]: phrase
+                    }
                   }
-                }
-              ]
+                ]
+              })
             }
           }
         })
       });
       return response;
     } catch (err) {
-      log.error(`elasticsearch.searchType(): ${err.status || 500} - ${err}`);
+      log.error(
+        `elasticsearch.searchType(): ${err.status || 500} - ${stringifyError(
+          err
+        )}`
+      );
       throw err;
     }
   }
