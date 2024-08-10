@@ -10,6 +10,7 @@ const {
   MinioBucket,
   TaskStatusMap
 } = require('../../../config/constant');
+const { stringifyError } = require('../../utils/exit-utils');
 
 const env = process.env;
 const BUCKETNAME = env.MINIO_BUCKET ?? MinioBucket;
@@ -51,7 +52,7 @@ async function workerManager (logger) {
       logInfo.date = startDate[0];
       logInfo.time = startDate[1].split('.')[0];
       if (task.whenToRun === 'Nightly') logInfo.runtime = task.whenToRun;
-      logger.info(JSON.stringify(logInfo));
+      logger.info(stringifyError(logInfo));
 
       const { status, isSuccess } = await service.operation(task, logger);
 
@@ -60,7 +61,7 @@ async function workerManager (logger) {
       logInfo.isSuccess = isSuccess;
       logInfo.date = endDate[0];
       logInfo.time = endDate[1].split('.')[0];
-      logger.info(JSON.stringify(logInfo));
+      logger.info(stringifyError(logInfo));
 
       if (isSuccess) {
         await Task.findOneAndDelete({ _id: task._id });
@@ -98,7 +99,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
     date: date[0],
     time: date[1].split('.')[0]
   };
-  logger.info(JSON.stringify(logInfo));
+  logger.info(stringifyError(logInfo));
   if (isFileExist) {
     try {
       await sharp(tiffImagePath).png().toFile(pngFilePath);
@@ -107,7 +108,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
       logInfo.status = 'Worker-services.Image Conversion:: Completed';
       logInfo.date = date[0];
       logInfo.time = date[1].split('.')[0];
-      logger.info(JSON.stringify(logInfo));
+      logger.info(stringifyError(logInfo));
     } catch (error) {
       tempFile = prefixFile(ref);
       logger.error(error);
@@ -121,7 +122,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
     'Worker-services.Update curation with converted file:: Started';
   logInfo.date = date[0];
   logInfo.time = date[1].split('.')[0];
-  logger.info(JSON.stringify(logInfo));
+  logger.info(stringifyError(logInfo));
 
   tempFile = generateTempFileName(pngFile);
   const isPngTempFileExist = await checkFileExistence(tempFile);
@@ -159,7 +160,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
         'Worker-services.Update curation with converted file:: Completed';
       logInfo.date = date[0];
       logInfo.time = date[1].split('.')[0];
-      logger.info(JSON.stringify(logInfo));
+      logger.info(stringifyError(logInfo));
     } catch (error) {
       logger.error(error);
       prefixFile(pngFilePath);
@@ -173,7 +174,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
     'Worker-services.Uploading converted file to object store:: Started';
   logInfo.date = date[0];
   logInfo.time = date[1].split('.')[0];
-  logger.info(JSON.stringify(logInfo));
+  logger.info(stringifyError(logInfo));
   try {
     if (!(await isObjectExistInMinio(BUCKETNAME, pngFile)) && !isPngFileExist) {
       return {
@@ -205,7 +206,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
       'Worker-services.Uploading converted file to object store:: Completed';
     logInfo.date = date[0];
     logInfo.time = date[1].split('.')[0];
-    logger.info(JSON.stringify(logInfo));
+    logger.info(stringifyError(logInfo));
     return { status: TaskStatusMap.COMPLETED, isSuccess: true };
   } catch (error) {
     prefixFile(pngFilePath);
@@ -227,7 +228,7 @@ async function knowledgeRequest (
     date: date[0],
     time: date[1].split('.')[0]
   };
-  logger.info(JSON.stringify(logInfo));
+  logger.info(stringifyError(logInfo));
 
   // attach request body and query if not set
   if (!req.body) req.body = { query: undefined };
@@ -242,7 +243,7 @@ async function knowledgeRequest (
     logInfo.status = 'Worker-services.knowledgeRequest:: Completed';
     logInfo.date = date[0];
     logInfo.time = date[1].split('.')[0];
-    logger.info(JSON.stringify(logInfo));
+    logger.info(stringifyError(logInfo));
 
     return result
       ? {

@@ -1,3 +1,5 @@
+const { stringifyError } = require('./exit-utils');
+
 /**
  * Writes error to logger and return the error
  * @param {*} req
@@ -13,8 +15,8 @@ exports.errorWriter = (req, error, fnName = 'N/A', code, type) => {
     return new Error('Server Error');
   }
 
-  if (type) req.logger[type](`[${fnName}]: error - ${error}`);
-  else req.logger?.error(`[${fnName}]: error - ${error}`);
+  if (type) req.logger[type](`[${fnName}]: error - ${stringifyError(error)}`);
+  else req.logger?.error(`[${fnName}]: error - ${stringifyError(error)}`);
   const err = new Error(error);
   if (code) err.statusCode = code;
   return err;
