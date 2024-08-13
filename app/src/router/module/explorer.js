@@ -1,5 +1,5 @@
-import ChartBase from '@/pages/explorer/chart/Base.vue'
-import ImageBase from '@/pages/explorer/image/Base.vue'
+import ChartBase from '@/pages/explorer/chart/Base.vue';
+import ImageBase from '@/pages/explorer/image/Base.vue';
 const explorerRoutes = [
   {
     path: '',
@@ -134,7 +134,9 @@ const explorerRoutes = [
       {
         path: '',
         name: 'validList',
-        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue')
+        component: () =>
+          import('@/pages/explorer/curate/validlist/XlsList.vue'),
+        meta: { requiresAuth: true }
       },
       {
         path: 'update',
@@ -295,6 +297,6 @@ const explorerRoutes = [
       }
     ]
   }
-]
+];
 
-export default explorerRoutes
+export default explorerRoutes;

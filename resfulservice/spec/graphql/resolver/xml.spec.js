@@ -7,6 +7,7 @@ const {
   Query: { xmlFinder, xmlViewer }
 } = require('../../../src/graphql/resolver');
 const CuratedSamples = require('../../../src/models/curatedSamples');
+const { mockDBXmlDataList, mockDBXmlData } = require('../../mocks');
 
 const { expect } = chai;
 
@@ -17,25 +18,6 @@ const mockXmlData = {
     '<xml> <CD> <TITLE>Empire Burlesque</TITLE><ARTIST>Bob Dylan</ARTIST> <COUNTRY>USA</COUNTRY> <COMPANY>Columbia</COMPANY> <PRICE>10.90</PRICE> <YEAR>1985</YEAR> </CD> </xml>',
   entityState: 'EditedValid'
 };
-
-const mockXmlDataList = [
-  {
-    id: '6622848a808bdbee354f96d3',
-    title: 'L311_S10_Lou_2009.xml',
-    status: 'Not Approved',
-    isNewCuration: false,
-    sequence: 311,
-    user: '65b8ec85c3d3b2ed82fe4029'
-  },
-  {
-    id: '65cf719860df704a1ca74428',
-    title: 'E0_S1_Uthdev_2003.xml',
-    status: 'Approved',
-    isNewCuration: true,
-    sequence: null,
-    user: '65b8ec85c3d3b2ed82fe4029'
-  }
-];
 
 describe('XmlData Resolver Unit Tests:', function () {
   afterEach(() => sinon.restore());
@@ -58,33 +40,35 @@ describe('XmlData Resolver Unit Tests:', function () {
       sinon.stub(CuratedSamples, 'countDocuments').returns(1);
       sinon
         .stub(XmlData, 'aggregate')
-        .returns([{ count: mockXmlDataList.length, xmlData: mockXmlDataList }]);
+        .returns([
+          { count: mockDBXmlDataList.length, xmlData: mockDBXmlDataList }
+        ]);
 
       const result = await xmlFinder({}, { input }, { req });
 
       expect(result).to.have.property('xmlData');
       expect(result.xmlData).to.be.an('Array');
 
-      expect(result.xmlData[0]).to.have.property('id', mockXmlDataList[0].id);
+      expect(result.xmlData[0]).to.have.property('id', mockDBXmlDataList[0].id);
       expect(result.xmlData[0]).to.have.property(
         'title',
-        mockXmlDataList[0].title
+        mockDBXmlDataList[0].title
       );
       expect(result.xmlData[0]).to.have.property(
         'status',
-        mockXmlDataList[0].status
+        mockDBXmlDataList[0].status
       );
       expect(result.xmlData[0]).to.have.property(
         'isNewCuration',
-        mockXmlDataList[0].isNewCuration
+        mockDBXmlDataList[0].isNewCuration
       );
       expect(result.xmlData[0]).to.have.property(
         'sequence',
-        mockXmlDataList[0].sequence
+        mockDBXmlDataList[0].sequence
       );
       expect(result.xmlData[0]).to.have.property(
         'user',
-        mockXmlDataList[0].user
+        mockDBXmlDataList[0].user
       );
     });
 
@@ -94,33 +78,35 @@ describe('XmlData Resolver Unit Tests:', function () {
 
       sinon
         .stub(XmlData, 'aggregate')
-        .returns([{ count: mockXmlDataList.length, xmlData: mockXmlDataList }]);
+        .returns([
+          { count: mockDBXmlDataList.length, xmlData: mockDBXmlDataList }
+        ]);
 
       const result = await xmlFinder({}, { input }, { req });
 
       expect(result).to.have.property('xmlData');
       expect(result.xmlData).to.be.an('Array');
 
-      expect(result.xmlData[1]).to.have.property('id', mockXmlDataList[1].id);
+      expect(result.xmlData[1]).to.have.property('id', mockDBXmlDataList[1].id);
       expect(result.xmlData[1]).to.have.property(
         'title',
-        mockXmlDataList[1].title
+        mockDBXmlDataList[1].title
       );
       expect(result.xmlData[1]).to.have.property(
         'status',
-        mockXmlDataList[1].status
+        mockDBXmlDataList[1].status
       );
       expect(result.xmlData[1]).to.have.property(
         'isNewCuration',
-        mockXmlDataList[1].isNewCuration
+        mockDBXmlDataList[1].isNewCuration
       );
       expect(result.xmlData[1]).to.have.property(
         'sequence',
-        mockXmlDataList[1].sequence
+        mockDBXmlDataList[1].sequence
       );
       expect(result.xmlData[1]).to.have.property(
         'user',
-        mockXmlDataList[1].user
+        mockDBXmlDataList[1].user
       );
     });
 
@@ -148,7 +134,7 @@ describe('XmlData Resolver Unit Tests:', function () {
     });
 
     it('should return an xmldata', async () => {
-      sinon.stub(XmlData, 'findOne').returns(mockXmlData);
+      sinon.stub(XmlData, 'findOne').returns(mockDBXmlData);
 
       const result = await xmlViewer({}, { input }, { req });
 
@@ -159,7 +145,9 @@ describe('XmlData Resolver Unit Tests:', function () {
 
     it('should return a curated sample data', async () => {
       sinon.stub(CuratedSamples, 'findOne').returns(fetchedCuratedXlsxObject);
-      sinon.stub(XlsxFileManager, 'xmlGenerator').returns(mockXmlData.xml_str);
+      sinon
+        .stub(XlsxFileManager, 'xmlGenerator')
+        .returns(mockDBXmlData.xml_str);
       const result = await xmlViewer(
         {},
         { input: { ...input, isNewCuration: true } },

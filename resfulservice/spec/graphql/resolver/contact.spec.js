@@ -3,6 +3,11 @@ const sinon = require('sinon');
 const Contact = require('../../../src/models/contact');
 const graphQlSchema = require('../../../src/graphql');
 const {
+  mockContact,
+  mockUserContact,
+  mockUpdatedContact
+} = require('../../mocks');
+const {
   Mutation: { submitContact, updateContact },
   Query: { getUserContacts, contacts }
 } = require('../../../src/graphql/resolver');
@@ -10,23 +15,6 @@ const { userRoles } = require('../../../config/constant');
 const FileController = require('../../../src/controllers/fileController');
 
 const { expect } = chai;
-
-const mockContact = {
-  fullName: 'test user',
-  email: 'test@example.com',
-  purpose: 'QUESTION',
-  message: 'test message',
-  attachments: [
-    '/api/files/strategic_beetle_joelle-2024-02-15T09:25:42.264Z-master_template (5).xlsx?isStore=true',
-    '/api/files/strategic_beetle_joelle-2024-02-15T09:27:07.905Z-master_template.xlsx?isStore=true'
-  ]
-};
-
-const mockUpdatedContact = {
-  ...mockContact,
-  resolved: true,
-  response: 'Thanks for reaching out. We are working on it'
-};
 
 describe('Contact Resolver Unit Tests:', function () {
   afterEach(() => sinon.restore());
@@ -124,15 +112,6 @@ describe('Contact Resolver Unit Tests:', function () {
   });
 
   context('getUserContacts', () => {
-    const mockUserContact = {
-      _id: 'akdn9wqkn',
-      fullName: 'test user',
-      email: 'test@example.com',
-      purpose: 'QUESTION',
-      message: 'test message',
-      lean: () => this
-    };
-
     it("should return paginated lists of a user's contacts", async () => {
       sinon.stub(Contact, 'countDocuments').returns(1);
       sinon.stub(Contact, 'find').returns(mockUserContact);
