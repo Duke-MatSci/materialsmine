@@ -200,7 +200,7 @@ describe('Dataset Resolver Unit Tests:', function () {
 
       const result = await getFilesets(
         {},
-        { input },
+        { input: mockFiles },
         { user, req, isAuthenticated: true }
       );
 

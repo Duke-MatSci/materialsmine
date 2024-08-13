@@ -15,15 +15,15 @@
 <script>
 export default {
   name: 'Namespace',
-  data() {
+  data () {
     return {
       loading: false
-    };
+    }
   },
   computed: {
-    namespace() {
-      return this.$route.params?.namespace;
+    namespace () {
+      return this.$route.params?.namespace
     }
   }
-};
+}
 </script>

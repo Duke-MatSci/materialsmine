@@ -1,19 +1,19 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-import store from '@/store/index.js';
-import ExplorerBase from '@/pages/explorer/Base.vue';
-import MetamineBase from '@/pages/metamine/Base.vue';
-import NanomineBase from '@/pages/nanomine/Base.vue';
-import PortalBase from '@/pages/portal/Base.vue';
-import XsdBase from '@/pages/portal/curation/xsd/Base.vue';
-import NotFound from '@/pages/NotFound.vue';
-import nanomineRoutes from '@/router/module/nanomine';
-import metamineRoutes from '@/router/module/metamine';
-import explorerRoutes from '@/router/module/explorer';
-import portalRoutes from '@/router/module/portal';
-import xsdRoutes from '@/router/module/xsd';
-import nsRoutes from './module/ns';
-Vue.use(VueRouter);
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import store from '@/store/index.js'
+import ExplorerBase from '@/pages/explorer/Base.vue'
+import MetamineBase from '@/pages/metamine/Base.vue'
+import NanomineBase from '@/pages/nanomine/Base.vue'
+import PortalBase from '@/pages/portal/Base.vue'
+import XsdBase from '@/pages/portal/curation/xsd/Base.vue'
+import NotFound from '@/pages/NotFound.vue'
+import nanomineRoutes from '@/router/module/nanomine'
+import metamineRoutes from '@/router/module/metamine'
+import explorerRoutes from '@/router/module/explorer'
+import portalRoutes from '@/router/module/portal'
+import xsdRoutes from '@/router/module/xsd'
+import nsRoutes from './module/ns'
+Vue.use(VueRouter)
 
 const routes = [
   {
@@ -63,24 +63,24 @@ const routes = [
   { path: '/mm:notFound(.*)', component: NotFound },
   { path: '/nm:notFound(.*)', component: NotFound },
   { path: '/:notFound(.*)', component: NotFound }
-];
+]
 
 const router = new VueRouter({
   mode: 'history',
   routes,
-  scrollBehavior(to, _, prevPosition) {
+  scrollBehavior (to, _, prevPosition) {
     if (prevPosition) {
-      return prevPosition;
+      return prevPosition
     }
     if (to.hash) {
       return {
         el: to.hash,
         behavior: 'smooth'
-      };
+      }
     }
-    return { x: 0, y: 0 };
+    return { x: 0, y: 0 }
   }
-});
+})
 
 router.beforeEach(async function (to, _, next) {
   if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
@@ -92,19 +92,19 @@ router.beforeEach(async function (to, _, next) {
           duration: 1500
         },
         { root: true }
-      );
+      )
 
-      await store.dispatch('auth/tryLogin');
+      await store.dispatch('auth/tryLogin')
       if (store.getters['auth/isAuthenticated']) {
-        return next();
+        return next()
       }
     }
-    next('');
+    next('')
   } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
-    next();
+    next()
   } else {
-    next();
+    next()
   }
-});
+})
 
-export default router;
+export default router

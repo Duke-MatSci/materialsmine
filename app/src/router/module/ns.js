@@ -11,6 +11,6 @@ const nsRoutes = [
     component: () => import('@/pages/ns/Home.vue'),
     meta: { requiresAuth: false }
   }
-];
+]
 
-export default nsRoutes;
+export default nsRoutes
