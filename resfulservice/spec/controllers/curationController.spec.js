@@ -314,7 +314,7 @@ describe('Curation Controller', function () {
       const nextSpy = sinon.spy();
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returnsThis();
-      sinon.stub(DatasetId, 'findOne').throws();
+      sinon.stub(XlsxObject, 'find').throws();
 
       await XlsxController.getControlSampleId(req, res, nextSpy);
       sinon.assert.calledOnce(nextSpy);
