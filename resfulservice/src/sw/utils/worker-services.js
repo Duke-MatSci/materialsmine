@@ -1,10 +1,12 @@
 const sharp = require('sharp');
 const fs = require('fs');
+const axios = require('axios');
 const CuratedSamples = require('../../models/curatedSamples');
 const Task = require('../models/task');
 const FileManager = require('../../utils/fileManager');
 const KnowledgeController = require('../../controllers/kgWrapperController');
 const minioClient = require('../../utils/minio');
+const { log } = require('../../middlewares');
 const {
   SupportedFileResponseHeaders,
   MinioBucket,
@@ -14,6 +16,90 @@ const { stringifyError } = require('../../utils/exit-utils');
 
 const env = process.env;
 const BUCKETNAME = env.MINIO_BUCKET ?? MinioBucket;
+const TIME_API_URL =
+  'https://timeapi.io/api/Time/current/zone?timeZone=US/Eastern';
+
+// Global variables to store the fetched time and date
+let fetchedTime = null;
+let fetchedDate = null;
+
+// Function to fetch the current time from the API
+async function fetchCurrentTime() {
+  log.info('fetchCurrentTime(): Function entry');
+  try {
+    const response = await axios.get(TIME_API_URL);
+    if (response.status === 200) {
+      const data = response.data;
+      log.info(`Fetched time: ${data.dateTime}`);
+      fetchedTime = new Date(data.dateTime);
+      fetchedDate = fetchedTime.toISOString().split('T')[0];
+    } else {
+      log.error('Failed to fetch time from the API');
+      throw new Error('Failed to fetch time from the API');
+    }
+  } catch (error) {
+    log.error(error);
+  }
+}
+
+// Function to calculate the remaining time until 12:00 AM in the correct timezone
+function getRemainingTimeUntilMidnight() {
+  log.info('getRemainingTimeUntilMidnight(): Function entry');
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  const nowInEST = new Date(now.getTime() - timezoneOffset + 3600000 * -5); // EST is UTC-5
+  const nextMidnight = new Date(nowInEST);
+  nextMidnight.setHours(0, 0, 0, 0);
+
+  // If it's already past 12:00 AM today, set nextMidnight to 12:00 AM the next day
+  if (nowInEST >= nextMidnight) {
+    nextMidnight.setDate(nextMidnight.getDate() + 1);
+  }
+
+  return nextMidnight - nowInEST;
+}
+
+// Function to check if the current time is between 12:00 AM and 3:00 AM
+function isNightTime() {
+  log.info('isNightTime(): Function entry');
+  if (fetchedTime !== null) {
+    const startTime = new Date(fetchedTime);
+    startTime.setHours(0, 0, 0, 0);
+    const endTime = new Date(fetchedTime);
+    endTime.setHours(3, 0, 0, 0);
+    return fetchedTime >= startTime && fetchedTime < endTime;
+  } else {
+    return false;
+  }
+}
+
+// Function to update fetched time and date periodically
+async function updateTimeIfNecessary() {
+  log.info('updateTimeIfNecessary(): Function entry');
+  const now = new Date();
+  const timezoneOffset = now.getTimezoneOffset() * 60000;
+  const nowInEST = new Date(now.getTime() - timezoneOffset + 3600000 * -5); // EST is UTC-5
+  const currentDate = nowInEST.toISOString().split('T')[0];
+
+  // Check if it's a new day
+  if (fetchedDate !== currentDate) {
+    await fetchCurrentTime();
+  } else {
+    // Increment fetchedTime by 3 minutes
+    fetchedTime = new Date(fetchedTime.getTime() + 3 * 60 * 1000);
+  }
+}
+
+// Initial fetch of the current time
+fetchCurrentTime().then(() => {
+  // Set a timer to fetch the time from the API at 12:00 AM
+  const remainingTimeUntilMidnight = getRemainingTimeUntilMidnight();
+  setTimeout(async () => {
+    await fetchCurrentTime();
+    console.log('Fetched time at 12:00 AM:', fetchedTime);
+  }, remainingTimeUntilMidnight);
+});
+
 const serviceManager = {
   convertImageToPng: {
     serviceName: 'convertImageToPng',
@@ -27,12 +113,15 @@ const serviceManager = {
   }
 };
 
-async function workerManager (logger) {
+async function workerManager(logger) {
   const tasks = await Task.find({
     status: { $nin: [TaskStatusMap.MISSING, TaskStatusMap.DISABLED] }
   });
 
   if (!tasks.length) return;
+
+  await updateTimeIfNecessary();
+  logger.info('current time: ', fetchedTime);
 
   tasks.forEach(async (task) => {
     const service = serviceManager[task.serviceName];
@@ -73,7 +162,7 @@ async function workerManager (logger) {
   });
 }
 
-async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
+async function convertImageToPng({ _id, info: { ref, sampleID } }, logger) {
   logger.info('Worker-services.convertImageToPng - Function entry');
   const pngFilePath = `${ref.split(/.tiff?/)[0]}.png`;
   const pngFile = pngFilePath.split('mm_files/')[1];
@@ -215,7 +304,7 @@ async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
   }
 }
 
-async function knowledgeRequest (
+async function knowledgeRequest(
   { _id: uuid, info: { knowledgeId, req } },
   logger
 ) {
@@ -268,7 +357,7 @@ const isObjectExistInMinio = async (bucketName, fileName) => {
   }
 };
 
-async function checkFileExistence (filePath) {
+async function checkFileExistence(filePath) {
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     return true;
@@ -295,17 +384,6 @@ const prefixFile = async (filename, logger) => {
 const generateTempFileName = (filepath) => {
   const filename = filepath.split('/').pop();
   return `mm_files/failed_upload_${filename}`;
-};
-
-const isNightTime = () => {
-  const options = {
-    timeZone: 'America/New_York', // Specify the timezone
-    hour12: false, // Set to true for 12-hour format, false for 24-hour format
-    hour: '2-digit' // Set to '2-digit' to get the hour
-  };
-
-  const currentHour = new Date().toLocaleString('en-US', options);
-  return currentHour >= 0 && currentHour <= 3;
 };
 
 module.exports = { convertImageToPng, workerManager, knowledgeRequest };

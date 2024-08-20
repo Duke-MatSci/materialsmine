@@ -240,6 +240,22 @@ const fetchedCuration = {
   }
 };
 
+const mockTimeApiResponse = {
+  year: 2024,
+  month: 6,
+  day: 6,
+  hour: 6,
+  minute: 44,
+  seconds: 38,
+  milliSeconds: 875,
+  dateTime: '2024-06-06T06:44:38.8753094',
+  date: '06/06/2024',
+  time: '06:44',
+  timeZone: 'US/Eastern',
+  dayOfWeek: 'Thursday',
+  dstActive: true
+};
+
 module.exports = {
   mockTasks,
   mockNonExistingService,
@@ -251,5 +267,6 @@ module.exports = {
   searchedKnowledgeGraph,
   mockElasticSearchChartsResult,
   mockFavoriteChart,
-  fetchedCuration
+  fetchedCuration,
+  mockTimeApiResponse
 };
