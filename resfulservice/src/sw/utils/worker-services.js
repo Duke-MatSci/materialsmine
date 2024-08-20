@@ -24,7 +24,7 @@ let fetchedTime = null;
 let fetchedDate = null;
 
 // Function to fetch the current time from the API
-async function fetchCurrentTime() {
+async function fetchCurrentTime () {
   log.info('fetchCurrentTime(): Function entry');
   try {
     const response = await axios.get(TIME_API_URL);
@@ -43,7 +43,7 @@ async function fetchCurrentTime() {
 }
 
 // Function to calculate the remaining time until 12:00 AM in the correct timezone
-function getRemainingTimeUntilMidnight() {
+function getRemainingTimeUntilMidnight () {
   log.info('getRemainingTimeUntilMidnight(): Function entry');
   const now = new Date();
   const timezoneOffset = now.getTimezoneOffset() * 60000;
@@ -60,7 +60,7 @@ function getRemainingTimeUntilMidnight() {
 }
 
 // Function to check if the current time is between 12:00 AM and 3:00 AM
-function isNightTime() {
+function isNightTime () {
   log.info('isNightTime(): Function entry');
   if (fetchedTime !== null) {
     const startTime = new Date(fetchedTime);
@@ -74,7 +74,7 @@ function isNightTime() {
 }
 
 // Function to update fetched time and date periodically
-async function updateTimeIfNecessary() {
+async function updateTimeIfNecessary () {
   log.info('updateTimeIfNecessary(): Function entry');
   const now = new Date();
   const timezoneOffset = now.getTimezoneOffset() * 60000;
@@ -113,7 +113,7 @@ const serviceManager = {
   }
 };
 
-async function workerManager(logger) {
+async function workerManager (logger) {
   const tasks = await Task.find({
     status: { $nin: [TaskStatusMap.MISSING, TaskStatusMap.DISABLED] }
   });
@@ -162,7 +162,7 @@ async function workerManager(logger) {
   });
 }
 
-async function convertImageToPng({ _id, info: { ref, sampleID } }, logger) {
+async function convertImageToPng ({ _id, info: { ref, sampleID } }, logger) {
   logger.info('Worker-services.convertImageToPng - Function entry');
   const pngFilePath = `${ref.split(/.tiff?/)[0]}.png`;
   const pngFile = pngFilePath.split('mm_files/')[1];
@@ -304,7 +304,7 @@ async function convertImageToPng({ _id, info: { ref, sampleID } }, logger) {
   }
 }
 
-async function knowledgeRequest(
+async function knowledgeRequest (
   { _id: uuid, info: { knowledgeId, req } },
   logger
 ) {
@@ -357,7 +357,7 @@ const isObjectExistInMinio = async (bucketName, fileName) => {
   }
 };
 
-async function checkFileExistence(filePath) {
+async function checkFileExistence (filePath) {
   try {
     await fs.promises.access(filePath, fs.constants.F_OK);
     return true;
