@@ -40,10 +40,12 @@ mockDB/fuseki/log4j2.properties
 mockDB/materialsmine_backup/
 mockDB/fuseki/files/
 mockDB/fuseki/
+sparqlqueries.html
 
 #Sync DB
 mockDB/restore/mongodump/
 mockDB/materialsmine_backup/
+whyis/materialsmine/whyis-init.sh
 
 #Elastic Search
 mockDB/es/
