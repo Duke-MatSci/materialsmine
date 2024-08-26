@@ -6632,11 +6632,7 @@
           "File": {
             "cellValue": "6. Microstructure|[4,1]",
             "type": "File",
-            "validTypes": [
-              "jpg",
-              "png",
-              "gif"
-            ]
+            "validTypes": ["jpg", "png", "gif"]
           },
           "Description": {
             "cellValue": "6. Microstructure|[5,1]",
@@ -6946,7 +6942,7 @@
         "required": false,
         "unitofmeasurement": "nm/pi(vo)xel"
       },
-      "2D_RVE": {
+      "TwoD_RVE": {
         "Width": {
           "cellValue": "7. Simulation - FEA|[38,2]",
           "type": "String",
@@ -6960,7 +6956,7 @@
           "unitofmeasurement": "pixel"
         }
       },
-      "3D_RVE": {
+      "ThreeD_RVE": {
         "Width": {
           "cellValue": "7. Simulation - FEA|[41,2]",
           "type": "String",
