@@ -82,7 +82,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       const appName = 'dynamfit';
       req.params = { appName };
       sinon.stub(latency, 'latencyCalculator').returns(true);
-      sinon.stub(axios, 'post').returns(dynafitSuccessResponse);
+      sinon.stub(axios, 'request').returns(dynafitSuccessResponse);
       sinon.stub(jwt, 'sign').returns('askle90lk.s409sjgl0ad.s0akng40');
       const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('appName');
@@ -99,7 +99,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       req.params = { appName };
       sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(jwt, 'sign').returns('askle90lk.s409sjgl0ad.s0akng40');
-      sinon.stub(axios, 'post').returns(dynamfitErrorResponse);
+      sinon.stub(axios, 'request').returns(dynamfitErrorResponse);
       const result = await manageServiceRequest(req, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal(dynamfitErrorResponse.data.message);
@@ -109,7 +109,7 @@ describe('Manage Service Controller Unit Tests:', function () {
       const appName = 'dynamfit';
       req.params = { appName };
       const nextSpy = sinon.spy();
-      sinon.stub(axios, 'post').throws();
+      sinon.stub(axios, 'request').throws();
       sinon.stub(latency, 'latencyCalculator').returns(true);
 
       await manageServiceRequest(req, res, nextSpy);
@@ -121,7 +121,7 @@ describe('Manage Service Controller Unit Tests:', function () {
     it('should return a 500 server error when chemprops server is not accessible', async function () {
       req.originalUrl = '/nm/chemprops/init';
       const nextSpy = sinon.spy();
-      sinon.stub(axios, 'post').throws();
+      sinon.stub(axios, 'request').throws();
       sinon.stub(latency, 'latencyCalculator').returns(true);
 
       await chemPropsSeed(req, res, nextSpy);

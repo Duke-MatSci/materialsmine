@@ -991,8 +991,6 @@ paths:
             
   /curate/schema:
     get:
-      security:
-        - BearerAuth: []
       summary: Gets XSD  Schema
       description: This route provides access to retrieving the XSD Schema. If the isFile query parameter is specified it returns the XSD schema as a downloadable file. Alternatively, if the isJson query parameter is specified, it returns a valid Base JSON Schema. Finally, if the getXSD query parameter is included, it returns the XSD schema as JSON.
       tags:
@@ -1022,7 +1020,69 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/Sample-XSD'
                   - $ref: '#/components/schemas/Sample-JsonSchema'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: An error occurred
+  /xml/{controlID}:
+    get:
+      summary: Gets Curation XMl
+      description: This route downloads a curation xml
+      tags:
+        - Xml
+      parameters:
+        - in: path
+          required: true
+          name: controlID
+          description: The Control_ID of the xml to be fetched.
+          schema:
+            type: string
+            example: L5_S4_Hareesh_2023
 
+        - in: query
+          name: format
+          schema:
+            type: string
+            example: xml
+            default: xml
+          description: Set to xml
+      responses:
+        '200':
+          description: Returns the curation XML, either rendered directly or as a downloadable file.
+          content:
+            application/xml:
+              schema:
+                type: string
+                example: |
+                  <?xml version="1.0" encoding="utf-8"?>
+                    <PolymerNanocomposite >
+                      <2D_RVE>
+                        <Width>500</Width>
+                        <Height>500</Height>
+                      </2D_RVE>
+                      <3D_RVE>
+                        <Width>500</Width>
+                        <Height>500</Height>
+                      </3D_RVE>
+                    </PolymerNanocomposite>
+                
+        
+        '404':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        example: 'Curation sample not found'
         '500':
           description: Internal Server Error
           content:
@@ -1510,6 +1570,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Forbidden-Error'
+       
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This response indicates an unexpected server-side issue.
+                    
+  /mn/materialsmine:
+    get:
+      summary: A route to Extract Ontology Information
+      description: This route processes an RDF Turtle file to extract ontology details, compute statistical metrics, and build a hierarchical structure of ontology classes.
+      tags:
+        - Managed Services
+                
+      responses:
+        '200':
+          description: Materialsmine Managed Service data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Materialsmine-Data'
+
+        '400':
+          description: Invalid Request Payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        example: Failed to download file from GitHub
+                                 
+
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+                
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  error: Not Found
+                  message: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
        
         '500':
           description: Internal Server Error
@@ -2170,6 +2285,77 @@ components:
           StandardName: Polystyrene
           density: '1.04'
           uSMILES: C(C(C1=CC=CC=C1)[*])[*]
+    
+    Successful-Materialsmine-Data:
+      type: object
+      example: 
+        appName: materialsmine
+        data:
+          details:
+            Acronyms: MATERIALSMINE
+            Visibility: Public
+            Description: A materials ontology to support data publication involving nanomaterials and metamaterials.
+            Status: Alpha
+            Format: OWL
+            Contact: Sabbir Rashid, rashidsabbir@gmail.com
+            Categories: Chemical, Development, Physicochemical
+            OntologyVersion: http://materialsmine.org/ns/1.0
+          metrics:
+            classes: 543
+            individuals: 224
+            properties: 0
+            maximum_depth: 5
+            maximum_number_of_children: 21
+            average_number_of_children: 1
+            classes_with_a_single_child: 216
+            classes_with_more_than_25_children: 0
+            classes_with_no_definition: 248
+          data:
+            - ID: http://www.w3.org/2002/07/owl#Thing
+              Preferred Name: Thing
+              prefixIRI: owl:Thing
+              prefLabel: Thing
+              subClasses:
+                - ID: obo:ID_0000061
+                  subClasses:
+                    - subClasses:
+                        - subClasses: []
+                          ID: http://materialsmine.org/ns/TemperatureSweep
+                          prefixIRI: materialsmine:TemperatureSweep
+                          prefLabel: Temperature Sweep
+                          Label: Temperature Sweep
+                          Preferred Name: Temperature Sweep
+                          subClassOf: http://materialsmine.org/ns/DMA_Mode
+                          Definitions: A continuous variation of temperature within a pre-defined range.
+                      ID: http://materialsmine.org/ns/DMA_Mode
+                      prefixIRI: materialsmine:DMA_Mode
+                      subClassOf: http://materialsmine.org/ns/DynamicProperties
+                      prefLabel: Dynamic Mechanical Analysis
+                      Label: Dynamic Mechanical Analysis
+                      Preferred Name: Dynamic Mechanical Analysis
+                      Definitions: The type of condition (e.g., temperature sweep or frequency sweep) under which a material's dynamic mechanical response is measured.
+                  Preferred Name: obo:ID_0000061
+                  prefLabel: obo:ID_0000061
+                  prefixIRI: ns2:ID_0000061
+                  subClassOf: http://www.w3.org/2002/07/owl#Thing
+              subClassOf: http://www.w3.org/2002/07/owl#Thing
+            - subClasses:
+                - subClasses: []
+                  ID: http://materialsmine.org/ns/Beam
+                  prefixIRI: materialsmine:Beam
+                  subClassOf: http://materialsmine.org/ns/1DSolidMechanicsModel
+                  Definitions: A slender 1d structural element that primarily bears lateral loads.
+                  prefLabel: Beam
+                  Label: Beam
+                  Preferred Name: Beam
+              ID: http://materialsmine.org/ns/1DSolidMechanicsModel
+              prefixIRI: materialsmine:1DSolidMechanicsModel
+              Definitions: A one-dimensional model of a solid relating stress with strain.
+              prefLabel: 1D Solid Mechanics Model
+              Label: 1D Solid Mechanics Model
+              Preferred Name: 1D Solid Mechanics Model
+              subClassOf: http://www.w3.org/2002/07/owl#Thing
+          
       
       
     Sample-Files:

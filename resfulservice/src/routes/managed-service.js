@@ -11,6 +11,7 @@ router
 
 router
   .route('/:appName')
+  .get(latencyTimer, manageServiceController.manageServiceRequest)
   .post(isAuth, latencyTimer, manageServiceController.manageServiceRequest);
 
 router
