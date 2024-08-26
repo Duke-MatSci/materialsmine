@@ -15,6 +15,19 @@ file_url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{FIL
 commits_url = f'https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/commits?path={FILE_PATH}&sha={BRANCH}'
 
 def make_github_request(url, app):
+    """
+    This function sends a GET request to the specified URL with GitHub authentication.
+    It handles different HTTP status codes and logs relevant information using the provided app logger.
+
+    Parameters:
+    url (str): The URL to send the GET request to.
+    app: The application instance that provides logging functionality.
+
+    Returns:
+    dict or None: The JSON response from the GitHub API if the request is successful (status code 200).
+                  None if the request fails or encounters a rate limit (status code 429).
+                  None if there is a network error.
+    """
     try:
         response = requests.get(url, auth=(GITHUB_USERNAME, GITHUB_TOKEN))
         if response.status_code == 200:
@@ -30,6 +43,16 @@ def make_github_request(url, app):
         return None
 
 def download_file(app):
+    """
+    This function connects to GitHub, retrieves the content of a specified file, decodes it, and saves it locally.
+
+    Parameters:
+    app: The application instance that provides logging functionality.
+
+    Returns:
+    bool: True if the file is downloaded and saved successfully.
+          False if there is an error during the download or saving process.
+    """
     app.logger.info("[download_file]: Connecting to GitHub to download file")
     
     file_content_json = make_github_request(file_url, app)
@@ -50,6 +73,20 @@ def download_file(app):
         return False
 
 def get_commit_dates(app):
+    """
+    Fetches the last commit dates for a specified file from a GitHub repository.
+    Constructs a list of dictionaries, each representing a commit with version, description, released, and uploaded dates.
+
+    Parameters:
+    app: The application instance that provides logging functionality.
+
+    Returns:
+    list: A list of dictionaries, where each dictionary represents a commit with the following keys:
+          - version: The version number of the commit.
+          - description: A brief description of the commit.
+          - released: The date and time of the commit in ISO 8601 format.
+          - uploaded: The date and time of the commit in ISO 8601 format.
+    """
     app.logger.info("[get_commit_dates]: Fetching last commit dates.")
     
     commits_json = make_github_request(commits_url, app)
