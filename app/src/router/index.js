@@ -28,7 +28,7 @@ const routes = [
   },
   {
     path: '/ns',
-    component: ExplorerBase,
+    component: () => import('@/pages/ns/Base.vue'),
     children: [...nsRoutes]
   },
   {
