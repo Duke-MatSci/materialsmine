@@ -29,13 +29,13 @@ def create_app(config_class = Config):
             from app.chemprops.routes import chemprops
             from app.dynamfit.routes import dynamfit
             from app.main.routes import main
-            from app.ontology.routes import materialsmine
+            from app.ontology.routes import ontology
             from app.errors.handlers import error
             
             app.register_blueprint(chemprops)
             app.register_blueprint(dynamfit)
             app.register_blueprint(main)
-            app.register_blueprint(materialsmine)
+            app.register_blueprint(ontology)
             app.register_blueprint(error)
 
         except (ImportError, ModuleNotFoundError) as e:

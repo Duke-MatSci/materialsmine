@@ -44,15 +44,15 @@ def extract_preferred_name(iri):
 
 def initialize_statistics() -> Dict[str, int]:
     return {
-        "classes": 0,
-        "individuals": 0,
-        "properties": 0,
-        "maximum_depth": 0,
-        "maximum_number_of_children": 0,
-        "average_number_of_children": 0,
-        "classes_with_a_single_child": 0,
-        "classes_with_more_than_25_children": 0,
-        "classes_with_no_definition": 0
+        "Classes": 0,
+        "Individuals": 0,
+        "Properties": 0,
+        "Maximum Depth": 0,
+        "Maximum number of children": 0,
+        "Average number of children": 0,
+        "Classes with a single child": 0,
+        "Classes with more than 25 children": 0,
+        "Classes with no definition": 0
     }
 
 def populate_class_with_details(classes, g):
@@ -108,7 +108,7 @@ def process_graph(g: Graph):
             process_triple(s, p, o, g, classes, attribute_mapping)
     
     properties = extract_properties_to_list(unique_properties)
-    stats["properties"] += len(properties)
+    stats["Properties"] += len(properties)
     return stats, classes, class_children_count, classes_with_definitions, properties
 
 def extract_properties_to_list(unique_properties):
@@ -140,11 +140,12 @@ def define_attribute_mapping() -> Dict[str, str]:
 def update_stats_based_on_type(stats: Dict[str, int], p: URIRef, o: URIRef) -> None:
     if p == RDF.type:
         if o == OWL.Class:
-            stats["classes"] += 1
+            stats["Classes"] += 1
         elif o in (OWL.ObjectProperty, OWL.DatatypeProperty):
-            stats["properties"] += 1
+            stats["Properties"] += 1
         else:
-            stats["individuals"] += 1
+            stats["Individuals"] += 1
+
 
 def track_definitions(s: URIRef, p: URIRef, o: URIRef, classes_with_definitions: set) -> None:
     if p in (RDFS.comment, SKOS.definition):
@@ -204,15 +205,15 @@ def calculate_additional_statistics(stats, classes, class_children_count, classe
     total_children = 0
     for class_id, count in class_children_count.items():
         total_children += count
-        stats["maximum_number_of_children"] = max(stats["maximum_number_of_children"], count)
+        stats["Maximum number of children"] = max(stats["Maximum number of children"], count)
         if count == 1:
-            stats["classes_with_a_single_child"] += 1
+            stats["Classes with a single child"] += 1
         if count > 25:
-            stats["classes_with_more_than_25_children"] += 1
+            stats["Classes with more than 25 children"] += 1
     
     # Calculate average number of children
-    if stats["classes"] > 0:
-        stats["average_number_of_children"] = round(total_children / stats["classes"])
+    if stats["Classes"] > 0:
+        stats["Average number of children"] = round(total_children / stats["Classes"])
 
     # Calculate maximum depth and classes with no definitions
     for class_id, class_data in classes.items():
@@ -221,10 +222,10 @@ def calculate_additional_statistics(stats, classes, class_children_count, classe
         while (s, RDFS.subClassOf, None) in g:
             current_depth += 1
             s = g.value(s, RDFS.subClassOf)
-        stats["maximum_depth"] = max(stats["maximum_depth"], current_depth)
+        stats["Maximum Depth"] = max(stats["Maximum Depth"], current_depth)
 
         if class_id not in classes_with_definitions:
-            stats["classes_with_no_definition"] += 1   
+            stats["Classes with no definition"] += 1   
     return stats
 
 def details_from_turtle(app):

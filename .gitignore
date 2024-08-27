@@ -46,6 +46,7 @@ sparqlqueries.html
 mockDB/restore/mongodump/
 mockDB/materialsmine_backup/
 whyis/materialsmine/whyis-init.sh
+mockDB/whyis-init.sh
 
 #Elastic Search
 mockDB/es/

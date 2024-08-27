@@ -15,7 +15,7 @@ export default {
       forceFetch
     ) {
       try {
-        const url = '/api/mn/materialsmine';
+        const url = '/api/mn/ontology';
 
         const req = await fetch(url, {
           headers: {

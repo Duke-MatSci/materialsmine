@@ -153,7 +153,7 @@ module.exports = {
   ManagedServiceRegister: {
     dynamfit: '/dynamfit/extract/',
     chemprops: '/chemprops/call/',
-    materialsmine: '/materialsmine/extract/'
+    ontology: '/ontology/extract/'
   },
   MGD_SVC_ERR_CODE: {
     default: {

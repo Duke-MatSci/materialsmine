@@ -6,9 +6,9 @@ from app.ontology.github_flow import get_commit_dates, download_file
 from app.ontology.helper import details_from_turtle
 from app.ontology.cache_service import check_cache, save_to_cache
 
-materialsmine = Blueprint("materialsmine", __name__, url_prefix="/materialsmine")
+ontology = Blueprint("ontology", __name__, url_prefix="/ontology")
 
-@materialsmine.route('/extract/', methods=['GET'])
+@ontology.route('/extract/', methods=['GET'])
 @log_errors
 @request_logger
 @token_required

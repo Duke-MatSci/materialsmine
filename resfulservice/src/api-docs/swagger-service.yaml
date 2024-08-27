@@ -1582,7 +1582,7 @@ paths:
                     type: string
                     example: This response indicates an unexpected server-side issue.
                     
-  /mn/materialsmine:
+  /mn/ontology:
     get:
       summary: A route to Extract Ontology Information
       description: This route processes an RDF Turtle file to extract ontology details, compute statistical metrics, and build a hierarchical structure of ontology classes.
@@ -1607,8 +1607,6 @@ paths:
                       message:
                         type: string
                         example: Failed to download file from GitHub
-                                 
-
         '401':
           description: Unauthorized access to this service.
           content:
