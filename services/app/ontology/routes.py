@@ -39,8 +39,15 @@ def get_data_from_file(request_id):
 
             return response
         else:
-            app.logger.error("Failed to download file from GitHub.")
-            return jsonify({'message': "Failed to download file from GitHub"}), 400
+            # If download from GitHub fails, serve outdated cache if available
+            app.logger.error("Failed to download file from GitHub. Serving from existing cache if available.")
+            cached_data = check_cache(app, serve_out_dated=True)  # Check cache again (for fallback)
+            if cached_data:
+                app.logger.info("Serving outdated cached data as fallback.")
+                response = create_response(request_id, cached_data, start_time)
+                return response
+            else:
+                return jsonify({'message': "Failed to download file from GitHub and no cache available."}), 500
 
     except ValueError as ve:
         app.logger.error(f"ValueError: {str(ve)}", exc_info=True)
@@ -80,5 +87,6 @@ def construct_data_dictionary(metrics, ontology_info, submission_details, turtle
         "metrics": metrics,
         "data": turtle_data,
         "submissions": submission_details,
-        "properties": properties
+        "properties": properties,
+        "lastUpdateDate": str(datetime.date.today())
     }

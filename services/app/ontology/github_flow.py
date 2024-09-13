@@ -91,29 +91,25 @@ def get_commit_dates(app):
     
     commits_json = make_github_request(commits_url, app)
     if commits_json:
-        if commits_json:
-            submissions = []
-            total_commits = len(commits_json)
-            # Start from the oldest commit, so the oldest gets 1.0 and newer commits get incremented versions
-            for i, commit in enumerate(reversed(commits_json)):
-                version_number = "1.0" if i == 0 else f"1.{i}"
-                description = "Parsed, Indexed, Metrics, Annotator, Error Diff" if i == (total_commits - 1) else "Archived"
-                
-                submission = {
-                    "version": version_number,
-                    "description": description,
-                    "released": commit['commit']['committer']['date'],
-                    "uploaded": commit['commit']['committer']['date']
-                }
-                
-                submissions.append(submission)  
+        submissions = []
+        total_commits = len(commits_json)
+        # Start from the oldest commit, so the oldest gets 1.0 and newer commits get incremented versions
+        for i, commit in enumerate(reversed(commits_json)):
+            version_number = "1.0" if i == 0 else f"1.{i}"
+            description = "Parsed, Indexed, Metrics, Annotator, Error Diff" if i == (total_commits - 1) else "Archived"
             
-            submissions.reverse()
+            submission = {
+                "version": version_number,
+                "description": description,
+                "released": commit['commit']['committer']['date'],
+                "uploaded": commit['commit']['committer']['date']
+            }
             
-            return submissions
-        else:
-            app.logger.info('[get_commit_dates]: No commits found for this file.')
-            return []
+            submissions.append(submission)  
+        
+        submissions.reverse()
+        
+        return submissions
     else:
-        app.logger.error('[get_commit_dates]: Failed to retrieve commits.')
+        app.logger.error('[get_commit_dates]: No commits found for this file.')
         return []
