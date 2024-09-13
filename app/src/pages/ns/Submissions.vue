@@ -26,41 +26,41 @@
   </div>
 </template>
 <script>
-import TableComponent from '@/components/explorer/TableComponent.vue';
+import TableComponent from '@/components/explorer/TableComponent.vue'
 
 export default {
   name: 'Submissions',
   components: {
     TableComponent
   },
-  data() {
+  data () {
     return {
       loading: false
-    };
+    }
   },
   computed: {
-    submissions() {
-      return this.$store.state.ns.submissions;
+    submissions () {
+      return this.$store.state.ns.submissions
     },
-    formattedSubmission() {
-      if (!this.submissions.length) return;
-      const arr = [...this.submissions];
+    formattedSubmission () {
+      if (!this.submissions.length) return
+      const arr = [...this.submissions]
 
       const result = arr.map((val) => ({
         Version: val?.version,
         '': val?.description,
         Released: this.formatDate(val?.released),
         Uploaded: this.formatDate(val?.uploaded)
-      }));
+      }))
 
-      return result;
+      return result
     }
   },
   methods: {
-    formatDate(d) {
-      const date = new Date(d);
-      return date.toLocaleDateString(); // Example output: "DD/MM/YYYY" (format depends on your locale)
+    formatDate (d) {
+      const date = new Date(d)
+      return date.toLocaleDateString() // Example output: "DD/MM/YYYY" (format depends on your locale)
     }
   }
-};
+}
 </script>

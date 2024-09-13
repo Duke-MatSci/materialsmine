@@ -65,24 +65,33 @@
               </tr>
             </tbody>
           </table>
+
+          <div class="md-card-actions md-alignment-right">
+            <button
+              class="md-button btn btn--primary btn--noradius"
+              @click.prevent="visualize(currentClass.ID)"
+            >
+              Visualize
+            </button>
+          </div>
         </div>
       </section>
     </main>
   </article>
 </template>
 <script>
-import ClassesList from '@/components/ns/classes/ClassesList.vue';
-import { mapGetters, mapState } from 'vuex';
+import ClassesList from '@/components/ns/classes/ClassesList.vue'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   name: 'Namespace',
   components: {
     ClassesList
   },
-  data() {
+  data () {
     return {
       loading: false
-    };
+    }
   },
   computed: {
     ...mapState('ns', {
@@ -92,13 +101,20 @@ export default {
       classes: 'getClasses',
       lastUpdate: 'getLastUpdatedDate'
     }),
-    objLength() {
-      const obj = this.currentClass ? this.currentClass : {};
-      return Object.keys(obj).length;
+    objLength () {
+      const obj = this.currentClass ? this.currentClass : {}
+      return Object.keys(obj).length
     },
-    pageTitle() {
-      return this.currentClass?.['Preferred Name'] ?? 'MaterialsMine Ontology';
+    pageTitle () {
+      return this.currentClass?.['Preferred Name'] ?? 'MaterialsMine Ontology'
+    }
+  },
+  methods: {
+    visualize (idUrl) {
+      const id = idUrl.split('/').pop().split('#').pop()
+      const url = `/ns/visualize?class=${id}`
+      this.$router.push(url)
     }
   }
-};
+}
 </script>

@@ -113,7 +113,7 @@ export default {
     },
 
     showClassInfo (id) {
-      const url = `/ns/${id.split('/').pop()}`
+      const url = `/ns/${id.split('/').pop().split('#').pop()}`
       this.$router.push(url)
     }
   }

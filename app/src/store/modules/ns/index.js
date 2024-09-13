@@ -1,10 +1,10 @@
-import mutations from './mutations.js';
-import actions from './actions.js';
-import getters from './getters.js';
+import mutations from './mutations.js'
+import actions from './actions.js'
+import getters from './getters.js'
 
 export default {
   namespaced: true,
-  state() {
+  state () {
     return {
       loading: true,
       queryGroup: [],
@@ -16,9 +16,9 @@ export default {
       submissions: [],
       selectedId: null,
       searchError: false
-    };
+    }
   },
   mutations,
   actions,
   getters
-};
+}

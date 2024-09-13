@@ -45,6 +45,6 @@ const classes = [
     'Preferred Name': '2D Solid Mechanics Model',
     subClassOf: 'http://www.w3.org/2002/07/owl#Thing'
   }
-];
+]
 
-export { classes };
+export { classes }

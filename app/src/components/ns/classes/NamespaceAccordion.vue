@@ -94,7 +94,10 @@ export default {
       const id = this.id
 
       if (this.namespace) {
-        const url = `/ns/${this.classInfo.ID.split('/').pop()}`
+        const url = `/ns/${this.classInfo.ID.split('/')
+          .pop()
+          .split('#')
+          .pop()}`
         this.$router.push(url)
       }
       if (this.selectedId) {

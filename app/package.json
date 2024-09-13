@@ -25,6 +25,7 @@
     "@triply/yasgui": "^4.2.21",
     "apollo-boost": "^0.4.9",
     "core-js": "^3.6.5",
+    "cytoscape-dagre": "^2.5.0",
     "cytoscape-fcose": "^2.2.0",
     "d3": "^7.3.0",
     "datavoyager": "^2.0.0-alpha.24",

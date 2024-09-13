@@ -5,7 +5,7 @@
     <table class="">
       <tbody>
         <tr class="" v-for="(val, key) in metrics" :key="key">
-          <td class="md-table-cell image-detail-page-tab">
+          <td class="u--bg md-table-cell image-detail-page-tab">
             <div class="md-table-cell-container">
               {{ key }}
             </div>
@@ -26,7 +26,6 @@
 import { mapGetters } from 'vuex'
 export default {
   name: 'OntologyMetrics',
-  data: () => ({}),
   computed: {
     ...mapGetters({
       metrics: 'ns/getMetrics',

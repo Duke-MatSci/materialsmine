@@ -17,11 +17,6 @@ const HEADER_ROUTES = {
       exact: false
     },
     {
-      path: '/explorer/pathols',
-      label: 'pathols',
-      exact: false
-    },
-    {
       path: '/explorer/parameterized_query',
       label: 'Parameterized Query',
       name: 'parameterized_query',
@@ -62,6 +57,6 @@ const HEADER_ROUTES = {
       exact: true
     }
   ]
-};
+}
 
-export { HEADER_ROUTES };
+export { HEADER_ROUTES }

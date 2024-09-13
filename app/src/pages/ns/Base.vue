@@ -5,7 +5,6 @@
       <drawers />
     </md-app-drawer>
     <md-app-content
-      v-if="!loading"
       class="u--padding-zero u--layout-flex u--layout-flex-column utility-roverflow"
     >
       <div class="section_loader" v-if="loading">
@@ -15,7 +14,8 @@
         <router-view v-if="!namespace" />
 
         <template v-else>
-          <component v-if="!searchLoading" :is="resolvedComponent"></component>
+          <Classes v-if="!searchLoading && searchResult" />
+          <Home v-else />
         </template>
 
         <div class="explorer_page_footer u_margin-top-auto">
@@ -28,96 +28,85 @@
   </md-app>
 </template>
 <script>
-import Drawers from '@/components/Drawer.vue';
-import ExpHeader from '@/components/explorer/Header.vue';
-import spinner from '@/components/Spinner';
+import Drawers from '@/components/Drawer.vue'
+import ExpHeader from '@/components/explorer/Header.vue'
+import spinner from '@/components/Spinner'
+import Classes from '@/pages/ns/Classes.vue'
+import Home from '@/pages/ns/Home.vue'
 
 export default {
   name: 'NameSpaceBase',
   components: {
     mdAppToolbar: ExpHeader,
     Drawers,
-    spinner
-
-    // Classes
+    spinner,
+    Classes,
+    Home
   },
-  data() {
+  data () {
     return {
       toggleMenuVisibility: false,
       showTop: true,
       searchLoading: true,
       componentToRender: ''
-    };
-  },
-  computed: {
-    loading() {
-      return this.$store.getters['ns/isLoading'];
-    },
-    searchResult() {
-      return this.$store.state.ns.currentClass;
-    },
-    namespace() {
-      return this.$route.params?.namespace;
-    },
-    getBody() {
-      return document.querySelector('.md-app.md-fixed .md-app-scroller');
-    },
-    resolvedComponent() {
-      /* eslint-disable */
-      if (!this.namespace) return null;
-
-      const result = this.searchResult ? 'Classes' : 'Home';
-      if (!result) {
-        return null;
-      }
-      return () =>
-        import(`@/pages/ns/${result}.vue`).then((module) => {
-          return module.default;
-        });
     }
   },
-  async created() {
-    await this.$store.dispatch('ns/fetchNsData');
-    if (this.namespace) await this.findQuery(this.namespace);
+  computed: {
+    loading () {
+      return this.$store.getters['ns/isLoading']
+    },
+    searchResult () {
+      return this.$store.state.ns.currentClass
+    },
+    namespace () {
+      return this.$route.params?.namespace
+    },
+    getBody () {
+      return document.querySelector('.md-app.md-fixed .md-app-scroller')
+    }
   },
-  mounted() {
+  async created () {
+    await this.$store.dispatch('ns/fetchNsData')
+    if (this.namespace) await this.findQuery(this.namespace)
+  },
+  mounted () {
     this.$nextTick(() => {
-      this.getBody.addEventListener('scroll', this.adjustHeader);
-    });
+      this.getBody.addEventListener('scroll', this.adjustHeader)
+    })
   },
-  beforeDestroy() {
-    this.getBody.removeEventListener('scroll', this.adjustHeader);
+  beforeDestroy () {
+    this.getBody.removeEventListener('scroll', this.adjustHeader)
   },
   methods: {
-    toggleMenu() {
-      this.toggleMenuVisibility = !this.toggleMenuVisibility;
+    toggleMenu () {
+      this.toggleMenuVisibility = !this.toggleMenuVisibility
     },
-    adjustHeader() {
-      const scrollHeight = this.getBody.scrollTop;
-      if (window.innerWidth < 650) return;
-      this.showTop = !(scrollHeight > 100);
-      const offset = scrollHeight > 100 ? '-74px' : '0px';
-      this.getBody.style.position = 'relative';
-      this.getBody.style.marginTop = offset;
-      this.getBody.style.paddingBottom = offset;
+    adjustHeader () {
+      const scrollHeight = this.getBody.scrollTop
+      if (window.innerWidth < 650) return
+      this.showTop = !(scrollHeight > 100)
+      const offset = scrollHeight > 100 ? '-74px' : '0px'
+      this.getBody.style.position = 'relative'
+      this.getBody.style.marginTop = offset
+      this.getBody.style.paddingBottom = offset
     },
-    async findQuery(query) {
-      this.searchLoading = true;
-      this.$store.commit('ns/clearCurrentClass');
-      await this.$nextTick();
-      this.$store.dispatch('ns/searchNSData', { query, singleResult: true });
+    async findQuery (query) {
+      this.searchLoading = true
+      this.$store.commit('ns/clearCurrentClass')
+      await this.$nextTick()
+      this.$store.dispatch('ns/searchNSData', { query, singleResult: true })
       if (this.searchResult) {
-        this.$store.commit('ns/setSelectedId', this.searchResult.ID);
+        this.$store.commit('ns/setSelectedId', this.searchResult.ID)
       }
-      this.searchLoading = false;
+      this.searchLoading = false
     }
   },
   watch: {
     '$route.params': async function (newValue) {
       if (newValue?.namespace) {
-        await this.findQuery(newValue.namespace);
+        await this.findQuery(newValue.namespace)
       }
     }
   }
-};
+}
 </script>
