@@ -8,6 +8,7 @@ import nanomine from './modules/nanomine/index.js'
 import metamineNU from './modules/metamineNU/index.js'
 import contact from './modules/contact/index.js'
 import portal from './modules/portal/index.js'
+import ns from './modules/ns/index.js'
 
 Vue.use(Vuex)
 
@@ -20,6 +21,7 @@ export default new Vuex.Store({
     nanomine,
     metamineNU,
     contact,
-    portal
+    portal,
+    ns
   }
 })

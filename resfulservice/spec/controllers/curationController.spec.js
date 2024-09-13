@@ -77,7 +77,7 @@ describe('Curation Controller', function () {
     header: () => {},
     status: () => {},
     json: () => {},
-    send: () => {},
+    send: (value) => value,
     setHeader: () => {}
   };
 
@@ -816,6 +816,61 @@ describe('Curation Controller', function () {
       sinon.stub(XlsxFileManager, 'jsonSchemaGenerator').throws();
 
       await XlsxController.getCurationXSD(req, res, nextSpy);
+      sinon.assert.called(nextSpy);
+    });
+  });
+
+  context('Download curation XML', () => {
+    it('should return a 404 if curation is not found', async () => {
+      req.params = { controlID: 'L5_S4_Hareesh_2023' };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns();
+      sinon.stub(res, 'setHeader').returns(true);
+      sinon.stub(XlsxObject, 'findOne').returns(null);
+      sinon.stub(XmlData, 'findOne').returns(null);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      const result = await XlsxController.getCurationXml(req, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Curation sample not found');
+    });
+    it('should return a xml file for new curation', async () => {
+      req.params = { controlID: 'L5_S4_Hareesh_2023' };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns();
+      sinon.stub(res, 'setHeader').returns(true);
+      sinon.stub(res, 'send').returns(mockXmlData.xml_str);
+      sinon.stub(XlsxObject, 'findOne').returns(fetchedCuratedXlsxObject);
+      sinon.stub(XmlData, 'findOne').returns(null);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      const result = await XlsxController.getCurationXml(req, res, next);
+      expect(result).to.be.a('String');
+    });
+
+    it('should return the xml file for old curation', async () => {
+      req.params = { controlID: 'L5_S4_Hareesh_2023' };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returns();
+      sinon.stub(res, 'setHeader').returns(true);
+      sinon.stub(res, 'send').returns(mockXmlData.xml_str);
+      sinon.stub(XmlData, 'findOne').returns(mockXmlData);
+      sinon.stub(XlsxObject, 'findOne').returns(null);
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+
+      const result = await XlsxController.getCurationXml(req, res, next);
+      expect(result).to.be.a('String');
+    });
+
+    it('should return a 500 server error when database throws an error', async function () {
+      req.params = { controlID: 'L5_S4_Hareesh_2023' };
+      const nextSpy = sinon.spy();
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(XlsxObject, 'findOne').throws();
+      sinon.stub(XmlData, 'findOne').throws();
+
+      await XlsxController.getCurationXml(req, res, nextSpy);
       sinon.assert.called(nextSpy);
     });
   });

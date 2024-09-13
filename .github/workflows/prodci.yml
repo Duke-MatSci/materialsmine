@@ -37,7 +37,7 @@ jobs:
           mkdir app_asset_artifacts && mv app-src_code.zip app_asset_artifacts && mv app-test-coverage-report.zip app_asset_artifacts
       - name: Upload App Assets
         if: github.event_name == 'push'
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: app-assets
           path: app_asset_artifacts
@@ -73,7 +73,7 @@ jobs:
           mkdir backend_asset_artifacts && mv backend-src_code.zip backend_asset_artifacts && mv backend-test-coverage-report.zip backend_asset_artifacts
       - name: Upload Backend Assets
         if: github.event_name == 'push'
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: backend-assets
           path: backend_asset_artifacts

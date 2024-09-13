@@ -53,49 +53,13 @@
           <!-- Add _ to _menutabs as this is just a class selector for testing purposes only -->
           <md-tab
             class="_menutabs"
-            to="/explorer"
-            id="tab-home"
-            md-label="Search"
-            exact
-          >
-          </md-tab>
-          <md-tab
-            class="_menutabs"
-            to="/explorer/visualization"
-            id="tab-visualization"
-            md-label="Visualization"
-          >
-          </md-tab>
-          <md-tab
-            class="_menutabs"
-            to="/explorer/curate"
-            id="tab-curate"
-            md-label="Curate"
-          >
-          </md-tab>
-          <md-tab
-            class="_menutabs"
-            to="/explorer/tools"
-            id="tab-tools"
-            md-label="Tools"
-          >
-          </md-tab>
-          <md-tab
-            class="_menutabs"
-            to="/explorer/parameterized_query"
-            id="tab-query"
-            md-label="Parameterized Query"
-            exact
-          >
-          </md-tab>
-          <md-tab
-            class="_menutabs"
-            to="/explorer/sparql"
-            id="tab-sparql"
-            md-label="SPARQL Query"
-            exact
-          >
-          </md-tab>
+            v-for="(route, i) in tabRoutes"
+            :key="i"
+            :to="route.path"
+            :id="`tab-${route.name || route.label}`"
+            :md-label="route.label"
+            :exact="route.exact"
+          />
         </md-tabs>
       </div>
     </md-app-toolbar>
@@ -104,6 +68,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { HEADER_ROUTES } from '@/modules/nav-routes'
+
 export default {
   name: 'ExpHeader',
   props: ['toggler', 'showTop'],
@@ -118,6 +84,10 @@ export default {
       isAuth: 'auth/isAuthenticated',
       displayName: 'auth/displayName'
     }),
+    tabRoutes () {
+      const routeParent = this.$route.path.split('/')[1]
+      return HEADER_ROUTES?.[routeParent] ?? []
+    },
     searchTerm: {
       get () {
         return this.$store.getters['explorer/getSearchKeyword']

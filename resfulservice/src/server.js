@@ -19,6 +19,7 @@ const knowledgeRoutes = require('./routes/kg-wrapper');
 const pixelatedRoutes = require('./routes/pixelated');
 const searchRoutes = require('./routes/search');
 const managedServiceRoutes = require('./routes/managed-service');
+const xmlRoutes = require('./routes/xml');
 const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
@@ -55,6 +56,7 @@ if (cluster.isMaster) {
   app.use('/search', searchRoutes);
   app.use('/pixelated', pixelatedRoutes);
   app.use('/mn', managedServiceRoutes);
+  app.use('/xml', xmlRoutes);
   app.use('/*', invalidRoutes);
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
