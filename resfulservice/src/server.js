@@ -12,13 +12,14 @@ const { globalMiddleWare, log, swaggerService } = require('./middlewares');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/authService');
 const curationRoutes = require('./routes/curation');
-const elasticSearch = require('./utils/elasticSearch');
+// const elasticSearch = require('./utils/elasticSearch');
 const fileRoutes = require('./routes/files');
 const invalidRoutes = require('./routes/invalid');
 const knowledgeRoutes = require('./routes/kg-wrapper');
 const pixelatedRoutes = require('./routes/pixelated');
 const searchRoutes = require('./routes/search');
 const managedServiceRoutes = require('./routes/managed-service');
+const xmlRoutes = require('./routes/xml');
 const resolvers = require('./graphql/resolver');
 const typeDefs = require('./graphql');
 const getHttpContext = require('./graphql/context/getHttpContext');
@@ -31,7 +32,8 @@ if (cluster.isMaster) {
   // Main process
   const app = express();
   globalMiddleWare(app);
-  elasticSearch.ping(log);
+  // TODO: Check - temporarily stopping this error from blowing up the server
+  // elasticSearch.ping(log);
 
   const httpServer = createHttpServer(app);
   const wsServer = new WebSocketServer({
@@ -54,6 +56,7 @@ if (cluster.isMaster) {
   app.use('/search', searchRoutes);
   app.use('/pixelated', pixelatedRoutes);
   app.use('/mn', managedServiceRoutes);
+  app.use('/xml', xmlRoutes);
   app.use('/*', invalidRoutes);
 
   const schema = makeExecutableSchema({ typeDefs, resolvers });
@@ -65,7 +68,8 @@ if (cluster.isMaster) {
       if (!err.extensions) {
         return err;
       }
-      const message = err.extensions.message || 'An error occurred.';
+      const message =
+        err.message ?? err.extensions.exception.message ?? 'An error occurred.';
       const code = err.extensions.code || 500;
       log.error(`GQL Error: ${JSON.stringify(err)}`);
       return { message, status: code };

@@ -782,6 +782,56 @@ exports.getCurationXSD = async (req, res, next) => {
   }
 };
 
+exports.getCurationXml = async (req, res, next) => {
+  const { logger, params } = req;
+
+  logger.info('getCurationXml Function Entry:');
+
+  const { controlID } = params;
+
+  try {
+    const regex = new RegExp(controlID, 'i');
+
+    // Perform searches on both collections simultaneously using Promise.all
+    const [curatedSample, xmlData] = await Promise.all([
+      CuratedSamples.findOne({ 'object.Control_ID': { $regex: regex } }, null, {
+        lean: true
+      }),
+      XmlData.findOne({ title: { $regex: regex } }, null, { lean: true })
+    ]);
+
+    // Determine which result to use based on availability
+    const curation = curatedSample || xmlData;
+
+    if (!curation) {
+      return next(
+        errorWriter(req, 'Curation sample not found', 'getCurationXml', 404)
+      );
+    }
+
+    let xml;
+    if (curatedSample) {
+      xml = XlsxFileManager.xmlGenerator(
+        JSON.stringify({ PolymerNanoComposite: curatedSample.object })
+      );
+      xml = `<?xml version="1.0" encoding="utf-8"?>\n${xml}`;
+    } else {
+      xml = xmlData.xml_str;
+    }
+
+    xml = xml.replace(/2D_RVE/g, 'TwoD_RVE').replace(/3D_RVE/g, 'ThreeD_RVE');
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'application/xml');
+
+    // Send the XML content as a file response
+    latency.latencyCalculator(res);
+    return res.send(xml);
+  } catch (error) {
+    next(errorWriter(req, error, 'getCurationXml', 500));
+  }
+};
+
 const getKeyCaseInsensitive = (obj, key) => {
   if (typeof obj !== 'object' || obj === null) {
     return undefined;

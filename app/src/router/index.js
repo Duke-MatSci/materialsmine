@@ -12,6 +12,7 @@ import metamineRoutes from '@/router/module/metamine'
 import explorerRoutes from '@/router/module/explorer'
 import portalRoutes from '@/router/module/portal'
 import xsdRoutes from '@/router/module/xsd'
+import nsRoutes from './module/ns'
 Vue.use(VueRouter)
 
 const routes = [
@@ -24,6 +25,11 @@ const routes = [
     path: '/nm',
     component: NanomineBase,
     children: [...nanomineRoutes]
+  },
+  {
+    path: '/ns',
+    component: () => import('@/pages/ns/Base.vue'),
+    children: [...nsRoutes]
   },
   {
     path: '/mm',

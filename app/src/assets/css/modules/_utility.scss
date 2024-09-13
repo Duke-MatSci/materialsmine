@@ -161,6 +161,9 @@
           margin-left: 1.2rem !important;
         }
       }
+      &xs {
+        margin-left: 1.2rem !important;
+      }
       &-auto {
         margin-left: auto !important;
       }
@@ -191,6 +194,9 @@
   &_width {
     &--max {
       width: 100% !important;
+    }
+    &--auto {
+      width: auto !important;
     }
   }
 
@@ -688,14 +694,14 @@
   &-gridicon {
     position: absolute;
     right: 4.5rem;
-    top: 16rem;
+    top: 6rem;
     z-index: 10000000;
     @include respond(tab-land) {
       right: 2.5rem;
-      top: 19rem;
+      top: 5rem;
     }
     @include respond(phone) {
-      top: 15rem;
+      top: 3.7rem;
     }
     & > div {
       display: inline-block;
