@@ -47,11 +47,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     post:
       security:
         - BearerAuth: [] 
@@ -89,11 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     put:
       tags:
         - Admin
@@ -185,11 +177,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     delete:
       security:
         - BearerAuth: [] 
@@ -288,11 +276,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
   /admin/es/delete-index/{type}:
     delete:
       security:
@@ -343,12 +327,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-                    example: Internal Server Error
+                $ref: '#/components/schemas/Server-Error'
   /knowledge/charts/favorites:
     get:
       security:
@@ -407,11 +386,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     post:
       summary: Add a favorite chart
       security:
@@ -447,11 +422,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     delete:
       security:
         - BearerAuth: []
@@ -487,7 +458,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Server-Error'
   /curate:
     get:
       security:
@@ -529,11 +500,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
     post:
       security:
         - BearerAuth: [] 
@@ -623,11 +590,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
+
     put:
       tags:
         - Curation
@@ -704,11 +668,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
+                
     delete:
       security:
         - BearerAuth: []
@@ -782,11 +743,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
   
   /curate/get/{curationId}:
     get:
@@ -839,11 +796,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
   
   /curate/duplicate/{curationId}:
     post:
@@ -898,11 +851,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
   
   /curate/bulk:
      post:
@@ -983,11 +932,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
             
   /curate/schema:
     get:
@@ -1020,16 +965,14 @@ paths:
                 anyOf:
                   - $ref: '#/components/schemas/Sample-XSD'
                   - $ref: '#/components/schemas/Sample-JsonSchema'
+
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
+                    
   /xml/{controlID}:
     get:
       summary: Gets Curation XMl
@@ -1044,7 +987,7 @@ paths:
           schema:
             type: string
             example: L5_S4_Hareesh_2023
-
+  
         - in: query
           name: format
           schema:
@@ -1088,11 +1031,8 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: An error occurred
+                $ref: '#/components/schemas/Server-Error'
+                
   /files/{fileId}:
     get:
       summary: Download files from the server
@@ -1147,11 +1087,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Error fetching file'
+                $ref: '#/components/schemas/Server-Error'
                     
     delete:
       security:
@@ -1199,11 +1135,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Error deleting files'
+                $ref: '#/components/schemas/Server-Error'
                     
   /files/image_migration/{imageType}:
     get:
@@ -1256,11 +1188,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'Error fetching file'
+                $ref: '#/components/schemas/Server-Error'
               
   /files/upload:
     post:
@@ -1325,11 +1253,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Error uploading files
+                $ref: '#/components/schemas/Server-Error'
                     
   /files/metamine:
     get:
@@ -1350,11 +1274,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: error listing metamine objects
+                $ref: '#/components/schemas/Server-Error'
                     
   /files/metamine/{fileName}:
     get:
@@ -1383,11 +1303,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 'error fetching metamine csv object'
+                $ref: '#/components/schemas/Server-Error'
                     
   /mn/dynamfit:
     post:
@@ -1460,11 +1376,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: This response indicates an unexpected server-side issue.
+                $ref: '#/components/schemas/Server-Error'
                     
   /mn/chemprops:
     post:
@@ -1505,9 +1417,9 @@ paths:
               schema:
                 type: object
                 properties:
-                      message:
-                        type: string
-                        enum: ["Invalid Polymer Name", "Invalid Request: Ignore if not; it will be added to the database.", "polfil is required", "ChemicalName is required",  "polfil must be either pol or fil"]
+                  message:
+                    type: string
+                    enum: ["Invalid Polymer Name", "Invalid Request: Ignore if not; it will be added to the database.", "polfil is required", "ChemicalName is required",  "polfil must be either pol or fil"]
 
         '401':
           description: Unauthorized access to this service.
@@ -1531,11 +1443,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: This response indicates an unexpected server-side issue.
+                $ref: '#/components/schemas/Server-Error'
                     
   /mn/chemprops/init:
     post:
@@ -1576,11 +1484,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: This response indicates an unexpected server-side issue.
+                $ref: '#/components/schemas/Server-Error'
                     
   /mn/ontology:
     get:
@@ -1629,11 +1533,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: This response indicates an unexpected server-side issue.
+                $ref: '#/components/schemas/Server-Error'
 components:
   securitySchemes:
     BearerAuth:
@@ -1655,6 +1555,12 @@ components:
         message:
           type: string
           example: User is forbidden
+    Server-Error: 
+      type: object
+      properties:
+        message:
+          type: string
+          enum: ['An error occurred', 'Internal Server Error', 'This response indicates an unexpected server-side issue.', 'Error fetching file', 'Error deleting files', 'Error uploading files', 'error listing metamine objects', 'error fetching metamine csv object']
     Missing-Input-Error: 
       type: object
       properties:
