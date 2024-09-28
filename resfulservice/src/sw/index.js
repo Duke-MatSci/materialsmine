@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const { log } = require('../middlewares');
 const WorkerService = require('./utils/worker-services');
 const Debouncer = require('./utils/debouncer');
+const { ServiceWorkerDebouncerTimer } = require('../../config/constant');
 
 const env = process.env;
 
-const catchAllHandler = (request, response) => {
+const catchAllHandler = (_request, response) => {
   response.writeHead(200, {
     'Content-Type': 'application/json'
   });
@@ -34,7 +35,7 @@ mongoose
     });
     const debouncedWorkerManager = Debouncer.debounce(
       WorkerService.workerManager,
-      120000
+      ServiceWorkerDebouncerTimer
     );
     debouncedWorkerManager(log);
   })

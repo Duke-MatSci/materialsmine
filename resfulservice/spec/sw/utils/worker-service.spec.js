@@ -1,3 +1,4 @@
+const axios = require('axios');
 const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
@@ -21,6 +22,12 @@ const CuratedSamples = require('../../../src/models/curatedSamples');
 const minioClient = require('../../../src/utils/minio');
 
 describe('Worker Services', function () {
+  beforeEach(() => {
+    axiosStub = sinon
+      .stub(axios, 'get')
+      .resolves({ data: { dateTime: new Date().toISOString() } });
+    clock = sinon.useFakeTimers();
+  });
   afterEach(() => sinon.restore());
 
   context('workerManager', () => {
