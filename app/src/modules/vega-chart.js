@@ -104,9 +104,9 @@ function buildXmlLd (xmlData, xmlId) {
   const dataset = tileArray[1]
   const dsSeq = tileArray[2]
 
-  return {
+  return `{
     '@context': {
-      '@base': `${nmRdfLodPrefix}`,
+      '@base': ${nmRdfLodPrefix},
       schema: 'http://schema.org/',
       xsd: 'http://www.w3.org/2001/XMLSchema#',
       whyis: 'http://vocab.rpi.edu/whyis/',
@@ -117,39 +117,35 @@ function buildXmlLd (xmlData, xmlId) {
       prov: 'http://www.w3.org/ns/prov#',
       mt: 'https://www.iana.org/assignments/media-types/'
     },
-    '@id': `urn:${whyisId}`,
+    '@id': urn:${whyisId},
     '@graph': {
-      '@id': `urn:${whyisId}`,
+      '@id': urn:${whyisId},
       '@type': 'np:Nanopublication',
       'np:hasAssertion': {
-        '@id': `urn:${whyisId}_assertion`,
+        '@id': urn:${whyisId}_assertion,
         '@type': 'np:Assertion',
         '@graph': [
           {
-            '@id': `${nmRdfLodPrefix}/explorer/xml/visualizer/${xmlData.id}?isNewCuration=${xmlData.isNewCuration}`,
+            '@id': ${nmRdfLodPrefix}/api/xml/${xmlData.title}?format=xml,
             '@type': [
               'schema:DataDownload',
               'mt:text/xml',
               'http://nanomine.org/ns/NanomineXMLFile'
             ],
-            'whyis:hasContent': `data:text/xml;charset=UTF-8;base64,${b64XmlData}`,
+            'whyis:hasContent': data:text/xml;charset=UTF-8;base64,${b64XmlData},
             'dc:conformsTo': {
-              '@id': `${nmRdfLodPrefix}/api/curate/schema?getXSD=true`
+              '@id': ${nmRdfLodPrefix}/api/curate/schema?isFile=true
             }
           },
           {
-            '@id': `${nmRdfLodPrefix}/api/curate/${dataset}/${dsSeq}`,
-            '@type': 'schema:Dataset',
-            'schema:distribution': [
-              {
-                '@id': `${nmRdfLodPrefix}/explorer/xml/visualizer/${xmlData.id}?isNewCuration=${xmlData.isNewCuration}`
-              }
-            ]
+            '@id': ${nmRdfLodPrefix}/api/curate/${dataset}/${dsSeq},
+            "@type" : "schema:Dataset",
+            "schema:distribution" : [ {"@id" : "${nmRdfLodPrefix}/api/xml/${xmlData.title}"} ]
           }
         ]
       }
     }
-  }
+  }`
 }
 
 function buildXsdLd (xsdData, xsdId, schemaName) {

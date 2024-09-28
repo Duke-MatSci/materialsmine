@@ -6,7 +6,7 @@ from functools import wraps
 from flask import request, jsonify, current_app as app # type: ignore
 import jwt # type: ignore
 import pandas as pd # type: ignore
-import datetime
+from datetime import datetime, timedelta, timezone
 import functools
 import jwt # type: ignore
 import uuid
@@ -107,21 +107,34 @@ def token_required(f):
             jwt.ExpiredSignatureError: If the token has expired.
             jwt.InvalidTokenError: If the token is invalid.
         """
-        token = request.headers.get('Authorization')[7:]	
+        header = request.headers.get('Authorization')
+        
+        if not header or not header.startswith('Bearer '):
+            app.logger.warning("Authorization header is missing or invalid")
+            return jsonify({'message': 'Authorization header is missing or invalid'}), 401
+    
+        token = header[7:].strip()
+    
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
         try:
             decoded = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
             request_id = decoded.get('reqId')
             if not request_id:
+                app.logger.warning("Invalid token or missing request_id field")
                 return jsonify({'message': 'Invalid token or missing field'}), 401
             # Pass the request_id field value to the function
             response = f(request_id, *args, **kwargs)
             return response
         except jwt.ExpiredSignatureError:
+            app.logger.warning("Token has expired")
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:
+            app.logger.warning("Invalid token")
             return jsonify({'message': 'Invalid token'}), 401
+        except Exception as e:
+            app.logger.error(f"An unexpected error occurred: {str(e)}")
+            return jsonify({'message': 'An unexpected error occurred'}), 500
     return decorated_function
 
 
@@ -148,14 +161,14 @@ def request_logger(func):
         Returns:
             Any: The response from the decorated function.
         """
-        start_time = datetime.datetime.now()
+        start_time = datetime.now()
         try:
             json_payload = request.get_json()
         except Exception:
             json_payload = None
         app.logger.info(f"[START]: Entering {func.__name__} function at {start_time}. Request payload: {json_payload}")
         response = func(*args, **kwargs)
-        end_time = datetime.datetime.now()
+        end_time = datetime.now()
         execution_time = ((end_time - start_time).total_seconds()) * 1000
         # Check if a response is sent back
         if response:
@@ -181,7 +194,7 @@ def generate_jwt(expires_in: int = 600):
     # Add expiration time to the payload
     request_id =  str(uuid.uuid4())
     data = {"requestid": request_id}
-    data.update({"exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)})
+    data.update({"exp": datetime.now(timezone.utc) + timedelta(seconds=expires_in)})
     return jwt.encode(data, Config.SECRET_KEY, algorithm='HS256'), request_id
 
 

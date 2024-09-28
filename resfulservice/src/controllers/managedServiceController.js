@@ -34,7 +34,7 @@ exports.manageServiceRequest = async (req, res, next) => {
           `${
             appName[0].toUpperCase() + appName.slice(1)
           } service not available`,
-          'getDynamfitChartData',
+          'manageServiceRequest',
           422
         )
       );
@@ -53,7 +53,7 @@ exports.manageServiceRequest = async (req, res, next) => {
           error?.message ??
           'This response indicates an unexpected server-side issue'
         }`,
-        'getDynamfitChartData',
+        'manageServiceRequest',
         statusCode
       )
     );
@@ -87,7 +87,7 @@ exports.chemPropsSeed = async (req, res, next) => {
           error?.message ??
           'This response indicates an unexpected server-side issue'
         }`,
-        'getDynamfitChartData',
+        'chemPropsSeed',
         statusCode
       )
     );
@@ -100,6 +100,7 @@ const _managedServiceCall = async (req, res) => {
     url,
     body,
     params: { appName },
+    method = 'post',
     logger
   } = req;
   req.timer = '1m';
@@ -114,7 +115,10 @@ const _managedServiceCall = async (req, res) => {
     reqBody.file_name = req.env.DYNAMFIT_TEST_FILE;
   }
 
-  const response = await axios.post(url, reqBody, {
+  const response = await axios.request({
+    method,
+    url,
+    data: reqBody,
     headers: {
       Authorization: `Bearer ${token}`
     }
