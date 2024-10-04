@@ -48,6 +48,9 @@
                 <router-link to="/explorer" class="nav_menu--siblings-lists"
                   ><a>Browse Data</a></router-link
                 >
+                <router-link to="/ns" class="nav_menu--siblings-lists"
+                  ><a>Ontology Explorer</a></router-link
+                >
                 <router-link
                   to="/explorer/chart"
                   class="nav_menu--siblings-lists"
