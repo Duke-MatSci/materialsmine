@@ -3,6 +3,7 @@ import requests
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from ruamel.yaml import YAML
+from .yaml_utils import validate_control_id
 
 
 # Create a Blueprint named 'yaml_converter' with a URL prefix '/yaml_converter'
@@ -23,6 +24,10 @@ def fetch_xml(control_id):
         external_url = f"https://qa.materialsmine.org/api/xml/{control_id}?format=xml"
 
     try:
+        is_valid, validation_msg = validate_control_id(control_id)
+        if not is_valid:
+            return jsonify({"message": validation_msg}), 400
+        
         # Send a GET request to the external URL
         response = requests.get(external_url)
 
@@ -38,7 +43,7 @@ def fetch_xml(control_id):
             yaml_data = convert_dict_to_yaml(xml_dict)
 
             # Return the YAML data as a response
-            return Response(yaml_data, mimetype='text/yaml')
+            return Response(yaml_data, mimetype='text/yaml', content_type='text/yaml; charset=utf-8', status=200)
 
         elif response.status_code == 404:
             # If the resource is not found, return a 404 error message
@@ -103,6 +108,7 @@ def convert_dict_to_yaml(data_dict):
     yaml.default_style = None
     
     # Convert OrderedDict to regular dict to avoid !!omap
+    # TODO (@Jhyang): Use descriptive argument names here, and add type hints. 
     def convert_ordereddict(d):
         if isinstance(d, OrderedDict):
             return dict((k, convert_ordereddict(v)) for k, v in d.items())
@@ -117,7 +123,3 @@ def convert_dict_to_yaml(data_dict):
     yaml_stream = StringIO()
     yaml.dump(clean_dict, yaml_stream)
     return yaml_stream.getvalue()
-
-
-
-

@@ -95,6 +95,14 @@
         </md-button>
 
         <md-button
+          class="md-fab md-dense md-primary btn--primary"
+          @click.native.prevent="openAsYaml"
+        >
+          <md-tooltip> Convert to Yaml </md-tooltip>
+          <md-icon>code</md-icon>
+        </md-button>
+
+        <md-button
           @click="showSidepanel = true"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -134,17 +142,17 @@
 </template>
 
 <script>
-import Prism from 'prismjs'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-markup'
-import 'prismjs/themes/prism-coy.min.css'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
-import Comment from '@/components/explorer/Comment'
-import spinner from '@/components/Spinner'
-import XmlView from '@/components/explorer/XmlView'
-import { XML_VIEWER } from '@/modules/gql/xml-gql'
-import { mapGetters, mapActions, mapMutations } from 'vuex'
-import dialogBox from '@/components/Dialog.vue'
+import Prism from 'prismjs';
+import 'prismjs/components/prism-xml-doc';
+import 'prismjs/components/prism-markup';
+import 'prismjs/themes/prism-coy.min.css';
+import optionalChainingUtil from '@/mixins/optional-chaining-util';
+import Comment from '@/components/explorer/Comment';
+import spinner from '@/components/Spinner';
+import XmlView from '@/components/explorer/XmlView';
+import { XML_VIEWER } from '@/modules/gql/xml-gql';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
+import dialogBox from '@/components/Dialog.vue';
 
 export default {
   name: 'XmlVisualizer',
@@ -155,12 +163,12 @@ export default {
     XmlView,
     dialogBox
   },
-  data () {
+  data() {
     return {
       showSidepanel: false,
       type: 'xml',
       xmlViewer: {}
-    }
+    };
   },
   computed: {
     ...mapGetters({
@@ -169,11 +177,11 @@ export default {
       userId: 'auth/userId',
       dialogBoxActive: 'dialogBox'
     }),
-    isSmallTabView () {
-      return screen.width < 760
+    isSmallTabView() {
+      return screen.width < 760;
     },
-    isLargeTabView () {
-      return screen.width < 1024
+    isLargeTabView() {
+      return screen.width < 1024;
     }
   },
   methods: {
@@ -181,33 +189,39 @@ export default {
       toggleDialogBox: 'setDialogBox'
     }),
     ...mapActions('explorer/curation', ['approveCuration', 'requestApproval']),
-    closeDialogBox () {
-      this.toggleDialogBox()
+    closeDialogBox() {
+      this.toggleDialogBox();
     },
-    navBack () {
-      this.$router.back()
+    navBack() {
+      this.$router.back();
     },
-    editCuration (id, isNew) {
+    editCuration(id, isNew) {
       if (!!id && typeof isNew === 'boolean') {
         return this.$router.push({
           name: 'EditXmlCuration',
           query: { isNew: isNew, id: id }
-        })
+        });
       }
     },
-    async reloadXml () {
-      return await this.$apollo.queries.xmlFinder.refetch()
+    async reloadXml() {
+      return await this.$apollo.queries.xmlFinder.refetch();
+    },
+    openAsYaml() {
+      return window.open(
+        `${window.location.origin}/api/mn/yaml-loader/${this.$route.params.id}`,
+        '_blank'
+      );
     }
   },
-  mounted () {
-    window.Prism = window.Prism || {}
-    window.Prism.manual = true
-    Prism.highlightAll()
+  mounted() {
+    window.Prism = window.Prism || {};
+    window.Prism.manual = true;
+    Prism.highlightAll();
   },
   apollo: {
     xmlViewer: {
       query: XML_VIEWER,
-      variables () {
+      variables() {
         return {
           input: {
             id: this.$route.params.id,
@@ -215,23 +229,23 @@ export default {
               ? JSON.parse(this.$route?.query?.isNewCuration)
               : false
           }
-        }
+        };
       },
       fetchPolicy: 'cache-and-network',
-      error (error) {
+      error(error) {
         if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
+          const err = error.networkError;
+          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
         } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
+          this.error = error.graphQLErrors;
         }
         this.$store.commit('setSnackbar', {
           message:
             error.networkError?.response?.statusText ?? error.graphQLErrors,
           action: () => this.$apollo.queries.xmlViewer.refetch()
-        })
+        });
       }
     }
   }
-}
+};
 </script>
