@@ -10,8 +10,8 @@ def validate_control_id(control_id):
   if not isinstance(control_id, str):
     return False, "control_id must be a string"
   
-  # Check the format of control_id (example: must be alphanumeric and 24 characters long)
-  if not control_id.isalnum() or len(control_id) != 24:
-    return False, "control_id must be 8 alphanumeric characters"
+  # Check the format of control_id (example: must be alphanumeric and 8 characters long)
+  if len(control_id) <= 8:
+    return False, "control_id must be greater than 8 alphanumeric characters"
   
   return True, "control_id is valid"
