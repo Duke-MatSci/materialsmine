@@ -133,8 +133,8 @@ services:
       - ./app:/app
   managedservices:
     container_name: managedservices
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
     restart: always
     build:
       dockerfile: Dockerfile

@@ -1,35 +1,15 @@
 <template>
   <div class="xmlLoader">
-    <dialog-box :minWidth="40" :active="dialogBoxActive">
-      <template v-slot:title>Success</template>
-      <template v-slot:content>
-        <div class="u_display-flex u_centralize_items u--margin-posmd">
-          <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
-            >check_circle</md-icon
-          >
-          <span
-            >XML has been approved and successfully ingested into the knowledge
-            graph</span
-          >
-        </div>
-      </template>
-      <template v-slot:actions>
-        <md-button @click.native.prevent="closeDialogBox">Ok</md-button>
-      </template>
-    </dialog-box>
     <section
       class="u_width--max viz-u-postion__rel utility-roverflow"
-      v-if="!!Object.keys(xmlViewer).length && xmlViewer.xmlString"
+      v-if="!yamlLoading"
     >
       <md-drawer
         class="md-right"
         :class="{ ' md-fixed': showSidepanel }"
         :md-active.sync="showSidepanel"
       >
-        <comment
-          :type="type"
-          :identifier="optionalChaining(() => xmlViewer.id)"
-        ></comment>
+        <comment :type="type" :identifier="xmlId"></comment>
         <md-button
           @click="showSidepanel = false"
           class="md-fab md-fixed md-dense md-fab-top-right md-primary btn--primary"
@@ -44,11 +24,11 @@
         >
           <div :class="[isSmallTabView ? 'u_myprofile--container' : '']">
             <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
-              {{ optionalChaining(() => xmlViewer.title) }}
+              {{ `${optionalChaining(() => controlID)}.yaml` }}
             </h2>
             <div class="u_centralize_text viz-u-mgbottom-sm">
               <a
-                href="#"
+                @click.prevent="openYaml(true)"
                 class="viz-tab__button"
                 :class="[!loadYaml && 'active u--color-primary']"
                 >XML View</a
@@ -57,15 +37,16 @@
               <a
                 class="viz-tab__button"
                 :class="[loadYaml && 'active u--color-primary']"
-                @click.prevent="openYaml(true)"
+                href="#"
                 >YAML View</a
               >
             </div>
           </div>
           <!-- xml viewer  -->
-          <div class="wrapper" style="min-width: 90%">
+          <div class="wrapper" style="min-width: 90%" ref="codeBlock">
+            <!-- <XmlView ref="codeBlock" :content="dataFeed" :isYaml="loadYaml" /> -->
             <pre>
-              <code class="language-xml" >{{ optionalChaining(() => xmlViewer.xmlString) }}</code>
+              <code class="language-yml keepMarkUp" >{{ optionalChaining(() => yamlString) }}</code>
             </pre>
           </div>
         </md-content>
@@ -118,71 +99,46 @@
           <md-tooltip md-direction="top">Comment</md-tooltip>
           <md-icon>comment</md-icon>
         </md-button>
-
-        <md-button
-          @click.prevent="editCuration(xmlViewer.id, xmlViewer.isNewCuration)"
-          v-if="isAuth && (xmlViewer.user === userId || isAdmin)"
-          class="md-fab md-dense md-primary btn--primary"
-        >
-          <md-tooltip md-direction="top">Edit Curation</md-tooltip>
-          <md-icon>edit</md-icon>
-        </md-button>
-
-        <md-button
-          @click="approveCuration({ xmlViewer, reloadXml })"
-          v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
-          class="md-fab md-dense md-primary btn--primary"
-        >
-          <md-tooltip md-direction="top">Approve</md-tooltip>
-          <md-icon>check</md-icon>
-        </md-button>
       </div>
     </section>
 
-    <section class="section_loader u--margin-toplg" v-else-if="$apollo.loading">
-      <spinner :loading="$apollo.loading" text="Loading Xml" />
-    </section>
     <section class="section_loader u--margin-toplg" v-else>
-      <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
-        This XML no longer exists or has been moved
-      </h2>
+      <spinner :loading="yamlLoading" text="Loading Yaml" />
     </section>
   </div>
 </template>
 
 <script>
 import Prism from 'prismjs'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-markup'
 import 'prismjs/themes/prism-coy.min.css'
+import 'prismjs/themes/prism-dark.css'
+import 'prismjs/themes/prism.css'
+import 'prismjs/components/prism-yaml'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
-import { XML_VIEWER } from '@/modules/gql/xml-gql'
-import { mapGetters, mapActions, mapMutations } from 'vuex'
-import dialogBox from '@/components/Dialog.vue'
+import { mapGetters } from 'vuex'
 
 export default {
-  name: 'XmlVisualizer',
+  name: 'YamlVisualizer',
   mixins: [optionalChainingUtil],
   components: {
     Comment,
-    spinner,
-    dialogBox
+    spinner
   },
   data () {
     return {
       showSidepanel: false,
       type: 'xml',
-      xmlViewer: {}
+      yamlString: '',
+      yamlLoading: false
     }
   },
   computed: {
     ...mapGetters({
       isAuth: 'auth/isAuthenticated',
       isAdmin: 'auth/isAdmin',
-      userId: 'auth/userId',
-      dialogBoxActive: 'dialogBox'
+      userId: 'auth/userId'
     }),
     isSmallTabView () {
       return screen.width < 760
@@ -192,44 +148,55 @@ export default {
     },
     loadYaml () {
       return !!this.$route.query.isYaml
+    },
+    xmlId () {
+      return this.$route.params.id
+    },
+    controlID () {
+      return this.$route.query?.title?.split('.')[0]
     }
   },
   methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    ...mapActions('explorer/curation', ['approveCuration', 'requestApproval']),
-    closeDialogBox () {
-      this.toggleDialogBox()
-    },
     navBack () {
       this.$router.back()
     },
-    editCuration (id, isNew) {
-      if (!!id && typeof isNew === 'boolean') {
-        return this.$router.push({
-          name: 'EditXmlCuration',
-          query: { isNew: isNew, id: id }
+    async openAsYaml () {
+      this.yamlLoading = true
+      if (!this.controlID) {
+        this.yamlLoading = false
+        return this.$router.push({ name: 'XmlGallery' })
+      }
+      try {
+        const res = await fetch(`/api/mn/yaml-loader/${this.controlID}`)
+        if (!res.ok) {
+          throw new Error('Failed to convert to YAML')
+        }
+        const yamlText = await res.text()
+        this.yamlString = yamlText
+        this.yamlLoading = false
+      } catch (error) {
+        this.yamlLoading = false
+        this.$store.commit('setSnackbar', {
+          message:
+            error.message ??
+            'An error occurred while trying to convert to YAML',
+          action: () => this.openAsYaml()
         })
       }
     },
-    async reloadXml () {
-      return await this.$apollo.queries.xmlFinder.refetch()
-    },
     openYaml () {
       const query = {
-        title: this.xmlViewer.title?.split('.')[0],
-        isNewCuration: this.$route.query?.isNewCuration,
-        isYaml: true
+        isNewCuration: this.$route.query?.isNewCuration
       }
       const params = {
         id: this.$route.params.id
       }
 
-      return this.$router.push({ name: 'YamlVisualizer', params, query })
+      return this.$router.push({ name: 'XmlVisualizer', params, query })
     }
   },
-  mounted () {
+  async mounted () {
+    await this.openAsYaml()
     window.Prism = window.Prism || {}
     window.Prism.manual = true
   },
@@ -238,35 +205,6 @@ export default {
     setTimeout(() => {
       Prism.highlightAll(vm.$refs.codeBlock)
     }, 200)
-  },
-  apollo: {
-    xmlViewer: {
-      query: XML_VIEWER,
-      variables () {
-        return {
-          input: {
-            id: this.$route.params.id,
-            isNewCuration: this.$route?.query?.isNewCuration
-              ? JSON.parse(this.$route?.query?.isNewCuration)
-              : false
-          }
-        }
-      },
-      fetchPolicy: 'cache-and-network',
-      error (error) {
-        if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-        } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
-        }
-        this.$store.commit('setSnackbar', {
-          message:
-            error.networkError?.response?.statusText ?? error.graphQLErrors,
-          action: () => this.$apollo.queries.xmlViewer.refetch()
-        })
-      }
-    }
   }
 }
 </script>
