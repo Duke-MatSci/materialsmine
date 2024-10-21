@@ -189,8 +189,8 @@ services:
       - fuseki
     stdin_open: true
     command:
-      /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8}
-      --timeout 0 -b :8000
+      # twistd -n web --port tcp:8000 --wsgi wsgi:appliction
+      /opt/venv/bin/gunicorn wsgi:application --workers 4 --timeout 300 -b :8000
     environment:
       - CHOKIDAR_USEPOLLING=true
       - NM_GRAPH_AUTH_SECRET=${TKNS}
@@ -200,8 +200,8 @@ services:
       - ./mockDB/fuseki:/app/run
     ports:
       - '8000:8000'
-    mem_limit: 2048m
-    cpus: '0.25'
+    # mem_limit: 2048m
+    # cpus: '0.25'
   fuseki:
     build: whyis
     command: /opt/venv/bin/fuseki-server --mem /ds
@@ -219,8 +219,8 @@ services:
       - '3030:3030'
     volumes:
       - ./mockDB/fuseki:/fuseki
-    mem_limit: 3072m
-    cpus: '0.45'
+    # mem_limit: 3072m
+    # cpus: '0.45'
 
 volumes:
   mockDB:

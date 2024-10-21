@@ -66,3 +66,4 @@ resfulservice/.nyc_output
 old_services
 venv/
 __pycache__/
+sparqlqueries.html
