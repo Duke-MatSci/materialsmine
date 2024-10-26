@@ -153,7 +153,8 @@ module.exports = {
   ManagedServiceRegister: {
     dynamfit: '/dynamfit/extract/',
     chemprops: '/chemprops/call/',
-    ontology: '/ontology/extract/'
+    ontology: '/ontology/extract/',
+    'yaml-loader': '/yaml_converter/'
   },
   MGD_SVC_ERR_CODE: {
     default: {

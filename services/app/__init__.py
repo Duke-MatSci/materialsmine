@@ -28,14 +28,16 @@ def create_app(config_class = Config):
         try:
             from app.chemprops.routes import chemprops
             from app.dynamfit.routes import dynamfit
-            from app.main.routes import main
             from app.ontology.routes import ontology
+            from app.yaml_converter.routes import yaml_converter
+            from app.main.routes import main
             from app.errors.handlers import error
             
             app.register_blueprint(chemprops)
             app.register_blueprint(dynamfit)
             app.register_blueprint(main)
             app.register_blueprint(ontology)
+            app.register_blueprint(yaml_converter)
             app.register_blueprint(error)
 
         except (ImportError, ModuleNotFoundError) as e:

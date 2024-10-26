@@ -16,6 +16,7 @@ packaging==23.2
 plotly==5.15.0
 tenacity==8.2.3
 PyJWT==2.8.0
+ruamel.yaml==0.17.32
 
 # NOT NEEDED
 # flask-bcrypt==0.7.1

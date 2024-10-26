@@ -1,11 +1,11 @@
 <template>
-<div>
-  <pre class="language-xml grid">
-    <code class="inlinecode language-xml keepMarkUp">
-      {{ xml }}
-    </code>
-  </pre>
-</div>
+  <div>
+    <pre class="language-xml grid">
+      <code class="inlinecode language-xml keepMarkUp">
+        {{ xml }}
+      </code>
+    </pre>
+  </div>
 </template>
 
 <script>
