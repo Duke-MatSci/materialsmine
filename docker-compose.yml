@@ -207,11 +207,11 @@ services:
     volumes:
       - ./whyis/materialsmine:/app
       - ./mockDB/fuseki:/app/run
-      - ./mockDB/whyis-init.sh:/app/whyis-init.sh
+      # - ./mockDB/whyis-init.sh:/app/whyis-init.sh
     ports:
       - '8000:8000'
     # mem_limit: 2048m
-    # cpus: '0.25'
+    cpus: '1.5'
   fuseki:
     build: whyis
     command: /opt/venv/bin/fuseki-server --mem /ds

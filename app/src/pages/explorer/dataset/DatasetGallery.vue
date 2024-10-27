@@ -183,18 +183,18 @@
   </div>
 </template>
 <script>
-import spinner from '@/components/Spinner';
-import pagination from '@/components/explorer/Pagination';
-import Dialog from '@/components/Dialog.vue';
-import { mapGetters, mapMutations } from 'vuex';
-import reducer from '@/mixins/reduce';
-import optionalChainingUtil from '@/mixins/optional-chaining-util';
-import explorerQueryParams from '@/mixins/explorerQueryParams';
+import spinner from '@/components/Spinner'
+import pagination from '@/components/explorer/Pagination'
+import Dialog from '@/components/Dialog.vue'
+import { mapGetters, mapMutations } from 'vuex'
+import reducer from '@/mixins/reduce'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import explorerQueryParams from '@/mixins/explorerQueryParams'
 
 export default {
   name: 'viz-grid',
   mixins: [reducer, explorerQueryParams, optionalChainingUtil],
-  data() {
+  data () {
     return {
       loading: true,
       pageNumber: 1,
@@ -206,7 +206,7 @@ export default {
       filter: '',
       searchWord: '',
       searchEnabled: false
-    };
+    }
   },
   components: {
     pagination,
@@ -226,89 +226,89 @@ export default {
   },
   methods: {
     ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
-    renderDialog(title, type, result, minWidth) {
+    renderDialog (title, type, result, minWidth) {
       this.dialog = {
         title,
         type,
         minWidth,
         dataset: result
-      };
-      this.toggleDialogBox();
+      }
+      this.toggleDialogBox()
     },
-    async submitSearch() {
-      this.searchEnabled = !!this.searchWord; // || !!this.filtersActive
-      this.pageNumber = 1;
-      return await this.updateParamsAndCall(true);
+    async submitSearch () {
+      this.searchEnabled = !!this.searchWord // || !!this.filtersActive
+      this.pageNumber = 1
+      return await this.updateParamsAndCall(true)
     },
-    async customReset(type) {
-      this.filter = '';
-      this.searchWord = null;
-      await this.resetSearch(type);
+    async customReset (type) {
+      this.filter = ''
+      this.searchWord = null
+      await this.resetSearch(type)
     },
-    async deleteDataset(dataset) {
-      if (!this.isAdmin) return; // temporary safeguard
-      this.dialogLoading = true;
+    async deleteDataset (dataset) {
+      if (!this.isAdmin) return // temporary safeguard
+      this.dialogLoading = true
       await this.$store.dispatch(
         'explorer/curation/deleteEntityNanopub',
         dataset.identifier
-      );
+      )
       await this.$store.dispatch('explorer/curation/deleteEntityES', {
         identifier: dataset.identifier,
         type: 'datasets'
-      });
+      })
       await this.$store.dispatch('explorer/curation/deleteEntityFiles', {
         distribution: dataset?.distribution ?? null,
         thumbnail: dataset?.thumbnail ?? null
-      });
-      this.toggleDialogBox();
-      this.dialogLoading = false;
-      await this.loadItems();
+      })
+      this.toggleDialogBox()
+      this.dialogLoading = false
+      await this.loadItems()
     },
-    editDataset(dataset) {
+    editDataset (dataset) {
       return this.$router.push(
         `/explorer/curate/sdd/edit/${this.getDatasetId(dataset)}`
-      );
+      )
     },
-    downloadFiles(item) {
+    downloadFiles (item) {
       if (item.distribution) {
-        fetch(item.distribution);
+        fetch(item.distribution)
       }
     },
-    async localSearchMethod() {
+    async localSearchMethod () {
       if (this.searchEnabled) {
         this.$store.dispatch('explorer/sddDatasets/searchDatasetKeyword', {
           searchTerm: this.searchWord,
           page: this.pageNumber
-        });
-      } else await this.loadItems(this.pageNumber);
-      this.loading = false;
+        })
+      } else await this.loadItems(this.pageNumber)
+      this.loading = false
     },
-    async loadItems(page = 1) {
-      this.loading = true;
+    async loadItems (page = 1) {
+      this.loading = true
       try {
         await this.$store.dispatch('explorer/sddDatasets/loadDatasets', {
           page
-        });
+        })
       } catch (error) {
         this.$store.commit('setSnackbar', {
           message: error || 'Something went wrong',
           action: () => this.loadItems(page)
-        });
+        })
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    getDatasetId(dataset) {
-      return dataset.identifier.split('dataset/')[1];
+    getDatasetId (dataset) {
+      return dataset.identifier.split('dataset/')[1]
     }
   },
-  async mounted() {
-    const query = this.$route.query;
+  async mounted () {
+    const query = this.$route.query
     if (query) {
-      await this.loadParams(this.$route.query, false);
+      await this.loadParams(this.$route.query, false)
     } else {
-      await this.loadItems();
+      await this.loadItems()
     }
   }
-};
+}
 </script>
