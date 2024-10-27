@@ -307,16 +307,16 @@
   </div>
 </template>
 <script>
-import spinner from '@/components/Spinner'
-import { mapGetters } from 'vuex'
-import reducer from '@/mixins/reduce'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
-import { parseFileName } from '@/modules/whyis-dataset'
+import spinner from '@/components/Spinner';
+import { mapGetters } from 'vuex';
+import reducer from '@/mixins/reduce';
+import optionalChainingUtil from '@/mixins/optional-chaining-util';
+import { parseFileName } from '@/modules/whyis-dataset';
 export default {
   name: 'DatasetDetailView',
   mixins: [reducer, optionalChainingUtil],
   props: ['id'],
-  data () {
+  data() {
     return {
       shareToolTip: 'Share Dataset',
       tabbed_content: {
@@ -340,51 +340,51 @@ export default {
       distributions: {},
       organizations: [],
       loading: true
-    }
+    };
   },
   components: {
     spinner
   },
   watch: {
-    dataset (newValues, oldValues) {
-      this.loading = false
+    dataset(newValues, oldValues) {
+      this.loading = false;
       // Note: Initial sets of SDD curations are missing 'www'
-      let cp = newValues?.[this.datasetFields.cp]
+      let cp = newValues?.[this.datasetFields.cp];
       if (!cp) {
-        cp = newValues?.['http://w3.org/ns/dcat#contactpoint']
-        this.datasetFields.cp = 'http://w3.org/ns/dcat#contactpoint'
+        cp = newValues?.['http://w3.org/ns/dcat#contactpoint'];
+        this.datasetFields.cp = 'http://w3.org/ns/dcat#contactpoint';
       }
       if (cp) {
-        const orcid = this.dataset[this.datasetFields.cp][0]['@id']
+        const orcid = this.dataset[this.datasetFields.cp][0]['@id'];
         const trimmedId = orcid
           .replace('http://orcid.org/', '')
-          .replace(`${window.location.origin}/`, '')
-        this.lookupOrcid(trimmedId)
+          .replace(`${window.location.origin}/`, '');
+        this.lookupOrcid(trimmedId);
       }
       if (newValues?.[this.datasetFields.organization]) {
-        const rorList = this.dataset[this.datasetFields.organization]
-        this.parseRorList(rorList)
+        const rorList = this.dataset[this.datasetFields.organization];
+        this.parseRorList(rorList);
       }
       if (newValues?.[this.datasetFields.depiction]) {
         const thumbnailUri =
-          this.dataset[this.datasetFields.depiction][0]['@id']
-        this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri)
+          this.dataset[this.datasetFields.depiction][0]['@id'];
+        this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri);
       }
 
       // Note: Initial sets of SDD curations are missing 'www'
-      let dist = newValues?.[this.datasetFields.distribution]
+      let dist = newValues?.[this.datasetFields.distribution];
       if (!dist) {
-        dist = newValues?.['http://w3.org/ns/dcat#distribution']
-        this.datasetFields.distribution = 'http://w3.org/ns/dcat#distribution'
+        dist = newValues?.['http://w3.org/ns/dcat#distribution'];
+        this.datasetFields.distribution = 'http://w3.org/ns/dcat#distribution';
       }
       if (dist) {
         for (const index in newValues[this.datasetFields.distribution]) {
           const downloadLink =
-            newValues[this.datasetFields.distribution][index]?.['@id']
+            newValues[this.datasetFields.distribution][index]?.['@id'];
           this.distributions[index] = {
             downloadLink,
             label: parseFileName(downloadLink)
-          }
+          };
         }
       }
     }
@@ -397,73 +397,80 @@ export default {
       dataset: 'explorer/getCurrentDataset',
       thumbnail: 'explorer/getDatasetThumbnail',
       orcidData: 'explorer/curation/getOrcidData',
-      rorData: 'explorer/curation/getRorData'
+      rorData: 'explorer/curation/getRorData',
+      routeInfo: 'getRouteInfo'
     }),
-    doi () {
+    doi() {
       if (this.dataset?.[this.datasetFields.doi]) {
-        const doiString = this.dataset[this.datasetFields.doi][0]['@value']
-        return doiString.replace('http://dx.doi.org/', '')
+        const doiString = this.dataset[this.datasetFields.doi][0]['@value'];
+        return doiString.replace('http://dx.doi.org/', '');
       }
-      return ''
+      return '';
     },
-    fullDatasetUri () {
-      return `${window.location.origin}/explorer/dataset/${this.id}`
+    fullDatasetUri() {
+      return `${window.location.origin}/explorer/dataset/${this.id}`;
     }
   },
   methods: {
-    async loadDataset () {
+    async loadDataset() {
       try {
         await this.$store.dispatch(
           'explorer/fetchSingleDataset',
           this.fullDatasetUri
-        )
+        );
       } catch (e) {
-        this.$store.commit('setSnackbar', { message: e })
-        this.loading = false
+        this.$store.commit('setSnackbar', { message: e });
+        this.loading = false;
       }
     },
-    lookupOrcid (id) {
-      this.$store.dispatch('explorer/curation/lookupOrcid', id)
+    lookupOrcid(id) {
+      this.$store.dispatch('explorer/curation/lookupOrcid', id);
     },
-    parseRorList (rorList) {
+    parseRorList(rorList) {
       Promise.all(
         rorList.map((org) => {
-          const id = org?.['@id'].replace('https://ror.org/', '')
-          return this.$store.dispatch('explorer/curation/searchRor', { id })
+          const id = org?.['@id'].replace('https://ror.org/', '');
+          return this.$store.dispatch('explorer/curation/searchRor', { id });
         })
       ).then((results) => {
-        this.organizations = results
-      })
+        this.organizations = results;
+      });
     },
-    navBack () {
-      this.$router.back()
+    navBack() {
+      // Note: A check to go back to gallery after curating a dataset
+      const { from } = this.routeInfo;
+      if (from.name === 'CurateSDD') {
+        this.$router.push('/explorer/curate');
+      } else {
+        this.$router.back();
+      }
     },
-    nav_to_tab (e) {
+    nav_to_tab(e) {
       Object.keys(this.tabbed_content).forEach((el) => {
-        this.tabbed_content[el] = true
-      })
-      this.tabbed_content[e.target.getAttribute('name')] = false
+        this.tabbed_content[el] = true;
+      });
+      this.tabbed_content[e.target.getAttribute('name')] = false;
     },
-    nav_to_doi (doi) {
-      this.$router.push(`/explorer/article/${doi}`)
+    nav_to_doi(doi) {
+      this.$router.push(`/explorer/article/${doi}`);
     },
-    handleShare () {
-      navigator.clipboard.writeText(this.fullDatasetUri)
-      this.shareToolTip = 'Link copied to clipboard'
+    handleShare() {
+      navigator.clipboard.writeText(this.fullDatasetUri);
+      this.shareToolTip = 'Link copied to clipboard';
       setTimeout(function () {
-        this.shareToolTip = 'Share Dataset'
-      }, 2000)
+        this.shareToolTip = 'Share Dataset';
+      }, 2000);
     },
-    editDataset () {
-      this.$router.push(`/explorer/curate/sdd/edit/${this.id}`)
+    editDataset() {
+      this.$router.push(`/explorer/curate/sdd/edit/${this.id}`);
     },
-    linkDataset () {
-      this.$router.push(`/explorer/curate/sdd/link/${this.id}`)
+    linkDataset() {
+      this.$router.push(`/explorer/curate/sdd/link/${this.id}`);
     }
   },
-  created () {
-    this.loading = true
-    return this.loadDataset()
+  created() {
+    this.loading = true;
+    return this.loadDataset();
   }
-}
+};
 </script>

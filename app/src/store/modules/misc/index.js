@@ -1,10 +1,10 @@
-import mutations from './mutations.js'
-import actions from './actions.js'
-import getters from './getters.js'
+import mutations from './mutations.js';
+import actions from './actions.js';
+import getters from './getters.js';
 
 export default {
   // namespaced: true,
-  state () {
+  state() {
     return {
       appHeaderInfo: {
         icon: '',
@@ -21,10 +21,11 @@ export default {
         callToActionText: 'Retry'
       },
       countDownDate: new Date('March 22, 2023 13:30:00').getTime(),
-      uploadedFile: null
-    }
+      uploadedFile: null,
+      routeInfo: {}
+    };
   },
   mutations,
   actions,
   getters
-}
+};
