@@ -82,7 +82,7 @@ const router = new VueRouter({
   }
 })
 
-router.beforeEach(async function (to, _, next) {
+router.beforeEach(async function (to, from, next) {
   if (to.meta.requiresAuth && !store.getters['auth/isAuthenticated']) {
     if (!store.getters['auth/isAuthenticated']) {
       store.commit(
@@ -96,13 +96,16 @@ router.beforeEach(async function (to, _, next) {
 
       await store.dispatch('auth/tryLogin')
       if (store.getters['auth/isAuthenticated']) {
+        store.commit('setRouteInfo', { to, from })
         return next()
       }
     }
     next('')
   } else if (to.meta.requiresUnauth && store.getters.auth.isAuthenticated) {
+    store.commit('setRouteInfo', { to, from })
     next()
   } else {
+    store.commit('setRouteInfo', { to, from })
     next()
   }
 })

@@ -21,7 +21,8 @@ export default {
         callToActionText: 'Retry'
       },
       countDownDate: new Date('March 22, 2023 13:30:00').getTime(),
-      uploadedFile: null
+      uploadedFile: null,
+      routeInfo: {}
     }
   },
   mutations,

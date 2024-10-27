@@ -304,11 +304,11 @@ function buildDistrLd (fileList) {
 
     // Note: When testing SDD linking locally enable below logic and comment above if statement
     // if (fileList[x]?.status === 'complete') {
-    //   distrLDs[x]['@id'] = fileList[x].uri
+    //   distrLDs[x]['@id'] = fileList[x].uri;
     // } else {
     //   distrLDs[x]['@id'] = `http://restful:3001/${
     //     fileList[x].filename?.split('/api/')?.[1]
-    //   }`
+    //   }`;
     // }
   })
   return distrLDs

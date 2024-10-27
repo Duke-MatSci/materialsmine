@@ -26,5 +26,8 @@ export default {
   },
   setUploadedFile (state, str) {
     state.uploadedFile = str
+  },
+  setRouteInfo (state, info) {
+    state.routeInfo = info
   }
 }

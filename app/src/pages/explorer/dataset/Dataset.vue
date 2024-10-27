@@ -397,7 +397,8 @@ export default {
       dataset: 'explorer/getCurrentDataset',
       thumbnail: 'explorer/getDatasetThumbnail',
       orcidData: 'explorer/curation/getOrcidData',
-      rorData: 'explorer/curation/getRorData'
+      rorData: 'explorer/curation/getRorData',
+      routeInfo: 'getRouteInfo'
     }),
     doi () {
       if (this.dataset?.[this.datasetFields.doi]) {
@@ -436,7 +437,13 @@ export default {
       })
     },
     navBack () {
-      this.$router.back()
+      // Note: A check to go back to gallery after curating a dataset
+      const { from } = this.routeInfo
+      if (from.name === 'CurateSDD') {
+        this.$router.push('/explorer/curate')
+      } else {
+        this.$router.back()
+      }
     },
     nav_to_tab (e) {
       Object.keys(this.tabbed_content).forEach((el) => {
