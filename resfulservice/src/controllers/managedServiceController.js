@@ -18,11 +18,8 @@ const { validateIsAdmin } = require('../middlewares/validations');
  * @returns {*} response
  */
 exports.manageServiceRequest = async (req, res, next) => {
-  const {
-    logger,
-    params: { appName },
-    body
-  } = req;
+  const { logger, params, body } = req;
+  const [appName, controlId] = params.appName?.split('/');
   logger.info(':::manageServiceRequest Function Entry');
   const reqId = uuidv4();
   logger.info(`${appName}::${JSON.stringify({ ...body, reqId })}`);
@@ -34,14 +31,14 @@ exports.manageServiceRequest = async (req, res, next) => {
           `${
             appName[0].toUpperCase() + appName.slice(1)
           } service not available`,
-          'getDynamfitChartData',
+          'manageServiceRequest',
           422
         )
       );
     }
 
     req.reqId = reqId;
-    req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`;
+    if (!controlId) { req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`; } else { req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}${controlId}`; }
     return await _managedServiceCall(req, res);
   } catch (error) {
     const statusCode = error?.response?.status ?? 500;
@@ -53,7 +50,7 @@ exports.manageServiceRequest = async (req, res, next) => {
           error?.message ??
           'This response indicates an unexpected server-side issue'
         }`,
-        'getDynamfitChartData',
+        'manageServiceRequest',
         statusCode
       )
     );
@@ -87,7 +84,7 @@ exports.chemPropsSeed = async (req, res, next) => {
           error?.message ??
           'This response indicates an unexpected server-side issue'
         }`,
-        'getDynamfitChartData',
+        'chemPropsSeed',
         statusCode
       )
     );
@@ -100,6 +97,7 @@ const _managedServiceCall = async (req, res) => {
     url,
     body,
     params: { appName },
+    method = 'post',
     logger
   } = req;
   req.timer = '1m';
@@ -114,7 +112,10 @@ const _managedServiceCall = async (req, res) => {
     reqBody.file_name = req.env.DYNAMFIT_TEST_FILE;
   }
 
-  const response = await axios.post(url, reqBody, {
+  const response = await axios.request({
+    method,
+    url,
+    data: reqBody,
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -125,6 +126,11 @@ const _managedServiceCall = async (req, res) => {
     `mgdsvc.${appName} = (${reqId}) => response.status(${response.status})`
   );
   if (response.status === 200) {
+    if (response.headers['content-type'] === 'text/yaml; charset=utf-8') {
+      res.setHeader('Content-Type', response.headers['content-type']);
+      return res.send(response.data);
+      // return res.status(200).json({ yamlString: YAML.stringify(yamlString) });
+    }
     const errorObj = {};
     if (response.headers.responseid !== reqId) {
       errorObj.error = {

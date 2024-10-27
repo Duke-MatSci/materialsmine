@@ -46,10 +46,27 @@
             <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
               {{ optionalChaining(() => xmlViewer.title) }}
             </h2>
+            <div class="u_centralize_text viz-u-mgbottom-sm">
+              <a
+                href="#"
+                class="viz-tab__button"
+                :class="[!loadYaml && 'active u--color-primary']"
+                >XML View</a
+              >
+              ||
+              <a
+                class="viz-tab__button"
+                :class="[loadYaml && 'active u--color-primary']"
+                @click.prevent="openYaml(true)"
+                >YAML View</a
+              >
+            </div>
           </div>
           <!-- xml viewer  -->
-          <div class="wrapper">
-            <XmlView :xml="optionalChaining(() => xmlViewer.xmlString)" />
+          <div class="wrapper" style="min-width: 90%">
+            <pre>
+              <code class="language-xml" >{{ optionalChaining(() => xmlViewer.xmlString) }}</code>
+            </pre>
           </div>
         </md-content>
 
@@ -141,7 +158,6 @@ import 'prismjs/themes/prism-coy.min.css'
 import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import Comment from '@/components/explorer/Comment'
 import spinner from '@/components/Spinner'
-import XmlView from '@/components/explorer/XmlView'
 import { XML_VIEWER } from '@/modules/gql/xml-gql'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import dialogBox from '@/components/Dialog.vue'
@@ -152,7 +168,6 @@ export default {
   components: {
     Comment,
     spinner,
-    XmlView,
     dialogBox
   },
   data () {
@@ -174,6 +189,9 @@ export default {
     },
     isLargeTabView () {
       return screen.width < 1024
+    },
+    loadYaml () {
+      return !!this.$route.query.isYaml
     }
   },
   methods: {
@@ -197,12 +215,29 @@ export default {
     },
     async reloadXml () {
       return await this.$apollo.queries.xmlFinder.refetch()
+    },
+    openYaml () {
+      const query = {
+        title: this.xmlViewer.title?.split('.')[0],
+        isNewCuration: this.$route.query?.isNewCuration,
+        isYaml: true
+      }
+      const params = {
+        id: this.$route.params.id
+      }
+
+      return this.$router.push({ name: 'YamlVisualizer', params, query })
     }
   },
   mounted () {
     window.Prism = window.Prism || {}
     window.Prism.manual = true
-    Prism.highlightAll()
+  },
+  updated () {
+    const vm = this
+    setTimeout(() => {
+      Prism.highlightAll(vm.$refs.codeBlock)
+    }, 200)
   },
   apollo: {
     xmlViewer: {

@@ -9,6 +9,7 @@ import './registerServiceWorker'
 import store from './store'
 import router from './router'
 import apollo from './modules/gql/apolloClient'
+import VueCytoscape from 'vue-cytoscape'
 
 const apolloProvider = new VueApollo({
   defaultClient: apollo
@@ -16,11 +17,12 @@ const apolloProvider = new VueApollo({
 
 Vue.use(VueApollo)
 Vue.use(VueMaterial)
+Vue.use(VueCytoscape)
 Vue.config.productionTip = false
 
 new Vue({
   store,
   router,
   apolloProvider,
-  render: h => h(App)
+  render: (h) => h(App)
 }).$mount('#app')

@@ -279,6 +279,12 @@ const explorerRoutes = [
     meta: { requiresAuth: false }
   },
   {
+    path: 'yamlvisualizer/:id',
+    name: 'YamlVisualizer',
+    component: () => import('@/pages/explorer/xml/YamlLoader.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: 'dataset',
     component: ChartBase,
     children: [

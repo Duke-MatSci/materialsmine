@@ -10,7 +10,8 @@ router
   .post(isAuth, latencyTimer, manageServiceController.chemPropsSeed);
 
 router
-  .route('/:appName')
+  .route('/:appName([^/]*)')
+  .get(latencyTimer, manageServiceController.manageServiceRequest)
   .post(isAuth, latencyTimer, manageServiceController.manageServiceRequest);
 
 router

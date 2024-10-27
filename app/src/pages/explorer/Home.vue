@@ -85,10 +85,7 @@
     </div>
     <search-header v-if="searchEnabled" />
     <search-results-table v-if="searchEnabled" />
-    <div
-      class="explorer_page_footer"
-      :class="searchEnabled && 'u_margin-top-auto'"
-    >
+    <div class="explorer_page_footer u_margin-top-auto">
       <span class="explorer_page_footer-text"
         >&copy; {{ new Date().getFullYear() }} MaterialsMine Project</span
       >
