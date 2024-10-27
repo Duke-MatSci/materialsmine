@@ -556,9 +556,9 @@ export default {
         '@id': this.replaceBaseUrl(
           distribution.downloadLink,
           'http://localhost/api/',
-          // `${window.location.origin}/api/`
+          `${window.location.origin}/api/`
           // Note: When testing SDD linking locally enable below logic and comment above
-          'http://restful:3001/'
+          // 'http://restful:3001/'
         )
       };
       if (distribution.fileExtension === 'csv') {
@@ -580,9 +580,9 @@ export default {
             '@id': this.replaceBaseUrl(
               file?.downloadLink,
               'http://localhost/api/',
-              // `${window.location.origin}/api/`
+              `${window.location.origin}/api/`
               // Note: When testing SDD linking locally enable below logic and comment above
-              'http://restful:3001/'
+              // 'http://restful:3001/'
             )
           };
         }
