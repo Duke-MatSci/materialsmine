@@ -815,24 +815,24 @@
 </template>
 
 <script>
-import _ from 'lodash';
-import FileDrop from '@/components/curate/FileDrop.vue';
-import FilePreview from '@/components/curate/FilePreview.vue';
-import Dialog from '@/components/Dialog.vue';
-import CurateNavBar from '@/components/curate/CurateNavBar.vue';
-import Spinner from '@/components/Spinner.vue';
-import useFileList from '@/modules/file-list';
-import optionalChainingUtil from '@/mixins/optional-chaining-util';
+import _ from 'lodash'
+import FileDrop from '@/components/curate/FileDrop.vue'
+import FilePreview from '@/components/curate/FilePreview.vue'
+import Dialog from '@/components/Dialog.vue'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
+import Spinner from '@/components/Spinner.vue'
+import useFileList from '@/modules/file-list'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
 import {
   saveDataset,
   isValidOrcid,
   loadDataset,
   parseFileName,
   deleteFile
-} from '@/modules/whyis-dataset';
-import { mapGetters, mapMutations } from 'vuex';
-const { v4: uuidv4 } = require('uuid');
-const distrFn = useFileList();
+} from '@/modules/whyis-dataset'
+import { mapGetters, mapMutations } from 'vuex'
+const { v4: uuidv4 } = require('uuid')
+const distrFn = useFileList()
 
 // Move to a separate file
 const DATASET = {
@@ -855,7 +855,7 @@ const DATASET = {
     '@value': ''
   },
   organization: []
-};
+}
 
 export default {
   name: 'SDDHome',
@@ -868,7 +868,7 @@ export default {
     Spinner,
     CurateNavBar
   },
-  data() {
+  data () {
     return {
       auth: true,
       loading: false,
@@ -902,7 +902,7 @@ export default {
         size: 60,
         disableClose: false
       }
-    };
+    }
   },
   computed: {
     ...mapGetters({
@@ -911,7 +911,7 @@ export default {
       orcidData: 'explorer/curation/getOrcidData',
       organizations: 'explorer/curation/getRorData'
     }),
-    secondPageFilled() {
+    secondPageFilled () {
       return (
         !!this.dataset.title &&
         !!this.dataset?.contactPoint?.['@id'] &&
@@ -920,41 +920,41 @@ export default {
         !!this.dataset.contactPoint.cpEmail &&
         !!this.dataset.description &&
         !this.invalid.orcid
-      );
+      )
     },
-    userInfo() {
+    userInfo () {
       return {
         '@id': `https://materialsmine.org/api/user/${this.$store.getters['auth/userId']}`,
         firstName: this.$store.getters['auth/user'].givenName,
         lastName: this.$store.getters['auth/user'].surName
-      };
+      }
     },
-    generatedUUID() {
-      return uuidv4();
+    generatedUUID () {
+      return uuidv4()
     }
   },
   watch: {
-    orcidData(newValue, oldValue) {
+    orcidData (newValue, oldValue) {
       if (newValue === 'invalid') {
-        this.invalid.orcid = true;
+        this.invalid.orcid = true
       } else {
-        this.invalid.orcid = false;
-        this.dataset.contactPoint['@id'] = this.orcidData?.['@id'];
+        this.invalid.orcid = false
+        this.dataset.contactPoint['@id'] = this.orcidData?.['@id']
         this.dataset.contactPoint.firstName =
-          this.orcidData?.['http://schema.org/givenName'][0]?.['@value'];
+          this.orcidData?.['http://schema.org/givenName'][0]?.['@value']
         this.dataset.contactPoint.lastName =
-          this.orcidData?.['http://schema.org/familyName'][0]?.['@value'];
+          this.orcidData?.['http://schema.org/familyName'][0]?.['@value']
         this.dataset.contactPoint.cpEmail =
           this.orcidData?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.[
             '@value'
-          ];
+          ]
       }
     },
-    searchKeywordOrg(newVal) {
+    searchKeywordOrg (newVal) {
       if (newVal) {
-        this.lookupOrganization({ query: newVal });
+        this.lookupOrganization({ query: newVal })
       }
-      this.showDropdown = true;
+      this.showDropdown = true
     }
   },
   methods: {
@@ -967,135 +967,135 @@ export default {
     removeDistr: distrFn.removeFile,
     modStatDistr: distrFn.modifyStatus,
     clearFileList: distrFn.clearAllFiles,
-    navBack() {
-      this.$router.back();
+    navBack () {
+      this.$router.back()
     },
-    async loadDataset() {
+    async loadDataset () {
       try {
         const response = await loadDataset(
           `${window.location.origin}/explorer/dataset/${this.datasetId}`
-        );
+        )
         if (response[0]?.refby.length) {
-          this.doi = response[0]?.refby[0].split('.org/')[1];
+          this.doi = response[0]?.refby[0].split('.org/')[1]
         }
-        this.dataset = response[0];
-        this.oldDistributions = response?.[1];
+        this.dataset = response[0]
+        this.oldDistributions = response?.[1]
         if (response?.[2]) {
           const thumbnailResponse = await this.$store.dispatch(
             'explorer/fetchDatasetThumbnail',
             response?.[2]?.[0]?.['@id']
-          );
-          const accessUrl = thumbnailResponse[0]?.['@value'] ?? '';
+          )
+          const accessUrl = thumbnailResponse[0]?.['@value'] ?? ''
           this.oldDepiction = {
             accessUrl,
             originalname: parseFileName(accessUrl),
             status: 'complete'
-          };
+          }
         }
         this.orcidId =
-          response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1];
-        this.lookupOrcid(this.orcidId);
+          response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1]
+        this.lookupOrcid(this.orcidId)
         if (this.dataset?.organization?.length) {
           const orgs = this.dataset.organization.map(async (org) => {
-            const rorId = org['@id'].split('https://ror.org/')[1];
+            const rorId = org['@id'].split('https://ror.org/')[1]
             const rorOrg = await this.$store.dispatch(
               'explorer/curation/searchRor',
               { id: rorId }
-            );
+            )
             return {
               '@id': org['@id'],
               '@type': 'organization',
               name: rorOrg[0].name
-            };
-          });
-          this.dataset.organization = await Promise.all(orgs);
+            }
+          })
+          this.dataset.organization = await Promise.all(orgs)
         }
       } catch (e) {
-        this.$store.commit('setSnackbar', { message: e });
-        this.loading = false;
+        this.$store.commit('setSnackbar', { message: e })
+        this.loading = false
       }
     },
-    onInputChange(e) {
-      this.addDistr(e.target.files);
-      e.target.value = null;
-      this.invalid.first = null;
+    onInputChange (e) {
+      this.addDistr(e.target.files)
+      e.target.value = null
+      this.invalid.first = null
     },
-    goToStep(id, index) {
-      this.clearSnackbar();
+    goToStep (id, index) {
+      this.clearSnackbar()
       if (
         id === 'first' &&
         !this.distrFiles.length &&
         !this.oldDistributions?.length
       ) {
-        this.invalid.first = 'Missing required field';
+        this.invalid.first = 'Missing required field'
       } else if (id === 'second' && !this.secondPageFilled) {
-        this.invalid.second = 'Missing required field';
+        this.invalid.second = 'Missing required field'
       } else {
         // Clear invalid errors
-        id === 'first' && (this.invalid.first = null);
-        id === 'second' && (this.invalid.second = null);
-        this[id] = true;
+        id === 'first' && (this.invalid.first = null)
+        id === 'second' && (this.invalid.second = null)
+        this[id] = true
         if (index) {
-          this.active = index;
+          this.active = index
         }
       }
     },
-    async lookupOrcid(e) {
-      const id = e?.target?.value ?? e;
+    async lookupOrcid (e) {
+      const id = e?.target?.value ?? e
       if (isValidOrcid(id)) {
-        this.invalid.orcid = false;
-        await this.$store.dispatch('explorer/curation/lookupOrcid', id);
+        this.invalid.orcid = false
+        await this.$store.dispatch('explorer/curation/lookupOrcid', id)
       } else {
-        this.invalid.orcid = true;
+        this.invalid.orcid = true
       }
     },
-    async lookupDoi(e) {
-      await this.$store.dispatch('explorer/curation/lookupDoi', e.target.value);
+    async lookupDoi (e) {
+      await this.$store.dispatch('explorer/curation/lookupDoi', e.target.value)
       if (this.doiData) {
-        this.dataset.refby = this.doiData?.URL;
-        this.renderDialog('Use imported DOI data?', 'doiData', 40);
+        this.dataset.refby = this.doiData?.URL
+        this.renderDialog('Use imported DOI data?', 'doiData', 40)
       }
     },
     lookupOrganization: _.debounce(function (payload) {
-      this.$store.dispatch('explorer/curation/searchRor', payload);
+      this.$store.dispatch('explorer/curation/searchRor', payload)
     }, 300),
-    selectOrg(item) {
+    selectOrg (item) {
       const formatOrg = {
         '@id': item.id,
         '@type': 'organization',
         name: item.name
-      };
+      }
       if (!this.dataset.organization.includes(formatOrg)) {
-        this.dataset.organization.push(formatOrg);
-        this.searchKeywordOrg = '';
-        return;
+        this.dataset.organization.push(formatOrg)
+        this.searchKeywordOrg = ''
+        return
       }
       this.$store.commit('setSnackbar', {
         message: 'Duplicate Value Entered',
         duration: 3000
-      });
+      })
     },
-    deleteOrg(arr, e) {
-      arr.splice(e, 1);
+    deleteOrg (arr, e) {
+      arr.splice(e, 1)
     },
-    setDropdownPosition() {
+    setDropdownPosition () {
       return {
         position: 'relative',
         top: '-2rem',
         zIndex: 10,
         minHeight: 'auto'
-      };
-    },
-    async disableDropdownRender(e) {
-      const selected = e.target.closest('.search_box');
-      if (!selected) {
-        this.showDropdown = false;
       }
     },
-    useDoiData() {
-      this.dataset.title = this.doiData?.title[0] ?? this.dataset.title;
+    async disableDropdownRender (e) {
+      const selected = e.target.closest('.search_box')
+      if (!selected) {
+        this.showDropdown = false
+      }
+    },
+    useDoiData () {
+      this.dataset.title = this.doiData?.title[0] ?? this.dataset.title
       if (this.doiData?.published?.['date-parts'].flat().length === 3) {
-        const dateArray = this.doiData.published['date-parts'].flat();
+        const dateArray = this.doiData.published['date-parts'].flat()
         this.dataset.datePub['@value'] =
           dateArray[0].toString() +
           '-' +
@@ -1105,114 +1105,114 @@ export default {
           '-' +
           (dateArray[2] < 10
             ? '0' + dateArray[2].toString()
-            : dateArray[2].toString());
+            : dateArray[2].toString())
       }
-      this.toggleDialogBox();
+      this.toggleDialogBox()
     },
     // Load a thumbnail of the representative image
-    previewFile() {
-      const preview = document.querySelector('#depictImg');
-      const wrapper = document.querySelector('#depictWrapper');
-      const previewMini = document.querySelector('#depictImgMini');
-      const wrapperMini = document.querySelector('#depictWrapperMini');
-      const file = document.querySelector('#file-depict-input').files[0];
-      const reader = new FileReader();
-      this.depiction = file;
+    previewFile () {
+      const preview = document.querySelector('#depictImg')
+      const wrapper = document.querySelector('#depictWrapper')
+      const previewMini = document.querySelector('#depictImgMini')
+      const wrapperMini = document.querySelector('#depictWrapperMini')
+      const file = document.querySelector('#file-depict-input').files[0]
+      const reader = new FileReader()
+      this.depiction = file
 
       reader.addEventListener(
         'load',
         function () {
-          wrapper.style.visibility = wrapperMini.style.visibility = 'visible';
-          preview.src = previewMini.src = reader.result;
+          wrapper.style.visibility = wrapperMini.style.visibility = 'visible'
+          preview.src = previewMini.src = reader.result
         },
         false
-      );
+      )
 
       if (file) {
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(file)
       }
     },
-    removeImage() {
-      document.querySelector('#depictWrapper').style.visibility = 'hidden';
-      document.querySelector('#file-depict-input').value = '';
-      document.querySelector('#depictImg').src = '';
-      this.depiction = null;
+    removeImage () {
+      document.querySelector('#depictWrapper').style.visibility = 'hidden'
+      document.querySelector('#file-depict-input').value = ''
+      document.querySelector('#depictImg').src = ''
+      this.depiction = null
     },
-    renderDialog(title, type, minWidth, disableClose = false) {
+    renderDialog (title, type, minWidth, disableClose = false) {
       this.dialog = {
         title,
         type,
         minWidth,
         disableClose
-      };
-      this.toggleDialogBox();
-    },
-    async deleteDistribution(file) {
-      try {
-        await deleteFile(this.file?.fileId);
-        const index = this.oldDistributions.indexOf(file);
-        if (index > -1) this.oldDistributions.splice(index, 1);
-      } catch (e) {
-        this.$store.commit('setSnackbar', { message: e });
       }
-      this.toggleDialogBox();
+      this.toggleDialogBox()
     },
-    confirmDeletion(file) {
-      this.toDelete = file;
-      this.toDelete.fileId = parseFileName(file?.uri, true);
-      this.renderDialog('Delete file?', 'deleteOld', 40, false);
+    async deleteDistribution (file) {
+      try {
+        await deleteFile(this.file?.fileId)
+        const index = this.oldDistributions.indexOf(file)
+        if (index > -1) this.oldDistributions.splice(index, 1)
+      } catch (e) {
+        this.$store.commit('setSnackbar', { message: e })
+      }
+      this.toggleDialogBox()
+    },
+    confirmDeletion (file) {
+      this.toDelete = file
+      this.toDelete.fileId = parseFileName(file?.uri, true)
+      this.renderDialog('Delete file?', 'deleteOld', 40, false)
     },
     // Format files for submission
-    processFiles() {
+    processFiles () {
       return this.distrFiles
         .map((file) => ({ ...file, status: 'incomplete' }))
         .concat(
           this.oldDistributions.map((file) => ({ ...file, status: 'complete' }))
-        );
+        )
     },
     // Ensure only one thumbnail is associated with the dataset
-    processDepictions() {
-      const depictions = [];
+    processDepictions () {
+      const depictions = []
       if (this.depiction) {
-        depictions.push({ file: this.depiction, status: 'incomplete' });
+        depictions.push({ file: this.depiction, status: 'incomplete' })
         if (this.oldDepiction) {
-          this.oldDepiction.status = 'delete';
+          this.oldDepiction.status = 'delete'
         }
       }
-      if (this.oldDepiction) depictions.push({ ...this.oldDepiction });
-      return depictions;
+      if (this.oldDepiction) depictions.push({ ...this.oldDepiction })
+      return depictions
     },
     // Submit and post as nanopublication
-    async submitForm() {
-      this.uploadInProgress = 'Uploading files';
-      this.renderDialog('Submitting dataset', 'loading', 40, true);
-      this.clearSnackbar();
+    async submitForm () {
+      this.uploadInProgress = 'Uploading files'
+      this.renderDialog('Submitting dataset', 'loading', 40, true)
+      this.clearSnackbar()
       if (
         (!this.distrFiles.length && !this.oldDistributions?.length) ||
         !this.secondPageFilled
       ) {
         this.setSnackbar({
           message: 'Unable to submit, check for required fields'
-        });
-        this.toggleDialogBox();
+        })
+        this.toggleDialogBox()
         this.invalid.first =
           !this.distrFiles.length && !this.oldDistributions?.length
             ? 'Missing required field'
-            : null;
+            : null
         this.invalid.second = !this.secondPageFilled
           ? 'Missing required field'
-          : null;
+          : null
       } else {
-        this.dataset.creator = this.userInfo;
-        const processedFiles = this.processFiles();
-        const processedImg = this.processDepictions();
+        this.dataset.creator = this.userInfo
+        const processedFiles = this.processFiles()
+        const processedImg = this.processDepictions()
         try {
           const datasetNanopub = await saveDataset(
             this.dataset,
             processedFiles,
             processedImg,
             this.generatedUUID
-          );
+          )
           await this.$store.dispatch(
             'explorer/curation/cacheNewEntityResponse',
             {
@@ -1220,28 +1220,28 @@ export default {
               resourceNanopub: datasetNanopub,
               type: 'datasets'
             }
-          );
-          this.dialog.title = 'Upload successful';
-          this.dialog.type = 'success';
+          )
+          this.dialog.title = 'Upload successful'
+          this.dialog.type = 'success'
         } catch (err) {
-          this.toggleDialogBox();
-          this.setSnackbar({ message: err.response ?? err });
+          this.toggleDialogBox()
+          this.setSnackbar({ message: err.response ?? err })
         }
       }
     },
-    goToDataset() {
-      this.toggleDialogBox();
-      const datasetId = this.datasetId ?? this.generatedUUID;
-      this.clearFileList(); // Reset imported module
-      this.dataset = { ...DATASET }; // Reset dataset
-      return this.$router.push(`/explorer/dataset/${datasetId}`);
+    goToDataset () {
+      this.toggleDialogBox()
+      const datasetId = this.datasetId ?? this.generatedUUID
+      this.clearFileList() // Reset imported module
+      this.dataset = { ...DATASET } // Reset dataset
+      return this.$router.push(`/explorer/dataset/${datasetId}`)
     }
   },
-  async created() {
-    console.log('created SDDForm', this.datasetId);
-    this.loading = true;
-    if (this.datasetId) await this.loadDataset();
-    this.loading = false;
+  async created () {
+    console.log('created SDDForm', this.datasetId)
+    this.loading = true
+    if (this.datasetId) await this.loadDataset()
+    this.loading = false
   }
-};
+}
 </script>

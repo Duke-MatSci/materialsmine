@@ -384,19 +384,19 @@
   </div>
 </template>
 <script>
-import spinner from '@/components/Spinner';
-import CurateNavBar from '@/components/curate/CurateNavBar.vue';
-import { mapGetters, mapMutations } from 'vuex';
-import reducer from '@/mixins/reduce';
-import optionalChainingUtil from '@/mixins/optional-chaining-util';
-import { parseFileName } from '@/modules/whyis-dataset';
-import { postNewNanopub } from '@/modules/whyis-utils';
+import spinner from '@/components/Spinner'
+import CurateNavBar from '@/components/curate/CurateNavBar.vue'
+import { mapGetters, mapMutations } from 'vuex'
+import reducer from '@/mixins/reduce'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import { parseFileName } from '@/modules/whyis-dataset'
+import { postNewNanopub } from '@/modules/whyis-utils'
 
 export default {
   name: 'SDDLinking',
   props: ['datasetId'],
   mixins: [reducer, optionalChainingUtil],
-  data() {
+  data () {
     return {
       loading: true,
       navRoutes: [
@@ -430,39 +430,39 @@ export default {
       defaultNamespace: true,
       namespace: '',
       testboolean: false
-    };
+    }
   },
   components: {
     spinner,
     CurateNavBar
   },
   watch: {
-    dataset(newValues, oldValues) {
-      this.loading = false;
+    dataset (newValues, oldValues) {
+      this.loading = false
       if (newValues?.[this.datasetFields.cp]) {
-        const orcid = this.dataset[this.datasetFields.cp][0]['@id'];
+        const orcid = this.dataset[this.datasetFields.cp][0]['@id']
         const trimmedId = orcid
           .replace('http://orcid.org/', '')
-          .replace(`${window.location.origin}/`, '');
-        this.lookupOrcid(trimmedId);
+          .replace(`${window.location.origin}/`, '')
+        this.lookupOrcid(trimmedId)
       }
       if (newValues?.[this.datasetFields.depiction]) {
         const thumbnailUri =
-          this.dataset[this.datasetFields.depiction][0]['@id'];
-        this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri);
+          this.dataset[this.datasetFields.depiction][0]['@id']
+        this.$store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri)
       }
       if (newValues?.[this.datasetFields.distribution]) {
         for (const index in newValues[this.datasetFields.distribution]) {
           const downloadLink =
-            newValues[this.datasetFields.distribution][index]?.['@id'];
-          const label = parseFileName(downloadLink);
-          const fileExtension = label.split('.').pop()?.toLowerCase();
+            newValues[this.datasetFields.distribution][index]?.['@id']
+          const label = parseFileName(downloadLink)
+          const fileExtension = label.split('.').pop()?.toLowerCase()
           this.distributions[index] = {
             downloadLink,
             label,
             fileExtension,
             delimiter: null
-          };
+          }
         }
       }
     }
@@ -476,18 +476,18 @@ export default {
       thumbnail: 'explorer/getDatasetThumbnail',
       orcidData: 'explorer/curation/getOrcidData'
     }),
-    doi() {
+    doi () {
       if (this.dataset?.[this.datasetFields.doi]) {
-        const doiString = this.dataset[this.datasetFields.doi][0]['@value'];
-        return doiString.replace('http://dx.doi.org/', '');
+        const doiString = this.dataset[this.datasetFields.doi][0]['@value']
+        return doiString.replace('http://dx.doi.org/', '')
       }
-      return '';
+      return ''
     },
-    fullDatasetUri() {
-      return `${window.location.origin}/explorer/dataset/${this.datasetId}`;
+    fullDatasetUri () {
+      return `${window.location.origin}/explorer/dataset/${this.datasetId}`
     },
-    title() {
-      return this.dataset[this.datasetFields.title][0]['@value'];
+    title () {
+      return this.dataset[this.datasetFields.title][0]['@value']
     }
   },
   methods: {
@@ -495,63 +495,63 @@ export default {
       setSnackbar: 'setSnackbar',
       clearSnackbar: 'resetSnackbar'
     }),
-    replaceBaseUrl(originalUrl, oldBase, newBase) {
-      return originalUrl.replace(oldBase, newBase);
+    replaceBaseUrl (originalUrl, oldBase, newBase) {
+      return originalUrl.replace(oldBase, newBase)
     },
-    async loadDataset() {
+    async loadDataset () {
       try {
         await this.$store.dispatch(
           'explorer/fetchSingleDataset',
           this.fullDatasetUri || undefined
-        );
+        )
       } catch (e) {
-        this.setSnackbar({ message: e });
+        this.setSnackbar({ message: e })
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    lookupOrcid(id) {
-      this.$store.dispatch('explorer/curation/lookupOrcid', id);
+    lookupOrcid (id) {
+      this.$store.dispatch('explorer/curation/lookupOrcid', id)
     },
-    goToStep(id, index) {
-      this.clearSnackbar();
-      if (id === 'third' && this.checkInvalidThird()) return;
-      this[id] = true;
-      this.active = index;
+    goToStep (id, index) {
+      this.clearSnackbar()
+      if (id === 'third' && this.checkInvalidThird()) return
+      this[id] = true
+      this.active = index
     },
-    checkInvalidThird() {
-      let isInvalid = false;
-      const csvs = this.distributions.filter((x) => x.fileExtension === 'csv');
+    checkInvalidThird () {
+      let isInvalid = false
+      const csvs = this.distributions.filter((x) => x.fileExtension === 'csv')
       for (const index in csvs) {
-        isInvalid = isInvalid || !csvs[index].delimiter;
+        isInvalid = isInvalid || !csvs[index].delimiter
       }
-      if (isInvalid) this.invalid.third = 'Check delimiters';
-      else this.invalid.third = null;
-      return isInvalid;
+      if (isInvalid) this.invalid.third = 'Check delimiters'
+      else this.invalid.third = null
+      return isInvalid
     },
-    processSddList() {
+    processSddList () {
       for (const index in this.isSddArray) {
-        const distrInd = this.isSddArray[index];
-        this.distributions[distrInd].isSdd = true;
+        const distrInd = this.isSddArray[index]
+        this.distributions[distrInd].isSdd = true
       }
     },
-    createDatasetLd() {
+    createDatasetLd () {
       const jsonLd = {
         '@id': this.fullDatasetUri
-      };
-      let namespace = `${this.fullDatasetUri}/`;
+      }
+      let namespace = `${this.fullDatasetUri}/`
       if (!this.defaultNamespace && this.namespace) {
-        namespace = this.namespace;
+        namespace = this.namespace
       }
       jsonLd['http://rdfs.org/ns/void#uriSpace'] = {
         '@value': namespace,
         '@lang': null,
         '@type': 'http://www.w3.org/2001/XMLSchema#string'
-      };
-      return jsonLd;
+      }
+      return jsonLd
     },
-    createFileLd(index) {
-      const distribution = this.distributions[index];
+    createFileLd (index) {
+      const distribution = this.distributions[index]
       const jsonLd = {
         '@id': this.replaceBaseUrl(
           distribution.downloadLink,
@@ -560,22 +560,22 @@ export default {
           // Note: When testing SDD linking locally enable below logic and comment above
           // 'http://restful:3001/'
         )
-      };
+      }
       if (distribution.fileExtension === 'csv') {
         jsonLd['http://www.w3.org/ns/csvw#delimiter'] = {
           '@value': distribution.delimiter,
           '@type': 'http://www.w3.org/2001/XMLSchema#string'
-        };
-        jsonLd['http://open.vocab.org/terms/hasContentType'] = 'text/csv';
+        }
+        jsonLd['http://open.vocab.org/terms/hasContentType'] = 'text/csv'
         if (this.whichSdd === 'other' && this.searchSdd) {
           jsonLd['http://purl.org/dc/terms/conformsTo'] = {
             '@id': this.searchSdd
-          };
+          }
         } else if (this.whichSdd === 'uploaded' && this.selectSdd) {
           // Runs this if SDD is part of the dataset submission
           const file = this.distributions.find((file) =>
             file.downloadLink.includes(this.selectSdd)
-          );
+          )
           jsonLd['http://purl.org/dc/terms/conformsTo'] = {
             '@id': this.replaceBaseUrl(
               file?.downloadLink,
@@ -584,47 +584,47 @@ export default {
               // Note: When testing SDD linking locally enable below logic and comment above
               // 'http://restful:3001/'
             )
-          };
+          }
         }
       } else if (distribution?.isSdd) {
-        jsonLd['@type'] = 'http://purl.org/twc/sdd/SemanticDataDictionary';
+        jsonLd['@type'] = 'http://purl.org/twc/sdd/SemanticDataDictionary'
       }
-      return jsonLd;
+      return jsonLd
     },
-    async submitForm() {
-      this.clearSnackbar();
+    async submitForm () {
+      this.clearSnackbar()
       if (this.checkInvalidThird()) {
         return this.setSnackbar({
           message: 'Check for errors in required fields'
-        });
+        })
       }
-      this.processSddList();
-      const datasetJsonLd = this.createDatasetLd();
-      const promises = [];
-      promises.push(postNewNanopub(datasetJsonLd));
+      this.processSddList()
+      const datasetJsonLd = this.createDatasetLd()
+      const promises = []
+      promises.push(postNewNanopub(datasetJsonLd))
       for (const file in this.distributions) {
-        promises.push(postNewNanopub(this.createFileLd(file)));
+        promises.push(postNewNanopub(this.createFileLd(file)))
       }
       Promise.all(promises)
         .then((response) => {
           // TODO: Remove later - consume response in snackbar
-          console.log(response);
+          console.log(response)
           return this.setSnackbar({
             message: 'SDD linking completed successfully',
             // explorer/dataset/4acae5dd-8986-4177-8836-38901591fce0
             action: () =>
               this.$router.push(`/explorer/dataset/${this.datasetId}`),
             callToActionText: 'View'
-          });
+          })
         })
         .catch((e) => {
-          throw e;
-        });
+          throw e
+        })
     }
   },
-  created() {
-    this.loading = true;
-    this.loadDataset();
+  created () {
+    this.loading = true
+    this.loadDataset()
   }
-};
+}
 </script>

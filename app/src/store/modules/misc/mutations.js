@@ -1,11 +1,11 @@
 export default {
-  setAppHeaderInfo(state, info) {
-    state.appHeaderInfo = info;
+  setAppHeaderInfo (state, info) {
+    state.appHeaderInfo = info
   },
-  setDialogBox(state) {
-    state.dialogBox = !state.dialogBox;
+  setDialogBox (state) {
+    state.dialogBox = !state.dialogBox
   },
-  setSnackbar(
+  setSnackbar (
     state,
     { message, action = null, duration = false, callToActionText = 'Retry' }
   ) {
@@ -14,20 +14,20 @@ export default {
       action,
       duration,
       callToActionText
-    };
+    }
   },
-  resetSnackbar(state) {
+  resetSnackbar (state) {
     state.snackbar = {
       message: '',
       action: null,
       duration: 0, // Indicate reset
       callToActionText: 'Retry'
-    };
+    }
   },
-  setUploadedFile(state, str) {
-    state.uploadedFile = str;
+  setUploadedFile (state, str) {
+    state.uploadedFile = str
   },
-  setRouteInfo(state, info) {
-    state.routeInfo = info;
+  setRouteInfo (state, info) {
+    state.routeInfo = info
   }
-};
+}

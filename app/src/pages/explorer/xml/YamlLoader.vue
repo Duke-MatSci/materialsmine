@@ -208,3 +208,5 @@ export default {
   }
 }
 </script>
+
+prefix = nanomine.org uri =
