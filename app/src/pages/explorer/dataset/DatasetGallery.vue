@@ -256,6 +256,10 @@ export default {
         identifier: dataset.identifier,
         type: 'datasets'
       });
+      await this.$store.dispatch('explorer/curation/deleteEntityFiles', {
+        distribution: dataset?.distribution ?? null,
+        thumbnail: dataset?.thumbnail ?? null
+      });
       this.toggleDialogBox();
       this.dialogLoading = false;
       await this.loadItems();

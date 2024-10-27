@@ -2,7 +2,10 @@
   <div>
     <div>
       <div>
-        <CurateNavBar active="Direct Upload with SDD" :navRoutes="navRoutes" />
+        <CurateNavBar
+          :active="`Direct Upload with SDD > ${generatedUUID}`"
+          :navRoutes="navRoutes"
+        />
       </div>
       <div class="curate">
         <div>
@@ -829,7 +832,6 @@ import {
 } from '@/modules/whyis-dataset';
 import { mapGetters, mapMutations } from 'vuex';
 const { v4: uuidv4 } = require('uuid');
-const datasetUuid = uuidv4();
 const distrFn = useFileList();
 
 // Move to a separate file
@@ -883,7 +885,6 @@ export default {
         second: null,
         orcid: false
       },
-      generatedUUID: datasetUuid,
       doi: '',
       orcidId: null,
       searchKeywordOrg: '',
@@ -927,6 +928,9 @@ export default {
         firstName: this.$store.getters['auth/user'].givenName,
         lastName: this.$store.getters['auth/user'].surName
       };
+    },
+    generatedUUID() {
+      return uuidv4();
     }
   },
   watch: {
