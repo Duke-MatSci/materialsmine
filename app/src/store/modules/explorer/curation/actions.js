@@ -88,11 +88,11 @@ export default {
       ]?.map((org) => {
         return org?.['http://xmlns.com/foaf/0.1/name']?.['@value']
       }),
-      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map(
-        (dist) => {
-          return dist?.['@id']
-        }
-      )
+      distribution: datasetObject[
+        'http://www.w3.org/ns/dcat#distribution'
+      ]?.map((dist) => {
+        return dist?.['@id']
+      })
     }
   },
 
@@ -626,6 +626,44 @@ export default {
         { message: error.message ?? 'Something went wrong during the request' },
         { root: true }
       )
+    }
+  },
+  async deleteEntityFiles ({ _, __, rootGetters }, payload) {
+    const { distribution, thumbnail } = payload
+    if (!distribution.length && !thumbnail) return
+
+    const token = rootGetters['auth/token']
+    if (thumbnail) {
+      // Enable this url definition below for local testing
+      // const url = thumbnail.replace(
+      //   'http://restful:3001',
+      //   'http://localhost/api'
+      // );
+      // await fetch(url, {
+      await fetch(thumbnail, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token
+        }
+      })
+    }
+
+    if (distribution.length) {
+      for (const dist of distribution) {
+        // Enable this url definition below for local testing
+        // const url = dist.replace('http://restful:3001', 'http://localhost/api');
+        // await fetch(url, {
+        await fetch(dist, {
+          method: 'DELETE',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          }
+        })
+      }
     }
   }
 }
