@@ -10,5 +10,8 @@ export default {
   },
   getSnackbar (state) {
     return state.snackbar
+  },
+  getRouteInfo (state) {
+    return state.routeInfo
   }
 }
