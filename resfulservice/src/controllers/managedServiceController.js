@@ -38,7 +38,11 @@ exports.manageServiceRequest = async (req, res, next) => {
     }
 
     req.reqId = reqId;
-    if (!controlId) { req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`; } else { req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}${controlId}`; }
+    if (!controlId) {
+      req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`;
+    } else {
+      req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}${controlId}`;
+    }
     return await _managedServiceCall(req, res);
   } catch (error) {
     const statusCode = error?.response?.status ?? 500;
