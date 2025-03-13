@@ -157,81 +157,81 @@ services:
       - REPO_NAME=${REPO_NAME}
       - FILE_PATH=${FILE_PATH}
       - BRANCH=${BRANCH}
-  redis:
-    image: 'redis:alpine'
-    command: redis-server
-    volumes:
-      - ./mockDB/redis-data:/var/lib/redis
-  celery:
-    depends_on:
-      - redis
-      - fuseki
-    volumes:
-      - ./mockDB/fuseki:/app/run
-      - ./whyis/materialsmine:/app
-    command:
-      /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody
-      --gid=nogroup
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    build: whyis
-  celerybeat:
-    depends_on:
-      - redis
-      - fuseki
-    volumes:
-      - ./mockDB/fuseki:/app/run
-      - ./whyis/materialsmine:/app
-    command:
-      /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody
-      --gid=nogroup
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    build: whyis
-  whyis:
-    container_name: whyis
-    depends_on:
-      - redis
-      - fuseki
-    stdin_open: true
-    command:
-      /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8}
-      --timeout 0 -b :8000
-    # entrypoint:
-    #   /bin/sh -c "chmod +x ./whyis-init.sh && /opt/venv/bin/gunicorn
-    #   wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000 &
-    #   sleep 10 && ./whyis-init.sh"
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-      - NM_GRAPH_AUTH_SECRET=${TKNS}
-    build: whyis
-    volumes:
-      - ./whyis/materialsmine:/app
-      - ./mockDB/fuseki:/app/run
-      - ./mockDB/whyis-init.sh:/app/whyis-init.sh
-    ports:
-      - '8000:8000'
-    # mem_limit: 2048m
-    # cpus: '0.25'
-  fuseki:
-    build: whyis
-    command: /opt/venv/bin/fuseki-server --mem /ds
-    # Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
-    #    image: 'stain/jena-fuseki:4.0.0
-    restart: always
-    # mem_limit: 9G
-    # mem_reservation: 9G
-    environment:
-      #      - ADMIN_USER=admin
-      #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - JVM_ARGS=-Xmx4g
-      - FUSEKI_BASE=/fuseki
-    ports:
-      - '3030:3030'
-    volumes:
-      - ./mockDB/fuseki:/fuseki
-    mem_limit: 3072m
-    cpus: '0.45'
+  # redis:
+  #   image: 'redis:alpine'
+  #   command: redis-server
+  #   volumes:
+  #     - ./mockDB/redis-data:/var/lib/redis
+  # celery:
+  #   depends_on:
+  #     - redis
+  #     - fuseki
+  #   volumes:
+  #     - ./mockDB/fuseki:/app/run
+  #     - ./whyis/materialsmine:/app
+  #   command:
+  #     /opt/venv/bin/celery -A wsgi.celery worker -l INFO -c 4 --uid=nobody
+  #     --gid=nogroup
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #   build: whyis
+  # celerybeat:
+  #   depends_on:
+  #     - redis
+  #     - fuseki
+  #   volumes:
+  #     - ./mockDB/fuseki:/app/run
+  #     - ./whyis/materialsmine:/app
+  #   command:
+  #     /opt/venv/bin/celery -A wsgi.celery beat -l INFO --uid=nobody
+  #     --gid=nogroup
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #   build: whyis
+  # whyis:
+  #   container_name: whyis
+  #   depends_on:
+  #     - redis
+  #     - fuseki
+  #   stdin_open: true
+  #   command:
+  #     /opt/venv/bin/gunicorn wsgi:application --workers ${WEB_CONCURRENCY:-8}
+  #     --timeout 0 -b :8000
+  #   # entrypoint:
+  #   #   /bin/sh -c "chmod +x ./whyis-init.sh && /opt/venv/bin/gunicorn
+  #   #   wsgi:application --workers ${WEB_CONCURRENCY:-8} --timeout 0 -b :8000 &
+  #   #   sleep 10 && ./whyis-init.sh"
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - NM_GRAPH_AUTH_SECRET=${TKNS}
+  #   build: whyis
+  #   volumes:
+  #     - ./whyis/materialsmine:/app
+  #     - ./mockDB/fuseki:/app/run
+  #     - ./mockDB/whyis-init.sh:/app/whyis-init.sh
+  #   ports:
+  #     - '8000:8000'
+  #   # mem_limit: 2048m
+  #   # cpus: '0.25'
+  # fuseki:
+  #   build: whyis
+  #   command: /opt/venv/bin/fuseki-server --mem /ds
+  #   # Needs fuseki 4.3.2 to use our full text search, stain is still at 4.0.0.
+  #   #    image: 'stain/jena-fuseki:4.0.0
+  #   restart: always
+  #   # mem_limit: 9G
+  #   # mem_reservation: 9G
+  #   environment:
+  #     #      - ADMIN_USER=admin
+  #     #      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+  #     - JVM_ARGS=-Xmx4g
+  #     - FUSEKI_BASE=/fuseki
+  #   ports:
+  #     - '3030:3030'
+  #   volumes:
+  #     - ./mockDB/fuseki:/fuseki
+  #   mem_limit: 3072m
+  #   cpus: '0.45'
 
 volumes:
   mockDB:
