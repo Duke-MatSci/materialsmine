@@ -866,6 +866,14 @@
       margin: 0 auto !important;
     }
   }
+
+  &-half-width {
+    width: 50%;
+  }
+
+  &-padding-sm {
+    padding: 0.6rem;
+  }
 }
 
 .metadata {
