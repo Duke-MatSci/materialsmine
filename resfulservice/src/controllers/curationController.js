@@ -26,6 +26,8 @@ const Task = require('../sw/models/task');
 const ChangeLog = require('../models/changeLog');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
+const { loadXmlProperty } = require('../pipelines/xml-pipeline');
+const { parseXmlAndExtractTables } = require('../utils/iterator');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -829,6 +831,52 @@ exports.getCurationXml = async (req, res, next) => {
     return res.send(xml);
   } catch (error) {
     next(errorWriter(req, error, 'getCurationXml', 500));
+  }
+};
+
+exports.loadXmlTable = async (req, res, next) => {
+  try {
+    const { logger, body } = req;
+    logger.info('load xml table Function Entry:');
+
+    const hasValues = ['temperature', 'frequency', 'time', 'strain', 'stress'];
+    let { has, limit, page } = body;
+    limit = limit || 2;
+    page = page || 1;
+
+    if (has && !hasValues.includes(has)) {
+      return res.status(400).json({
+        error: `'has' must be one of: ${hasValues.join(', ')}`
+      });
+    }
+
+    if (!has) {
+      return res
+        .status(400)
+        .json({ error: 'property type parameter is required.' });
+    }
+
+    const results = await XmlData.aggregate(loadXmlProperty(has, page, limit));
+
+    const xmls = results[0]?.xmls ?? [];
+    const contains = await Promise.all(
+      xmls.map(async (xmlObject) => {
+        const contains = await parseXmlAndExtractTables(xmlObject.xml);
+        return { contains, title: xmlObject.title };
+      })
+    );
+
+    const data = {
+      counts: results[0]?.counts ?? 0,
+      xmls: contains,
+      page
+    };
+
+    return res.status(200).json(data);
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: 'Internal Server Error', details: error.message });
   }
 };
 
