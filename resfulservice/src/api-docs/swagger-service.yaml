@@ -1032,6 +1032,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Server-Error'
+
+  /xml/xml-has-property:
+    post:
+      security:
+        - BearerAuth: []
+      summary: Get properties present in the XML
+      description: This API endpoint checks and filters dynamic properties present in XML files.
+      tags:
+        - Xml
+      requestBody:
+        description: A payload containing either the master_template xlsx file and other required files for curation creation, or the Base schema object.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                has:
+                  type: string
+                  enum:
+                    - temperature
+                    - strain
+                    - stress
+                    - frequency
+                    - time
+                limit:
+                  type: integer
+                  example: 2
+                page:
+                  type: integer
+                  example: 1
+              required:
+                - has
+      responses:
+        '200':
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  counts:
+                    type: number
+                    example: 10
+                  xmls:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: "LM_A10.xml"
+                        contains:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              property:
+                                type: string
+                                example: "AC_Dielectric_Constant"
+                              table:
+                                type: string
+                                example: "Frequency (Hz) vs Tan delta"
+                required:
+                  - counts
+                  - xmls
+        
+        '400':
+          description: Curation not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        example: 'has parameter is required.'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
                 
   /files/{fileId}:
     get:
