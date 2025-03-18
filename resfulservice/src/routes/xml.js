@@ -12,4 +12,8 @@ router
   .route('/xml-has-property')
   .post(isAuth, latencyTimer, curationController.loadXmlTable);
 
+router
+  .route('/viscoelastic-data')
+  .post(isAuth, latencyTimer, curationController.viscoelasticDataXml);
+
 module.exports = router;

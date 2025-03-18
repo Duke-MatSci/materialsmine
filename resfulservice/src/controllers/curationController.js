@@ -880,6 +880,37 @@ exports.loadXmlTable = async (req, res, next) => {
   }
 };
 
+exports.viscoelasticDataXml = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
+    const matchopt =
+      /(?:Storage Modulus.*Loss Modulus|Storage Modulus.*tan delta|tan delta.*Loss Modulus)/i;
+
+    const results = await XmlData.aggregate(
+      loadXmlProperty(undefined, page, limit, matchopt)
+    );
+    const xmls = results[0]?.xmls ?? [];
+
+    const contains = await Promise.all(
+      xmls.map(async (xmlObject) => {
+        const contains = await parseXmlAndExtractTables(xmlObject.xml);
+        return { contains, title: xmlObject.title };
+      })
+    );
+
+    const data = {
+      counts: results[0]?.counts ?? 0,
+      xmls: contains,
+      page
+    };
+
+    return res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 const getKeyCaseInsensitive = (obj, key) => {
   if (typeof obj !== 'object' || obj === null) {
     return undefined;
