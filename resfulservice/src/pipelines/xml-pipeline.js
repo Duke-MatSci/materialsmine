@@ -26,16 +26,38 @@
 //   }
 // ];
 
-exports.loadXmlProperty = (has, page, limit) => [
-  {
-    $match: {
-      xml_str: {
-        $regex: `<column id="[01]">${has}`,
-        $options: 'i'
+exports.loadXmlProperty = (has, page, limit, matchOpt) => {
+  const stage = [];
+  if (has) {
+    stage.push({
+      $match: {
+        xml_str: {
+          $regex: `<column id="[01]">${has}`,
+          $options: 'i'
+        }
       }
-    }
-  },
-  {
+    });
+  }
+  if (matchOpt) {
+    stage.push(
+      {
+        $match: {
+          xml_str: {
+            $regex: matchOpt
+          }
+        }
+      },
+      {
+        $match: {
+          xml_str: {
+            $regex: `<column id="[01]">${has}`,
+            $options: 'i'
+          }
+        }
+      }
+    );
+  }
+  stage.push({
     $group: {
       _id: null,
       docs: {
@@ -45,8 +67,8 @@ exports.loadXmlProperty = (has, page, limit) => [
         }
       }
     }
-  },
-  {
+  });
+  stage.push({
     $project: {
       _id: 0,
       counts: { $size: '$docs' },
@@ -54,5 +76,6 @@ exports.loadXmlProperty = (has, page, limit) => [
         $slice: ['$docs', (page - 1) * limit, limit]
       }
     }
-  }
-];
+  });
+  return stage;
+};
