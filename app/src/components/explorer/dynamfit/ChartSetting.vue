@@ -98,41 +98,45 @@
           </div>
 
           <div
-            v-if="
-              optionalChaining(() => results?.xmls?.length) && !selectedItem
-            "
+            v-if="optionalChaining(() => results?.xmls?.length) && !currentItem"
             class="metamine_footer-ref-header"
           >
-            <h3>Results (2 of {{ results.counts }})</h3>
+            <h3>Results ({{ currentPage * limit }} of {{ results.counts }})</h3>
             <hr />
             <div class="list-container">
               <div
-                v-for="(item, index) in results.xmls"
-                :key="index"
+                v-for="item in results.xmls"
+                :key="item.title"
                 class="u_display-flex grid_gap-small u_margin-bottom-small"
               >
                 <input
                   type="radio"
-                  :id="item.id"
+                  :id="item.title"
                   :value="item"
-                  v-model="selectedItem"
+                  v-model="currentItem"
                   style="accent-color: #09233c"
                 />
                 <label :for="item.title">{{ item.title }}</label>
               </div>
             </div>
+            <pagination
+              v-if="totalPages > 1 && !currentItem"
+              :cpage="currentPage"
+              :tpages="totalPages"
+              @go-to-page="goToPage"
+            />
           </div>
-          <div v-if="selectedItem" class="metamine_footer-ref-header">
+          <div v-if="currentItem" class="metamine_footer-ref-header">
             <h3>
-              {{ selectedItem.title }}
+              {{ currentItem.title }}
               <span class="u--color-grey-sec u--margin-neg md-body-1"
-                >({{ selectedItem.contains.length }} viscoelastic data)</span
+                >({{ currentItem.contains.length }} viscoelastic data)</span
               >
             </h3>
             <hr />
             <div class="list-container">
               <div
-                v-for="(item, index) in selectedItem.contains"
+                v-for="(item, index) in currentItem.contains"
                 :key="index"
                 class="u_display-flex grid_gap-small u_margin-bottom-small"
               >
@@ -274,12 +278,16 @@
   </div>
 </template>
 <script>
-import { mapState, mapGetters } from 'vuex'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import { mapState, mapGetters } from 'vuex';
+import optionalChainingUtil from '@/mixins/optional-chaining-util';
+import pagination from '@/components/explorer/Pagination';
 export default {
   name: 'ChartSetting',
   mixins: [optionalChainingUtil],
-  data () {
+  components: {
+    pagination
+  },
+  data() {
     return {
       showToolTip: false,
       isTemp: true,
@@ -288,76 +296,81 @@ export default {
       selectedProperty: 'temperature',
       limit: 2,
       results: [],
-      selectedItem: null,
-      selectedItemProperty: null
-    }
+      currentItem: null,
+      selectedItemProperty: null,
+      currentPage: 1,
+      totalPages: 0
+    };
   },
   watch: {
     dynamfit: {
       handler: function (newVal) {
-        if (!newVal) return
-        this.updateChart()
+        if (!newVal) return;
+        this.updateChart();
       },
       deep: true
+    },
+    limit() {
+      return this.search();
     }
   },
   methods: {
-    sampleTitle () {
+    sampleTitle() {
       // eslint-disable-next-line
       return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
     },
-    downloadTitle () {
+    downloadTitle() {
       // eslint-disable-next-line
       return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
     },
-    async onInputChange (e) {
-      this.useSample = false
-      this.displayInfo('Uploading File...')
-      const file = [...e.target?.files]
-      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
+    async onInputChange(e) {
+      this.useSample = false;
+      this.displayInfo('Uploading File...');
+      const file = [...e.target?.files];
+      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
       try {
         const extension =
           file[0]?.type?.replace(/(.*)\//, '') ||
-          file[0]?.name.split('.').pop()
+          file[0]?.name.split('.').pop();
         if (!extension || !allowedTypes.includes(extension)) {
-          return this.displayInfo('Unsupported file format')
+          return this.displayInfo('Unsupported file format');
         }
         const { fileName } = await this.$store.dispatch('uploadFile', {
           file,
           isTemp: this.isTemp
-        })
+        });
         if (fileName) {
-          this.dynamfit.fileUpload = fileName
-          this.displayInfo('Upload Successful', 1500)
+          this.dynamfit.fileUpload = fileName;
+          this.displayInfo('Upload Successful', 1500);
         }
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err?.message || 'Something went wrong',
           action: () => this.onInputChange(e)
-        })
+        });
       }
     },
-    async useSampleFile () {
-      this.closeSidebar()
-      this.useSample = true
-      this.displayInfo('Using sample file', 1500)
-      this.dynamfit.fileUpload = 'test.tsv'
+    async useSampleFile() {
+      this.closeSidebar();
+      this.useSample = true;
+      this.displayInfo('Using sample file', 1500);
+      this.dynamfit.fileUpload = 'test.tsv';
     },
-    async resetChart () {
-      const name = this.dynamfit.fileUpload
-      if (!name) return
+    async resetChart() {
+      const name = this.dynamfit.fileUpload;
+      if (!name) return;
 
       // DO NOT call BE to delete for sample file
       if (!this.useSample) {
         const { deleted, error } = await this.$store.dispatch('deleteFile', {
           name,
           isTemp: this.isTemp
-        })
+        });
         if (!error && deleted) {
-          return this.clearDynamfitData()
+          return this.clearDynamfitData();
         }
       } else {
-        return this.clearDynamfitData()
+        return this.clearDynamfitData();
       }
 
       // TODO: WILL NEED TO FIX THIS LATER!
@@ -366,78 +379,79 @@ export default {
       //   action: () => this.resetChart()
       // })
     },
-    displayInfo (msg, duration) {
+    displayInfo(msg, duration) {
       if (msg) {
         this.$store.commit('setSnackbar', {
           message: msg,
           duration: duration ?? 3000
-        })
+        });
       }
     },
-    clearDynamfitData () {
+    clearDynamfitData() {
       // First reset useSample flag if in use
-      this.useSample = false
-      this.$store.commit('explorer/resetDynamfit')
-      this.$store.commit('explorer/resetDynamfitData')
+      this.useSample = false;
+      this.$store.commit('explorer/resetDynamfit');
+      this.$store.commit('explorer/resetDynamfitData');
     },
-    async updateChart () {
+    async updateChart() {
       const payload = {
         fileName: this.dynamfit.fileUpload,
         numberOfProny: this.dynamfit.range,
         model: this.dynamfit.model,
         fitSettings: this.dynamfit.fitSettings,
         useSample: this.useSample
-      }
-      await this.$store.dispatch('explorer/fetchDynamfitData', payload)
+      };
+      await this.$store.dispatch('explorer/fetchDynamfitData', payload);
     },
-    openSidebar () {
-      this.isSidebarOpen = true
+    openSidebar() {
+      this.isSidebarOpen = true;
     },
-    closeSidebar () {
-      this.isSidebarOpen = false
+    closeSidebar() {
+      this.isSidebarOpen = false;
     },
-    goBack () {
-      this.selectedItem = null
+    goBack() {
+      this.currentItem = null;
+      this.selectedItemProperty = null;
     },
-    async handleSelect () {
-      if (!this.selectedItem) {
+    async handleSelect() {
+      if (!this.currentItem) {
         this.$store.commit('setSnackbar', {
           message: 'Please select an item before proceeding.',
           type: 'error',
           duration: 4000
-        })
-        return
+        });
+        return;
       }
 
-      this.isSidebarOpen = false
+      this.isSidebarOpen = false;
       try {
         const response = await this.$axios.post('/mn/load-xml-table', {
-          id: this.selectedItem.id
-        })
+          id: this.currentItem.id
+        });
 
         if (response.data.fileName) {
-          this.dynamfit.fileUpload = response.data.fileName
+          this.dynamfit.fileUpload = response.data.fileName;
           this.$store.commit('setSnackbar', {
             message: 'Upload Successful!',
             type: 'success'
-          })
+          });
         } else {
-          throw new Error('Unexpected response format')
+          throw new Error('Unexpected response format');
         }
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err.message || 'Something went wrong. Please try again.',
           type: 'error',
           duration: 1000
-        })
+        });
       }
     },
-    async search () {
+    async search() {
       const payload = {
         has: this.selectedProperty,
-        limit: this.limit,
-        page: 1
-      }
+        limit: this.limit || 2,
+        page: this.currentPage
+      };
       try {
         const response = await fetch('/api/xml/xml-has-property', {
           method: 'POST',
@@ -446,20 +460,26 @@ export default {
             Authorization: 'Bearer ' + this.token
           },
           body: JSON.stringify(payload)
-        })
+        });
 
-        const data = await response.json()
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.message)
+          throw new Error(data.message);
         }
-        this.results = data
+        this.results = data;
+        this.totalPages = Math.ceil(data.counts / this.limit);
       } catch (err) {
         this.$store.commit('setSnackbar', {
           message: err.message || 'Something went wrong. Please try again.',
           type: 'error',
           duration: 10000
-        })
+        });
       }
+    },
+    async goToPage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      await this.search();
     }
   },
   computed: {
@@ -467,16 +487,16 @@ export default {
       dynamfit: (state) => state.dynamfit
     }),
     ...mapGetters({ token: 'auth/token' }),
-    disableInput () {
+    disableInput() {
       return (
         !this.dynamfit.fileUpload ||
         !this.dynamfitData ||
         !Object.keys(this.dynamfitData).length
-      )
+      );
     },
-    dynamfitData () {
-      return this.$store.getters['explorer/getDynamfitData']
+    dynamfitData() {
+      return this.$store.getters['explorer/getDynamfitData'];
     }
   }
-}
+};
 </script>
