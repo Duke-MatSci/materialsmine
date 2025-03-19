@@ -72,7 +72,7 @@ exports.iteration = (arr, iterationFn, batchSize) =>
     });
   });
 
-exports.parseXmlAndExtractTables = async (xml) => {
+exports.parseXmlAndExtractTables = async (xml, returnRow = false) => {
   const parser = new xml2js.Parser({ explicitArray: true });
   const result = await parser.parseStringPromise(xml);
 
@@ -106,6 +106,25 @@ exports.parseXmlAndExtractTables = async (xml) => {
     return null;
   }
 
+  // Helper to extract rows when has parameter is true
+  function extractRows (node, headerNames) {
+    const rowData = [];
+    if (node.rows && Array.isArray(node.rows)) {
+      const rowsNode = node.rows[0];
+      if (rowsNode.row && Array.isArray(rowsNode.row)) {
+        rowsNode.row.forEach((rowObj) => {
+          const columns = rowObj.column || [];
+          const record = {};
+          for (let i = 0; i < headerNames.length; i++) {
+            record[headerNames[i]] = columns[i] ? columns[i]._ : null;
+          }
+          rowData.push(record);
+        });
+      }
+    }
+    return rowData;
+  }
+
   /**
    * Recursively walk through the XML object.
    *
@@ -128,11 +147,13 @@ exports.parseXmlAndExtractTables = async (xml) => {
         const columns = node.headers[0].column;
         if (columns.length >= 2) {
           // Join all column texts with " vs " (so three columns will be joined accordingly)
-          const headersText = columns.map((col) => col._).join(' vs ');
+          const headerNames = columns.map((col) => col._);
+          const headersText = headerNames.join(' vs ');
           // Use the passed-in nodeName if available.
           tablesFound.push({
             property: nodeName,
-            table: headersText
+            table: headersText,
+            ...(returnRow ? { rows: extractRows(node, headerNames) } : {})
           });
         }
       }
