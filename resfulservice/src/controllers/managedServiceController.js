@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
+const XLSX = require('xlsx');
 const { errorWriter } = require('../utils/logWriter');
 const {
   ManagedServiceRegister,
@@ -9,6 +10,8 @@ const {
 const { signToken, decodeToken } = require('../utils/jwtService');
 const latency = require('../middlewares/latencyTimer');
 const { validateIsAdmin } = require('../middlewares/validations');
+const { parseXmlAndExtractTables } = require('../utils/iterator');
+const xmlData = require('../models/xmlData');
 
 /**
  * getDynamfitChartData - Retrieves dynamfit chart data
@@ -114,6 +117,57 @@ const _managedServiceCall = async (req, res) => {
     const { useSample, ...remainingBody } = body;
     reqBody = remainingBody;
     reqBody.file_name = req.env.DYNAMFIT_TEST_FILE;
+  }
+
+  if (appName === 'loadxml') {
+    const { title, property, table, index } = body;
+    logger.info('_handleLoadXml: Function entry');
+
+    if (!title || !property || !table || typeof index !== 'number') {
+      return res.status(400).json({
+        message:
+          'Request body must include "title", "property", "table", and "index" (number)'
+      });
+    }
+
+    const result = await xmlData.findOne({ title });
+    if (!result || !result.xml_str) {
+      return res.status(404).json({ message: 'No XML data found for title' });
+    }
+
+    const contains = await parseXmlAndExtractTables(result.xml_str, true);
+
+    // Apply filtering based on index
+    let filteredData = [];
+    if (index !== undefined && Array.isArray(contains)) {
+      filteredData = contains[index] || [];
+    }
+
+    // Filter by property and table
+    if (property && table && filteredData.tables) {
+      filteredData.tables = filteredData.tables.filter(
+        (t) => t.name === table && t.properties?.includes(property)
+      );
+    }
+
+    if (!filteredData.rows?.length === 0) {
+      throw new Error('No data found for the given property and table');
+    }
+
+    // Convert JSON data to a worksheet
+    const worksheet = XLSX.utils.json_to_sheet(filteredData.rows);
+    // Convert the worksheet to CSV format
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+    // Generate a dynamic filename using a UUID
+    const fileName = `${filteredData.table || uuidv4()}.csv`;
+
+    // Set response headers for file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    latency.latencyCalculator(res);
+    return res.status(200).send(csv);
   }
 
   const response = await axios.request({
