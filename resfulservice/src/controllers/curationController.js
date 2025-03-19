@@ -882,8 +882,8 @@ exports.loadXmlTable = async (req, res, next) => {
 
 exports.viscoelasticDataXml = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 2;
+    const page = parseInt(req.body.page) || 1;
+    const limit = parseInt(req.body.limit) || 2;
     const matchopt =
       /(?:Storage Modulus.*Loss Modulus|Storage Modulus.*tan delta|tan delta.*Loss Modulus)/i;
 
