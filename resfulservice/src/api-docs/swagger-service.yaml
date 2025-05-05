@@ -1482,6 +1482,7 @@ paths:
                 model: Linear
                 fit_settings: false
                 useSample: false
+                domain: 'temperature'
                 
       responses:
         '200':

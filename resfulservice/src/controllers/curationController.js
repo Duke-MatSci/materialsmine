@@ -837,6 +837,8 @@ exports.getCurationXml = async (req, res, next) => {
 exports.loadXmlTable = async (req, res, next) => {
   try {
     const { logger, body } = req;
+    const context = req.headers.referer;
+    console.log('context', context);
     logger.info('load xml table Function Entry:');
 
     const hasValues = ['temperature', 'frequency', 'time', 'strain', 'stress'];
