@@ -290,7 +290,7 @@
       @extend .u--font-emph-700;
     }
     &-l {
-      font-size: $large-size;
+      font-size: $large-size !important;
       font-weight: 500;
     }
     &-m {
@@ -694,14 +694,14 @@
   &-gridicon {
     position: absolute;
     right: 4.5rem;
-    top: 6rem;
+    top: 16rem;
     z-index: 10000000;
     @include respond(tab-land) {
       right: 2.5rem;
-      top: 5rem;
+      top: 19rem;
     }
     @include respond(phone) {
-      top: 3.7rem;
+      top: 15rem;
     }
     & > div {
       display: inline-block;
