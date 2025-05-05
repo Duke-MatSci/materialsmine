@@ -5,7 +5,7 @@ from app.config import Config
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.dynamfit.helper import prony_linear_fit, compute_rspectum
+from app.dynamfit.helper import prony_linear_fit, compute_rspectum, tts_frequency_to_temperature, tts_temperature_to_frequency
 from app.utils.util import log_errors
 
 
@@ -24,7 +24,7 @@ def check_file_exists(file_name):
     
 
 @log_errors
-def update_line_chart(uploadData, number_of_prony, model, fit_settings):
+def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
     """
     Updates a line chart based on the provided data.
 
@@ -39,6 +39,8 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings):
         fig11 (plotly.graph_objects.Figure): The updated line chart.
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
+        fig4 (plotly.graph_objects.Figure): The temperature line chart.
+        fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
         coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
     """
     try:
@@ -49,7 +51,175 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings):
         if dfl is not None:
             
             df = pd.DataFrame(dfl)
+            
 
+            if domain == "frequency":
+                freq_sweep_data = df.copy()
+                freq_sweep_data.columns = ["Frequency", "E'", "E''"]
+                freq_sweep_data["Temperature"] = 30
+                C1 = 17.44
+                C2 = 51.6
+                omega_ref = 1
+                # Perform Temperature Conversion
+                temp_sweep_data = tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2)
+
+                print('temp_sweep_data-2', temp_sweep_data)
+                temp_sweep_data_melt = pd.melt(temp_sweep_data, id_vars=["Temperature"], 
+                                value_vars=["E'", "E''"], 
+                                var_name='Modulus', value_name="Young's Modulus (MPa)")
+                temp_sweep_data_melt["Type"] = "Experiment"
+
+                print('tempsweep_data_melt-2', temp_sweep_data_melt)
+                fig4 = px.line(temp_sweep_data_melt, x="Temperature", y="Young's Modulus (MPa)", 
+                    # log_x=True, 
+                    log_y=True, 
+                    facet_col='Modulus',
+                    color="Type", line_dash="Type",
+                    # line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                    labels={
+                        "Temperature": "Temperature (C)",
+                    },
+                    )
+            
+                df41_concat = temp_sweep_data_melt.copy()
+                df41_tand = pd.DataFrame()
+                df41_tand["Temperature"] = df41_concat[df41_concat["Modulus"] == "E''"]["Temperature"]
+                df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
+
+                df41_tand["Young's Modulus (MPa)"] = df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() / df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
+                # print(df11_tand.head(5))
+                df41_tand['Modulus'] = 'tan delta'
+                # print(df11_tand.head(5))
+                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
+
+                # print(df11_tand.head(5))
+                # print(df11_concat)
+
+                fig41 = px.line(df41_concat[df41_concat['Modulus']!="E''"], x="Temperature", y="Young's Modulus (MPa)", 
+                        # log_x=True, 
+                        # log_y=True, 
+                        facet_col='Modulus',
+                        color="Type", line_dash="Type",
+                        # line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                        # template=template_from_url(theme),
+                        labels={
+                            "Temperature": "Temperature (C)",
+                        },
+                        )
+                fig41.update_yaxes(matches=None, showticklabels=True)
+                fig41.update_yaxes(type="log", col=1)
+                fig4.update_yaxes(exponentformat = 'power')
+                fig41.update_yaxes(exponentformat = 'power')
+            
+            elif domain == "temperature":
+
+                temp_sweep_data = df.copy()
+                temp_sweep_data.columns = ["Temperature", "E'", "E''"]
+                temp_sweep_data["Frequency"] = 1
+                C1 = 17.44
+                C2 = 51.6
+                T_ref = 30
+                # Perform Temperature Conversion
+                freq_sweep_data = tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2)
+                
+                # reassign df to transformed data
+                df = freq_sweep_data[["Frequency", "E'", "E''"]]
+                df.columns = ["Frequency", "E Storage", "E Loss"]
+
+                temp_sweep_data_melt = pd.melt(temp_sweep_data, id_vars=["Temperature"], 
+                                value_vars=["E'", "E''"], 
+                                var_name='Modulus', value_name="Young's Modulus (MPa)")
+                temp_sweep_data_melt["Type"] = "Experiment"
+
+                fig4 = px.line(temp_sweep_data_melt, x="Temperature", y="Young's Modulus (MPa)", 
+                    # log_x=True, 
+                    log_y=True, 
+                    facet_col='Modulus',
+                    color="Type", line_dash="Type",
+                    # line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                    labels={
+                        "Temperature": "Temperature (C)",
+                    },
+                    )
+            
+                df41_concat = temp_sweep_data_melt.copy()
+                df41_tand = pd.DataFrame()
+                df41_tand["Temperature"] = df41_concat[df41_concat["Modulus"] == "E''"]["Temperature"]
+                df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
+
+                df41_tand["Young's Modulus (MPa)"] = df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() / df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
+                # print(df11_tand.head(5))
+                df41_tand['Modulus'] = 'tan delta'
+                # print(df11_tand.head(5))
+                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
+
+                # print(df11_tand.head(5))
+                # print(df11_concat)
+
+                fig41 = px.line(df41_concat[df41_concat['Modulus']!="E''"], x="Temperature", y="Young's Modulus (MPa)", 
+                        # log_x=True, 
+                        # log_y=True, 
+                        facet_col='Modulus',
+                        color="Type", line_dash="Type",
+                        # line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                        # template=template_from_url(theme),
+                        labels={
+                            "Temperature": "Temperature (C)",
+                        },
+                        )
+                fig41.update_yaxes(matches=None, showticklabels=True)
+                fig41.update_yaxes(type="log", col=1)
+                fig4.update_yaxes(exponentformat = 'power')
+                fig41.update_yaxes(exponentformat = 'power')
+
+                # temp_sweep_data_melt = pd.melt(freq_sweep_data, id_vars=["Frequency"], 
+                #                 value_vars=["E'", "E''"], 
+                #                 var_name='Modulus', value_name="Young's Modulus (MPa)")
+                # temp_sweep_data_melt["Type"] = "Experiment"
+
+                # fig4 = px.line(temp_sweep_data_melt, x="Frequency", y="Young's Modulus (MPa)", 
+                #     # log_x=True, 
+                #     log_y=True, 
+                #     facet_col='Modulus',
+                #     color="Type", line_dash="Type",
+                #     line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                #     labels={
+                #         "Frequency": "Frequency (Hz)",
+                #     },
+                #     )
+            
+                # df41_concat = temp_sweep_data_melt.copy()
+                # df41_tand = pd.DataFrame()
+                # df41_tand["Frequency"] = df41_concat[df41_concat["Modulus"] == "E''"]["Frequency"]
+                # df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
+
+                # df41_tand["Young's Modulus (MPa)"] = df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() / df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
+                # # print(df11_tand.head(5))
+                # df41_tand['Modulus'] = 'tan delta'
+                # # print(df11_tand.head(5))
+                # df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
+
+                # # print(df11_tand.head(5))
+                # # print(df11_concat)
+
+                # fig41 = px.line(df41_concat[df41_concat['Modulus']!="E''"], x="Frequency", y="Young's Modulus (MPa)", 
+                #         log_x=True, 
+                #         # log_y=True, 
+                #         facet_col='Modulus',
+                #         color="Type", line_dash="Type",
+                #         line_dash_map={"Experiment":"solid", f"{N_nz}-Term Prony":"dash"},
+                #         # template=template_from_url(theme),
+                #         labels={
+                #             "Frequency": "Frequency (Hz)",
+                #         },
+                #         )
+                # fig41.update_yaxes(matches=None, showticklabels=True)
+                # fig41.update_yaxes(type="log", col=1)
+                # fig4.update_yaxes(exponentformat = 'power')
+                # fig41.update_yaxes(exponentformat = 'power')
+
+            print('dfs', df)
+            # Fit prony series
             tau, E, complex, relax = prony_linear_fit(df, N, model)
             N_nz = np.count_nonzero(E)
 
@@ -228,6 +398,6 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings):
                 fig.update_xaxes(exponentformat = 'power')
                 fig.update_yaxes(exponentformat = 'power')
 
-            return fig1, fig11, fig2, fig3, coef_df.to_dict("records")
+            return fig1, fig11, fig2, fig3, fig4, fig41, coef_df.to_dict("records")
     except Exception as e:
         raise ValueError("File contains corrupt data")
