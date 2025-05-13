@@ -63,13 +63,11 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 # Perform Temperature Conversion
                 temp_sweep_data = tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2)
 
-                print('temp_sweep_data-2', temp_sweep_data)
                 temp_sweep_data_melt = pd.melt(temp_sweep_data, id_vars=["Temperature"], 
                                 value_vars=["E'", "E''"], 
                                 var_name='Modulus', value_name="Young's Modulus (MPa)")
                 temp_sweep_data_melt["Type"] = "Experiment"
 
-                print('tempsweep_data_melt-2', temp_sweep_data_melt)
                 fig4 = px.line(temp_sweep_data_melt, x="Temperature", y="Young's Modulus (MPa)", 
                     # log_x=True, 
                     log_y=True, 
@@ -87,13 +85,9 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
 
                 df41_tand["Young's Modulus (MPa)"] = df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() / df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
-                # print(df11_tand.head(5))
-                df41_tand['Modulus'] = 'tan delta'
-                # print(df11_tand.head(5))
-                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
-                # print(df11_tand.head(5))
-                # print(df11_concat)
+                df41_tand['Modulus'] = 'tan delta'
+                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
                 fig41 = px.line(df41_concat[df41_concat['Modulus']!="E''"], x="Temperature", y="Young's Modulus (MPa)", 
                         # log_x=True, 
@@ -148,13 +142,9 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
 
                 df41_tand["Young's Modulus (MPa)"] = df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() / df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
-                # print(df11_tand.head(5))
-                df41_tand['Modulus'] = 'tan delta'
-                # print(df11_tand.head(5))
-                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
-                # print(df11_tand.head(5))
-                # print(df11_concat)
+                df41_tand['Modulus'] = 'tan delta'
+                df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
                 fig41 = px.line(df41_concat[df41_concat['Modulus']!="E''"], x="Temperature", y="Young's Modulus (MPa)", 
                         # log_x=True, 
@@ -218,7 +208,6 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 # fig4.update_yaxes(exponentformat = 'power')
                 # fig41.update_yaxes(exponentformat = 'power')
 
-            print('dfs', df)
             # Fit prony series
             tau, E, complex, relax = prony_linear_fit(df, N, model)
             N_nz = np.count_nonzero(E)
@@ -260,13 +249,9 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
             df11_tand["Type"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Type"]
 
             df11_tand["Young's Modulus (MPa)"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (MPa)"].to_numpy() / df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (MPa)"].to_numpy()
-            # print(df11_tand.head(5))
-            df11_tand['Modulus'] = 'tan delta'
-            # print(df11_tand.head(5))
-            df11_concat = pd.concat([df11_concat, df11_tand], ignore_index=True)
 
-            # print(df11_tand.head(5))
-            # print(df11_concat)
+            df11_tand['Modulus'] = 'tan delta'
+            df11_concat = pd.concat([df11_concat, df11_tand], ignore_index=True)
 
             fig11 = px.line(df11_concat[df11_concat['Modulus']!="E Loss"], x="Frequency", y="Young's Modulus (MPa)", 
                     log_x=True, 

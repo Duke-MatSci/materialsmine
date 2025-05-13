@@ -215,7 +215,7 @@ def tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2, calcShifts=True
             a_T = group['a_T']
         else:
             a_T = wlf_shift(T, T_ref, C1, C2)
-        # print(f'a_T: {a_T}')
+
         shifted_freq = group['Frequency'] * a_T
         shifted_data.append(pd.DataFrame({
             'Frequency': shifted_freq,
@@ -246,10 +246,9 @@ def tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2, calcShifts=
     i = 0
 
     for omega, group in freq_sweep_data.groupby('Frequency'):
-        print(f'omega: {omega}')
         a_T = omega/omega_ref
         T_ref = group["Temperature"]
-        print(f'T_ref: {T_ref}')
+
         if not calcShifts:
             print("not implemented error")
             # not implemented but would need shift temps
@@ -257,7 +256,7 @@ def tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2, calcShifts=
         else:
             # a_T = wlf_shift(T, T_ref, C1, C2)
             shifted_T = inverse_wlf_shift(a_T, T_ref, C1, C2)
-        # print(f'a_T: {a_T}')
+
         # shifted_freq = group['Frequency'] * a_T
         shifted_data.append(pd.DataFrame({
             'Frequency': omega_ref,
