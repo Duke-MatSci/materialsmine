@@ -1,17 +1,30 @@
 <template>
   <div class="u_width--max utility-bg_border-dark u--b-rad">
     <md-tabs
+      :md-active-tab="
+        dynamfitDomain === 'frequency' ? 'tab-home' : 'tab-temp-new'
+      "
       class="form__stepper form__stepper-curate dialog-box_content u-reset-transform"
       md-dynamic-height
     >
-      <md-tab id="tab-home" md-label="Complex, E*(iω)">
+      <md-tab id="tab-home" md-label="Complex, E*(iω)" class="u_relative">
         <PlotlyView :chart="dynamfitData['complex-chart']" key="1" />
+        <div class="dynamfit-note" v-if="isTempData">
+          <strong>Note:</strong> The viscoelastic response of untransformed data
+          in the frequency domain.
+        </div>
       </md-tab>
       <md-tab id="tab-exp" md-label="E'(ω), tan(δ)">
         <PlotlyView :chart="dynamfitData['complex-tand-chart']" key="2" />
       </md-tab>
-      <md-tab id="tab-temp-new" md-label="Complex, E*(T)">
+      <md-tab id="tab-temp-new" md-label="Complex, E*(T)" class="u_relative">
         <PlotlyView :chart="dynamfitData['complex-temp-chart']" key="3" />
+        <div class="dynamfit-note" v-if="isFrequencyData">
+          <strong>Note:</strong> The viscoelastic response in the temperature
+          domain of data transformed by TTSP given shift factors calculated via
+          Williams-Landel-Ferry equation for universal amorphous constants
+          C1=17.44, C2=51.6.
+        </div>
       </md-tab>
       <md-tab id="tab-temp" md-label="E'(T), tan(δ)">
         <PlotlyView :chart="dynamfitData['temp-tand-chart']" key="4" />
@@ -59,12 +72,25 @@ export default {
   },
   computed: {
     ...mapGetters({
-      dynamfitData: 'explorer/getDynamfitData'
+      dynamfitData: 'explorer/getDynamfitData',
+      dynamfitDomain: 'explorer/getDynamfitDomain'
     }),
     ...mapState({
       prony: (state) => state.explorer.dynamfitData?.mytable ?? [],
       upload: (state) => state.explorer.dynamfitData?.['upload-data'] ?? []
-    })
+    }),
+    isFrequencyData() {
+      return (
+        this.dynamfitDomain === 'frequency' &&
+        this.dynamfitData['complex-chart']
+      );
+    },
+    isTempData() {
+      return (
+        this.dynamfitDomain === 'temperature' &&
+        this.dynamfitData['complex-temp-chart']
+      );
+    }
   },
   // Vue 2 watch dynamfitData and console log it both old and new values
   watch: {

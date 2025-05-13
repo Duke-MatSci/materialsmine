@@ -49,5 +49,8 @@ export default {
       model: 'Linear',
       fileUpload: ''
     }
+  },
+  setDynamfitDomain (state, payload) {
+    state.dynamfitDomain = payload
   }
 }
