@@ -13,6 +13,14 @@
   transform: translate(-50%, -50%);
 }
 
+@mixin rPosRelative {
+  position: relative;
+}
+
+@mixin rPosAbsolute {
+  position: absolute;
+}
+
 @mixin chartDisplayAdjust($i, $num) {
   @if $i > $num {
     visibility: hidden;
