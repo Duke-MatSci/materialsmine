@@ -1,4 +1,5 @@
 const axios = require('axios');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 const XLSX = require('xlsx');
@@ -10,8 +11,11 @@ const {
 const { signToken, decodeToken } = require('../utils/jwtService');
 const latency = require('../middlewares/latencyTimer');
 const { validateIsAdmin } = require('../middlewares/validations');
-const { parseXmlAndExtractTables } = require('../utils/iterator');
-const xmlData = require('../models/xmlData');
+// const { parseXmlAndExtractTables } = require('../utils/iterator');
+const CuratedSamples = require('../models/curatedSamples');
+const { loadViscoelasticPropPipeline } = require('../pipelines/xml-pipeline');
+const path = require('path');
+// const xmlData = require('../models/xmlData');
 
 /**
  * getDynamfitChartData - Retrieves dynamfit chart data
@@ -41,7 +45,9 @@ exports.manageServiceRequest = async (req, res, next) => {
     }
 
     req.reqId = reqId;
-    if (!controlId) {
+    if (appName === 'loadxml') {
+      req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister.dynamfit}`;
+    } else if (!controlId) {
       req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`;
     } else {
       req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}${controlId}`;
@@ -120,54 +126,101 @@ const _managedServiceCall = async (req, res) => {
   }
 
   if (appName === 'loadxml') {
-    const { title, property, table, index } = body;
+    const { id, domain, index, ...remainingBody } = body;
     logger.info('_handleLoadXml: Function entry');
 
-    if (!title || !property || !table || typeof index !== 'number') {
+    if (!id || !domain || typeof index !== 'number') {
       return res.status(400).json({
         message:
           'Request body must include "title", "property", "table", and "index" (number)'
       });
     }
+    // if (!title || !property || !table || typeof index !== 'number') {
+    //   return res.status(400).json({
+    //     message:
+    //       'Request body must include "title", "property", "table", and "index" (number)'
+    //   });
+    // }
 
-    const result = await xmlData.findOne({ title });
-    if (!result || !result.xml_str) {
-      return res.status(404).json({ message: 'No XML data found for title' });
+    // const result = await xmlData.findOne({ title });
+    // if (!result || !result.xml_str) {
+    //   return res.status(404).json({ message: 'No XML data found for title' });
+    // }
+
+    // const contains = await parseXmlAndExtractTables(result.xml_str, true);
+
+    // // Apply filtering based on index
+    // let filteredData = [];
+    // if (index !== undefined && Array.isArray(contains)) {
+    //   filteredData = contains[index] || [];
+    // }
+
+    // // Filter by property and table
+    // if (property && table && filteredData.tables) {
+    //   filteredData.tables = filteredData.tables.filter(
+    //     (t) => t.name === table && t.properties?.includes(property)
+    //   );
+    // }
+
+    // if (!filteredData.rows?.length === 0) {
+    //   throw new Error('No data found for the given property and table');
+    // }
+
+    // // Convert JSON data to a worksheet
+    // const worksheet = XLSX.utils.json_to_sheet(filteredData.rows);
+    // // Convert the worksheet to CSV format
+    // const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+    // // Generate a dynamic filename using a UUID
+    // const fileName = `${filteredData.table || uuidv4()}.csv`;
+
+    // // Set response headers for file download
+    // res.setHeader('Content-Type', 'text/csv');
+    // res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    const outputDir = '/app/mm_files/';
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const contains = await parseXmlAndExtractTables(result.xml_str, true);
+    const fileName = `${id}_${index}.csv`;
+    const filePath = path.join(outputDir, fileName);
 
-    // Apply filtering based on index
-    let filteredData = [];
-    if (index !== undefined && Array.isArray(contains)) {
-      filteredData = contains[index] || [];
-    }
-
-    // Filter by property and table
-    if (property && table && filteredData.tables) {
-      filteredData.tables = filteredData.tables.filter(
-        (t) => t.name === table && t.properties?.includes(property)
+    // Skip if file exists
+    if (fs.existsSync(filePath)) {
+      logger.notice(`⚠️ File already exists: ${fileName}, skipping.`);
+    } else {
+      const data = await CuratedSamples.aggregate(
+        loadViscoelasticPropPipeline({ id, includeRows: true })
       );
+
+      if (!data) {
+        throw new Error('No data found for the given ID');
+      }
+
+      const containsItem = data[0]?.xmls[0]?.contains[index];
+      if (!containsItem) {
+        throw new Error('No data found for the given index');
+      }
+
+      // Only extract _text values from columns
+      const flattened = containsItem.rows.map((row) =>
+        row.column.map((col) => col._text)
+      );
+
+      // Convert to worksheet (no headers, just pure data rows)
+      const worksheet = XLSX.utils.aoa_to_sheet(flattened);
+
+      // Create a workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+      // Write to CSV
+      XLSX.writeFile(workbook, filePath, { bookType: 'csv' });
+      logger.info(`New Dynamfit file created: ${filePath}`);
     }
-
-    if (!filteredData.rows?.length === 0) {
-      throw new Error('No data found for the given property and table');
-    }
-
-    // Convert JSON data to a worksheet
-    const worksheet = XLSX.utils.json_to_sheet(filteredData.rows);
-    // Convert the worksheet to CSV format
-    const csv = XLSX.utils.sheet_to_csv(worksheet);
-
-    // Generate a dynamic filename using a UUID
-    const fileName = `${filteredData.table || uuidv4()}.csv`;
-
-    // Set response headers for file download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-
-    latency.latencyCalculator(res);
-    return res.status(200).send(csv);
+    reqBody = remainingBody;
+    reqBody.file_name = fileName;
   }
 
   const response = await axios.request({

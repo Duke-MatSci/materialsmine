@@ -64,7 +64,7 @@ if (cluster.isMaster) {
 
   const apolloServer = new ApolloServer({
     schema,
-    formatError(err) {
+    formatError (err) {
       if (!err.extensions) {
         return err;
       }

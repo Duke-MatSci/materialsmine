@@ -26,8 +26,7 @@ const Task = require('../sw/models/task');
 const ChangeLog = require('../models/changeLog');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
-const { loadXmlProperty } = require('../pipelines/xml-pipeline');
-const { parseXmlAndExtractTables } = require('../utils/iterator');
+const { loadViscoelasticPropPipeline } = require('../pipelines/xml-pipeline');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -837,42 +836,52 @@ exports.getCurationXml = async (req, res, next) => {
 exports.loadXmlTable = async (req, res, next) => {
   try {
     const { logger, body } = req;
-    const context = req.headers.referer;
-    console.log('context', context);
+    // const context = req.headers.referer;
     logger.info('load xml table Function Entry:');
 
-    const hasValues = ['temperature', 'frequency', 'time', 'strain', 'stress'];
-    let { has, limit, page } = body;
-    limit = limit || 2;
-    page = page || 1;
+    // TODO: Commented out as this only applies to old xml data
+    // let { has, limit: size, page } = body;
+    // const hasValues = ['temperature', 'frequency', 'time', 'strain', 'stress'];
+    // const limit = size || 2;
+    // page = page || 1;
 
-    if (has && !hasValues.includes(has)) {
-      return res.status(400).json({
-        error: `'has' must be one of: ${hasValues.join(', ')}`
-      });
-    }
+    // if (has && !hasValues.includes(has)) {
+    //   return res.status(400).json({
+    //     error: `'has' must be one of: ${hasValues.join(', ')}`
+    //   });
+    // }
 
-    if (!has) {
-      return res
-        .status(400)
-        .json({ error: 'property type parameter is required.' });
-    }
+    // if (!has) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: 'property type parameter is required.' });
+    // }
 
-    const results = await XmlData.aggregate(loadXmlProperty(has, page, limit));
+    // const results = await XmlData.aggregate(loadXmlProperty(has, page, limit));
 
-    const xmls = results[0]?.xmls ?? [];
-    const contains = await Promise.all(
-      xmls.map(async (xmlObject) => {
-        const contains = await parseXmlAndExtractTables(xmlObject.xml);
-        return { contains, title: xmlObject.title };
+    // const xmls = results[0]?.xmls ?? [];
+    // const contains = await Promise.all(
+    //   xmls.map(async (xmlObject) => {
+    //     const contains = await parseXmlAndExtractTables(xmlObject.xml);
+    //     return { contains, title: xmlObject.title };
+    //   })
+    // );
+
+    // const data = {
+    //   counts: results[0]?.counts ?? 0,
+    //   xmls: contains,
+    //   page
+    // };
+
+    const { has, limit: size, page } = body;
+    const resp = await CuratedSamples.aggregate(
+      loadViscoelasticPropPipeline({
+        has,
+        ...(size && { size }),
+        ...(page && { page })
       })
     );
-
-    const data = {
-      counts: results[0]?.counts ?? 0,
-      xmls: contains,
-      page
-    };
+    const data = resp[0];
 
     return res.status(200).json(data);
   } catch (error) {
@@ -882,30 +891,45 @@ exports.loadXmlTable = async (req, res, next) => {
   }
 };
 
+// TODO: Endpoint to be removed, not in use!
 exports.viscoelasticDataXml = async (req, res, next) => {
   try {
-    const page = parseInt(req.body.page) || 1;
-    const limit = parseInt(req.body.limit) || 2;
-    const matchopt =
-      /(?:Storage Modulus.*Loss Modulus|Storage Modulus.*tan delta|tan delta.*Loss Modulus)/i;
+    // TODO: Commented out as this only applies to old xml data
+    // const page = parseInt(req.body.page) || 1;
+    // const limit = parseInt(req.body.limit) || 2;
+    // const matchopt =
+    //   /(?:Storage Modulus.*Loss Modulus|Storage Modulus.*tan delta|tan delta.*Loss Modulus)/i;
 
-    const results = await XmlData.aggregate(
-      loadXmlProperty(undefined, page, limit, matchopt)
-    );
-    const xmls = results[0]?.xmls ?? [];
+    // const results = await XmlData.aggregate(
+    //   loadXmlProperty(undefined, page, limit, matchopt)
+    // );
+    // const xmls = results[0]?.xmls ?? [];
 
-    const contains = await Promise.all(
-      xmls.map(async (xmlObject) => {
-        const contains = await parseXmlAndExtractTables(xmlObject.xml);
-        return { contains, title: xmlObject.title };
+    // const contains = await Promise.all(
+    //   xmls.map(async (xmlObject) => {
+    //     const contains = await parseXmlAndExtractTables(xmlObject.xml);
+    //     return { contains, title: xmlObject.title };
+    //   })
+    // );
+
+    // const data = {
+    //   counts: results[0]?.counts ?? 0,
+    //   xmls: contains,
+    //   page
+    // };
+
+    const data = await CuratedSamples.aggregate(
+      loadViscoelasticPropPipeline({
+        id: undefined,
+        includeRows: true,
+        ...(req.body.limit && { size: req.body.limit }),
+        ...(req.body.page && { page: req.body.page })
       })
     );
 
-    const data = {
-      counts: results[0]?.counts ?? 0,
-      xmls: contains,
-      page
-    };
+    if (!data.length) {
+      return res.status(404).json({ message: 'No data found' });
+    }
 
     return res.status(200).json(data);
   } catch (error) {

@@ -12,6 +12,7 @@ router
   .route('/xml-has-property')
   .post(isAuth, latencyTimer, curationController.loadXmlTable);
 
+// TODO: Endpoint to be removed, not in use. Also remove from swagger
 router
   .route('/viscoelastic-data')
   .post(isAuth, latencyTimer, curationController.viscoelasticDataXml);
