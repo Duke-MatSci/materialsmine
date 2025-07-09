@@ -10,8 +10,8 @@
       <md-tab id="tab-home" md-label="Complex, E*(iω)" class="u_relative">
         <PlotlyView :chart="dynamfitData['complex-chart']" key="1" />
         <div class="dynamfit-note" v-if="isTempData">
-          <strong>Note:</strong> The viscoelastic response of untransformed data
-          in the frequency domain.
+          <strong>Note:</strong> The frequency response is computed from
+          uploaded temperature data, assuming WLF with universal constants
         </div>
       </md-tab>
       <md-tab id="tab-exp" md-label="E'(ω), tan(δ)">
@@ -20,10 +20,8 @@
       <md-tab id="tab-temp-new" md-label="Complex, E*(T)" class="u_relative">
         <PlotlyView :chart="dynamfitData['complex-temp-chart']" key="3" />
         <div class="dynamfit-note" v-if="isFrequencyData">
-          <strong>Note:</strong> The viscoelastic response in the temperature
-          domain of data transformed by TTSP given shift factors calculated via
-          Williams-Landel-Ferry equation for universal amorphous constants
-          C1=17.44, C2=51.6.
+          <strong>Note:</strong> The temperature response is computed from
+          uploaded frequency data, assuming WLF with universal constants
         </div>
       </md-tab>
       <md-tab id="tab-temp" md-label="E'(T), tan(δ)">
