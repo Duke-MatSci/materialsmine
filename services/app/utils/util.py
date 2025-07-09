@@ -73,6 +73,22 @@ def upload_init(file_name):
         df = pd.read_csv(file_path, delimiter=delimiter, header=None)
         if df.empty:
             raise ValueError('File is empty')
+        # Find the first numeric row index
+        valid_start_index = None
+        for i, row in df.iterrows():
+            if is_numeric_row(row):
+                valid_start_index = i
+                break
+        if valid_start_index is None:
+            raise ValueError("No valid numeric rows found in the file")
+        
+        # Slice to valid rows only
+        df = df.iloc[valid_start_index:].reset_index(drop=True)
+
+        # Convert to float explicitly
+        df = df.applymap(float)
+
+        # Rename columns
         df.columns =['Frequency', 'E Storage', 'E Loss']
         return df.to_dict("records")
     except pd.errors.EmptyDataError as e:
@@ -215,3 +231,11 @@ def decode_jwt(token: str):
         return "Token has expired"
     except jwt.InvalidTokenError:
         return "Invalid token"
+    
+def is_numeric_row(row):
+    """Check if all values in the row can be converted to float."""
+    try:
+        [float(val) for val in row]
+        return True
+    except ValueError:
+        return False

@@ -154,7 +154,8 @@ module.exports = {
     dynamfit: '/dynamfit/extract/',
     chemprops: '/chemprops/call/',
     ontology: '/ontology/extract/',
-    'yaml-loader': '/yaml_converter/'
+    'yaml-loader': '/yaml_converter/',
+    loadxml: 'loadxml'
   },
   MGD_SVC_ERR_CODE: {
     default: {

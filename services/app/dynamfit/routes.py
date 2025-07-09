@@ -29,6 +29,7 @@ def extract_data_from_file(request_id):
         number_of_prony = data.get('number_of_prony', 100)
         model = data.get('model', 'Linear')
         fit_settings = data.get('fit_settings', False)
+        domain = data.get('domain', 'frequency')
         
         if  not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
@@ -52,7 +53,9 @@ def extract_data_from_file(request_id):
             return jsonify({'message': f"File '{file_name}' is empty"}), 400
         
         # Assuming the update_line_chart function returns values in a specific order
-        result = update_line_chart(uploadData, number_of_prony, model, fit_settings)
+        # Print uploadData for debugging
+        print("Upload Data:", uploadData)
+        result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain)
 
         # Unpacking values into a dictionary
         chart_data = {
@@ -60,7 +63,9 @@ def extract_data_from_file(request_id):
             'complex_tand_chart_placeholder': result[1],
             'relaxation_chart_placeholder': result[2],
             'relaxation_spectrum_placeholder': result[3],
-            'mytable_placeholder': result[4],
+            'complex_temperature_chart_placeholder': result[4],
+            'temperature_tand_chart_placeholder2': result[5],
+            'mytable_placeholder': result[6],
         }
         
         # Constructing the data dictionary
@@ -71,6 +76,8 @@ def extract_data_from_file(request_id):
                 "complex-tand-chart": json.loads(chart_data['complex_tand_chart_placeholder'].to_json()),
                 "relaxation-chart": json.loads(chart_data['relaxation_chart_placeholder'].to_json()),
                 "relaxation-spectrum-chart": json.loads(chart_data['relaxation_spectrum_placeholder'].to_json()),
+                "complex-temp-chart": json.loads(chart_data['complex_temperature_chart_placeholder'].to_json()),
+                "temp-tand-chart": json.loads(chart_data['temperature_tand_chart_placeholder2'].to_json()),
                 "mytable": chart_data['mytable_placeholder'],
                 "upload-data": uploadData,
             }

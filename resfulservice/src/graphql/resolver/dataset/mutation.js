@@ -15,11 +15,22 @@ const datasetMutation = {
 
     try {
       const { _id, displayName } = user;
-      const unusedDatasetId = await DatasetId.findOne({ user: _id, samples: [] });
+      const unusedDatasetId = await DatasetId.findOne({
+        user: _id,
+        samples: []
+      });
       if (unusedDatasetId?._id) {
-        req.logger.error('[createDatasetId]: Failed to create. User has unused existing dataset Id');
-        const err = { message: `An unused datasetId - ${unusedDatasetId?._id} exists` };
-        return errorFormater(err.message, 409);
+        req.logger.error(
+          '[createDatasetId]: Failed to create. User has unused existing dataset Id'
+        );
+        // const err = {
+        //   message: `An unused datasetId - ${unusedDatasetId?._id} exists`
+        // };
+        req.logger?.error(
+          `[createDatasetId]: An unused datasetId - ${unusedDatasetId?._id} exists`
+        );
+
+        return datasetTransformer(unusedDatasetId, { _id, displayName });
       }
 
       const datasetId = new DatasetId({ user: _id });
@@ -36,13 +47,18 @@ const datasetMutation = {
     try {
       req.logger.info('datasetIdUpload Function Entry:');
       if (!isAuthenticated) {
-        req.logger?.error('[fileUpload]: User not authenticated to view user listing');
+        req.logger?.error(
+          '[fileUpload]: User not authenticated to view user listing'
+        );
         input.files.forEach(({ path }) => {
           deleteFile(path, req);
         });
         return errorFormater('not authenticated', 401);
       }
-      const datasetId = await Dataset.findOne({ _id: input.datasetId, userid: user.userid });
+      const datasetId = await Dataset.findOne({
+        _id: input.datasetId,
+        userid: user.userid
+      });
       if (!datasetId) {
         req.logger?.error('[fileUpload]: datasetId not found');
         input.files.forEach(({ path }) => {
@@ -55,21 +71,25 @@ const datasetMutation = {
         input.files.forEach(({ path }) => {
           deleteFile(path, req);
         });
-        return errorFormater('Cancelled an overwrite attempt, this is not an empty dataset', 409);
+        return errorFormater(
+          'Cancelled an overwrite attempt, this is not an empty dataset',
+          409
+        );
       }
 
-      const files = input.files.length >= 1
-        ? input.files.map(({ filename, mimetype }) => {
-          return {
-            id: filename,
-            type: mimetype,
-            metadata: {
-              filename,
-              contentType: mimetype
-            }
-          };
-        })
-        : [];
+      const files =
+        input.files.length >= 1
+          ? input.files.map(({ filename, mimetype }) => {
+            return {
+              id: filename,
+              type: mimetype,
+              metadata: {
+                filename,
+                contentType: mimetype
+              }
+            };
+          })
+          : [];
 
       const dataset = await Dataset.findOneAndUpdate(
         { _id: input.datasetId, userid: user.userid },

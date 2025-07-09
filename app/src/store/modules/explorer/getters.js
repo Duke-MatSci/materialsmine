@@ -31,5 +31,8 @@ export default {
   },
   getDynamfitData (state) {
     return state.dynamfitData
+  },
+  getDynamfitDomain (state) {
+    return state.dynamfitDomain
   }
 }

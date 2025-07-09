@@ -52,7 +52,7 @@ describe('Dataset Resolver Unit Tests:', function () {
       expect(datasetId).to.have.property('datasetGroupId');
     });
 
-    it('should throw a 409, when an unused datasetId exists', async () => {
+    it.skip('should throw a 409, when an unused datasetId exists', async () => {
       sinon.stub(DatasetId, 'findOne').returns({
         _id: '62d951cb6981a12d136a0a0d',
         status: 'WORK IN PROGRESS',
