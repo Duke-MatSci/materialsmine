@@ -97,7 +97,7 @@ jobs:
       - name: Install root
         run: npm install
       - name: Download Asset Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: Create prod release
         id: version
         run: npx semantic-release
