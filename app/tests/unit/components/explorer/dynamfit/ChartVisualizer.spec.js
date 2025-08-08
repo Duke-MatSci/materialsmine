@@ -34,7 +34,7 @@ describe('ChartSetting.vue', () => {
     })
 
     it('renders the correct number of tabs', () => {
-      expect(tabsWrapper.findAllComponents('md-tab-stub').length).toBe(6)
+      expect(tabsWrapper.findAllComponents('md-tab-stub').length).toBe(8)
     })
 
     it('renders the tabs accordingly', () => {
@@ -43,16 +43,20 @@ describe('ChartSetting.vue', () => {
       expect(tabs.at(0).findComponent('plotlyview-stub').exists()).toBe(true)
       expect(tabs.at(1).attributes('mdlabel')).toBe("E'(ω), tan(δ)")
       expect(tabs.at(1).findComponent('plotlyview-stub').exists()).toBe(true)
-      expect(tabs.at(2).attributes('mdlabel')).toBe('Relaxation, E(t)')
+      expect(tabs.at(2).attributes('mdlabel')).toBe('Complex, E*(T)')
       expect(tabs.at(2).findComponent('plotlyview-stub').exists()).toBe(true)
-      expect(tabs.at(3).attributes('mdlabel')).toBe('R Spectrum, H(𝜏)')
+      expect(tabs.at(3).attributes('mdlabel')).toBe("E'(T), tan(δ)")
       expect(tabs.at(3).findComponent('plotlyview-stub').exists()).toBe(true)
-      expect(tabs.at(4).attributes('mdlabel')).toBe('Uploaded Data')
-      expect(tabs.at(4).findComponent('tablecomponent-stub').exists()).toBe(
+      expect(tabs.at(4).attributes('mdlabel')).toBe('Relaxation, E(t)')
+      expect(tabs.at(4).findComponent('plotlyview-stub').exists()).toBe(true)
+      expect(tabs.at(5).attributes('mdlabel')).toBe('R Spectrum, H(𝜏)')
+      expect(tabs.at(5).findComponent('plotlyview-stub').exists()).toBe(true)
+      expect(tabs.at(6).attributes('mdlabel')).toBe('Uploaded Data')
+      expect(tabs.at(6).findComponent('tablecomponent-stub').exists()).toBe(
         true
       )
-      expect(tabs.at(5).attributes('mdlabel')).toBe('Prony Coeff')
-      expect(tabs.at(5).findComponent('tablecomponent-stub').exists()).toBe(
+      expect(tabs.at(7).attributes('mdlabel')).toBe('Prony Coeff')
+      expect(tabs.at(7).findComponent('tablecomponent-stub').exists()).toBe(
         true
       )
     })

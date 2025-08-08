@@ -1,628 +1,664 @@
 .teams {
-    &_text {
-        font-size: 2.2rem;
-        font-weight: 300;
-        word-spacing: .2rem;
-        margin: 0 0 5rem 0;
-        line-height: 1.7;
-        text-align: justify;
+  &_text {
+    font-size: 2.2rem;
+    font-weight: 300;
+    word-spacing: 0.2rem;
+    margin: 0 0 5rem 0;
+    line-height: 1.7;
+    text-align: justify;
 
-        & > span {
-            font-weight: bold;
-        }
-
-        @include respond(phone){
-            margin: 0 0 3rem 0;
-            font-size: 1.5rem;
-        }
+    & > span {
+      font-weight: bold;
     }
 
-    &_header {
-        margin-bottom: 0 !important;
-        text-align: left;
+    @include respond(phone) {
+      margin: 0 0 3rem 0;
+      font-size: 1.5rem;
+    }
+  }
 
-        @include respond(phone){
-            margin-top: 0 !important;
-        }
+  &_header {
+    margin-bottom: 0 !important;
+    text-align: left;
 
-        &-partner {
-            text-align: center;
-        }
+    @include respond(phone) {
+      margin-top: 0 !important;
     }
 
-    &_list {
-        text-align: center;
-        margin-bottom: 5rem;
-
-        @include respond(phone){
-            margin-top: 1rem;
-            margin-bottom: 6rem;
-        }
-        & > ul {
-            @include respond(phone){
-                padding-left: 0;
-            }
-
-            & > li {
-                display: inline-block;
-                list-style: none;
-            }
-        }
-        &-ordered {
-          margin: 0px -0.8rem !important;
-          @include respond(laptop){
-            margin: 0px -1.3rem !important;
-          }
-          @include respond(tab-port){
-            margin: 0px -1.5rem !important;
-          }
-          @include respond(phone){
-            margin: 0px -1.3rem !important;
-          }
-          ol li {
-            counter-increment: OrderedList;
-            list-style: none;
-            margin: 2rem 1rem;
-            font-size: 1.6rem;
-            line-height: 1.5;
-            @include respond(tab-port){
-              margin: 2rem 1.4rem;
-            }
-            @include respond(phone){
-              font-size: 1.1rem;
-            }
-          }
-          ol li:before {
-            content: "[" counter(OrderedList) "]  ";
-          }
-        }
+    &-partner {
+      text-align: center;
     }
+  }
 
-    &_container {
-        border: .01rem solid rgba($primary-grey, .1);
-        box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
-        width: 35rem;
-        height: 45.5rem;
-        border-radius: 3px;
-        margin: 0 2.8rem 4.2rem 0;
-        place-items: center;
-        background: #fff;
-        overflow: hidden;
-        display: grid;
+  &_list {
+    text-align: center;
+    margin-bottom: 5rem;
+
+    @include respond(phone) {
+      margin-top: 1rem;
+      margin-bottom: 6rem;
+    }
+    & > ul {
+      @include respond(phone) {
+        padding-left: 0;
+      }
+
+      & > li {
+        display: inline-block;
+        list-style: none;
+      }
+    }
+    &-ordered {
+      margin: 0px -0.8rem !important;
+      @include respond(laptop) {
+        margin: 0px -1.3rem !important;
+      }
+      @include respond(tab-port) {
+        margin: 0px -1.5rem !important;
+      }
+      @include respond(phone) {
+        margin: 0px -1.3rem !important;
+      }
+      ol li {
+        counter-increment: OrderedList;
+        list-style: none;
+        margin: 2rem 1rem;
+        font-size: 1.6rem;
         line-height: 1.5;
-
-        @include respond(phone){
-            width: 95% !important;
-            margin: 0 1.4rem 4.2rem 0;
-            height: 57rem;
+        @include respond(tab-port) {
+          margin: 2rem 1.4rem;
         }
+        @include respond(phone) {
+          font-size: 1.1rem;
+        }
+      }
+      ol li:before {
+        content: '[' counter(OrderedList) ']  ';
+      }
+    }
+  }
+
+  &_container {
+    border: 0.01rem solid rgba($primary-grey, 0.1);
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+    width: 35rem;
+    height: 45.5rem;
+    border-radius: 3px;
+    margin: 0 2.8rem 4.2rem 0;
+    place-items: center;
+    background: #fff;
+    overflow: hidden;
+    display: grid;
+    line-height: 1.5;
+
+    @include respond(phone) {
+      width: 95% !important;
+      margin: 0 1.4rem 4.2rem 0;
+      height: 57rem;
+    }
+  }
+
+  &_partner {
+    position: relative;
+
+    @include respond(phone) {
+      margin: 0 auto;
+    }
+    &-nsf {
+      width: 16.8rem;
+      @include respond(tab-land) {
+        width: 9.8rem;
+      }
+    }
+    &-chimad {
+      width: 33.6rem;
+      @include respond(tab-land) {
+        width: 18.2rem;
+      }
+    }
+    &-naval,
+    &-nist {
+      width: 25.2rem;
+      @include respond(tab-land) {
+        width: 12.6rem;
+      }
     }
 
-    &_partner{
+    &-align {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+
+      @include respond(phone) {
         position: relative;
-
-        @include respond(phone){
-            margin: 0 auto;
-        }
-        &-nsf {
-            width: 16.8rem;
-            @include respond(tab-land){
-                width: 9.8rem;
-            }
-        }
-        &-chimad {
-            width: 33.6rem;
-            @include respond(tab-land){
-                width: 18.2rem;
-            }
-        }
-        &-naval,
-        &-nist {
-            width: 25.2rem;
-            @include respond(tab-land){
-                width: 12.6rem;
-            }
-        }
-
-        &-align {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-
-            @include respond(phone){
-                position: relative;
-                top: 0;
-                left: 0;
-                transform: none;
-            }
-        }
-
-        &-container {
-            margin-top: 19.6rem;
-        }
+        top: 0;
+        left: 0;
+        transform: none;
+      }
     }
 
-    &_profile {
-        &-pic {
-            margin: 5% auto;
-            transition: .5s ease;
-
-            & > img {
-                width: 140px;
-                height: 140px;
-                object-fit: cover;
-                border-radius: 50%;
-                background-position: top;
-            }
-        }
-
-        &-header {
-            margin: 0 0 2px 0;
-            font-size: 2.1rem;
-            @include respond(phone){
-                font-size: 2.7rem;
-            }
-        }
-
-        &-subhead {
-            font-size: 1.1rem;
-            @include respond(phone){
-                font-size: 1.4rem;
-            }
-        }
-
-        &-text {
-           font-size: 1.26rem;
-           color: $primary-grey;
-           font-style: italic;
-           margin: .7rem 0;
-           padding: 0 1.4rem;
-           letter-spacing: 0rem;
-
-           @include respond(phone){
-               font-size: 1.6rem;
-           }
-        }
-
-        &_link {
-            position: relative;
-            width: 100%;
-            height: 100px;
-            background: $primary;
-            border-radius: 0 5px 0 0;
-            transform: rotate(-8deg) translateY(69px);
-            transition: .5s;
-            transform-origin: left;
-            right: 1.3rem;
-            bottom: .1px;
-
-            @include respond(tab-port){
-                transform: rotate(-8deg) translateY(36px);
-                bottom: -20px;
-            }
-
-            @include respond(phone){
-                transform: rotate(-8deg) translateY(63px);
-            }
-
-            &-list {
-                position: absolute;
-                top: 20px;
-                right: 15px;
-                transform: rotate(10deg);
-
-                @include respond(tab-port){
-                    top: 9px;
-                }
-
-                & > a, & span {
-                    color: $primary-white;
-                    font-size: 2rem;
-                    @include respond(tab-port){
-                        margin-right: 0.3rem;
-                    }
-                    @include respond(phone){
-                        font-size: 2.5rem;
-                    }
-                }
-            }
-        }
+    &-container {
+      margin-top: 19.6rem;
     }
+  }
+
+  &_profile {
+    &-pic {
+      margin: 5% auto;
+      transition: 0.5s ease;
+
+      & > img {
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 50%;
+        background-position: top;
+      }
+    }
+
+    &-header {
+      margin: 0 0 2px 0;
+      font-size: 2.1rem;
+      @include respond(phone) {
+        font-size: 2.7rem;
+      }
+    }
+
+    &-subhead {
+      font-size: 1.1rem;
+      @include respond(phone) {
+        font-size: 1.4rem;
+      }
+    }
+
+    &-text {
+      font-size: 1.26rem;
+      color: $primary-grey;
+      font-style: italic;
+      margin: 0.7rem 0;
+      padding: 0 1.4rem;
+      letter-spacing: 0rem;
+
+      @include respond(phone) {
+        font-size: 1.6rem;
+      }
+    }
+
+    &_link {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      background: $primary;
+      border-radius: 0 5px 0 0;
+      transform: rotate(-8deg) translateY(69px);
+      transition: 0.5s;
+      transform-origin: left;
+      right: 1.3rem;
+      bottom: 0.1px;
+
+      @include respond(tab-port) {
+        transform: rotate(-8deg) translateY(36px);
+        bottom: -20px;
+      }
+
+      @include respond(phone) {
+        transform: rotate(-8deg) translateY(63px);
+      }
+
+      &-list {
+        position: absolute;
+        top: 20px;
+        right: 15px;
+        transform: rotate(10deg);
+
+        @include respond(tab-port) {
+          top: 9px;
+        }
+
+        & > a,
+        & span {
+          color: $primary-white;
+          font-size: 2rem;
+          @include respond(tab-port) {
+            margin-right: 0.3rem;
+          }
+          @include respond(phone) {
+            font-size: 2.5rem;
+          }
+        }
+      }
+    }
+  }
 }
 
 .howto_item {
-    &-header{
-        cursor: pointer;
-        display: -webkit-box;
-        display: -ms-flexbox;
-        -webkit-box-align: center;
-        -ms-flex-align: center;
-        align-items: center;
-        & > span {
-            font-size: 8.4rem;
-            margin-right: 2.1rem;
-            background-image: linear-gradient(to right bottom, $primary, rgba($primary-light, 0.4));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+  &-header {
+    cursor: pointer;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    & > span {
+      font-size: 8.4rem;
+      margin-right: 2.1rem;
+      background-image: linear-gradient(
+        to right bottom,
+        $primary,
+        rgba($primary-light, 0.4)
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
 
-            @include respond(phone){
-                font-size: 4.2rem;
-                margin-right: 1.4rem;
-            }
-        }
-        & > h1 {
-            display: inline-block;
-            text-align: left;
-            padding-bottom: 0.2rem;
+      @include respond(phone) {
+        font-size: 4.2rem;
+        margin-right: 1.4rem;
+      }
+    }
+    & > h1 {
+      display: inline-block;
+      text-align: left;
+      padding-bottom: 0.2rem;
 
-            @include respond(phone){
-                margin-top: 0;
-                font-size: 2rem;
-            }
-        }
-        @include respond(phone){
-            margin-bottom: .7rem;
-        }
+      @include respond(phone) {
+        margin-top: 0;
+        font-size: 2rem;
+      }
     }
-    & > p {
-        padding: 0 .7rem;
-        font-weight: 300;
-        text-align: left;
-        margin-bottom: 1.6rem;
-        @include respond(phone){
-            font-size: 1.5rem;
-        }
+    @include respond(phone) {
+      margin-bottom: 0.7rem;
     }
+  }
+  & > p {
+    padding: 0 0.7rem;
+    font-weight: 300;
+    text-align: left;
+    margin-bottom: 1.6rem;
+    @include respond(phone) {
+      font-size: 1.5rem;
+    }
+  }
 
-    @include respond(phone){
-        margin-bottom: 1.4rem;
-        &:not(:last-child){
-            margin-bottom: 2.8rem;
-        }
+  @include respond(phone) {
+    margin-bottom: 1.4rem;
+    &:not(:last-child) {
+      margin-bottom: 2.8rem;
     }
+  }
 }
 
 .news {
-    &-container {
-        width: 75%;
-        margin: 0 auto;
-        margin-bottom: 5rem;
-        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+  &-container {
+    width: 75%;
+    margin: 0 auto;
+    margin-bottom: 5rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
-        &:hover{
-            box-shadow: 0 14px 28px rgba($primary-black,0.25), 0 10px 10px rgba($primary-black,0.22);
-            border-radius: 1rem;
-            padding: 3rem;
-            cursor: pointer;
-        }
+    &:hover {
+      box-shadow: 0 14px 28px rgba($primary-black, 0.25),
+        0 10px 10px rgba($primary-black, 0.22);
+      border-radius: 1rem;
+      padding: 3rem;
+      cursor: pointer;
+    }
+  }
+
+  &_header {
+    margin-top: 2rem;
+    text-align: center;
+  }
+
+  &_image {
+    float: left;
+    box-shadow: 0 1px 3px rgba($primary-black, 0.12),
+      0 1px 2px rgba($primary-black, 0.24);
+    margin-right: 3.2rem;
+    padding: 0.5rem;
+    @include respond(phone) {
+      margin-right: 1.2rem !important;
     }
 
-    &_header {
-        margin-top: 2rem;
-        text-align: center;
+    & > img {
+      height: 21rem;
+      width: auto;
     }
 
-    &_image{
-        float: left;
-        box-shadow: 0 1px 3px rgba($primary-black, .12), 0 1px 2px rgba($primary-black, .24);
-        margin-right: 3.2rem;
-        padding: .5rem;
-        @include respond(phone){
-            margin-right: 1.2rem !important;
-        }
-
-        & > img {
-            height: 21rem;
-            width: auto;
-        }
-
-        & > i {
-            font-size: 14rem !important;
-            @include respond(phone){
-                font-size: 5.6rem !important;
-            }
-        }
+    & > i {
+      font-size: 14rem !important;
+      @include respond(phone) {
+        font-size: 5.6rem !important;
+      }
     }
+  }
 
-    &_text {
-        font-size: 2rem;
-        font-weight: 300;
-        word-spacing: .2rem;
-        line-height: 1.7;
-        text-align: justify;
-        @include respond(phone){
-            font-size: 1.7rem !important;
-        }
+  &_text {
+    font-size: 2rem;
+    font-weight: 300;
+    word-spacing: 0.2rem;
+    line-height: 1.7;
+    text-align: justify;
+    @include respond(phone) {
+      font-size: 1.7rem !important;
     }
+  }
 
-    &_title{
-        font-weight: 500;
-        font-size: 2.8rem;
-        line-height: 1.7;
-        color: $primary;
-        @include respond(phone){
-            font-size: 2rem !important;
-        }
+  &_title {
+    font-weight: 500;
+    font-size: 2.8rem;
+    line-height: 1.7;
+    color: $primary;
+    @include respond(phone) {
+      font-size: 2rem !important;
     }
+  }
 
-    &_info {
-        margin-top: 1rem;
-        @include respond(phone){
-            font-size: 1rem !important;
-        }
-        &-left {
-            color: $primary;
-            padding: .2rem;
-            padding-right: 1rem;
-            border-right: .1rem solid $primary;
-            display: inline-block;
-            & > span {
-                text-transform: uppercase;
-            }
-        }
-        &-right {
-            color: $primary;
-            display: inline-block;
-            padding-left: .8rem;
-        }
+  &_info {
+    margin-top: 1rem;
+    @include respond(phone) {
+      font-size: 1rem !important;
     }
+    &-left {
+      color: $primary;
+      padding: 0.2rem;
+      padding-right: 1rem;
+      border-right: 0.1rem solid $primary;
+      display: inline-block;
+      & > span {
+        text-transform: uppercase;
+      }
+    }
+    &-right {
+      color: $primary;
+      display: inline-block;
+      padding-left: 0.8rem;
+    }
+  }
 }
 
 .tools {
-    background: #e2e1e0 !important;
+  background: #e2e1e0 !important;
 
-    &-simulation {
-        margin-top: 4rem;
+  &-simulation {
+    margin-top: 4rem;
+  }
+
+  &_shortcuts {
+    &-list {
+      margin: 0 auto;
+      & > ul {
+        padding-left: 0;
+        text-align: center;
+        li {
+          display: table-cell;
+          margin-right: 5rem;
+          margin-bottom: 5rem;
+
+          @include respond(tab-port) {
+            display: block;
+            margin-right: 0;
+          }
+        }
+      }
+    }
+  }
+
+  &_box {
+    background-size: cover;
+    border-radius: 0.6rem;
+    box-shadow: 0 1px 3px rgba($primary-black, 0.12),
+      0 1px 2px rgba($primary-black, 0.24);
+    width: 45rem;
+    height: 30rem;
+
+    &--1 {
+      background-image: linear-gradient(
+          0deg,
+          rgba($primary-light, 1) 0%,
+          rgba($primary-light, 0.5) 0%,
+          transparent 0%
+        ),
+        url(/nmstatic/img/recon_tool.PNG);
     }
 
-    &_shortcuts {
-        &-list {
-            margin: 0 auto;
-            & > ul {
-                padding-left: 0;
-                text-align: center;
-                li {
-                    display: table-cell;
-                    margin-right: 5rem;
-                    margin-bottom: 5rem;
-
-                    @include respond(tab-port){
-                        display: block;
-                        margin-right: 0;
-                    }
-                }
-            }
-        }
+    &--2 {
+      background-image: linear-gradient(
+          0deg,
+          rgba($primary-light, 1) 0%,
+          rgba($primary-light, 0.5) 0%,
+          transparent 0%
+        ),
+        url(/nmstatic/img/dynamfit.png);
     }
 
-    &_box {
-        background-size: cover;
-        border-radius: .6rem;
-        box-shadow: 0 1px 3px rgba($primary-black,0.12), 0 1px 2px rgba($primary-black, .24);
-        width: 45rem;
-        height: 30rem;
-
-        &--1 {
-            background-image: linear-gradient(0deg,
-                                    rgba($primary-light, 1) 0%,
-                                    rgba($primary-light, .5) 0%,
-                                    transparent 0%),
-                            url(/nmstatic/img/recon_tool.PNG);
-        }
-
-        &--2 {
-            background-image: linear-gradient(0deg,
-                                rgba($primary-light, 1) 0%,
-                                rgba($primary-light, .5) 0%,
-                                transparent 0%),
-                            url(/nmstatic/img/dynamfit.png);
-        }
-
-        &--3 {
-            background-image: linear-gradient(0deg,
-                                rgba($primary-light, 1) 0%,
-                                rgba($primary-light, .5) 0%,
-                                transparent 0%),
-                            url(/nmstatic/img/prop_simu.png);
-        }
-
-        @include respond(laptop){
-            width: 34rem;
-            height: 25rem;
-        }
-
-        @include respond(tab-land){
-            width: 28rem;
-            height: 20rem;
-        }
-
-        @include respond(tab-port){
-            height: 18rem;
-        }
-
-        &-content {
-            margin-top: 3rem;
-            padding: .5rem 1rem;
-            text-align: justify;
-
-            &-odd {
-                width: 90%;
-            }
-        }
+    &--3 {
+      background-image: linear-gradient(
+          0deg,
+          rgba($primary-light, 1) 0%,
+          rgba($primary-light, 0.5) 0%,
+          transparent 0%
+        ),
+        url(/nmstatic/img/prop_simu.png);
     }
 
-    &_description {
-        font-size: 1.1rem;
-        font-weight: 400;
-        line-height: 2;
-        @include clearfix;
+    @include respond(laptop) {
+      width: 34rem;
+      height: 25rem;
     }
 
-    &_laucher {
-        float: right;
-        line-height: 1;
+    @include respond(tab-land) {
+      width: 28rem;
+      height: 20rem;
     }
 
-    &_name {
-        & > h3 {
-            border-bottom: .1rem solid $primary-black;
-            margin-bottom: .5rem;
-            font-size: 1.5rem;
-        }
+    @include respond(tab-port) {
+      height: 18rem;
     }
+
+    &-content {
+      margin-top: 3rem;
+      padding: 0.5rem 1rem;
+      text-align: justify;
+
+      &-odd {
+        width: 90%;
+      }
+    }
+  }
+
+  &_description {
+    font-size: 1.1rem;
+    font-weight: 400;
+    line-height: 2;
+    @include clearfix;
+  }
+
+  &_laucher {
+    float: right;
+    line-height: 1;
+  }
+
+  &_name {
+    & > h3 {
+      border-bottom: 0.1rem solid $primary-black;
+      margin-bottom: 0.5rem;
+      font-size: 1.5rem;
+    }
+  }
 }
 
 .upload {
-    &_text {
-        margin-top: 1.5rem;
+  &_text {
+    margin-top: 1.5rem;
 
-        & > span {
-            font-weight: bold;
-        }
+    & > span {
+      font-weight: bold;
+    }
+  }
+
+  &_lists {
+    font-family: 'Roboto', sans-serif !important;
+    & div.dataset-header,
+    & * div.dataset-header {
+      background-color: $primary !important;
     }
 
-    &_lists {
-        font-family: "Roboto", sans-serif !important;
-        & div.dataset-header,
-        & * div.dataset-header {
-            background-color: $primary !important;
-        }
-
-        & * button,
-        & button {
-            background-color: $tertiary !important;
-            color: $primary !important;
-        }
+    & * button,
+    & button {
+      background-color: $tertiary !important;
+      color: $primary !important;
     }
+  }
 
-    &_btns {
-        background-color: $tertiary !important;
-        color: $primary !important;
-    }
+  &_btns {
+    background-color: $tertiary !important;
+    color: $primary !important;
+  }
 
-    &_txt {
-        font-family: "Roboto", sans-serif !important;
-        font-weight: 300;
-        font-size: 1.2rem;
-    }
+  &_txt {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 300;
+    font-size: 1.2rem;
+  }
 }
 
 .contactus {
-    width: 80%;
-    margin: 0 auto;
-    border: .1rem solid $primary;
-    padding: 2rem;
-    border-radius: .4rem;
+  width: 80%;
+  margin: 0 auto;
+  border: 0.1rem solid $primary;
+  padding: 2rem;
+  border-radius: 0.4rem;
 
-    &_radios {
-        padding-left: 0 !important;
-        & > li {
-            display: inline-block;
-            padding: .5rem;
-        }
-
-        &-text {
-            font-size: 1.6rem;
-            font-weight: 300;
-            word-spacing: .2rem;
-            text-align: justify;
-            margin-bottom: 1rem;
-        }
+  &_radios {
+    padding-left: 0 !important;
+    & > li {
+      display: inline-block;
+      padding: 0.5rem;
     }
+
+    &-text {
+      font-size: 1.6rem;
+      font-weight: 300;
+      word-spacing: 0.2rem;
+      text-align: justify;
+      margin-bottom: 1rem;
+    }
+  }
 }
 
 .article {
-    &_title {
-        margin: 1rem 0;
-        padding-bottom: 0.2rem;
+  &_title {
+    margin: 1rem 0;
+    padding-bottom: 0.2rem;
+  }
+
+  &_subtitle {
+    margin: 1rem 0;
+    font-weight: bold;
+    font-size: 2.2rem;
+  }
+
+  &_authors {
+    margin: 1rem 0;
+    font-style: italic;
+    font-size: 2.2rem;
+  }
+
+  &_metadata {
+    margin: 1rem 0;
+    font-size: 1.5rem;
+
+    &_strong {
+      font-weight: bold;
+    }
+  }
+
+  &_abstract {
+    width: 90%;
+    font-size: 1.7rem;
+    line-height: 1.3;
+    margin: 1rem 0;
+  }
+
+  &_citations,
+  &_references {
+    margin: 2rem 0;
+  }
+
+  &_table {
+    max-height: 50rem;
+    overflow: auto;
+
+    & > table {
+      table-layout: fixed;
+      width: 100%;
+      border-collapse: collapse;
     }
 
-    &_subtitle {
-        margin: 1rem 0;
-        font-weight: bold;
-        font-size: 2.2rem;
+    & tr {
+      border: solid;
+      border-color: #555;
+      border-width: 1px 0;
+
+      &:first-child {
+        border-top: none;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
     }
 
-    &_authors {
-        margin: 1rem 0;
-        font-style: italic;
-        font-size: 2.2rem;
+    & th {
+      text-align: left;
+      font-size: 1.7rem;
+      position: sticky;
+      top: 0;
+      background: #eee;
+      &:nth-child(1) {
+        width: 2.5em;
+      }
+      &:nth-child(2) {
+        width: 20%;
+      }
+      &:nth-child(3) {
+        width: 75%;
+      }
     }
 
-    &_metadata {
-        margin: 1rem 0;
-        font-size: 1.5rem;
-
-        &_strong {
-            font-weight: bold;
-        }
+    & td {
+      overflow: hidden;
+      max-width: 30%;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 1.5rem;
+      text-align: left;
     }
-
-    &_abstract {
-        width: 90%;
-        font-size: 1.7rem;
-        line-height: 1.3;
-        margin: 1rem 0;
-    }
-
-    &_citations,&_references {
-        margin: 2rem 0;
-    }
-
-    &_table {
-        max-height: 50rem;
-        overflow: auto;
-
-        & > table {
-            table-layout: fixed;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        & tr {
-            border: solid;
-            border-color: #555;
-            border-width: 1px 0;
-
-            &:first-child {
-                border-top: none;
-            }
-
-            &:last-child {
-                border-bottom: none;
-            }
-        }
-
-        & th {
-            text-align: left;
-            font-size: 1.7rem;
-            position: sticky;
-            top: 0;
-            background: #eee;
-            &:nth-child(1){
-                width: 2.5em;
-            }
-            &:nth-child(2){
-                width: 20%;
-            }
-            &:nth-child(3){
-                width: 75%;
-            }
-        }
-
-        & td {
-            overflow: hidden;
-            max-width: 30%;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 1.5rem;
-            text-align: left;
-        }
-    }
+  }
 }
 
 .is-dragging {
-    cursor: col-resize;
+  cursor: col-resize;
+}
+
+.new-item {
+  &-button-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* The floating badge */
+  &-new-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    padding: 2px 4px;
+    background-color: #ff0; /* bright yellow to attract attention */
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #000;
+    border-radius: 5px;
+    z-index: 1;
+  }
 }

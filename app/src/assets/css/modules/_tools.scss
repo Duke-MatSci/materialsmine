@@ -1,19 +1,19 @@
-.tool{
-  &_page{
-    .md-layout-item{
+.tool {
+  &_page {
+    .md-layout-item {
       height: fit-content;
       width: fit-content;
     }
   }
-  &_set{
-    .md-layout-item{
+  &_set {
+    .md-layout-item {
       height: fit-content;
-      margin: .5rem;
+      margin: 0.5rem;
     }
   }
 }
 
-.md-layout-responsive{
+.md-layout-responsive {
   flex-flow: row wrap;
   justify-content: space-evenly;
   min-height: 35rem;
@@ -106,7 +106,12 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.3); /* dims the entire screen to make the modal stand out */
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.3
+  ); /* dims the entire screen to make the modal stand out */
   // display: flex; //Added with a utility class on element
   flex-direction: column;
   justify-content: center;
@@ -247,7 +252,8 @@
     margin-bottom: 15px;
   }
 
-  .imageTableHeader, .imageTableContents {
+  .imageTableHeader,
+  .imageTableContents {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
@@ -257,7 +263,9 @@
     margin-bottom: 5px;
   }
 
-  .imageTableHeader h4, .imageTableContents p, .tooltipWrapper {
+  .imageTableHeader h4,
+  .imageTableContents p,
+  .tooltipWrapper {
     width: 25%;
     text-align: left;
   }
@@ -333,5 +341,25 @@
 
   .imgDimButton {
     margin-left: 30px;
+  }
+}
+
+.dynamfit-note {
+  position: absolute !important;
+  bottom: 1rem;
+  right: 1rem;
+  border: $primary-black 0.1rem solid;
+  padding: 0.2rem 0.4rem;
+  font-size: 1rem;
+  z-index: 1000;
+  color: $primary;
+  max-width: 20rem;
+
+  @include respond(tab-land) {
+    max-width: 14rem;
+  }
+
+  @include respond(tab-port) {
+    max-width: calc(100% - 2rem);
   }
 }

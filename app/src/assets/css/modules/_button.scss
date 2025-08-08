@@ -3,13 +3,13 @@ a.btn,
   &,
   &:link,
   &:visited {
+    @include rPosRelative;
     text-transform: uppercase;
     text-decoration: none;
     padding: 1rem 1.8rem;
     display: inline-block;
     border-radius: 10rem;
     transition: all 0.2s;
-    position: relative;
     font-size: $medium-size;
     font-weight: bold;
     text-decoration: none !important;
@@ -86,12 +86,12 @@ a.btn,
   }
 
   &::after {
+    @include rPosAbsolute;
     content: '';
     display: inline-block;
     height: 100%;
     width: 100%;
     border-radius: 10rem;
-    position: absolute;
     top: 0;
     left: 0;
     z-index: -1;

@@ -27,6 +27,7 @@ export default {
       selectedFacetFilterMaterials: {},
       dataset: null,
       datasetThumbnail: '',
+      dynamfitDomain: 'frequency',
       dynamfitData: {},
       dynamfit: {
         range: 100,

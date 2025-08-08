@@ -1,46 +1,300 @@
 <template>
   <div class="u_width--max utility-bg_border-dark md-card-header u--b-rad">
     <label class="form-label md-subheading">
-      <div>Upload Compatible Viscoelastic Data</div>
-      <div>
-        <p><em>(accepted formats: '.csv', '.tsv')</em></p>
+      <div class="u_margin-bottom-small" v-if="!updateControls">
+        Begin by uploading your viscoelastic dataset or selecting from existing
+        entries.
+      </div>
+      <div class="u_margin-bottom-small" v-else>
+        Click reset below to clear all your selections and begin again.
       </div>
     </label>
-    <!-- File Upload  -->
-    <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
-      <template v-if="!dynamfit.fileUpload">
-        <label for="Viscoelastic_Data" class="u--inline">
-          <div class="form__file-input">
-            <div class="md-theme-default">
-              <label
-                class="btn btn--primary md-button u--b-rad"
-                for="Viscoelastic_Data"
-                ><p class="md-body-1">Upload file</p></label
+    <!-- Control Plain  -->
+    <div class="search_box_form u_centralize_items">
+      <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
+        <template>
+          <div class="new-item-button-container" v-if="!updateControls">
+            <button @click="openSidebar" class="btn btn--primary u--b-rad">
+              Continue to Datafile Options
+            </button>
+            <div class="new-item-new-badge">New</div>
+          </div>
+          <div v-else title="Click to reset all your selections">
+            <button
+              @click="resetAll"
+              class="btn btn--tertiary u_margin-right-small"
+            >
+              Reset
+            </button>
+            <button
+              v-if="!isSidebarOpen"
+              @click="openSidebar"
+              class="btn btn--primary"
+            >
+              Open Sidebar
+            </button>
+            <button v-else @click="closeSidebar" class="btn btn--primary">
+              Close Sidebar
+            </button>
+          </div>
+        </template>
+      </div>
+      <div v-if="isSidebarOpen" class="sidebar">
+        <button
+          class="md-fab md-fixed md-dense md-fab-top-right md-button btn--primary dialog-box_close"
+          @click="closeSidebar"
+        >
+          <md-icon class="utility-navfonticon u--font-emph-xl">close</md-icon>
+        </button>
+        <template v-if="stepper === 1">
+          <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
+            Next: Select Domain
+          </h2>
+          <hr />
+
+          <div
+            class="u_display-flex metamine_footer-ref-header u_centralize_content"
+          >
+            <div
+              class="u_display-flex u--layout-flex-column grid_gap-smaller utility-half-width"
+            >
+              <select
+                class="form__input form__input--adjust utility-padding-sm"
+                v-model="selectedProperty"
               >
-              <div class="md-file">
-                <input
-                  @change="onInputChange"
-                  accept=".csv, .tsv, .txt"
-                  type="file"
-                  name="Viscoelastic_Data"
-                  id="Viscoelastic_Data"
-                />
+                <option value="select">Select Domain</option>
+                <option value="temperature">Temperature</option>
+                <option value="frequency">Frequency</option>
+              </select>
+            </div>
+          </div>
+          <div
+            class="metamine_footer-ref-header u_display-flex u_centralize_content"
+          >
+            <button
+              @click="increaseStepper"
+              class="btn btn--primary u--b-rad"
+              :disabled="selectedProperty === 'select'"
+            >
+              Next
+            </button>
+          </div>
+        </template>
+        <template v-if="stepper === 2">
+          <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
+            Next: Choose how you’d like to provide viscoelastic data
+          </h2>
+          <hr />
+          <!-- Start -->
+          <div class="md-layout u--margin-toplg">
+            <div class="md-layout-item">
+              <div
+                id="dynamfit-card"
+                class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-short"
+                @click="selectType('upload')"
+              >
+                <md-icon class="icons" id="mm">cloud_upload</md-icon>
+                <span class="u--font-emph-l">Upload File</span>
+                <p
+                  class="u--font-emph-smm utility-padding-sm u_centralize_text"
+                >
+                  Upload a compatible viscoelastic file
+                  <em>(accepted formats: '.csv', '.tsv')</em>
+                </p>
+              </div>
+            </div>
+            <div class="md-layout-item">
+              <div
+                id="dynamfit-card"
+                class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-short"
+                @click="selectType('explore')"
+              >
+                <md-icon class="icons" id="mm">manage_search</md-icon>
+                <span class="u--font-emph-l">Explore Xml</span>
+                <p
+                  class="u--font-emph-smm utility-padding-sm u_centralize_text"
+                >
+                  Browse existing entries from the XML repository
+                </p>
               </div>
             </div>
           </div>
-        </label>
-      </template>
-      <template v-else>
-        <button
-          class="md-button btn btn--tertiary btn--noradius"
-          @click.prevent="resetChart"
-        >
-          Reset
-        </button>
-        <span class="md-caption md-success viz-u-display__show">{{
-          dynamfit.fileUpload
-        }}</span>
-      </template>
+          <!-- End -->
+          <div
+            class="metamine_footer-ref-header u_display-flex u_centralize_content md-layout-item_card-btn"
+          >
+            <button
+              @click="decreaseStepper"
+              class="btn btn--primary u--b-rad"
+              :disabled="selectedProperty === 'select'"
+            >
+              Change Domain
+            </button>
+          </div>
+        </template>
+        <template v-if="stepper === 3">
+          <!-- Upload BYOF -->
+          <template v-if="dataType === 'upload'">
+            <h2
+              class="md-title metamine_footer-ref-header u_margin-bottom-small"
+            >
+              Next: Upload
+            </h2>
+            <hr />
+
+            <div class="search_box_form u_centralize_items">
+              <div
+                class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big"
+              >
+                <template v-if="!dynamfit.fileUpload">
+                  <label for="Viscoelastic_Data" class="u--inline">
+                    <div class="form__file-input">
+                      <div class="md-theme-default">
+                        <label
+                          class="btn btn--primary u--b-rad"
+                          for="Viscoelastic_Data"
+                          ><p class="md-body-1">Upload file</p></label
+                        >
+                        <div class="md-file">
+                          <input
+                            @change="onInputChange"
+                            accept=".csv, .tsv, .txt"
+                            type="file"
+                            name="Viscoelastic_Data"
+                            id="Viscoelastic_Data"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </template>
+                <template v-else>
+                  <button
+                    class="md-button btn btn--tertiary btn--noradius"
+                    @click.prevent="resetChart"
+                  >
+                    Reset
+                  </button>
+                  <span class="md-caption md-success viz-u-display__show">{{
+                    dynamfit.fileUpload
+                  }}</span>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- Explore XML -->
+          <template v-else>
+            <h2
+              class="md-title metamine_footer-ref-header u_margin-bottom-small"
+            >
+              Next: Explore XML
+            </h2>
+            <hr />
+
+            <div
+              class="u_display-flex metamine_footer-ref-header u_centralize_content"
+            >
+              <div
+                class="u_display-flex u--layout-flex-column grid_gap-smaller utility-half-width"
+              >
+                <label>Response Limit</label>
+                <input
+                  class="form__input form__input--adjust utility-padding-sm"
+                  type="number"
+                  v-model.number="limit"
+                  min="1"
+                />
+              </div>
+            </div>
+            <div
+              class="metamine_footer-ref-header u_display-flex u_centralize_content"
+            >
+              <button @click="search" class="btn btn--primary u--b-rad">
+                Search
+              </button>
+            </div>
+            <!-- Search Response -->
+            <div
+              v-if="
+                optionalChaining(() => results?.xmls?.length) && !currentItem
+              "
+              class="metamine_footer-ref-header"
+            >
+              <h3 v-if="results.counts > limit">
+                Results ({{ currentPage * limit }} of {{ results.counts }})
+              </h3>
+              <h3 v-else>
+                Results ({{ currentPage }} of {{ results.counts }})
+              </h3>
+              <hr />
+              <div class="list-container">
+                <div
+                  v-for="item in results.xmls"
+                  :key="item.id"
+                  class="u_display-flex grid_gap-small u_margin-bottom-small"
+                >
+                  <input
+                    type="radio"
+                    :id="item.id"
+                    :value="item"
+                    v-model="currentItem"
+                    style="accent-color: #09233c"
+                  />
+                  <label :for="item.title">{{ item.title }}</label>
+                </div>
+              </div>
+              <pagination
+                v-if="totalPages > 1 && !currentItem"
+                :cpage="currentPage"
+                :tpages="totalPages"
+                @go-to-page="goToPage"
+              />
+            </div>
+            <!-- Selected Item from response -->
+            <div v-if="currentItem" class="metamine_footer-ref-header">
+              <h3>
+                {{ currentItem.title }}
+                <span class="u--color-grey-sec u--margin-neg md-body-1"
+                  >({{ currentItem.contains.length }} viscoelastic data)</span
+                >
+              </h3>
+              <hr />
+              <div class="list-container">
+                <div
+                  v-for="(item, index) in currentItem.contains"
+                  :key="index"
+                  class="u_display-flex grid_gap-small u_margin-bottom-small"
+                >
+                  <input
+                    type="radio"
+                    :id="index"
+                    :value="{ ...item, index: index }"
+                    v-model="selectedItemProperty"
+                    style="accent-color: #09233c"
+                  />
+                  <label :for="item"
+                    ><span style="display: block"
+                      ><strong>Description:</strong> {{ item.property }}</span
+                    ><span class="u--color-grey-sec u--margin-neg md-body-1"
+                      ><strong>Table:</strong> {{ item.table }}</span
+                    ></label
+                  >
+                </div>
+              </div>
+              <button
+                @click="goBack"
+                class="select-btn btn btn--primary u--margin-rightlg"
+              >
+                Go Back
+              </button>
+              <button @click="handleSelect" class="select-btn btn btn--primary">
+                Select
+              </button>
+            </div>
+          </template>
+        </template>
+      </div>
     </div>
     <!-- Dropdown -->
     <div>
@@ -151,14 +405,30 @@
   </div>
 </template>
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
+import optionalChainingUtil from '@/mixins/optional-chaining-util'
+import pagination from '@/components/explorer/Pagination'
 export default {
   name: 'ChartSetting',
+  mixins: [optionalChainingUtil],
+  components: {
+    pagination
+  },
   data () {
     return {
       showToolTip: false,
       isTemp: true,
-      useSample: false
+      useSample: false,
+      isSidebarOpen: false,
+      selectedProperty: 'select',
+      limit: 2,
+      results: [],
+      currentItem: null,
+      selectedItemProperty: null,
+      currentPage: 1,
+      totalPages: 0,
+      stepper: 1,
+      dataType: undefined
     }
   },
   watch: {
@@ -168,9 +438,35 @@ export default {
         this.updateChart()
       },
       deep: true
+    },
+    limit () {
+      return this.search()
     }
   },
   methods: {
+    updateView () {},
+    resetAll () {
+      this.closeSidebar()
+      this.resetChart()
+      this.selectedProperty = 'select'
+      this.currentItem = null
+      this.selectedItemProperty = null
+      this.currentPage = 1
+      this.totalPages = 0
+      this.results = []
+      this.stepper = 1
+      this.dataType = undefined
+    },
+    selectType (type) {
+      this.stepper = 3
+      this.dataType = type
+    },
+    increaseStepper () {
+      this.stepper++
+    },
+    decreaseStepper () {
+      this.stepper--
+    },
     sampleTitle () {
       // eslint-disable-next-line
       return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
@@ -207,12 +503,13 @@ export default {
       }
     },
     async useSampleFile () {
+      this.closeSidebar()
       this.useSample = true
       this.displayInfo('Using sample file', 1500)
       this.dynamfit.fileUpload = 'test.tsv'
     },
     async resetChart () {
-      const name = this.dynamfit.fileUpload
+      const name = this.dynamfit.fileUpload || this.selectedItemProperty.index
       if (!name) return
 
       // DO NOT call BE to delete for sample file
@@ -249,29 +546,135 @@ export default {
       this.$store.commit('explorer/resetDynamfitData')
     },
     async updateChart () {
+      // If user is exploring XML
+      if (this.selectedItemProperty?.index >= 0) {
+        console.log('Selected item property:', this.selectedItemProperty)
+        return await this.handleSelect()
+      }
+
       const payload = {
         fileName: this.dynamfit.fileUpload,
         numberOfProny: this.dynamfit.range,
         model: this.dynamfit.model,
         fitSettings: this.dynamfit.fitSettings,
-        useSample: this.useSample
+        useSample: this.useSample,
+        domain: this.selectedProperty
       }
+
+      this.isSidebarOpen = false
+      this.$store.commit('explorer/setDynamfitDomain', this.selectedProperty)
       await this.$store.dispatch('explorer/fetchDynamfitData', payload)
+    },
+    openSidebar () {
+      this.isSidebarOpen = true
+    },
+    closeSidebar () {
+      this.isSidebarOpen = false
+    },
+    goBack () {
+      this.currentItem = null
+      this.selectedItemProperty = null
+    },
+    async handleSelect () {
+      if (!this.selectedItemProperty) {
+        this.$store.commit('setSnackbar', {
+          message: 'Please select an item before proceeding.',
+          type: 'error',
+          duration: 4000
+        })
+        return
+      }
+
+      this.isSidebarOpen = false
+      try {
+        const payload = {
+          id: this.currentItem.id,
+          domain: this.selectedProperty,
+          index: this.selectedItemProperty.index,
+          numberOfProny: this.dynamfit.range,
+          model: this.dynamfit.model,
+          fitSettings: this.dynamfit.fitSettings
+        }
+
+        const response = await fetch('/api/mn/loadxml', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + this.token
+          },
+          body: JSON.stringify(payload)
+        })
+        // get response data and check if response is ok then commit to store
+        const resp = await response.json()
+        if (!response.ok) {
+          throw new Error(resp.message)
+        }
+
+        const data = resp?.response ?? {}
+        this.$store.commit('explorer/setDynamfitDomain', this.selectedProperty)
+        this.$store.commit('explorer/setDynamfitData', data)
+      } catch (err) {
+        this.$store.commit('setSnackbar', {
+          message: err.message || 'Something went wrong. Please try again.',
+          type: 'error',
+          duration: 1000
+        })
+      }
+    },
+    async search () {
+      const payload = {
+        has: this.selectedProperty,
+        limit: this.limit || 2,
+        page: this.currentPage
+      }
+      try {
+        const response = await fetch('/api/xml/xml-has-property', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + this.token
+          },
+          body: JSON.stringify(payload)
+        })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.message)
+        }
+        this.results = data
+        this.totalPages = Math.ceil(data.counts / this.limit)
+      } catch (err) {
+        this.$store.commit('setSnackbar', {
+          message: err.message || 'Something went wrong. Please try again.',
+          type: 'error',
+          duration: 10000
+        })
+      }
+    },
+    async goToPage (page) {
+      if (page < 1 || page > this.totalPages) return
+      this.currentPage = page
+      await this.search()
     }
   },
   computed: {
     ...mapState('explorer', {
       dynamfit: (state) => state.dynamfit
     }),
+    ...mapGetters({ token: 'auth/token' }),
     disableInput () {
       return (
-        !this.dynamfit.fileUpload ||
-        !this.dynamfitData ||
-        !Object.keys(this.dynamfitData).length
+        // (!this.dynamfit.fileUpload && !this.selectedItemProperty.index) ||
+        // !this.dynamfit.fileUpload ||
+        // !this.selectedItemProperty.index ||
+        !this.dynamfitData || !Object.keys(this.dynamfitData).length
       )
     },
     dynamfitData () {
       return this.$store.getters['explorer/getDynamfitData']
+    },
+    updateControls () {
+      return !!this.dynamfit.fileUpload || !!this.results?.xmls?.length
     }
   }
 }

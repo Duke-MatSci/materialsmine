@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 from sklearn import linear_model
 
 
@@ -184,3 +185,87 @@ def prony_linear_fit(df, N, model):
     relax = compute_relax(tau,E)
     
     return (tau, E, prony, relax)
+
+def wlf_shift(T, T_ref, C1, C2):
+    """Calculate shift factor a_T using the WLF equation."""
+    return 10 ** (-C1 * (T - T_ref) / (C2 + (T - T_ref)))
+
+def inverse_wlf_shift(a_T, T_ref, C1, C2):
+    """calculate the shifted temperature given a shift factor"""
+    return (np.log10(a_T)*(T_ref-C2)+C1*T_ref)/(np.log10(a_T)+C1)
+
+def tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2, calcShifts=True):
+    """
+    Convert temperature sweep viscoelastic data to frequency sweep data using TTS.
+
+    Parameters:
+        temp_sweep_data (pd.DataFrame): Data with columns ['Temperature', 'Frequency', "E'", "E''"].
+        T_ref (float): Reference temperature for shifting.
+        C1 (float): WLF equation parameter 1.
+        C2 (float): WLF equation parameter 2.
+
+    Returns:
+        pd.DataFrame: Frequency sweep data at T_ref.
+    """
+    shifted_data = []
+    i = 0
+
+    for T, group in temp_sweep_data.groupby('Temperature'):
+        if not calcShifts:
+            a_T = group['a_T']
+        else:
+            a_T = wlf_shift(T, T_ref, C1, C2)
+
+        shifted_freq = group['Frequency'] * a_T
+        shifted_data.append(pd.DataFrame({
+            'Frequency': shifted_freq,
+            'Temperature': T_ref,
+            "E'": group["E'"],
+            "E''": group["E''"]
+        }))
+        i = i+1
+
+    combined_data = pd.concat(shifted_data).sort_values('Frequency')
+
+    return combined_data
+
+def tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2, calcShifts=True):
+    """
+    Convert temperature sweep viscoelastic data to frequency sweep data using TTS.
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Data with columns ['Temperature', 'Frequency', "E'", "E''"].
+        omega_ref (float): Reference frequency for shifting.
+        C1 (float): WLF equation parameter 1.
+        C2 (float): WLF equation parameter 2.
+
+    Returns:
+        pd.DataFrame: Temperature sweep data at omega_ref.
+    """
+    shifted_data = []
+    i = 0
+
+    for omega, group in freq_sweep_data.groupby('Frequency'):
+        a_T = omega/omega_ref
+        T_ref = group["Temperature"]
+
+        if not calcShifts:
+            print("not implemented error")
+            # not implemented but would need shift temps
+            # a_T = group['a_T']
+        else:
+            # a_T = wlf_shift(T, T_ref, C1, C2)
+            shifted_T = inverse_wlf_shift(a_T, T_ref, C1, C2)
+
+        # shifted_freq = group['Frequency'] * a_T
+        shifted_data.append(pd.DataFrame({
+            'Frequency': omega_ref,
+            'Temperature': shifted_T,
+            "E'": group["E'"],
+            "E''": group["E''"]
+        }))
+        i = i+1
+
+    combined_data = pd.concat(shifted_data).sort_values('Temperature')
+
+    return combined_data

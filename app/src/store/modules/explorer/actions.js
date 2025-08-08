@@ -92,11 +92,15 @@ export default {
     if (Array.isArray(responseData)) {
       accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL']
       // Note: Initial sets of SDD curations are missing 'www'
-      if (!accessURL) { accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'] }
+      if (!accessURL) {
+        accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL']
+      }
     } else {
       accessURL = responseData['http://www.w3.org/ns/dcat#accessURL']
       // Note: Initial sets of SDD curations are missing 'www'
-      if (!accessURL) { accessURL = responseData['http://w3.org/ns/dcat#accessURL'] }
+      if (!accessURL) {
+        accessURL = responseData['http://w3.org/ns/dcat#accessURL']
+      }
     }
     context.commit('setCurrentDatasetThumbnail', accessURL)
     return accessURL
@@ -152,7 +156,8 @@ export default {
       number_of_prony: payload?.numberOfProny,
       model: payload?.model,
       fit_settings: payload?.fitSettings,
-      useSample: payload?.useSample
+      useSample: payload?.useSample,
+      domain: payload?.domain
     })
     const url = '/api/mn/dynamfit'
     const token = rootGetters['auth/token']

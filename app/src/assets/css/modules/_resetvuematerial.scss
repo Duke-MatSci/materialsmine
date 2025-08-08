@@ -125,6 +125,21 @@
       height: 38rem !important;
     }
 
+    &-short#dynamfit-card {
+      height: 20rem !important;
+      width: 19rem !important;
+
+      .icons#mm {
+        font-size: 5rem !important;
+        color: $primary !important;
+        margin-top: 2rem !important;
+      }
+    }
+
+    &-btn {
+      margin-top: 22rem !important;
+    }
+
     &::after {
       display: none !important;
       visibility: hidden !important;
