@@ -23,6 +23,8 @@ on:
         required: true
       MM_GHT:
         required: false
+      FE_PORT:
+        required: false
 
 jobs:
   Build:
@@ -57,6 +59,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
           build-args: |
             ${{ inputs.myid == 'app' && 'MM_GHT=' || '' }}${{ inputs.myid == 'app' && secrets.MM_GHT || '' }}
+            ${{ inputs.myid == 'app' && 'PORT=' || '' }}${{ inputs.myid == 'app' && secrets.FE_PORT || '8080' }}
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
