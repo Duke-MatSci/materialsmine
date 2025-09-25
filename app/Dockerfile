@@ -1,8 +1,15 @@
 FROM node:22 AS build
 WORKDIR /app
 
+# Accept build argument for GitHub token
+ARG MM_GHT
+
+# Set environment variable for the build process
+ENV MM_GHT=${MM_GHT}
+
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml ./
+COPY .npmrc ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 

@@ -12,11 +12,17 @@ on:
       tags:
         required: true
         type: string
+      dockerfile:
+        required: false
+        type: string
+        default: 'Dockerfile'
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
         required: true
+      MM_GHT:
+        required: false
 
 jobs:
   Build:
@@ -44,10 +50,13 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ${{ inputs.context }}
+          file: ${{ inputs.context }}/${{ inputs.dockerfile }}
           push: true
           tags: ${{ inputs.tags }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
+          build-args: |
+            ${{ inputs.myid == 'app' && 'MM_GHT=' || '' }}${{ inputs.myid == 'app' && secrets.MM_GHT || '' }}
       - name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
