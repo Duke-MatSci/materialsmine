@@ -1,0 +1,254 @@
+.form {
+    &__group:not(:last-child) {
+        margin-bottom: 2rem;
+    }
+
+    &__select {
+        font-family: inherit;
+        color: $primary;
+        padding: .2rem;
+        background-color: rgba($primary-white, .5);
+        border: .1rem solid $primary-light;
+        width: 98%;
+        display: block;
+        transition: all .3s;
+    }
+
+    &__input {
+        font-size: 1.5rem;
+        font-family: inherit;
+        color: $primary;
+        padding: 1.5rem 1rem;
+        border-radius: 2px;
+        background-color: rgba($primary-white, .5);
+        border: none;
+        border-bottom: 3px solid rgba($primary, .1);
+        width: 100%;
+        display: block;
+        transition: all .3s;
+        @include respond(phone) {
+            padding: 0.95rem !important;
+        }
+
+        &:focus {
+            outline: none;
+            box-shadow: 0 1rem 2rem rgba($primary-black, .1);
+            border-bottom: 3px solid $primary;
+        }
+
+        &:focus:invalid {
+            border-bottom: 3px solid $tertiary;
+        }
+
+        &::-webkit-input-placeholder {
+            color: $primary-light;
+        }
+
+        &--adjust {
+            border: .15rem solid $primary;
+            padding: 1.2rem;
+
+            &:focus {
+                border: .15rem solid $primary;
+            }
+
+            &:focus:invalid {
+                border: .15rem solid $tertiary;
+            }
+        }
+
+        &--flat {
+            border-radius: 0px !important;
+            border-bottom: 1.4px solid rgba($primary, .6);
+            padding: .5rem;
+            &::-webkit-input-placeholder {
+                color: $primary;
+            }
+            &:focus {
+                outline: none;
+                box-shadow: none;
+                border-bottom: 1.4px solid $primary;
+            }
+            &:focus:invalid {
+                border-bottom: 1.4px solid rgba($primary, .3);
+            }
+        }
+    }
+
+
+    &__label {
+        font-weight: 200;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-left: .2rem;
+        margin-top: .7rem;
+        display: block;
+        transition: all .3s;
+    }
+
+    &__input:placeholder-shown + &__label {
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-4rem);
+    }
+
+
+    &__radio-group {
+        display: inline-block;
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+
+    &__radio-input {
+        display: none;
+    }
+    
+    &__radio-label {
+        font-size: 1.4rem;
+        color: $primary;
+        cursor: pointer;
+        position: relative;
+        padding-top: 0;
+        padding-left: 4.5rem;
+    }
+
+    &__radio-button {
+        height: 2rem;
+        width: 2rem;
+        border: 3px solid $primary;
+        border-radius: 50%;
+        display: inline-block;
+        position: absolute;
+        left: 0;
+        top: -.4rem;
+
+        &::after {
+            content: "";
+            display: block;
+            height: 0.8rem;
+            width: 0.8rem;
+            border-radius: 50%;
+            position: absolute;
+            top: 47.38%;
+            left: 53%;
+            transform: translate(-54%, -44%);
+            background-color: $primary;
+            opacity: 0;
+            transition: opacity .2s;
+        }
+    }
+
+    &__radio-button_less {
+        border: 3px solid $primary;
+    }
+
+    &__radio-input:checked ~ &__radio-label &__radio-button::after {
+        opacity: 1;
+    }
+
+    &__stepper {
+        .md-done {
+            .md-stepper-number {
+                background-color: $secondary-grey !important;
+            }
+        }
+        .md-active {
+            .md-button-content {
+                color: $primary !important;
+                font-weight: 500;
+            }
+            .md-stepper-number {
+                background-color: $primary !important;
+            }
+        }
+        
+        .md-button-content {
+            color: $secondary-grey !important;
+            font-size: 1.8rem;
+        }
+        .md-button_next {
+            background: $primary;
+            .md-button-content, .md-icon {
+                color: $primary-white !important;
+            }
+            .md-disabled {
+                background: $secondary-grey;
+                .md-button-content, .md-icon {
+                    color: $primary-grey !important;
+                }
+            }
+        }
+        .md-button_prev {
+            background: $tertiary;
+            .md-button-content, .md-icon {
+                color: $primary !important;
+            }
+        }
+        &-curate{
+            .md-button-content {
+                font-size: $medium-size;
+            }
+            .md-stepper-header .md-ripple {
+                padding: 0px 4px;
+            }
+            & > .md-steppers-navigation {
+                box-shadow: none !important;
+                @include respond(tab-port) {
+                    display: none;
+                }
+                .md-stepper-header {
+                    &.md-active {
+                        .md-stepper-number  {
+                            @extend .u--bg;
+                        }
+                    }
+                    &.md-done {
+                        .md-stepper-number  {
+                            @extend .u--alt-bg;
+                            border: unset !important;
+                        }
+                    }
+                    .md-stepper-number  {
+                        @extend .utility-gridborder;
+                        @extend .utility-transparentbg;
+                        @extend .u--color-primary;
+                    }
+                }
+            }
+            
+        }
+    }
+
+    &__file-input {
+        width: 100%;
+        margin: 0 auto;
+        transition: .2s ease;
+        cursor: pointer;
+        input[type=file] {
+            visibility: hidden;
+        }
+    }
+
+    &__drop-area {
+        max-width: 80%;
+        margin: 2.5rem;
+        padding: 3rem 1rem 0rem 1rem;
+        outline: 4px dashed $secondary-grey;
+        &[data-active=true] {
+            outline: 4px dashed $secondary;
+            color: $secondary;
+        }
+        &_label {
+            width: 100%;
+            margin: 0 auto;
+            padding: 5rem;
+            transition: .2s ease;
+            place-items: center;
+            text-align: center;
+            cursor: pointer;
+            input[type=file] {
+                visibility: hidden;
+            }
+        }
+    }
+}

@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://toluconsulting.com/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /secure/
+Disallow: /api/
+Disallow: /static/
+Disallow: /store/
+
+# Allow important pages
+Allow: /mm
+Allow: /contact-us
+

@@ -1,0 +1,46 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ12 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>attributes in the knowledge graph</b> that are a subclass of {?PropertyClass} property.";
+  sp:text """
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX mm: <http://materialsmine.org/ns/>
+SELECT * WHERE {
+  ?AttributeType rdfs:subClassOf+ ?PropertyClass
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "PropertyClass";
+    schema:option [
+        rdfs:label "electrical";
+        schema:identifier <http://materialsmine.org/ns/ElectricalProperty>;
+        schema:position 1
+      ],
+      [
+        rdfs:label "thermal";
+        schema:identifier <http://materialsmine.org/ns/ThermalProperty>;
+        schema:position 2
+      ],
+      [
+        rdfs:label "viscoelastic";
+        schema:identifier <http://materialsmine.org/ns/ViscoelasticProperty>;
+        schema:position 3
+      ],
+      [
+        rdfs:label "mechanical";
+        schema:identifier <http://materialsmine.org/ns/MechanicalProperty>;
+        schema:position 4
+      ],
+      [
+        rdfs:label "rheological";
+        schema:identifier <http://materialsmine.org/ns/RheologicalProperty>;
+        schema:position 5
+      ]
+  ].

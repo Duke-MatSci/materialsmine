@@ -125,12 +125,17 @@ services:
       - API_PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
       - SERVICE_PORT=${HOST_PORT}
+      - MM_GHT=${MM_GHT}
     build:
       dockerfile: Dockerfile.dev
       context: ./app
+      args:
+        - MM_GHT=${MM_GHT}
     volumes:
       - /app/node_modules
       - ./app:/app
+    ports:
+      - '8080:8080'
   managedservices:
     container_name: managedservices
     # depends_on:

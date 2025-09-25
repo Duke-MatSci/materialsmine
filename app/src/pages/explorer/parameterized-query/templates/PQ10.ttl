@@ -1,0 +1,90 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ10 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>charts from the gallery</b> whose query includes {?Text}, along with the title of the chart.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX schema: <http://schema.org/>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT ?Chart ?Title WHERE {
+  ?Chart a sio:Chart ;
+         schema:query ?Query ;
+         dct:title ?Title .
+  FILTER(REGEX(LCASE(STR(?Query)), ?Text))
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Text";
+    schema:option [
+        rdfs:label "glass transition temperature";
+        schema:value "glasstransitiontemperature";
+        schema:position 1
+      ],
+      [
+        rdfs:label "elastic modulus";
+        schema:value "tensilemodulus";
+        schema:position 2
+      ],
+      [
+        rdfs:label "journal articles";
+        schema:value "bibliographicresource";
+        schema:position 3
+      ],
+      [
+        rdfs:label "elongation at break";
+        schema:value "elongationatbreak";
+        schema:position 4
+      ],
+      [
+        rdfs:label "permittivity";
+        schema:value "permittivity";
+        schema:position 5
+      ],
+      [
+        rdfs:label "tan delta";
+        schema:value "tandelta";
+        schema:position 6
+      ],
+      [
+        rdfs:label "storage modulus";
+        schema:value "storagemodulus";
+        schema:position 7
+      ],
+      [
+        rdfs:label "loss modulus";
+        schema:value "lossmodulus";
+        schema:position 8
+      ],
+      [
+        rdfs:label "electrical conductivity";
+        schema:value "electricalconductivity";
+        schema:position 9
+      ],
+      [
+        rdfs:label "regular expression filter";
+        schema:value "regex";
+        schema:position 10
+      ],
+      [
+        rdfs:label "binding of variables";
+        schema:value "bind";
+        schema:position 11
+      ],
+      [
+        rdfs:label "group_concat aggregate operator";
+        schema:value "group_concat";
+        schema:position 12
+      ],
+      [
+        rdfs:label "provenance ontology terms";
+        schema:value "http://www.w3.org/ns/prov#";
+        schema:position 13
+      ]
+  ].
