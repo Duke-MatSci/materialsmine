@@ -1,7 +1,8 @@
-import { defineConfig } from '@vue/cli-service';
-import path from 'path';
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { defineConfig } = require('@vue/cli-service');
+const path = require('path');
 
-export default defineConfig({
+module.exports = defineConfig({
   transpileDependencies: true,
   devServer: {
     host: '0.0.0.0',
