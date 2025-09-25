@@ -1,64 +1,79 @@
 <template>
   <div>
-    <md-dialog :class="['dialog-box', dialogSizeClass]"
-      :md-active.sync="active"
-      :md-click-outside-to-close="false">
+    <MdDialog
+      :class="['dialog-box', dialogSizeClass]"
+      :md-active="active"
+      :md-click-outside-to-close="false"
+      @update:md-active="$emit('update:active', $event)"
+    >
       <div class="dialog-box_header">
-        <md-dialog-title>
-          <slot name="title">
-          </slot>
-        </md-dialog-title>
-        <md-button v-if="!disableClose" class="md-icon-button dialog-box_close facet-content_container u_margin-right-small" @click="toggleDialogBox()">
-          <md-icon class="utility-navfonticon u--font-emph-xl">close</md-icon>
-        </md-button>
+        <MdDialogTitle>
+          <slot name="title"></slot>
+        </MdDialogTitle>
+        <MdButton
+          v-if="!disableClose"
+          class="md-icon-button dialog-box_close facet-content_container u_margin-right-small"
+          @click="toggleDialogBox()"
+        >
+          <MdIcon class="utility-navfonticon u--font-emph-xl">close</MdIcon>
+        </MdButton>
       </div>
       <div class="dialog-box_content">
-        <md-dialog-content>
-          <slot name="content">
-          </slot>
-        </md-dialog-content>
+        <MdDialogContent>
+          <slot name="content"></slot>
+        </MdDialogContent>
       </div>
       <div class="dialog-box_actions md-button-lightbg">
-        <md-dialog-actions>
-          <slot name="actions">
-          </slot>
-        </md-dialog-actions>
+        <MdDialogActions>
+          <slot name="actions"></slot>
+        </MdDialogActions>
       </div>
-      </md-dialog>
+    </MdDialog>
   </div>
 </template>
 
-<script>
-import { mapMutations } from 'vuex'
-export default {
-  name: 'Dialog',
-  props: {
-    active: {
-      type: Boolean,
-      default: false
-    },
-    minWidth: {
-      type: Number,
-      default: 60
-    },
-    disableClose: {
-      type: Boolean,
-      default: false
-    }
-  },
-  computed: {
-    dialogSizeClass () {
-      return ({
-        40: 'dialog-box_size-sm',
-        60: 'dialog-box_size-md',
-        80: 'dialog-box_size-lg'
-      })[this.minWidth] || 'dialog-box_size-md'
-    }
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    })
-  }
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+// Component name for debugging
+defineOptions({
+  name: 'AppDialog',
+});
+
+// Props
+interface Props {
+  active: boolean;
+  minWidth?: number;
+  disableClose?: boolean;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  active: false,
+  minWidth: 60,
+  disableClose: false,
+});
+
+// Emits
+const emit = defineEmits<{
+  'update:active': [value: boolean];
+}>();
+
+// Store
+const store = useStore();
+
+// Computed properties
+const dialogSizeClass = computed(() => {
+  const sizeMap: Record<number, string> = {
+    40: 'dialog-box_size-sm',
+    60: 'dialog-box_size-md',
+    80: 'dialog-box_size-lg',
+  };
+  return sizeMap[props.minWidth] || 'dialog-box_size-md';
+});
+
+// Methods
+const toggleDialogBox = () => {
+  store.commit('setDialogBox');
+};
 </script>

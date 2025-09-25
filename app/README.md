@@ -1,29 +1,35 @@
-# app
+# MaterialsMine v2.0
 
 ## Project setup
+
 ```
-npm install
+pnpm install
 ```
 
 ### Compiles and hot-reloads for development
+
 ```
-npm run serve
+pnpm run serve
 ```
 
 ### Compiles and minifies for production
+
 ```
-npm run build
+pnpm run build
 ```
 
 ### Run your unit tests
+
 ```
-npm run test:unit
+pnpm run test:unit
 ```
 
 ### Lints and fixes files
+
 ```
-npm run lint
+pnpm run lint
 ```
 
 ### Customize configuration
+
 See [Configuration Reference](https://cli.vuejs.org/config/).

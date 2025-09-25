@@ -6,9 +6,7 @@
       </div>
       <!-- Left element -->
       <div class="chart_editor__left-view" style="flex: 1 1 50%">
-        <div
-          class="u--layout-width u--layout-flex u--layout-flex-justify-fs u_margin-bottom-small"
-        >
+        <div class="u--layout-width u--layout-flex u--layout-flex-justify-fs u_margin-bottom-small">
           <a
             @click.prevent="leftTab = 1"
             :class="[leftTab === 1 ? 'active u--color-primary' : '']"
@@ -34,7 +32,7 @@
             v-if="chart.query"
             v-model="chart.query"
             :value="chart.query"
-            v-on:query-success="onQuerySuccess"
+            @query-success="onQuerySuccess"
             v-show="leftTab === 1"
             :showBtns="true"
           >
@@ -91,11 +89,7 @@
         </div>
 
         <div class="chart_editor__right-content">
-          <div
-            v-show="rightTab === 1"
-            class="loading-dialog"
-            style="margin: auto"
-          >
+          <div v-show="rightTab === 1" class="loading-dialog" style="margin: auto">
             <vega-lite
               :spec="spec"
               @new-vega-view="onNewVegaView"
@@ -103,11 +97,7 @@
             />
           </div>
 
-          <div
-            v-show="rightTab === 2"
-            class="viz-intro-query"
-            style="min-height: 40rem !important"
-          >
+          <div v-show="rightTab === 2" class="viz-intro-query" style="min-height: 40rem !important">
             <yasr :results="results"></yasr>
           </div>
         </div>
@@ -122,168 +112,180 @@
   </div>
 </template>
 
-<script>
-import { querySparql } from '@/modules/sparql'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter, useRoute } from 'vue-router';
+import { querySparql } from '@/modules/sparql';
 import {
-  saveChart,
+  saveChart as saveChartFn,
   getDefaultChart,
   buildSparqlSpec,
-  loadChart,
-  toChartId
-} from '@/modules/vega-chart'
-import VJsoneditor from 'v-jsoneditor'
-import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
-import yasqe from '@/components/explorer/yasqe'
-import yasr from '@/components/explorer/yasr'
-import spinner from '@/components/Spinner'
-export default {
+  loadChart as loadChartFn,
+  toChartId,
+} from '@/modules/vega-chart';
+import VJsoneditor from 'v-jsoneditor';
+import VegaLite from '@/components/explorer/VegaLiteWrapper.vue';
+import yasqe from '@/components/explorer/Yasqe.vue';
+import yasr from '@/components/explorer/Yasr.vue';
+import Spinner from '@/components/Spinner.vue';
+
+// Component name for debugging
+defineOptions({
   name: 'ChartCreate',
-  components: {
-    VJsoneditor,
-    VegaLite,
-    yasqe,
-    yasr,
-    spinner
-  },
-  data () {
-    return {
-      loading: true,
-      mouseIsDown: false,
-      x: 0,
-      y: 0,
-      leftTab: 1,
-      rightTab: 1,
-      results: null,
-      specJsonEditorOpts: {
-        mode: 'code',
-        mainMenuBar: false
-      },
-      chart: {
-        baseSpec: null,
-        query: null,
-        title: null,
-        description: null
-      },
-      actionType: 'Save Chart',
-      submittedIdentifier: undefined
-    }
-  },
-  props: ['chartId'],
-  computed: {
-    spec () {
-      const spec = buildSparqlSpec(this.chart.baseSpec, this.results) ?? {}
-      return spec
-    }
-  },
-  methods: {
-    getSparqlData () {
-      const vm = this
-      querySparql(vm.chart.query)
-        .then(this.onQuerySuccess)
-        .then((this.loading = false))
-        .catch((this.loading = false))
-    },
-    onQuerySuccess (results) {
-      this.results = results
-    },
-    onSpecJsonError () {
-      // console.log('bad', arguments)
-    },
-    async onNewVegaView (view) {
-      const blob = await view
-        .toImageURL('png')
-        .then((url) => fetch(url))
-        .then((resp) => resp.blob())
-      const fr = new FileReader()
-      fr.addEventListener('load', () => {
-        this.chart.depiction = fr.result
-      })
-      fr.readAsDataURL(blob)
-    },
-    async loadChart () {
-      // this.types = 'new, edit, restore & delete'
-      let getChartPromise
-      if (this.$route.params.type === 'new') {
-        this.actionType = 'Save Chart'
-        getChartPromise = Promise.resolve(getDefaultChart())
-      } else if (this.$route.params.type === 'edit') {
-        // fetch chart from knowledge graph
-        this.actionType = 'Edit Chart'
-        getChartPromise = Promise.resolve(loadChart(this.chartId))
-      } else {
-        // Get chart from mongo backup
-        this.actionType = 'Restore Chart'
-        this.reloadRestored()
-      }
-      getChartPromise
-        .then((chart) => {
-          this.chart = chart
-          return this.getSparqlData()
-        })
-        .catch((this.loading = false))
-    },
-    async reloadRestored () {
-      // 1. Fetch backup from mongo
-      // 2. Post each chart (schema + sparql) to knowledge graph
-      // 3. Toggle restore flag in mongo
-    },
-    async saveChart () {
-      this.loading = true
-      // Todo (ticket xx): Move this into vuex
-      try {
-        const chartNanopub = await saveChart(this.chart)
+});
 
-        if (this.$route.params.type === 'new') {
-          // Save chart to MongoDB - async operation
-        } else {
-          await this.$store.dispatch('explorer/curation/deleteEntityES', {
-            // TODO: Can we change these to a materialsmine.org uri or will that break things?
-            identifier: `http://nanomine.org/viz/${this.chartId}`,
-            type: 'charts'
-          })
-          // Find in mongo and update - async operation
-        }
-
-        const resp = await this.$store.dispatch(
-          'explorer/curation/cacheNewEntityResponse',
-          {
-            identifier: this.submittedIdentifier,
-            resourceNanopub: chartNanopub,
-            type: 'charts'
-          }
-        )
-
-        if (resp.identifier) {
-          this.submittedIdentifier = resp.identifier
-        }
-
-        // This next line tells the gallery page to fetch cos a new chart exist
-        this.$store.commit('explorer/curation/setNewChartExist', true)
-        this.loading = false
-        // Change button name after submission
-        this.actionType = 'Edit Chart'
-        this.$store.commit('setSnackbar', {
-          message: 'Chart saved successfully!',
-          duration: 15000
-        })
-
-        if (this.$route.params.type === 'new') {
-          return this.$router.push(
-            `/explorer/chart/editor/edit/${toChartId(resp.identifier)}`
-          )
-        }
-      } catch (err) {
-        // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
-        return alert(err)
-      }
-    },
-    goToExplorer () {
-      this.$router.push('/explorer/chart')
-    }
-  },
-  created () {
-    this.loading = true
-    this.loadChart()
-  }
+// Props
+interface Props {
+  chartId?: string;
 }
+
+const props = defineProps<Props>();
+
+// Store and router
+const store = useStore();
+const router = useRouter();
+const route = useRoute();
+
+// Reactive data
+const loading = ref(true);
+const mouseIsDown = ref(false);
+const x = ref(0);
+const y = ref(0);
+const leftTab = ref(1);
+const rightTab = ref(1);
+const results = ref<any>(null);
+const specJsonEditorOpts = ref({
+  mode: 'code',
+  mainMenuBar: false,
+});
+const chart = ref<any>({
+  baseSpec: null,
+  query: null,
+  title: null,
+  description: null,
+});
+const actionType = ref('Save Chart');
+const submittedIdentifier = ref<string | undefined>(undefined);
+
+// Computed properties
+const spec = computed(() => {
+  const spec = buildSparqlSpec(chart.value.baseSpec, results.value) ?? {};
+  return spec;
+});
+
+// Methods
+const getSparqlData = () => {
+  querySparql(chart.value.query)
+    .then(onQuerySuccess)
+    .then(() => (loading.value = false))
+    .catch(() => (loading.value = false));
+};
+
+const onQuerySuccess = (queryResults: any) => {
+  results.value = queryResults;
+};
+
+const onSpecJsonError = () => {
+  // console.log('bad', arguments)
+};
+
+const onNewVegaView = async (view: any) => {
+  const blob = await view
+    .toImageURL('png')
+    .then((url: string) => fetch(url))
+    .then((resp: Response) => resp.blob());
+  const fr = new FileReader();
+  fr.addEventListener('load', () => {
+    chart.value.depiction = fr.result;
+  });
+  fr.readAsDataURL(blob);
+};
+
+const loadChartData = async () => {
+  // this.types = 'new, edit, restore & delete'
+  let getChartPromise: Promise<any>;
+  if (route.params.type === 'new') {
+    actionType.value = 'Save Chart';
+    getChartPromise = Promise.resolve(getDefaultChart());
+  } else if (route.params.type === 'edit') {
+    // fetch chart from knowledge graph
+    actionType.value = 'Edit Chart';
+    getChartPromise = Promise.resolve(loadChartFn(props.chartId || ''));
+  } else {
+    // Get chart from mongo backup
+    actionType.value = 'Restore Chart';
+    reloadRestored();
+    return;
+  }
+  getChartPromise
+    .then((chartData) => {
+      chart.value = chartData;
+      return getSparqlData();
+    })
+    .catch(() => (loading.value = false));
+};
+
+const reloadRestored = async () => {
+  // 1. Fetch backup from mongo
+  // 2. Post each chart (schema + sparql) to knowledge graph
+  // 3. Toggle restore flag in mongo
+};
+
+const saveChart = async (): Promise<void> => {
+  loading.value = true;
+  // Todo (ticket xx): Move this into vuex
+  try {
+    const chartNanopub: any = await saveChartFn(chart.value);
+
+    if (route.params.type === 'new') {
+      // Save chart to MongoDB - async operation
+    } else {
+      await store.dispatch('explorer/curation/deleteEntityES', {
+        // TODO: Can we change these to a materialsmine.org uri or will that break things?
+        identifier: `http://nanomine.org/viz/${props.chartId}`,
+        type: 'charts',
+      });
+      // Find in mongo and update - async operation
+    }
+
+    const resp: any = await store.dispatch('explorer/curation/cacheNewEntityResponse', {
+      identifier: submittedIdentifier.value,
+      resourceNanopub: chartNanopub,
+      type: 'charts',
+    });
+
+    if (resp.identifier) {
+      submittedIdentifier.value = resp.identifier;
+    }
+
+    // This next line tells the gallery page to fetch cos a new chart exist
+    store.commit('explorer/curation/setNewChartExist', true);
+    loading.value = false;
+    // Change button name after submission
+    actionType.value = 'Edit Chart';
+    store.commit('setSnackbar', {
+      message: 'Chart saved successfully!',
+      duration: 15000,
+    });
+
+    if (route.params.type === 'new') {
+      router.push(`/explorer/chart/editor/edit/${toChartId(resp.identifier)}`);
+      return;
+    }
+  } catch (err: any) {
+    // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
+    return alert(err);
+  }
+};
+
+const goToExplorer = () => {
+  router.push('/explorer/chart');
+};
+
+// Lifecycle
+onMounted(() => {
+  loading.value = true;
+  loadChartData();
+});
 </script>

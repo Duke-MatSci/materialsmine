@@ -2,17 +2,12 @@
   <div
     :class="[
       'section_banner u--margin-neglg',
-      info.pagetype == 'home' ? '' : 'section_banner__misc'
+      info.pagetype == 'home' ? '' : 'section_banner__misc',
     ]"
   >
     <div class="section_banner__text">
-      <div
-        v-if="info.pagetype == 'home'"
-        class="section_banner__text-content u_margin-top-small"
-      >
-        <span class="u_adjust-banner-text u_adjust-banner-text-home">{{
-          info.name
-        }}</span>
+      <div v-if="info.pagetype == 'home'" class="section_banner__text-content u_margin-top-small">
+        <span class="u_adjust-banner-text u_adjust-banner-text-home">{{ info.name }}</span>
         <p class="u_adjust-banner-text_subtitle">{{ info.subtitle }}</p>
       </div>
       <div v-else class="section_banner__text-content">
@@ -41,9 +36,7 @@
           </li>
           <li class="u_margin-right-small">
             <div class="nav_menu--container">
-              <a class="u--default-size nav_menu--handler" href="#"
-                >Visualize</a
-              >
+              <a class="u--default-size nav_menu--handler" href="#">Visualize</a>
               <div class="nav_menu--siblings">
                 <router-link to="/explorer" class="nav_menu--siblings-lists"
                   ><a>Browse Data</a></router-link
@@ -51,24 +44,16 @@
                 <router-link to="/ns" class="nav_menu--siblings-lists"
                   ><a>Ontology Explorer</a></router-link
                 >
-                <router-link
-                  to="/explorer/chart"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/chart" class="nav_menu--siblings-lists"
                   ><a>Chart Gallery</a></router-link
                 >
-                <router-link
-                  to="/explorer/images"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/images" class="nav_menu--siblings-lists"
                   ><a>Image Gallery</a></router-link
                 >
-                <router-link
-                  to="/explorer/xmls"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/xmls" class="nav_menu--siblings-lists"
                   ><a>View XMLs</a></router-link
                 >
-                <router-link
-                  to="/explorer/dataset"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/dataset" class="nav_menu--siblings-lists"
                   ><a>Dataset Gallery</a></router-link
                 >
               </div>
@@ -76,11 +61,7 @@
           </li>
           <li class="u_margin-right-small">
             <div class="nav_menu--container">
-              <a
-                class="u--default-size nav_menu--handler"
-                href="/explorer/curate"
-                >Curate</a
-              >
+              <a class="u--default-size nav_menu--handler" href="/explorer/curate">Curate</a>
               <!-- <div class="nav_menu--siblings">
                 <a
                   href="/explorer/curate/spreadsheet"
@@ -109,32 +90,24 @@
             <div class="nav_menu--container">
               <a class="u--default-size nav_menu--handler" href="#">Tools</a>
               <div class="nav_menu--siblings">
-                <router-link
-                  to="/explorer/sparql"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/sparql" class="nav_menu--siblings-lists"
                   ><a>Sparql Query</a></router-link
                 >
-                <router-link
-                  to="/explorer/tools"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/explorer/tools" class="nav_menu--siblings-lists"
                   ><a>Module & Simulation Tools</a></router-link
                 >
-                <router-link
-                  to="/nm/tools/plot-curation"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"
                   ><a>Easy CSV Plotter</a></router-link
                 >
-                <a href="/api/api-docs/" class="nav_menu--siblings-lists"
-                  ><a>API Documentation</a></a
+                <router-link to="/api/api-docs/" class="nav_menu--siblings-lists"
+                  ><a>API Documentation</a></router-link
                 >
               </div>
             </div>
           </li>
           <li class="u_margin-right-small">
             <div class="nav_menu--container">
-              <a class="u--default-size nav_menu--handler" href="#"
-                >Conferences</a
-              >
+              <a class="u--default-size nav_menu--handler" href="#">Conferences</a>
               <div class="nav_menu--siblings">
                 <router-link to="/nm/mrs2022" class="nav_menu--siblings-lists"
                   ><a>MRS 2022</a></router-link
@@ -142,9 +115,7 @@
                 <router-link to="/nm/cssi2023" class="nav_menu--siblings-lists"
                   ><a>CSSI 2023</a></router-link
                 >
-                <router-link
-                  to="/nm/2024-doe-poster"
-                  class="nav_menu--siblings-lists"
+                <router-link to="/nm/2024-doe-poster" class="nav_menu--siblings-lists"
                   ><a>2024 DOE Poster</a></router-link
                 >
               </div>
@@ -168,18 +139,16 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
+const info = computed(() => store.getters.appHeaderInfo);
+const isAuth = computed(() => store.getters['auth/isAuthenticated'] || false);
+const isAdmin = computed(() => store.getters['auth/isAdmin'] || false);
+
+defineOptions({
   name: 'HeroHeader',
-  props: ['toggler'],
-  computed: {
-    ...mapGetters({
-      info: 'appHeaderInfo',
-      isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin',
-      displayName: 'auth/displayName'
-    })
-  }
-}
+});
 </script>

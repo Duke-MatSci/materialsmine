@@ -1,12 +1,12 @@
 <template>
-  <chart-gallery />
+  <ChartGallery />
 </template>
-<script>
-import ChartGallery from '@/components/ChartGallery.vue'
-export default {
-  name: 'viz-grid',
-  components: {
-    ChartGallery
-  }
-}
+
+<script setup lang="ts">
+import ChartGallery from '@/components/ChartGallery.vue';
+
+// Component name for debugging
+defineOptions({
+  name: 'Gallery',
+});
 </script>

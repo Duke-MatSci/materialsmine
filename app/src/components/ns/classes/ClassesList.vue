@@ -15,25 +15,21 @@
         >
           <div class="md-ripple">
             <div class="md-button-content">
-              <md-icon class="utility-color">{{
+              <MdIcon class="utility-color">{{
                 isListVisible ? 'keyboard_arrow_up' : 'keyboard_arrow_down'
-              }}</md-icon>
+              }}</MdIcon>
             </div>
           </div>
         </button>
       </div>
-      <md-field style="align-items: baseline">
+      <MdField style="align-items: baseline">
         <p><strong>Jump to:</strong></p>
         &nbsp;
-        <md-input v-model="searchKeyword" id="namespace"></md-input>
-        <md-button
-          aria-disabled="true"
-          disabled
-          class="md-icon-button md-dense"
-        >
-          <md-icon>search</md-icon>
-        </md-button>
-      </md-field>
+        <MdInput v-model="searchKeyword" id="namespace"></MdInput>
+        <MdButton aria-disabled="true" disabled class="md-icon-button md-dense">
+          <MdIcon>search</MdIcon>
+        </MdButton>
+      </MdField>
 
       <template v-if="!!searchResult.length">
         <div class="search-dropdown-menu" :style="setDropdownPosition">
@@ -63,75 +59,80 @@
   </div>
 </template>
 
-<script>
-import NamespaceAccordion from '@/components/ns/classes/NamespaceAccordion.vue'
-import { mapGetters } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import NamespaceAccordion from '@/components/ns/classes/NamespaceAccordion.vue';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'ClassesList',
-  data () {
-    return {
-      loading: false,
-      searchKeyword: '',
-      isListVisible: true
-    }
-  },
-  components: {
-    NamespaceAccordion
-  },
-  computed: {
-    ...mapGetters({
-      classes: 'ns/getClasses',
-      currentClass: 'ns/getCurrentClass',
-      searchResult: 'ns/getSearchResults'
-    }),
-    setDropdownPosition () {
-      return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
-    },
+});
 
-    limitHeight () {
-      return { maxHeight: 6 + 'rem' }
+const store = useStore();
+const router = useRouter();
+
+// Reactive data
+const loading = ref<boolean>(false);
+const searchKeyword = ref<string>('');
+const isListVisible = ref<boolean>(true);
+
+// Computed properties
+const classes = computed(() => store.getters['ns/getClasses']);
+const currentClass = computed(() => store.getters['ns/getCurrentClass']);
+const searchResult = computed(() => store.getters['ns/getSearchResults']);
+
+const setDropdownPosition = computed(() => {
+  return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' };
+});
+
+const limitHeight = computed(() => {
+  return { maxHeight: 6 + 'rem' };
+});
+
+// Methods
+const toggleClass = (id: string) => {
+  const element = document.getElementById(id);
+  if (!element) return;
+  element.classList.toggle('u--alt-bg');
+  openAncestor(id);
+};
+
+const openAncestor = (id: string) => {
+  const element = document.getElementById(id);
+  let parent = element?.parentElement;
+  while (parent) {
+    if (parent.tagName.toLowerCase() === 'details') {
+      (parent as HTMLDetailsElement).open = true;
     }
-  },
-  methods: {
-    toggleClass (id) {
-      const element = document.getElementById(id)
-      if (!element) return
-      element.classList.toggle('u--alt-bg')
-      this.openAncestor(id)
-    },
-    openAncestor (id) {
-      const element = document.getElementById(id)
-      let parent = element.parentElement
-      while (parent) {
-        if (parent.tagName.toLowerCase() === 'details') {
-          parent.open = true
-        }
-        parent = parent.parentElement
-      }
-    },
-    showClassInfo (id) {
-      const url = `/ns/${id.split('/').pop().split('#').pop()}`
-      this.$router.push(url)
-    },
-    async submitSearch () {
-      const query = this.searchKeyword
-      if (query.length < 3) {
-        return this.$store.commit('ns/clearSearchQueries')
-      }
-      await this.$store.dispatch('ns/searchNSData', {
-        query,
-        singleResult: false
-      })
-    }
-  },
-  mounted () {
-    this.toggleClass(this.$store.state.ns.selectedId)
-  },
-  watch: {
-    searchKeyword () {
-      this.submitSearch()
-    }
+    parent = parent.parentElement;
   }
-}
+};
+
+const showClassInfo = (id: string) => {
+  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`;
+  router.push(url);
+};
+
+const submitSearch = async () => {
+  const query = searchKeyword.value;
+  if (query.length < 3) {
+    return store.commit('ns/clearSearchQueries');
+  }
+  await store.dispatch('ns/searchNSData', {
+    query,
+    singleResult: false,
+  });
+};
+
+// Lifecycle
+onMounted(() => {
+  toggleClass(store.state.ns.selectedId);
+});
+
+// Watchers
+watch(searchKeyword, () => {
+  submitSearch();
+});
 </script>

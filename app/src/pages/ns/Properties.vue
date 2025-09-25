@@ -1,20 +1,21 @@
 <template>
-  <div class="section_pages">
-    <div class="wrapper">
-      <h1 class="visualize_header-h1 article_title">
-        MaterialsMine Properties
-      </h1>
-      <div class="article_subtitle">Welcome...</div>
-    </div>
+  <div class="ns-properties">
+    <h1>Namespace Properties</h1>
+    <p>
+      This is the Namespace Properties component. It will be implemented based on the original Vue 2
+      source.
+    </p>
   </div>
 </template>
-<script>
-export default {
-  name: 'Namespace',
-  data () {
-    return {
-      loading: false
-    }
-  }
-}
+
+<script setup lang="ts">
+defineOptions({
+  name: 'NSProperties',
+});
 </script>
+
+<style scoped>
+.ns-properties {
+  padding: 20px;
+}
+</style>

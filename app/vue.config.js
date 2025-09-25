@@ -1,23 +1,33 @@
-module.exports = {
-  lintOnSave: false,
+/* eslint-disable @typescript-eslint/no-var-requires */
+const { defineConfig } = require('@vue/cli-service');
+const path = require('path');
+
+module.exports = defineConfig({
+  transpileDependencies: true,
   devServer: {
-    disableHostCheck: true
+    host: '0.0.0.0',
+    port: 8080,
+    allowedHosts: 'all',
+    client: {
+      webSocketURL: 'auto://0.0.0.0:0/ws',
+    },
   },
-  chainWebpack: (config) => {
-    // Suggestion for having actual lazy-loading
-    config.plugins.delete('prefetch')
-    // Add a raw loader for certain file types to import file contents as a string
-    config.module.rule('raw')
-      .test(/\.(ttl|rq)$/)
-      .use('raw-loader')
-      .loader('raw-loader')
-      .end()
-    config.module
-      .rule('vue')
-      .use('vue-loader')
-      .tap(options => {
-        options.compiler = require('vue-template-babel-compiler')
-        return options
-      })
-  }
-}
+  configureWebpack: {
+    devtool: 'source-map',
+    module: {
+      rules: [
+        {
+          test: /\.(ttl|rq)$/,
+          type: 'asset/source',
+        },
+      ],
+    },
+    resolve: {
+      alias: {
+        // datavoyager UMD bundle requires this legacy loader for styles.
+        // Alias to a no-op module to avoid incompatible webpack 5 loader execution.
+        'font-awesome-sass-loader': path.resolve(__dirname, 'src/shims/empty.ts'),
+      },
+    },
+  },
+});

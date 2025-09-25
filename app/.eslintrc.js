@@ -1,31 +1,37 @@
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
+  },
+  parser: 'vue-eslint-parser',
+  parserOptions: {
+    parser: '@typescript-eslint/parser',
+    ecmaVersion: 2022,
+    sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
   extends: [
-    'plugin:vue/essential',
-    '@vue/standard',
-    'eslint:recommended'
+    'plugin:vue/vue3-essential',
+    'eslint:recommended',
+    '@vue/typescript/recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
   ],
-  parserOptions: {
-    parser: 'babel-eslint'
-  },
   rules: {
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    'vue/multi-word-component-names': 'off',
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-tabs': 'off',
-    'vue/no-deprecated-slot-attribute': 'off' // TODO (@check) Do we need this?
   },
   overrides: [
     {
-      files: [
-        '**/__tests__/*.{j,t}s?(x)',
-        '**/tests/unit/**/*.spec.{j,t}s?(x)'
-      ],
+      files: ['**/__tests__/*.{j,t}s?(x)', '**/tests/unit/**/*.spec.{j,t}s?(x)'],
       env: {
-        jest: true
-      }
-    }
-  ]
-}
+        jest: true,
+      },
+    },
+  ],
+};

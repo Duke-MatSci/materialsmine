@@ -1,12 +1,16 @@
 <template>
   <md-app md-waterfall md-mode="fixed">
-    <md-app-toolbar :showTop="showTop" :toggler="toggleMenu" />
-    <md-app-drawer :md-active.sync="toggleMenuVisibility">
-      <drawers />
-    </md-app-drawer>
-    <md-app-content
-      class="u--padding-zero u--layout-flex u--layout-flex-column utility-roverflow"
+    <md-app-toolbar
+      class="md-app-toolbar md-large md-dense md-primary md-theme-default"
+      id="reset_bg"
+      :style="[transition, !showTop && hideHeaderView]"
     >
+      <app-toolbar :toggler="toggleMenuVisibility" />
+    </md-app-toolbar>
+    <md-app-drawer v-model:mdActive="menuVisible">
+      <Drawers />
+    </md-app-drawer>
+    <md-app-content class="u--padding-zero u--layout-flex u--layout-flex-column utility-roverflow">
       <div class="section_loader" v-if="loading">
         <spinner :loading="loading" text="Loading Ontology Data" />
       </div>
@@ -27,86 +31,99 @@
     </md-app-content>
   </md-app>
 </template>
-<script>
-import Drawers from '@/components/Drawer.vue'
-import ExpHeader from '@/components/explorer/Header.vue'
-import spinner from '@/components/Spinner'
-import Classes from '@/pages/ns/Classes.vue'
-import Home from '@/pages/ns/Home.vue'
 
-export default {
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+import Drawers from '@/components/Drawer.vue';
+import AppToolbar from '@/components/explorer/Header.vue';
+import spinner from '@/components/Spinner.vue';
+import Classes from '@/pages/ns/Classes.vue';
+import Home from '@/pages/ns/Home.vue';
+
+// Component name for debugging
+defineOptions({
   name: 'NameSpaceBase',
-  components: {
-    mdAppToolbar: ExpHeader,
-    Drawers,
-    spinner,
-    Classes,
-    Home
-  },
-  data () {
-    return {
-      toggleMenuVisibility: false,
-      showTop: true,
-      searchLoading: true,
-      componentToRender: ''
+});
+
+const store = useStore();
+const route = useRoute();
+
+// Reactive data
+const menuVisible = ref<boolean>(false);
+const showTop = ref<boolean>(true);
+const searchLoading = ref<boolean>(true);
+
+// Computed properties
+const loading = computed(() => store.getters['ns/isLoading']);
+const searchResult = computed(() => store.state.ns.currentClass);
+const namespace = computed(() => route.params?.namespace as string);
+const getBody = computed(() => {
+  return document.querySelector('.md-app.md-fixed .md-app-scroller');
+});
+
+// Methods
+const toggleMenuVisibility = (): void => {
+  menuVisible.value = !menuVisible.value;
+};
+
+const handleDrawerUpdate = (value: boolean): void => {
+  menuVisible.value = value;
+};
+
+const hideHeaderView = computed(() => ({ top: `-${74}px` }));
+const transition = computed(() => ({ transition: `all ${0.2}s linear` }));
+
+const adjustHeader = () => {
+  const bodyElement = getBody.value as HTMLElement;
+  const scrollHeight = bodyElement?.scrollTop || 0;
+  if (window.innerWidth < 650) return;
+  showTop.value = !(scrollHeight > 100);
+  const offset = scrollHeight > 100 ? '-74px' : '0px';
+  if (bodyElement) {
+    bodyElement.style.position = 'relative';
+    bodyElement.style.marginTop = offset;
+    bodyElement.style.paddingBottom = offset;
+  }
+};
+
+const findQuery = async (query: string) => {
+  searchLoading.value = true;
+  store.commit('ns/clearCurrentClass');
+  await nextTick();
+  await store.dispatch('ns/searchNSData', { query, singleResult: true });
+  if (searchResult.value) {
+    store.commit('ns/setSelectedId', searchResult.value.ID);
+  }
+  searchLoading.value = false;
+};
+
+// Lifecycle
+onMounted(async () => {
+  await store.dispatch('ns/fetchNsData');
+  if (namespace.value) await findQuery(namespace.value);
+
+  nextTick(() => {
+    if (getBody.value) {
+      getBody.value.addEventListener('scroll', adjustHeader);
     }
-  },
-  computed: {
-    loading () {
-      return this.$store.getters['ns/isLoading']
-    },
-    searchResult () {
-      return this.$store.state.ns.currentClass
-    },
-    namespace () {
-      return this.$route.params?.namespace
-    },
-    getBody () {
-      return document.querySelector('.md-app.md-fixed .md-app-scroller')
-    }
-  },
-  async created () {
-    await this.$store.dispatch('ns/fetchNsData')
-    if (this.namespace) await this.findQuery(this.namespace)
-  },
-  mounted () {
-    this.$nextTick(() => {
-      this.getBody.addEventListener('scroll', this.adjustHeader)
-    })
-  },
-  beforeDestroy () {
-    this.getBody.removeEventListener('scroll', this.adjustHeader)
-  },
-  methods: {
-    toggleMenu () {
-      this.toggleMenuVisibility = !this.toggleMenuVisibility
-    },
-    adjustHeader () {
-      const scrollHeight = this.getBody.scrollTop
-      if (window.innerWidth < 650) return
-      this.showTop = !(scrollHeight > 100)
-      const offset = scrollHeight > 100 ? '-74px' : '0px'
-      this.getBody.style.position = 'relative'
-      this.getBody.style.marginTop = offset
-      this.getBody.style.paddingBottom = offset
-    },
-    async findQuery (query) {
-      this.searchLoading = true
-      this.$store.commit('ns/clearCurrentClass')
-      await this.$nextTick()
-      this.$store.dispatch('ns/searchNSData', { query, singleResult: true })
-      if (this.searchResult) {
-        this.$store.commit('ns/setSelectedId', this.searchResult.ID)
-      }
-      this.searchLoading = false
-    }
-  },
-  watch: {
-    '$route.params': async function (newValue) {
-      if (newValue?.namespace) {
-        await this.findQuery(newValue.namespace)
-      }
+  });
+});
+
+onBeforeUnmount(() => {
+  if (getBody.value) {
+    getBody.value.removeEventListener('scroll', adjustHeader);
+  }
+});
+
+// Watchers
+watch(
+  () => route.params,
+  async (newValue) => {
+    if (newValue?.namespace) {
+      await findQuery(newValue.namespace as string);
     }
   }
-}
+);
 </script>

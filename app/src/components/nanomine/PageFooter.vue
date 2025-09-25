@@ -12,8 +12,7 @@
             />
           </router-link>
           <span class="footer_icon-text"
-            >&copy; 2014 - {{ new Date().getFullYear() }} Nanomine. All Rights
-            Reserved.</span
+            >&copy; 2014 - {{ new Date().getFullYear() }} Nanomine. All Rights Reserved.</span
           >
         </div>
         <div class="footer_content">
@@ -43,9 +42,7 @@
                   >
                 </li>
                 <li>
-                  <a href="https://security.duke.edu/node/82" target="_blank"
-                    >Terms of Use</a
-                  >
+                  <a href="https://security.duke.edu/node/82" target="_blank">Terms of Use</a>
                 </li>
                 <li><router-link to="/nm/contact">Contact Us</router-link></li>
               </ul>
@@ -60,16 +57,19 @@
           alt="Materialsmine Logo"
         />
         <span class="footer_icon-text"
-          >&copy; 2014-{{ new Date().getFullYear() }} Materialsmine. All Rights
-          Reserved.</span
+          >&copy; 2014-{{ new Date().getFullYear() }} Materialsmine. All Rights Reserved.</span
         >
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'Footer'
-}
+<script setup lang="ts">
+defineOptions({
+  name: 'PageFooter',
+});
 </script>
+
+<style scoped>
+/* Add any component-specific styles here */
+</style>

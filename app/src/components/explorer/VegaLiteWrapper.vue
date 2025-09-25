@@ -1,174 +1,200 @@
 <template>
   <div>
-    <p v-show="showSchemaWarning && specValidation.valid === false">Vega-Lite specification does not conform to schema</p>
+    <p v-show="showSchemaWarning && specValidation.valid === false">
+      Vega-Lite specification does not conform to schema
+    </p>
     <p v-show="renderError">Error while rendering Vega-Lite specification</p>
     <p v-show="!validVersionNum">Could not determine vega lite schema version</p>
     <p v-show="!hasDataObject">No data object was provided in Vega-Lite specification</p>
 
-    <div v-show="!renderError&&validVersionNum" v-bind:id="id"></div>
+    <div v-show="!renderError && validVersionNum" :id="id"></div>
   </div>
 </template>
 
-<script>
-import vegaLite4Schema from 'vega-lite4/build/vega-lite-schema.json'
-import vegaLite5Schema from 'vega-lite5/build/vega-lite-schema.json'
-import { compile as vegaLite4Compile } from 'vega-lite4'
-import { compile as vegaLite5Compile, isNumeric } from 'vega-lite5'
-import embed from 'vega-embed'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import vegaLite4Schema from 'vega-lite4/build/vega-lite-schema.json';
+import vegaLite5Schema from 'vega-lite5/build/vega-lite-schema.json';
+import { compile as vegaLite4Compile } from 'vega-lite4';
+import { compile as vegaLite5Compile, isNumeric } from 'vega-lite5';
+import embed from 'vega-embed';
+import debounce from '@/modules/debounce';
+import { validate as jsonValidate } from 'jsonschema';
 
-import debounce from '@/modules/debounce'
+// Component name for debugging
+defineOptions({
+  name: 'VegaLiteWrapper',
+});
 
-import { validate as jsonValidate } from 'jsonschema'
+// Props
+interface Props {
+  spec?: any;
+  dataname?: string;
+  data?: any;
+  showSchemaWarning?: boolean;
+}
 
+const props = withDefaults(defineProps<Props>(), {
+  spec: () => null,
+  dataname: () => '',
+  data: () => null,
+  showSchemaWarning: false,
+});
+
+// Emits
+const emit = defineEmits<{
+  'new-vega-view': [view: any];
+}>();
+
+// Vega-Lite version configurations
 const vegaLiteVersions = {
   4: {
     schema: vegaLite4Schema,
-    compile: vegaLite4Compile
+    compile: vegaLite4Compile,
   },
   5: {
     schema: vegaLite5Schema,
-    compile: vegaLite5Compile
-  }
-}
+    compile: vegaLite5Compile,
+  },
+};
 
-const schemaIdMap = {}
+const schemaIdMap: Record<string, any> = {};
 
 for (const [ver, verObj] of Object.entries(vegaLiteVersions)) {
-  const schemaId = `https://vega.github.io/schema/vega-lite/v${ver}.json`
-  schemaIdMap[schemaId] = verObj
-  verObj.schemaId = schemaId
-  verObj.versionNum = ver
+  const schemaId = `https://vega.github.io/schema/vega-lite/v${ver}.json`;
+  schemaIdMap[schemaId] = {
+    ...verObj,
+    schemaId,
+    versionNum: ver,
+  };
 }
 
-export default {
-  name: 'vega-lite',
-  data () {
-    return {
-      id: 'vega-lite',
-      specValidation: {},
-      renderError: false,
-      validVersionNum: true
+// Reactive data
+const id = ref('vega-lite');
+const specValidation = ref<any>({});
+const renderError = ref(false);
+const validVersionNum = ref(true);
+
+// Computed properties
+const hasDataObject = computed(() => {
+  return !!props.spec?.data;
+});
+
+// Methods
+const plotSpec = async (versionNum: number) => {
+  // Cancel plotting if the component's element no longer exists in dom
+  await nextTick();
+  const element = document.getElementById(id.value);
+  if (!element || !document.body.contains(element)) {
+    return;
+  }
+
+  try {
+    const { spec: vegaSpec } = vegaLiteVersions[
+      versionNum as keyof typeof vegaLiteVersions
+    ].compile(props.spec);
+    const result = await embed(`#${id.value}`, vegaSpec, {});
+    if (props.data) {
+      const name = props.dataname || ((props.spec || {}).data || {}).name || 'source_0';
+      result.view.insert(name, props.data).resize().run();
     }
-  },
-  computed: {
-    hasDataObject () {
-      return !!this.spec?.data
+    emit('new-vega-view', result.view);
+    renderError.value = false;
+    alignVegaTooltips();
+  } catch (ex) {
+    console.error('Error while rendering vega-lite specification', ex);
+    renderError.value = true;
+  }
+};
+
+const alignVegaTooltips = () => {
+  const canvas = document.getElementsByClassName('marks')[0] as HTMLElement;
+  const vegaBindings = document.getElementsByClassName('vega-bindings')[0] as HTMLElement;
+  if (canvas && vegaBindings) {
+    vegaBindings.style.width = canvas.style.width;
+  }
+};
+
+const validateSpec = (versionNum: number) => {
+  try {
+    const validation = jsonValidate(
+      props.spec,
+      vegaLiteVersions[versionNum as keyof typeof vegaLiteVersions].schema,
+      {}
+    );
+    if (!validation.valid) {
+      console.warn('Invalid spec', validation);
+    } else {
+      console.debug('Valid spec', validation);
     }
-  },
-  props: {
-    spec: {
-      type: Object,
-      default: () => null
-    },
-    dataname: {
-      type: String,
-      default: () => null
-    },
-    data: {
-      type: Object,
-      default: () => null
-    },
-    showSchemaWarning: {
-      type: Boolean,
-      default: () => false
+    specValidation.value = validation;
+  } catch (e) {
+    console.error('spec validation error');
+    console.error(e);
+    specValidation.value = { valid: false };
+  }
+};
+
+const getVersionNum = (): number | null => {
+  const schemaId = props.spec?.$schema;
+  let versionNum: number | null = null;
+
+  if (schemaId) {
+    // Try to match using provided schema id
+    if (schemaId in schemaIdMap) {
+      versionNum = parseInt(schemaIdMap[schemaId].versionNum);
+    } else {
+      console.warn(`unknown vega lite schema type: ${schemaId}`);
+      console.warn('available schemas:', Object.keys(schemaIdMap));
     }
-  },
-  created () {
-    this.onSpecChange = debounce(this.processSpec, 300)
-    this.onSpecChange()
-  },
-  methods: {
-    async plotSpec (versionNum) {
-      // Cancel plotting if the component's element no longer exists in dom
-      if (!document.body.contains(this.$el)) {
-        return
-      }
+  } else {
+    // Run validators on spec to see what works
+    console.warn('no schema id provided in spec. Attempting to match schema...');
+    for (const [vNum, vObj] of Object.entries(vegaLiteVersions)) {
       try {
-        const { spec: vegaSpec } = vegaLiteVersions[versionNum].compile(this.spec)
-        const result = await embed(`#${this.id}`, vegaSpec, {})
-        if (this.data) {
-          const name = this.dataname || ((this.spec || {}).data || {}).name || 'source_0'
-          result.view.insert(name, this.data).resize().run()
+        const validation = jsonValidate(props.spec, vObj.schema, {});
+        // Prefer higher version numbers
+        if (validation.valid && parseInt(vNum) > (versionNum || 0)) {
+          versionNum = parseInt(vNum);
         }
-        this.$emit('new-vega-view', result.view)
-        this.renderError = false
-        this.alignVegaTooltips()
-      } catch (ex) {
-        console.error('Error while rendering vega-lite specification', ex)
-        this.renderError = true
-      }
-    },
-    alignVegaTooltips () {
-      const canvas = document.getElementsByClassName('marks')[0]
-      const vegaBindings = document.getElementsByClassName('vega-bindings')[0]
-      vegaBindings.style.width = canvas.style.width
-    },
-    validateSpec (versionNum) {
-      try {
-        const validation = jsonValidate(this.spec, vegaLiteVersions[versionNum].schema)
-        if (!validation.valid) {
-          console.warn('Invalid spec', validation)
-        } else {
-          console.debug('Valid spec', validation)
-        }
-        this.specValidation = validation
       } catch (e) {
-        console.error('spec validation error')
-        console.error(e)
-        this.specValidation = { valid: false }
-      }
-    },
-    getVersionNum () {
-      const schemaId = this.spec.$schema
-      let versionNum = null
-
-      if (schemaId) {
-        // Try to match using provided schema id
-        if (schemaId in schemaIdMap) {
-          versionNum = schemaIdMap[schemaId].versionNum
-        } else {
-          console.warn(`unknown vega lite schema type: ${schemaId}`)
-          console.warn('available schemas:', Object.keys(schemaIdMap))
-        }
-      } else {
-        // Run validators on spec to see what works
-        console.warn('no schema id provided in spec. Attempting to match schema...')
-        for (const [vNum, vObj] of Object.entries(vegaLiteVersions)) {
-          try {
-            const validation = jsonValidate(vObj.schema)
-            // Prefer higher version numbers
-            if (validation.valid && vNum > versionNum) {
-              versionNum = vNum
-            }
-          } catch (e) {
-            console.warn(`does not match v${vNum}`)
-          }
-        }
-        if (versionNum) {
-          console.warn(`using vega lite v${versionNum}`)
-        } else {
-          console.warn('could not find workable vega lite version')
-        }
-      }
-
-      return versionNum
-    },
-    processSpec () {
-      const versionNum = this.getVersionNum()
-      this.validVersionNum = isNumeric(versionNum)
-      if (this.validVersionNum) {
-        if (this.hasDataObject) {
-          this.validateSpec(versionNum)
-        }
-        this.plotSpec(versionNum)
+        console.warn(`does not match v${vNum}`);
       }
     }
-  },
-  watch: {
-    spec () {
-      this.onSpecChange()
+    if (versionNum) {
+      console.warn(`using vega lite v${versionNum}`);
+    } else {
+      console.warn('could not find workable vega lite version');
     }
   }
-}
 
+  return versionNum;
+};
+
+const processSpec = () => {
+  const versionNum = getVersionNum();
+  validVersionNum.value = isNumeric(versionNum ?? '');
+  if (validVersionNum.value && versionNum !== null) {
+    if (hasDataObject.value) {
+      validateSpec(versionNum);
+    }
+    plotSpec(versionNum);
+  }
+};
+
+// Debounced spec change handler
+const onSpecChange = debounce(processSpec, 300);
+
+// Lifecycle
+onMounted(() => {
+  onSpecChange();
+});
+
+// Watchers
+watch(
+  () => props.spec,
+  () => {
+    onSpecChange();
+  }
+);
 </script>

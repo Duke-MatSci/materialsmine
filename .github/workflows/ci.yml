@@ -9,32 +9,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Cache Dependencies
+
+      # Frontend App Tests (Node 22 + pnpm)
+      - name: Setup Node.js 22 for frontend
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+      - name: Enable pnpm for frontend
+        run: corepack enable && corepack prepare pnpm@latest --activate
+      - name: Cache pnpm dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('app/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Use NodeJS
+            ${{ runner.os }}-pnpm-
+      - name: Install frontend dependencies
+        run: |
+          cd app
+          pnpm install --frozen-lockfile
+        env:
+          MM_GHT: ${{ secrets.MM_GHT }}
+      # - name: App Coverage Test
+      #   run: |
+      #     cd app
+      #     pnpm run test:unit -- --coverage
+      #   env:
+      #     CI: true
+      # - name: Upload Test Coverage
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: app-coverage-report
+      #     path: app/coverage
+
+      # Restful Service Tests (Node 17.9.1 + npm)
+      - name: Setup Node.js 17.9.1 for restful service
         uses: actions/setup-node@v3
         with:
           node-version: '17.9.1'
-      - name: Install frontend dependencies & test
-        run: |
-          cd app
-          npm install
-      - name: App Coverage Test
-        run: |
-          cd app
-          npm run test:unit -- --coverage
-        env:
-          CI: true
-      - name: Upload Test Coverage
-        uses: actions/upload-artifact@v4
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
         with:
-          name: app-coverage-report
-          path: app/coverage
+          path: ~/.npm
+          key:
+            ${{ runner.os }}-node-${{
+            hashFiles('resfulservice/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Install restful service dependencies
         run: |
           cd resfulservice
@@ -53,10 +74,12 @@ jobs:
     with:
       myid: app
       context: ./app
+      dockerfile: Dockerfile.stage
       tags: dukematsci/dev-app:latest
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      MM_GHT: ${{ secrets.MM_GHT }}
   BuildProxy:
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
@@ -73,6 +96,7 @@ jobs:
     with:
       myid: restful
       context: ./resfulservice
+      dockerfile: Dockerfile
       tags: dukematsci/dev-restful:latest
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

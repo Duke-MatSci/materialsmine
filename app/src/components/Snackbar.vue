@@ -2,70 +2,86 @@
   <div>
     <md-snackbar
       :md-position="position"
-      :md-active.sync="show"
-      :md-duration="!snackbar.duration ? Infinity : snackbar.duration"
+      :md-duration="!snackbar?.duration ? Infinity : snackbar.duration"
       class="md-snackbar-adjust"
+      v-model:mdActive="show"
     >
-      {{ snackbar.message }}
-      <span>
-        <md-button
-          v-if="snackbar.action && !snackbar.duration"
-          id="snackbarAction"
-          class="md-primary"
-          @click.native="snackBarAction"
-          >{{ snackbar.callToActionText }}</md-button
-        >
+      <span class="u--font-emph-sl">
+        {{ snackbar?.message || '' }}
       </span>
+      <MdButton
+        v-if="snackbar?.action && !snackbar?.duration"
+        id="snackbarAction"
+        class="md-primary"
+        @click="snackBarAction"
+        >{{ snackbar?.callToActionText || 'Retry' }}</MdButton
+      >
     </md-snackbar>
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+
+// Component name for debugging
+defineOptions({
   name: 'Snackbar',
-  props: {
-    position: {
-      type: String,
-      required: false,
-      default: 'left'
-    }
-  },
-  data () {
-    return {
-      show: false
-    }
-  },
-  computed: {
-    ...mapGetters({
-      snackbar: 'getSnackbar'
-    })
-  },
-  methods: {
-    resetSnackbar () {
-      this.show = false
-    },
-    async snackBarAction () {
-      if (this.snackbar.action) {
-        this.show = false
-        return await this.snackbar.action()
-      }
-      this.show = false
-    }
-  },
-  watch: {
-    snackbar (val, oldVal) {
-      if (val.message) {
-        this.show = true
-      } else if (val.duration === 0) {
-        this.resetSnackbar()
-      }
-    },
-    $route (newValue, oldValue) {
-      if (newValue !== oldValue) {
-        this.resetSnackbar()
-      }
-    }
-  }
+});
+
+// Props
+interface Props {
+  position?: string;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  position: 'left', // Valid options: 'center' | 'left'
+});
+
+// Store and Router
+const store = useStore();
+const route = useRoute();
+
+// Reactive data
+const show = ref(false);
+
+// Computed
+const snackbar = computed(
+  () =>
+    store.getters.getSnackbar || {
+      message: '',
+      action: null,
+      duration: false,
+      callToActionText: 'Retry',
+    }
+);
+
+// Methods
+const resetSnackbar = () => {
+  show.value = false;
+};
+
+const snackBarAction = async () => {
+  if (snackbar.value?.action) {
+    show.value = false;
+    return await snackbar.value.action();
+  }
+  show.value = false;
+};
+
+// Watchers
+watch(snackbar, (val) => {
+  if (val?.message) {
+    show.value = true;
+  } else if (val?.duration === 0) {
+    resetSnackbar();
+  }
+});
+
+watch(route, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    resetSnackbar();
+  }
+});
 </script>

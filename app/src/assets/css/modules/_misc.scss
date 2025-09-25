@@ -243,11 +243,7 @@
     & > span {
       font-size: 8.4rem;
       margin-right: 2.1rem;
-      background-image: linear-gradient(
-        to right bottom,
-        $primary,
-        rgba($primary-light, 0.4)
-      );
+      background-image: linear-gradient(to right bottom, $primary, rgba($primary-light, 0.4));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
@@ -297,8 +293,7 @@
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
     &:hover {
-      box-shadow: 0 14px 28px rgba($primary-black, 0.25),
-        0 10px 10px rgba($primary-black, 0.22);
+      box-shadow: 0 14px 28px rgba($primary-black, 0.25), 0 10px 10px rgba($primary-black, 0.22);
       border-radius: 1rem;
       padding: 3rem;
       cursor: pointer;
@@ -312,8 +307,7 @@
 
   &_image {
     float: left;
-    box-shadow: 0 1px 3px rgba($primary-black, 0.12),
-      0 1px 2px rgba($primary-black, 0.24);
+    box-shadow: 0 1px 3px rgba($primary-black, 0.12), 0 1px 2px rgba($primary-black, 0.24);
     margin-right: 3.2rem;
     padding: 0.5rem;
     @include respond(phone) {
@@ -407,8 +401,7 @@
   &_box {
     background-size: cover;
     border-radius: 0.6rem;
-    box-shadow: 0 1px 3px rgba($primary-black, 0.12),
-      0 1px 2px rgba($primary-black, 0.24);
+    box-shadow: 0 1px 3px rgba($primary-black, 0.12), 0 1px 2px rgba($primary-black, 0.24);
     width: 45rem;
     height: 30rem;
 
@@ -419,7 +412,7 @@
           rgba($primary-light, 0.5) 0%,
           transparent 0%
         ),
-        url(/nmstatic/img/recon_tool.PNG);
+        url('~@/assets/img/nanomine/recon_tool.png');
     }
 
     &--2 {
@@ -429,7 +422,7 @@
           rgba($primary-light, 0.5) 0%,
           transparent 0%
         ),
-        url(/nmstatic/img/dynamfit.png);
+        url('~@/assets/img/nanomine/dynamfit.png');
     }
 
     &--3 {
@@ -439,7 +432,7 @@
           rgba($primary-light, 0.5) 0%,
           transparent 0%
         ),
-        url(/nmstatic/img/prop_simu.png);
+        url('~@/assets/img/nanomine/prop_simu.png');
     }
 
     @include respond(laptop) {

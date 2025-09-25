@@ -1,15 +1,10 @@
 <template>
-  <div
-    class="section_teams viz-u-mgbottom-big"
-    :class="{ 'u--margin-neg': searchError }"
-  >
+  <div class="section_teams viz-u-mgbottom-big" :class="{ 'u--margin-neg': searchError }">
     <div class="md-layout md-gutter md-alignment-top-center u_margin-top-med">
       <div
         class="search_box md-layout-item md-size-70 md-small-size-80 md-xsmall-size-90 u_height--auto"
       >
-        <h2 class="search_box_header teams_header">
-          MaterialsMine Ontology Explorer
-        </h2>
+        <h2 class="search_box_header teams_header">MaterialsMine Ontology Explorer</h2>
         <p class="u--color-grey-sec u--margin-neg md-body-1">
           <small>Last Updated:- {{ lastUpdate }}</small>
         </p>
@@ -27,9 +22,7 @@
                 required
                 v-model="searchKeyword"
               />
-              <label htmlFor="search" class="form__label search_box_form_label"
-                >Search</label
-              >
+              <label htmlFor="search" class="form__label search_box_form_label">Search</label>
             </div>
             <template v-if="!!searchResult.length">
               <div
@@ -51,9 +44,7 @@
               </div>
             </template>
           </div>
-          <div
-            class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg"
-          >
+          <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg">
             <button
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -67,55 +58,61 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+
+// Component name for debugging
+defineOptions({
   name: 'SearchComponent',
-  props: {
-    searchError: {
-      type: Boolean,
-      default: false
-    },
-    showDropdown: {
-      type: Boolean,
-      default: true
-    }
-  },
-  data () {
-    return {
-      searchKeyword: '',
-      searchEnabled: false
-    }
-  },
-  computed: {
-    ...mapGetters('ns', {
-      classes: 'getClasses',
-      searchResult: 'getSearchResults',
-      lastUpdate: 'getLastUpdatedDate'
-    }),
-    setDropdownPosition () {
-      return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
-    },
-    isValidLength () {
-      return this.searchKeyword.length > 2
-    }
-  },
-  methods: {
-    async submitSearch () {
-      const query = this.searchKeyword
-      if (query.length < 3) return
+});
 
-      // this.$store.commit('ns/showDropdown', true)
-      await this.$store.dispatch('ns/searchNSData', {
-        query,
-        singleResult: false
-      })
-    },
-
-    showClassInfo (id) {
-      const url = `/ns/${id.split('/').pop().split('#').pop()}`
-      this.$router.push(url)
-    }
-  }
+// Props
+interface Props {
+  searchError?: boolean;
+  showDropdown?: boolean;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  searchError: false,
+  showDropdown: true,
+});
+
+const store = useStore();
+const router = useRouter();
+
+// Reactive data
+const searchKeyword = ref<string>('');
+const searchEnabled = ref<boolean>(false);
+
+// Computed properties
+const classes = computed(() => store.getters['ns/getClasses']);
+const searchResult = computed(() => store.getters['ns/getSearchResults']);
+const lastUpdate = computed(() => store.getters['ns/getLastUpdatedDate']);
+
+const setDropdownPosition = computed(() => {
+  return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' };
+});
+
+const isValidLength = computed(() => {
+  return searchKeyword.value.length > 2;
+});
+
+// Methods
+const submitSearch = async () => {
+  const query = searchKeyword.value;
+  if (query.length < 3) return;
+
+  // this.$store.commit('ns/showDropdown', true)
+  await store.dispatch('ns/searchNSData', {
+    query,
+    singleResult: false,
+  });
+};
+
+const showClassInfo = (id: string) => {
+  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`;
+  router.push(url);
+};
 </script>

@@ -25,23 +25,26 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'OntologyDetails',
-  data: () => ({}),
-  computed: {
-    ...mapGetters({
-      details: 'ns/getDetails',
-      loading: 'ns/getLoading'
-    }),
-    objLength () {
-      return Object.keys(this.details).length
-    },
-    sortedKeys () {
-      return Object.keys(this.details).sort()
-    }
-  }
-}
+});
+
+const store = useStore();
+
+// Computed properties
+const details = computed(() => store.getters['ns/getDetails']);
+const loading = computed(() => store.getters['ns/getLoading']);
+
+const objLength = computed(() => {
+  return Object.keys(details.value).length;
+});
+
+const sortedKeys = computed(() => {
+  return Object.keys(details.value).sort();
+});
 </script>

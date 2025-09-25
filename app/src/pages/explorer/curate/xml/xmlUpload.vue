@@ -13,19 +13,12 @@
       </div>
       <div v-else>
         <h2 class="visualize_header-h1">Upload XML Samples</h2>
-        <md-steppers
-          md-vertical
-          md-linear
-          :md-active-step.sync="active"
-          class="form__stepper"
-        >
-          <md-step id="first" md-label="Upload Xml File" :md-done.sync="first">
+        <md-steppers md-vertical md-linear v-model:md-active-step="active" class="form__stepper">
+          <md-step id="first" md-label="Upload Xml File" v-model:md-done="first">
             <DropZone class="form__drop-area" @files-dropped="addXmlFile">
               <label for="xml-file-input">
                 <div class="form__drop-area_label">
-                  <div class="explorer_page-nav-card_text">
-                    Drag prepared xml files here
-                  </div>
+                  <div class="explorer_page-nav-card_text">Drag prepared xml files here</div>
                   <div
                     class="md-layout-item_para md-layout-item_para_fl"
                     style="text-align: center"
@@ -43,8 +36,8 @@
               </label>
             </DropZone>
             <div class="u--margin-posmd u--color-primary teams_header">
-              <strong>Note:</strong> Title, Author, Citation Type and
-              Publication Year, are required entry in the XML.
+              <strong>Note:</strong> Title, Author, Citation Type and Publication Year, are required
+              entry in the XML.
             </div>
             <div class="md-layout" v-show="xmlFiles.length">
               <md-list class="md-layout utility-transparentbg md-theme-default">
@@ -67,14 +60,9 @@
               Next
             </md-button>
           </md-step>
-          <md-step
-            id="second"
-            md-label="Confirm and submit"
-            :md-done.sync="second"
-          >
+          <md-step id="second" md-label="Confirm and submit" v-model:md-done="second">
             <div class="u--color-primary teams_header">
-              <strong>Are you sure?</strong> Select
-              <strong>Save & Submit</strong> to confirm or
+              <strong>Are you sure?</strong> Select <strong>Save & Submit</strong> to confirm or
               <strong>Go Back</strong> to cancel
             </div>
             <div class="md-layout">
@@ -102,90 +90,95 @@
   </div>
 </template>
 
-<script>
-import DropZone from '@/components/curate/FileDrop.vue'
-import FilePreview from '@/components/curate/FilePreview.vue'
-import LoginRequired from '@/components/LoginRequired.vue'
-import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import Spinner from '@/components/Spinner.vue'
-import useFileList from '@/modules/file-list'
-import { mapGetters, mapActions } from 'vuex'
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import DropZone from '@/components/curate/FileDrop.vue';
+import FilePreview from '@/components/curate/FilePreview.vue';
+import CurateNavBar from '@/components/curate/CurateNavBar.vue';
+import Spinner from '@/components/Spinner.vue';
+import useFileList from '@/modules/file-list';
 
-const xmlFilesFn = useFileList()
-export default {
+// Component name for debugging
+defineOptions({
   name: 'XmlUpload',
-  components: {
-    DropZone,
-    FilePreview,
-    CurateNavBar,
-    Spinner,
-    LoginReq: LoginRequired
+});
+
+// Store
+const store = useStore();
+
+// File list composable
+const xmlFilesFn = useFileList();
+
+// Reactive data
+const active = ref('first');
+const first = ref(false);
+const second = ref(false);
+const xmlFiles = xmlFilesFn.files;
+const loading = ref(false);
+const uploadInProgress = ref<string | null>(null);
+const submitted = ref(false);
+const renameXlsx = ref(false);
+
+const navRoutes = [
+  {
+    label: 'Curate',
+    path: '/explorer/curate',
   },
-  data () {
-    return {
-      active: 'first',
-      first: false,
-      second: false,
-      xmlFiles: xmlFilesFn.files,
-      loading: false,
-      uploadInProgress: null,
-      submitted: false,
-      navRoutes: [
-        {
-          label: 'Curate',
-          path: '/explorer/curate'
-        }
-      ]
-    }
-  },
-  methods: {
-    addXmlFile: xmlFilesFn.addFiles,
-    removeXmlFile: xmlFilesFn.removeFile,
-    modStatXml: xmlFilesFn.modifyStatus,
-    ...mapActions({
-      submitXML: 'explorer/curation/submitXmlFiles'
-    }),
-    goToStep (id, index) {
-      // this.clearSnackbar();
-      this[id] = true
-      if (index) {
-        this.active = index
-      }
-    },
-    filterXml (files) {
-      this.renameXlsx = false
-      const newFiles = [...files]
-      const filteredFiles = []
-      const regex = /.xml$/gi
-      for (let i = 0; i < newFiles.length; i++) {
-        if (!regex.test(newFiles[i].name)) {
-          this.renameXlsx = true
-        } else filteredFiles.push(newFiles[i])
-      }
-      return filteredFiles
-    },
-    onInputChange (e) {
-      // TODO: Remove the if statement below and check that everything works correctly
-      if (e.target.id === 'xml-file-input') {
-        const uploadedXmlFiles = this.filterXml(e.target.files)
-        this.addXmlFile(uploadedXmlFiles)
-      }
-      // reset so that selecting the same file again will still cause it to fire this change
-      e.target.value = null
-    },
-    async submitXmlFiles () {
-      this.uploadInProgress = 'Uploading...'
-      this.loading = true
-      await this.submitXML(this.xmlFiles)
-      this.loading = false
-      this.submitted = true
-      this.uploadInProgress = null
-    }
-  },
-  computed: {
-    ...mapGetters({
-      isAuth: 'auth/isAuthenticated'
-    })
+];
+
+// Computed properties
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+
+// Methods
+const addXmlFile = xmlFilesFn.addFiles;
+const removeXmlFile = (file: any) => xmlFilesFn.removeFile(file);
+const modStatXml = xmlFilesFn.modifyStatus;
+
+const goToStep = (id: string, index?: string) => {
+  // this.clearSnackbar();
+  if (id === 'first') {
+    first.value = true;
+  } else if (id === 'second') {
+    second.value = true;
   }
-}
+  if (index) {
+    active.value = index;
+  }
+};
+
+const filterXml = (files: FileList | File[]) => {
+  renameXlsx.value = false;
+  const newFiles = [...files];
+  const filteredFiles: File[] = [];
+  const regex = /.xml$/gi;
+  for (let i = 0; i < newFiles.length; i++) {
+    if (!regex.test(newFiles[i].name)) {
+      renameXlsx.value = true;
+    } else {
+      filteredFiles.push(newFiles[i]);
+    }
+  }
+  return filteredFiles;
+};
+
+const onInputChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  // TODO: Remove the if statement below and check that everything works correctly
+  if (target.id === 'xml-file-input') {
+    const uploadedXmlFiles = filterXml(target.files || []);
+    addXmlFile(uploadedXmlFiles);
+  }
+  // reset so that selecting the same file again will still cause it to fire this change
+  target.value = '';
+};
+
+const submitXmlFiles = async () => {
+  uploadInProgress.value = 'Uploading...';
+  loading.value = true;
+  await store.dispatch('explorer/curation/submitXmlFiles', xmlFiles.value);
+  loading.value = false;
+  submitted.value = true;
+  uploadInProgress.value = null;
+};
 </script>

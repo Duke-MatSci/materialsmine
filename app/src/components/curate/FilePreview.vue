@@ -1,13 +1,18 @@
 <template>
   <component :is="tag" :class="classname">
     <md-list-item>
-      <div class="md-layout-item md-size-60 display-text" style="height:2rem">{{fileName}}</div>
-      <div class="md-layout-item" >
+      <div class="md-layout-item md-size-60 display-text" style="height: 2rem">{{ fileName }}</div>
+      <div class="md-layout-item">
         <span v-if="customActions">
           <slot name="custom_actions"></slot>
         </span>
-        <md-button v-if="showRemove" id="removeFile" class="md-icon-button" @click.native.prevent="$emit('remove', file)">
-          <md-tooltip> Remove file </md-tooltip>
+        <md-button
+          v-if="showRemove"
+          id="removeFile"
+          class="md-icon-button"
+          @click.prevent="$emit('remove', file)"
+        >
+          <md-tooltip>Remove file</md-tooltip>
           <md-icon>cancel</md-icon>
         </md-button>
       </div>
@@ -15,37 +20,49 @@
   </component>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import { computed } from 'vue';
+
+// Component name for debugging
+defineOptions({
   name: 'FilePreview',
-  emits: ['remove'],
-  props: {
-    file: {
-      type: Object,
-      required: true
-    },
-    tag: {
-      type: String,
-      default: 'li'
-    },
-    classname: {
-      type: String,
-      required: false,
-      default: ''
-    },
-    showRemove: {
-      required: false,
-      default: true
-    },
-    customActions: {
-      required: false,
-      default: false
-    }
-  },
-  computed: {
-    fileName () {
-      return this.file?.file?.name ?? this.file?.name
-    }
-  }
+});
+
+// Props
+interface FileObject {
+  file?: {
+    name: string;
+  };
+  name?: string;
 }
+
+interface Props {
+  file: FileObject;
+  tag?: string;
+  classname?: string;
+  showRemove?: boolean;
+  customActions?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  tag: 'li',
+  classname: '',
+  showRemove: true,
+  customActions: false,
+});
+
+// Emits
+const emit = defineEmits<{
+  remove: [file: FileObject];
+}>();
+
+// Computed properties
+const fileName = computed(() => {
+  return props.file?.file?.name ?? props.file?.name;
+});
 </script>
+
+
+
+
+

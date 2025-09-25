@@ -6,13 +6,13 @@
       <div class="visualize--links">
         <div
           class="visualize--link-icons visualize--link-left"
-          @click.prevent="reduceAsset('prev')"
+          @click.prevent="reduceAsset('prev', assetItems, pushedAssetItem)"
         >
           <i class="material-icons">keyboard_arrow_left</i>
         </div>
         <div
           class="visualize--link-icons visualize--link-right"
-          @click.prevent="reduceAsset('next')"
+          @click.prevent="reduceAsset('next', assetItems, pushedAssetItem)"
         >
           <i class="material-icons">keyboard_arrow_right</i>
         </div>
@@ -42,16 +42,13 @@
         </div>
 
         <div class="visualize_btn">
-          <a href="/explorer/chart" class="btn-text"
-            >Explore the chart gallery</a
-          >
+          <a href="/explorer/chart" class="btn-text">Explore the chart gallery</a>
         </div>
         <div class="visualize_text">
           <p>
-            Our chart builder leverages <strong>SPARQL</strong> and
-            <strong>Vega-Lite</strong> for rich, interactive charts of data from
-            the MaterialsMine knowledge graph. Visit our Charts Gallery to view
-            examples, and contact us to get your data integrated.
+            Our chart builder leverages <strong>SPARQL</strong> and <strong>Vega-Lite</strong> for
+            rich, interactive charts of data from the MaterialsMine knowledge graph. Visit our
+            Charts Gallery to view examples, and contact us to get your data integrated.
           </p>
         </div>
       </div>
@@ -59,16 +56,12 @@
     <div class="u_vertical-only-display section_quicklinks u--margin-toplg">
       <div class="wrapper">
         <div class="grid grid_col-3 grid_gap-smaller">
-          <div
-            class="quicklinks"
-            @click.prevent="navigateFunction('/explorer')"
-          >
+          <div class="quicklinks" @click.prevent="navigateFunction('/explorer')">
             <div class="quicklinks_content">
               <h2>Browse Data</h2>
               <i class="material-icons">search</i>
               <div class="quicklinks_content-description">
-                Browse or search information on articles, samples, images,
-                charts, etc.
+                Browse or search information on articles, samples, images, charts, etc.
               </div>
             </div>
           </div>
@@ -85,10 +78,7 @@
             </div>
           </div>
 
-          <div
-            class="quicklinks"
-            @click.prevent="navigateFunction('/explorer/chart')"
-          >
+          <div class="quicklinks" @click.prevent="navigateFunction('/explorer/chart')">
             <div class="quicklinks_content">
               <h2>Chart Gallery</h2>
               <i class="material-icons">ssid_chart</i>
@@ -112,8 +102,8 @@
               <h2>Datasets</h2>
               <i class="material-icons">dataset</i>
               <div class="quicklinks_content-description">
-                Browse a catalog of datasets that have been curated into the
-                MaterialsMine knowledge graph.
+                Browse a catalog of datasets that have been curated into the MaterialsMine knowledge
+                graph.
               </div>
             </div>
           </div>
@@ -162,56 +152,69 @@
   </div>
 </template>
 
-<script>
-import reducer from '@/mixins/reduce'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import { useReduce } from '@/composables/useReduce';
 
-export default {
-  name: 'HomeNM',
-  mixins: [reducer],
-  data () {
-    return {
-      assetItems: [
-        {
-          img: require('@/assets/img/chartgifs/characterization-radial.gif'),
-          title: 'Tooltips',
-          url: '/explorer/chart/view/1eeea9b71ebb10b7'
-        },
-        {
-          img: require('@/assets/img/chartgifs/crossfiltering.gif'),
-          title: 'Crossfiltering',
-          url: '/explorer/chart/view/1dfd29527da82466'
-        },
-        {
-          img: require('@/assets/img/chartgifs/matrix-filler-combo.gif'),
-          title: 'Dynamic Selection',
-          url: '/explorer/chart/view/24b40b6d992fa2f8'
-        },
-        {
-          img: require('@/assets/img/chartgifs/meta-analysis.gif'),
-          title: 'Pan & Zoom',
-          url: '/explorer/chart/view/2a774b46a67ff7a6'
-        },
-        {
-          img: require('@/assets/img/chartgifs/tensile-chart.gif'),
-          title: 'Conditional Highlighting',
-          url: '/explorer/chart/view/6203fc0eade146e8'
-        }
-      ],
-      pushedAssetItem: [],
-      screen: 0
-    }
-  },
-  methods: {
-    navigateFunction (arg) {
-      this.$router.push(arg)
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', {
-      icon: '',
-      pagetype: 'home',
-      name: 'Welcome to MaterialsMine! An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
-    })
-  }
+const store = useStore();
+const router = useRouter();
+const { reduceAsset } = useReduce();
+
+interface AssetItem {
+  img: string;
+  title: string;
+  url: string;
 }
+
+const assetItems = ref<AssetItem[]>([
+  {
+    img: require('@/assets/img/chartgifs/characterization-radial.gif'),
+    title: 'Tooltips',
+    url: '/explorer/chart/view/1eeea9b71ebb10b7',
+  },
+  {
+    img: require('@/assets/img/chartgifs/crossfiltering.gif'),
+    title: 'Crossfiltering',
+    url: '/explorer/chart/view/1dfd29527da82466',
+  },
+  {
+    img: require('@/assets/img/chartgifs/matrix-filler-combo.gif'),
+    title: 'Dynamic Selection',
+    url: '/explorer/chart/view/24b40b6d992fa2f8',
+  },
+  {
+    img: require('@/assets/img/chartgifs/meta-analysis.gif'),
+    title: 'Pan & Zoom',
+    url: '/explorer/chart/view/2a774b46a67ff7a6',
+  },
+  {
+    img: require('@/assets/img/chartgifs/tensile-chart.gif'),
+    title: 'Conditional Highlighting',
+    url: '/explorer/chart/view/6203fc0eade146e8',
+  },
+]);
+
+const pushedAssetItem = ref<AssetItem[]>([]);
+
+const navigateFunction = (arg: string) => {
+  router.push(arg);
+};
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', {
+    icon: '',
+    pagetype: 'home',
+    name: 'Welcome to MaterialsMine! An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)',
+  });
+});
+
+defineOptions({
+  name: 'HomeNM',
+});
 </script>
+
+<style scoped>
+/* Add any component-specific styles here */
+</style>
