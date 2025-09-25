@@ -80,6 +80,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       MM_GHT: ${{ secrets.MM_GHT }}
+      FE_PORT: ${{ secrets.FE_PORT }}
   BuildProxy:
     needs: [test]
     uses: Duke-MatSci/materialsmine/.github/workflows/builder.yml@develop
