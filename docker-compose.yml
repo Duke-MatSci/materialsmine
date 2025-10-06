@@ -136,6 +136,20 @@ services:
       - ./app:/app
     ports:
       - '8080:8080'
+  # client:
+  #   stdin_open: true
+  #   container_name: frontend
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - API_PORT=${PORT}
+  #     - MINIO_PORT=${MINIO_PORT}
+  #     - SERVICE_PORT=${HOST_PORT}
+  #   build:
+  #     dockerfile: Dockerfile.dev
+  #     context: ./old-app
+  #   volumes:
+  #     - /old-app/node_modules
+  #     - ./old-app:/app
   managedservices:
     container_name: managedservices
     # depends_on:
