@@ -1,20 +1,7 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-
-export interface CurationState {
-  datasetId: string | null;
-  fieldNameSelected: string;
-  newChartExist: boolean;
-  doiData: any;
-  orcidData: any;
-  rorData: any[];
-  xmlBulkResponse: any;
-  replaceNestedRef: string[];
-  curationFormData: any;
-  curationSheetStatus: any;
-  curationFormError: any;
-}
+import { CurationState } from '../types';
 
 export default {
   namespaced: true,

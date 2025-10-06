@@ -1,108 +1,43 @@
-import { ActionContext } from 'vuex';
-import { CurationState } from './index';
 import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql';
-// import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/metamaterial-gql';
+import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/metamaterial-gql';
 import router from '@/router';
 import apollo from '@/modules/gql/apolloClient';
 import { deleteChart, saveXml } from '@/modules/vega-chart';
 import { isValidOrcid } from '@/modules/whyis-dataset';
+import { ActionContext } from 'vuex';
+import {
+  CurationState,
+  CreateDatasetIdPayload,
+  DeleteEntityPayload,
+  CacheEntityPayload,
+  FetchXlsListPayload,
+  FetchCurationDataPayload,
+  SubmitCurationDataPayload,
+  DeleteCurationPayload,
+  SearchRorPayload,
+  ApproveCurationPayload,
+  RequestApprovalPayload,
+  DeleteEntityFilesPayload,
+} from '../types';
 
-interface CreateDatasetIdPayload {
-  isBulk?: boolean;
-}
-
-interface BulkXmlPayload {
-  files: File[];
-}
-
-interface FetchXlsListPayload {
-  field: string;
-  pageNumber?: number;
-}
-
-interface CurationDataPayload {
-  id?: string;
-  isNew?: boolean;
-}
-
-interface SubmitCurationDataPayload {
-  xlsxObjectId?: string | null;
-  isNew?: boolean;
-}
-
-interface DeleteCurationPayload {
-  xmlId: string;
-  isNew: boolean;
-}
-
-interface SearchRorPayload {
-  query?: string;
-  id?: string;
-}
-
-interface ApproveCurationPayload {
-  xmlViewer: any;
-  callbackFn: () => void;
-}
-
-interface RequestApprovalPayload {
-  curationId: string;
-  isNew: boolean;
-}
-
-interface SubmitXmlFilesPayload {
-  files: Array<{ file: File }>;
-}
-
-interface DeleteEntityFilesPayload {
-  distribution: string[];
-  thumbnail?: string;
-}
-
-interface CacheNewEntityPayload {
-  identifier: string;
-  resourceNanopub: any;
-  type: 'charts' | 'datasets';
-}
-
-interface DeleteEntityESPayload {
-  identifier: string;
-  type: string;
-}
-
-interface ChartInstanceObject {
-  description?: string;
-  identifier: string;
-  label?: string;
-  thumbnail?: string;
-}
-
-interface DatasetInstanceObject {
-  description?: string;
-  identifier: string;
-  label?: string;
-  thumbnail?: string;
-  doi?: string;
-  organization?: string[];
-  distribution?: string[];
-}
+type Context = ActionContext<CurationState, unknown>;
 
 export default {
   async createDatasetIdVuex(
-    { commit, dispatch }: ActionContext<CurationState, any>,
+    { commit, dispatch }: Context,
     { isBulk = false }: CreateDatasetIdPayload
-  ) {
+  ): Promise<void> {
     await apollo
       .mutate({
         mutation: CREATE_DATASET_ID_MUTATION,
       })
-      .then((result: any) => {
+      .then((result) => {
         const datasetId = result.data.createDatasetId.datasetGroupId;
         commit('setDatasetId', datasetId);
         if (isBulk) return;
         router.push({ name: 'CurateSpreadsheet', params: { datasetId } });
       })
-      .catch((error: any) => {
+      .catch((error: Error) => {
         if (error.message.includes('unused datasetId')) {
           const datasetId = error.message.split('-')[1]?.split(' ')[1];
           commit('setDatasetId', datasetId);
@@ -125,10 +60,13 @@ export default {
   },
 
   async createChartInstanceObject(
-    _context: ActionContext<CurationState, any>,
-    nanopubPayload: any
-  ): Promise<ChartInstanceObject | Error> {
-    const chartObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
+    _context: Context,
+    nanopubPayload: unknown
+  ): Promise<Record<string, unknown> | Error> {
+    const payload = nanopubPayload as Record<string, unknown>;
+    const graph = payload?.['@graph'] as Record<string, unknown>;
+    const assertion = graph?.['np:hasAssertion'] as Record<string, unknown[]>;
+    const chartObject = assertion?.['@graph']?.[0] as Record<string, unknown>;
 
     // Return if not able to retrieve chart object
     if (!chartObject) {
@@ -137,19 +75,21 @@ export default {
 
     // Build chart instance object
     return {
-      description: chartObject['http://purl.org/dc/terms/description']?.[0]?.['@value'],
+      description: ((chartObject['http://purl.org/dc/terms/description'] as unknown[])?.[0] as Record<string, unknown>)?.['@value'],
       identifier: chartObject['@id'],
-      label: chartObject['http://purl.org/dc/terms/title']?.[0]?.['@value'],
-      thumbnail: chartObject['http://xmlns.com/foaf/0.1/depiction']?.['@id'],
-      // depiction: chartObject['http://xmlns.com/foaf/0.1/depiction']?.['http://vocab.rpi.edu/whyis/hasContent']
+      label: ((chartObject['http://purl.org/dc/terms/title'] as unknown[])?.[0] as Record<string, unknown>)?.['@value'],
+      thumbnail: (chartObject['http://xmlns.com/foaf/0.1/depiction'] as Record<string, unknown>)?.['@id'],
     };
   },
 
   async createDatasetInstanceObject(
-    _context: ActionContext<CurationState, any>,
-    nanopubPayload: any
-  ): Promise<DatasetInstanceObject | Error> {
-    const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
+    _context: Context,
+    nanopubPayload: unknown
+  ): Promise<Record<string, unknown> | Error> {
+    const payload = nanopubPayload as Record<string, unknown>;
+    const graph = payload?.['@graph'] as Record<string, unknown>;
+    const assertion = graph?.['np:hasAssertion'] as Record<string, unknown[]>;
+    const datasetObject = assertion?.['@graph']?.[0] as Record<string, unknown>;
 
     // Return if not able to retrieve chart object
     if (!datasetObject) {
@@ -159,36 +99,40 @@ export default {
     // Build chart instance object
     return {
       description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+        ((datasetObject['http://purl.org/dc/terms/description'] as unknown[])?.[0] as Record<string, unknown>)?.['@value'] ??
+        (datasetObject['http://purl.org/dc/terms/description'] as Record<string, unknown>)?.['@value'],
       identifier: datasetObject['@id'],
       label:
-        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/title']?.['@value'],
+        ((datasetObject['http://purl.org/dc/terms/title'] as unknown[])?.[0] as Record<string, unknown>)?.['@value'] ??
+        (datasetObject['http://purl.org/dc/terms/title'] as Record<string, unknown>)?.['@value'],
       thumbnail:
-        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+        (datasetObject['http://xmlns.com/foaf/0.1/depiction'] as Record<string, unknown>)?.[
           'http://www.w3.org/ns/dcat#accessURL'
         ],
-      doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
-        return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
-      }),
-      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
-        return dist?.['@id'];
-      }),
+      doi: (datasetObject['http://purl.org/dc/terms/isReferencedBy'] as Record<string, unknown>)?.['@value'],
+      organization: (datasetObject['http://xmlns.com/foaf/0.1/Organization'] as Record<string, unknown>[])?.map(
+        (org: Record<string, unknown>) => {
+          return (org?.['http://xmlns.com/foaf/0.1/name'] as Record<string, unknown>)?.['@value'];
+        }
+      ),
+      distribution: (datasetObject['http://www.w3.org/ns/dcat#distribution'] as Record<string, unknown>[])?.map(
+        (dist: Record<string, unknown>) => {
+          return dist?.['@id'];
+        }
+      ),
     };
   },
 
-  async deleteEntityNanopub(_context: ActionContext<CurationState, any>, entityUri: string) {
+  async deleteEntityNanopub(_context: Context, entityUri: string): Promise<unknown> {
     // TODO: refactor delete function to generalize to other entity types
     const response = await deleteChart(entityUri);
     return response;
   },
 
   async deleteEntityES(
-    { rootGetters }: ActionContext<CurationState, any>,
-    payload: DeleteEntityESPayload
-  ) {
+    { rootGetters }: Context,
+    payload: DeleteEntityPayload
+  ): Promise<void> {
     const { identifier, type } = payload;
     const url = '/api/admin/es';
     const token = rootGetters['auth/token'];
@@ -204,23 +148,19 @@ export default {
   },
 
   async cacheNewEntityResponse(
-    { commit, dispatch, rootGetters }: ActionContext<CurationState, any>,
-    payload: CacheNewEntityPayload
-  ) {
+    { commit, dispatch, rootGetters }: Context,
+    payload: CacheEntityPayload
+  ): Promise<{ response: unknown; identifier: string } | Error> {
     const { identifier, resourceNanopub, type } = payload;
 
     const url = '/api/admin/es';
-    let resourceInstanceObject: ChartInstanceObject | DatasetInstanceObject | Error;
+    let resourceInstanceObject;
     if (type === 'charts') {
       resourceInstanceObject = await dispatch('createChartInstanceObject', resourceNanopub);
     } else if (type === 'datasets') {
       resourceInstanceObject = await dispatch('createDatasetInstanceObject', resourceNanopub);
     } else {
       return new Error('Caching error. Type parameter is missing or invalid');
-    }
-
-    if (resourceInstanceObject instanceof Error) {
-      return resourceInstanceObject;
     }
 
     const token = rootGetters['auth/token'];
@@ -241,29 +181,35 @@ export default {
     });
 
     if (fetchResponse.status !== 200) {
-      return new Error(fetchResponse.statusText || `Server error, cannot cache ${type} object`);
+      return new Error(
+        fetchResponse.statusText || `Server error, cannot cache ${type} object`
+      );
     }
 
     const response = await fetchResponse.json();
-    return { response, identifier: resourceInstanceObject.identifier };
+    return {
+      response,
+      identifier: (resourceInstanceObject as Record<string, unknown>).identifier as string,
+    };
   },
 
-  async lookupOrcid({ commit }: ActionContext<CurationState, any>, orcidId: string) {
+  async lookupOrcid({ commit }: Context, orcidId: string): Promise<void> {
     const unhyphenated = /^\d{15}(\d|X)$/.test(orcidId);
-    if (unhyphenated) {
-      orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4');
-    }
+    unhyphenated &&
+      (orcidId = orcidId.replace(
+        /^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/,
+        '$1-$2-$3-$4'
+      ));
 
     if (isValidOrcid(orcidId)) {
-      // TODO: update the endpoint route name
-      // const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`;
       const url = `/api/knowledge/instance?uri=http://orcid.org/${orcidId}`;
       const response = await fetch(url, {
         method: 'GET',
       });
       if (response?.statusText !== 'OK') {
         const snackbar = {
-          message: (response as any).message || 'Something went wrong while fetching orcid data',
+          message:
+            response.statusText || 'Something went wrong while fetching orcid data',
           duration: 5000,
         };
         return commit('setSnackbar', snackbar, { root: true });
@@ -271,7 +217,7 @@ export default {
 
       const responseData = await response.json();
       const cpResult = responseData.filter(
-        (entry: any) => entry['@id'] === `http://orcid.org/${orcidId}`
+        (entry: Record<string, unknown>) => entry['@id'] === `http://orcid.org/${orcidId}`
       );
       if (cpResult.length) {
         return commit('setOrcidData', cpResult[0]);
@@ -285,14 +231,14 @@ export default {
     }
   },
 
-  async lookupDoi({ commit }: ActionContext<CurationState, any>, inputDoi: string) {
+  async lookupDoi({ commit }: Context, inputDoi: string): Promise<void> {
     const url = `/api/knowledge/getdoi/${inputDoi}`;
     const response = await fetch(url, {
       method: 'GET',
     });
     if (response?.statusText !== 'OK') {
       const snackbar = {
-        message: (response as any).message || 'Something went wrong while fetching DOI data',
+        message: response.statusText || 'Something went wrong while fetching DOI data',
         duration: 5000,
       };
       return commit('setSnackbar', snackbar, { root: true });
@@ -302,9 +248,9 @@ export default {
   },
 
   async submitBulkXml(
-    { commit, dispatch, rootGetters }: ActionContext<CurationState, any>,
+    { commit, dispatch, rootGetters }: Context,
     files: File[]
-  ) {
+  ): Promise<Response> {
     const token = rootGetters['auth/token'];
     await dispatch('createDatasetIdVuex', { isBulk: true });
     const url = `${window.location.origin}/api/curate/bulk?dataset=${rootGetters['explorer/curation/datasetId']}`;
@@ -319,39 +265,41 @@ export default {
       },
     });
     if (response?.statusText !== 'OK') {
-      throw new Error((response as any).message || 'Something went wrong while submitting XMLs');
+      throw new Error(response.statusText || 'Something went wrong while submitting XMLs');
     }
     const result = await response.json();
     commit('setXmlBulkResponse', result);
     return response;
   },
 
-  // async fetchXlsList(_context: ActionContext<CurationState, any>, payload: FetchXlsListPayload) {
-  //   if (!payload.field) return;
-  //   const response = await apollo.query({
-  //     query: SEARCH_SPREADSHEETLIST_QUERY,
-  //     variables: {
-  //       input: {
-  //         field: payload.field,
-  //         pageNumber: payload?.pageNumber ?? 1,
-  //         pageSize: 20,
-  //       },
-  //     },
-  //     fetchPolicy: 'no-cache',
-  //   });
-  //   if (!response) {
-  //     const error = new Error('Server error: Unable to access list!');
-  //     throw error;
-  //   }
-  //   const result = response?.data?.getXlsxCurationList || {};
-  //   return result;
-  // },
+  async fetchXlsList(_context: Context, payload: FetchXlsListPayload): Promise<unknown> {
+    if (!payload.field) return;
+    const response = await apollo.query({
+      query: SEARCH_SPREADSHEETLIST_QUERY,
+      variables: {
+        input: {
+          field: payload.field,
+          pageNumber: payload?.pageNumber ?? 1,
+          pageSize: 20,
+        },
+      },
+      fetchPolicy: 'no-cache',
+    });
+    if (!response) {
+      const error = new Error('Server error: Unable to access list!');
+      throw error;
+    }
+    const result = response?.data?.getXlsxCurationList || {};
+    return result;
+  },
 
   async fetchCurationData(
-    { commit, getters, rootGetters }: ActionContext<CurationState, any>,
-    payload: CurationDataPayload | null = null
-  ) {
-    const url = !payload ? '/api/curate' : `/api/curate/get/${payload.id}?isNew=${payload?.isNew}`;
+    { commit, getters, rootGetters }: Context,
+    payload: FetchCurationDataPayload | null = null
+  ): Promise<void> {
+    const url = !payload
+      ? '/api/curate'
+      : `/api/curate/get/${payload.id}?isNew=${payload?.isNew}`;
     const token = rootGetters['auth/token'];
     const curationData = getters?.getCurationFormData ?? {};
 
@@ -373,10 +321,11 @@ export default {
 
   // Curation Form Page Submit Function
   async submitCurationData(
-    { state, commit, rootGetters }: ActionContext<CurationState, any>,
+    { state, commit, rootGetters }: Context,
     { xlsxObjectId = null, isNew = true }: SubmitCurationDataPayload = {}
-  ) {
-    const cId = state.curationFormData.Control_ID ?? state.curationFormData.CONTROL_ID ?? {};
+  ): Promise<void> {
+    const cId =
+      state.curationFormData.Control_ID ?? state.curationFormData.CONTROL_ID ?? {};
 
     if (!cId?.cellValue && !xlsxObjectId) {
       throw new Error('Please enter Control_ID before submitting');
@@ -393,7 +342,7 @@ export default {
       const element = JSON.parse(replaceNestedRef[i]);
       const title = element.shift();
       const lastKey = element.pop();
-      const refData = element.reduce(function (o: any, x: any) {
+      const refData = element.reduce(function (o: Record<string, unknown>, x: string) {
         return typeof o === 'undefined' || o === null ? o : o[x];
       }, data[title]);
       refData[lastKey] = refData[lastKey].values;
@@ -442,7 +391,7 @@ export default {
         router.push({
           name: 'XmlVisualizer',
           params: { id: sampleId },
-          query: { isNewCuration: String(isNew) },
+          query: { isNewCuration: isNew.toString() },
         });
       } else {
         router.push({ name: 'XmlGallery' });
@@ -456,7 +405,7 @@ export default {
     }
   },
 
-  async createControlId({ rootGetters, dispatch, commit }: ActionContext<CurationState, any>) {
+  async createControlId({ rootGetters, dispatch, commit }: Context): Promise<void> {
     const url = '/api/curate/newsampleid';
     const token = rootGetters['auth/token'];
 
@@ -477,11 +426,12 @@ export default {
 
       const { controlID } = await request.json();
       commit('setControlID', controlID);
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       commit(
         'setSnackbar',
         {
-          message: error?.message ?? 'Something went wrong fetching Control_ID',
+          message: err?.message ?? 'Something went wrong fetching Control_ID',
           action: () => dispatch('createControlId'),
         },
         { root: true }
@@ -490,30 +440,33 @@ export default {
   },
 
   async deleteCuration(
-    { commit, rootGetters, dispatch }: ActionContext<CurationState, any>,
+    { commit, rootGetters, dispatch }: Context,
     payload: DeleteCurationPayload
-  ) {
+  ): Promise<void> {
     try {
       if (!payload || !payload?.xmlId) {
-        throw new Error('Incorrect query parameters', {
-          cause: 'Missing flag',
-        });
+        throw new Error('Incorrect query parameters');
       }
       const token = rootGetters['auth/token'];
       const { xmlId, isNew } = payload;
 
       await dispatch('deleteEntityNanopub', xmlId);
 
-      const fetchResponse = await fetch(`/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
-      });
+      const fetchResponse = await fetch(
+        `/api/curate?xlsxObjectId=${xmlId}&isNew=${isNew}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token,
+          },
+        }
+      );
 
       if (fetchResponse.status !== 200) {
-        throw new Error(fetchResponse.statusText || 'Server error, Unable to delete curation');
+        throw new Error(
+          fetchResponse.statusText || 'Server error, Unable to delete curation'
+        );
       }
       const response = await fetchResponse.json();
       const snackbar = {
@@ -521,27 +474,23 @@ export default {
         duration: 5000,
       };
       return commit('setSnackbar', snackbar, { root: true });
-    } catch (error: any) {
-      let snackbar;
-      if ('cause' in error) {
-        snackbar = { message: error?.message, duration: 4000 };
-      } else {
-        snackbar = {
-          message: error?.message ?? 'Something went wrong',
-          action: () =>
-            dispatch('deleteCuration', {
-              xmlId: payload.xmlId,
-              isNew: payload.isNew,
-            }),
-        };
-      }
+    } catch (error) {
+      const err = error as Error;
+      const snackbar = {
+        message: err?.message ?? 'Something went wrong',
+        action: () =>
+          dispatch('deleteCuration', {
+            xmlId: payload.xmlId,
+            isNew: payload.isNew,
+          }),
+      };
       commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async searchRor({ commit }: ActionContext<CurationState, any>, payload: SearchRorPayload) {
+  async searchRor({ commit }: Context, payload: SearchRorPayload): Promise<unknown> {
     const { query, id } = payload;
-    let url: string;
+    let url;
     if (query) url = `/api/knowledge/ror?query=${query}`;
     else if (id) url = `/api/knowledge/ror?id=${id}`;
     else {
@@ -556,7 +505,7 @@ export default {
     });
     if (response?.statusText !== 'OK') {
       const snackbar = {
-        message: (response as any).message || 'Something went wrong while fetching ROR data',
+        message: response.statusText || 'Something went wrong while fetching ROR data',
         duration: 5000,
       };
       return commit('setSnackbar', snackbar, { root: true });
@@ -567,9 +516,9 @@ export default {
   },
 
   async approveCuration(
-    { commit, rootGetters }: ActionContext<CurationState, any>,
+    { commit, rootGetters }: Context,
     { xmlViewer, callbackFn }: ApproveCurationPayload
-  ) {
+  ): Promise<void> {
     const isAdmin = rootGetters['auth/isAdmin'];
     const token = rootGetters['auth/token'];
     if (!isAdmin) {
@@ -592,8 +541,6 @@ export default {
     );
     try {
       await saveXml(xmlViewer, token);
-      // TODO: FIX THIS LATER!
-      // commit('resetSnackbar', {}, { root: true });
       commit('setDialogBox', true, { root: true });
       return callbackFn();
     } catch (error) {
@@ -609,9 +556,9 @@ export default {
   },
 
   async requestApproval(
-    { commit, rootGetters, dispatch }: ActionContext<CurationState, any>,
+    { commit, rootGetters, dispatch }: Context,
     { curationId, isNew }: RequestApprovalPayload
-  ) {
+  ): Promise<void> {
     const isAdmin = rootGetters['auth/isAdmin'];
     const token = rootGetters['auth/token'];
     if (isAdmin) {
@@ -664,9 +611,9 @@ export default {
   },
 
   async submitXmlFiles(
-    { commit, rootGetters }: ActionContext<CurationState, any>,
+    { commit, rootGetters }: Context,
     files: Array<{ file: File }>
-  ) {
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     try {
       const formData = new FormData();
@@ -675,7 +622,6 @@ export default {
       const response = await fetch('/api/curate/xml', {
         method: 'POST',
         headers: {
-          // 'Content-Type': 'application/json',
           Authorization: 'Bearer ' + token,
         },
         body: formData,
@@ -692,7 +638,8 @@ export default {
             },
             { root: true }
           );
-          return router.push('/explorer/xmls');
+          await router.push('/explorer/xmls');
+          return;
         } else {
           return commit(
             'setSnackbar',
@@ -705,32 +652,25 @@ export default {
           );
         }
       }
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       return commit(
         'setSnackbar',
-        {
-          message: error.message ?? 'Something went wrong during the request',
-        },
+        { message: err.message ?? 'Something went wrong during the request' },
         { root: true }
       );
     }
   },
 
   async deleteEntityFiles(
-    { rootGetters }: ActionContext<CurationState, any>,
+    { rootGetters }: Context,
     payload: DeleteEntityFilesPayload
-  ) {
+  ): Promise<void> {
     const { distribution, thumbnail } = payload;
     if (!distribution.length && !thumbnail) return;
 
     const token = rootGetters['auth/token'];
     if (thumbnail) {
-      // Enable this url definition below for local testing
-      // const url = thumbnail.replace(
-      //   'http://restful:3001',
-      //   'http://localhost/api'
-      // );
-      // await fetch(url, {
       await fetch(thumbnail, {
         method: 'DELETE',
         headers: {
@@ -743,9 +683,6 @@ export default {
 
     if (distribution.length) {
       for (const dist of distribution) {
-        // Enable this url definition below for local testing
-        // const url = dist.replace('http://restful:3001', 'http://localhost/api');
-        // await fetch(url, {
         await fetch(dist, {
           method: 'DELETE',
           headers: {

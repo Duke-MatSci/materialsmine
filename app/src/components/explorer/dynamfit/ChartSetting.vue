@@ -11,21 +11,21 @@
     <!-- Control Plain  -->
     <div class="search_box_form u_centralize_items">
       <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
-        <template>
-          <div class="new-item-button-container" v-if="!updateControls">
-            <button @click="openSidebar" class="btn btn--primary u--b-rad">
-              Continue to Datafile Options
-            </button>
-            <div class="new-item-new-badge">New</div>
-          </div>
-          <div v-else title="Click to reset all your selections">
-            <button @click="resetAll" class="btn btn--tertiary u_margin-right-small">Reset</button>
-            <button v-if="!isSidebarOpen" @click="openSidebar" class="btn btn--primary">
-              Open Sidebar
-            </button>
-            <button v-else @click="closeSidebar" class="btn btn--primary">Close Sidebar</button>
-          </div>
-        </template>
+        <!-- <template> -->
+        <div class="new-item-button-container" v-if="!updateControls">
+          <button @click="openSidebar" class="btn btn--primary u--b-rad">
+            Continue to Datafile Options
+          </button>
+          <div class="new-item-new-badge">New</div>
+        </div>
+        <div v-else title="Click to reset all your selections">
+          <button @click="resetAll" class="btn btn--tertiary u_margin-right-small">Reset</button>
+          <button v-if="!isSidebarOpen" @click="openSidebar" class="btn btn--primary">
+            Open Sidebar
+          </button>
+          <button v-else @click="closeSidebar" class="btn btn--primary">Close Sidebar</button>
+        </div>
+        <!-- </template> -->
       </div>
       <div v-if="isSidebarOpen" class="sidebar">
         <button
@@ -179,10 +179,10 @@
               v-if="optionalChaining(() => results?.xmls?.length) && !currentItem"
               class="metamine_footer-ref-header"
             >
-              <h3 v-if="results.counts > limit">
-                Results ({{ currentPage * limit }} of {{ results.counts }})
+              <h3 v-if="(results.counts ?? 0) > limit">
+                Results ({{ currentPage * limit }} of {{ results.counts ?? 0 }})
               </h3>
-              <h3 v-else>Results ({{ currentPage }} of {{ results.counts }})</h3>
+              <h3 v-else>Results ({{ currentPage }} of {{ results.counts ?? 0 }})</h3>
               <hr />
               <div class="list-container">
                 <div
@@ -224,12 +224,12 @@
                 >
                   <input
                     type="radio"
-                    :id="index"
+                    :id="String(index)"
                     :value="{ ...item, index: index }"
                     v-model="selectedItemProperty"
                     style="accent-color: #09233c"
                   />
-                  <label :for="item"
+                  <label :for="String(index)"
                     ><span style="display: block"
                       ><strong>Description:</strong> {{ item.property }}</span
                     ><span class="u--color-grey-sec u--margin-neg md-body-1"
@@ -299,18 +299,92 @@
     </div>
 
     <!-- Checkbox -->
-    <div>
+    <div style="margin-bottom: 0.5rem">
       <label for="fitSettings" class="md-body-2">Additional Settings</label>
-      <md-checkbox
-        :disabled="disableInput"
-        v-model="dynamfit.fitSettings"
-        :class="[
-          disableInput ? 'nuplot-masked' : '',
-          'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
-        ]"
-      >
-        Show Basis Functions
-      </md-checkbox>
+      <div class="u--layout-flex u--layout-flex-justify-sb">
+        <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
+          Perform TTSP
+        </md-checkbox>
+        <md-checkbox
+          :disabled="disableInput"
+          v-model="dynamfit.fitSettings"
+          :class="[
+            disableInput ? 'nuplot-masked' : '',
+            'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
+          ]"
+        >
+          Show Basis Functions
+        </md-checkbox>
+      </div>
+    </div>
+    <div style="margin-bottom: 1rem" v-if="ttsp">
+      <!-- Transform Method Dropdown -->
+      <div class="md-field viz-u-mgbottom-big">
+        <select
+          :disabled="!ttsp"
+          v-model="transformMethod"
+          :class="[!ttsp ? 'nuplot-masked' : '', 'form__select u--b-rad']"
+          name="transformMethod"
+          id="transformMethod"
+        >
+          <option value="">Transform Method</option>
+          <option value="WLF">WLF</option>
+          <option value="Manual">Manual</option>
+        </select>
+      </div>
+
+      <!-- TTSP Checkbox -->
+      <!-- TTSP Tg Value -->
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspTgValue"
+          name="ttspTgValue"
+          id="ttspTgValue"
+          placeholder="Tg"
+          :disabled="!ttsp"
+        ></md-input>
+        <md-checkbox
+          :disabled="ttspDisabled"
+          v-model="tgEstimated"
+          class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+        >
+          Use Estimated Tg
+        </md-checkbox>
+      </div>
+      <!-- TTSP C1 Value -->
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspC1Value"
+          name="ttspC1Value"
+          id="ttspC1Value"
+          placeholder="C1"
+          :disabled="!ttsp"
+        ></md-input>
+        <md-checkbox
+          :disabled="ttspDisabled"
+          v-model="c1Estimated"
+          class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+        >
+          Use Estimated C1
+        </md-checkbox>
+      </div>
+      <!-- TTSP C2 Value -->
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspC2Value"
+          name="ttspC2Value"
+          id="ttspC2Value"
+          placeholder="C2"
+          :disabled="!ttsp"
+        ></md-input>
+        <md-checkbox
+          :disabled="ttspDisabled"
+          v-model="c2Estimated"
+          class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+        >
+          Use Estimated C2
+        </md-checkbox>
+      </div>
     </div>
     <div class="grid grid_col-2">
       <div class="">
@@ -319,7 +393,7 @@
           class="btn-text"
           style="border-radius: 0% !important"
           href="#"
-          @click="useSampleFile"
+          v-on:click="useSampleFile"
           ><span class="md-body-1">Use Sample </span></a
         >
         <span
@@ -352,7 +426,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useStore } from 'vuex';
-import { useOptionalChaining } from '@/composables/useOptionalChaining';
+import { useOptionalChaining } from '@/composables';
 import Pagination from '@/components/explorer/Pagination.vue';
 
 // Component name for debugging
@@ -360,29 +434,56 @@ defineOptions({
   name: 'ChartSetting',
 });
 
-// Store
-const store = useStore();
+// Type definitions
+interface XmlItem {
+  id: string;
+  title: string;
+  contains: Array<{
+    property: string;
+    table: string;
+  }>;
+}
+
+interface SearchResults {
+  xmls?: XmlItem[];
+  counts?: number;
+}
+
+interface SelectedItemProperty {
+  property: string;
+  table: string;
+  index: number;
+}
 
 // Composables
 const { optionalChaining } = useOptionalChaining();
+const store = useStore();
 
-// Reactive data
+// Reactive state
 const showToolTip = ref(false);
 const isTemp = ref(true);
 const useSample = ref(false);
 const isSidebarOpen = ref(false);
 const selectedProperty = ref('select');
 const limit = ref(2);
-const results = ref<any[]>([]);
-const currentItem = ref<any>(null);
-const selectedItemProperty = ref<any>(null);
+const results = ref<SearchResults>({});
+const currentItem = ref<XmlItem | null>(null);
+const selectedItemProperty = ref<SelectedItemProperty | null>(null);
 const currentPage = ref(1);
 const totalPages = ref(0);
 const stepper = ref(1);
 const dataType = ref<string | undefined>(undefined);
+const ttsp = ref(false);
+const transformMethod = ref('');
+const ttspTgValue = ref('');
+const tgEstimated = ref(false);
+const ttspC1Value = ref('');
+const c1Estimated = ref(false);
+const ttspC2Value = ref('');
+const c2Estimated = ref(false);
 
 // Computed properties
-const dynamfit = computed(() => store.state.explorer.dynamfit);
+const dynamfit = computed(() => store.getters['explorer/dynamfit']);
 const token = computed(() => store.getters['auth/token']);
 
 const disableInput = computed(() => {
@@ -397,24 +498,16 @@ const updateControls = computed(() => {
   return !!dynamfit.value.fileUpload || !!results.value?.xmls?.length;
 });
 
-// Watch for changes
-watch(
-  dynamfit,
-  (newVal) => {
-    if (!newVal) return;
-    updateChart();
-  },
-  { deep: true }
-);
+const ttspDisabled = computed(() => {
+  return selectedProperty.value === 'frequency';
+});
 
-watch(limit, () => {
-  return search();
+const showTtsp = computed(() => {
+  return ttsp.value && transformMethod.value === 'WLF';
 });
 
 // Methods
-// const updateView = () => {};
-
-const resetAll = () => {
+const resetAll = (): void => {
   closeSidebar();
   resetChart();
   selectedProperty.value = 'select';
@@ -422,37 +515,39 @@ const resetAll = () => {
   selectedItemProperty.value = null;
   currentPage.value = 1;
   totalPages.value = 0;
-  results.value = [];
+  results.value = {};
   stepper.value = 1;
   dataType.value = undefined;
 };
 
-const selectType = (type: string) => {
+const selectType = (type: string): void => {
   stepper.value = 3;
   dataType.value = type;
 };
 
-const increaseStepper = () => {
+const increaseStepper = (): void => {
   stepper.value++;
 };
 
-const decreaseStepper = () => {
+const decreaseStepper = (): void => {
   stepper.value--;
 };
 
-const sampleTitle = () => {
+const sampleTitle = (): string => {
+  // eslint-disable-next-line
   return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
 };
 
-const downloadTitle = () => {
+const downloadTitle = (): string => {
+  // eslint-disable-next-line
   return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
 };
 
-const onInputChange = async (e: Event) => {
-  const target = e.target as HTMLInputElement;
+const onInputChange = async (e: Event): Promise<void> => {
   useSample.value = false;
   displayInfo('Uploading File...');
-  const file = [...(target.files || [])];
+  const target = e.target as HTMLInputElement;
+  const file = [...(target?.files || [])];
   const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
   try {
     const extension = file[0]?.type?.replace(/(.*)\//, '') || file[0]?.name.split('.').pop();
@@ -467,22 +562,23 @@ const onInputChange = async (e: Event) => {
       dynamfit.value.fileUpload = fileName;
       displayInfo('Upload Successful', 1500);
     }
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     store.commit('setSnackbar', {
-      message: err?.message || 'Something went wrong',
+      message: error?.message || 'Something went wrong',
       action: () => onInputChange(e),
     });
   }
 };
 
-const useSampleFile = async () => {
+const useSampleFile = async (): Promise<void> => {
   closeSidebar();
   useSample.value = true;
   displayInfo('Using sample file', 1500);
   dynamfit.value.fileUpload = 'test.tsv';
 };
 
-const resetChart = async () => {
+const resetChart = async (): Promise<void> => {
   const name = dynamfit.value.fileUpload || selectedItemProperty.value?.index;
   if (!name) return;
 
@@ -498,15 +594,9 @@ const resetChart = async () => {
   } else {
     return clearDynamfitData();
   }
-
-  // TODO: WILL NEED TO FIX THIS LATER!
-  // store.commit('setSnackbar', {
-  //   message: error ?? 'Something went wrong',
-  //   action: () => resetChart()
-  // })
 };
 
-const displayInfo = (msg: string, duration?: number) => {
+const displayInfo = (msg: string, duration?: number): void => {
   if (msg) {
     store.commit('setSnackbar', {
       message: msg,
@@ -515,16 +605,16 @@ const displayInfo = (msg: string, duration?: number) => {
   }
 };
 
-const clearDynamfitData = () => {
+const clearDynamfitData = (): void => {
   // First reset useSample flag if in use
   useSample.value = false;
   store.commit('explorer/resetDynamfit');
   store.commit('explorer/resetDynamfitData');
 };
 
-const updateChart = async () => {
+const updateChart = async (): Promise<void> => {
   // If user is exploring XML
-  if (selectedItemProperty.value?.index >= 0) {
+  if ((selectedItemProperty.value?.index ?? -1) >= 0) {
     console.log('Selected item property:', selectedItemProperty.value);
     return await handleSelect();
   }
@@ -543,20 +633,20 @@ const updateChart = async () => {
   await store.dispatch('explorer/fetchDynamfitData', payload);
 };
 
-const openSidebar = () => {
+const openSidebar = (): void => {
   isSidebarOpen.value = true;
 };
 
-const closeSidebar = () => {
+const closeSidebar = (): void => {
   isSidebarOpen.value = false;
 };
 
-const goBack = () => {
+const goBack = (): void => {
   currentItem.value = null;
   selectedItemProperty.value = null;
 };
 
-const handleSelect = async () => {
+const handleSelect = async (): Promise<void> => {
   if (!selectedItemProperty.value) {
     store.commit('setSnackbar', {
       message: 'Please select an item before proceeding.',
@@ -569,7 +659,7 @@ const handleSelect = async () => {
   isSidebarOpen.value = false;
   try {
     const payload = {
-      id: currentItem.value.id,
+      id: currentItem.value?.id,
       domain: selectedProperty.value,
       index: selectedItemProperty.value.index,
       numberOfProny: dynamfit.value.range,
@@ -594,16 +684,17 @@ const handleSelect = async () => {
     const data = resp?.response ?? {};
     store.commit('explorer/setDynamfitDomain', selectedProperty.value);
     store.commit('explorer/setDynamfitData', data);
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     store.commit('setSnackbar', {
-      message: err.message || 'Something went wrong. Please try again.',
+      message: error.message || 'Something went wrong. Please try again.',
       type: 'error',
       duration: 1000,
     });
   }
 };
 
-const search = async () => {
+const search = async (): Promise<void> => {
   const payload = {
     has: selectedProperty.value,
     limit: limit.value || 2,
@@ -625,18 +716,33 @@ const search = async () => {
     }
     results.value = data;
     totalPages.value = Math.ceil(data.counts / limit.value);
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error;
     store.commit('setSnackbar', {
-      message: err.message || 'Something went wrong. Please try again.',
+      message: error.message || 'Something went wrong. Please try again.',
       type: 'error',
       duration: 10000,
     });
   }
 };
 
-const goToPage = async (page: number) => {
+const goToPage = async (page: number): Promise<void> => {
   if (page < 1 || page > totalPages.value) return;
   currentPage.value = page;
   await search();
 };
+
+// Watchers
+watch(
+  dynamfit,
+  (newVal) => {
+    if (!newVal) return;
+    updateChart();
+  },
+  { deep: true }
+);
+
+watch(limit, () => {
+  return search();
+});
 </script>

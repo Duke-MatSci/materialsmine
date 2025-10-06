@@ -1,58 +1,36 @@
-import { ActionTree } from 'vuex';
-import { ResultsState } from './index';
+import { ActionContext } from 'vuex';
+import {
+  ResultsState,
+  OutboundSearchPayload,
+  SearchResponseData,
+  TotalGrouping,
+  ImageResult,
+} from '../types';
 
-interface SearchPayload {
-  keyPhrase: string;
-  type: 'search' | 'autosuggest';
-}
+type Context = ActionContext<ResultsState, unknown>;
 
-interface ImageSearchResponse {
-  data: {
-    searchImages: {
-      totalItems: number;
-      pageSize: number;
-      pageNumber: number;
-      totalPages: number;
-      hasPreviousPage: boolean;
-      hasNextPage: boolean;
-      images: Array<{
-        file: string;
-        description: string;
-        type: string;
-        metaData: {
-          title: string;
-          id: string;
-        };
-      }>;
-    };
-  };
-}
-
-interface SearchResponse {
-  data: {
-    hits: Array<{
-      _index: string;
-      _source: any;
-    }>;
-  };
-}
-
-const actions: ActionTree<ResultsState, any> = {
-  async searchKeyword(context, payload: string) {
-    context.commit('setIsLoading', true);
-    const newPayload: SearchPayload = {
+export default {
+  async searchKeyword(
+    { commit, dispatch }: Context,
+    payload: string
+  ): Promise<void> {
+    commit('setIsLoading', true);
+    const newPayload: OutboundSearchPayload = {
       keyPhrase: payload,
       type: 'search',
     };
     if (!payload) {
       return;
     }
-    await context.dispatch('outboundSearchRequest', newPayload);
-    await context.dispatch('getMatchedImages', payload);
-    return context.dispatch('getMatchedMaterials', payload);
+    await dispatch('outboundSearchRequest', newPayload);
+    await dispatch('getMatchedImages', payload);
+    return dispatch('getMatchedMaterials', payload);
   },
 
-  async getMatchedImages(context, payload: string) {
+  async getMatchedImages(
+    { commit, getters, dispatch }: Context,
+    payload: string
+  ): Promise<void> {
     const url = `${window.location.origin}/api/graphql`;
     const graphql = JSON.stringify({
       query: `query SearchImages($input: imageExplorerInput!){
@@ -93,28 +71,35 @@ const actions: ActionTree<ResultsState, any> = {
         throw error;
       }
 
-      const responseData: ImageSearchResponse = await response.json();
-      const total = context.getters.getTotal + responseData?.data?.searchImages?.totalItems;
-      const groupTotals = context.getters.getTotalGroupings;
+      const responseData: SearchResponseData = await response.json();
+      const total =
+        getters.getTotal + (responseData?.data?.searchImages?.totalItems ?? 0);
+      const groupTotals: TotalGrouping = getters.getTotalGroupings;
       groupTotals.getImages = responseData?.data?.searchImages?.totalItems ?? 0;
-      context.commit('setTotal', total ?? 0);
-      context.commit('setImages', responseData?.data?.searchImages?.images ?? []);
-      context.commit('setTotalGrouping', groupTotals);
-    } catch (error: any) {
+      commit('setTotal', total ?? 0);
+      commit(
+        'setImages',
+        (responseData?.data?.searchImages?.images ?? []) as ImageResult[]
+      );
+      commit('setTotalGrouping', groupTotals);
+    } catch (error) {
       const snackbar = {
         message: 'Something went wrong while fetching images!',
-        action: () => context.dispatch('getMatchedImages', payload),
+        action: () => dispatch('getMatchedImages', payload),
       };
-      return context.commit('setSnackbar', snackbar, { root: true });
+      return commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async getMatchedMaterials(context, payload: string) {
+  async getMatchedMaterials(
+    { commit, getters, dispatch }: Context,
+    payload: string
+  ): Promise<void> {
     const url = `/api/admin/populate-datasets-properties?search=${payload}`;
     try {
-      const cache = await context
-        .dispatch('fetchWrapper', { url }, { root: true })
-        .then((res: any) => res.val);
+      const cache = await dispatch('fetchWrapper', { url }, { root: true }).then(
+        (res: { val: RequestCache }) => res.val
+      );
       const response = await fetch(url, {
         method: 'GET',
         cache,
@@ -127,27 +112,34 @@ const actions: ActionTree<ResultsState, any> = {
         throw error;
       }
 
-      const responseData = await response.json();
+      const responseData: { data?: unknown[] } = await response.json();
       const materialsTotal = responseData?.data?.length || 0;
 
-      const total = context.getters.getTotal + materialsTotal;
-      const groupTotals = context.getters.getTotalGroupings;
+      const total = getters.getTotal + materialsTotal;
+      const groupTotals: TotalGrouping = getters.getTotalGroupings;
       groupTotals.getMaterials = materialsTotal;
 
-      context.commit('setTotal', total || 0);
-      context.commit('setMaterials', responseData?.data || []);
-      context.commit('setTotalGrouping', groupTotals);
-    } catch (error: any) {
-      await context.dispatch('fetchWrapper', { url: 'cause' in error }, { root: true });
+      commit('setTotal', total || 0);
+      commit('setMaterials', responseData?.data || []);
+      commit('setTotalGrouping', groupTotals);
+    } catch (error) {
+      await dispatch(
+        'fetchWrapper',
+        { url: 'cause' in (error as Error) },
+        { root: true }
+      );
       const snackbar = {
         message: 'Something went wrong while fetching properties!',
-        action: () => context.dispatch('getMatchedMaterials', payload),
+        action: () => dispatch('getMatchedMaterials', payload),
       };
-      return context.commit('setSnackbar', snackbar, { root: true });
+      return commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async outboundSearchRequest(context, payload: SearchPayload) {
+  async outboundSearchRequest(
+    { commit, dispatch }: Context,
+    payload: OutboundSearchPayload
+  ): Promise<void> {
     const { keyPhrase, type } = payload;
     let url: string;
     if (type === 'search') {
@@ -157,16 +149,16 @@ const actions: ActionTree<ResultsState, any> = {
     }
 
     try {
-      const cache = await context
-        .dispatch('fetchWrapper', { url }, { root: true })
-        .then((res: any) => res.val);
+      const cache = await dispatch('fetchWrapper', { url }, { root: true }).then(
+        (res: { val: RequestCache }) => res.val
+      );
       const response = await fetch(url, {
         method: 'GET',
         cache,
       });
 
       if (!response || response.statusText !== 'OK') {
-        context.commit('setIsLoading', false);
+        commit('setIsLoading', false);
         const error = new Error(response?.statusText || 'Something went wrong!');
         throw error;
       }
@@ -175,23 +167,26 @@ const actions: ActionTree<ResultsState, any> = {
         return;
       }
 
-      const responseData: SearchResponse = await response.json();
+      const responseData: SearchResponseData = await response.json();
       if (type === 'search') {
-        return context.dispatch('saveSearch', responseData);
+        return dispatch('saveSearch', responseData);
       } else {
-        return context.dispatch('saveAutosuggest', responseData);
+        return dispatch('saveAutosuggest', responseData);
       }
-    } catch (error: any) {
+    } catch (error) {
       const snackbar = {
         message: 'Something went wrong!',
-        action: () => context.dispatch('outboundSearchRequest', payload),
+        action: () => dispatch('outboundSearchRequest', payload),
       };
-      return context.commit('setSnackbar', snackbar, { root: true });
+      return commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async autosuggestionRequest(context, payload: string) {
-    const newPayload: SearchPayload = {
+  async autosuggestionRequest(
+    { dispatch }: Context,
+    payload: string
+  ): Promise<void> {
+    const newPayload: OutboundSearchPayload = {
       keyPhrase: payload,
       type: 'autosuggest',
     };
@@ -199,36 +194,36 @@ const actions: ActionTree<ResultsState, any> = {
     if (!payload) {
       return;
     }
-    return context.dispatch('outboundSearchRequest', newPayload);
+    return dispatch('outboundSearchRequest', newPayload);
   },
 
-  saveSearch(context, responseData: SearchResponse) {
+  saveSearch({ commit }: Context, responseData: SearchResponseData): void {
     const data = responseData?.data?.hits || [];
-    const types: Record<string, any[]> = {};
+    const types: Record<string, unknown[]> = Object.create({});
     data.forEach((item) => {
       const categoryExist =
-        Object.keys(types)?.find((currKey) => currKey === item?._index) || undefined;
+        Object.keys(types)?.find((currKey) => currKey === item?._index) ||
+        undefined;
 
       if (categoryExist) {
         types[categoryExist].push(item._source);
       } else {
-        types[item._index] = [item._source];
+        types[item._index] = new Array(item._source);
       }
     });
     const articlesLength = types?.articles?.length || 0;
     const samplesLength = types?.samples?.length || 0;
     const chartsLength = types?.charts?.length || 0;
     const total = [articlesLength, samplesLength, chartsLength].reduce(
-      (total, value) => total + value,
-      0
+      (total, value) => total + value
     );
 
-    context.commit('setArticles', types?.articles || []);
-    context.commit('setSamples', types?.samples || []);
-    context.commit('setCharts', types?.charts || []);
-    context.commit('setTotal', total || 0);
-    context.commit('setIsLoading', false);
-    context.commit('setTotalGrouping', {
+    commit('setArticles', types?.articles || []);
+    commit('setSamples', types?.samples || []);
+    commit('setCharts', types?.charts || []);
+    commit('setTotal', total || 0);
+    commit('setIsLoading', false);
+    commit('setTotalGrouping', {
       getArticles: articlesLength,
       getSamples: samplesLength,
       getCharts: chartsLength,
@@ -237,13 +232,14 @@ const actions: ActionTree<ResultsState, any> = {
     });
   },
 
-  saveAutosuggest(context, responseData: SearchResponse) {
+  saveAutosuggest(
+    { commit }: Context,
+    responseData: SearchResponseData
+  ): void {
     const data = responseData?.data?.hits || [];
     const suggestions = data.map((item) => {
-      return item?._source?.label;
+      return (item?._source as { label?: string })?.label;
     });
-    context.commit('setAutosuggest', suggestions || []);
+    commit('setAutosuggest', (suggestions || []) as string[]);
   },
 };
-
-export default actions;

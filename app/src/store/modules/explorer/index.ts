@@ -1,67 +1,44 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-import curation from './curation';
+import { ExplorerState } from './types';
+
 import gallery from './gallery';
 import results from './results';
-
-export interface ExplorerState {
-  // Pagination state
-  currentPage: number;
-  totalPages: number;
-  itemsPerPage: number;
-  totalItems: number;
-
-  // Search and results state
-  searchQuery: string;
-  searchResults: any[];
-  isLoading: boolean;
-  error: string | null;
-
-  // Filters and sorting
-  filters: Record<string, any>;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-
-  // Facet filter state
-  facetFilterMaterials: any[];
-  selectedFacetFilterMaterialsValue: string | null;
-  selectedFacetFilterMaterials: any;
-}
+import curation from './curation';
+import sddDatasets from './sddDatasets';
 
 export default {
   namespaced: true,
+  modules: {
+    gallery,
+    results,
+    curation,
+    sddDatasets,
+  },
   state(): ExplorerState {
     return {
-      // Pagination state
-      currentPage: 1,
-      totalPages: 1,
-      itemsPerPage: 20,
-      totalItems: 0,
-
-      // Search and results state
-      searchQuery: '',
-      searchResults: [],
-      isLoading: false,
-      error: null,
-
-      // Filters and sorting
-      filters: {},
-      sortBy: '',
-      sortOrder: 'asc',
-
-      // Facet filter state
+      toggleMenuVisibility: false,
+      enableAutosuggest: true,
+      resultsTab: 'getArticles',
+      searchKeyword: '',
+      searching: false,
       facetFilterMaterials: [],
       selectedFacetFilterMaterialsValue: null,
       selectedFacetFilterMaterials: {},
+      dataset: null,
+      datasetThumbnail: '',
+      dynamfitDomain: 'frequency',
+      dynamfitData: {},
+      dynamfit: {
+        range: 100,
+        fitSettings: false,
+        model: 'Linear',
+        fileUpload: '',
+      },
     };
   },
   mutations,
   actions,
   getters,
-  modules: {
-    curation,
-    gallery,
-    results,
-  },
 };

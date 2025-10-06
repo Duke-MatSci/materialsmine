@@ -1,17 +1,14 @@
-import { ActionTree } from 'vuex';
-import { GalleryState } from './index';
 import router from '@/router';
+import { ActionContext } from 'vuex';
+import { GalleryState, LoadItemsPayload, BookmarkChartPayload } from '../types';
 
-interface LoadItemsPayload {
-  page?: number;
-}
+type Context = ActionContext<GalleryState, unknown>;
 
-interface BookmarkChartPayload {
-  chart: any;
-}
-
-const actions: ActionTree<GalleryState, any> = {
-  async loadItems({ commit, getters, dispatch }, { page = 1 }: LoadItemsPayload = {}) {
+export default {
+  async loadItems(
+    { commit, getters, dispatch }: Context,
+    { page = 1 }: LoadItemsPayload = {}
+  ): Promise<void> {
     if (getters.totalPages > 0) {
       if (page < 1 || (page > 1 && page > getters.totalPages)) {
         throw new Error(
@@ -48,7 +45,10 @@ const actions: ActionTree<GalleryState, any> = {
     return dispatch('fetchFavoriteCharts');
   },
 
-  async fetchFavoriteCharts({ commit, rootGetters, dispatch }, root = true) {
+  async fetchFavoriteCharts(
+    { commit, rootGetters, dispatch }: Context,
+    root = true
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const name = rootGetters['auth/displayName'];
     const isAdmin = rootGetters['auth/isAdmin'];
@@ -66,7 +66,9 @@ const actions: ActionTree<GalleryState, any> = {
         },
       });
       if (response.status !== 200) {
-        const error = new Error(`Server error - ${response.statusText ?? response.statusText}`);
+        const error = new Error(
+          `Server error - ${response.statusText ?? 'Unknown error'}`
+        );
         throw error;
       }
 
@@ -92,11 +94,12 @@ const actions: ActionTree<GalleryState, any> = {
         },
         { root: true }
       );
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       return commit(
         'setSnackbar',
         {
-          message: error?.message ?? 'Something went wrong',
+          message: err?.message ?? 'Something went wrong',
           action: () => dispatch('fetchFavoriteCharts', root),
           callToActionText: 'Retry',
         },
@@ -105,10 +108,13 @@ const actions: ActionTree<GalleryState, any> = {
     }
   },
 
-  async bookmarkChart({ commit, rootGetters, dispatch }, { chart }: BookmarkChartPayload) {
+  async bookmarkChart(
+    { commit, rootGetters, dispatch }: Context,
+    { chart }: BookmarkChartPayload
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const storeCharts = rootGetters['explorer/gallery/favoriteChartItems'];
-    let totalData: any[] = [];
+    let totalData = [];
 
     try {
       if (!token) return;
@@ -126,11 +132,12 @@ const actions: ActionTree<GalleryState, any> = {
       totalData = [...storeCharts, { chartId: chart.identifier }];
       commit('setfavoriteChartItems', totalData);
       commit('setSnackbar', { message: responseData.message }, { root: true });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       return commit(
         'setSnackbar',
         {
-          message: error?.message ?? 'Something went wrong',
+          message: err?.message ?? 'Something went wrong',
           action: () => dispatch('fetchFavoriteCharts'),
           callToActionText: 'Retry',
         },
@@ -139,5 +146,3 @@ const actions: ActionTree<GalleryState, any> = {
     }
   },
 };
-
-export default actions;

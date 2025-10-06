@@ -1,31 +1,12 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-
-export interface ResultsState {
-  // TODO:
-  articles: any[] | null;
-  samples: any[] | null;
-  images: any[] | null;
-  charts: any[] | null;
-  materials: any[] | null;
-  suggestions: string[];
-  total: number;
-  isLoading: boolean;
-  totalGrouping: {
-    getArticles: number;
-    getSamples: number;
-    getImages: number;
-    getCharts: number;
-    getMaterials: number;
-  };
-}
+import { ResultsState } from '../types';
 
 export default {
   namespaced: true,
   state(): ResultsState {
     return {
-      // TODO:
       articles: null,
       samples: null,
       images: null,

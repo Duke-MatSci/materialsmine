@@ -1,13 +1,13 @@
-import { CurationState } from './index';
+import { CurationState } from '../types';
 
 export default {
-  datasetId(state: CurationState) {
+  datasetId(state: CurationState): string | null {
     return state.datasetId;
   },
-  getFieldNameSelected(state: CurationState) {
+  getFieldNameSelected(state: CurationState): string {
     return state.fieldNameSelected;
   },
-  getNewChartExist(state: CurationState) {
+  getNewChartExist(state: CurationState): boolean {
     return state.newChartExist;
   },
   getDoiData(state: CurationState) {

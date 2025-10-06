@@ -1,20 +1,17 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-import { GalleryState } from '../types';
+import { SddDatasetsState } from '../types';
 
 export default {
   namespaced: true,
-  state(): GalleryState {
+  state(): SddDatasetsState {
     return {
-      items: null,
-      pageSize: 50,
-      page: 1,
-      queryTimeMillis: 0,
+      items: [],
       total: 0,
-      totalFavorites: 0,
-      missingCharts: [],
-      favoriteChartItems: [],
+      page: 1,
+      pageSize: 20,
+      queryTimeMillis: 0,
     };
   },
   mutations,

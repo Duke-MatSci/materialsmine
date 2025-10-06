@@ -37,12 +37,12 @@ const explorerRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/explorer/Tools.vue'),
         meta: { requiresAuth: false },
       },
-      // {
-      //   path: 'dynamfit',
-      //   name: 'DynamFit',
-      //   component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
-      //   meta: { requiresAuth: true },
-      // },
+      {
+        path: 'dynamfit',
+        name: 'DynamFit',
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {

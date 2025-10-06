@@ -1,115 +1,255 @@
+import { querySparql, parseSparql } from '@/modules/sparql';
+import queries from '@/modules/queries/sampleQueries';
+import router from '@/router';
 import { ActionContext } from 'vuex';
-import { ExplorerState } from './index';
+import {
+  ExplorerState,
+  FetchDynamfitDataPayload,
+  DuplicateXmlPayload,
+  DuplicateXmlResponse,
+  Dataset,
+} from './types';
+
+type Context = ActionContext<ExplorerState, unknown>;
 
 export default {
-  // Pagination actions
-  async setCurrentPage({ commit }: ActionContext<ExplorerState, any>, page: number) {
-    commit('SET_CURRENT_PAGE', page);
-  },
+  // Todo: (@FE) This function should be deprecated.
+  async facetFilterMaterials(context: Context): Promise<void> {
+    const response = await fetch('/api/admin/populate-datasets-properties', {
+      method: 'GET',
+    });
 
-  async setTotalPages({ commit }: ActionContext<ExplorerState, any>, pages: number) {
-    commit('SET_TOTAL_PAGES', pages);
-  },
+    if (!response || response.statusText !== 'OK') {
+      const error = new Error(response?.statusText || 'Something went wrong!');
+      throw error;
+    }
 
-  async setItemsPerPage({ commit }: ActionContext<ExplorerState, any>, items: number) {
-    commit('SET_ITEMS_PER_PAGE', items);
-    // Recalculate total pages when items per page changes
-    const state = commit as any;
-    const totalPages = Math.ceil(state.totalItems / items);
-    commit('SET_TOTAL_PAGES', totalPages);
-    commit('SET_CURRENT_PAGE', 1); // Reset to first page
-  },
-
-  async setTotalItems({ commit }: ActionContext<ExplorerState, any>, total: number) {
-    commit('SET_TOTAL_ITEMS', total);
-    // Recalculate total pages
-    const state = commit as any;
-    const totalPages = Math.ceil(total / state.itemsPerPage);
-    commit('SET_TOTAL_PAGES', totalPages);
-  },
-
-  // Search actions
-  async setSearchQuery({ commit }: ActionContext<ExplorerState, any>, query: string) {
-    commit('SET_SEARCH_QUERY', query);
-    commit('SET_CURRENT_PAGE', 1); // Reset to first page when searching
-  },
-
-  async setSearchResults({ commit }: ActionContext<ExplorerState, any>, results: any[]) {
-    commit('SET_SEARCH_RESULTS', results);
-  },
-
-  async setLoading({ commit }: ActionContext<ExplorerState, any>, loading: boolean) {
-    commit('SET_LOADING', loading);
-  },
-
-  async setError({ commit }: ActionContext<ExplorerState, any>, error: string | null) {
-    commit('SET_ERROR', error);
-  },
-
-  // Filter and sort actions
-  async setFilters({ commit }: ActionContext<ExplorerState, any>, filters: Record<string, any>) {
-    commit('SET_FILTERS', filters);
-    commit('SET_CURRENT_PAGE', 1); // Reset to first page when filtering
-  },
-
-  async setSortBy({ commit }: ActionContext<ExplorerState, any>, sortBy: string) {
-    commit('SET_SORT_BY', sortBy);
-  },
-
-  async setSortOrder({ commit }: ActionContext<ExplorerState, any>, order: 'asc' | 'desc') {
-    commit('SET_SORT_ORDER', order);
-  },
-
-  // Reset actions
-  async resetPagination({ commit }: ActionContext<ExplorerState, any>) {
-    commit('RESET_PAGINATION');
-  },
-
-  async resetSearch({ commit }: ActionContext<ExplorerState, any>) {
-    commit('RESET_SEARCH');
-  },
-
-  // Combined actions
-  async goToPage({ commit, dispatch }: ActionContext<ExplorerState, any>, page: number) {
-    commit('SET_CURRENT_PAGE', page);
-    // You can add additional logic here, such as fetching data for the new page
-    // await dispatch('fetchSearchResults');
-  },
-
-  async performSearch({ commit, dispatch }: ActionContext<ExplorerState, any>, query: string) {
-    commit('SET_LOADING', true);
-    commit('SET_ERROR', null);
-
-    try {
-      await dispatch('setSearchQuery', query);
-      // await dispatch('fetchSearchResults');
-      // This is where you would typically make an API call
-    } catch (error) {
-      commit('SET_ERROR', error instanceof Error ? error.message : 'Search failed');
-    } finally {
-      commit('SET_LOADING', false);
+    if (response.status === 200) {
+      const responseData = await response.json();
+      context.commit('setFacetFilterMaterials', responseData?.data || []);
     }
   },
 
-  // Facet filter actions
-  async searchFacetFilterMaterials(
-    { commit }: ActionContext<ExplorerState, any>,
-    selectedValue: string
-  ) {
-    commit('SET_LOADING', true);
-    commit('SET_ERROR', null);
+  async searchFacetFilterMaterials(context: Context, payload: string): Promise<void> {
+    if (!payload) {
+      return;
+    }
 
+    context.commit('setSelectedFacetFilterMaterialsValue', payload);
+    router.push(`/explorer/filter/property/${payload}`);
+    const getCount = await querySparql(
+      queries.getSearchFacetFilterMaterialCount(payload.split(' ').join(''))
+    );
+    const getDefinition = await querySparql(
+      queries.getSearchFacetFilterMaterialDefinition(payload.split(' ').join(''))
+    );
+    const getContent = await querySparql(
+      queries.getSearchFacetFilterMaterial(payload.split(' ').join(''))
+    );
+
+    const parsedResponseCount = parseSparql(getCount);
+    const parsedResponseDefinition = parseSparql(getDefinition);
+    const parsedResponseContent = parseSparql(getContent);
+
+    context.commit('setSelectedFacetFilterMaterials', {
+      parsedResponseCount,
+      parsedResponseDefinition,
+      parsedResponseContent,
+    });
+  },
+
+  async fetchSingleDataset(context: Context, uri: string): Promise<Dataset | undefined> {
+    if (!uri) {
+      return;
+    }
+    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
+      method: 'GET',
+    });
+
+    if (response?.statusText !== 'OK') {
+      const error = new Error(
+        response?.statusText || 'Something went wrong while fetching dataset'
+      );
+      throw error;
+    }
+
+    let responseData = await response.json();
+    if (Array.isArray(responseData)) responseData = responseData[0];
+    context.commit('setCurrentDataset', responseData);
+    return responseData;
+  },
+
+  async fetchDatasetThumbnail(context: Context, uri: string): Promise<unknown> {
+    if (!uri) {
+      return;
+    }
+    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
+      method: 'GET',
+    });
+
+    if (response?.statusText !== 'OK') {
+      const snackbar = {
+        message: response.statusText || 'Something went wrong while fetching thumbnail',
+        duration: 5000,
+      };
+      return context.commit('setSnackbar', snackbar, { root: true });
+    }
+
+    const responseData = await response.json();
+    let accessURL;
+    if (Array.isArray(responseData)) {
+      accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL'];
+      // Note: Initial sets of SDD curations are missing 'www'
+      if (!accessURL) {
+        accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'];
+      }
+    } else {
+      accessURL = responseData['http://www.w3.org/ns/dcat#accessURL'];
+      // Note: Initial sets of SDD curations are missing 'www'
+      if (!accessURL) {
+        accessURL = responseData['http://w3.org/ns/dcat#accessURL'];
+      }
+    }
+    context.commit('setCurrentDatasetThumbnail', accessURL);
+    return accessURL;
+  },
+
+  async fetchViscoelasticData(
+    { commit, dispatch }: Context,
+    { base64 = '' }: { base64: string }
+  ): Promise<void> {
+    if (!base64) return;
+
+    const uri = '/api/_dash-update-component';
+    const body = JSON.stringify({
+      output:
+        '..upload-table.data...upload-alert.children...upload-alert.color...upload-alert.is_open..',
+      outputs: [
+        { id: 'upload-table', property: 'data' },
+        { id: 'upload-alert', property: 'children' },
+        { id: 'upload-alert', property: 'color' },
+        { id: 'upload-alert', property: 'is_open' },
+      ],
+      inputs: [{ id: 'upload-data', property: 'contents', value: base64 }],
+      changedPropIds: ['upload-data.contents'],
+    });
     try {
-      // This would typically make an API call to search for facet filter materials
-      // For now, we'll just set the selected value
-      commit('SET_SELECTED_FACET_FILTER_MATERIALS_VALUE', selectedValue);
-      // You would add the actual API call here
-      // const response = await api.searchFacetFilterMaterials(selectedValue);
-      // commit('SET_SELECTED_FACET_FILTER_MATERIALS', response);
-    } catch (error) {
-      commit('SET_ERROR', error instanceof Error ? error.message : 'Facet filter search failed');
-    } finally {
-      commit('SET_LOADING', false);
+      const request = await fetch(uri, {
+        headers: { accept: 'application/json' },
+        body,
+        method: 'POST',
+      });
+      const response = await request.json();
+
+      if (!response || response.status !== 200) {
+        const error = new Error(response?.message || 'Something went wrong!');
+        throw error;
+      }
+      commit('setSnackbar', { message: 'Successful Upload', duration: 3000 }, { root: true });
+    } catch (err) {
+      const error = err as Error;
+      commit(
+        'setSnackbar',
+        {
+          message: error.message,
+          action: () => dispatch('fetchViscoelasticData', { base64 }),
+        },
+        { root: true }
+      );
+    }
+  },
+
+  async fetchDynamfitData(
+    { commit, dispatch, rootGetters }: Context,
+    payload: FetchDynamfitDataPayload
+  ): Promise<void> {
+    if (!payload.fileName) return;
+    const body = JSON.stringify({
+      file_name: payload.fileName,
+      number_of_prony: payload?.numberOfProny,
+      model: payload?.model,
+      fit_settings: payload?.fitSettings,
+      useSample: payload?.useSample,
+      domain: payload?.domain,
+    });
+    const url = '/api/mn/dynamfit';
+    const token = rootGetters['auth/token'];
+    try {
+      const req = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+        body,
+        method: 'POST',
+      });
+
+      const response = (await req?.json()) ?? null;
+      if (!response || req.status !== 200) {
+        const statusCode = req?.status;
+        const message = statusCode === 500 ? 'Internal Server Error' : (response as Record<string, unknown>)?.message;
+        const error = new Error((message as string) ?? 'Something went wrong!');
+        throw error;
+      }
+
+      const data = (response as Record<string, unknown>)?.response ?? {};
+      const breach = (response as Record<string, unknown>)?.error ?? null;
+      if (breach) {
+        const { givenName, surName } = rootGetters['auth/user'];
+        const contactData = {
+          fullName: `${givenName} ${surName}`,
+          email: (response as Record<string, unknown>)?.systemEmail,
+          purpose: 'TICKET',
+          message: `Code: ${(breach as Record<string, unknown>)?.code} ${(breach as Record<string, unknown>)?.description}`,
+        };
+        dispatch('contact/contactUs', contactData, { root: true });
+      }
+      commit('setDynamfitData', data);
+    } catch (err) {
+      const error = err as Error;
+      const snackbar: { message: string; duration?: number; action?: () => void } = {
+        message: error.message,
+      };
+      if ((error as Error & { cause?: number })?.cause === 400) {
+        snackbar.duration = 3000;
+      } else {
+        snackbar.action = () => dispatch('fetchDynamfitData', payload);
+      }
+      commit('setSnackbar', snackbar, { root: true });
+    }
+  },
+
+  async duplicateXml(
+    { commit, rootGetters }: Context,
+    payload: DuplicateXmlPayload
+  ): Promise<DuplicateXmlResponse | undefined> {
+    const uri = `/api/curate/duplicate/${payload.id}?isNew=${payload.isNew}`;
+    const token = rootGetters['auth/token'];
+    try {
+      const request = await fetch(uri, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+      });
+      const response = await request.json();
+      if (!response || !response._id) {
+        const error = new Error('Something went wrong!');
+        throw error;
+      }
+      return { id: response._id, isNew: response.isNew };
+    } catch (err) {
+      const error = err as Error;
+      commit(
+        'setSnackbar',
+        {
+          message: error.message,
+        },
+        { root: true }
+      );
     }
   },
 };

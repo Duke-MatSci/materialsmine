@@ -18,6 +18,13 @@ const props = defineProps<Props>();
 
 const plotlyView = ref<HTMLElement>();
 
+const generateWidth = () => {
+  const ww = window.innerWidth;
+  if (ww > 1280) return (ww * 2) / 3 - 100;
+  if (ww > 960) return (ww * 2) / 4 + 40;
+  if (ww < 960) return ww * 0.86;
+};
+
 const layout = ref({
   width: generateWidth(),
   height: 360,
@@ -38,22 +45,25 @@ const isChartInvalid = computed(() => {
 });
 
 const createPlot = () => {
-  if (!isChartInvalid.value) return updatePlot();
-  Plotly.newPlot(container.value, [], { ...layout.value }, { ...config.value });
+  if (!container.value) return;
+
+  if (!isChartInvalid.value) {
+    const { data = [], layout: chartLayout = {} } = props.chart;
+    Plotly.newPlot(container.value, data, { ...chartLayout, ...layout.value }, { ...config.value });
+  } else {
+    Plotly.newPlot(container.value, [], { ...layout.value }, { ...config.value });
+  }
 };
 
 const updatePlot = () => {
-  if (isChartInvalid.value) return createPlot();
+  if (!container.value) return;
 
-  const { data = [], layout: chartLayout = {} } = props.chart;
-  Plotly.newPlot(container.value, data, { ...chartLayout, ...layout.value }, { ...config.value });
-};
-
-const generateWidth = () => {
-  const ww = window.innerWidth;
-  if (ww > 1280) return (ww * 2) / 3 - 100;
-  if (ww > 960) return (ww * 2) / 4 + 40;
-  if (ww < 960) return ww * 0.86;
+  if (isChartInvalid.value) {
+    Plotly.newPlot(container.value, [], { ...layout.value }, { ...config.value });
+  } else {
+    const { data = [], layout: chartLayout = {} } = props.chart;
+    Plotly.newPlot(container.value, data, { ...chartLayout, ...layout.value }, { ...config.value });
+  }
 };
 
 onMounted(() => {
@@ -64,8 +74,7 @@ watch(
   () => props.chart,
   () => {
     updatePlot();
-  },
-  { deep: true }
+  }
 );
 </script>
 
