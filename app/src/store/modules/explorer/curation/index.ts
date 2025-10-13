@@ -1,7 +1,7 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-import { CurationState } from '../types';
+import { CurationState } from './types';
 
 export default {
   namespaced: true,
@@ -17,10 +17,10 @@ export default {
       replaceNestedRef: [],
       curationFormData: {},
       curationSheetStatus: {},
-      curationFormError: {},
+      curationFormError: {}
     };
   },
   mutations,
   actions,
-  getters,
+  getters
 };

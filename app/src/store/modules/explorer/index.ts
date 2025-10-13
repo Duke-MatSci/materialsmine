@@ -14,7 +14,7 @@ export default {
     gallery,
     results,
     curation,
-    sddDatasets,
+    sddDatasets
   },
   state(): ExplorerState {
     return {
@@ -34,11 +34,11 @@ export default {
         range: 100,
         fitSettings: false,
         model: 'Linear',
-        fileUpload: '',
-      },
+        fileUpload: ''
+      }
     };
   },
   mutations,
   actions,
-  getters,
+  getters
 };

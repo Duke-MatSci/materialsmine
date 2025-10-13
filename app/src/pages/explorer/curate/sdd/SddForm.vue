@@ -10,7 +10,7 @@
       <div class="curate">
         <div>
           <div class="section_loader" v-if="loading">
-            <Spinner :loading="loading" text="Loading Dataset" />
+            <spinner :loading="loading" text="Loading Dataset" />
           </div>
           <div v-else @click="disableDropdownRender">
             <md-card style="margin: 10px">
@@ -21,7 +21,7 @@
                 enctype="multipart/form-data"
                 upload_type="http://www.w3.org/ns/dcat#Dataset"
               >
-                <md-steppers class="form__stepper" v-model:md-active-step="active" md-linear>
+                <md-steppers class="form__stepper" :md-active-step.sync="active" md-linear>
                   <md-step id="first" md-label="Upload files" :md-error="invalid.first">
                     <div style="margin: 20px">
                       <md-field style="max-width: 100%">
@@ -56,13 +56,8 @@
                         </label>
                       </FileInput>
 
-                      <div
-                        class="u--margin-posmd"
-                        v-show="optionalChaining(() => distrFiles.length)"
-                      >
-                        <h4 v-if="optionalChaining(() => oldDistributions.length)">
-                          New file(s) to upload
-                        </h4>
+                      <div class="u--margin-posmd" v-show="distrFiles.length">
+                        <h4 v-if="oldDistributions.length">New file(s) to upload</h4>
                         <div class="md-layout">
                           <md-list class="md-layout utility-transparentbg md-theme-default">
                             <FilePreview
@@ -71,25 +66,19 @@
                               :file="file"
                               tag="div"
                               classname="md-layout-item"
-                              @remove="(file: any) => removeDistr(file)"
+                              @remove="removeDistr"
                             />
                           </md-list>
                         </div>
                       </div>
 
                       <md-divider
-                        v-if="
-                          optionalChaining(() => distrFiles.length) &&
-                          optionalChaining(() => oldDistributions.length)
-                        "
+                        v-if="distrFiles.length && oldDistributions.length"
                         class="u_width--max"
                         style="border-style: solid"
                       ></md-divider>
 
-                      <div
-                        class="u--margin-posmd"
-                        v-if="optionalChaining(() => oldDistributions.length)"
-                      >
+                      <div class="u--margin-posmd" v-if="oldDistributions.length">
                         <h4>Previously uploaded file(s)</h4>
                         <i>
                           These files are already in MaterialsMine. You do not need to be re-upload
@@ -112,7 +101,7 @@
                                   <md-button
                                     id="downloadFile"
                                     class="md-icon-button"
-                                    :href="optionalChaining(() => file.uri)"
+                                    :href="file.uri"
                                     download
                                   >
                                     <md-tooltip> Download file </md-tooltip>
@@ -210,7 +199,7 @@
                           >
                             <h4 v-if="oldDepiction">
                               Replacement thumbnail<span v-if="depiction"
-                                >: {{ optionalChaining(() => depiction.name) }}</span
+                                >: {{ depiction.name }}</span
                               >
                             </h4>
                             <figure>
@@ -241,11 +230,7 @@
                     </div>
                   </md-step>
 
-                  <md-step
-                    id="second"
-                    md-label="Provide additional info"
-                    :md-error="invalid.second"
-                  >
+                  <md-step id="second" md-label="Provide additional info" :md-error="invalid.second">
                     <div class="md-layout">
                       <!---------- General Info fields ---------->
                       <md-content class="u_width--max" style="margin: 20px">
@@ -269,15 +254,18 @@
                             <md-field
                               :class="{
                                 'md-invalid':
-                                  (invalid['second'] &&
-                                    optionalChaining(() => !dataset.contactPoint['@id'])) ||
+                                  (invalid['second'] && !dataset.contactPoint['@id']) ||
                                   invalid.orcid,
                               }"
                             >
                               <label style="font-size: 14px"
                                 >ORCID Identifier (e.g., 0000-0001-2345-6789)</label
                               >
-                              <md-input v-model="orcidId" required @change="lookupOrcid"></md-input>
+                              <md-input
+                                v-model="orcidId"
+                                required
+                                @change="lookupOrcid"
+                              ></md-input>
                               <span class="md-error" v-if="!invalid.orcid">ORCID ID required</span>
                               <span class="md-error" v-if="invalid.orcid">Invalid ORCID ID</span>
                             </md-field>
@@ -288,12 +276,16 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid': invalid['second'] && !dataset.contactPoint.cpEmail,
+                                'md-invalid':
+                                  invalid['second'] && !dataset.contactPoint.cpEmail,
                               }"
                               class="u_width--max"
                             >
                               <label>Email</label>
-                              <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
+                              <md-input
+                                v-model="dataset.contactPoint.cpEmail"
+                                required
+                              ></md-input>
                               <span class="md-error">Valid email required</span>
                             </md-field>
                           </div>
@@ -303,7 +295,8 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid': invalid['second'] && !dataset.contactPoint.firstName,
+                                'md-invalid':
+                                  invalid['second'] && !dataset.contactPoint.firstName,
                               }"
                             >
                               <label>First name</label>
@@ -320,11 +313,15 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid': invalid['second'] && !dataset.contactPoint.lastName,
+                                'md-invalid':
+                                  invalid['second'] && !dataset.contactPoint.lastName,
                               }"
                             >
                               <label>Last name</label>
-                              <md-input v-model="dataset.contactPoint.lastName" required></md-input>
+                              <md-input
+                                v-model="dataset.contactPoint.lastName"
+                                required
+                              ></md-input>
                               <span class="md-error">Contact point required</span>
                             </md-field>
                           </div>
@@ -376,14 +373,9 @@
                               >
                                 <span>
                                   {{ item.name }}
-                                  <span
-                                    v-if="
-                                      optionalChaining(() => item.addresses[0].city) ||
-                                      optionalChaining(() => item.country.country_code)
-                                    "
-                                  >
-                                    ({{ optionalChaining(() => item.addresses[0].city) }},
-                                    {{ optionalChaining(() => item.country.country_code) }})
+                                  <span v-if="item.addresses?.[0]?.city || item.country?.country_code">
+                                    ({{ item.addresses?.[0]?.city }},
+                                    {{ item.country?.country_code }})
                                   </span>
                                 </span>
                               </li>
@@ -392,56 +384,14 @@
                         </div>
                       </md-content>
 
-                      <!-- <md-divider class="u_width--max" style="border-style: solid"></md-divider> -->
-
-                      <!---------- TODO: Contributor fields -------->
-                      <!-- <md-content style="width: 100%; margin: 20px">
-              <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
-                Contributors
-              </div>
-
-              <div>
-              <table class="table" width="100%" style="border-collapse: collapse;">
-                <tbody>
-                  <tr >
-                  <td style="width:100%">
-                    <tr v-for="(row, index) in []"
-                      v-bind:key="index + 'contr'"
-                      style="border-top: 0.5pt lightgray solid"
-                    >
-                      <td style="width:50%">
-                        {{contributors[index]['name']}}
-                      </td>
-                      <td style="width:40%">
-                      </td>
-                      <td>
-                        <a style="cursor: pointer" >Remove</a>
-                      </td>
-                    </tr>
-                  </td>
-                  </tr>
-                </tbody>
-
-              </table>
-              </div>
-            </md-content>
-
-            <md-divider style="border-style: solid" width="100%"></md-divider> -->
-
                       <!-- -------- Publication Info fields -------- -->
                       <md-content class="u_width--max" style="margin: 20px">
-                        <!-- <div class="md-headline" style="margin-top: 10px; margin-bottom: 10px">
-                Publication Information
-              </div> -->
                         <div class="u_width--max">
                           <div class="md-layout md-gutter">
                             <div class="md-layout-item md-size-50">
                               <label>Date Published</label>
                               <md-field>
-                                <md-input
-                                  v-model="dataset.datePub['@value']"
-                                  type="date"
-                                ></md-input>
+                                <md-input v-model="dataset.datePub['@value']" type="date"></md-input>
                               </md-field>
                             </div>
                           </div>
@@ -493,10 +443,7 @@
                         <div class="md-subhead" v-if="depiction">
                           Cover Image: {{ depiction.name }}
                         </div>
-                        <div
-                          class="md-subhead"
-                          v-else-if="oldDepiction && oldDepiction.status !== 'delete'"
-                        >
+                        <div class="md-subhead" v-else-if="oldDepiction && oldDepiction.status !== 'delete'">
                           Cover Image: {{ oldDepiction.originalname }}
                         </div>
                       </md-card-header-text>
@@ -525,21 +472,15 @@
                         <h3>Title:</h3>
                         {{ dataset.title }}
                       </div>
-                      <div
-                        v-if="optionalChaining(() => dataset.refby.length)"
-                        class="u_margin-bottom-small"
-                      >
+                      <div v-if="dataset.refby.length" class="u_margin-bottom-small">
                         <h3>DOI:</h3>
                         {{ dataset.refby }}
                       </div>
-                      <div
-                        v-if="optionalChaining(() => dataset.contactPoint['@id'])"
-                        class="u_margin-bottom-small"
-                      >
+                      <div v-if="dataset.contactPoint['@id']" class="u_margin-bottom-small">
                         <h3>Contact Point:</h3>
-                        {{ optionalChaining(() => dataset.contactPoint['firstName']) }}
-                        {{ optionalChaining(() => dataset.contactPoint['lastName']) }},
-                        {{ optionalChaining(() => dataset.contactPoint['cpEmail']) }}
+                        {{ dataset.contactPoint['firstName'] }}
+                        {{ dataset.contactPoint['lastName'] }},
+                        {{ dataset.contactPoint['cpEmail'] }}
                       </div>
                       <div class="u_margin-bottom-small">
                         <h3>Files:</h3>
@@ -552,7 +493,7 @@
                             :key="index"
                             class="u--margin-leftsm"
                           >
-                            {{ optionalChaining(() => file.file.name) }}
+                            {{ file.file.name }}
                           </li>
                         </ul>
                         <div v-if="oldDistributions.length">
@@ -563,7 +504,7 @@
                               :key="`${index}_old`"
                               class="u--margin-leftsm"
                             >
-                              {{ optionalChaining(() => file.name) }}
+                              {{ file.name }}
                             </li>
                           </ul>
                         </div>
@@ -595,7 +536,7 @@
         </div>
       </div>
     </div>
-    <Dialog
+    <dialogbox
       :active="dialogBoxActive"
       :minWidth="dialog.minWidth"
       :disableClose="dialog.disableClose"
@@ -603,7 +544,7 @@
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
         <div v-if="dialog.type == 'loading' && uploadInProgress">
-          <Spinner :text="uploadInProgress" />
+          <spinner :text="uploadInProgress" />
         </div>
         <div v-else-if="dialog.type == 'success'">
           <div v-if="!!datasetId">Dataset with ID {{ datasetId }} successfully updated</div>
@@ -611,27 +552,27 @@
         </div>
         <div v-else-if="dialog.type == 'deleteOld'">
           <div>
-            Selecting "Yes, Delete" will permanently remove the file from the MaterialsMine database
-            for all users.
+            Selecting "Yes, Delete" will permanently remove the file from the MaterialsMine
+            database for all users.
           </div>
           <div>This action cannot be undone.</div>
           <div>
             Selected file:
-            <a :href="optionalChaining(() => toDelete.uri)" download>
-              {{ optionalChaining(() => toDelete.name) }}
+            <a :href="toDelete?.uri" download>
+              {{ toDelete?.name }}
             </a>
           </div>
         </div>
         <div v-else-if="dialog.type == 'doiData'">
-          The following data was imported from DOI.org. Use to auto-fill form? This will replace any
-          fields that you may have already filled.
-          <div v-if="doiData.title">
+          The following data was imported from DOI.org. Use to auto-fill form? This will replace
+          any fields that you may have already filled.
+          <div v-if="doiData?.title">
             <b>Title: </b>
-            {{ optionalChaining(() => doiData.title[0]) }}
+            {{ doiData?.title?.[0] }}
           </div>
-          <div v-if="doiData.published">
+          <div v-if="doiData?.published">
             <b>Date Published: </b>
-            {{ optionalChaining(() => doiData.published['date-parts'].flat()) }}
+            {{ doiData?.published?.['date-parts']?.flat() }}
           </div>
         </div>
       </template>
@@ -648,15 +589,15 @@
           <md-button @click="useDoiData()">Yes, use imported data</md-button>
         </div>
       </template>
-    </Dialog>
+    </dialogbox>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import _ from 'lodash';
+import { useStore } from 'vuex';
+import { debounce } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 import FileDrop from '@/components/curate/FileDrop.vue';
 import FilePreview from '@/components/curate/FilePreview.vue';
@@ -664,7 +605,6 @@ import Dialog from '@/components/Dialog.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 import Spinner from '@/components/Spinner.vue';
 import useFileList from '@/modules/file-list';
-import { useOptionalChaining } from '@/composables/useOptionalChaining';
 import {
   saveDataset,
   isValidOrcid,
@@ -685,22 +625,80 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// Store and router
-const store = useStore();
+// Router and store
 const router = useRouter();
+const store = useStore();
 
-// Composables
-const { optionalChaining } = useOptionalChaining();
-
-// Create file list for distributions
+// File list composable
 const distrFn = useFileList();
 
-// Move to a separate file
-const DATASET = {
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface ContactPoint {
+  '@type': string;
+  '@id': string | null;
+  firstName: string;
+  lastName: string;
+  cpEmail: string;
+}
+
+interface DatePub {
+  '@type': string;
+  '@value': string;
+}
+
+interface Organization {
+  '@id': string;
+  '@type': string;
+  name: string;
+}
+
+interface Dataset {
+  '@type': string;
+  refby: string;
+  title: string;
+  contactPoint: ContactPoint;
+  description: string;
+  contributors: any[];
+  datePub: DatePub;
+  organization: Organization[];
+  creator?: any;
+  uri?: string;
+}
+
+interface Invalid {
+  first: string | null;
+  second: string | null;
+  orcid: boolean;
+}
+
+interface DialogConfig {
+  title: string;
+  type: string | null;
+  minWidth: number;
+  disableClose: boolean;
+}
+
+interface OldDistribution {
+  uri: string;
+  name: string;
+  fileId?: string;
+}
+
+interface OldDepiction {
+  accessUrl: string;
+  originalname: string;
+  status: string;
+}
+
+// Default dataset structure
+const DEFAULT_DATASET: Dataset = {
   '@type': 'http://www.w3.org/ns/dcat#Dataset',
-  // Dataset info: Step 1
   refby: '',
-  // Dataset info: Step 2
   title: '',
   contactPoint: {
     '@type': 'schemaPerson',
@@ -721,17 +719,17 @@ const DATASET = {
 // Reactive data
 const auth = ref(true);
 const loading = ref(false);
-const navRoutes = ref([
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
   },
 ]);
-// Stepper data
+
 const active = ref('first');
-const invalid = ref({
-  first: null as string | null,
-  second: null as string | null,
+const invalid = ref<Invalid>({
+  first: null,
+  second: null,
   orcid: false,
 });
 const doi = ref('');
@@ -740,21 +738,19 @@ const searchKeywordOrg = ref('');
 const showDropdown = ref(false);
 const distrFiles = distrFn.files;
 const depiction = ref<File | null>(null);
-const dataset = ref({ ...DATASET });
-// For editing existing datasets
-const oldDistributions = ref<any[]>([]);
-const toDelete = ref<any>(null);
-const oldDepiction = ref<any>(null);
-const dialog = ref({
+const dataset = ref<Dataset>({ ...DEFAULT_DATASET });
+const oldDistributions = ref<OldDistribution[]>([]);
+const toDelete = ref<OldDistribution | null>(null);
+const oldDepiction = ref<OldDepiction | null>(null);
+const dialog = ref<DialogConfig>({
   title: '',
-  type: null as string | null,
-  size: 60,
+  type: null,
   minWidth: 60,
   disableClose: false,
 });
-const uploadInProgress = ref<string | boolean>(false);
+const uploadInProgress = ref<string | null>(null);
 
-// Computed properties
+// Computed
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
 const doiData = computed(() => store.getters['explorer/curation/getDoiData']);
 const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
@@ -784,7 +780,7 @@ const generatedUUID = computed(() => {
   return uuidv4();
 });
 
-// Watch for changes
+// Watch
 watch(orcidData, (newValue) => {
   if (newValue === 'invalid') {
     invalid.value.orcid = true;
@@ -792,9 +788,9 @@ watch(orcidData, (newValue) => {
     invalid.value.orcid = false;
     dataset.value.contactPoint['@id'] = orcidData.value?.['@id'];
     dataset.value.contactPoint.firstName =
-      orcidData.value?.['http://schema.org/givenName'][0]?.['@value'];
+      orcidData.value?.['http://schema.org/givenName']?.[0]?.['@value'];
     dataset.value.contactPoint.lastName =
-      orcidData.value?.['http://schema.org/familyName'][0]?.['@value'];
+      orcidData.value?.['http://schema.org/familyName']?.[0]?.['@value'];
     dataset.value.contactPoint.cpEmail =
       orcidData.value?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value'];
   }
@@ -820,8 +816,8 @@ const clearSnackbar = () => {
   store.commit('resetSnackbar');
 };
 
-const addDistr = distrFn.addFiles;
-const removeDistr = distrFn.removeFile;
+const addDistr = (files: File[]) => distrFn.addFiles(files);
+const removeDistr = (file: any) => distrFn.removeFile(file);
 const modStatDistr = distrFn.modifyStatus;
 const clearFileList = distrFn.clearAllFiles;
 
@@ -838,7 +834,7 @@ const loadDatasetData = async () => {
       doi.value = response[0]?.refby[0].split('.org/')[1];
     }
     dataset.value = response[0];
-    oldDistributions.value = response?.[1];
+    oldDistributions.value = response?.[1] || [];
     if (response?.[2]) {
       const thumbnailResponse = await store.dispatch(
         'explorer/fetchDatasetThumbnail',
@@ -854,7 +850,7 @@ const loadDatasetData = async () => {
     orcidId.value = response?.[0]?.contactPoint?.['@id']?.split('http://orcid.org/')[1];
     lookupOrcid(orcidId.value);
     if (dataset.value?.organization?.length) {
-      const orgs = dataset.value.organization.map(async (org: any) => {
+      const orgs = dataset.value.organization.map(async (org) => {
         const rorId = org['@id'].split('https://ror.org/')[1];
         const rorOrg = await store.dispatch('explorer/curation/searchRor', { id: rorId });
         return {
@@ -873,7 +869,9 @@ const loadDatasetData = async () => {
 
 const onInputChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
-  addDistr(target.files);
+  if (target.files) {
+    addDistr(Array.from(target.files));
+  }
   target.value = '';
   invalid.value.first = null;
 };
@@ -888,7 +886,6 @@ const goToStep = (id: string, index?: string) => {
     // Clear invalid errors
     if (id === 'first') invalid.value.first = null;
     if (id === 'second') invalid.value.second = null;
-    (this as any)[id] = true;
     if (index) {
       active.value = index;
     }
@@ -914,12 +911,12 @@ const lookupDoi = async (e: Event) => {
   }
 };
 
-const lookupOrganization = _.debounce(function (payload: any) {
+const lookupOrganization = debounce((payload: any) => {
   store.dispatch('explorer/curation/searchRor', payload);
 }, 300);
 
 const selectOrg = (item: any) => {
-  const formatOrg = {
+  const formatOrg: Organization = {
     '@id': item.id,
     '@type': 'organization',
     name: item.name,
@@ -935,7 +932,7 @@ const selectOrg = (item: any) => {
   });
 };
 
-const deleteOrg = (arr: any[], e: number) => {
+const deleteOrg = (arr: Organization[], e: number) => {
   arr.splice(e, 1);
 };
 
@@ -957,8 +954,8 @@ const disableDropdownRender = (e: Event) => {
 };
 
 const useDoiData = () => {
-  dataset.value.title = doiData.value?.title[0] ?? dataset.value.title;
-  if (doiData.value?.published?.['date-parts'].flat().length === 3) {
+  dataset.value.title = doiData.value?.title?.[0] ?? dataset.value.title;
+  if (doiData.value?.published?.['date-parts']?.flat()?.length === 3) {
     const dateArray = doiData.value.published['date-parts'].flat();
     dataset.value.datePub['@value'] =
       dateArray[0].toString() +
@@ -970,26 +967,23 @@ const useDoiData = () => {
   toggleDialogBox();
 };
 
-// Load a thumbnail of the representative image
 const previewFile = () => {
   const preview = document.querySelector('#depictImg') as HTMLImageElement;
   const wrapper = document.querySelector('#depictWrapper') as HTMLElement;
   const previewMini = document.querySelector('#depictImgMini') as HTMLImageElement;
   const wrapperMini = document.querySelector('#depictWrapperMini') as HTMLElement;
   const fileInput = document.querySelector('#file-depict-input') as HTMLInputElement;
-  const file = fileInput.files?.[0];
+  const file = fileInput?.files?.[0];
+  if (!file) return;
+
   const reader = new FileReader();
-  depiction.value = file || null;
+  depiction.value = file;
 
   reader.addEventListener(
     'load',
     function () {
-      if (wrapper && wrapperMini) {
-        wrapper.style.visibility = wrapperMini.style.visibility = 'visible';
-      }
-      if (preview && previewMini) {
-        preview.src = previewMini.src = reader.result as string;
-      }
+      wrapper.style.visibility = wrapperMini.style.visibility = 'visible';
+      preview.src = previewMini.src = reader.result as string;
     },
     false
   );
@@ -1002,26 +996,31 @@ const previewFile = () => {
 const removeImage = () => {
   const wrapper = document.querySelector('#depictWrapper') as HTMLElement;
   const fileInput = document.querySelector('#file-depict-input') as HTMLInputElement;
-  const preview = document.querySelector('#depictImg') as HTMLImageElement;
+  const imgElement = document.querySelector('#depictImg') as HTMLImageElement;
 
-  if (wrapper) wrapper.style.visibility = 'hidden';
-  if (fileInput) fileInput.value = '';
-  if (preview) preview.src = '';
+  wrapper.style.visibility = 'hidden';
+  fileInput.value = '';
+  imgElement.src = '';
   depiction.value = null;
 };
 
-const renderDialog = (title: string, type: string, minWidth: number, disableClose = false) => {
+const renderDialog = (
+  title: string,
+  type: string,
+  minWidth: number,
+  disableClose: boolean = false
+) => {
   dialog.value = {
     title,
     type,
-    size: 60,
     minWidth,
     disableClose,
   };
   toggleDialogBox();
 };
 
-const deleteDistribution = async (file: any) => {
+const deleteDistribution = async (file: OldDistribution | null) => {
+  if (!file) return;
   try {
     await deleteFile(file?.fileId);
     const index = oldDistributions.value.indexOf(file);
@@ -1032,20 +1031,18 @@ const deleteDistribution = async (file: any) => {
   toggleDialogBox();
 };
 
-const confirmDeletion = (file: any) => {
+const confirmDeletion = (file: OldDistribution) => {
   toDelete.value = file;
   toDelete.value.fileId = parseFileName(file?.uri, true);
   renderDialog('Delete file?', 'deleteOld', 40, false);
 };
 
-// Format files for submission
 const processFiles = () => {
   return distrFiles.value
-    .map((file: any) => ({ ...file, status: 'incomplete' }))
-    .concat(oldDistributions.value.map((file: any) => ({ ...file, status: 'complete' })));
+    .map((file) => ({ ...file, status: 'incomplete' }))
+    .concat(oldDistributions.value.map((file) => ({ ...file, status: 'complete' })));
 };
 
-// Ensure only one thumbnail is associated with the dataset
 const processDepictions = () => {
   const depictions: any[] = [];
   if (depiction.value) {
@@ -1058,18 +1055,22 @@ const processDepictions = () => {
   return depictions;
 };
 
-// Submit and post as nanopublication
 const submitForm = async () => {
   uploadInProgress.value = 'Uploading files';
   renderDialog('Submitting dataset', 'loading', 40, true);
   clearSnackbar();
-  if ((!distrFiles.value.length && !oldDistributions.value?.length) || !secondPageFilled.value) {
+  if (
+    (!distrFiles.value.length && !oldDistributions.value?.length) ||
+    !secondPageFilled.value
+  ) {
     setSnackbar({
       message: 'Unable to submit, check for required fields',
     });
     toggleDialogBox();
     invalid.value.first =
-      !distrFiles.value.length && !oldDistributions.value?.length ? 'Missing required field' : null;
+      !distrFiles.value.length && !oldDistributions.value?.length
+        ? 'Missing required field'
+        : null;
     invalid.value.second = !secondPageFilled.value ? 'Missing required field' : null;
   } else {
     dataset.value.creator = userInfo.value;
@@ -1100,7 +1101,7 @@ const goToDataset = () => {
   toggleDialogBox();
   const datasetId = props.datasetId ?? generatedUUID.value;
   clearFileList(); // Reset imported module
-  dataset.value = { ...DATASET }; // Reset dataset
+  dataset.value = { ...DEFAULT_DATASET }; // Reset dataset
   return router.push(`/explorer/dataset/${datasetId}`);
 };
 
@@ -1112,4 +1113,3 @@ onMounted(async () => {
   loading.value = false;
 });
 </script>
-

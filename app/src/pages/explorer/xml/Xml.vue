@@ -229,9 +229,6 @@ const store = useStore();
 const router = useRouter();
 const route = useRoute();
 
-// Composables
-const { updateParamsAndCall, resetSearch, loadParams } = useExplorerQueryParams();
-
 // Reactive data
 const baseUrl = ref(window.location.origin);
 const renderText = ref('Showing all XML');
@@ -329,7 +326,7 @@ const isAuthorized = (xmlUser: string) => {
   return isAuth.value && (xmlUser === userId.value || isAdmin.value);
 };
 
-const localSearchMethod = async () => {
+const localSearchMethod = async (): Promise<void> => {
   // TODO @aswallace: Update to user query params instead
   const filterParamsObj = {
     isNewCuration: selectedFilters.value.includes('isNew') ? isNew.value === 'Yes' : null,
@@ -344,6 +341,28 @@ const localSearchMethod = async () => {
   filterParams.value = filterParamsObj;
   await refetch();
 };
+
+// Setup useExplorerQueryParams with localSearchMethod
+const {
+  pageNumber: composablePageNumber,
+  pageSize: composablePageSize,
+  loadPrevNextImage,
+  updateParamsAndCall,
+  resetSearch,
+  loadParams
+} = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true
+});
+
+// Sync composable refs with local refs used in Apollo query
+watch(composablePageNumber, (newVal) => {
+  pageNumber.value = newVal;
+});
+
+watch(composablePageSize, (newVal) => {
+  pageSize.value = newVal;
+});
 
 const submitSearch = async () => {
   if (!searchWord.value && !filtersActive.value) {
@@ -384,15 +403,52 @@ const selectFilters = (e: Event) => {
   if (!selectedFilters.value.includes(arrValue[0])) {
     selectedFilters.value.push(arrValue[0]);
   }
-  (this as any)[arrValue[0]] = arrValue[1] && arrValue[1];
+
+  // Assign to the correct ref based on filter name
+  switch (arrValue[0]) {
+    case 'apprStatus':
+      apprStatus.value = arrValue[1] || null;
+      break;
+    case 'curationState':
+      curationState.value = arrValue[1] || null;
+      break;
+    case 'user':
+      user.value = arrValue[1] || null;
+      break;
+    case 'author':
+      author.value = arrValue[1] || null;
+      break;
+    case 'isNew':
+      isNew.value = arrValue[1] || null;
+      break;
+  }
+
   target.value = '';
 };
 
 const removeChip = (str: string) => {
   const index = selectedFilters.value.indexOf(str);
   if (index < 0) return;
-  selectedFilters.value.splice(index, 1); // 2nd parameter means remove one item only
-  (this as any)[str] = null;
+  selectedFilters.value.splice(index, 1);
+
+  // Reset the correct ref based on filter name
+  switch (str) {
+    case 'apprStatus':
+      apprStatus.value = null;
+      break;
+    case 'curationState':
+      curationState.value = null;
+      break;
+    case 'user':
+      user.value = null;
+      break;
+    case 'author':
+      author.value = null;
+      break;
+    case 'isNew':
+      isNew.value = null;
+      break;
+  }
 };
 
 const deleteXmlCuration = async (id: string, isNew: boolean | null = null) => {
@@ -413,11 +469,6 @@ const duplicateCuration = async (id: string, isNew: boolean) => {
   if (response?.id) {
     editCuration(response.id, response.isNew);
   }
-};
-
-const loadPrevNextImage = (event: number) => {
-  pageNumber.value = event;
-  localSearchMethod();
 };
 
 // Error handling

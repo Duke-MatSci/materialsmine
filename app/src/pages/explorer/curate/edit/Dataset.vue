@@ -1,14 +1,14 @@
 <template>
   <div>
     <div>
-      <div v-if="!verifyUser.isAuth">
+      <div v-if="!verifyUser?.isAuth">
         <LoginReq />
       </div>
       <div v-else>
         <CurateNavBar :active="'Dataset ' + id" :navRoutes="navRoutes" />
 
         <div class="section_loader u--margin-toplg" v-if="loading">
-          <Spinner :loading="loading" text="Loading Dataset Info" />
+          <spinner :loading="loading" text="Loading Dataset Info" />
         </div>
 
         <div v-else>
@@ -42,31 +42,23 @@
           <div class="utility-roverflow">
             <div class="grid_explorer-datasets curate-grid">
               <md-card
-                v-for="(fileset, index) in getFilesets.filesets"
+                v-for="(fileset, index) in getFilesets?.filesets"
                 :key="index"
                 class="btn--animated"
               >
                 <md-card-header>
                   <router-link
-                    :to="{
-                      name: 'FilesetSingleView',
-                      params: { filesetId: fileset.filesetName },
-                    }"
+                    :to="{ name: 'FilesetSingleView', params: { filesetId: fileset.filesetName } }"
                   >
-                    <div class="md-title">
-                      <a>{{ fileset.filesetName }}</a>
-                    </div>
+                    <div class="md-title"><a>{{ fileset.filesetName }}</a></div>
                   </router-link>
                 </md-card-header>
                 <md-card-content class="grid grid_col-3 curate-grid-icons">
-                  <div v-for="(file, index) in fileset.files" :key="index">
+                  <div v-for="(file, fileIndex) in fileset.files" :key="fileIndex">
                     <router-link
                       :to="{
                         name: 'FileSingleView',
-                        params: {
-                          filesetId: fileset.filesetName,
-                          file: file.filename,
-                        },
+                        params: { filesetId: fileset.filesetName, file: file.filename },
                       }"
                     >
                       <md-button>
@@ -86,13 +78,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
-import { VERIFY_AUTH_QUERY, FILESET_QUERY } from '@/modules/gql/dataset-gql';
 import Spinner from '@/components/Spinner.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 import LoginRequired from '@/components/LoginRequired.vue';
+import { VERIFY_AUTH_QUERY, FILESET_QUERY } from '@/modules/gql/dataset-gql';
 
 // Component name for debugging
 defineOptions({
@@ -109,11 +101,31 @@ const props = defineProps<Props>();
 // Router
 const router = useRouter();
 
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface FileItem {
+  filename: string;
+}
+
+interface Fileset {
+  filesetName: string;
+  files: FileItem[];
+}
+
+interface FilesetsData {
+  filesets: Fileset[];
+}
+
+interface VerifyUserData {
+  isAuth: boolean;
+}
+
 // Reactive data
-const radio = ref(false);
-const verifyUser = ref<any>({});
-const getFilesets = ref<any>({});
-const navRoutes = ref([
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
@@ -125,45 +137,29 @@ const navRoutes = ref([
 ]);
 
 // GraphQL queries
-const { result: verifyUserResult, loading: verifyUserLoading } = useQuery(
+const { result: verifyUserResult } = useQuery<{ verifyUser: VerifyUserData }>(
   VERIFY_AUTH_QUERY,
-  () => ({}),
-  () => ({
+  {},
+  {
     fetchPolicy: 'cache-and-network',
-  })
+  }
 );
 
-const { result: getFilesetsResult, loading: getFilesetsLoading } = useQuery(
+const { result: filesetsResult, loading } = useQuery<{ getFilesets: FilesetsData }>(
   FILESET_QUERY,
   () => ({
-    input: { datasetId: `${props.id}` },
+    input: { datasetId: props.id },
   }),
-  () => ({
+  {
     fetchPolicy: 'cache-and-network',
-  })
+  }
 );
 
-// Watch for query results
-watch(verifyUserResult, (newResult) => {
-  if (newResult?.verifyUser) {
-    verifyUser.value = newResult.verifyUser;
-  }
-});
-
-watch(getFilesetsResult, (newResult) => {
-  if (newResult?.getFilesets) {
-    getFilesets.value = newResult.getFilesets;
-  }
-});
-
-// Computed properties
-const loading = computed(() => verifyUserLoading.value || getFilesetsLoading.value);
+// Computed
+const verifyUser = computed(() => verifyUserResult.value?.verifyUser);
+const getFilesets = computed(() => filesetsResult.value?.getFilesets);
 
 // Methods
-const navBack = () => {
-  router.back();
-};
-
 const goToEdit = () => {
   router.push({ name: 'CurateSpreadsheet', params: { datasetId: props.id } });
 };

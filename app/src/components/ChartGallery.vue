@@ -101,7 +101,7 @@
         </div>
       </template>
       <template #actions>
-        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart">Delete</MdButton>
+        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart(dialog.chart)">Delete</MdButton>
         <MdButton @click="closeDialog">Cancel</MdButton>
       </template>
     </Dialog>
@@ -141,7 +141,16 @@ const router = useRouter();
 
 // Composables
 const { reduceDescription } = useReduce();
-const { loadParams, loadPrevNextImage } = useExplorerQueryParams();
+
+// Local search method for query params composable
+const localSearchMethod = async (): Promise<void> => {
+  await loadItems(pageNumber.value);
+};
+
+const { pageNumber, pageSize, loadParams, loadPrevNextImage } = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true
+});
 
 // Reactive data
 const loading = ref(false);
@@ -197,6 +206,10 @@ const renderDialog = (title: string, type: string, result: any, minWidth: number
 
 const toggleDialogBox = () => {
   store.commit('setDialogBox');
+};
+
+const closeDialog = () => {
+  toggleDialogBox();
 };
 
 const deleteChart = async (chart: any, retry = false) => {

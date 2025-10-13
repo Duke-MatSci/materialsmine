@@ -1,26 +1,5 @@
-import mutations from './mutations';
 import actions from './actions';
-import getters from './getters';
-
-interface MetamineNUState {
-  fetchedNames: any[];
-  datasets: any[];
-  activeData: any[];
-  dataLibrary: any[];
-  dataPoint: any;
-  selectedData: any[];
-  page: string;
-  query1: string | null;
-  query2: string | null;
-  neighbors: any[];
-  reset: boolean;
-  knnUmap: number;
-  dialogBoxActiveKnn: boolean;
-  enableKnn: boolean;
-  refreshStatus: boolean;
-  loadingState: boolean;
-  rawJson: any;
-}
+import mutations, { MetamineNUState } from './mutations';
 
 export default {
   namespaced: true,
@@ -45,7 +24,16 @@ export default {
       rawJson: null,
     };
   },
-  mutations,
+  getters: {
+    getFetchedNames: (state: MetamineNUState) => state.fetchedNames,
+    getDatasets: (state: MetamineNUState) => state.datasets,
+    getActiveData: (state: MetamineNUState) => state.activeData,
+    getDataLibrary: (state: MetamineNUState) => state.dataLibrary,
+    getDataPoint: (state: MetamineNUState) => state.dataPoint,
+    getRefreshStatus: (state: MetamineNUState) => state.refreshStatus,
+    getLoadingState: (state: MetamineNUState) => state.loadingState,
+    getRawJson: (state: MetamineNUState) => state.rawJson,
+  },
   actions,
-  getters,
+  mutations,
 };

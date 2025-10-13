@@ -87,15 +87,14 @@
     &--siblings-mm {
       padding: 0.3rem 0;
       position: absolute;
-      top: 4.3rem !important;
+      top: 3.5rem !important;
       left: 0;
       line-height: 2.5;
       min-width: 20rem;
       background-color: #ffffff;
       border-bottom-left-radius: 0.5rem !important;
       border-bottom-right-radius: 0.5rem !important;
-      box-shadow: 0 2px 4px -1px rgb($primary-black, 20%),
-        0 4px 5px 0 rgb($primary-black, 14%);
+      box-shadow: 0 2px 4px -1px rgb($primary-black, 20%), 0 4px 5px 0 rgb($primary-black, 14%);
       display: none;
       visibility: hidden;
       z-index: 10;

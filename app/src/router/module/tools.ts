@@ -1,57 +1,57 @@
 import { RouteRecordRaw } from 'vue-router';
 
 const toolSetRoutes: Array<RouteRecordRaw> = [
-  {
-    path: 'module_homepage',
-    alias: '',
-    props: { toolProp: 'ModuleTools' },
-    component: () =>
-      import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ModuleTools.vue'),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'mcr_homepage',
-    props: { toolProp: 'MCRTools' },
-    component: () =>
-      import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/MCRTools.vue'),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'binarization_homepage',
-    props: { toolProp: 'BinarizationTools' },
-    component: () =>
-      import(
-        /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/BinarizationTools.vue'
-      ),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'characterization_homepage',
-    props: { toolProp: 'CharacterizationTools' },
-    component: () =>
-      import(
-        /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/CharacterizationTools.vue'
-      ),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'reconstruction_homepage',
-    props: { toolProp: 'ReconstructionTools' },
-    component: () =>
-      import(
-        /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ReconstructionTools.vue'
-      ),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'simtools',
-    props: { toolProp: 'SimulationTools' },
-    component: () =>
-      import(
-        /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/SimulationTools.vue'
-      ),
-    meta: { requiresAuth: false },
-  },
+  // {
+  //   path: 'module_homepage',
+  //   alias: '',
+  //   props: { toolProp: 'ModuleTools' },
+  //   component: () =>
+  //     import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ModuleTools.vue'),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'mcr_homepage',
+  //   props: { toolProp: 'MCRTools' },
+  //   component: () =>
+  //     import(/* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/MCRTools.vue'),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'binarization_homepage',
+  //   props: { toolProp: 'BinarizationTools' },
+  //   component: () =>
+  //     import(
+  //       /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/BinarizationTools.vue'
+  //     ),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'characterization_homepage',
+  //   props: { toolProp: 'CharacterizationTools' },
+  //   component: () =>
+  //     import(
+  //       /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/CharacterizationTools.vue'
+  //     ),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'reconstruction_homepage',
+  //   props: { toolProp: 'ReconstructionTools' },
+  //   component: () =>
+  //     import(
+  //       /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/ReconstructionTools.vue'
+  //     ),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'simtools',
+  //   props: { toolProp: 'SimulationTools' },
+  //   component: () =>
+  //     import(
+  //       /* webpackChunkName: "toolsettemplate" */ '@/pages/nanomine/toolSets/SimulationTools.vue'
+  //     ),
+  //   meta: { requiresAuth: false },
+  // },
 ];
 
 const toolRoutes: Array<RouteRecordRaw> = [
@@ -62,22 +62,22 @@ const toolRoutes: Array<RouteRecordRaw> = [
       import(/* webpackChunkName: "dynamfit" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
     meta: { requiresAuth: false },
   },
-  {
-    path: 'dynamfitResult',
-    name: 'DynamfitResult',
-    component: () =>
-      import(
-        /* webpackChunkName: "dynamfitresult" */ '@/pages/nanomine/tools/dynamfitResult/DynamfitResult.vue'
-      ),
-    meta: { requiresAuth: false },
-  },
-  {
-    path: 'plot-curation',
-    name: 'CsvPlotter',
-    component: () =>
-      import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/csvPlotter/CsvPlotter.vue'),
-    meta: { requiresAuth: false },
-  },
+  // {
+  //   path: 'dynamfitResult',
+  //   name: 'DynamfitResult',
+  //   component: () =>
+  //     import(
+  //       /* webpackChunkName: "dynamfitresult" */ '@/pages/nanomine/tools/dynamfitResult/DynamfitResult.vue'
+  //     ),
+  //   meta: { requiresAuth: false },
+  // },
+  // {
+  //   path: 'plot-curation',
+  //   name: 'CsvPlotter',
+  //   component: () =>
+  //     import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/csvPlotter/CsvPlotter.vue'),
+  //   meta: { requiresAuth: false },
+  // },
   {
     path: 'chemprops',
     name: 'ChemProps',
@@ -90,7 +90,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'CorrelationCharacterize',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/CorrelationCharacterize.vue'
+        /* webpackChunkName: "correlationcharacterize" */ '@/pages/nanomine/tools/CorrelationCharacterize.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -99,7 +99,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'CorrelationReconstruct',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/CorrelationReconstruct.vue'
+        /* webpackChunkName: "correlationreconstruct" */ '@/pages/nanomine/tools/CorrelationReconstruct.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -108,7 +108,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'DescriptorCharacterize',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/DescriptorCharacterize.vue'
+        /* webpackChunkName: "descriptorcharacterize" */ '@/pages/nanomine/tools/DescriptorCharacterize.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -117,7 +117,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'DescriptorReconstruct',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/DescriptorReconstruct.vue'
+        /* webpackChunkName: "descriptorreconstruct" */ '@/pages/nanomine/tools/DescriptorReconstruct.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -126,7 +126,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'IntelligentCharacterize',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/IntelligentCharacterize.vue'
+        /* webpackChunkName: "intelligentcharacterize" */ '@/pages/nanomine/tools/IntelligentCharacterize.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -135,7 +135,7 @@ const toolRoutes: Array<RouteRecordRaw> = [
     name: 'Niblack',
     component: () =>
       import(
-        /* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/NiblackBinarization.vue'
+        /* webpackChunkName: "niblack" */ '@/pages/nanomine/tools/NiblackBinarization.vue'
       ),
     meta: { requiresAuth: false },
   },
@@ -143,23 +143,37 @@ const toolRoutes: Array<RouteRecordRaw> = [
     path: 'Otsu',
     name: 'Otsu',
     component: () =>
-      import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/OtsuBinarization.vue'),
+      import(/* webpackChunkName: "otsu" */ '@/pages/nanomine/tools/OtsuBinarization.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: 'SDFCharacterize',
     name: 'SDFCharacterize',
     component: () =>
-      import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/SDFCharacterize.vue'),
+      import(/* webpackChunkName: "sdfcharacterize" */ '@/pages/nanomine/tools/SDFCharacterize.vue'),
     meta: { requiresAuth: false },
   },
   {
     path: 'SDFReconstruct',
     name: 'SDFReconstruct',
     component: () =>
-      import(/* webpackChunkName: "chempropsapi" */ '@/pages/nanomine/tools/SDFReconstruct.vue'),
+      import(/* webpackChunkName: "sdfreconstruct" */ '@/pages/nanomine/tools/SDFReconstruct.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: 'Polymerizer',
+    name: 'Polymerizer',
+    component: () =>
+      import(/* webpackChunkName: "polymerizer" */ '@/pages/nanomine/tools/Polymerizer.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: 'TransferLearning',
+    name: 'TransferLearning',
+    component: () =>
+      import(/* webpackChunkName: "transferlearning" */ '@/pages/nanomine/tools/TransferLearning.vue'),
     meta: { requiresAuth: false },
   },
 ];
 
-// export { toolRoutes, toolSetRoutes };
+export { toolRoutes, toolSetRoutes };

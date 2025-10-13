@@ -1,116 +1,155 @@
-import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, watch, Ref } from 'vue';
+import { useRoute, useRouter, LocationQueryValue } from 'vue-router';
 
-/**
- * Explorer Query Parameters Composable
- * Manages URL query parameters for explorer pages
- */
-export function useExplorerQueryParams() {
+interface ExplorerQueryParamsOptions {
+  localSearchMethod: () => Promise<void>;
+  hasPageSize?: boolean;
+  filtersActive?: Ref<boolean>;
+  filter?: Ref<string>;
+  renderText?: Ref<string>;
+}
+
+interface ExplorerQueryParamsReturn {
+  pageNumber: Ref<number>;
+  pageSize: Ref<number>;
+  searchWord: Ref<string>;
+  searchEnabled: Ref<boolean>;
+  loadParams: (query: Record<string, LocationQueryValue | LocationQueryValue[]>) => Promise<void>;
+  updateParamsAndCall: (pushNewRoute?: boolean) => Promise<void>;
+  loadPrevNextImage: (event: number) => Promise<void>;
+  updateSearchWord: (searchWord: string) => void;
+  resetSearch: (type: string) => Promise<void>;
+  checkPageSize: (pageSize: number) => void;
+}
+
+export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): ExplorerQueryParamsReturn {
   const route = useRoute();
   const router = useRouter();
 
-  // Reactive data
-  const pageNumber = ref(1);
-  const pageSize = ref(20);
-  const searchWord = ref('');
-  const searchEnabled = ref(false);
-  const filter = ref('');
-  const filtersActive = ref(false);
-  const renderText = ref('');
+  const {
+    localSearchMethod,
+    hasPageSize = true,
+    filtersActive,
+    filter,
+    renderText
+  } = options;
 
-  // Watch for route query changes
-  watch(
-    () => route.query,
-    (newValue, oldValues) => {
-      if (newValue !== oldValues) {
-        loadParams(newValue);
-      }
-    },
-    { deep: true }
-  );
+  // Reactive state
+  const pageNumber = ref<number>(1);
+  const pageSize = ref<number>(20);
+  const searchWord = ref<string>('');
+  const searchEnabled = ref<boolean>(false);
 
-  // Watch for page size changes
-  watch(pageSize, (newValue, oldValue) => {
-    if (newValue !== oldValue) {
-      checkPageSize(newValue);
-      updateParamsAndCall(true);
+  // Methods
+  const checkPageSize = (size: number): void => {
+    if (!size || size < 1) {
+      pageSize.value = 20;
+    } else if (size > 50) {
+      pageSize.value = 20;
+    } else {
+      pageSize.value = size;
     }
-  });
-
-  const loadParams = async (query: any) => {
-    pageNumber.value = parseInt(query.page as string) ? +query.page : 1;
-    if (pageSize.value) {
-      parseInt(query.size as string) ? checkPageSize(+query.size) : checkPageSize(20);
-    }
-    query.q ? updateSearchWord(query.q as string) : updateSearchWord('');
-    await updateParamsAndCall();
   };
 
-  const updateParamsAndCall = async (pushNewRoute = false) => {
-    searchEnabled.value = !!searchWord.value || !!filtersActive.value;
+  const updateSearchWord = (word: string): void => {
+    if (!word || word.length === 0) {
+      searchEnabled.value = false;
+    }
+    searchWord.value = word;
+  };
+
+  const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
+    searchEnabled.value = !!searchWord.value || !!(filtersActive?.value);
+
     if (pushNewRoute) {
-      const query: any = {
-        page: pageNumber.value,
+      const query: Record<string, string | number> = {
+        page: pageNumber.value
       };
-      if (pageSize.value) {
+
+      if (hasPageSize) {
         query.size = pageSize.value;
       }
+
       if (searchWord.value) {
         query.q = searchWord.value;
       }
-      if (filter.value) {
+
+      if (filter?.value) {
         query.type = filter.value;
       }
-      router.push({ query });
+
+      await router.push({ query: query as any });
     }
-    // This will be implemented by the component using this composable
-    // await localSearchMethod()
+
+    await localSearchMethod();
   };
 
-  const loadPrevNextImage = async (event: number) => {
+  const loadParams = async (query: Record<string, LocationQueryValue | LocationQueryValue[]>): Promise<void> => {
+    const pageQuery = query.page;
+    const sizeQuery = query.size;
+    const qQuery = query.q;
+
+    pageNumber.value = pageQuery && typeof pageQuery === 'string' && parseInt(pageQuery)
+      ? +pageQuery
+      : 1;
+
+    if (hasPageSize) {
+      if (sizeQuery && typeof sizeQuery === 'string' && parseInt(sizeQuery)) {
+        checkPageSize(+sizeQuery);
+      } else {
+        checkPageSize(20);
+      }
+    }
+
+    const searchQuery = typeof qQuery === 'string' ? qQuery : '';
+    updateSearchWord(searchQuery);
+
+    await updateParamsAndCall();
+  };
+
+  const loadPrevNextImage = async (event: number): Promise<void> => {
     pageNumber.value = event;
     await updateParamsAndCall(true);
   };
 
-  const updateSearchWord = (searchWordParam: string) => {
-    if (!searchWordParam || !searchWordParam.length) {
-      searchEnabled.value = false;
+  const resetSearch = async (type: string): Promise<void> => {
+    if (renderText) {
+      renderText.value = `Showing all ${type}`;
     }
-    searchWord.value = searchWordParam;
-  };
-
-  const resetSearch = async (type: string) => {
-    renderText.value = `Showing all ${type}`;
     await router.replace({ query: {} });
     return await loadParams({});
   };
 
-  const checkPageSize = (pageSizeParam: number) => {
-    if (!pageSizeParam || (pageSizeParam && pageSizeParam < 1)) {
-      pageSize.value = 20;
-    } else if (pageSizeParam && pageSizeParam > 50) {
-      pageSize.value = 20;
-    } else {
-      pageSize.value = pageSizeParam;
+  // Watchers
+  watch(
+    () => route.query,
+    (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        loadParams(newValue);
+      }
     }
-  };
+  );
+
+  watch(
+    pageSize,
+    (newValue, oldValue) => {
+      if (newValue !== oldValue) {
+        checkPageSize(newValue);
+        updateParamsAndCall(true);
+      }
+    }
+  );
 
   return {
-    // Reactive data
     pageNumber,
     pageSize,
     searchWord,
     searchEnabled,
-    filter,
-    filtersActive,
-    renderText,
-
-    // Methods
     loadParams,
     updateParamsAndCall,
     loadPrevNextImage,
     updateSearchWord,
     resetSearch,
-    checkPageSize,
+    checkPageSize
   };
 }

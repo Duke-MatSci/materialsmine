@@ -1,10 +1,10 @@
-import { GalleryState, GalleryItem, FavoriteChartItem } from '../types';
+import { GalleryState } from './types';
 
 export default {
-  setAllItems(state: GalleryState, allItems: GalleryItem[] | null): void {
-    state.items = allItems;
+  setAllItems(state: GalleryState, allItems: any[]): void {
+    (state as any).allItems = allItems;
   },
-  setItems(state: GalleryState, items: GalleryItem[] | null): void {
+  setItems(state: GalleryState, items: any[]): void {
     state.items = items;
   },
   setPage(state: GalleryState, page: number): void {
@@ -16,13 +16,13 @@ export default {
   setQueryTimeMillis(state: GalleryState, queryTimeMillis: number): void {
     state.queryTimeMillis = queryTimeMillis;
   },
-  setfavoriteChartItems(state: GalleryState, items: FavoriteChartItem[]): void {
+  setfavoriteChartItems(state: GalleryState, items: any[]): void {
     state.favoriteChartItems = items;
   },
-  setMissingCharts(state: GalleryState, payload: unknown[]): void {
+  setMissingCharts(state: GalleryState, payload: any[]): void {
     state.missingCharts = payload;
   },
   setTotalFavorites(state: GalleryState, totalFavorites: number): void {
     state.totalFavorites = totalFavorites;
-  },
+  }
 };

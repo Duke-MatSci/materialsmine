@@ -32,8 +32,10 @@ defineOptions({
 interface FileObject {
   file?: {
     name: string;
+    [key: string]: any;
   };
   name?: string;
+  [key: string]: any;
 }
 
 interface Props {

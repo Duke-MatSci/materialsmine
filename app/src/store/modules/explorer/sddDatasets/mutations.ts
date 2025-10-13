@@ -1,7 +1,7 @@
-import { SddDatasetsState, DatasetItem } from '../types';
+import { SddDatasetsState } from './types';
 
 export default {
-  setDatasetList(state: SddDatasetsState, payload: DatasetItem[]): void {
+  setDatasetList(state: SddDatasetsState, payload: any[]): void {
     state.items = payload;
   },
   setDatasetTotal(state: SddDatasetsState, payload: number): void {
@@ -12,5 +12,5 @@ export default {
   },
   setQueryTimeMillis(state: SddDatasetsState, queryTimeMillis: number): void {
     state.queryTimeMillis = queryTimeMillis;
-  },
+  }
 };

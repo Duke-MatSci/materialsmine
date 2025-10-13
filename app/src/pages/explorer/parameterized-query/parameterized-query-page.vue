@@ -109,8 +109,8 @@ import {
 } from './sparql-templates';
 import debounce from '@/modules/debounce';
 import accordion from '@/components/Accordion.vue';
-import yasr from '@/components/explorer/Yasr.vue';
-import yasqe from '@/components/explorer/Yasqe.vue';
+import yasr from '@/components/explorer/yasr.vue';
+import yasqe from '@/components/explorer/yasqe.vue';
 import spinner from '@/components/Spinner.vue';
 
 defineOptions({

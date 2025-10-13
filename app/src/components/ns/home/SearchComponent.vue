@@ -1,10 +1,15 @@
 <template>
-  <div class="section_teams viz-u-mgbottom-big" :class="{ 'u--margin-neg': searchError }">
+  <div
+    class="section_teams viz-u-mgbottom-big"
+    :class="{ 'u--margin-neg': searchError }"
+  >
     <div class="md-layout md-gutter md-alignment-top-center u_margin-top-med">
       <div
         class="search_box md-layout-item md-size-70 md-small-size-80 md-xsmall-size-90 u_height--auto"
       >
-        <h2 class="search_box_header teams_header">MaterialsMine Ontology Explorer</h2>
+        <h2 class="search_box_header teams_header">
+          MaterialsMine Ontology Explorer
+        </h2>
         <p class="u--color-grey-sec u--margin-neg md-body-1">
           <small>Last Updated:- {{ lastUpdate }}</small>
         </p>
@@ -22,7 +27,9 @@
                 required
                 v-model="searchKeyword"
               />
-              <label htmlFor="search" class="form__label search_box_form_label">Search</label>
+              <label htmlFor="search" class="form__label search_box_form_label"
+                >Search</label
+              >
             </div>
             <template v-if="!!searchResult.length">
               <div
@@ -44,7 +51,9 @@
               </div>
             </template>
           </div>
-          <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg">
+          <div
+            class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg"
+          >
             <button
               type="submit"
               class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -59,60 +68,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
-// Component name for debugging
-defineOptions({
-  name: 'SearchComponent',
-});
-
-// Props
 interface Props {
-  searchError?: boolean;
-  showDropdown?: boolean;
+  searchError?: boolean
+  showDropdown?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   searchError: false,
-  showDropdown: true,
-});
+  showDropdown: true
+})
 
-const store = useStore();
-const router = useRouter();
+const store = useStore()
+const router = useRouter()
 
-// Reactive data
-const searchKeyword = ref<string>('');
-const searchEnabled = ref<boolean>(false);
+const searchKeyword = ref('')
+const searchEnabled = ref(false)
+const search_input = ref<HTMLInputElement | null>(null)
 
-// Computed properties
-const classes = computed(() => store.getters['ns/getClasses']);
-const searchResult = computed(() => store.getters['ns/getSearchResults']);
-const lastUpdate = computed(() => store.getters['ns/getLastUpdatedDate']);
+const classes = computed(() => store.getters['ns/getClasses'])
+const searchResult = computed(() => store.getters['ns/getSearchResults'])
+const lastUpdate = computed(() => store.getters['ns/getLastUpdatedDate'])
 
 const setDropdownPosition = computed(() => {
-  return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' };
-});
+  return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
+})
 
 const isValidLength = computed(() => {
-  return searchKeyword.value.length > 2;
-});
+  return searchKeyword.value.length > 2
+})
 
-// Methods
 const submitSearch = async () => {
-  const query = searchKeyword.value;
-  if (query.length < 3) return;
+  const query = searchKeyword.value
+  if (query.length < 3) return
 
-  // this.$store.commit('ns/showDropdown', true)
+  // store.commit('ns/showDropdown', true)
   await store.dispatch('ns/searchNSData', {
     query,
-    singleResult: false,
-  });
-};
+    singleResult: false
+  })
+}
 
 const showClassInfo = (id: string) => {
-  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`;
-  router.push(url);
-};
+  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`
+  router.push(url)
+}
 </script>

@@ -8,9 +8,16 @@
       <SearchComponent :searchError="error" />
 
       <article class="u--margin-posmd md-layout md-alignment-center-center">
-        <hr class="md-divider u--bg viz-u-mgbottom-big" :class="containerSize" />
+        <hr
+          class="md-divider u--bg viz-u-mgbottom-big"
+          :class="containerSize"
+        />
 
-        <div class="md-layout md-gutter u_margin-none" :class="containerSize" style="gap: 1rem">
+        <div
+          class="md-layout md-gutter u_margin-none"
+          :class="containerSize"
+          style="gap: 1rem"
+        >
           <section
             class="viz-u-maxwidth md-layout-item viz-u-mgbottom-big search_box_form-item-2 u--padding-zero u_height--auto"
           >
@@ -28,43 +35,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
-import SearchComponent from '@/components/ns/home/SearchComponent.vue';
-import OntologyDetails from '@/components/ns/home/OntologyDetails.vue';
-import OntologyMetrics from '@/components/ns/home/OntologyMetrics.vue';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
+import SearchComponent from '@/components/ns/home/SearchComponent.vue'
+import OntologyDetails from '@/components/ns/home/OntologyDetails.vue'
+import OntologyMetrics from '@/components/ns/home/OntologyMetrics.vue'
 
-// Component name for debugging
-defineOptions({
-  name: 'Namespace',
-});
+const route = useRoute()
+const store = useStore()
 
-const store = useStore();
-const route = useRoute();
+const loading = ref(false)
+const errorMessage = ref("The class information you are looking for doesn't exist.")
 
-// Reactive data
-const loading = ref<boolean>(false);
-const errorMessage = ref<string>("The class information you are looking for doesn't exist.");
+const namespace = computed(() => route.params?.namespace)
+const containerSize = computed(() => 'md-layout-item md-size-100 md-large-size-95 md-small-size-100 u_height--auto')
+const error = computed(() => store.getters['ns/checkError'])
 
-// Computed properties
-const namespace = computed(() => route.params?.namespace as string);
-
-const containerSize = computed(() => {
-  return 'md-layout-item md-size-100 md-large-size-95 md-small-size-100 u_height--auto';
-});
-
-const error = computed(() => store.getters['ns/checkError']);
-
-// Methods
 const handleDropdown = () => {
-  const element = document.getElementById('searchMenuDropdown');
-  if (!element) return;
-  store.commit('ns/clearSearchQueries');
-};
+  const element = document.getElementById('searchMenuDropdown')
+  if (!element) return
+  store.commit('ns/clearSearchQueries')
+}
 
-// Lifecycle
 onMounted(() => {
-  store.commit('ns/clearSearchQueries');
-});
+  store.commit('ns/clearSearchQueries')
+})
 </script>

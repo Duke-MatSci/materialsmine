@@ -336,13 +336,15 @@
       <!-- TTSP Checkbox -->
       <!-- TTSP Tg Value -->
       <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
-        <md-input
-          v-model="ttspTgValue"
-          name="ttspTgValue"
-          id="ttspTgValue"
-          placeholder="Tg"
-          :disabled="!ttsp"
-        ></md-input>
+        <md-field>
+          <md-input
+            v-model="ttspTgValue"
+            name="ttspTgValue"
+            id="ttspTgValue"
+            placeholder="Tg"
+            :disabled="!ttsp"
+          ></md-input>
+        </md-field>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="tgEstimated"
@@ -353,13 +355,15 @@
       </div>
       <!-- TTSP C1 Value -->
       <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
-        <md-input
-          v-model="ttspC1Value"
-          name="ttspC1Value"
-          id="ttspC1Value"
-          placeholder="C1"
-          :disabled="!ttsp"
-        ></md-input>
+        <md-field>
+          <md-input
+            v-model="ttspC1Value"
+            name="ttspC1Value"
+            id="ttspC1Value"
+            placeholder="C1"
+            :disabled="!ttsp"
+          ></md-input>
+        </md-field>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="c1Estimated"
@@ -370,13 +374,15 @@
       </div>
       <!-- TTSP C2 Value -->
       <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
-        <md-input
-          v-model="ttspC2Value"
-          name="ttspC2Value"
-          id="ttspC2Value"
-          placeholder="C2"
-          :disabled="!ttsp"
-        ></md-input>
+        <md-field>
+          <md-input
+            v-model="ttspC2Value"
+            name="ttspC2Value"
+            id="ttspC2Value"
+            placeholder="C2"
+            :disabled="!ttsp"
+          ></md-input>
+        </md-field>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="c2Estimated"
@@ -495,7 +501,7 @@ const dynamfitData = computed(() => {
 });
 
 const updateControls = computed(() => {
-  return !!dynamfit.value.fileUpload || !!results.value?.xmls?.length;
+  return !!dynamfit.value?.fileUpload || !!results.value?.xmls?.length;
 });
 
 const ttspDisabled = computed(() => {

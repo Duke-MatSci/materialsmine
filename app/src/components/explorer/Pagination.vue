@@ -1,44 +1,24 @@
 <template>
   <div class="explorer_page-nav u_margin-top-med viz-pagination-width-mod u_margin-bottom-small">
     <div v-if="tpages > 1">
-      <MdButton
+      <button
         @click.prevent="goToBeginning"
-        v-if="rowNumber > 1"
-        :disabled="rowNumber < 1"
-        class="md-icon-button md-dense md-primary u--color-primary"
-      >
-        1
-      </MdButton>
-      <MdButton
-        @click.prevent="prevRow"
-        v-if="rowNumber > 1"
-        class="md-icon-button md-dense md-primary u--color-primary"
-      >
-        <MdIcon class="u--default-size">more_horiz</MdIcon>
-      </MdButton>
-      <MdButton
-        @click.prevent="goToPage(n + offset)"
-        v-for="(n, i) in lengths"
-        :key="i"
-        class="md-icon-button md-dense md-primary"
+        v-if="rowNumber > 1" :disabled="rowNumber < 1"
+        class="md-button md-icon-button md-dense md-primary u--color-primary">1 </button>
+      <button
+        @click.prevent="prevRow" v-if="rowNumber > 1"
+        class="md-button md-icon-button md-dense md-primary u--color-primary">
+        <md-icon class="u--default-size">more_horiz</md-icon>
+      </button>
+      <button
+        @click.prevent="goToPage(n + offset)" v-for="(n, i) in lengths" :key="i"
+        class="md-button md-icon-button md-dense md-primary"
         :class="isActiveClass(n + offset)"
-      >
-        {{ n + offset }}
-      </MdButton>
-      <MdButton
-        @click.prevent="nextRow"
-        class="md-icon-button md-dense md-primary u--color-primary"
-        v-if="rowNumber < factor"
-      >
-        <MdIcon class="u--default-size">more_horiz</MdIcon>
-      </MdButton>
-      <MdButton
-        @click.prevent="goToEnd"
-        v-if="rowNumber < factor"
-        class="md-icon-button md-dense md-primary u--color-primary"
-      >
-        {{ tpages }}
-      </MdButton>
+      >{{ n + offset }}</button>
+      <button @click.prevent="nextRow" class="md-button md-icon-button md-dense md-primary u--color-primary" v-if="rowNumber < factor">
+        <md-icon class="u--default-size">more_horiz</md-icon>
+      </button>
+      <button @click.prevent="goToEnd" v-if="rowNumber < factor" class="md-button md-icon-button md-dense md-primary u--color-primary"> {{ tpages }} </button>
     </div>
   </div>
 </template>
@@ -48,7 +28,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 
 // Component name for debugging
 defineOptions({
-  name: 'Pagination',
+  name: 'Pagination'
 });
 
 // Props
@@ -60,16 +40,22 @@ interface Props {
 const props = defineProps<Props>();
 
 // Emits
-const emit = defineEmits<{
-  'go-to-page': [page: number];
-}>();
+interface Emits {
+  (e: 'go-to-page', page: number): void;
+}
 
-// Reactive data
-const pageInput = ref(props.cpage);
-const offset = ref(0);
-const rowNumber = ref(1);
+const emit = defineEmits<Emits>();
 
-// Computed properties
+// Data
+const pageInput = ref<number>(props.cpage);
+const offset = ref<number>(0);
+const rowNumber = ref<number>(1);
+
+// Computed
+const factor = computed(() => {
+  return Math.ceil(props.tpages / lengths.value);
+});
+
 const lengths = computed(() => {
   if (window.matchMedia('(max-width: 27.5em)').matches) {
     if (props.tpages <= 4) {
@@ -84,10 +70,6 @@ const lengths = computed(() => {
   }
 });
 
-const factor = computed(() => {
-  return Math.ceil(props.tpages / lengths.value);
-});
-
 // Methods
 const pageExists = (page: number): boolean => {
   return page > 0 && page <= props.tpages;
@@ -100,10 +82,10 @@ const isActiveClass = (e: number): string => {
 const verifyRow = (): void => {
   if (props.cpage === 1) return;
   const limit = factor.value - 1;
-  const rowNumberCalc = Math.ceil(props.cpage / lengths.value);
-  if (props.cpage < props.tpages && rowNumberCalc <= limit) {
-    offset.value = (rowNumberCalc - 1) * lengths.value;
-    rowNumber.value = rowNumberCalc;
+  const rowNum = Math.ceil(props.cpage / lengths.value);
+  if (props.cpage < props.tpages && rowNum <= limit) {
+    offset.value = (rowNum - 1) * lengths.value;
+    rowNumber.value = rowNum;
   } else {
     goToLastRow();
   }
@@ -126,7 +108,7 @@ const goToEnd = (): void => {
 };
 
 const goToPage = (page: number): void => {
-  if (page !== props.cpage && pageExists(page)) {
+  if ((page !== props.cpage) && pageExists(page)) {
     emit('go-to-page', page);
     pageInput.value = page;
   }
@@ -155,16 +137,13 @@ const prevRow = (): void => {
   }
 };
 
-// Watchers
-watch(
-  () => props.cpage,
-  (newValue, oldValue) => {
-    // Necessary for when searching changes the page number
-    if (newValue !== oldValue && pageExists(newValue)) {
-      pageInput.value = newValue;
-    }
+// Watch
+// Necessary for when searching changes the page number
+watch(() => props.cpage, (newValue, oldValue) => {
+  if ((newValue !== oldValue) && pageExists(newValue)) {
+    pageInput.value = newValue;
   }
-);
+});
 
 // Lifecycle
 onMounted(() => {

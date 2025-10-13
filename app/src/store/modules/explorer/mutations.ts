@@ -1,11 +1,4 @@
-import {
-  ExplorerState,
-  FacetFilterMaterial,
-  SelectedFacetFilterMaterials,
-  Dataset,
-  DynamfitData,
-  SetSearchingPayload,
-} from './types';
+import { ExplorerState } from './types';
 
 export default {
   setMenuVisible(state: ExplorerState): void {
@@ -17,16 +10,16 @@ export default {
   setSearchKeyword(state: ExplorerState, payload: string): void {
     state.searchKeyword = payload;
   },
-  setFacetFilterMaterials(state: ExplorerState, payload: FacetFilterMaterial[]): void {
+  setFacetFilterMaterials(state: ExplorerState, payload: any[]): void {
     state.facetFilterMaterials = payload;
   },
-  setSelectedFacetFilterMaterials(state: ExplorerState, payload: SelectedFacetFilterMaterials): void {
+  setSelectedFacetFilterMaterials(state: ExplorerState, payload: Record<string, any>): void {
     state.selectedFacetFilterMaterials = payload;
   },
   setSelectedFacetFilterMaterialsValue(state: ExplorerState, payload: string | null): void {
     state.selectedFacetFilterMaterialsValue = payload;
   },
-  setSearching(state: ExplorerState, payload?: SetSearchingPayload): void {
+  setSearching(state: ExplorerState, payload?: { set: boolean }): void {
     if (payload) {
       state.searching = payload.set;
       return;
@@ -39,13 +32,13 @@ export default {
   setEnableAutosuggest(state: ExplorerState, payload: boolean): void {
     state.enableAutosuggest = payload;
   },
-  setCurrentDataset(state: ExplorerState, payload: Dataset | null): void {
+  setCurrentDataset(state: ExplorerState, payload: any): void {
     state.dataset = payload;
   },
   setCurrentDatasetThumbnail(state: ExplorerState, payload: string): void {
     state.datasetThumbnail = payload;
   },
-  setDynamfitData(state: ExplorerState, payload: DynamfitData): void {
+  setDynamfitData(state: ExplorerState, payload: Record<string, any>): void {
     state.dynamfitData = payload;
   },
   resetDynamfitData(state: ExplorerState): void {
@@ -56,10 +49,10 @@ export default {
       range: 100,
       fitSettings: false,
       model: 'Linear',
-      fileUpload: '',
+      fileUpload: ''
     };
   },
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
-  },
+  }
 };

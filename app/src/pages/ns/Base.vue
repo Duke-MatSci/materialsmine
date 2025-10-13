@@ -5,14 +5,72 @@
       id="reset_bg"
       :style="[transition, !showTop && hideHeaderView]"
     >
-      <app-toolbar :toggler="toggleMenuVisibility" />
+      <div class="md-toolbar-row">
+        <div class="md-toolbar-section-start">
+          <md-button class="md-icon-button" @click="toggleMenuVisibility">
+            <md-icon>menu</md-icon>
+          </md-button>
+
+          <router-link to="/" class="header-logo">
+            <span class="md-title"
+              ><img id="logo" src="@/assets/img/materialsmine_logo_sm.png"
+            /></span>
+          </router-link>
+        </div>
+
+        <div class="md-toolbar-section-end md-toolbar-section-end_adjust">
+          <div class="nav nav_menu u--inline">
+            <ul>
+              <li>
+                <router-link to="/nm" v-slot="{ navigate, href }" custom>
+                  <a :href="href" @click="navigate">NanoMine</a>
+                </router-link>
+              </li>
+              <li>
+                <router-link to="/mm" v-slot="{ navigate, href }" custom>
+                  <a :href="href" @click="navigate">Metamine</a>
+                </router-link>
+              </li>
+              <li>
+                <span v-if="isAuth" class="u_color_white u--font-emph-m">
+                  Hi {{ displayName }}
+                </span>
+                <a
+                  v-if="!isAuth"
+                  class="md-icon-button large u_color_white u--font-emph-m u_margin-top-small"
+                  href="/secure"
+                >
+                  Login
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar Tabs -->
+      <div class="md-toolbar-row u_margin-top-med u_toggle-display-off">
+        <md-tabs class="md-primary" id="reset_tab_bg" md-sync-route>
+          <md-tab
+            class="_menutabs"
+            v-for="(route, i) in tabRoutes"
+            :key="i"
+            :to="route.path"
+            :id="`tab-${route.name || route.label}`"
+            :md-label="route.label"
+            :exact="route.exact"
+          />
+        </md-tabs>
+      </div>
     </md-app-toolbar>
     <md-app-drawer v-model:mdActive="menuVisible">
-      <Drawers />
+      <Drawer id="leftdrawer" />
     </md-app-drawer>
-    <md-app-content class="u--padding-zero u--layout-flex u--layout-flex-column utility-roverflow">
+    <md-app-content
+      class="u--padding-zero u--layout-flex u--layout-flex-column utility-roverflow"
+    >
       <div class="section_loader" v-if="loading">
-        <spinner :loading="loading" text="Loading Ontology Data" />
+        <Spinner :loading="loading" text="Loading Ontology Data" />
       </div>
       <template v-else>
         <router-view v-if="!namespace" />
@@ -34,31 +92,42 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue';
-import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
-import Drawers from '@/components/Drawer.vue';
-import AppToolbar from '@/components/explorer/Header.vue';
-import spinner from '@/components/Spinner.vue';
+import { useStore } from 'vuex';
+import Drawer from '@/components/Drawer.vue';
+import Spinner from '@/components/Spinner.vue';
 import Classes from '@/pages/ns/Classes.vue';
 import Home from '@/pages/ns/Home.vue';
+import { HEADER_ROUTES } from '@/modules/nav-routes';
+
+const store = useStore();
+const route = useRoute();
 
 // Component name for debugging
 defineOptions({
   name: 'NameSpaceBase',
 });
 
-const store = useStore();
-const route = useRoute();
-
 // Reactive data
 const menuVisible = ref<boolean>(false);
-const showTop = ref<boolean>(true);
-const searchLoading = ref<boolean>(true);
+const showTop = ref(true);
+const searchLoading = ref(true);
 
-// Computed properties
+// Auth state
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const displayName = computed(() => store.getters['auth/displayName']);
+
+// Tabs
+const tabRoutes = computed(() => {
+  const routeParent = route.path.split('/')[1] as keyof typeof HEADER_ROUTES;
+  const routes = HEADER_ROUTES?.[routeParent] ?? [];
+  return routes;
+});
+
+// Computed
 const loading = computed(() => store.getters['ns/isLoading']);
 const searchResult = computed(() => store.state.ns.currentClass);
-const namespace = computed(() => route.params?.namespace as string);
+const namespace = computed(() => route.params?.namespace);
 const getBody = computed(() => {
   return document.querySelector('.md-app.md-fixed .md-app-scroller');
 });
@@ -66,10 +135,6 @@ const getBody = computed(() => {
 // Methods
 const toggleMenuVisibility = (): void => {
   menuVisible.value = !menuVisible.value;
-};
-
-const handleDrawerUpdate = (value: boolean): void => {
-  menuVisible.value = value;
 };
 
 const hideHeaderView = computed(() => ({ top: `-${74}px` }));
@@ -88,11 +153,11 @@ const adjustHeader = () => {
   }
 };
 
-const findQuery = async (query: string) => {
+const findQuery = async (query: string | string[]) => {
   searchLoading.value = true;
   store.commit('ns/clearCurrentClass');
   await nextTick();
-  await store.dispatch('ns/searchNSData', { query, singleResult: true });
+  store.dispatch('ns/searchNSData', { query, singleResult: true });
   if (searchResult.value) {
     store.commit('ns/setSelectedId', searchResult.value.ID);
   }
@@ -122,7 +187,7 @@ watch(
   () => route.params,
   async (newValue) => {
     if (newValue?.namespace) {
-      await findQuery(newValue.namespace as string);
+      await findQuery(newValue.namespace);
     }
   }
 );

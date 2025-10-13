@@ -5,7 +5,7 @@
     </div>
     <div>
       <div class="section_loader" v-if="loading">
-        <Spinner :loading="loading" text="Loading Dataset" />
+        <spinner :loading="loading" text="Loading Dataset" />
       </div>
       <div v-else class="curate">
         <md-card style="margin: 10px">
@@ -16,27 +16,24 @@
             enctype="multipart/form-data"
             upload_type="http://www.w3.org/ns/dcat#Dataset"
           >
-            <md-steppers class="form__stepper" v-model:md-active-step="active" md-linear>
+            <md-steppers class="form__stepper" :md-active-step.sync="active" md-linear>
               <md-step id="first" md-label="Dataset Info">
-                Linking has not been completed for this dataset. Are you ready to finish linking the
-                data?
+                Linking has not been completed for this dataset. Are you ready to finish linking
+                the data?
                 <a>Click here</a> if you'd like to request assistance from an admin.
 
                 <md-card-header>
                   <md-card-header-text>
                     <div class="md-subhead">Dataset Summary:</div>
                     <div class="md-title">
-                      {{
-                        optionalChaining(() => dataset[datasetFields['title']][0]['@value']) ||
-                        'Curated Dataset'
-                      }}
+                      {{ dataset?.[datasetFields.title]?.[0]?.['@value'] || 'Curated Dataset' }}
                     </div>
                     <!-- <div class="md-subhead" v-if="dataset[datasetFields['depiction']]">Cover Image: {{ depiction.name }}</div> -->
                   </md-card-header-text>
 
                   <md-card-media
                     md-big
-                    v-show="optionalChaining(() => dataset[datasetFields['depiction']])"
+                    v-show="dataset?.[datasetFields.depiction]"
                     style="height: 0px"
                   >
                     <span id="depictWrapperMini">
@@ -44,7 +41,7 @@
                         <img
                           id="depictImgMini"
                           v-if="thumbnail"
-                          :src="optionalChaining(() => thumbnail[0]['@value'])"
+                          :src="thumbnail?.[0]?.['@value']"
                           alt="Image preview"
                         />
                       </figure>
@@ -52,44 +49,33 @@
                   </md-card-media>
                 </md-card-header>
                 <md-card-content>
-                  <div v-if="optionalChaining(() => dataset[datasetFields['doi']])">
+                  <div v-if="dataset?.[datasetFields.doi]">
                     DOI: <a class="u--b-rad">{{ doi }}</a>
                   </div>
                   <div class="u_margin-bottom-small">
-                    {{ optionalChaining(() => dataset[datasetFields['description']][0]['@value']) }}
+                    {{ dataset?.[datasetFields.description]?.[0]?.['@value'] }}
                   </div>
                   <div v-if="orcidData" class="u_margin-bottom-small">
                     <span>
                       <h3>Contact Point:</h3>
                       {{
-                        optionalChaining(
-                          () => orcidData['http://schema.org/givenName'][0]['@value']
-                        ) || ''
+                        orcidData?.['http://schema.org/givenName']?.[0]?.['@value'] || ''
                       }}
-                      {{
-                        optionalChaining(
-                          () => orcidData['http://schema.org/familyName'][0]['@value']
-                        ) || ''
-                      }}
+                      {{ orcidData?.['http://schema.org/familyName']?.[0]?.['@value'] || '' }}
                     </span>
                     <div>
-                      <a
-                        class="u--b-rad"
-                        :href="optionalChaining(() => orcidData['@id'])"
-                        target="_blank"
-                      >
+                      <a class="u--b-rad" :href="orcidData?.['@id']" target="_blank">
                         {{
-                          optionalChaining(() => orcidData['@id']) ||
-                          optionalChaining(() => dataset[datasetFields.cp][0]['@id']) ||
+                          orcidData?.['@id'] ||
+                          dataset?.[datasetFields.cp]?.[0]?.['@id'] ||
                           'N/A'
                         }}
                       </a>
                     </div>
-                    <div v-if="orcidData['http://www.w3.org/2006/vcard/ns#email']">
+                    <div v-if="orcidData?.['http://www.w3.org/2006/vcard/ns#email']">
                       {{
-                        optionalChaining(
-                          () => orcidData['http://www.w3.org/2006/vcard/ns#email'][0]['@value']
-                        ) || 'N/A'
+                        orcidData?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value'] ||
+                          'N/A'
                       }}
                     </div>
                   </div>
@@ -101,27 +87,21 @@
                         :key="`file_${index}`"
                         class="u--margin-leftsm"
                       >
-                        <a :href="optionalChaining(() => file.downloadLink)" download>
-                          {{ optionalChaining(() => file.label) }}
+                        <a :href="file.downloadLink" download>
+                          {{ file.label }}
                         </a>
                       </li>
                     </ul>
                   </div>
-                  <div v-if="optionalChaining(() => dataset[datasetFields['datePub']])">
+                  <div v-if="dataset?.[datasetFields.datePub]">
                     <span class="u--color-black"> Date Published: </span>
                     <span>
-                      {{
-                        optionalChaining(() => dataset[datasetFields['datePub']][0]['@value']) ||
-                        'N/A'
-                      }}
+                      {{ dataset?.[datasetFields.datePub]?.[0]?.['@value'] || 'N/A' }}
                     </span>
                   </div>
                 </md-card-content>
                 <div class="md-card-actions md-alignment-right chart_editor__right-view">
-                  <md-button
-                    @click="goToStep('first', 'second')"
-                    class="md-theme-default md-button_next"
-                  >
+                  <md-button @click="goToStep('first', 'second')" class="md-theme-default md-button_next">
                     Next
                   </md-button>
                 </div>
@@ -299,11 +279,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 import Spinner from '@/components/Spinner.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
-import { useOptionalChaining } from '@/composables/useOptionalChaining';
 import { parseFileName } from '@/modules/whyis-dataset';
 import { postNewNanopub } from '@/modules/whyis-utils';
 
@@ -319,16 +298,32 @@ interface Props {
 
 const props = defineProps<Props>();
 
-// Store and router
-const store = useStore();
+// Router and store
 const router = useRouter();
+const store = useStore();
 
-// Composables
-const { optionalChaining } = useOptionalChaining();
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface Distribution {
+  downloadLink: string;
+  label: string;
+  fileExtension: string;
+  delimiter: string | null;
+  isSdd?: boolean;
+}
+
+interface InvalidSteps {
+  third: string | null;
+  fourth: string | null;
+}
 
 // Reactive data
 const loading = ref(true);
-const navRoutes = ref([
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
@@ -338,7 +333,8 @@ const navRoutes = ref([
     path: `/explorer/curate/sdd/edit/${props.datasetId}`,
   },
 ]);
-const datasetFields = ref({
+
+const datasetFields = {
   description: 'http://purl.org/dc/terms/description',
   doi: 'http://purl.org/dc/terms/isReferencedBy',
   datePub: 'http://purl.org/dc/terms/issued',
@@ -346,32 +342,29 @@ const datasetFields = ref({
   cp: 'http://www.w3.org/ns/dcat#contactpoint',
   distribution: 'http://www.w3.org/ns/dcat#distribution',
   depiction: 'http://xmlns.com/foaf/0.1/depiction',
-});
-const distributions = ref<any[]>([]);
+};
+
+const distributions = ref<Distribution[]>([]);
 const isSddArray = ref<number[]>([]);
 const whichSdd = ref<string | null>(null);
 const selectSdd = ref('');
 const active = ref('first');
-const invalid = ref({
-  third: null as string | null,
-  fourth: null as string | null,
+const invalid = ref<InvalidSteps>({
+  third: null,
+  fourth: null,
 });
 const defaultNamespace = ref(true);
 const namespace = ref('');
-const testboolean = ref(false);
 const searchSdd = ref('');
 
-// Computed properties
-const dialogBoxActive = computed(() => store.getters['dialogBox']);
-const isAuth = computed(() => store.getters['auth/isAuthenticated']);
-const isAdmin = computed(() => store.getters['auth/isAdmin']);
+// Computed
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
 const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 
 const doi = computed(() => {
-  if (dataset.value?.[datasetFields.value.doi]) {
-    const doiString = dataset.value[datasetFields.value.doi][0]['@value'];
+  if (dataset.value?.[datasetFields.doi]) {
+    const doiString = dataset.value[datasetFields.doi][0]['@value'];
     return doiString.replace('http://dx.doi.org/', '');
   }
   return '';
@@ -382,48 +375,44 @@ const fullDatasetUri = computed(() => {
 });
 
 const title = computed(() => {
-  return dataset.value[datasetFields.value.title][0]['@value'];
+  return dataset.value?.[datasetFields.title]?.[0]?.['@value'] || '';
 });
 
-// Watch for changes
-watch(dataset, (newValues) => {
-  loading.value = false;
-  if (newValues?.[datasetFields.value.cp]) {
-    const orcid = dataset.value[datasetFields.value.cp][0]['@id'];
-    const trimmedId = orcid
-      .replace('http://orcid.org/', '')
-      .replace(`${window.location.origin}/`, '');
-    lookupOrcid(trimmedId);
-  }
-  if (newValues?.[datasetFields.value.depiction]) {
-    const thumbnailUri = dataset.value[datasetFields.value.depiction][0]['@id'];
-    store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri);
-  }
-  if (newValues?.[datasetFields.value.distribution]) {
-    for (const index in newValues[datasetFields.value.distribution]) {
-      const downloadLink = newValues[datasetFields.value.distribution][index]?.['@id'];
-      const label = parseFileName(downloadLink);
-      const fileExtension = label.split('.').pop()?.toLowerCase();
-      distributions.value[index] = {
-        downloadLink,
-        label,
-        fileExtension,
-        delimiter: null,
-      };
+// Watch for dataset changes
+watch(
+  dataset,
+  (newValues) => {
+    loading.value = false;
+    if (newValues?.[datasetFields.cp]) {
+      const orcid = newValues[datasetFields.cp][0]['@id'];
+      const trimmedId = orcid
+        .replace('http://orcid.org/', '')
+        .replace(`${window.location.origin}/`, '');
+      lookupOrcid(trimmedId);
     }
-  }
-});
+    if (newValues?.[datasetFields.depiction]) {
+      const thumbnailUri = newValues[datasetFields.depiction][0]['@id'];
+      store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri);
+    }
+    if (newValues?.[datasetFields.distribution]) {
+      for (const index in newValues[datasetFields.distribution]) {
+        const downloadLink = newValues[datasetFields.distribution][index]?.['@id'];
+        const label = parseFileName(downloadLink);
+        const fileExtension = label.split('.').pop()?.toLowerCase() || '';
+        distributions.value[parseInt(index)] = {
+          downloadLink,
+          label,
+          fileExtension,
+          delimiter: null,
+        };
+      }
+    }
+  },
+  { immediate: true }
+);
 
 // Methods
-const setSnackbar = (payload: any) => {
-  store.commit('setSnackbar', payload);
-};
-
-const clearSnackbar = () => {
-  store.commit('resetSnackbar');
-};
-
-const replaceBaseUrl = (originalUrl: string, oldBase: string, newBase: string) => {
+const replaceBaseUrl = (originalUrl: string, oldBase: string, newBase: string): string => {
   return originalUrl.replace(oldBase, newBase);
 };
 
@@ -431,7 +420,7 @@ const loadDataset = async () => {
   try {
     await store.dispatch('explorer/fetchSingleDataset', fullDatasetUri.value || undefined);
   } catch (e: any) {
-    setSnackbar({ message: e });
+    store.commit('setSnackbar', { message: e });
   } finally {
     loading.value = false;
   }
@@ -442,15 +431,12 @@ const lookupOrcid = (id: string) => {
 };
 
 const goToStep = (id: string, index?: string) => {
-  clearSnackbar();
+  store.commit('resetSnackbar');
   if (id === 'third' && checkInvalidThird()) return;
-  (this as any)[id] = true;
-  if (index) {
-    active.value = index;
-  }
+  active.value = index || id;
 };
 
-const checkInvalidThird = () => {
+const checkInvalidThird = (): boolean => {
   let isInvalid = false;
   const csvs = distributions.value.filter((x) => x.fileExtension === 'csv');
   for (const index in csvs) {
@@ -469,7 +455,7 @@ const processSddList = () => {
 };
 
 const createDatasetLd = () => {
-  const jsonLd = {
+  const jsonLd: any = {
     '@id': fullDatasetUri.value,
   };
   let namespaceValue = `${fullDatasetUri.value}/`;
@@ -486,7 +472,7 @@ const createDatasetLd = () => {
 
 const createFileLd = (index: number) => {
   const distribution = distributions.value[index];
-  const jsonLd = {
+  const jsonLd: any = {
     '@id': replaceBaseUrl(
       distribution.downloadLink,
       'http://localhost/api/',
@@ -510,7 +496,7 @@ const createFileLd = (index: number) => {
       const file = distributions.value.find((file) => file.downloadLink.includes(selectSdd.value));
       jsonLd['http://purl.org/dc/terms/conformsTo'] = {
         '@id': replaceBaseUrl(
-          file?.downloadLink,
+          file?.downloadLink || '',
           'http://localhost/api/',
           `${window.location.origin}/api/`
           // Note: When testing SDD linking locally enable below logic and comment above
@@ -525,9 +511,9 @@ const createFileLd = (index: number) => {
 };
 
 const submitForm = async () => {
-  clearSnackbar();
+  store.commit('resetSnackbar');
   if (checkInvalidThird()) {
-    return setSnackbar({
+    return store.commit('setSnackbar', {
       message: 'Check for errors in required fields',
     });
   }
@@ -542,7 +528,7 @@ const submitForm = async () => {
     .then((response) => {
       // TODO: Remove later - consume response in snackbar
       console.log(response);
-      return setSnackbar({
+      return store.commit('setSnackbar', {
         message: 'SDD linking completed successfully',
         // explorer/dataset/4acae5dd-8986-4177-8836-38901591fce0
         action: () => router.push(`/explorer/dataset/${props.datasetId}`),
@@ -560,4 +546,3 @@ onMounted(() => {
   loadDataset();
 });
 </script>
-

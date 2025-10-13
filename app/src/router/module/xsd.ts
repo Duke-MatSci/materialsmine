@@ -9,4 +9,4 @@ const xsdRoutes: Array<RouteRecordRaw> = [
   },
 ];
 
-// export default xsdRoutes;
+export default xsdRoutes;

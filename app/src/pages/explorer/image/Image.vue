@@ -153,7 +153,6 @@ const store = useStore();
 
 // Composables
 const { reduceDescription } = useReduce();
-const { updateParamsAndCall, resetSearch, checkPageSize } = useExplorerQueryParams();
 
 // Reactive data
 const baseUrl = ref(window.location.origin);
@@ -161,6 +160,7 @@ const renderText = ref('Showing all images');
 const images = ref<any>([]);
 const searchImages = ref<any>([]);
 const ImageList = ref<any>([]);
+// Local refs for Apollo queries (will be synced with composable)
 const pageNumber = ref(parseInt(route.query.page as string) || 1);
 const pageSize = ref(
   parseInt(route.query.size as string) <= 20 ? parseInt(route.query.size as string) : 20
@@ -247,6 +247,38 @@ watch([imagesLoading, searchImagesLoading], ([imagesLoad, searchLoad]) => {
   loading.value = imagesLoad || searchLoad;
 });
 
+// Methods
+const localSearchMethod = async (): Promise<void> => {
+  error.value = '';
+  if (searchEnabled.value) {
+    await refetchSearchImages();
+  } else {
+    await refetchImages();
+  }
+};
+
+// Setup useExplorerQueryParams with localSearchMethod
+const {
+  pageNumber: composablePageNumber,
+  pageSize: composablePageSize,
+  loadPrevNextImage,
+  updateParamsAndCall,
+  resetSearch,
+  checkPageSize: checkPageSizeFromComposable
+} = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true
+});
+
+// Sync composable refs with local refs used in Apollo queries
+watch(composablePageNumber, (newVal) => {
+  pageNumber.value = newVal;
+});
+
+watch(composablePageSize, (newVal) => {
+  pageSize.value = newVal;
+});
+
 // Watch for imageSearch changes
 watch(imageSearch, (newValue, oldValues) => {
   if (newValue && newValue.value?.length) {
@@ -260,16 +292,6 @@ watch(imageSearch, (newValue, oldValues) => {
     return localSearchMethod();
   }
 });
-
-// Methods
-const localSearchMethod = () => {
-  error.value = '';
-  if (searchEnabled.value) {
-    refetchSearchImages();
-  } else {
-    refetchImages();
-  }
-};
 
 const submitSearch = async () => {
   if (!searchWord.value || !filter.value) {
@@ -299,11 +321,6 @@ const clearForm = () => {
   dispatchSearch();
 };
 
-const loadPrevNextImage = (event: number) => {
-  pageNumber.value = event;
-  localSearchMethod();
-};
-
 // Error handling
 const handleError = (error: any) => {
   if (error.networkError) {
@@ -321,7 +338,7 @@ const handleError = (error: any) => {
 // Lifecycle
 onMounted(() => {
   if (route.query.pageSize) {
-    checkPageSize(parseInt(route.query.pageSize as string));
+    checkPageSizeFromComposable(parseInt(route.query.pageSize as string));
   }
   if (route.query.q && route.query.type) {
     searchEnabled.value = true;

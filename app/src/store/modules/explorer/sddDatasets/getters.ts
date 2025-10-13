@@ -1,16 +1,14 @@
-import { SddDatasetsState, DatasetItem } from '../types';
+import { SddDatasetsState } from './types';
 
 export default {
-  getAllDatasets(state: SddDatasetsState): DatasetItem[] {
+  getAllDatasets(state: SddDatasetsState): any[] {
     return state.items;
   },
   getTotal(state: SddDatasetsState): number {
     return state.total || 0;
   },
-  getTotalPages(state: SddDatasetsState, getters: Record<string, unknown>): number {
-    return Math.ceil(
-      (getters.getTotal as number) / (getters.getPageSize as number)
-    );
+  getTotalPages(_state: SddDatasetsState, getters: any): number {
+    return Math.ceil(getters.getTotal / getters.getPageSize);
   },
   getPage(state: SddDatasetsState): number {
     return state.page;
@@ -20,5 +18,5 @@ export default {
   },
   getQueryTimeMillis(state: SddDatasetsState): number {
     return state.queryTimeMillis;
-  },
+  }
 };

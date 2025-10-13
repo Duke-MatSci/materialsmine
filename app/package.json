@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.0",
-    "@duke-matsci/vue-materials": "^0.0.745",
+    "@duke-matsci/vue-materials": "^0.0.818",
     "@rdfjs/data-model": "^1.3.4",
     "@triply/yasgui": "^4.2.21",
     "@vue/apollo-composable": "^4.0.0-alpha.15",
@@ -63,6 +63,7 @@
   "devDependencies": {
     "@types/d3": "^7.4.3",
     "@types/jest": "^27.5.2",
+    "@types/jsoneditor": "^9.9.6",
     "@types/n3": "^1.26.0",
     "@types/prismjs": "^1.26.5",
     "@types/uuid": "^10.0.0",

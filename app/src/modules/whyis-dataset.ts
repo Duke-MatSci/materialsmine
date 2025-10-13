@@ -1,9 +1,55 @@
-import { listNanopubs, postNewNanopub, deleteNanopub, lodPrefix } from '@/modules/whyis-utils';
-import { useStore } from 'vuex';
+import { listNanopubs, postNewNanopub, deleteNanopub, lodPrefix } from './whyis-utils';
+import store from '@/store';
 import { v4 as uuidv4 } from 'uuid';
-const store = useStore();
 
-const defaultDataset: any = {
+interface ContactPoint {
+  '@type': string;
+  '@id': string | null;
+  firstName: string;
+  lastName: string;
+  cpEmail: string;
+}
+
+interface DateField {
+  '@type': string;
+  '@value': string;
+}
+
+interface Depiction {
+  name: string;
+  accessURL: string | null;
+}
+
+interface Dataset {
+  title: string;
+  description: string;
+  contactPoint: ContactPoint;
+  creator: string;
+  contributor: string[];
+  organization: string[];
+  datePub: DateField;
+  dateMod: DateField;
+  refby: string[];
+  distribution: string[];
+  depiction: Depiction;
+  uri?: string;
+  '@type'?: string;
+  [key: string]: any;
+}
+
+interface FileItem {
+  status?: string;
+  file?: File;
+  uri?: string;
+  filename?: string;
+  swaggerFilename?: string;
+  name?: string;
+  originalname?: string;
+  accessUrl?: string;
+  [key: string]: any;
+}
+
+const defaultDataset: Dataset = {
   title: '',
   description: '',
   contactPoint: {
@@ -38,7 +84,7 @@ const vcard = 'http://www.w3.org/2006/vcard/ns#';
 const foaf = 'http://xmlns.com/foaf/0.1/';
 const schema = 'http://schema.org/';
 
-const datasetFieldUris = {
+const datasetFieldUris: Record<string, string> = {
   baseSpec: 'http://semanticscience.org/resource/hasValue',
   title: `${dct}title`,
   description: `${dct}description`,
@@ -72,7 +118,7 @@ const datasetFieldUris = {
 
 const datasetPrefix = 'dataset';
 
-// Generate a random uuid, or use current if exists
+// Generate a randum uuid, or use current if exists
 function generateDatasetId(guuid?: string): string {
   let datasetId: string;
   if (arguments.length === 0) {
@@ -83,12 +129,10 @@ function generateDatasetId(guuid?: string): string {
   return `${lodPrefix}/explorer/${datasetPrefix}/${datasetId}`;
 }
 
-function buildDatasetLd(dataset: any): any {
+function buildDatasetLd(dataset: Dataset): Record<string, any> {
   dataset = Object.assign({}, dataset);
-  if (dataset.context) {
-    dataset.context = JSON.stringify(dataset.context);
-  }
-  const datasetLd: any = {
+  dataset.context = JSON.stringify(dataset.context);
+  const datasetLd: Record<string, any> = {
     '@id': dataset.uri,
     '@type': [],
   };
@@ -99,17 +143,14 @@ function buildDatasetLd(dataset: any): any {
 
   Object.entries(dataset)
     // filter out the ones that aren't in our allowed fields
-    .filter(
-      ([field, value]) => datasetFieldUris[field.toLowerCase() as keyof typeof datasetFieldUris]
-    )
+    .filter(([field, value]) => datasetFieldUris[field.toLowerCase()])
     .forEach(([field, value]) => {
       // make a new dictionary
-      let ldValues = {};
+      let ldValues: any = {};
       // If the field has a value
       if (!isEmpty(value)) {
         ldValues = recursiveFieldSetter([field, value]);
-        datasetLd[datasetFieldUris[field.toLowerCase() as keyof typeof datasetFieldUris]] =
-          ldValues;
+        datasetLd[datasetFieldUris[field.toLowerCase()]] = ldValues;
       }
     });
   return datasetLd;
@@ -143,13 +184,13 @@ function isEmpty(value: any): boolean {
 function recursiveFieldSetter([field, value]: [string, any]): any {
   // If the value is also an array, recur through the value
   if (Array.isArray(value)) {
-    const fieldArray = [];
+    const fieldArray: any[] = [];
     for (const val in value) {
       fieldArray.push(recursiveFieldSetter([field, value[val]]));
     }
     return fieldArray;
   } else {
-    const fieldDict: any = {};
+    const fieldDict: Record<string, any> = {};
     // Fields may have multiple values, so loop through all
     for (const val in value) {
       // type, value and id aren't in datasetFieldURIs dictionary
@@ -162,11 +203,10 @@ function recursiveFieldSetter([field, value]: [string, any]): any {
           value[val];
       } else if (Object.getOwnPropertyDescriptor(datasetFieldUris, val.toLowerCase())) {
         // Recursive case (val is an allowed field)
-        fieldDict[datasetFieldUris[val.toLowerCase() as keyof typeof datasetFieldUris]] =
-          recursiveFieldSetter([
-            datasetFieldUris[val.toLowerCase() as keyof typeof datasetFieldUris],
-            value[val],
-          ]);
+        fieldDict[datasetFieldUris[val.toLowerCase()]] = recursiveFieldSetter([
+          datasetFieldUris[val.toLowerCase()],
+          value[val],
+        ]);
       } else {
         fieldDict['@value'] = value;
       }
@@ -176,7 +216,7 @@ function recursiveFieldSetter([field, value]: [string, any]): any {
 }
 
 // Blank dataset
-function getDefaultDataset(): any {
+function getDefaultDataset(): Dataset {
   return Object.assign({}, defaultDataset);
 }
 
@@ -190,26 +230,26 @@ function getDefaultDataset(): any {
 //     )
 // }
 async function deleteResources(resourceURI: string): Promise<any> {
-  return listNanopubs(resourceURI).then((nanopubs: any) => {
+  return listNanopubs(resourceURI).then((nanopubs) => {
     if (!nanopubs || !nanopubs.length) return;
-    return Promise.all(nanopubs.map(async (nanopub: any) => await deleteNanopub(nanopub.np)));
+    return Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
   });
 }
 
 // Handle all of the uploads as multipart form
 async function saveDataset(
-  dataset: any,
-  fileList: any[],
-  imageList: any[],
+  dataset: Dataset,
+  fileList: FileItem[],
+  imageList: FileItem[],
   guuid?: string
 ): Promise<any> {
   const oldFiles = fileList.filter((file) => file.status === 'complete');
   const oldDepiction = imageList.filter((file) => file.status === 'complete');
   const imgToDelete = imageList.filter((file) => file.status === 'delete')?.[0]?.accessUrl;
-  let imgDeleteId;
+  let imgDeleteId: string | undefined;
   if (imgToDelete) imgDeleteId = parseFileName(imgToDelete, true);
 
-  let p = Promise.resolve();
+  let p: Promise<any> = Promise.resolve();
   if (dataset.uri) {
     p = await deleteResources(dataset.uri);
   } else if (arguments.length === 1) {
@@ -220,7 +260,7 @@ async function saveDataset(
   const [distrRes, imgRes] = await Promise.all([
     saveDatasetFiles(fileList.filter((file) => file.status === 'incomplete')),
     saveDatasetFiles(imageList.filter((file) => file.status === 'incomplete')),
-    deleteFile(imgDeleteId ?? undefined),
+    deleteFile(imgDeleteId),
     p,
   ]);
   const datasetLd = buildDatasetLd(dataset);
@@ -231,20 +271,20 @@ async function saveDataset(
   }
 
   if (imgRes?.files?.length) {
-    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(imgRes?.files?.[0], dataset.uri);
+    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(imgRes?.files?.[0], dataset.uri!);
   } else if (oldDepiction.length) {
-    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(oldDepiction[0], dataset.uri);
+    datasetLd[datasetFieldUris.depiction] = buildDepictionLd(oldDepiction[0], dataset.uri!);
   }
 
   return postNewNanopub(datasetLd);
   // TODO: Error handling
 }
 
-async function saveDatasetFiles(fileList: any[]): Promise<any> {
+async function saveDatasetFiles(fileList: FileItem[]): Promise<any> {
   if (fileList.length) {
     const url = `${window.location.origin}/api/files/upload`;
     const formData = new FormData();
-    fileList.forEach((file) => formData.append('uploadfile', file?.file ?? file));
+    fileList.forEach((file) => formData.append('uploadfile', file?.file ?? (file as any)));
     const result = await fetch(url, {
       method: 'POST',
       body: formData,
@@ -258,7 +298,7 @@ async function saveDatasetFiles(fileList: any[]): Promise<any> {
   }
 }
 
-async function deleteFile(fileId: string | undefined): Promise<any> {
+async function deleteFile(fileId?: string): Promise<Response | undefined> {
   if (fileId) {
     const response = await fetch(`${window.location.origin}/api/files/${fileId}`, {
       method: 'DELETE',
@@ -267,15 +307,17 @@ async function deleteFile(fileId: string | undefined): Promise<any> {
       },
     });
     if (response?.statusText !== 'OK') {
-      const error = new Error('Something went wrong while deleting file');
+      const error = new Error(
+        (response as any)?.message || 'Something went wrong while deleting file'
+      );
       throw error;
     }
     return response;
   }
 }
 
-function buildDistrLd(fileList: any[]): any[] {
-  const distrLDs = Array(fileList.length);
+function buildDistrLd(fileList: FileItem[]): any[] {
+  const distrLDs: any[] = Array(fileList.length);
   Array.from(Array(fileList.length).keys()).map((x) => {
     // TODO: check if we want to keep distribution uri as /explorer/dataset/id/filename and redirect for download
     const fileName = fileList[x]?.swaggerFilename ?? fileList[x]?.name;
@@ -301,8 +343,8 @@ function buildDistrLd(fileList: any[]): any[] {
   return distrLDs;
 }
 
-function buildDepictionLd(file: any, uri: string): any {
-  const depictionLd = {
+function buildDepictionLd(file: FileItem, uri: string): Record<string, any> {
+  const depictionLd: Record<string, any> = {
     '@id': `${uri}/depiction`,
     '@type': 'http://purl.org/net/provenance/ns#File',
     'http://www.w3.org/2000/01/rdf-schema#label': file?.swaggerFilename ?? file.originalname,
@@ -313,27 +355,26 @@ function buildDepictionLd(file: any, uri: string): any {
 }
 
 // Load for editing
-async function loadDataset(datasetUri: string): Promise<any[]> {
+async function loadDataset(datasetUri: string): Promise<[Dataset, FileItem[], any] | undefined> {
   try {
     const response = await store.dispatch('explorer/fetchSingleDataset', datasetUri);
     const [extractedDataset, oldDistributions, oldDepiction] = extractDataset(response);
     return [extractedDataset, oldDistributions, oldDepiction];
-  } catch (e) {
+  } catch (e: any) {
     store.commit('setSnackbar', { message: e });
-    throw e;
   }
 }
 
 // Extract information from dataset in JSONLD format
-function extractDataset(datasetLd: any): [any, any[], any] {
+function extractDataset(datasetLd: Record<string, any>): [Dataset, FileItem[], any] {
   // eslint-disable-next-line no-undef
-  const dataset = structuredClone(defaultDataset);
+  const dataset: Dataset = structuredClone(defaultDataset);
   dataset.uri = datasetLd?.['@id'];
-  let oldDistributions: any[] = [];
+  let oldDistributions: FileItem[] = [];
   let oldDepiction: any;
 
   Object.entries(defaultDataset).forEach(([field]) => {
-    const uri = datasetFieldUris?.[field.toLowerCase() as keyof typeof datasetFieldUris];
+    const uri = datasetFieldUris?.[field.toLowerCase()];
     const val = datasetLd?.[uri];
     if (!!uri && typeof val !== 'undefined') {
       if (field === 'distribution') {
@@ -344,21 +385,16 @@ function extractDataset(datasetLd: any): [any, any[], any] {
           };
         });
       } else if (field === 'depiction') oldDepiction = val;
-      else if (
-        Array.isArray(defaultDataset[field as keyof typeof defaultDataset]) &&
-        Array.isArray(val)
-      ) {
+      else if (Array.isArray(defaultDataset[field]) && Array.isArray(val)) {
         dataset[field] = val.map((entry: any) => {
           return entry?.['@value'] ?? entry;
         });
-      } else if (typeof defaultDataset[field as keyof typeof defaultDataset] === 'object') {
-        Object.entries(defaultDataset[field as keyof typeof defaultDataset] as any).forEach(
-          ([subfield]) => {
-            if (typeof val?.[0]?.[subfield] !== 'undefined') {
-              dataset[field][subfield] = val?.[0]?.[subfield];
-            }
+      } else if (typeof defaultDataset[field] === 'object') {
+        Object.entries(defaultDataset[field]).forEach(([subfield]) => {
+          if (typeof val?.[0]?.[subfield] !== 'undefined') {
+            dataset[field][subfield] = val?.[0]?.[subfield];
           }
-        );
+        });
       } else if (typeof val[0]['@value'] !== 'undefined') {
         dataset[field] = datasetLd[uri][0]['@value'];
       }
@@ -370,10 +406,10 @@ function extractDataset(datasetLd: any): [any, any[], any] {
 // For extracting the original file name from the URI
 function parseFileName(fileString: string, fullId = false): string {
   const dateString = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)-/;
-  let parsed;
-  if (fullId) parsed = fileString.split('api/files/').pop();
-  else parsed = fileString.split(dateString).pop();
-  return parsed?.split('?')[0] || '';
+  let parsed: string;
+  if (fullId) parsed = fileString.split('api/files/').pop()!;
+  else parsed = fileString.split(dateString).pop()!;
+  return parsed.split('?')[0];
 }
 
 const isValidOrcid = (identifier: string): boolean => {

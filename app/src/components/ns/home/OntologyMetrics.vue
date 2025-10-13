@@ -23,17 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from 'vue'
+import { useStore } from 'vuex'
 
-// Component name for debugging
-defineOptions({
-  name: 'OntologyMetrics',
-});
+const store = useStore()
 
-const store = useStore();
-
-// Computed properties
-const metrics = computed(() => store.getters['ns/getMetrics']);
-const loading = computed(() => store.getters['ns/getLoading']);
+const metrics = computed(() => store.getters['ns/getMetrics'])
+const loading = computed(() => store.getters['ns/getLoading'])
 </script>

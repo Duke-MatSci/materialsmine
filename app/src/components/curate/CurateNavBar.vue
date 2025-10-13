@@ -2,7 +2,7 @@
   <div>
     <div class="curate-menu">
       <md-button class="md-icon-button" @click.prevent="navBack">
-        <!-- <md-tooltip md-direction="bottom">Go Back</md-tooltip> -->
+        <md-tooltip md-direction="bottom">Go Back</md-tooltip>
         <md-icon>arrow_back</md-icon>
       </md-button>
       <div v-for="(route, index) in navRoutes" :key="index" class="curate-menu-routes">

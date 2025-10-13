@@ -2,21 +2,18 @@ import { querySparql, parseSparql } from '@/modules/sparql';
 import queries from '@/modules/queries/sampleQueries';
 import router from '@/router';
 import { ActionContext } from 'vuex';
-import {
-  ExplorerState,
-  FetchDynamfitDataPayload,
-  DuplicateXmlPayload,
-  DuplicateXmlResponse,
-  Dataset,
-} from './types';
+import { ExplorerState } from './types';
 
-type Context = ActionContext<ExplorerState, unknown>;
+type Context = ActionContext<ExplorerState, any>;
 
 export default {
   // Todo: (@FE) This function should be deprecated.
   async facetFilterMaterials(context: Context): Promise<void> {
+    // const sparqlResponse = await querySparql(queries.facetFilterMaterial())
+    // const parsedResponse = parseSparql(sparqlResponse)
+    // context.commit('setFacetFilterMaterials', parsedResponse || [])
     const response = await fetch('/api/admin/populate-datasets-properties', {
-      method: 'GET',
+      method: 'GET'
     });
 
     if (!response || response.statusText !== 'OK') {
@@ -29,7 +26,6 @@ export default {
       context.commit('setFacetFilterMaterials', responseData?.data || []);
     }
   },
-
   async searchFacetFilterMaterials(context: Context, payload: string): Promise<void> {
     if (!payload) {
       return;
@@ -41,7 +37,9 @@ export default {
       queries.getSearchFacetFilterMaterialCount(payload.split(' ').join(''))
     );
     const getDefinition = await querySparql(
-      queries.getSearchFacetFilterMaterialDefinition(payload.split(' ').join(''))
+      queries.getSearchFacetFilterMaterialDefinition(
+        payload.split(' ').join('')
+      )
     );
     const getContent = await querySparql(
       queries.getSearchFacetFilterMaterial(payload.split(' ').join(''))
@@ -54,16 +52,15 @@ export default {
     context.commit('setSelectedFacetFilterMaterials', {
       parsedResponseCount,
       parsedResponseDefinition,
-      parsedResponseContent,
+      parsedResponseContent
     });
   },
-
-  async fetchSingleDataset(context: Context, uri: string): Promise<Dataset | undefined> {
+  async fetchSingleDataset(context: Context, uri: string): Promise<any> {
     if (!uri) {
       return;
     }
     const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET',
+      method: 'GET'
     });
 
     if (response?.statusText !== 'OK') {
@@ -78,25 +75,26 @@ export default {
     context.commit('setCurrentDataset', responseData);
     return responseData;
   },
-
-  async fetchDatasetThumbnail(context: Context, uri: string): Promise<unknown> {
+  async fetchDatasetThumbnail(context: Context, uri: string): Promise<string | undefined> {
     if (!uri) {
-      return;
+      return undefined;
     }
     const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET',
+      method: 'GET'
     });
 
     if (response?.statusText !== 'OK') {
       const snackbar = {
-        message: response.statusText || 'Something went wrong while fetching thumbnail',
-        duration: 5000,
+        message:
+          response.statusText || 'Something went wrong while fetching thumbnail',
+        duration: 5000
       };
-      return context.commit('setSnackbar', snackbar, { root: true });
+      context.commit('setSnackbar', snackbar, { root: true });
+      return undefined;
     }
 
     const responseData = await response.json();
-    let accessURL;
+    let accessURL: string | undefined;
     if (Array.isArray(responseData)) {
       accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL'];
       // Note: Initial sets of SDD curations are missing 'www'
@@ -113,11 +111,7 @@ export default {
     context.commit('setCurrentDatasetThumbnail', accessURL);
     return accessURL;
   },
-
-  async fetchViscoelasticData(
-    { commit, dispatch }: Context,
-    { base64 = '' }: { base64: string }
-  ): Promise<void> {
+  async fetchViscoelasticData({ commit, dispatch }: Context, { base64 = '' }: { base64?: string }): Promise<void> {
     if (!base64) return;
 
     const uri = '/api/_dash-update-component';
@@ -128,16 +122,16 @@ export default {
         { id: 'upload-table', property: 'data' },
         { id: 'upload-alert', property: 'children' },
         { id: 'upload-alert', property: 'color' },
-        { id: 'upload-alert', property: 'is_open' },
+        { id: 'upload-alert', property: 'is_open' }
       ],
       inputs: [{ id: 'upload-data', property: 'contents', value: base64 }],
-      changedPropIds: ['upload-data.contents'],
+      changedPropIds: ['upload-data.contents']
     });
     try {
       const request = await fetch(uri, {
         headers: { accept: 'application/json' },
         body,
-        method: 'POST',
+        method: 'POST'
       });
       const response = await request.json();
 
@@ -145,24 +139,23 @@ export default {
         const error = new Error(response?.message || 'Something went wrong!');
         throw error;
       }
-      commit('setSnackbar', { message: 'Successful Upload', duration: 3000 }, { root: true });
-    } catch (err) {
-      const error = err as Error;
+      commit(
+        'setSnackbar',
+        { message: 'Successful Upload', duration: 3000 },
+        { root: true }
+      );
+    } catch (err: any) {
       commit(
         'setSnackbar',
         {
-          message: error.message,
-          action: () => dispatch('fetchViscoelasticData', { base64 }),
+          message: err.message,
+          action: () => dispatch('fetchViscoelasticData', { base64 })
         },
         { root: true }
       );
     }
   },
-
-  async fetchDynamfitData(
-    { commit, dispatch, rootGetters }: Context,
-    payload: FetchDynamfitDataPayload
-  ): Promise<void> {
+  async fetchDynamfitData({ commit, dispatch, rootGetters }: Context, payload: any): Promise<void> {
     if (!payload.fileName) return;
     const body = JSON.stringify({
       file_name: payload.fileName,
@@ -170,7 +163,7 @@ export default {
       model: payload?.model,
       fit_settings: payload?.fitSettings,
       useSample: payload?.useSample,
-      domain: payload?.domain,
+      domain: payload?.domain
     });
     const url = '/api/mn/dynamfit';
     const token = rootGetters['auth/token'];
@@ -179,39 +172,38 @@ export default {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
+          Authorization: 'Bearer ' + token
         },
         body,
-        method: 'POST',
+        method: 'POST'
       });
 
       const response = (await req?.json()) ?? null;
       if (!response || req.status !== 200) {
         const statusCode = req?.status;
-        const message = statusCode === 500 ? 'Internal Server Error' : (response as Record<string, unknown>)?.message;
-        const error = new Error((message as string) ?? 'Something went wrong!');
+        const message =
+          statusCode === 500 ? 'Internal Server Error' : response?.message;
+        const error: any = new Error(message ?? 'Something went wrong!');
+        error.cause = statusCode;
         throw error;
       }
 
-      const data = (response as Record<string, unknown>)?.response ?? {};
-      const breach = (response as Record<string, unknown>)?.error ?? null;
+      const data = response?.response ?? {};
+      const breach = response?.error ?? null;
       if (breach) {
         const { givenName, surName } = rootGetters['auth/user'];
-        const contactData = {
+        const data = {
           fullName: `${givenName} ${surName}`,
-          email: (response as Record<string, unknown>)?.systemEmail,
+          email: response?.systemEmail,
           purpose: 'TICKET',
-          message: `Code: ${(breach as Record<string, unknown>)?.code} ${(breach as Record<string, unknown>)?.description}`,
+          message: `Code: ${breach?.code} ${breach?.description}`
         };
-        dispatch('contact/contactUs', contactData, { root: true });
+        dispatch('contact/contactUs', data, { root: true });
       }
       commit('setDynamfitData', data);
-    } catch (err) {
-      const error = err as Error;
-      const snackbar: { message: string; duration?: number; action?: () => void } = {
-        message: error.message,
-      };
-      if ((error as Error & { cause?: number })?.cause === 400) {
+    } catch (err: any) {
+      const snackbar: any = { message: err.message };
+      if (err?.cause === 400) {
         snackbar.duration = 3000;
       } else {
         snackbar.action = () => dispatch('fetchDynamfitData', payload);
@@ -219,11 +211,7 @@ export default {
       commit('setSnackbar', snackbar, { root: true });
     }
   },
-
-  async duplicateXml(
-    { commit, rootGetters }: Context,
-    payload: DuplicateXmlPayload
-  ): Promise<DuplicateXmlResponse | undefined> {
+  async duplicateXml({ commit, rootGetters }: Context, payload: { id: string; isNew: boolean }): Promise<{ id: string; isNew: boolean } | undefined> {
     const uri = `/api/curate/duplicate/${payload.id}?isNew=${payload.isNew}`;
     const token = rootGetters['auth/token'];
     try {
@@ -232,8 +220,8 @@ export default {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-        },
+          Authorization: 'Bearer ' + token
+        }
       });
       const response = await request.json();
       if (!response || !response._id) {
@@ -241,15 +229,14 @@ export default {
         throw error;
       }
       return { id: response._id, isNew: response.isNew };
-    } catch (err) {
-      const error = err as Error;
+    } catch (err: any) {
       commit(
         'setSnackbar',
         {
-          message: error.message,
+          message: err.message
         },
         { root: true }
       );
     }
-  },
+  }
 };

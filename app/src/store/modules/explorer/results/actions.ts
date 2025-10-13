@@ -1,36 +1,24 @@
 import { ActionContext } from 'vuex';
-import {
-  ResultsState,
-  OutboundSearchPayload,
-  SearchResponseData,
-  TotalGrouping,
-  ImageResult,
-} from '../types';
+import { ResultsState } from './types';
 
-type Context = ActionContext<ResultsState, unknown>;
+type Context = ActionContext<ResultsState, any>;
 
 export default {
-  async searchKeyword(
-    { commit, dispatch }: Context,
-    payload: string
-  ): Promise<void> {
-    commit('setIsLoading', true);
-    const newPayload: OutboundSearchPayload = {
+  async searchKeyword(context: Context, payload: string): Promise<void> {
+    context.commit('setIsLoading', true);
+    const newPayload = {
       keyPhrase: payload,
-      type: 'search',
+      type: 'search'
     };
     if (!payload) {
       return;
     }
-    await dispatch('outboundSearchRequest', newPayload);
-    await dispatch('getMatchedImages', payload);
-    return dispatch('getMatchedMaterials', payload);
+    await context.dispatch('outboundSearchRequest', newPayload);
+    await context.dispatch('getMatchedImages', payload);
+    return context.dispatch('getMatchedMaterials', payload);
   },
 
-  async getMatchedImages(
-    { commit, getters, dispatch }: Context,
-    payload: string
-  ): Promise<void> {
+  async getMatchedImages(context: Context, payload: string): Promise<void> {
     const url = `${window.location.origin}/api/graphql`;
     const graphql = JSON.stringify({
       query: `query SearchImages($input: imageExplorerInput!){
@@ -53,16 +41,16 @@ export default {
         }
       }`,
       variables: {
-        input: { search: 'Keyword', searchValue: payload, pageSize: 100 },
+        input: { search: 'Keyword', searchValue: payload, pageSize: 100 }
       },
-      fetchPolicy: 'cache-first',
+      fetchPolicy: 'cache-first'
     });
     const requestOptions = {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
-      body: graphql,
+      body: graphql
     };
     try {
       const response = await fetch(url, requestOptions);
@@ -71,75 +59,68 @@ export default {
         throw error;
       }
 
-      const responseData: SearchResponseData = await response.json();
+      const responseData = await response.json();
       const total =
-        getters.getTotal + (responseData?.data?.searchImages?.totalItems ?? 0);
-      const groupTotals: TotalGrouping = getters.getTotalGroupings;
+        context.getters.getTotal + responseData?.data?.searchImages?.totalItems;
+      const groupTotals = context.getters.getTotalGroupings;
       groupTotals.getImages = responseData?.data?.searchImages?.totalItems ?? 0;
-      commit('setTotal', total ?? 0);
-      commit(
+      context.commit('setTotal', total ?? 0);
+      context.commit(
         'setImages',
-        (responseData?.data?.searchImages?.images ?? []) as ImageResult[]
+        responseData?.data?.searchImages?.images ?? []
       );
-      commit('setTotalGrouping', groupTotals);
+      context.commit('setTotalGrouping', groupTotals);
     } catch (error) {
       const snackbar = {
         message: 'Something went wrong while fetching images!',
-        action: () => dispatch('getMatchedImages', payload),
+        action: () => context.dispatch('getMatchedImages', payload)
       };
-      return commit('setSnackbar', snackbar, { root: true });
+      return context.commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async getMatchedMaterials(
-    { commit, getters, dispatch }: Context,
-    payload: string
-  ): Promise<void> {
+  async getMatchedMaterials(context: Context, payload: string): Promise<void> {
     const url = `/api/admin/populate-datasets-properties?search=${payload}`;
     try {
-      const cache = await dispatch('fetchWrapper', { url }, { root: true }).then(
-        (res: { val: RequestCache }) => res.val
-      );
+      const cache = await context
+        .dispatch('fetchWrapper', { url }, { root: true })
+        .then((res: any) => res.val);
       const response = await fetch(url, {
         method: 'GET',
-        cache,
+        cache
       });
 
       if (!response || response.statusText !== 'OK') {
-        const error = new Error(response?.statusText || 'Something went wrong!', {
-          cause: url,
-        });
+        const error: any = new Error(response?.statusText || 'Something went wrong!');
+        error.cause = url;
         throw error;
       }
 
-      const responseData: { data?: unknown[] } = await response.json();
+      const responseData = await response.json();
       const materialsTotal = responseData?.data?.length || 0;
 
-      const total = getters.getTotal + materialsTotal;
-      const groupTotals: TotalGrouping = getters.getTotalGroupings;
+      const total = context.getters.getTotal + materialsTotal;
+      const groupTotals = context.getters.getTotalGroupings;
       groupTotals.getMaterials = materialsTotal;
 
-      commit('setTotal', total || 0);
-      commit('setMaterials', responseData?.data || []);
-      commit('setTotalGrouping', groupTotals);
-    } catch (error) {
-      await dispatch(
+      context.commit('setTotal', total || 0);
+      context.commit('setMaterials', responseData?.data || []);
+      context.commit('setTotalGrouping', groupTotals);
+    } catch (error: any) {
+      await context.dispatch(
         'fetchWrapper',
-        { url: 'cause' in (error as Error) },
+        { url: 'cause' in error },
         { root: true }
       );
       const snackbar = {
         message: 'Something went wrong while fetching properties!',
-        action: () => dispatch('getMatchedMaterials', payload),
+        action: () => context.dispatch('getMatchedMaterials', payload)
       };
-      return commit('setSnackbar', snackbar, { root: true });
+      return context.commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async outboundSearchRequest(
-    { commit, dispatch }: Context,
-    payload: OutboundSearchPayload
-  ): Promise<void> {
+  async outboundSearchRequest(context: Context, payload: { keyPhrase: string; type: string }): Promise<void> {
     const { keyPhrase, type } = payload;
     let url: string;
     if (type === 'search') {
@@ -149,16 +130,16 @@ export default {
     }
 
     try {
-      const cache = await dispatch('fetchWrapper', { url }, { root: true }).then(
-        (res: { val: RequestCache }) => res.val
-      );
+      const cache = await context
+        .dispatch('fetchWrapper', { url }, { root: true })
+        .then((res: any) => res.val);
       const response = await fetch(url, {
         method: 'GET',
-        cache,
+        cache
       });
 
       if (!response || response.statusText !== 'OK') {
-        commit('setIsLoading', false);
+        context.commit('setIsLoading', false);
         const error = new Error(response?.statusText || 'Something went wrong!');
         throw error;
       }
@@ -167,40 +148,37 @@ export default {
         return;
       }
 
-      const responseData: SearchResponseData = await response.json();
+      const responseData = await response.json();
       if (type === 'search') {
-        return dispatch('saveSearch', responseData);
+        return context.dispatch('saveSearch', responseData);
       } else {
-        return dispatch('saveAutosuggest', responseData);
+        return context.dispatch('saveAutosuggest', responseData);
       }
     } catch (error) {
       const snackbar = {
         message: 'Something went wrong!',
-        action: () => dispatch('outboundSearchRequest', payload),
+        action: () => context.dispatch('outboundSearchRequest', payload)
       };
-      return commit('setSnackbar', snackbar, { root: true });
+      return context.commit('setSnackbar', snackbar, { root: true });
     }
   },
 
-  async autosuggestionRequest(
-    { dispatch }: Context,
-    payload: string
-  ): Promise<void> {
-    const newPayload: OutboundSearchPayload = {
+  async autosuggestionRequest(context: Context, payload: string): Promise<void> {
+    const newPayload = {
       keyPhrase: payload,
-      type: 'autosuggest',
+      type: 'autosuggest'
     };
 
     if (!payload) {
       return;
     }
-    return dispatch('outboundSearchRequest', newPayload);
+    return context.dispatch('outboundSearchRequest', newPayload);
   },
 
-  saveSearch({ commit }: Context, responseData: SearchResponseData): void {
+  saveSearch(context: Context, responseData: any): void {
     const data = responseData?.data?.hits || [];
-    const types: Record<string, unknown[]> = Object.create({});
-    data.forEach((item) => {
+    const types: Record<string, any[]> = Object.create({});
+    data.forEach((item: any) => {
       const categoryExist =
         Object.keys(types)?.find((currKey) => currKey === item?._index) ||
         undefined;
@@ -218,28 +196,25 @@ export default {
       (total, value) => total + value
     );
 
-    commit('setArticles', types?.articles || []);
-    commit('setSamples', types?.samples || []);
-    commit('setCharts', types?.charts || []);
-    commit('setTotal', total || 0);
-    commit('setIsLoading', false);
-    commit('setTotalGrouping', {
+    context.commit('setArticles', types?.articles || []);
+    context.commit('setSamples', types?.samples || []);
+    context.commit('setCharts', types?.charts || []);
+    context.commit('setTotal', total || 0);
+    context.commit('setIsLoading', false);
+    context.commit('setTotalGrouping', {
       getArticles: articlesLength,
       getSamples: samplesLength,
       getCharts: chartsLength,
       getMaterials: 0,
-      getImages: 0,
+      getImages: 0
     });
   },
 
-  saveAutosuggest(
-    { commit }: Context,
-    responseData: SearchResponseData
-  ): void {
+  saveAutosuggest(context: Context, responseData: any): void {
     const data = responseData?.data?.hits || [];
-    const suggestions = data.map((item) => {
-      return (item?._source as { label?: string })?.label;
+    const suggestions = data.map((item: any) => {
+      return item?._source?.label;
     });
-    commit('setAutosuggest', (suggestions || []) as string[]);
-  },
+    context.commit('setAutosuggest', suggestions || []);
+  }
 };

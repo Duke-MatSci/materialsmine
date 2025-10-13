@@ -13,10 +13,10 @@ export default {
   getSearching(state: ExplorerState): boolean {
     return state.searching;
   },
-  getFacetFilterMaterials(state: ExplorerState) {
+  getFacetFilterMaterials(state: ExplorerState): any[] {
     return state.facetFilterMaterials;
   },
-  getSelectedFacetFilterMaterials(state: ExplorerState) {
+  getSelectedFacetFilterMaterials(state: ExplorerState): Record<string, any> {
     return state.selectedFacetFilterMaterials;
   },
   getSelectedFacetFilterMaterialsValue(state: ExplorerState): string | null {
@@ -25,19 +25,24 @@ export default {
   getAutosuggest(state: ExplorerState): boolean {
     return state.enableAutosuggest;
   },
-  getCurrentDataset(state: ExplorerState) {
+  getCurrentDataset(state: ExplorerState): any {
     return state.dataset;
   },
   getDatasetThumbnail(state: ExplorerState): string {
     return state.datasetThumbnail;
   },
-  getDynamfitData(state: ExplorerState) {
+  getDynamfitData(state: ExplorerState): Record<string, any> {
     return state.dynamfitData;
   },
   getDynamfitDomain(state: ExplorerState): string {
     return state.dynamfitDomain;
   },
-  dynamfit(state: ExplorerState) {
+  dynamfit(state: ExplorerState): {
+    range: number;
+    fitSettings: boolean;
+    model: string;
+    fileUpload: string;
+  } {
     return state.dynamfit;
-  },
+  }
 };

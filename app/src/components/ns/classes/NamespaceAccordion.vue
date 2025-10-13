@@ -1,5 +1,10 @@
 <template>
-  <summary @click="showDetails" class="u_pointer u--layout-flex" :id="id" v-if="hasNoChild">
+  <summary
+    @click="showDetails"
+    class="u_pointer u--layout-flex"
+    :id="id"
+    v-if="hasNoChild"
+  >
     <template v-if="hasParent">
       <span>&nbsp; &nbsp;</span>
       <span class="material-icons md-caption">subdirectory_arrow_right </span>
@@ -38,70 +43,71 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute, useRouter } from 'vue-router';
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRoute, useRouter } from 'vue-router'
 
-// Component name for debugging
-defineOptions({
-  name: 'NamespaceAccordion',
-});
+interface ClassInfo {
+  ID: string
+  'Preferred Name': string
+  subClasses?: any[]
+}
 
-// Props
 interface Props {
-  id: string;
-  summary: string;
-  child?: any[] | string;
-  hasParent?: boolean;
-  classInfo?: any;
+  id: string
+  summary: string
+  child?: any[] | string
+  hasParent?: boolean
+  classInfo?: ClassInfo
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  hasParent: false,
-  child: () => [],
-  classInfo: () => ({}),
-});
+  hasParent: false
+})
 
-const store = useStore();
-const route = useRoute();
-const router = useRouter();
+const store = useStore()
+const route = useRoute()
+const router = useRouter()
 
-// Computed properties
-const selectedId = computed(() => store.getters['ns/getSelectedId']);
+const selectedId = computed(() => store.getters['ns/getSelectedId'])
 
 const hasNoChild = computed(() => {
-  return !props.child || (Array.isArray(props.child) && props.child.length === 0);
-});
+  return !props.child || props.child.length === 0
+})
 
 const hasChildren = computed(() => {
-  return Array.isArray(props.child) && props.child.length > 1;
-});
+  return Array.isArray(props.child) && props.child.length > 1
+})
 
-const namespace = computed(() => route.params?.namespace as string);
+const namespace = computed(() => {
+  return route.params?.namespace
+})
 
-// Methods
 const showDetails = async () => {
-  const id = props.id;
+  const id = props.id
 
-  if (namespace.value) {
-    const url = `/ns/${props.classInfo.ID.split('/').pop()?.split('#').pop()}`;
-    router.push(url);
+  if (namespace.value && props.classInfo) {
+    const url = `/ns/${props.classInfo.ID.split('/')
+      .pop()
+      ?.split('#')
+      .pop()}`
+    router.push(url)
   }
   if (selectedId.value) {
-    toggleClass(selectedId.value);
+    toggleClass(selectedId.value)
   }
   // 2 Display selected value
-  store.commit('ns/clearCurrentClass');
-  store.commit('ns/setCurrentClass', props.classInfo);
+  store.commit('ns/clearCurrentClass')
+  store.commit('ns/setCurrentClass', props.classInfo)
   // 3 Update the selected value
-  store.commit('ns/setSelectedId', id); // id
+  store.commit('ns/setSelectedId', id) // id
   // 4 Add the Class to the new selected value
-  toggleClass(id);
-};
+  toggleClass(id)
+}
 
 const toggleClass = (id: string) => {
-  const element = document.getElementById(id);
-  if (!element) return;
-  element.classList.toggle('u--alt-bg');
-};
+  const element = document.getElementById(id)
+  if (!element) return
+  element.classList.toggle('u--alt-bg')
+}
 </script>

@@ -1,30 +1,23 @@
-import {
-  ResultsState,
-  Article,
-  Sample,
-  ImageResult,
-  Chart,
-  Material,
-  TotalGrouping,
-} from '../types';
+import { ResultsState } from './types';
 
 export default {
-  getArticles(state: ResultsState): Article[] | null {
+  // TODO:
+  getArticles(state: ResultsState): any[] | null {
     return state.articles;
   },
-  getSamples(state: ResultsState): Sample[] | null {
+  getSamples(state: ResultsState): any[] | null {
     return state.samples;
   },
-  getImages(state: ResultsState): ImageResult[] | null {
+  getImages(state: ResultsState): any[] | null {
     return state.images;
   },
-  getCharts(state: ResultsState): Chart[] | null {
+  getCharts(state: ResultsState): any[] | null {
     return state.charts;
   },
-  getMaterials(state: ResultsState): Material[] | null {
+  getMaterials(state: ResultsState): any[] | null {
     return state.materials;
   },
-  getSuggestions(state: ResultsState): string[] {
+  getSuggestions(state: ResultsState): any[] {
     return state.suggestions;
   },
   getTotal(state: ResultsState): number {
@@ -33,7 +26,7 @@ export default {
   getIsloading(state: ResultsState): boolean {
     return state.isLoading;
   },
-  getTotalGroupings(state: ResultsState): TotalGrouping {
+  getTotalGroupings(state: ResultsState): ResultsState['totalGrouping'] {
     return state.totalGrouping;
-  },
+  }
 };

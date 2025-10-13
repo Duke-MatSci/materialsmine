@@ -6,7 +6,9 @@
       </div>
       <!-- Left element -->
       <div class="chart_editor__left-view" style="flex: 1 1 50%">
-        <div class="u--layout-width u--layout-flex u--layout-flex-justify-fs u_margin-bottom-small">
+        <div
+          class="u--layout-width u--layout-flex u--layout-flex-justify-fs u_margin-bottom-small"
+        >
           <a
             @click.prevent="leftTab = 1"
             :class="[leftTab === 1 ? 'active u--color-primary' : '']"
@@ -32,18 +34,18 @@
             v-if="chart.query"
             v-model="chart.query"
             :value="chart.query"
-            @query-success="onQuerySuccess"
+            v-on:query-success="onQuerySuccess"
             v-show="leftTab === 1"
             :showBtns="true"
           >
           </yasqe>
-          <v-jsoneditor
+          <json-editor
             v-show="leftTab === 2"
             v-model="chart.baseSpec"
             :options="specJsonEditorOpts"
             v-if="chart.baseSpec"
           >
-          </v-jsoneditor>
+          </json-editor>
           <form v-show="leftTab === 3">
             <md-field>
               <label>Title</label>
@@ -55,7 +57,7 @@
               <md-textarea v-model="chart.description"></md-textarea>
             </md-field>
 
-            <button class="btn btn--primary" @click.prevent="saveChart">
+            <button class="btn btn--primary" @click.prevent="onSaveChart">
               {{ actionType }} <md-icon class="u--color-success">check</md-icon>
             </button>
           </form>
@@ -89,7 +91,11 @@
         </div>
 
         <div class="chart_editor__right-content">
-          <div v-show="rightTab === 1" class="loading-dialog" style="margin: auto">
+          <div
+            v-show="rightTab === 1"
+            class="loading-dialog"
+            style="margin: auto"
+          >
             <vega-lite
               :spec="spec"
               @new-vega-view="onNewVegaView"
@@ -97,7 +103,11 @@
             />
           </div>
 
-          <div v-show="rightTab === 2" class="viz-intro-query" style="min-height: 40rem !important">
+          <div
+            v-show="rightTab === 2"
+            class="viz-intro-query"
+            style="min-height: 40rem !important"
+          >
             <yasr :results="results"></yasr>
           </div>
         </div>
@@ -114,95 +124,93 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import { useRouter, useRoute } from 'vue-router';
 import { querySparql } from '@/modules/sparql';
 import {
-  saveChart as saveChartFn,
+  saveChart,
   getDefaultChart,
   buildSparqlSpec,
-  loadChart as loadChartFn,
-  toChartId,
+  loadChart,
+  toChartId
 } from '@/modules/vega-chart';
-import VJsoneditor from 'v-jsoneditor';
+import JsonEditor from '@/components/JsonEditor.vue';
 import VegaLite from '@/components/explorer/VegaLiteWrapper.vue';
-import yasqe from '@/components/explorer/Yasqe.vue';
-import yasr from '@/components/explorer/Yasr.vue';
-import Spinner from '@/components/Spinner.vue';
+import yasqe from '@/components/explorer/yasqe.vue';
+import yasr from '@/components/explorer/yasr.vue';
+import spinner from '@/components/Spinner.vue';
 
-// Component name for debugging
 defineOptions({
-  name: 'ChartCreate',
+  name: 'ChartCreate'
 });
 
-// Props
+interface ChartData {
+  baseSpec: Record<string, any> | null;
+  query: string | null;
+  title: string | null;
+  description: string | null;
+  uri?: string;
+  depiction?: string;
+}
+
 interface Props {
   chartId?: string;
 }
 
 const props = defineProps<Props>();
 
-// Store and router
-const store = useStore();
-const router = useRouter();
 const route = useRoute();
+const router = useRouter();
+const store = useStore();
 
-// Reactive data
-const loading = ref(true);
-const mouseIsDown = ref(false);
-const x = ref(0);
-const y = ref(0);
-const leftTab = ref(1);
-const rightTab = ref(1);
+const loading = ref<boolean>(true);
+const leftTab = ref<number>(1);
+const rightTab = ref<number>(1);
 const results = ref<any>(null);
-const specJsonEditorOpts = ref({
+const specJsonEditorOpts = ref<Record<string, any>>({
   mode: 'code',
-  mainMenuBar: false,
+  mainMenuBar: false
 });
-const chart = ref<any>({
+const chart = ref<ChartData>({
   baseSpec: null,
   query: null,
   title: null,
-  description: null,
+  description: null
 });
-const actionType = ref('Save Chart');
+const actionType = ref<string>('Save Chart');
 const submittedIdentifier = ref<string | undefined>(undefined);
 
-// Computed properties
 const spec = computed(() => {
-  const spec = buildSparqlSpec(chart.value.baseSpec, results.value) ?? {};
-  return spec;
+  const builtSpec = buildSparqlSpec(chart.value.baseSpec, results.value) ?? {};
+  return builtSpec;
 });
 
-// Methods
-const getSparqlData = () => {
-  querySparql(chart.value.query)
-    .then(onQuerySuccess)
-    .then(() => (loading.value = false))
-    .catch(() => (loading.value = false));
+const getSparqlData = (): void => {
+  if (chart.value.query) {
+    querySparql(chart.value.query)
+      .then(onQuerySuccess)
+      .then(() => { loading.value = false; })
+      .catch(() => { loading.value = false; });
+  }
 };
 
-const onQuerySuccess = (queryResults: any) => {
+const onQuerySuccess = (queryResults: any): void => {
   results.value = queryResults;
 };
 
-const onSpecJsonError = () => {
-  // console.log('bad', arguments)
-};
-
-const onNewVegaView = async (view: any) => {
+const onNewVegaView = async (view: any): Promise<void> => {
   const blob = await view
     .toImageURL('png')
     .then((url: string) => fetch(url))
     .then((resp: Response) => resp.blob());
   const fr = new FileReader();
   fr.addEventListener('load', () => {
-    chart.value.depiction = fr.result;
+    chart.value.depiction = fr.result as string;
   });
   fr.readAsDataURL(blob);
 };
 
-const loadChartData = async () => {
+const loadChartData = async (): Promise<void> => {
   // this.types = 'new, edit, restore & delete'
   let getChartPromise: Promise<any>;
   if (route.params.type === 'new') {
@@ -211,32 +219,32 @@ const loadChartData = async () => {
   } else if (route.params.type === 'edit') {
     // fetch chart from knowledge graph
     actionType.value = 'Edit Chart';
-    getChartPromise = Promise.resolve(loadChartFn(props.chartId || ''));
+    getChartPromise = Promise.resolve(loadChart(props.chartId!));
   } else {
     // Get chart from mongo backup
     actionType.value = 'Restore Chart';
-    reloadRestored();
+    await reloadRestored();
     return;
   }
   getChartPromise
-    .then((chartData) => {
-      chart.value = chartData;
+    .then((loadedChart) => {
+      chart.value = loadedChart;
       return getSparqlData();
     })
-    .catch(() => (loading.value = false));
+    .catch(() => { loading.value = false; });
 };
 
-const reloadRestored = async () => {
+const reloadRestored = async (): Promise<void> => {
   // 1. Fetch backup from mongo
   // 2. Post each chart (schema + sparql) to knowledge graph
   // 3. Toggle restore flag in mongo
 };
 
-const saveChart = async (): Promise<void> => {
+const onSaveChart = async (): Promise<void> => {
   loading.value = true;
   // Todo (ticket xx): Move this into vuex
   try {
-    const chartNanopub: any = await saveChartFn(chart.value);
+    const chartNanopub = await saveChart(chart.value as any);
 
     if (route.params.type === 'new') {
       // Save chart to MongoDB - async operation
@@ -244,16 +252,19 @@ const saveChart = async (): Promise<void> => {
       await store.dispatch('explorer/curation/deleteEntityES', {
         // TODO: Can we change these to a materialsmine.org uri or will that break things?
         identifier: `http://nanomine.org/viz/${props.chartId}`,
-        type: 'charts',
+        type: 'charts'
       });
       // Find in mongo and update - async operation
     }
 
-    const resp: any = await store.dispatch('explorer/curation/cacheNewEntityResponse', {
-      identifier: submittedIdentifier.value,
-      resourceNanopub: chartNanopub,
-      type: 'charts',
-    });
+    const resp = await store.dispatch(
+      'explorer/curation/cacheNewEntityResponse',
+      {
+        identifier: submittedIdentifier.value,
+        resourceNanopub: chartNanopub,
+        type: 'charts'
+      }
+    );
 
     if (resp.identifier) {
       submittedIdentifier.value = resp.identifier;
@@ -266,12 +277,13 @@ const saveChart = async (): Promise<void> => {
     actionType.value = 'Edit Chart';
     store.commit('setSnackbar', {
       message: 'Chart saved successfully!',
-      duration: 15000,
+      duration: 15000
     });
 
     if (route.params.type === 'new') {
-      router.push(`/explorer/chart/editor/edit/${toChartId(resp.identifier)}`);
-      return;
+      return router.push(
+        `/explorer/chart/editor/edit/${toChartId(resp.identifier)}`
+      );
     }
   } catch (err: any) {
     // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
@@ -279,11 +291,10 @@ const saveChart = async (): Promise<void> => {
   }
 };
 
-const goToExplorer = () => {
+const goToExplorer = (): void => {
   router.push('/explorer/chart');
 };
 
-// Lifecycle
 onMounted(() => {
   loading.value = true;
   loadChartData();

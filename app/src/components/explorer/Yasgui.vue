@@ -3,88 +3,78 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, getCurrentInstance } from 'vue';
 import { useStore } from 'vuex';
 import YASGUI from '@triply/yasgui';
 
-// Component name for debugging
 defineOptions({
-  name: 'Yasgui',
+  name: 'yasgui'
 });
 
-// Props
 interface Props {
   id?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  id: 'YASGUI',
+  id: 'YASGUI'
 });
 
-// Store
 const store = useStore();
-
-// Reactive data
+const instance = getCurrentInstance();
 const yasgui = ref<any>(null);
 
-// Lifecycle
 onMounted(() => {
   const token = store.getters['auth/token'];
-  const element = document.getElementById(props.id);
+  const el = instance?.proxy?.$el;
 
-  if (!element) {
-    console.error('YASGUI element not found');
-    return;
-  }
-
-  yasgui.value = new YASGUI(element, {
+  yasgui.value = new YASGUI(el, {
     requestConfig: {
       endpoint: '/api/knowledge/sparql',
       headers: () => ({
-        authorization: 'Bearer ' + token,
-      }),
+        authorization: 'Bearer ' + token
+      })
     },
-    copyEndpointOnNewTab: false,
-  } as any);
+    copyEndpointOnNewTab: false
+  });
 });
 </script>
 
-<style css src="@triply/yasgui/build/yasgui.min.css"></style>
+<style css src='@triply/yasgui/build/yasgui.min.css'></style>
 
-<style>
-.yasgui .endpointText {
-  display: none !important;
-}
-.yasgui .autocompleteWrapper,
-.yasgui .controlbar {
-  visibility: hidden !important;
-  display: none !important;
-}
-.yasqe .CodeMirror {
-  border: 1px solid #afe3f1 !important;
-}
-.CodeMirror-gutters {
-  border-right: 1px solid #afe3f1 !important;
-  background-color: #f7f7f7;
-  white-space: nowrap;
-}
-.yasgui > .tabsList > .tab > a {
-  font-weight: 300;
-  color: #08233c !important;
-}
-.yasgui .tabsList .tab:hover > a,
-.yasgui .tabsList .tab.active > a {
-  text-decoration: none;
-  color: #0e5f76 !important;
-  border: none !important;
-  border-bottom: 2px solid #afe3f1 !important;
-}
-.yasgui > .tabsList > .tab > a > div.closeTab {
-  color: #08233c !important;
-  opacity: 0.7 !important;
-}
-.yasgui > .tabsList > .tab.active > a > div.closeTab {
-  color: #08233c !important;
-  opacity: 1 !important;
-}
+<style css>
+  .yasgui .endpointText {
+    display: none !important;
+  }
+  .yasgui .autocompleteWrapper,
+  .yasgui .controlbar {
+    visibility: hidden !important;
+    display: none !important;
+  }
+  .yasqe .CodeMirror {
+    border: 1px solid #afe3f1 !important;
+  }
+  .CodeMirror-gutters {
+    border-right: 1px solid #afe3f1 !important;
+    background-color: #f7f7f7;
+    white-space: nowrap;
+  }
+  .yasgui > .tabsList > .tab > a {
+    font-weight: 300;
+    color: #08233c !important;
+  }
+  .yasgui .tabsList .tab:hover > a,
+  .yasgui .tabsList .tab.active > a {
+    text-decoration: none;
+    color: #0e5f76 !important;
+    border: none !important;
+    border-bottom: 2px solid #afe3f1 !important;
+  }
+  .yasgui > .tabsList > .tab > a > div.closeTab {
+    color: #08233c !important;
+    opacity: 0.7 !important;
+  }
+  .yasgui > .tabsList > .tab.active > a > div.closeTab {
+    color: #08233c !important;
+    opacity: 1 !important;
+  }
 </style>
