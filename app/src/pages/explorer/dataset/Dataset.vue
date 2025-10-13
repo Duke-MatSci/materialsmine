@@ -407,7 +407,7 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T>(fn: () => T): T | undefined => {
+const optionalChaining = <T,>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
@@ -417,7 +417,7 @@ const optionalChaining = <T>(fn: () => T): T | undefined => {
 };
 
 // Methods from reducer mixin
-const reduceDescription = (args: string, size: number = 50): string => {
+const reduceDescription = (args: string, size = 50): string => {
   const arr = args.split(' ');
   arr.splice(size);
   const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');

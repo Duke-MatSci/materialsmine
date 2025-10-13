@@ -107,7 +107,7 @@
     >
       <data-voyager
         :data="data"
-        :spec.sync="voyagerSpec"
+        v-model:spec="voyagerSpec"
       ></data-voyager>
     </div>
 

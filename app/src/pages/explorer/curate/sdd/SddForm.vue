@@ -21,7 +21,7 @@
                 enctype="multipart/form-data"
                 upload_type="http://www.w3.org/ns/dcat#Dataset"
               >
-                <md-steppers class="form__stepper" :md-active-step.sync="active" md-linear>
+                <md-steppers class="form__stepper" v-model:md-active-step="active" md-linear>
                   <md-step id="first" md-label="Upload files" :md-error="invalid.first">
                     <div style="margin: 20px">
                       <md-field style="max-width: 100%">
@@ -1008,7 +1008,7 @@ const renderDialog = (
   title: string,
   type: string,
   minWidth: number,
-  disableClose: boolean = false
+  disableClose = false
 ) => {
   dialog.value = {
     title,

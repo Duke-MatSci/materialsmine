@@ -238,7 +238,7 @@ const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
 const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T>(fn: () => T): T | undefined => {
+const optionalChaining = <T,>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
@@ -248,7 +248,7 @@ const optionalChaining = <T>(fn: () => T): T | undefined => {
 };
 
 // Methods from reducer mixin
-const reduceDescription = (args: string, size: number = 50): string => {
+const reduceDescription = (args: string, size = 50): string => {
   const arr = args.split(' ');
   arr.splice(size);
   const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
@@ -282,7 +282,7 @@ const localSearchMethod = async (): Promise<void> => {
   loading.value = false;
 };
 
-const updateParamsAndCall = async (pushNewRoute: boolean = false): Promise<void> => {
+const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
   searchEnabled.value = !!searchWord.value;
   if (pushNewRoute) {
     const query: Record<string, any> = {
@@ -301,7 +301,7 @@ const loadPrevNextImage = async (event: number): Promise<void> => {
   await updateParamsAndCall(true);
 };
 
-const loadParams = async (query: Record<string, any>, performCall: boolean = true): Promise<void> => {
+const loadParams = async (query: Record<string, any>, performCall = true): Promise<void> => {
   pageNumber.value = parseInt(query.page) ? +query.page : 1;
   if (pageSize.value) {
     parseInt(query.size) ? checkPageSize(+query.size) : checkPageSize(20);
@@ -373,7 +373,7 @@ const downloadFiles = (item: DatasetItem): void => {
   }
 };
 
-const loadItems = async (pageCurrent: number = 1): Promise<void> => {
+const loadItems = async (pageCurrent = 1): Promise<void> => {
   loading.value = true;
   try {
     await store.dispatch('explorer/sddDatasets/loadDatasets', {

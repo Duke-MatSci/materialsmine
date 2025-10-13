@@ -13,8 +13,8 @@
       </div>
       <div v-else>
         <h2 class="visualize_header-h1">Upload XML Samples</h2>
-        <md-steppers md-vertical md-linear :md-active-step.sync="active" class="form__stepper">
-          <md-step id="first" md-label="Upload Xml File" :md-done.sync="first">
+        <md-steppers md-vertical md-linear v-model:md-active-step="active" class="form__stepper">
+          <md-step id="first" md-label="Upload Xml File" v-model:md-done="first">
             <DropZone class="form__drop-area" @files-dropped="addXmlFile">
               <label for="xml-file-input">
                 <div class="form__drop-area_label">
@@ -60,7 +60,7 @@
               Next
             </md-button>
           </md-step>
-          <md-step id="second" md-label="Confirm and submit" :md-done.sync="second">
+          <md-step id="second" md-label="Confirm and submit" v-model:md-done="second">
             <div class="u--color-primary teams_header">
               <strong>Are you sure?</strong> Select
               <strong>Save & Submit</strong> to confirm or

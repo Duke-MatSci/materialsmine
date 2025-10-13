@@ -314,7 +314,7 @@ export default {
     // Process all replace nested field
     const replaceNestedRef = state.replaceNestedRef;
     for (let i = 0; i < replaceNestedRef.length; i++) {
-      var element = JSON.parse(replaceNestedRef[i]);
+      const element = JSON.parse(replaceNestedRef[i]);
       const title = element.shift();
       const lastKey = element.pop();
       const refData = element.reduce(function (o: any, x: string) {
@@ -363,7 +363,7 @@ export default {
     }
     if (fetchResponse.status === successResponse) {
       const response = await fetchResponse.json();
-      var sampleId = xlsxObjectId ?? response?.sampleID ?? '';
+      const sampleId = xlsxObjectId ?? response?.sampleID ?? '';
       if (sampleId) {
         router.push({
           name: 'XmlVisualizer',

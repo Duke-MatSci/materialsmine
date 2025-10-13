@@ -229,6 +229,7 @@ const props = defineProps<Props>();
 // Emits
 const emit = defineEmits<{
   (e: 'update-step-error'): void;
+  (e: 'update:inputObj', value: InputObjValue): void;
 }>();
 
 // Store and route
@@ -274,8 +275,9 @@ const addExtra = async () => {
   const data = JSON.stringify(props.inputObj.values);
   const arr = JSON.parse(data);
   clearFields(props.inputObj);
-  props.inputObj.values = [...arr, ...props.inputObj.values];
-  sortMultiple(props.inputObj.values, props.uniqueKey);
+  const newValues = [...arr, ...props.inputObj.values];
+  emit('update:inputObj', { ...props.inputObj, values: newValues });
+  sortMultiple(newValues, props.uniqueKey);
 };
 
 const validateFields = (): boolean => {
@@ -339,7 +341,7 @@ const sortMultiple = (arr: any[], parent: string[] = []) => {
       filterData(parsed, parent);
     }
     if (props.inputObj.values) {
-      props.inputObj.values = [...parsedArr];
+      emit('update:inputObj', { ...props.inputObj, values: [...parsedArr] });
     }
     return;
   }

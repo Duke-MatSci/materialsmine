@@ -15,7 +15,7 @@
           {{ name }}:
         </p>
         <md-input
-          v-model="inputObj.cellValue"
+          v-model="cellValue"
           :required="inputObj.required"
           :name="uniqueKey.join(',')"
           :id="uniqueKey.join(',')"
@@ -35,7 +35,7 @@
         :style="reduceSpacing"
       >
         <md-select
-          v-model="inputObj.cellValue"
+          v-model="cellValue"
           :name="uniqueKey.join(',')"
           :id="uniqueKey.join(',')"
           @md-opened="fetchValues"
@@ -69,7 +69,7 @@
       >
         <md-chips
           :class="[inputError ? 'md-invalid' : '', 'md-primary']"
-          v-model="inputObj.values"
+          v-model="valuesArray"
           :md-placeholder="`Enter ${name}`"
           :md-auto-insert="true"
         >
@@ -143,7 +143,7 @@
         <div>
           <md-dialog-confirm
             :md-click-outside-to-close="false"
-            :md-active.sync="dialogActive"
+            v-model:md-active="dialogActive"
             :md-title="dialogTitle"
             :md-content="dialogText"
             md-confirm-text="Proceed"
@@ -192,6 +192,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'data-file-deleted', value: string): void;
   (e: 'update-step-error'): void;
+  (e: 'update:inputObj', value: InputObj): void;
 }>();
 
 // Store and route
@@ -284,10 +285,25 @@ const stringInputVal = computed(() => {
   );
 });
 
+// Computed with getter/setter for v-model bindings to avoid prop mutation
+const cellValue = computed({
+  get: () => props.inputObj.cellValue,
+  set: (value) => {
+    emit('update:inputObj', { ...props.inputObj, cellValue: value });
+  }
+});
+
+const valuesArray = computed({
+  get: () => props.inputObj.values,
+  set: (value) => {
+    emit('update:inputObj', { ...props.inputObj, values: value });
+  }
+});
+
 // Watch
 watch(stringInputVal, (newVal) => {
   if (newVal === true) {
-    props.inputObj.cellValue = null;
+    cellValue.value = null;
   }
 });
 
@@ -359,7 +375,7 @@ const onInputChange = async (arg: File[]) => {
     const { fileLink } = await store.dispatch('uploadFile', {
       file: arg
     });
-    props.inputObj.cellValue = fileLink;
+    cellValue.value = fileLink;
     tempFileContainer.value = [];
   } catch (err: any) {
     store.commit('setSnackbar', {
@@ -387,7 +403,7 @@ const removeImage = async () => {
     });
     if (res.status === 200) {
       emit('data-file-deleted', props.inputObj.cellValue as string);
-      props.inputObj.cellValue = '';
+      cellValue.value = '';
       onCancel();
     }
   } catch (err: any) {

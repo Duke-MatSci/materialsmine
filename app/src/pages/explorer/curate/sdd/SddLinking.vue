@@ -16,7 +16,7 @@
             enctype="multipart/form-data"
             upload_type="http://www.w3.org/ns/dcat#Dataset"
           >
-            <md-steppers class="form__stepper" :md-active-step.sync="active" md-linear>
+            <md-steppers class="form__stepper" v-model:md-active-step="active" md-linear>
               <md-step id="first" md-label="Dataset Info">
                 Linking has not been completed for this dataset. Are you ready to finish linking
                 the data?

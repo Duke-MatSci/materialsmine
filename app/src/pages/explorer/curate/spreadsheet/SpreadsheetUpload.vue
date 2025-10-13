@@ -52,10 +52,10 @@
               <md-steppers
                 md-vertical
                 md-linear
-                :md-active-step.sync="active"
+                v-model:md-active-step="active"
                 class="form__stepper"
               >
-                <md-step id="first" md-label="Download blank template" :md-done.sync="first">
+                <md-step id="first" md-label="Download blank template" v-model:md-done="first">
                   <div class="utility-line-height-sm">
                     <a href="/master_template.xlsx" download> Click here</a> to download the
                     template spreadsheet, and fill it out with your data.
@@ -78,7 +78,7 @@
                 <md-step
                   id="second"
                   md-label="Select spreadsheet for upload"
-                  :md-done.sync="second"
+                  v-model:md-done="second"
                 >
                   <DropZone class="form__drop-area" @files-dropped="addSpreadsheet">
                     <label for="file-spreadsheet-input">
@@ -143,7 +143,7 @@
                 <md-step
                   id="third"
                   md-label="Select supplementary files for upload"
-                  :md-done.sync="third"
+                  v-model:md-done="third"
                 >
                   <DropZone class="form__drop-area" @files-dropped="addSupp">
                     <label for="file-supp-input">
@@ -203,7 +203,7 @@
                     </md-button>
                   </div>
                 </md-step>
-                <md-step id="fourth" md-label="Additional Information" :md-done.sync="fourth">
+                <md-step id="fourth" md-label="Additional Information" v-model:md-done="fourth">
                   <div
                     v-if="datasetId"
                     class="md-layout md-alignment-center-left"
@@ -254,7 +254,7 @@
                     </md-button>
                   </div>
                 </md-step>
-                <md-step id="fifth" md-label="Verify data" :md-done.sync="fifth">
+                <md-step id="fifth" md-label="Verify data" v-model:md-done="fifth">
                   <h3>DOI:</h3>
                   {{ doi }}
                   <div>&nbsp;</div>

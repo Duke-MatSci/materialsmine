@@ -42,7 +42,7 @@ export default {
     return dispatch('fetchFavoriteCharts');
   },
 
-  async fetchFavoriteCharts({ commit, rootGetters, dispatch }: Context, root: boolean = true): Promise<void> {
+  async fetchFavoriteCharts({ commit, rootGetters, dispatch }: Context, root = true): Promise<void> {
     const token = rootGetters['auth/token'];
     const name = rootGetters['auth/displayName'];
     const isAdmin = rootGetters['auth/isAdmin'];

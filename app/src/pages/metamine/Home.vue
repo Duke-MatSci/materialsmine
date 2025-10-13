@@ -220,7 +220,7 @@ const assetItems = ref<AssetItem[]>([
 ]);
 
 // Methods from reducer mixin
-const reduceDescription = (args: string, size: number = 50): string => {
+const reduceDescription = (args: string, size = 50): string => {
   const arr = args.split(' ');
   arr.splice(size);
   const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');

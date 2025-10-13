@@ -137,8 +137,8 @@
         </div>
         <div v-else>
           <h2 class="visualize_header-h1">Upload samples in bulk</h2>
-          <md-steppers md-vertical md-linear :md-active-step.sync="active" class="form__stepper">
-            <md-step id="first" md-label="Download blank template" :md-done.sync="first">
+          <md-steppers md-vertical md-linear v-model:md-active-step="active" class="form__stepper">
+            <md-step id="first" md-label="Download blank template" v-model:md-done="first">
               <div class="utility-line-height-sm">
                 <a href="/master_template.xlsx" download> Click here</a> to download the template
                 spreadsheet, and fill it out with your data.
@@ -155,7 +155,7 @@
                 Next
               </md-button>
             </md-step>
-            <md-step id="second" md-label="Select file for upload" :md-done.sync="second">
+            <md-step id="second" md-label="Select file for upload" v-model:md-done="second">
               <div style="margin: 2rem 2rem 0; font-weight: 600">
                 The template spreadsheet for each sample in the .zip file must contain
                 'master_template.xlsx' in its name.
@@ -221,7 +221,7 @@
                 </md-button>
               </div>
             </md-step>
-            <md-step id="third" md-label="Confirm and submit" :md-done.sync="third">
+            <md-step id="third" md-label="Confirm and submit" v-model:md-done="third">
               <h3>Selected zip file:</h3>
               <ul style="margin-left: 1rem">
                 <div v-for="(ss, index) in spreadsheetFiles" :key="index">

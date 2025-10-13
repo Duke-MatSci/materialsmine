@@ -26,7 +26,7 @@
       <form ref="curationForm" @submit.prevent="submit" class="modal-content">
         <md-steppers
           v-if="!!titles.length"
-          :md-active-step.sync="active"
+          v-model:md-active-step="active"
           @md-changed="(e) => sortCurate(e)"
           class="form__stepper form__stepper-curate"
         >
@@ -108,7 +108,7 @@
               <!-- Vertical Steppers  -->
               <md-steppers
                 v-if="!!tempInputObj[title].length"
-                :md-active-step.sync="verticalActive"
+                v-model:md-active-step="verticalActive"
                 md-vertical
                 md-dynamic-height
               >
