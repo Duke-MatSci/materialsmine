@@ -1,34 +1,33 @@
 <template>
   <div>
-    <MdDialog
+    <md-dialog
       :class="['dialog-box', dialogSizeClass]"
-      :md-active="active"
+      v-model:md-active="isActive"
       :md-click-outside-to-close="false"
-      @update:md-active="$emit('update:active', $event)"
     >
       <div class="dialog-box_header">
-        <MdDialogTitle>
-          <slot name="title"></slot>
-        </MdDialogTitle>
-        <MdButton
+        <md-dialog-title>
+          <slot name="title"> </slot>
+        </md-dialog-title>
+        <md-button
           v-if="!disableClose"
           class="md-icon-button dialog-box_close facet-content_container u_margin-right-small"
           @click="toggleDialogBox()"
         >
-          <MdIcon class="utility-navfonticon u--font-emph-xl">close</MdIcon>
-        </MdButton>
+          <md-icon class="utility-navfonticon u--font-emph-xl">close</md-icon>
+        </md-button>
       </div>
       <div class="dialog-box_content">
-        <MdDialogContent>
-          <slot name="content"></slot>
-        </MdDialogContent>
+        <md-dialog-content>
+          <slot name="content"> </slot>
+        </md-dialog-content>
       </div>
       <div class="dialog-box_actions md-button-lightbg">
-        <MdDialogActions>
-          <slot name="actions"></slot>
-        </MdDialogActions>
+        <md-dialog-actions>
+          <slot name="actions"> </slot>
+        </md-dialog-actions>
       </div>
-    </MdDialog>
+    </md-dialog>
   </div>
 </template>
 
@@ -38,12 +37,12 @@ import { useStore } from 'vuex';
 
 // Component name for debugging
 defineOptions({
-  name: 'AppDialog',
+  name: 'DialogBox',
 });
 
 // Props
 interface Props {
-  active: boolean;
+  active?: boolean;
   minWidth?: number;
   disableClose?: boolean;
 }
@@ -56,13 +55,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Emits
 const emit = defineEmits<{
-  'update:active': [value: boolean];
+  (e: 'update:active', value: boolean): void;
 }>();
 
 // Store
 const store = useStore();
 
 // Computed properties
+const isActive = computed({
+  get: () => props.active,
+  set: (value: boolean) => emit('update:active', value),
+});
+
 const dialogSizeClass = computed(() => {
   const sizeMap: Record<number, string> = {
     40: 'dialog-box_size-sm',

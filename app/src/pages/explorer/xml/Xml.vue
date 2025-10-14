@@ -42,11 +42,11 @@
       </div>
 
       <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
-        <md-chip
+        <md-chips
           class="u--bg u_margin-bottom-small"
           @md-delete="removeChip('isNew')"
           md-deletable=""
-          >is New: {{ isNew }}</md-chip
+          >is New: {{ isNew }}</md-chips
         >
       </div>
 
@@ -194,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onActivated, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
@@ -224,17 +224,41 @@ defineOptions({
   name: 'XmlGallery',
 });
 
+// Constants
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_NUMBER = 1;
+
 // Store and router
 const store = useStore();
 const router = useRouter();
 const route = useRoute();
 
+// TypeScript interfaces
+interface XmlData {
+  id: string;
+  title?: string;
+  user: string;
+  isNewCuration: boolean;
+}
+
+interface XmlFinderResponse {
+  xmlData: XmlData[];
+  totalItems: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
 // Reactive data
-const baseUrl = ref(window.location.origin);
-const renderText = ref('Showing all XML');
-const xmlFinder = ref<any>([]);
-const pageNumber = ref(1);
-const pageSize = ref(20);
+const xmlFinder = ref<XmlFinderResponse>({
+  xmlData: [],
+  totalItems: 0,
+  totalPages: 0,
+  pageNumber: DEFAULT_PAGE_NUMBER,
+  pageSize: DEFAULT_PAGE_SIZE,
+});
+const pageNumber = ref(DEFAULT_PAGE_NUMBER);
+const pageSize = ref(DEFAULT_PAGE_SIZE);
 const searchEnabled = ref(false);
 const searchWord = ref('');
 const selectedFilters = ref<string[]>([]);
@@ -254,14 +278,7 @@ const userId = computed(() => store.getters['auth/userId']);
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
 
 const isEmpty = computed(() => {
-  if (
-    xmlFinder.value.length === 0 ||
-    !Object.keys(xmlFinder.value).length ||
-    xmlFinder.value.totalItems === 0
-  ) {
-    return true;
-  }
-  return false;
+  return !xmlFinder.value.xmlData?.length || xmlFinder.value.totalItems === 0;
 });
 
 const filtersActive = computed(() => {
@@ -281,14 +298,14 @@ const { result, loading, refetch } = useQuery(
     },
   }),
   () => ({
-    fetchPolicy: 'cache-first',
+    fetchPolicy: 'cache-and-network',
   })
 );
 
 // Watch for query results
-watch(result, (newResult) => {
-  if (newResult?.xmlFinder) {
-    xmlFinder.value = newResult.xmlFinder;
+watchEffect(() => {
+  if (result.value?.xmlFinder) {
+    xmlFinder.value = result.value.xmlFinder;
     if (!loading.value) {
       error.value = null;
     }
@@ -349,10 +366,10 @@ const {
   loadPrevNextImage,
   updateParamsAndCall,
   resetSearch,
-  loadParams
+  loadParams,
 } = useExplorerQueryParams({
   localSearchMethod,
-  hasPageSize: true
+  hasPageSize: true,
 });
 
 // Sync composable refs with local refs used in Apollo query
@@ -471,25 +488,24 @@ const duplicateCuration = async (id: string, isNew: boolean) => {
   }
 };
 
-// Error handling
-const handleError = (error: any) => {
-  if (error.networkError) {
-    const err = error.networkError;
-    error.value = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
-  } else if (error.graphQLErrors) {
-    error.value = error.graphQLErrors;
+// Initialize component state based on route params
+const initializeGallery = () => {
+  const query = route.query;
+  if (query?.page || query?.size || query?.q) {
+    return loadParams(route.query);
+  } else {
+    // If no query params, just refetch with default state
+    return refetch();
   }
-  store.commit('setSnackbar', {
-    message: error.value,
-    duration: 10000,
-  });
 };
 
 // Lifecycle
 onMounted(() => {
-  const query = route.query;
-  if (query?.page || query?.size || query?.q) {
-    return loadParams(route.query);
-  }
+  initializeGallery();
+});
+
+// Refetch data when component is activated (e.g., when navigating back from detail view)
+onActivated(() => {
+  initializeGallery();
 });
 </script>

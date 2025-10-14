@@ -99,7 +99,7 @@
                 <router-link to="/nm/tools/plot-curation" class="nav_menu--siblings-lists"
                   ><a>Easy CSV Plotter</a></router-link
                 >
-                <router-link to="/api/api-docs/" class="nav_menu--siblings-lists"
+                <router-link to="/api-docs/" class="nav_menu--siblings-lists" target="_blank"
                   ><a>API Documentation</a></router-link
                 >
               </div>

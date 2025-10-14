@@ -71,13 +71,13 @@ const toolRoutes: Array<RouteRecordRaw> = [
   //     ),
   //   meta: { requiresAuth: false },
   // },
-  // {
-  //   path: 'plot-curation',
-  //   name: 'CsvPlotter',
-  //   component: () =>
-  //     import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/csvPlotter/CsvPlotter.vue'),
-  //   meta: { requiresAuth: false },
-  // },
+  {
+    path: 'plot-curation',
+    name: 'CsvPlotter',
+    component: () =>
+      import(/* webpackChunkName: "plotcuration" */ '@/pages/nanomine/csvPlotter/CsvPlotter.vue'),
+    meta: { requiresAuth: false },
+  },
   {
     path: 'chemprops',
     name: 'ChemProps',

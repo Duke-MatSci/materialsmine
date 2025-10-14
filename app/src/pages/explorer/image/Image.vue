@@ -53,13 +53,11 @@
     </div>
     <div class="utility-roverflow">
       <div class="u_content__result u_margin-top-small">
-        <span class="u_color utility-navfont" id="css-adjust-navfont">
+        <span v-if="!loading" class="u_color utility-navfont" id="css-adjust-navfont">
           <strong v-if="renderText != null">{{ renderText }}</strong>
-          <span v-if="searchImages.totalItems === 0 || images.totalItems === 0"> No results </span>
-          <span v-else-if="searchImages.totalItems === 1 || images.totalItems === 1">
-            1 result
-          </span>
-          <span v-else> About {{ searchImages.totalItems || images.totalItems }} results </span>
+          <span v-if="currentTotalItems === 0"> No results </span>
+          <span v-else-if="currentTotalItems === 1"> 1 result </span>
+          <span v-else> About {{ currentTotalItems }} results </span>
           <span class="utility-absolute-input">
             <label for="pagesize"><strong>Page size:</strong></label>
             <input
@@ -79,7 +77,7 @@
       <template v-if="!searchImagesEmpty || !imagesEmpty">
         <div class="gallery-grid grid grid_col-5">
           <md-card
-            v-for="(image, index) in searchImages.images || images.images"
+            v-for="(image, index) in currentImages"
             :key="index"
             class="btn--animated gallery-item"
           >
@@ -131,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, watchEffect, onMounted, onActivated, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useQuery } from '@vue/apollo-composable';
@@ -146,6 +144,19 @@ defineOptions({
   name: 'ImageGallery',
 });
 
+// Constants
+const DPS = 20; // Default page size
+const DPN = 1; // Default page number
+const DEFAULT_RESPONSE = {
+  images: [],
+  totalItems: 0,
+  pageSize: 0,
+  pageNumber: 0,
+  totalPages: 0,
+  hasPreviousPage: false,
+  hasNextPage: false,
+};
+
 // Route and router
 const route = useRoute();
 const router = useRouter();
@@ -154,34 +165,40 @@ const store = useStore();
 // Composables
 const { reduceDescription } = useReduce();
 
+// TypeScript interfaces
+interface ImagesResponse {
+  totalItems: number;
+  pageSize: number;
+  pageNumber: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  images: any[];
+}
+
 // Reactive data
 const baseUrl = ref(window.location.origin);
 const renderText = ref('Showing all images');
-const images = ref<any>([]);
-const searchImages = ref<any>([]);
-const ImageList = ref<any>([]);
-// Local refs for Apollo queries (will be synced with composable)
-const pageNumber = ref(parseInt(route.query.page as string) || 1);
-const pageSize = ref(
-  parseInt(route.query.size as string) <= 20 ? parseInt(route.query.size as string) : 20
-);
+const images = ref<ImagesResponse>(DEFAULT_RESPONSE);
+const searchImages = ref<ImagesResponse>(DEFAULT_RESPONSE);
+const pageNumber = ref(parseInt(route.query.page as string) || DPN);
+const pageSize = ref(Math.min(parseInt(route.query.size as string) || DPS, DPS));
 const searchEnabled = ref(false);
 const filter = ref('');
 const searchWord = ref('');
 const error = ref<string | null>(null);
+const imagesLoading = ref(false);
 const loading = ref(false);
 
 // Computed properties
 const imageSearch = computed(() => store.getters['explorer/getSelectedFacetFilterMaterialsValue']);
 
-// This is a WIP TODO (@Tolu) Update later
 const searchImagesEmpty = computed(() => {
-  return searchImages.value.length === 0 || searchImages.value?.totalItems === 0;
+  return !searchImages.value.images?.length || searchImages.value.totalItems === 0;
 });
 
 const imagesEmpty = computed(() => {
-  if (!Object.keys(images.value)?.length || images.value.totalItems === 0) return true;
-  return false;
+  return !images.value.images?.length || images.value.totalItems === 0;
 });
 
 const isEmpty = computed(() => {
@@ -190,23 +207,28 @@ const isEmpty = computed(() => {
   );
 });
 
+const currentImages = computed(() => {
+  return searchEnabled.value ? searchImages.value.images : images.value.images;
+});
+
+const currentTotalItems = computed(() => {
+  return searchEnabled.value ? searchImages.value.totalItems : images.value.totalItems;
+});
+
 // GraphQL queries
-const {
-  result: imagesResult,
-  loading: imagesLoading,
-  refetch: refetchImages,
-} = useQuery(
+// Use enabled instead of skip for better control
+const { result: imagesResult, refetch: refetchImages } = useQuery(
   IMAGES_QUERY,
-  () => ({
+  {
     input: {
       pageNumber: pageNumber.value,
       pageSize: parseInt(imageSearch.value?.size) || pageSize.value,
     },
-  }),
-  () => ({
-    skip: searchEnabled.value,
-    fetchPolicy: 'cache-first',
-  })
+  },
+  {
+    enabled: !searchEnabled.value,
+    fetchPolicy: 'cache-and-network',
+  }
 );
 
 const {
@@ -224,21 +246,21 @@ const {
     },
   }),
   () => ({
-    skip: !searchEnabled.value,
+    enabled: searchEnabled.value,
     fetchPolicy: 'network-only',
   })
 );
 
 // Watch for query results
-watch(imagesResult, (newResult) => {
-  if (newResult?.images) {
-    images.value = newResult.images;
+watchEffect(() => {
+  if (imagesResult.value?.images) {
+    images.value = imagesResult.value.images;
   }
 });
 
-watch(searchImagesResult, (newResult) => {
-  if (newResult?.searchImages) {
-    searchImages.value = newResult.searchImages;
+watchEffect(() => {
+  if (searchImagesResult.value?.searchImages) {
+    searchImages.value = searchImagesResult.value.searchImages;
   }
 });
 
@@ -248,12 +270,26 @@ watch([imagesLoading, searchImagesLoading], ([imagesLoad, searchLoad]) => {
 });
 
 // Methods
+const refetchTrigger = async (args?: { input: { pageNumber: number; pageSize: number } }) => {
+  imagesLoading.value = true;
+  try {
+    args ? await refetchImages(args) : await refetchImages();
+  } finally {
+    imagesLoading.value = false;
+  }
+};
+
 const localSearchMethod = async (): Promise<void> => {
-  error.value = '';
+  error.value = null;
   if (searchEnabled.value) {
     await refetchSearchImages();
   } else {
-    await refetchImages();
+    await refetchTrigger({
+      input: {
+        pageNumber: pageNumber.value,
+        pageSize: parseInt(imageSearch.value?.size) || pageSize.value,
+      },
+    });
   }
 };
 
@@ -263,11 +299,10 @@ const {
   pageSize: composablePageSize,
   loadPrevNextImage,
   updateParamsAndCall,
-  resetSearch,
-  checkPageSize: checkPageSizeFromComposable
+  checkPageSize: checkPageSizeFromComposable,
 } = useExplorerQueryParams({
   localSearchMethod,
-  hasPageSize: true
+  hasPageSize: true,
 });
 
 // Sync composable refs with local refs used in Apollo queries
@@ -279,17 +314,20 @@ watch(composablePageSize, (newVal) => {
   pageSize.value = newVal;
 });
 
-// Watch for imageSearch changes
-watch(imageSearch, (newValue, oldValues) => {
-  if (newValue && newValue.value?.length) {
+// Watch for imageSearch changes from store
+watch(imageSearch, async (newValue) => {
+  if (newValue?.value?.length) {
     renderText.value = `Showing ${newValue.type}: ${newValue.value}`;
     searchEnabled.value = true;
     pageSize.value = newValue.pageSize || pageSize.value;
-    return localSearchMethod();
+    await nextTick();
+    await localSearchMethod();
   } else {
+    renderText.value = 'Showing all images';
     searchEnabled.value = false;
-    pageSize.value = newValue.pageSize || pageSize.value;
-    return localSearchMethod();
+    pageSize.value = newValue?.pageSize || pageSize.value;
+    await nextTick();
+    await localSearchMethod();
   }
 });
 
@@ -305,54 +343,53 @@ const submitSearch = async () => {
   return await updateParamsAndCall(true);
 };
 
-const dispatchSearch = async () => {
-  await store.commit('explorer/setSelectedFacetFilterMaterialsValue', {
+const dispatchSearch = () =>
+  store.commit('explorer/setSelectedFacetFilterMaterialsValue', {
     type: filter.value,
     value: searchWord.value,
     size: pageSize.value,
   });
-};
 
 const clearForm = () => {
-  resetSearch('images');
-  searchImages.value = [];
+  searchImages.value = DEFAULT_RESPONSE;
   filter.value = '';
   searchWord.value = '';
+  searchEnabled.value = false;
+  pageNumber.value = DPN;
+  pageSize.value = DPS;
+  router.replace({ query: {} });
   dispatchSearch();
 };
 
-// Error handling
-const handleError = (error: any) => {
-  if (error.networkError) {
-    const err = error.networkError;
-    error.value = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
-  } else if (error.graphQLErrors) {
-    error.value = error.graphQLErrors;
-  }
-  store.commit('setSnackbar', {
-    message: error.value,
-    duration: 10000,
-  });
-};
-
-// Lifecycle
-onMounted(() => {
+// Initialize component state based on route and store
+const initializeGallery = async () => {
   if (route.query.pageSize) {
     checkPageSizeFromComposable(parseInt(route.query.pageSize as string));
   }
+
   if (route.query.q && route.query.type) {
-    searchEnabled.value = true;
     searchWord.value = route.query.q as string;
     filter.value = route.query.type as string;
+    searchEnabled.value = true;
     dispatchSearch();
   } else if (imageSearch.value?.value) {
+    filter.value = imageSearch.value.type;
+    searchWord.value = imageSearch.value.value;
     searchEnabled.value = true;
-    filter.value = imageSearch.value?.type;
-    searchWord.value = imageSearch.value?.value;
-    localSearchMethod();
+    await localSearchMethod();
   } else {
     searchEnabled.value = false;
-    dispatchSearch();
+    await refetchTrigger();
   }
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  initializeGallery();
+});
+
+// Refetch data when component is activated (e.g., when navigating back from detail view)
+onActivated(() => {
+  initializeGallery();
 });
 </script>

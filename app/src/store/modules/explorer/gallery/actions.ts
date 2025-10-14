@@ -15,7 +15,7 @@ export default {
     }
     const url = `/api/knowledge/charts/?page=${page}&pageSize=${getters.pageSize}`;
     const response = await fetch(url, {
-      method: 'GET'
+      method: 'GET',
     });
     if (!response || response?.statusText !== 'OK') {
       const error = new Error(response.statusText || 'Something went wrong!');
@@ -42,7 +42,10 @@ export default {
     return dispatch('fetchFavoriteCharts');
   },
 
-  async fetchFavoriteCharts({ commit, rootGetters, dispatch }: Context, root = true): Promise<void> {
+  async fetchFavoriteCharts(
+    { commit, rootGetters, dispatch }: Context,
+    root = true
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const name = rootGetters['auth/displayName'];
     const isAdmin = rootGetters['auth/isAdmin'];
@@ -53,19 +56,14 @@ export default {
       // Route the user to the correct route depending on isAdmin status
       const favoriteUrl = isAdmin ? '/favoritechart' : '/user/favorite-charts';
 
-      const response = await fetch(
-        '/api/knowledge/charts/favorites?pageSize=50',
-        {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch('/api/knowledge/charts/favorites?pageSize=50', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.status !== 200) {
-        const error = new Error(
-          `Server error - ${response.statusText ?? response.statusText}`
-        );
+        const error = new Error(`Server error - ${response.statusText ?? response.statusText}`);
         throw error;
       }
 
@@ -83,11 +81,11 @@ export default {
         'setSnackbar',
         {
           message: `Hi ${name}, you have ${faveLength} favourite charts`,
-          ...(!faveLength && { duration: 15000 }),
+          ...(!faveLength && { duration: 1500 }),
           ...(!!faveLength && {
             callToActionText: 'click to view',
-            action: () => router.push(`/portal${favoriteUrl}`)
-          })
+            action: () => router.push(`/portal${favoriteUrl}`),
+          }),
         },
         { root: true }
       );
@@ -97,14 +95,17 @@ export default {
         {
           message: error?.message ?? 'Something went wrong',
           action: () => dispatch('fetchFavoriteCharts', root),
-          callToActionText: 'Retry'
+          callToActionText: 'Retry',
         },
         { root: true }
       );
     }
   },
 
-  async bookmarkChart({ commit, rootGetters, dispatch }: Context, { chart }: { chart: any }): Promise<void> {
+  async bookmarkChart(
+    { commit, rootGetters, dispatch }: Context,
+    { chart }: { chart: any }
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const storeCharts = rootGetters['explorer/gallery/favoriteChartItems'];
     let totalData: any[] = [];
@@ -116,8 +117,8 @@ export default {
         body: JSON.stringify({ chartId: chart.identifier }),
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.status !== 200) return;
       const responseData = await response.json();
@@ -131,10 +132,10 @@ export default {
         {
           message: error?.message ?? 'Something went wrong',
           action: () => dispatch('fetchFavoriteCharts'),
-          callToActionText: 'Retry'
+          callToActionText: 'Retry',
         },
         { root: true }
       );
     }
-  }
+  },
 };
