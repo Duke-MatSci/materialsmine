@@ -41,15 +41,25 @@
               {{ optionalChaining(() => xmlViewer.title) }}
             </h2>
             <div class="u_centralize_text viz-u-mgbottom-sm">
-              <a href="#" class="viz-tab__button" :class="[!loadYaml && 'active u--color-primary']"
+              <a
+                href="#"
+                class="viz-tab__button"
+                :class="[isActiveXmlView && 'active u--color-primary']"
                 >XML View</a
               >
               ||
               <a
                 class="viz-tab__button"
-                :class="[loadYaml && 'active u--color-primary']"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
                 @click.prevent="openYaml"
                 >YAML View</a
+              >
+              ||
+              <a
+                class="viz-tab__button"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
+                @click.prevent="openHistory"
+                >History</a
               >
             </div>
           </div>
@@ -112,7 +122,7 @@
         </md-button>
 
         <md-button
-          @click="approveCuration({ xmlViewer, reloadXml })"
+          @click="approveCuration({ xmlViewer })"
           v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -208,9 +218,7 @@ const isLargeTabView = computed(() => {
   return screen.width < 1024;
 });
 
-const loadYaml = computed(() => {
-  return !!route.query.isYaml;
-});
+const isActiveXmlView = computed(() => !route.query.isYaml && !route.query.isHistory);
 
 // Methods
 const closeDialogBox = () => {
@@ -230,10 +238,6 @@ const editCuration = (id: string, isNew: boolean) => {
   }
 };
 
-const reloadXml = async () => {
-  return await refetch();
-};
-
 const openYaml = () => {
   const query = {
     title: xmlViewer.value.title?.split('.')[0],
@@ -247,14 +251,22 @@ const openYaml = () => {
   return router.push({ name: 'YamlVisualizer', params, query });
 };
 
-const approveCuration = async ({
-  xmlViewer,
-  reloadXml,
-}: {
-  xmlViewer: any;
-  reloadXml: () => void;
-}) => {
-  await store.dispatch('explorer/curation/approveCuration', { xmlViewer, reloadXml });
+const openHistory = () => {
+  const query = {
+    title: xmlViewer.value.title?.split('.')[0],
+    isNewCuration: route.query?.isNewCuration,
+    isHistory: true,
+  } as any;
+  const params = {
+    id: route.params.id,
+  };
+
+  return router.push({ name: 'SampleHistory', params, query });
+};
+
+// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
+const approveCuration = async ({ xmlViewer }: { xmlViewer: any }) => {
+  await store.dispatch('explorer/curation/approveCuration', { xml: xmlViewer });
 };
 
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {

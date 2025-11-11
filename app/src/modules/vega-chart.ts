@@ -80,13 +80,13 @@ const defaultSpec: VegaSpec = {
   encoding: {
     x: {
       field: 'YieldStrainPercent',
-      type: 'quantitative'
+      type: 'quantitative',
     },
     y: {
       field: 'YoungsModGPa',
-      type: 'quantitative'
-    }
-  }
+      type: 'quantitative',
+    },
+  },
 };
 
 const defaultChart: Chart = {
@@ -96,7 +96,7 @@ const defaultChart: Chart = {
   title: 'Example Bar Chart',
   description:
     'An example chart that looks up the frequency for each class in the knowledge graph.',
-  depiction: null
+  depiction: null,
 };
 
 const chartType = 'http://semanticscience.org/resource/Chart';
@@ -110,7 +110,7 @@ const chartFieldPredicates: Record<string, string> = {
   query: 'http://schema.org/query',
   title: 'http://purl.org/dc/terms/title',
   description: 'http://purl.org/dc/terms/description',
-  dataset: 'http://www.w3.org/ns/prov#used'
+  dataset: 'http://www.w3.org/ns/prov#used',
 };
 
 const chartIdLen = 16;
@@ -118,9 +118,7 @@ const chartIdLen = 16;
 function generateChartId(isXml?: boolean): string {
   const intArr = new Uint8Array(chartIdLen / 2);
   window.crypto.getRandomValues(intArr);
-  const chartId = Array.from(intArr, (dec) =>
-    ('0' + dec.toString(16)).substr(-2)
-  ).join('');
+  const chartId = Array.from(intArr, (dec) => ('0' + dec.toString(16)).substr(-2)).join('');
 
   return isXml ? chartId : `${chartUriPrefix}${chartId}`;
 }
@@ -133,8 +131,8 @@ function buildChartLd(chart: Chart): ChartLd {
     '@type': [chartType],
     [foafDepictionUri]: {
       '@id': `${chart.uri}_depiction`,
-      [hasContentUri]: chart.depiction
-    }
+      [hasContentUri]: chart.depiction,
+    },
   };
   Object.entries(chart)
     .filter(([field, value]) => chartFieldPredicates[field])
@@ -145,9 +143,7 @@ function buildChartLd(chart: Chart): ChartLd {
 }
 
 function matchValidXmlTitle(title: string): RegExpMatchArray | null {
-  const rv = title.match(
-    /^[A-Z]([0-9]+)[_][S]([0-9]+)[_]([\S]+)[_](\d{4})([.][Xx][Mm][Ll])?$/
-  ); // e.g. L183_S12_Poetschke_2003.xml
+  const rv = title.match(/^[A-Z]([0-9]+)[_][S]([0-9]+)[_]([\S]+)[_](\d{4})([.][Xx][Mm][Ll])?$/); // e.g. L183_S12_Poetschke_2003.xml
   return rv;
 }
 
@@ -219,7 +215,7 @@ function buildXsdLd(xsdData: string, xsdId: string, schemaName: string): Record<
       sio: 'http://semanticscience.org/resource/',
       dc: 'http://purl.org/dc/terms/',
       prov: 'http://www.w3.org/ns/prov#',
-      mt: 'https://www.iana.org/assignments/media-types/'
+      mt: 'https://www.iana.org/assignments/media-types/',
     },
     '@id': `urn:${xsdId}`,
     '@graph': {
@@ -232,11 +228,11 @@ function buildXsdLd(xsdData: string, xsdId: string, schemaName: string): Record<
           {
             '@id': `${nmRdfLodPrefix}/nmr/schema/${schemaName}`,
             '@type': ['mt:text/xml', 'http://www.w3.org/2001/XMLSchema'],
-            'whyis:hasContent': `data:text/xml;charset=UTF-8;base64,${b64SchemaData}`
-          }
-        ]
-      }
-    }
+            'whyis:hasContent': `data:text/xml;charset=UTF-8;base64,${b64SchemaData}`,
+          },
+        ],
+      },
+    },
   };
 }
 
@@ -259,9 +255,7 @@ function copyChart(sourceChart: Chart): Chart {
 async function deleteChart(chartUri: string): Promise<any> {
   return listNanopubs(chartUri).then((nanopubs) => {
     if (!nanopubs || !nanopubs.length) return;
-    return Promise.all(
-      nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np))
-    );
+    return Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
   });
 }
 
@@ -277,76 +271,36 @@ async function saveChart(chart: Chart): Promise<any> {
 }
 
 async function saveXml(xml: XmlData, token: string): Promise<SaveXmlResponse> {
-  let xmlId: string;
   try {
-    const changeLogResponse = await fetch(
-      `/api/curate/changelogs/${xml.id}?published=true`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-    if (changeLogResponse.ok) {
-      const latestPublishedXml = await changeLogResponse.json();
-      const latestPublishedXmlUri = latestPublishedXml?.change?.[0];
-      if (latestPublishedXmlUri) {
-        await deleteResources(latestPublishedXmlUri);
-        xmlId = latestPublishedXmlUri;
-      } else {
-        xmlId = generateChartId(true);
-      }
-    } else {
-      throw new Error(
-        `Failed to get latest published xml: ${changeLogResponse.statusText}`
-      );
-    }
-    const xmlLd = buildXmlLd(xml, xmlId);
-    const nanopub = await postNewNanopub(xmlLd, true);
+    // const xmlLd = buildXmlLd(xml, xmlId);
+    // const nanopub = await postNewNanopub(xmlLd, true);
 
-    if (nanopub) {
-      const approvalPromise = fetch('/api/curate/approval', {
+    if (xml.id) {
+      const isNewCuration = xml.isNewCuration == true ? true : false;
+      const approvalPromise = fetch('/api/curate/publish', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ curationId: xml.id, isNew: xml.isNewCuration })
-      });
-
-      const changeLogPromise = fetch(`/api/curate/changelogs/${xml.id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          resourceId: xml.id,
-          change: [xmlId],
-          published: true
-        })
+          xml: `${window.location.origin}/explorer/xmlvisualizer/${xml.id}?isNewCuration=${isNewCuration}`,
+          inference: 'rdfs',
+          resolveUrls: true,
+        }),
       });
 
-      const [approvalResponse, changeLogResponse] = await Promise.all([
-        approvalPromise,
-        changeLogPromise
-      ]);
+      // ar = approval response
+      const [ar] = await Promise.all([approvalPromise]);
 
-      // TODO: What happens if one fail & one passes?
-      if (!approvalResponse.ok) {
-        throw new Error(
-          `Failed to approve a curation: ${approvalResponse.statusText}`
-        );
+      if (!ar.ok) {
+        throw new Error(`Failed to approve a curation: ${ar.statusText}`);
       }
-      if (!changeLogResponse.ok) {
-        throw new Error(
-          `Failed to post change log: ${changeLogResponse.statusText}`
-        );
-      }
+
+      console.log('ar', ar);
     }
 
-    return { whyisId: xmlId, controlID: xml.title, status: 'ok' };
+    return { whyisId: '', controlID: xml.title, status: 'ok' };
   } catch (error: any) {
     throw new Error(`Error in saveXml: ${error.message}`);
   }
@@ -358,7 +312,7 @@ async function publishXSD(xsd: string, token: string): Promise<any> {
     .toLocaleDateString('en-US', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     })
     .replace(/\//g, '')}`;
 
@@ -370,19 +324,17 @@ async function publishXSD(xsd: string, token: string): Promise<any> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         resourceId: 'schema_id',
         change: [xsdId],
-        published: true
-      })
+        published: true,
+      }),
     });
 
     if (!publishResponse.ok) {
-      throw new Error(
-        `Failed to publish schema: ${publishResponse.statusText}`
-      );
+      throw new Error(`Failed to publish schema: ${publishResponse.statusText}`);
     }
   }
   return nanopub;
@@ -423,10 +375,7 @@ async function loadChart(chartUri: string): Promise<Chart> {
   }
 
   const valuesBlock = `\n  VALUES (?uri) { (<${chartUrl}>) }`;
-  const singleChartQuery = chartQuery.replace(
-    /(where\s*{)/i,
-    '$1' + valuesBlock
-  );
+  const singleChartQuery = chartQuery.replace(/(where\s*{)/i, '$1' + valuesBlock);
   const { results } = await querySparql(singleChartQuery);
   const rows = results?.bindings;
 
@@ -483,9 +432,7 @@ function toChartId(chartUri: string | null | undefined): string | undefined {
 
 function toChartUri(chartId: string): string {
   if (chartId.includes('viz')) {
-    return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(
-      chartId
-    )}`;
+    return `${window.location.origin}/explorer/chart/view/${encodeURIComponent(chartId)}`;
   }
 
   return chartUriPrefix + chartId;
@@ -510,5 +457,5 @@ export {
   toChartId,
   toChartUri,
   shareableChartUri,
-  chartUriPrefix
+  chartUriPrefix,
 };

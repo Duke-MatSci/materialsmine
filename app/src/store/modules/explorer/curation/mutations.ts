@@ -45,5 +45,8 @@ export default {
     if (state.curationFormData?.Control_ID) {
       state.curationFormData.Control_ID.cellValue = payload;
     }
-  }
+  },
+  setChangeLogs(state: CurationState, payload: any[]): void {
+    state.changeLogs = payload;
+  },
 };

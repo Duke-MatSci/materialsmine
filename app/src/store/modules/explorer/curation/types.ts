@@ -10,4 +10,5 @@ export interface CurationState {
   curationFormData: Record<string, any>;
   curationSheetStatus: Record<string, any>;
   curationFormError: Record<string, any>;
+  changeLogs: any[];
 }

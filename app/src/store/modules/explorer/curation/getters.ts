@@ -24,5 +24,8 @@ export default {
   },
   getCurationFormData(state: CurationState): Record<string, any> {
     return state.curationFormData;
-  }
+  },
+  getChangeLogs(state: CurationState): any[] {
+    return state.changeLogs;
+  },
 };

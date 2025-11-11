@@ -285,6 +285,12 @@ const explorerRoutes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: false },
   },
   {
+    path: 'sample-history/:id',
+    name: 'SampleHistory',
+    component: () => import('@/pages/explorer/xml/XmlHistory.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: 'dataset',
     component: ChartBase,
     children: [

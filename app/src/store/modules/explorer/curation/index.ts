@@ -17,10 +17,11 @@ export default {
       replaceNestedRef: [],
       curationFormData: {},
       curationSheetStatus: {},
-      curationFormError: {}
+      curationFormError: {},
+      changeLogs: [],
     };
   },
   mutations,
   actions,
-  getters
+  getters,
 };

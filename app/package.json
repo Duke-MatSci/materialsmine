@@ -54,6 +54,7 @@
     "vega-lite5": "npm:vega-lite@^5.1.1",
     "vue": "^3.2.13",
     "vue-advanced-cropper": "^1.10.1",
+    "vue-i18n": "^11.1.12",
     "vue-json-csv": "^1.2.12",
     "vue-mathjax": "^0.0.11",
     "vue-router": "^4.0.3",
