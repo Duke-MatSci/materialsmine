@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Dict, List
+from typing import Optional, Dict
 from collections import defaultdict
 from rdflib import Graph, URIRef, RDFS, OWL, RDF, BNode, SKOS
 
@@ -260,3 +260,18 @@ def details_from_turtle(app):
     sort_subclasses(root_classes)    
     app.logger.info('[details_from_turtle]: Details retrieved successfully from the turtle file')
     return final_stats, ontology_info, list(root_classes.values()), properties
+
+def mime_for(format_name: Optional[str]) -> str:
+    fmt = (format_name or "turtle").lower()
+    return {
+        "turtle": "text/turtle",
+        "ttl": "text/turtle",
+        "xml": "application/rdf+xml",
+        "rdfxml": "application/rdf+xml",
+        "n3": "text/n3",
+        "nquads": "application/n-quads",
+        "nq": "application/n-quads",
+        "trig": "application/trig",
+        "json-ld": "application/ld+json",
+        "jsonld": "application/ld+json",
+    }.get(fmt, "text/turtle")

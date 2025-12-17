@@ -21,3 +21,7 @@ class Config:
     REPO_NAME = os.environ.get('REPO_NAME')
     FILE_PATH = os.environ.get('FILE_PATH')
     BRANCH = os.environ.get('BRANCH')
+    FUSEKI_BASE_URL = os.environ.get('FUSEKI_BASE_URL')
+    FUSEKI_DATASET = os.environ.get('FUSEKI_DATASET', 'materialsmine')
+    FUSEKI_USER = os.environ.get('FUSEKI_USER', 'admin')
+    FUSEKI_PWD = os.environ.get('FUSEKI_PWD', 'test123')
