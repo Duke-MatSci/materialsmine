@@ -933,6 +933,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Server-Error'
+
+  /curate/publish:
+     post:
+      security:
+        - BearerAuth: [] 
+      summary: ETL for Polymer Nanocomposite XML → Nanopublication
+      description: >
+        Validates input XML against the PNC XSD, transforms it into a nanopublication
+        (JSON-LD by default; TriG or Turtle optional), and validates the result with SHACL
+        via the internal SHACL validator. Accepts a single XML string/URL (`xml`) or an array (`xmls`).
+        Bulk mode continues processing even if some items fail (partial success).
+      tags:
+        - Curation
+      requestBody:
+        $ref: '#/components/requestBodies/CurationEtlRequest'
+      responses:
+        '200':
+          $ref: '#/components/schemas/CurationEtl200'
+                        
+        '400':
+          description: Invalid Request Payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+            example:
+              message: "Provide \"xml\" (string/URL) or \"xmls\" (array)."
+
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
             
   /curate/schema:
     get:
@@ -1691,6 +1735,62 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Server-Error'
+  /mn/validate-ontology:
+    post:
+      security:
+        - BearerAuth: [] 
+      summary: Validate an RDF/OWL ontology (and optional instance data) with SHACL, tailored to the MaterialsMine ontology.
+      description: Fetches an ontology from a URL or inline text (defaults to the MaterialsMine @mm.ttl raw link if not provided), optionally loads an instance data graph, and runs syntax checking plus SHACL validation using shapes aligned to your MM classes (band gaps, binary geometries, matrix/tensor indices, etc.). You can choose reasoning level and enable lightweight ORCID/DOI URL resolvability checks. Returns a structured validation report and timing headers.
+      tags:
+        - Managed Services
+      requestBody:
+        $ref: '#/components/requestBodies/KgValidationRequestBody'          
+      responses:
+        '200':
+          description: Materialsmine Managed Service data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Successful-Validation-Data'
+        '400':
+          description: Invalid input or RDF parse/validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                      message:
+                        type: string
+                        example: Failed to download file from GitHub
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+                
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                example: 
+                  error: Not Found
+                  message: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+       
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
+        '502':
+          description: Resource Fetching Network Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
 components:
   securitySchemes:
     BearerAuth:
@@ -2346,6 +2446,245 @@ components:
           StandardName: Polystyrene
           density: '1.04'
           uSMILES: C(C(C1=CC=CC=C1)[*])[*]
+
+    Successful-Validation-Data: 
+      type: object
+      required: [multi, response]
+      properties:
+        multi:
+          type: boolean
+          description: Indicates multi-part response (true for ontology+data).
+        response:
+          $ref: '#/components/schemas/KgValidationPayload'
+
+    KgValidationPayload:
+      type: object
+      required: [mode, ontology_report]
+      properties:
+        mode:
+          type: string
+          enum: [ontology-only, ontology+data]
+        ontology_report:
+          $ref: '#/components/schemas/OntologyReport'
+        data_report:
+          $ref: '#/components/schemas/DataReport'
+          nullable: true
+        shacl:
+          $ref: '#/components/schemas/ShaclReport'
+          nullable: true
+        resolvability:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolvabilityCheck'
+          nullable: true
+        config:
+          $ref: '#/components/schemas/KgValidationConfig'
+
+    OntologyReport:
+      type: object
+      required: [syntax_ok, triples, source]
+      properties:
+        syntax_ok:
+          type: boolean
+        mm_base_iri:
+          type: string
+          nullable: true
+        triples:
+          type: integer
+          minimum: 0
+        source:
+          type: string
+          enum: [text, link]
+
+    DataReport:
+      type: object
+      required: [triples, source]
+      properties:
+        triples:
+          type: integer
+          minimum: 0
+        source:
+          type: string
+          enum: [text, link]
+
+    ShaclReport:
+      type: object
+      required: [conforms, violation_count, violations, text]
+      properties:
+        conforms:
+          type: boolean
+        violation_count:
+          type: integer
+          minimum: 0
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShaclViolation'
+        text:
+          type: string
+          description: Human-readable report from pySHACL.
+        shapes_warning:
+          type: string
+          nullable: true
+
+    ShaclViolation:
+      type: object
+      properties:
+        focusNode:
+          description: Node being validated.
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        resultPath:
+          description: Path/property that failed.
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        severity:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        value:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        sourceConstraint:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        sourceShape:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+
+    ResolvabilityCheck:
+      type: object
+      required: [url, status, ok]
+      properties:
+        url:
+          type: string
+          format: uri
+        status:
+          description: HTTP status code or error string.
+          oneOf:
+            - type: integer
+            - type: string
+        ok:
+          type: boolean
+
+    KgValidationConfig:
+      type: object
+      required: [inference, allowed_frequency_units]
+      properties:
+        inference:
+          type: string
+          enum: [none, rdfs, both]
+        allowed_frequency_units:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    FailedItem:
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+          description: May be null if ID couldn’t be parsed before failure.
+        stage:
+          type: string
+          description: Stage at which the item failed.
+          enum: [xsd, shacl, unexpected]
+        errors:
+          type: array
+          items:
+            type: string
+
+    EtlReport:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Number of input items received.
+        ok:
+          type: boolean
+          description: True if all items succeeded (no failures).
+        processedCount:
+          type: integer
+        failedCount:
+          type: integer
+        processed:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessedItem'
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/FailedItem'
+
+    ProcessedItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID extracted from the XML (<ID> value).
+        nanopub:
+          type: string
+          format: uri
+          description: Trusty URI base plus the ID.
+        format:
+          type: string
+          description: MIME type of the serialized output.
+          enum: [application/trig, application/ld+json, text/turtle]
+        extension:
+          type: string
+          enum: [.trig, .jsonld, .ttl]
+        content:
+          type: string
+          description: Serialized nanopublication (TriG/JSON-LD/Turtle).
+        shacl:
+          $ref: '#/components/schemas/ShaclReport'
+
+    CurationEtl200:
+      description: ETL run report (partial success supported).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EtlReport'
+          examples:
+            ok-partial:
+              summary: Mixed results (1 processed, 1 failed)
+              value:
+                count: 2
+                ok: false
+                processedCount: 1
+                failedCount: 1
+                processed:
+                  - id: "L134_S16_Tomer_2010"
+                    nanopub: "http://materialsmine.org/np/L134_S16_Tomer_2010"
+                    format: "application/trig"
+                    extension: ".trig"
+                    content: "@prefix np: <http://www.nanopub.org/nschema#> .\n{ ... }"
+                    shacl:
+                      conforms: true
+                      violation_count: 0
+                failed:
+                  - id: "L251_S6_Wang_2011"
+                    stage: "xsd"
+                    errors:
+                      - "Element 'Matrix': Missing child element(s). Expected: MatrixComponent."
     
     Successful-Materialsmine-Data:
       type: object
@@ -2416,9 +2755,6 @@ components:
               Label: 1D Solid Mechanics Model
               Preferred Name: 1D Solid Mechanics Model
               subClassOf: http://www.w3.org/2002/07/owl#Thing
-          
-      
-      
     Sample-Files:
       type: object
       example:
@@ -2428,5 +2764,164 @@ components:
             isStore: true
           - filename: /api/files/prickly_lungfish_lesya-2023-10-17T08:35:21.143Z-lattice_2d_sample.csv?isStore=true
             swaggerFilename: prickly_lungfish_lesya-2023-10-17T08:35:21.143Z-lattice_2d_sample.csv
-            isStore: true    
+            isStore: true
+    KgValidationRequest:
+      type: object
+      description: >
+        Input for `/mn/ontology/validate/`. Supply the ontology via URL (`ontology_link`)
+        or inline Turtle (`ontology_text`). For ontology+data validation, also
+        provide a data graph via `data_link` or `data_text`.
+      properties:
+        ontology_link:
+          type: string
+          format: uri
+          description: >
+            URL to the ontology file. If omitted, defaults to the MaterialsMine
+            `@mm.ttl` raw link.
+        ontology_text:
+          type: string
+          description: Inline ontology content (typically Turtle).
+        ontology_format:
+          type: string
+          description: RDF format hint for the ontology (rdflib will still try to guess from URL).
+          enum: [turtle, xml, n3, nt, nquads, trig, json-ld]
+          default: turtle
+
+        validation_type:
+          type: string
+          description: Choose ontology-only or ontology+data validation.
+          enum: [ontology, ontology+data]
+          default: ontology
+
+        data_link:
+          type: string
+          format: uri
+          description: URL to the instance data graph (required when `validation_type` is `ontology+data` unless `data_text` is provided).
+        data_text:
+          type: string
+          description: Inline data graph content.
+        data_format:
+          type: string
+          description: RDF format hint for the data graph.
+          enum: [turtle, xml, n3, nt, nquads, trig, json-ld]
+          default: turtle
+
+        inference:
+          type: string
+          description: >
+            Pre-reasoning to apply before SHACL: `none` (explicit triples only),
+            `rdfs` (RDFS reasoning), or `both` (RDFS + OWL RL).
+          enum: [none, rdfs, both]
+          default: rdfs
+
+        resolve_urls:
+          type: boolean
+          description: >
+            If true, perform HEAD requests to verify ORCID/DOI links found in data.
+          default: true
+
+        allowed_frequency_units:
+          type: array
+          description: Whitelist of unit IRIs (e.g., QUDT) used in band-gap shapes.
+          items:
+            type: string
+            format: uri
+
+      additionalProperties: false
+  requestBodies:
+    CurationEtlRequest:
+      description: ETL input for single or bulk XML(s).
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            oneOf:
+              - required: [xml]
+              - required: [xmls]
+            properties:
+              xml:
+                description: XML content as a string OR a URL to fetch.
+                type: string
+              xmls:
+                description: Array of XML strings and/or URLs (bulk mode).
+                type: array
+                items:
+                  type: string
+              output:
+                description: Output format (default is jsonld).
+                type: string
+                enum: [jsonld, trig, ttl]
+                default: jsonld
+              xsdUrl:
+                description: Override PNC XSD URL.
+                type: string
+                format: uri
+                example: https://raw.githubusercontent.com/Duke-MatSci/nanomine-schema/refs/heads/master/xml/PNC_schema_031822.xsd
+              inference:
+                description: Inference level used during SHACL validation.
+                type: string
+                enum: [none, rdfs, both]
+                default: rdfs
+              resolveUrls:
+                description: Enable external resolvability checks (ORCID/DOI/etc).
+                type: boolean
+                default: true
+              ontologyLink:
+                description: Explicit ontology link to validate against (defaults to server setting).
+                type: string
+                format: uri
+              xsdMode:
+                description: >
+                  XSD validation behavior: `strict` fails on any XSD error,
+                  `best-effort` logs errors but continues, `off` skips XSD validation.
+                type: string
+                enum: [strict, best-effort, off]
+                default: strict
+          examples:
+            single-jsonld:
+              summary: Single XML → JSON-LD (default)
+              value:
+                xml: "https://materialsmine.org/explorer/xmlvisualizer/5a1deb62e74a1d03cd1e6039?isNewCuration=false"
+                inference: "rdfs"
+                resolveUrls: true
+            bulk-trig:
+              summary: Bulk XMLs → full nanopubs as TriG
+              value:
+                xmls:
+                  - "https://materialsmine.org/explorer/xmlvisualizer/5a1deb62e74a1d03cd1e6039?isNewCuration=false"
+                  - "https://example.org/pnc/L251_S6_Wang_2011.xml"
+                output: "trig"
+                xsdMode: "best-effort"
+    KgValidationRequestBody:
+      description: Request body for MaterialsMine ontology/data SHACL validation.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KgValidationRequest'
+          examples:
+            OntologyOnly_Default:
+              summary: Ontology-only using default @mm.ttl
+              value:
+                validation_type: ontology
+            OntologyAndData_ByLink:
+              summary: Ontology + data (data by URL) with URL checks
+              value:
+                validation_type: ontology+data
+                data_link: https://example.org/mm-data.ttl
+                inference: rdfs
+                resolve_urls: true
+            OntologyAndData_Inline_CustomUnits:
+              summary: Ontology + data (inline) with custom unit whitelist
+              value:
+                validation_type: ontology+data
+                data_text: |
+                  @prefix ex: <https://ex/> .
+                  @prefix schema: <http://schema.org/> .
+                  # ... your Turtle data here ...
+                allowed_frequency_units:
+                  - http://qudt.org/vocab/unit/HZ
+                  - http://qudt.org/vocab/unit/KiloHZ
+                inference: both 
         
