@@ -8,13 +8,21 @@ export function useReduce() {
   const hideAssetNavLeft = ref(false);
   const hideAssetNavRight = ref(false);
 
-  const reduceDescription = (args: string, size = 50) => {
+  // Refactor to reduce description text from the end if startFromEnd is set to true
+  // For example: harsh_primate_anica-2025-11-12T07:28:19.449Z-tidy.csv will return "...anica-2025-11-12T07:28:19.449Z-tidy.csv"
+  const reduceDescription = (args: string, size = 50, startFromEnd = false) => {
     if (!args) return '';
-    const arr = args.split(' ');
-    arr.splice(size);
-    const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
-    const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return `${res}...`;
+    if (startFromEnd) {
+      const arr = args.split('')?.splice(-size);
+      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
+      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return `...${res}`;
+    } else {
+      const arr = args.split(' ').splice(size);
+      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
+      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return `${res}...`;
+    }
   };
 
   const reduceAsset = (args: 'prev' | 'next', assetItems: any[], pushedAssetItem: any[]) => {
