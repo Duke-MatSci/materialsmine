@@ -64,7 +64,7 @@ if (cluster.isMaster) {
 
   const apolloServer = new ApolloServer({
     schema,
-    formatError (err) {
+    formatError(err) {
       if (!err.extensions) {
         return err;
       }
@@ -100,21 +100,22 @@ if (cluster.isMaster) {
       httpServer.listen({ port: env.PORT }, () => {
         log.info(`Server running on port ${env.PORT}`);
         log.info(`GraphQL endpoint: http://localhost:${env.PORT}/graphql`);
+
+        // Fork the worker process
+        cluster.fork();
       });
     })
     .catch((err) => onExit(err, log));
-  // Fork the worker process
-  cluster.fork();
 } else {
   // Worker process
   require('./sw');
 }
 
 // Handle SIGINT signal (sent by Docker on container stop with Ctrl+C)
-process.on('SIGINT', (e) => onExit(e, log));
+process.on('SIGINT', () => onExit({ signal: 'SIGINT' }, log));
 
 // Handle SIGTERM signal (sent by Docker on container stop)
-process.on('SIGTERM', (e) => onExit(e, log));
+process.on('SIGTERM', () => onExit({ signal: 'SIGTERM' }, log));
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) =>
@@ -122,4 +123,4 @@ process.on('unhandledRejection', (reason, promise) =>
 );
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (e) => onExit(e, log));
+process.on('uncaughtException', (error) => onExit(error, log));

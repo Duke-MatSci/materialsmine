@@ -54,6 +54,7 @@ exports.manageServiceRequest = async (req, res, next) => {
     }
     return await _managedServiceCall(req, res);
   } catch (error) {
+    if (req.isBackendCall) throw error;
     const statusCode = error?.response?.status ?? 500;
     next(
       errorWriter(
@@ -228,7 +229,8 @@ const _managedServiceCall = async (req, res) => {
     url,
     data: reqBody,
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
     }
   });
 
@@ -255,6 +257,7 @@ const _managedServiceCall = async (req, res) => {
     latency.latencyCalculator(res);
     return res.status(200).json(output);
   } else {
+    if (req.isBackendCall) return response?.data;
     latency.latencyCalculator(res);
     return res.status(response.status).json(response.data);
   }

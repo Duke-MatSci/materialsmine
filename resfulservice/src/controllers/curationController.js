@@ -3,9 +3,13 @@
 /* eslint-disable indent */
 const util = require('util');
 const fs = require('fs');
-const XlsxFileManager = require('../utils/curation-utility');
+// const path = require('path');
+const { parseStringPromise } = require('xml2js');
+const CH = require('../utils/curation-utility'); // Curation Helper
+const Builder = require('../utils/curation-builder');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
+const { NP_BASE } = require('../../config/constant');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
 const {
@@ -99,10 +103,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
         ?.replace(/[[\]]/g, '')
         ?.split(/\||,/);
 
-      sheetsData[sheetName] = await XlsxFileManager.xlsxFileReader(
-        xlsxFile.path,
-        sheetName
-      );
+      sheetsData[sheetName] = await CH.xlsxFileReader(xlsxFile.path, sheetName);
 
       const title =
         sheetsData[sheetName]?.[+titleRow]?.[+titleCol] ?? undefined;
@@ -207,7 +208,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
     newCurationObject.object.ID = newCurationObject._id;
     if (processedFiles.toBeUploaded.length) {
       processedFiles.toBeUploaded.forEach(async ({ path }) => {
-        const isTif = XlsxFileManager.isTifFile(path);
+        const isTif = CH.isTifFile(path);
         if (isTif) {
           await Task.create({
             serviceName: 'convertImageToPng',
@@ -225,7 +226,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     await datasets.updateOne({ $push: { samples: curatedObject } });
 
-    const generatedXml = XlsxFileManager.xmlGenerator(
+    const generatedXml = CH.xmlGenerator(
       JSON.stringify({ PolymerNanocomposite: curatedObject.object })
     );
 
@@ -256,7 +257,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
 
     if (query?.isBaseObject && processedFiles.toBeUploaded.length) {
       for (const file of processedFiles.toBeUploaded) {
-        const isTif = XlsxFileManager.isTifFile(file.path);
+        const isTif = CH.isTifFile(file.path);
         if (!isTif) {
           FileStorage.minioPutObject(file, req);
         }
@@ -487,10 +488,7 @@ exports.bulkXlsxCurations = async (req, res, next) => {
   const bulkErrors = [];
   const bulkCurations = [];
   try {
-    const { folderPath, allfiles } = await XlsxFileManager.unZipFolder(
-      req,
-      zipFile.path
-    );
+    const { folderPath, allfiles } = await CH.unZipFolder(req, zipFile.path);
     await processFolders(bulkCurations, bulkErrors, folderPath, req);
     if (bulkErrors.length) {
       const failedCuration = bulkErrors.map(
@@ -498,7 +496,7 @@ exports.bulkXlsxCurations = async (req, res, next) => {
       );
       for (const file of allfiles) {
         const filePath = `${folderPath}/${file?.path}`;
-        const isTif = XlsxFileManager.isTifFile(file.path);
+        const isTif = CH.isTifFile(file.path);
         if (
           file.type === 'file' &&
           !failedCuration.includes(filePath) &&
@@ -522,8 +520,10 @@ exports.bulkXlsxCurations = async (req, res, next) => {
 };
 
 const processFolders = async (bulkCurations, bulkErrors, folder, req) => {
-  const { folders, masterTemplates, curationFiles } =
-    XlsxFileManager.readFolder(folder, req.logger);
+  const { folders, masterTemplates, curationFiles } = CH.readFolder(
+    folder,
+    req.logger
+  );
   await processSingleCuration(
     masterTemplates,
     curationFiles,
@@ -582,7 +582,7 @@ const processSingleCuration = async (
   // TODO (@tee*): Refactor to remove this and upload inside the closure function e.g. createMaterialObject
   if (toBeUploaded.length) {
     for (const file of toBeUploaded) {
-      const isTif = XlsxFileManager.isTifFile(file.path);
+      const isTif = CH.isTifFile(file.path);
       if (!isTif) {
         FileStorage.minioPutObject(file, req);
       }
@@ -625,7 +625,7 @@ exports.getXlsxCurations = async (req, res, next) => {
           errorWriter(req, 'Sample xml not found', 'getXlsxCurations', 404)
         );
       }
-      const xmlJson = XlsxFileManager.jsonGenerator(xmlData.xml_str);
+      const xmlJson = CH.jsonGenerator(xmlData.xml_str);
       const xmlObject = JSON.parse(xmlJson);
       if (!xmlObject.PolymerNanocomposite?.Control_ID) {
         xmlObject.PolymerNanocomposite.Control_ID =
@@ -712,7 +712,7 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
         );
       }
       const { _id, xml_str: xmlStr, title, ...duplicatedObject } = xmlData;
-      const xmlJson = XlsxFileManager.jsonGenerator(xmlStr);
+      const xmlJson = CH.jsonGenerator(xmlStr);
       const xmlObject = JSON.parse(xmlJson);
       const parsedCurationObject = parseXmlDataToBaseSchema(
         xmlObject.PolymerNanocomposite
@@ -723,7 +723,7 @@ exports.duplicateXlsxCuration = async (req, res, next) => {
       );
       parsedCurationObject.Control_ID = controlID;
       parsedCurationObject.ID = controlID;
-      let xml = XlsxFileManager.xmlGenerator(
+      let xml = CH.xmlGenerator(
         JSON.stringify({ PolymerNanocomposite: parsedCurationObject })
       );
       xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
@@ -753,17 +753,17 @@ exports.getCurationXSD = async (req, res, next) => {
     );
 
     jsonOBject = { PolymerNanocomposite: jsonOBject };
-    const jsonSchema = XlsxFileManager.jsonSchemaGenerator(jsonOBject);
+    const jsonSchema = CH.jsonSchemaGenerator(jsonOBject);
 
     if (isJson) {
       latency.latencyCalculator(res);
       return res.status(201).json(jsonSchema);
     }
 
-    let xsd = XlsxFileManager.jsonSchemaToXsdGenerator(jsonSchema);
+    let xsd = CH.jsonSchemaToXsdGenerator(jsonSchema);
     const filePath = `${req.env?.FILES_DIRECTORY}/schema.xsd`;
     await fs.promises.writeFile(filePath, xsd);
-    const parsedFile = await XlsxFileManager.parseXSDFile(req, filePath);
+    const parsedFile = await CH.parseXSDFile(req, filePath);
 
     if (isFile) {
       res.setHeader('Content-Type', 'application/octet-stream');
@@ -812,7 +812,7 @@ exports.getCurationXml = async (req, res, next) => {
 
     let xml;
     if (curatedSample) {
-      xml = XlsxFileManager.xmlGenerator(
+      xml = CH.xmlGenerator(
         JSON.stringify({ PolymerNanoComposite: curatedSample.object })
       );
       xml = `<?xml version="1.0" encoding="utf-8"?>\n${xml}`;
@@ -1000,7 +1000,7 @@ exports.curateXml = async (req, res, next) => {
 
     const _processXmlString = async (xmlStr) => {
       try {
-        const xmlJson = JSON.parse(XlsxFileManager.jsonGenerator(xmlStr));
+        const xmlJson = JSON.parse(CH.jsonGenerator(xmlStr));
         const curationObject = getKeyCaseInsensitive(
           xmlJson,
           'PolymerNanocomposite'
@@ -1090,7 +1090,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
         { lean: true }
       );
       if (xmlData) {
-        const xmlJson = XlsxFileManager.jsonGenerator(xmlData.xml_str);
+        const xmlJson = CH.jsonGenerator(xmlData.xml_str);
         const xmlObject = JSON.parse(xmlJson);
         storedObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
       }
@@ -1131,7 +1131,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
     if (isObjChanged) {
       // Create XML from filteredObject
       const filteredObject = filterNestedObject(payload);
-      let xml = XlsxFileManager.xmlGenerator(
+      let xml = CH.xmlGenerator(
         JSON.stringify({ PolymerNanocomposite: filteredObject })
       );
       xml = `<?xml version="1.0" encoding="utf-8"?>\n  ${xml}`;
@@ -1168,7 +1168,7 @@ exports.updateXlsxCurations = async (req, res, next) => {
 
       if (processedFiles.toBeUploaded.length) {
         for (const file of processedFiles.toBeUploaded) {
-          const isTif = XlsxFileManager.isTifFile(file.path);
+          const isTif = CH.isTifFile(file.path);
           if (isTif) {
             await Task.create({
               serviceName: 'convertImageToPng',
@@ -1262,7 +1262,7 @@ exports.deleteXlsxCurations = async (req, res, next) => {
           }
         }
       } else if (xlsxObject?.xml_str) {
-        const xmlJson = XlsxFileManager.jsonGenerator(xlsxObject.xml_str);
+        const xmlJson = CH.jsonGenerator(xlsxObject.xml_str);
         const xmlObject = JSON.parse(xmlJson);
         xlsxObject = parseXmlDataToBaseSchema(xmlObject.PolymerNanocomposite);
         const imageFiles = xlsxObject?.MICROSTRUCTURE?.ImageFile;
@@ -1418,10 +1418,7 @@ exports.createMaterialObject = async (
 
         if (!Object.getOwnPropertyDescriptor(sheetsData, sheetName)) {
           try {
-            sheetsData[sheetName] = await XlsxFileManager.xlsxFileReader(
-              path,
-              sheetName
-            );
+            sheetsData[sheetName] = await CH.xlsxFileReader(path, sheetName);
           } catch (error) {
             logger.info(`${sheetName} worksheet not found`);
             // errors[sheetName] = `${sheetName} worksheet not found`;
@@ -1489,10 +1486,7 @@ exports.createMaterialObject = async (
 
       if (!Object.getOwnPropertyDescriptor(sheetsData, sheetName)) {
         try {
-          sheetsData[sheetName] = await XlsxFileManager.xlsxFileReader(
-            path,
-            sheetName
-          );
+          sheetsData[sheetName] = await CH.xlsxFileReader(path, sheetName);
         } catch (error) {
           logger.info(`${sheetName} worksheet not found`);
           // errors[sheetName] = `${sheetName} worksheet not found`;
@@ -1529,7 +1523,7 @@ exports.createMaterialObject = async (
 
             const isProccessable = processableRegex.test(filename);
             if (isProccessable) {
-              const jsonData = await XlsxFileManager.parseCSV(file.path);
+              const jsonData = await CH.parseCSV(file.path);
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
 
@@ -1551,7 +1545,7 @@ exports.createMaterialObject = async (
                 BaseObjectSubstitutionMap[property] ?? property
               ] = `/api/files/${filename}?isStore=true`;
 
-              const isTif = XlsxFileManager.isTifFile(file.path);
+              const isTif = CH.isTifFile(file.path);
               if (isParentCall || isTif) {
                 processedFiles.toBeUploaded.push(fileDetails);
               } else {
@@ -1718,7 +1712,7 @@ const createJsonObject = async (
               (fn) => fn
             );
             if (dataStream) {
-              const jsonData = await XlsxFileManager.parseCSV(null, dataStream);
+              const jsonData = await CH.parseCSV(null, dataStream);
               const data = appendUploadedFiles(jsonData);
               filteredObject.data = data;
               processedFiles.toBeDeleted.push(newReq);
@@ -1913,6 +1907,8 @@ exports.createChangeLog = async (req, res, next) => {
 
     successWriter(req, JSON.stringify(changeLog), 'createChangeLog');
     latency.latencyCalculator(res);
+
+    if (req.isBackendCall) return changeLog;
     return res.status(201).json(changeLog);
   } catch (err) {
     next(errorWriter(req, err, 'createChangeLog', 500));
@@ -1935,7 +1931,7 @@ exports.getChangeLogs = async (req, res, next) => {
 
     if (!resourceChangeLog) {
       // return next(errorWriter(req, 'Change log not found', 'getChangeLogs', 404));
-      return res.status(200).json({});
+      return res.status(200).json({ changes: [] });
     }
 
     let changeLogs;
@@ -1951,15 +1947,211 @@ exports.getChangeLogs = async (req, res, next) => {
       changeLogs = resourceChangeLog.changes.slice(startIndex, endIndex);
     }
 
+    // TODO (November 7, 2025): Remove successWriter after testing
     successWriter(req, JSON.stringify(changeLogs), 'getChangeLogs');
     latency.latencyCalculator(res);
-    return res.status(200).json(changeLogs);
+    return res.status(200).json({ changes: changeLogs });
   } catch (err) {
     next(errorWriter(req, err, 'getChangeLogs', 500));
   }
 };
 
 exports.curationRehydration = async (req, res, next) => {};
+/**
+ * curationETL
+ * @description Function to perform ETL on curation XML/URLs to nanopub formats
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next middleware function
+ * @returns {Object} - The ETL result containing processed and failed items
+ * @example
+ * POST /api/curation/etl
+ * Body:
+ * {
+ *   "xml": "<curation-xml-string>" OR "http://example.com/curation.xml",
+ *   "output": "jsonld" | "trig" | "ttl",
+ *   "xsdUrl": "http://example.com/schema.xsd" (override XSD URL),
+ *   "validatorUrl": "http://example.com/validator",
+ *   "inference": "none" | "rdfs" | "both",
+ *   "resolveUrls": true,
+ *   "ontologyLink": "http://example.com/ontology" (optional explicit ontology link),
+ *   "xsdMode": "strict" | "best-effort" | "off"   (default 'strict')
+ * }
+ * @notes
+ * - The curationETL function performs ETL (Extract, Transform, Load) operations on curation data.
+ * - It accepts both XML strings and URLs as input.
+ * - The output: 'jsonld' (default) | 'trig' | 'ttl'
+ *        'jsonld' → full nanopub JSON-LD (default)
+ *        'trig'   → full nanopub TriG (named graphs)
+ *        'ttl'    → assertion-only Turtle (no named graphs)
+ */
+exports.curationETL = async (req, res, next) => {
+  const { logger, body } = req;
+  logger.info('curationETL(): Function Entry');
+
+  const {
+    xml,
+    xmls,
+    output = 'jsonld',
+    // xsdUrl = path.join('schemas', 'xsd-schema.xsd'), // Not used currently
+    inference = 'rdfs',
+    resolveUrls = true,
+    ontologyLink,
+    xsdMode = 'strict'
+  } = body || {};
+
+  if (!xml && !xmls) {
+    const err = new Error('Provide "xml" (string/URL) or "xmls" (array).');
+    return next(errorWriter(req, err, 'curationETL', 400));
+  }
+  try {
+    const input = xmls || xml;
+    const items = Array.isArray(input) ? input : [input];
+
+    const processed = [];
+    const failed = [];
+
+    for (const src of items) {
+      let idForFailure = null;
+      let sampleIdForFailure = null;
+      try {
+        const defaultId = `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
+        const { rawXml, id = defaultId } = await CH.getText(src);
+        idForFailure = id;
+        const xml = CH.normalizeXml(rawXml);
+
+        // XSD validation
+        if (xsdMode !== 'off') {
+          // const tmp = path.join(req.env?.FILES_DIRECTORY, `pnc-${id}.xml`); // Not used currently because of the line below
+          // const v = await CH.validateXmlAgainstXsd(tmp, xml, xsdUrl);
+          const v = { ok: true, errors: [] }; // TODO: XSD validation temporarily disabled
+          if (!v.ok) {
+            try {
+              const sniff = await parseStringPromise(xml, {
+                explicitArray: false,
+                trim: true
+              });
+              sampleIdForFailure =
+                sniff?.PolymerNanocomposite?.ID ||
+                sniff?.PolymerNanocomposite?.Id ||
+                sniff?.PolymerNanocomposite?.id ||
+                null;
+            } catch {}
+            if (xsdMode === 'strict') {
+              failed.push({
+                id,
+                sampleID: sampleIdForFailure,
+                stage: 'xsd',
+                errors: v.errors
+              });
+              continue;
+            }
+            logger.warn('CurationETL: [XSD warn]', v.errors.join(' | '));
+          }
+        }
+
+        // Parse XML → JS
+        const parsed = await parseStringPromise(xml, {
+          explicitArray: false,
+          trim: true,
+          explicitCharkey: false,
+          charsAsChildren: false,
+          explicitRoot: true,
+          mergeAttrs: false
+        });
+
+        // Transform → nanopub
+        const { nanopubId, nanopub, assertionId } =
+          await Builder.transformXmlToNanopub(parsed, req.logger);
+        sampleIdForFailure = nanopubId;
+
+        // Serialize per desired output
+        let content, format, extension, mime;
+        if (output === 'trig') {
+          content = await Builder.toTriG(nanopub);
+          format = 'trig';
+          extension = '.trig';
+          mime = 'application/trig';
+        } else if (output === 'ttl') {
+          content = await Builder.toTurtleAssertionOnly(nanopub, assertionId);
+          format = 'turtle';
+          extension = '.ttl';
+          mime = 'text/turtle';
+        } else {
+          content = await Builder.toJsonLd(nanopub);
+          format = 'json-ld';
+          extension = '.jsonld';
+          mime = 'application/ld+json';
+        }
+
+        // SHACL validation (Calling Managed Service)
+        const shacl = await Builder.validateWithSHACL({
+          data: content,
+          format,
+          inference,
+          resolveUrls,
+          ontologyLink,
+          req,
+          res,
+          next
+        });
+        const sh = shacl?.response?.shacl;
+        if (!sh || sh.conforms !== true) {
+          failed.push({
+            id,
+            sampleID: nanopubId,
+            stage: 'shacl',
+            errors: sh
+              ? sh.violations || [{ message: 'Unknown SHACL failure' }]
+              : [{ message: 'No SHACL report' }]
+          });
+          continue;
+        }
+
+        // Success
+        processed.push({
+          id,
+          sampleID: nanopubId,
+          nanopub: `${NP_BASE}${encodeURIComponent(nanopubId)}`,
+          format: mime,
+          extension,
+          // content,
+          shacl: { conforms: true, violation_count: sh.violation_count || 0 }
+        });
+
+        // Add to change log
+        await Builder.publishToChangeLog(
+          { resp: shacl?.response, id, failed, sampleIdForFailure },
+          req,
+          res,
+          next,
+          this.createChangeLog
+        );
+      } catch (e) {
+        failed.push({
+          id: idForFailure,
+          sampleID: sampleIdForFailure,
+          stage: 'unexpected',
+          errors: [String(e?.message || e)]
+        });
+      }
+    }
+
+    latency.latencyCalculator(res);
+    return res.status(200).json({
+      count: items.length,
+      ok: failed.length === 0,
+      processedCount: processed.length,
+      failedCount: failed.length,
+      processed,
+      failed
+    });
+  } catch (err) {
+    return next(errorWriter(req, err, 'curationETL', 500));
+  }
+};
 
 /**
  * @description Function to convert valid curation list to object mapping
@@ -2119,10 +2311,9 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
           storedObject?.[propertyKey]?.column ||
           storedObject?.[propertyKey]?.row)
       ) {
-        const filePath = XlsxFileManager.generateCSVData(
-          storedObject?.[propertyKey],
-          { logger }
-        );
+        const filePath = CH.generateCSVData(storedObject?.[propertyKey], {
+          logger
+        });
         curatedBaseObject[propertyKey] = {
           ...propertyValue,
           cellValue: filePath

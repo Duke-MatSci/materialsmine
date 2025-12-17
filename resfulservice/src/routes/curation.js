@@ -72,6 +72,10 @@ router
   );
 
 router
+  .route('/publish')
+  .post(isAuth, latencyTimer, curationController.curationETL);
+
+router
   .route('/newsampleid')
   .post(isAuth, latencyTimer, curationController.getControlSampleId);
 
