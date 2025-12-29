@@ -5,8 +5,29 @@ from app.config import Config
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.dynamfit.helper import prony_linear_fit, compute_rspectum, tts_frequency_to_temperature, tts_temperature_to_frequency
+from app.dynamfit.helper import prony_linear_fit, compute_rspectum, tts_frequency_to_temperature, tts_temperature_to_frequency, tts_temperature_to_frequency_V2, estimate_Tg, estimate_TL
 from app.utils.util import log_errors
+
+def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_estimate, C2_estimate, Ea_estimate, TL_estimate):
+    """
+    Estimates the parameters used by the shift factor Model.
+    """
+    C1=C2=Tg=TL=None
+    # "Universal" Estimations for C1, C2
+    if C1_estimate:
+        C1 = 17.44
+    if C2_estimate:
+        C2 = 51.6
+    # Calculate Tg from argmax of tandelta(T)
+    if Tg_estimate:
+        Tg = estimate_Tg(uploadData)
+    # Calculate TL from argmax of E''(T)
+    if TL_estimate:
+        TL = estimate_TL(uploadData)
+    # Use "generic" Ea for thermoplastic elastomers
+    if Ea_estimate:
+        Ea = 200 #kJ/mol
+    return C1, C2, Tg, Ea, TL
 
 
 def check_file_exists(file_name):
@@ -24,7 +45,7 @@ def check_file_exists(file_name):
     
 
 @log_errors
-def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
+def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None):
     """
     Updates a line chart based on the provided data.
 
@@ -47,6 +68,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
         dfl = uploadData
         model = model
         N = number_of_prony
+
         
         if dfl is not None:
             
@@ -61,6 +83,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 C2 = 51.6
                 omega_ref = 1
                 # Perform Temperature Conversion
+                # TODO: update this when reverse hybrid TTSP becomes available
                 temp_sweep_data = tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2)
 
                 temp_sweep_data_melt = pd.melt(temp_sweep_data, id_vars=["Temperature"], 
@@ -109,16 +132,6 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
 
                 temp_sweep_data = df.copy()
                 temp_sweep_data.columns = ["Temperature", "E'", "E''"]
-                temp_sweep_data["Frequency"] = 1
-                C1 = 17.44
-                C2 = 51.6
-                T_ref = 30
-                # Perform Temperature Conversion
-                freq_sweep_data = tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2)
-                
-                # reassign df to transformed data
-                df = freq_sweep_data[["Frequency", "E'", "E''"]]
-                df.columns = ["Frequency", "E Storage", "E Loss"]
 
                 temp_sweep_data_melt = pd.melt(temp_sweep_data, id_vars=["Temperature"], 
                                 value_vars=["E'", "E''"], 
@@ -161,6 +174,39 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 fig41.update_yaxes(type="log", col=1)
                 fig4.update_yaxes(exponentformat = 'power')
                 fig41.update_yaxes(exponentformat = 'power')
+
+                # Note: add shift factor prediction here
+                # Prerequisite boolean detection
+                # Only predict the shift factors if this statement resolves to true
+                b = (Tg and C1 and C2 and (shift_model is "WLF")) or (Tg and C1 and C2 and TL and Ea and (shift_model is "hybrid")) or (shiftData)
+                if b:
+                    # perform TTSP shifting
+                    # Note: add TTSP here (separate from update_line_chart)
+                    # Inputs: domain, shift_model, Tg, C1, C2, TL, Ea)
+                    print("Remove This Temporary Print. Here for python correctness only")
+
+                    temp_sweep_data["Frequency"] = 1
+                    # TTSP temp to freq
+                    # update to new method
+                    # Current TODO Remove this
+                    C1 = 17.44
+                    C2 = 51.6
+                    T_ref = 30
+                    # Perform Temperature Conversion (Old Method)
+                    # freq_sweep_data = tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2)
+
+                    # New Method
+                    # use TL fpr T_ref
+                    freq_sweep_data = tts_temperature_to_frequency_V2(temp_sweep_data, TL, C1, C2, Ea, shift_model, shiftData)
+
+                    # reassign df to transformed data
+                    df = freq_sweep_data[["Frequency", "E'", "E''"]]
+                    df.columns = ["Frequency", "E Storage", "E Loss"]
+
+                else:
+                    # end run early. do not generate any frequency related charts or tables
+                    fig1=fig11=fig2=fig3=coef_df=None
+                    return fig1, fig11, fig2, fig3, fig4, fig41, coef_df
 
                 # temp_sweep_data_melt = pd.melt(freq_sweep_data, id_vars=["Frequency"], 
                 #                 value_vars=["E'", "E''"], 
@@ -207,7 +253,8 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain):
                 # fig41.update_yaxes(type="log", col=1)
                 # fig4.update_yaxes(exponentformat = 'power')
                 # fig41.update_yaxes(exponentformat = 'power')
-
+            # Frequency Domain:
+            
             # Fit prony series
             tau, E, complex, relax = prony_linear_fit(df, N, model)
             N_nz = np.count_nonzero(E)

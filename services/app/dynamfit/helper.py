@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from sklearn import linear_model
+from scipy.signal import find_peaks
 
+float_correction = 1e-7
+R = 8.31446261815324  # J/(mol*K)
 
 def real_basis(omega,tau):
     """
@@ -190,6 +193,44 @@ def wlf_shift(T, T_ref, C1, C2):
     """Calculate shift factor a_T using the WLF equation."""
     return 10 ** (-C1 * (T - T_ref) / (C2 + (T - T_ref)))
 
+def arr_shift(T, T_ref, Ea):
+    """Calculate shift factor a_T using the Arrhenius equation."""
+    T_ref_K = T_ref + 273.15
+    T_temp_arr_K = T + 273.15
+
+    Ea_J_per_mol = Ea * 1000.0
+    m = Ea_J_per_mol / (2.303 * R)
+    a_T = 10 ** (m * ((1.0 / T_temp_arr_K) - (1.0 / T_ref_K)))
+    return a_T
+
+def hybrid_shift(T, T_ref, C1, C2, Ea, ascending = True):
+    # temperature values must be ordered!
+    # WLF
+    mask_temp_wlf = (
+        np.isfinite(T) &
+        (T > (T_ref + float_correction))
+    )
+    T_wlf = T[mask_temp_wlf]
+    print(f'T_wlf: {T_wlf}')
+    a_T_wlf = wlf_shift(T_wlf, T_ref, C1, C2)
+
+    # Arrhenius
+    mask_temp_arr = (
+        np.isfinite(T) &
+        (T <= (T_ref + float_correction))
+    )
+    T_arr = T[mask_temp_arr]
+    print(f'T_arr: {T_wlf}')
+    a_T_arr = arr_shift(T_arr, T_ref, Ea)
+
+    # determine which order to concatenate models based on ascending or descending order of temperature values
+    if ascending:
+        a_T = np.concatenate((a_T_arr, a_T_wlf))
+    else:
+        a_T = np.concatenate((a_T_wlf, a_T_arr))
+
+    return a_T
+
 def inverse_wlf_shift(a_T, T_ref, C1, C2):
     """calculate the shifted temperature given a shift factor"""
     return (np.log10(a_T)*(T_ref-C2)+C1*T_ref)/(np.log10(a_T)+C1)
@@ -215,6 +256,51 @@ def tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2, calcShifts=True
             a_T = group['a_T']
         else:
             a_T = wlf_shift(T, T_ref, C1, C2)
+
+        shifted_freq = group['Frequency'] * a_T
+        shifted_data.append(pd.DataFrame({
+            'Frequency': shifted_freq,
+            'Temperature': T_ref,
+            "E'": group["E'"],
+            "E''": group["E''"]
+        }))
+        i = i+1
+
+    combined_data = pd.concat(shifted_data).sort_values('Frequency')
+
+    return combined_data
+
+def tts_temperature_to_frequency_V2(temp_sweep_data, T_ref, C1, C2, Ea, shift_model, shiftData):
+    """
+    Convert temperature sweep viscoelastic data to frequency sweep data using TTS.
+
+    Parameters:
+        temp_sweep_data (pd.DataFrame): Data with columns ['Temperature', 'Frequency', "E'", "E''"].
+        T_ref (float): Reference temperature for shifting.
+        C1 (float): WLF equation parameter 1.
+        C2 (float): WLF equation parameter 2.
+
+    Returns:
+        pd.DataFrame: Frequency sweep data at T_ref.
+    """
+    # sort T ascending:
+    temp_sweep_data = temp_sweep_data.sort_values('Temperature')
+
+    shifted_data = []
+    i = 0
+
+    for T, group in temp_sweep_data.groupby('Temperature'):
+        if not shiftData:
+            if shift_model == 'WLF':
+                a_T = wlf_shift(T, T_ref, C1, C2)
+            elif shift_model == 'hybrid':
+                a_T = hybrid_shift(T, T_ref, C1, C2, Ea)
+        else:
+            # use manual shift values
+            # DONE: replace with shiftData['a_T']
+            # a_T = group['a_T']
+            # possible TODO: offer to use interpolated shift factor values when file is provided
+            a_T = shiftData['a_T']
 
         shifted_freq = group['Frequency'] * a_T
         shifted_data.append(pd.DataFrame({
@@ -269,3 +355,34 @@ def tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2, calcShifts=
     combined_data = pd.concat(shifted_data).sort_values('Temperature')
 
     return combined_data
+
+def estimate_Tg(uploadData):
+    # --- Compute tan delta ---
+    df = uploadData.copy()
+    df["tan_delta"] = df["E''"] / df["E'"]
+
+    # --- Use scipy.signal.find_peaks for robust peak detection ---
+    peaks, properties = find_peaks(df["tan_delta"], prominence=0.01)  # adjust 'prominence' if needed
+
+    if len(peaks) == 0:
+        raise ValueError("No tanδ peaks found to estimate Tg. Try lowering the prominence parameter or enter Tg manually.")
+
+    # Pick the most prominent (highest tan delta) peak
+    peak_idx = peaks[np.argmax(df["tan_delta"].iloc[peaks])]
+    Tg = df.loc[peak_idx, "Temperature"]
+    tan_delta_peak = df.loc[peak_idx, "tan_delta"]
+    return Tg
+
+def estimate_TL(uploadData):
+    df = uploadData.copy()
+    # --- Use scipy.signal.find_peaks for robust peak detection on loss curve---
+    peaks, properties = find_peaks(df["E''"], prominence=0.01)  # adjust 'prominence' if needed
+
+    if len(peaks) == 0:
+        raise ValueError("No Loss peaks found to estimate TL. Try lowering the prominence parameter or enter TL manually.")
+
+    # Pick the most prominent (highest tan delta) peak
+    peak_idx = peaks[np.argmax(df["E''"].iloc[peaks])]
+    TL = df.loc[peak_idx, "Temperature"]
+    loss_peak = df.loc[peak_idx, "E''"]
+    return TL
