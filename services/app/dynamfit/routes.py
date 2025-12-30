@@ -95,7 +95,7 @@ def extract_data_from_file(request_id):
         # Read incoming shift factor model metrics
         Tg = data.get('Tg', None)
         C1 = data.get('C1', None)
-        C1 = data.get('C2', None)
+        C2 = data.get('C2', None)
         Ea = data.get('Ea', None)
         TL = data.get('TL', None)
 
@@ -106,7 +106,7 @@ def extract_data_from_file(request_id):
         TL_estimate = data.get('TL_estimate', False)
 
         # add manual shift factor upload
-        shift_file_name = data.get('shift_file_name')
+        shift_file_name = data.get('shift_file_name', None)
         
         if  not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
@@ -138,21 +138,21 @@ def extract_data_from_file(request_id):
             return jsonify({'message': f"File '{file_name}' is empty"}), 400
         
         # Print uploadData for debugging
-        print("Upload Data:", uploadData)
+        # print("Upload Data:", uploadData)
 
 
         shiftData = shift_upload_init(shift_file_name)
         # add a function for handling shift data:
         # shiftData = upload_shift_init(shift_file_name)
         # Check if the file content is empty
-        if not shiftData:
-            return jsonify({'message': f"Shift file '{shift_file_name}' is empty"}), 400
+        # if not shiftData:
+        #     return jsonify({'message': f"Shift file '{shift_file_name}' is empty"}), 400
         # check that shift data and uploadData lengths align align
-        if len(uploadData) != len(shiftData):
+        if shiftData and (len(uploadData) != len(shiftData)):
              return jsonify({'message': f"Shift file and Upload File must have the same number of rows."}), 400
         
         # Print shiftData for debugging
-        print("Shift Upload Data:", shiftData)
+        # print("Shift Upload Data:", shiftData)
 
         # # Assuming the update_line_chart function returns values in a specific order
         # result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain)

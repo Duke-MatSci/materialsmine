@@ -113,6 +113,8 @@ def shift_upload_init(file_name):
         ValueError: If there is an error parsing the file content.
     """
     try:
+        if file_name is None:
+            return None
         file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
         extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
         

@@ -188,10 +188,10 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                     temp_sweep_data["Frequency"] = 1
                     # TTSP temp to freq
                     # update to new method
-                    # Current TODO Remove this
-                    C1 = 17.44
-                    C2 = 51.6
-                    T_ref = 30
+                    # # Current TODO Remove this
+                    # C1 = 17.44
+                    # C2 = 51.6
+                    # T_ref = 30
                     # Perform Temperature Conversion (Old Method)
                     # freq_sweep_data = tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2)
 
