@@ -14,7 +14,7 @@ export default {
     gallery,
     results,
     curation,
-    sddDatasets
+    sddDatasets,
   },
   state(): ExplorerState {
     return {
@@ -30,15 +30,17 @@ export default {
       datasetThumbnail: '',
       dynamfitDomain: 'frequency',
       dynamfitData: {},
+      dynamfitTransformMethod: 'none',
+      dynamfitManualFile: '',
       dynamfit: {
         range: 100,
         fitSettings: false,
         model: 'Linear',
-        fileUpload: ''
-      }
+        fileUpload: '',
+      },
     };
   },
   mutations,
   actions,
-  getters
+  getters,
 };

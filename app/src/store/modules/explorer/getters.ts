@@ -44,5 +44,11 @@ export default {
     fileUpload: string;
   } {
     return state.dynamfit;
-  }
+  },
+  getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'Manual' {
+    return state.dynamfitTransformMethod;
+  },
+  getDynamfitManualFile(state: ExplorerState): string {
+    return state.dynamfitManualFile;
+  },
 };

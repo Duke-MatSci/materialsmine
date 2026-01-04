@@ -49,10 +49,16 @@ export default {
       range: 100,
       fitSettings: false,
       model: 'Linear',
-      fileUpload: ''
+      fileUpload: '',
     };
   },
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
-  }
+  },
+  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'Manual'): void {
+    state.dynamfitTransformMethod = payload;
+  },
+  setDynamfitManualFile(state: ExplorerState, payload: string): void {
+    state.dynamfitManualFile = payload;
+  },
 };

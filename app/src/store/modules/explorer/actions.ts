@@ -13,7 +13,7 @@ export default {
     // const parsedResponse = parseSparql(sparqlResponse)
     // context.commit('setFacetFilterMaterials', parsedResponse || [])
     const response = await fetch('/api/admin/populate-datasets-properties', {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (!response || response.statusText !== 'OK') {
@@ -37,9 +37,7 @@ export default {
       queries.getSearchFacetFilterMaterialCount(payload.split(' ').join(''))
     );
     const getDefinition = await querySparql(
-      queries.getSearchFacetFilterMaterialDefinition(
-        payload.split(' ').join('')
-      )
+      queries.getSearchFacetFilterMaterialDefinition(payload.split(' ').join(''))
     );
     const getContent = await querySparql(
       queries.getSearchFacetFilterMaterial(payload.split(' ').join(''))
@@ -52,7 +50,7 @@ export default {
     context.commit('setSelectedFacetFilterMaterials', {
       parsedResponseCount,
       parsedResponseDefinition,
-      parsedResponseContent
+      parsedResponseContent,
     });
   },
   async fetchSingleDataset(context: Context, uri: string): Promise<any> {
@@ -60,7 +58,7 @@ export default {
       return;
     }
     const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (response?.statusText !== 'OK') {
@@ -80,14 +78,13 @@ export default {
       return undefined;
     }
     const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (response?.statusText !== 'OK') {
       const snackbar = {
-        message:
-          response.statusText || 'Something went wrong while fetching thumbnail',
-        duration: 5000
+        message: response.statusText || 'Something went wrong while fetching thumbnail',
+        duration: 5000,
       };
       context.commit('setSnackbar', snackbar, { root: true });
       return undefined;
@@ -111,7 +108,10 @@ export default {
     context.commit('setCurrentDatasetThumbnail', accessURL);
     return accessURL;
   },
-  async fetchViscoelasticData({ commit, dispatch }: Context, { base64 = '' }: { base64?: string }): Promise<void> {
+  async fetchViscoelasticData(
+    { commit, dispatch }: Context,
+    { base64 = '' }: { base64?: string }
+  ): Promise<void> {
     if (!base64) return;
 
     const uri = '/api/_dash-update-component';
@@ -122,16 +122,16 @@ export default {
         { id: 'upload-table', property: 'data' },
         { id: 'upload-alert', property: 'children' },
         { id: 'upload-alert', property: 'color' },
-        { id: 'upload-alert', property: 'is_open' }
+        { id: 'upload-alert', property: 'is_open' },
       ],
       inputs: [{ id: 'upload-data', property: 'contents', value: base64 }],
-      changedPropIds: ['upload-data.contents']
+      changedPropIds: ['upload-data.contents'],
     });
     try {
       const request = await fetch(uri, {
         headers: { accept: 'application/json' },
         body,
-        method: 'POST'
+        method: 'POST',
       });
       const response = await request.json();
 
@@ -139,32 +139,21 @@ export default {
         const error = new Error(response?.message || 'Something went wrong!');
         throw error;
       }
-      commit(
-        'setSnackbar',
-        { message: 'Successful Upload', duration: 3000 },
-        { root: true }
-      );
+      commit('setSnackbar', { message: 'Successful Upload', duration: 3000 }, { root: true });
     } catch (err: any) {
       commit(
         'setSnackbar',
         {
           message: err.message,
-          action: () => dispatch('fetchViscoelasticData', { base64 })
+          action: () => dispatch('fetchViscoelasticData', { base64 }),
         },
         { root: true }
       );
     }
   },
   async fetchDynamfitData({ commit, dispatch, rootGetters }: Context, payload: any): Promise<void> {
-    if (!payload.fileName) return;
-    const body = JSON.stringify({
-      file_name: payload.fileName,
-      number_of_prony: payload?.numberOfProny,
-      model: payload?.model,
-      fit_settings: payload?.fitSettings,
-      useSample: payload?.useSample,
-      domain: payload?.domain
-    });
+    if (!payload.file_name) return;
+
     const url = '/api/mn/dynamfit';
     const token = rootGetters['auth/token'];
     try {
@@ -172,17 +161,16 @@ export default {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
+          Authorization: 'Bearer ' + token,
         },
-        body,
-        method: 'POST'
+        body: JSON.stringify({ ...payload }),
+        method: 'POST',
       });
 
       const response = (await req?.json()) ?? null;
       if (!response || req.status !== 200) {
         const statusCode = req?.status;
-        const message =
-          statusCode === 500 ? 'Internal Server Error' : response?.message;
+        const message = statusCode === 500 ? 'Internal Server Error' : response?.message;
         const error: any = new Error(message ?? 'Something went wrong!');
         error.cause = statusCode;
         throw error;
@@ -196,7 +184,7 @@ export default {
           fullName: `${givenName} ${surName}`,
           email: response?.systemEmail,
           purpose: 'TICKET',
-          message: `Code: ${breach?.code} ${breach?.description}`
+          message: `Code: ${breach?.code} ${breach?.description}`,
         };
         dispatch('contact/contactUs', data, { root: true });
       }
@@ -211,7 +199,11 @@ export default {
       commit('setSnackbar', snackbar, { root: true });
     }
   },
-  async duplicateXml({ commit, rootGetters }: Context, payload: { id: string; isNew: boolean }): Promise<{ id: string; isNew: boolean } | undefined> {
+
+  async duplicateXml(
+    { commit, rootGetters }: Context,
+    payload: { id: string; isNew: boolean }
+  ): Promise<{ id: string; isNew: boolean } | undefined> {
     const uri = `/api/curate/duplicate/${payload.id}?isNew=${payload.isNew}`;
     const token = rootGetters['auth/token'];
     try {
@@ -220,8 +212,8 @@ export default {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token
-        }
+          Authorization: 'Bearer ' + token,
+        },
       });
       const response = await request.json();
       if (!response || !response._id) {
@@ -233,10 +225,10 @@ export default {
       commit(
         'setSnackbar',
         {
-          message: err.message
+          message: err.message,
         },
         { root: true }
       );
     }
-  }
+  },
 };
