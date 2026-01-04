@@ -15,5 +15,5 @@ export default {
   },
   getRouteInfo(state: MiscState): RouteInfo {
     return state.routeInfo;
-  }
+  },
 };
