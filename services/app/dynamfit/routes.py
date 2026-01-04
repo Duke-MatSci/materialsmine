@@ -91,7 +91,7 @@ def extract_data_from_file(request_id):
         model = data.get('model', 'Linear')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
-        shift_model = data.get('model', 'hybrid')
+        shift_model = data.get('transform_method', 'hybrid')
         # Read incoming shift factor model metrics
         Tg = data.get('Tg', None)
         C1 = data.get('C1', None)
@@ -111,8 +111,8 @@ def extract_data_from_file(request_id):
         if  not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
         
-        if  not check_file_exists(shift_file_name):
-            return jsonify({'message': f"Shift file '{shift_file_name}' not found"}), 404
+        # if  not check_file_exists(shift_file_name):
+        #     return jsonify({'message': f"Shift file '{shift_file_name}' not found"}), 404
 
         if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
             return jsonify({'message': 'The number of prony must be between 1 and 100'}), 400
