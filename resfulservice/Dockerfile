@@ -1,5 +1,5 @@
 FROM node:18.1.0-alpine
-RUN apk add --no-cache openjdk17-jdk
+RUN apk add --no-cache openjdk17-jdk curl
 ENV JAVA_HOME=/usr/lib/jvm/default-jvm
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 WORKDIR "/app"
