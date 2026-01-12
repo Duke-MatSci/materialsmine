@@ -300,7 +300,8 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, T_ref, C1, C2, Ea, shift_mo
             # DONE: replace with shiftData['a_T']
             # a_T = group['a_T']
             # possible TODO: offer to use interpolated shift factor values when file is provided
-            a_T = shiftData['a_T']
+            sd_df = pd.DataFrame(shiftData)
+            a_T = sd_df['a_T']
 
         shifted_freq = group['Frequency'] * a_T
         shifted_data.append(pd.DataFrame({

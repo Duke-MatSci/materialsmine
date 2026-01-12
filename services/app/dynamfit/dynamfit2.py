@@ -12,7 +12,7 @@ def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_est
     """
     Estimates the parameters used by the shift factor Model.
     """
-    C1=C2=Tg=TL=None
+    C1=C2=Tg=Ea=TL=None
     # "Universal" Estimations for C1, C2
     if C1_estimate:
         C1 = 17.44
@@ -205,7 +205,9 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
 
                 else:
                     # end run early. do not generate any frequency related charts or tables
-                    fig1=fig11=fig2=fig3=coef_df=None
+                    # fig1=fig11=fig2=fig3=coef_df=None
+                    fig1=fig11=fig2=fig3=go.Figure() # set unused plots to empty figures
+                    coef_df = pd.DataFrame(columns=["tau_i", "E_i"]).to_dict("records") # set unused tables to empty dataframes
                     return fig1, fig11, fig2, fig3, fig4, fig41, coef_df
 
                 # temp_sweep_data_melt = pd.melt(freq_sweep_data, id_vars=["Frequency"], 
