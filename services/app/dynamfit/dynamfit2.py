@@ -178,7 +178,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                 # Note: add shift factor prediction here
                 # Prerequisite boolean detection
                 # Only predict the shift factors if this statement resolves to true
-                b = (Tg and C1 and C2 and (shift_model is "WLF")) or (Tg and C1 and C2 and TL and Ea and (shift_model is "hybrid")) or (shiftData)
+                b = (Tg and C1 and C2 and (shift_model == "WLF")) or (Tg and C1 and C2 and TL and Ea and (shift_model == "hybrid")) or (shiftData)
                 if b:
                     # perform TTSP shifting
                     # Note: add TTSP here (separate from update_line_chart)
