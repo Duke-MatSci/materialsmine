@@ -189,9 +189,60 @@ def prony_linear_fit(df, N, model):
     
     return (tau, E, prony, relax)
 
+# OLD Method
+# def wlf_shift(T, T_ref, C1, C2):
+#     """Calculate shift factor a_T using the WLF equation."""
+#     print(f"T: {T}")
+#     print(f"T_ref: {T_ref}")
+#     print(f'C1: {C1}')
+#     print(f'C2: {C2}')
+#     return 10 ** (-C1 * (T - T_ref) / (C2 + (T - T_ref)))
+
+# With error checking
 def wlf_shift(T, T_ref, C1, C2):
-    """Calculate shift factor a_T using the WLF equation."""
-    return 10 ** (-C1 * (T - T_ref) / (C2 + (T - T_ref)))
+    """
+    Calculate shift factor a_T using the WLF equation with robust checks.
+
+    Raises:
+        ValueError: if a divide-by-zero, overflow, or non-finite result is detected.
+    """
+    # Ensure numeric numpy arrays (works for scalars too)
+    T_arr = np.array(T, dtype=np.float64)
+    T_ref = float(T_ref)
+    C1 = float(C1)
+    C2 = float(C2)
+
+    # denom = C2 + (T - T_ref)
+    denom = C2 + (T_arr - T_ref)
+
+    # Check for exact zero in denom (handles scalars and arrays)
+    # Use an absolute tolerance for floating point near-zero
+    if np.any(np.isclose(denom, 0.0, atol=1e-12)):
+        # Raise ValueError so Flask route will return the JSON message you asked for
+        raise ValueError(
+            "divide by zero detected when calculating WLF. Please adjust parameters or manually provide shift factors."
+        )
+
+    # Compute with error state catching to detect overflow/invalid results
+    with np.errstate(divide='raise', invalid='raise', over='raise'):
+        try:
+            exponent = -C1 * (T_arr - T_ref) / denom
+            a_T = np.power(10.0, exponent)
+
+            # Ensure finite output
+            if not np.all(np.isfinite(a_T)):
+                raise FloatingPointError("Non-finite result in WLF computation")
+
+            # If input was scalar, return scalar
+            if a_T.size == 1:
+                return float(a_T)
+            return a_T
+
+        except (FloatingPointError, ZeroDivisionError) as e:
+            # Normalize all numeric errors to the ValueError your route expects
+            raise ValueError(
+                "divide by zero detected when calculating WLF. Please adjust parameters or manually provide shift factors."
+            )
 
 def arr_shift(T, T_ref, Ea):
     """Calculate shift factor a_T using the Arrhenius equation."""
@@ -206,13 +257,19 @@ def arr_shift(T, T_ref, Ea):
 def hybrid_shift(T, T_ref, C1, C2, Ea, ascending = True):
     # temperature values must be ordered!
     # WLF
+    print('before mask')
     mask_temp_wlf = (
         np.isfinite(T) &
         (T > (T_ref + float_correction))
     )
+    print('before mask 2')
+    print(f'T = {T}')
+    print(f'mask = {mask_temp_wlf}')
     T_wlf = T[mask_temp_wlf]
     print(f'T_wlf: {T_wlf}')
+    print("before WLF_shift")
     a_T_wlf = wlf_shift(T_wlf, T_ref, C1, C2)
+    print("after WLF_shift")
 
     # Arrhenius
     mask_temp_arr = (
@@ -221,7 +278,9 @@ def hybrid_shift(T, T_ref, C1, C2, Ea, ascending = True):
     )
     T_arr = T[mask_temp_arr]
     print(f'T_arr: {T_wlf}')
+    print("before arr_shift")
     a_T_arr = arr_shift(T_arr, T_ref, Ea)
+    print("after arr_shift")
 
     # determine which order to concatenate models based on ascending or descending order of temperature values
     if ascending:
@@ -289,21 +348,48 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, T_ref, C1, C2, Ea, shift_mo
     shifted_data = []
     i = 0
 
-    for T, group in temp_sweep_data.groupby('Temperature'):
-        if not shiftData:
-            if shift_model == 'WLF':
-                a_T = wlf_shift(T, T_ref, C1, C2)
-            elif shift_model == 'hybrid':
-                a_T = hybrid_shift(T, T_ref, C1, C2, Ea)
-        else:
-            # use manual shift values
-            # DONE: replace with shiftData['a_T']
-            # a_T = group['a_T']
-            # possible TODO: offer to use interpolated shift factor values when file is provided
-            sd_df = pd.DataFrame(shiftData)
-            a_T = sd_df['a_T']
+    T = temp_sweep_data['Temperature']
+    if not shiftData:
+        if shift_model == 'WLF':
+            print("before WLF_shift 1")
+            a_T = wlf_shift(T, T_ref, C1, C2)
+            print("after WLF_shift 1")
+        elif shift_model == 'hybrid':
+            print("before hybrid_shift")
+            a_T = hybrid_shift(T, T_ref, C1, C2, Ea)
+            print("after hybrid_shift")
+    else:
+        # use manual shift values
+        # DONE: replace with shiftData['a_T']
+        # a_T = group['a_T']
+        # possible TODO: offer to use interpolated shift factor values when file is provided
+        sd_df = pd.DataFrame(shiftData)
+        a_T = sd_df['a_T']
 
-        shifted_freq = group['Frequency'] * a_T
+    temp_sweep_data['a_T'] = a_T
+
+    for T, group in temp_sweep_data.groupby('Temperature'):
+        print(f'group: {group}')
+        # moved out of grouping so a_T can be calculated by batch
+        # if not shiftData:
+        #     if shift_model == 'WLF':
+        #         print("before WLF_shift")
+        #         a_T = wlf_shift(T, T_ref, C1, C2)
+        #         print("after WLF_shift")
+        #     elif shift_model == 'hybrid':
+        #         print("before hybrid_shift")
+        #         a_T = hybrid_shift(T, T_ref, C1, C2, Ea)
+        #         print("after hybrid_shift")
+        # else:
+        #     # use manual shift values
+        #     # DONE: replace with shiftData['a_T']
+        #     # a_T = group['a_T']
+        #     # possible TODO: offer to use interpolated shift factor values when file is provided
+        #     sd_df = pd.DataFrame(shiftData)
+        #     a_T = sd_df['a_T']
+
+        # shifted_freq = group['Frequency'] * a_T
+        shifted_freq = group['Frequency'] * group['a_T']
         shifted_data.append(pd.DataFrame({
             'Frequency': shifted_freq,
             'Temperature': T_ref,
@@ -357,10 +443,13 @@ def tts_frequency_to_temperature(freq_sweep_data, omega_ref, C1, C2, calcShifts=
 
     return combined_data
 
-def estimate_Tg(uploadData):
+def estimate_Tg(uploadData, domain):
     # --- Compute tan delta ---
-    df = uploadData.copy()
-    df["tan_delta"] = df["E''"] / df["E'"]
+    # df = uploadData.copy()
+    df = pd.DataFrame(uploadData)
+    print(df)
+    # df["tan_delta"] = df["E''"] / df["E'"]
+    df["tan_delta"] = df["E Loss"] / df["E Storage"]
 
     # --- Use scipy.signal.find_peaks for robust peak detection ---
     peaks, properties = find_peaks(df["tan_delta"], prominence=0.01)  # adjust 'prominence' if needed
@@ -370,20 +459,30 @@ def estimate_Tg(uploadData):
 
     # Pick the most prominent (highest tan delta) peak
     peak_idx = peaks[np.argmax(df["tan_delta"].iloc[peaks])]
-    Tg = df.loc[peak_idx, "Temperature"]
+    if domain == "temperature":
+        Tg = df.loc[peak_idx, "Temperature"]
+    elif domain == "frequency":
+        Tg = df.loc[peak_idx, "Frequency"]
     tan_delta_peak = df.loc[peak_idx, "tan_delta"]
     return Tg
 
-def estimate_TL(uploadData):
-    df = uploadData.copy()
+def estimate_TL(uploadData, domain):
+    # df = uploadData.copy()
+    df = pd.DataFrame(uploadData)
     # --- Use scipy.signal.find_peaks for robust peak detection on loss curve---
-    peaks, properties = find_peaks(df["E''"], prominence=0.01)  # adjust 'prominence' if needed
+    # peaks, properties = find_peaks(df["E''"], prominence=0.01)  # adjust 'prominence' if needed
+    peaks, properties = find_peaks(df["E Loss"], prominence=0.01)  # adjust 'prominence' if needed
 
     if len(peaks) == 0:
         raise ValueError("No Loss peaks found to estimate TL. Try lowering the prominence parameter or enter TL manually.")
 
     # Pick the most prominent (highest tan delta) peak
-    peak_idx = peaks[np.argmax(df["E''"].iloc[peaks])]
-    TL = df.loc[peak_idx, "Temperature"]
-    loss_peak = df.loc[peak_idx, "E''"]
+    # peak_idx = peaks[np.argmax(df["E''"].iloc[peaks])]
+    peak_idx = peaks[np.argmax(df["E Loss"].iloc[peaks])]
+    if domain == "temperature":
+        TL = df.loc[peak_idx, "Temperature"]
+    elif domain == "frequency":
+        TL = df.loc[peak_idx, "Frequency"]
+    # loss_peak = df.loc[peak_idx, "E''"]
+    loss_peak = df.loc[peak_idx, "E Loss"]
     return TL

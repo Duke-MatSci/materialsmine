@@ -44,7 +44,7 @@ def check_extension(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 @log_errors
-def upload_init(file_name):
+def upload_init(file_name, domain):
     """
     Uploads a file and returns its content as a dictionary.
     
@@ -89,7 +89,12 @@ def upload_init(file_name):
         df = df.applymap(float)
 
         # Rename columns
-        df.columns =['Frequency', 'E Storage', 'E Loss']
+        if domain == 'frequency':
+            df.columns =['Frequency', 'E Storage', 'E Loss']
+        elif domain == 'temperature':
+            df.columns =['Temperature', 'E Storage', 'E Loss']
+        else:
+            df.columns =['', 'E Storage', 'E Loss']
         return df.to_dict("records")
     except pd.errors.EmptyDataError as e:
         raise ValueError("File is Empty")
@@ -126,6 +131,7 @@ def shift_upload_init(file_name):
             raise ValueError("Unsupported file extension")
         
         df = pd.read_csv(file_path, delimiter=delimiter, header=None)
+        print(f'df: {df}')
         if df.empty:
             raise ValueError('File is empty')
         # Find the first numeric row index

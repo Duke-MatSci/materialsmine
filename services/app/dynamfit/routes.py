@@ -129,8 +129,9 @@ def extract_data_from_file(request_id):
         if shift_model not in ['WLF', 'hybrid']:
             return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
         
-       
-        uploadData = upload_init(file_name)
+        print("before upload_init")
+        uploadData = upload_init(file_name, domain)
+        print("after upload_init")
         # add a function for handling shift data:
         # shiftData = upload_shift_init(shift_file_name)
         # Check if the file content is empty
@@ -140,8 +141,9 @@ def extract_data_from_file(request_id):
         # Print uploadData for debugging
         # print("Upload Data:", uploadData)
 
-
+        print("before shift_upload_init")
         shiftData = shift_upload_init(shift_file_name)
+        print("after shift_upload_init")
         # add a function for handling shift data:
         # shiftData = upload_shift_init(shift_file_name)
         # Check if the file content is empty
@@ -158,8 +160,10 @@ def extract_data_from_file(request_id):
         # result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain)
         
         # Perform shift variable estimation
-        estimate_bools = dict(Tg_estimate=Tg_estimate, C1_estimate=C1_estimate, C2_estimate=C2_estimate, Ea_estimate=Ea_estimate, TL_estimate=TL_estimate)
+        estimate_bools = dict(Tg_estimate=Tg_estimate, C1_estimate=C1_estimate, C2_estimate=C2_estimate, Ea_estimate=Ea_estimate, TL_estimate=TL_estimate, domain=domain)
+        print("before estimate_shift_model")
         C1_est, C2_est, Tg_est, Ea_est, TL_est = estimate_shift_model_parameters(uploadData, shift_model, **estimate_bools)
+        print("after estimate_shift_model")
 
         # Assign the new values for each variable based on the boolean switches:
         Tg = Tg_est if Tg_estimate else Tg
@@ -171,8 +175,9 @@ def extract_data_from_file(request_id):
         shift_params = dict(Tg=Tg, C1=C1, C2=C2, Ea=Ea, TL=TL, shift_model=shift_model, shiftData=shiftData)
 
         # Assuming the update_line_chart function returns values in a specific order
+        print("before update_line_chart")
         result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, **shift_params)
-
+        print("after update_line_chart")
         # # Note: add shift factor prediction here
         # # Prerequisite boolean detection
         # # Only predict the shift factors if this statement resolves to true
