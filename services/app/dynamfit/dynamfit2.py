@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from app.dynamfit.helper import prony_linear_fit, compute_rspectum, tts_frequency_to_temperature, tts_temperature_to_frequency, tts_temperature_to_frequency_V2, estimate_Tg, estimate_TL
 from app.utils.util import log_errors
 
-def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_estimate, C2_estimate, Ea_estimate, TL_estimate):
+def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_estimate, C2_estimate, Ea_estimate, TL_estimate, domain):
     """
     Estimates the parameters used by the shift factor Model.
     """
@@ -20,10 +20,14 @@ def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_est
         C2 = 51.6
     # Calculate Tg from argmax of tandelta(T)
     if Tg_estimate:
-        Tg = estimate_Tg(uploadData)
+        print("before estimate_Tg")
+        Tg = estimate_Tg(uploadData, domain)
+        print("after estimate_Tg")
     # Calculate TL from argmax of E''(T)
     if TL_estimate:
-        TL = estimate_TL(uploadData)
+        print("before estimate_TL")
+        TL = estimate_TL(uploadData, domain)
+        print("after estimate_TL")
     # Use "generic" Ea for thermoplastic elastomers
     if Ea_estimate:
         Ea = 200 #kJ/mol
@@ -196,9 +200,16 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                     # freq_sweep_data = tts_temperature_to_frequency(temp_sweep_data, T_ref, C1, C2)
 
                     # New Method
-                    # use TL fpr T_ref
-                    freq_sweep_data = tts_temperature_to_frequency_V2(temp_sweep_data, TL, C1, C2, Ea, shift_model, shiftData)
-
+                    # use TL fpr T_ref for hybrid and Tg for WLF
+                    if shift_model == "WLF":
+                        T_ref = Tg
+                    elif shift_model == "hybrid":
+                        T_ref = TL
+                    else:
+                        T_ref = None
+                    print("before tts_temperature_to_frequency_V2")
+                    freq_sweep_data = tts_temperature_to_frequency_V2(temp_sweep_data, T_ref, C1, C2, Ea, shift_model, shiftData)
+                    print("after tts_temperature_to_frequency_V2")
                     # reassign df to transformed data
                     df = freq_sweep_data[["Frequency", "E'", "E''"]]
                     df.columns = ["Frequency", "E Storage", "E Loss"]
@@ -433,5 +444,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                 fig.update_yaxes(exponentformat = 'power')
 
             return fig1, fig11, fig2, fig3, fig4, fig41, coef_df.to_dict("records")
+    except ValueError:
+        raise
     except Exception as e:
         raise ValueError("File contains corrupt data")
