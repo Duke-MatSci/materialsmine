@@ -337,7 +337,7 @@
         <md-radio id="transformMethodHybrid" v-model="transformMethod" value="hybrid"
           >Hybrid</md-radio
         >
-        <md-radio id="transformMethodManual" v-model="transformMethod" value="Manual"
+        <md-radio id="transformMethodManual" v-model="transformMethod" value="manual"
           >Manual</md-radio
         >
       </div>
@@ -582,7 +582,7 @@ const isWLF = computed(() => {
   return ttsp.value && transformMethod.value === 'WLF';
 });
 
-const isManual = computed(() => ttsp.value && transformMethod.value === 'Manual');
+const isManual = computed(() => ttsp.value && transformMethod.value === 'manual');
 const isHybrid = computed(() => ttsp.value && transformMethod.value === 'hybrid');
 
 // Methods
@@ -841,7 +841,7 @@ const goToPage = async (page: number): Promise<void> => {
 watch(transformMethod, (newValue) => {
   store.commit(
     'explorer/setDynamfitTransformMethod',
-    newValue as 'none' | 'WLF' | 'hybrid' | 'Manual'
+    newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
   );
 });
 
