@@ -154,7 +154,7 @@ const onInputChange = async (e: Event): Promise<void> => {
   store.commit('explorer/setDynamfitManualFile', '');
   const target = e.target as HTMLInputElement;
   const file = [...(target?.files || [])];
-  const allowedTypes = ['csv', 'tsv', 'tab-separated-values'];
+  const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
   try {
     const extension = file[0]?.type?.replace(/(.*)\//, '') || file[0]?.name.split('.').pop();
     if (!extension || !allowedTypes.includes(extension)) {
