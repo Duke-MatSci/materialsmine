@@ -1,6 +1,6 @@
 <template>
   <div class="">
-    <div class="dynamfit-file-uploader" v-if="ttspMethod === 'Manual' && !mFile">
+    <div class="dynamfit-file-uploader" v-if="ttspMethod === 'manual' && !mFile">
       <!-- <div> -->
       <p class="u_margin-bottom-small">
         <!-- CSV upload contains frequency or temperature data only. The time-temperature superposition
@@ -134,7 +134,7 @@ const isTempData = computed(() => {
 });
 
 // TTSP (i.e. ω-t Transformation) Transform Method
-const ttspMethod = computed<'none' | 'WLF' | 'Manual'>(
+const ttspMethod = computed<'none' | 'WLF' | 'hybrid' | 'manual'>(
   () => store.getters['explorer/getDynamfitTransformMethod']
 );
 
