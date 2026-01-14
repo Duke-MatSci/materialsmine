@@ -164,7 +164,7 @@ const onInputChange = async (e: Event): Promise<void> => {
       file,
       isTemp: isTemp.value,
     });
-    console.log('Uploaded File Name:', fileName);
+
     if (fileName) {
       // mFile.value = fileName;
       store.commit('explorer/setDynamfitManualFile', fileName);
