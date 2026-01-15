@@ -454,39 +454,138 @@ async function validateXmlAgainstXsd(TMP_DIRECTORY, xmlString, xsdUrl) {
 //   };
 // }
 
+// function prepareForValidation(doc) {
+//   // Accept either stringified JSON-LD or object
+//   const clone =
+//     typeof doc === 'string' ? JSON.parse(doc) : JSON.parse(JSON.stringify(doc));
+
+//   // Helper: ensure explicit @value/@type
+//   const ensureTypedValue = (val) => {
+//     if (val == null) return null;
+//     if (typeof val === 'object' && '@value' in val) return val;
+//     if (typeof val === 'number')
+//       return { '@value': val, '@type': 'xsd:double' };
+//     const n = Number(val);
+//     if (Number.isFinite(n) && String(val).trim() !== '') {
+//       return { '@value': n, '@type': 'xsd:double' };
+//     }
+//     return { '@value': String(val), '@type': 'xsd:string' };
+//   };
+
+//   // Helper: normalize unit to IRI (unit:*) when possible
+//   const toUnitIri = (u) => {
+//     if (!u) return null;
+//     // already curie or absolute IRI
+//     if (
+//       typeof u === 'string' &&
+//       (u.startsWith('unit:') || /^https?:\/\//i.test(u))
+//     ) {
+//       return u;
+//     }
+//     return UNIT_IRI[String(u).trim()] || null;
+//   };
+
+//   // Walk all graphs/nodes
+//   for (const g of clone['@graph'] ?? []) {
+//     for (const n of g['@graph'] ?? []) {
+//       // 1) Legacy 'hasUnit' → normalize to 'sio:hasUnit'
+//       if (n.hasUnit) {
+//         const unitIri = toUnitIri(n.hasUnit);
+//         if (unitIri) n['sio:hasUnit'] = unitIri;
+//         else n['sio:hasUnit'] = String(n.hasUnit);
+//         delete n.hasUnit;
+//       }
+
+//       // 2) If 'sio:hasUnit' is a raw literal we can map, map it
+//       if (n['sio:hasUnit'] && typeof n['sio:hasUnit'] === 'string') {
+//         const mapped = toUnitIri(n['sio:hasUnit']);
+//         if (mapped) n['sio:hasUnit'] = mapped;
+//       }
+
+//       // 3) Legacy 'hasValue' → normalize to 'sio:hasValue' with explicit typing
+//       if (n.hasValue != null) {
+//         n['sio:hasValue'] = ensureTypedValue(n.hasValue);
+//         delete n.hasValue;
+//       } else if (n['sio:hasValue'] != null) {
+//         // Ensure explicit typing even when already present but primitive
+//         if (
+//           typeof n['sio:hasValue'] !== 'object' ||
+//           !('@value' in n['sio:hasValue'])
+//         ) {
+//           n['sio:hasValue'] = ensureTypedValue(n['sio:hasValue']);
+//         }
+//       }
+
+//       // 4) Clean up non-shape fields if needed
+//       // (Kept from your original; safe to keep)
+//       delete n.countsByYear;
+
+//       // 5) Normalize schema:publication → journal node if still present
+//       if (n['schema:publication'] && !n.journal) {
+//         const j = n['schema:publication'];
+//         n.journal = {
+//           id: `mm:journal/${String(j).toLowerCase().replace(/\W+/g, '-')}`,
+//           type: 'schema:Periodical',
+//           'schema:name': j
+//         };
+//         delete n['schema:publication'];
+//       }
+
+//       // 6) If any primaryLocation id starts with doi:, normalize
+//       if (n.primaryLocation?.id?.startsWith?.('doi:')) {
+//         const doi = n.primaryLocation.id.replace(/^doi:/, '');
+//         n.primaryLocation.id = `https://doi.org/${doi}`;
+//       }
+//     }
+//   }
+
+//   return clone;
+// }
 function prepareForValidation(doc) {
   const clone =
     typeof doc === 'string' ? JSON.parse(doc) : JSON.parse(JSON.stringify(doc));
 
-  // 1) Replace hasUnit literals with QUDT IRIs
-  const UNIT_MAP = { nm: 'unit:NanoM', Hz: 'unit:HZ' /* add more as needed */ };
-  for (const g of clone['@graph'] ?? []) {
-    for (const n of g['@graph'] ?? []) {
-      if (n.hasUnit && typeof n.hasUnit === 'string') {
-        n.hasUnit = UNIT_MAP[n.hasUnit] || n.hasUnit; // fallback if unknown
-      }
-    }
-  }
+  const UNIT_MAP = { nm: 'unit:NanoM', Hz: 'unit:HZ' /* extend as needed */ };
 
-  // 2) Fix primaryLocation to full DOI URL if you don't have a 'doi' prefix in @context
+  // helper: recursively normalize unit strings to IRIs for both hasUnit and sio:hasUnit
+  const normalizeUnitsDeep = (node) => {
+    if (!node || typeof node !== 'object') return;
+    // normalize legacy keys
+    if (typeof node.hasUnit === 'string') {
+      node.hasUnit = UNIT_MAP[node.hasUnit] || node.hasUnit;
+    }
+    if (typeof node['sio:hasUnit'] === 'string') {
+      node['sio:hasUnit'] =
+        UNIT_MAP[node['sio:hasUnit']] || node['sio:hasUnit'];
+    }
+    // recurse
+    for (const k of Object.keys(node)) {
+      const v = node[k];
+      if (Array.isArray(v)) v.forEach(normalizeUnitsDeep);
+      else if (v && typeof v === 'object') normalizeUnitsDeep(v);
+    }
+  };
+
   for (const g of clone['@graph'] ?? []) {
     for (const n of g['@graph'] ?? []) {
+      normalizeUnitsDeep(n);
+
+      // ScholarlyArticle adjustments (unchanged)
       if (
-        n.type === 'schema:ScholarlyArticle' &&
+        n['@type'] === 'schema:ScholarlyArticle' &&
         n.primaryLocation?.id?.startsWith('doi:')
       ) {
         const doi = n.primaryLocation.id.replace(/^doi:/, '');
         n.primaryLocation.id = `https://doi.org/${doi}`;
       }
-      // Optionally drop countsByYear if your shapes are closed and don’t allow it yet
       delete n.countsByYear;
-      // Replace schema:publication literal with a journal node
+
       if (n['schema:publication'] && !n.journal) {
         const j = n['schema:publication'];
         n.journal = {
-          id: `mm:journal/${j.toLowerCase().replace(/\W+/g, '-')}`,
-          type: 'schema:Periodical',
-          name: j
+          '@id': `mm:journal/${j.toLowerCase().replace(/\W+/g, '-')}`,
+          '@type': 'schema:Periodical',
+          'schema:name': j
         };
         delete n['schema:publication'];
       }

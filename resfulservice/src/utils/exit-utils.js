@@ -17,6 +17,8 @@ async function onExit(rawError, log) {
       log.error(`Received ${error.signal}, shutting down.`);
     } else if (Object.keys(error).length) {
       log.error(stringifyError(error));
+    } else {
+      log.error(error);
     }
 
     if (mongoose.connection.readyState !== 0) {
