@@ -126,8 +126,8 @@ def extract_data_from_file(request_id):
         if not file_name or file_name == '':
             return jsonify({'message': 'No file name provided'})
 
-        if shift_model not in ['WLF', 'hybrid']:
-            return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
+        if shift_model not in ['WLF', 'hybrid', 'manual']:
+            return jsonify({'message': 'The shift factor model must be one of WLF, hybrid, manual'}), 400
         
         print("before upload_init")
         uploadData = upload_init(file_name, domain)
