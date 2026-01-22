@@ -179,8 +179,9 @@ function buildMatrixComponent(mc, componentId) {
       const desc = (pick(mw, 'description') || '').toString().toLowerCase();
       let typeIri = null;
       if (desc.includes('number average')) typeIri = 'mm:MolecularWeight_Mn';
-      else if (desc.includes('weight average'))
+      else if (desc.includes('weight average')) {
         typeIri = 'mm:MolecularWeight_Mw';
+      }
       if (!typeIri && mws.length === 1 && !hasText(pick(mw, 'description'))) {
         typeIri = 'mm:MolecularWeight_Mw';
       }
@@ -449,7 +450,9 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     });
   }
 
-  const chemicals = toArray(pick(mix, 'ChemicalUsed')).filter(hasText);
+  const chemicals = toArray(
+    pick(mix, 'ChemicalUsed.description') ?? pick(mix, 'ChemicalUsed')
+  ).filter(hasText);
   chemicals.forEach((c, i) => {
     subAttrs.push({
       '@id':
@@ -565,8 +568,9 @@ function buildExtrusionParam(
     // If still null (plain scalar), try direct value
     if (!valLit) {
       const raw = pick(obj, key);
-      if (raw != null)
+      if (raw != null) {
         valLit = isNumber ? litNum(raw) : litNum(raw) || litStr(raw);
+      }
     }
     if (!valLit) return;
 
@@ -813,8 +817,9 @@ function buildMatrixProcessing(pnc, baseId) {
       const paramId = `${baseId}/MatrixProcessing/parameter${idx}`;
 
       const curing = pick(cp, 'Curing');
-      if (curing)
+      if (curing) {
         return buildCuringLike('mm:Curing', 'curing', curing, paramId);
+      }
 
       const add = pick(cp, 'Additive');
       if (add) return buildAdditiveParam(add, paramId);
@@ -823,12 +828,14 @@ function buildMatrixProcessing(pnc, baseId) {
       if (sol) return buildSolventParam(sol, paramId);
 
       const heating = pick(cp, 'Heating');
-      if (heating)
+      if (heating) {
         return buildCuringLike('mm:Heating', 'heating', heating, paramId);
+      }
 
       const cooling = pick(cp, 'Cooling');
-      if (cooling)
+      if (cooling) {
         return buildCuringLike('mm:Cooling', 'cooling', cooling, paramId);
+      }
 
       const drying =
         pick(cp, 'Drying-Evaporation') || (cp && cp['Drying-Evaporation']);
@@ -842,13 +849,14 @@ function buildMatrixProcessing(pnc, baseId) {
       }
 
       const extrusion = pick(cp, 'Extrusion');
-      if (extrusion)
+      if (extrusion) {
         return buildExtrusionParam(
           extrusion,
           paramId,
           baseId,
           'MatrixProcessing'
         );
+      }
 
       const centrif = pick(cp, 'Centrifugation');
       if (hasText(centrif)) {
@@ -899,8 +907,9 @@ function buildMatrixProcessing(pnc, baseId) {
       }
 
       const mixing = pick(cp, 'Mixing');
-      if (mixing)
+      if (mixing) {
         return buildMixingParam(mixing, paramId, baseId, 'MatrixProcessing');
+      }
 
       const other = pick(cp, 'Other');
       if (hasText(other)) {
@@ -939,8 +948,9 @@ function buildFillerProcessing(pnc, baseId) {
       const paramId = `${baseId}/FillerProcessing/parameter${idx}`;
 
       const curing = pick(cp, 'Curing');
-      if (curing)
+      if (curing) {
         return buildCuringLike('mm:Curing', 'curing', curing, paramId);
+      }
 
       const add = pick(cp, 'Additive');
       if (add) return buildAdditiveParam(add, paramId);
@@ -949,12 +959,14 @@ function buildFillerProcessing(pnc, baseId) {
       if (sol) return buildSolventParam(sol, paramId);
 
       const heating = pick(cp, 'Heating');
-      if (heating)
+      if (heating) {
         return buildCuringLike('mm:Heating', 'heating', heating, paramId);
+      }
 
       const cooling = pick(cp, 'Cooling');
-      if (cooling)
+      if (cooling) {
         return buildCuringLike('mm:Cooling', 'cooling', cooling, paramId);
+      }
 
       const drying =
         pick(cp, 'Drying-Evaporation') || (cp && cp['Drying-Evaporation']);
@@ -968,13 +980,14 @@ function buildFillerProcessing(pnc, baseId) {
       }
 
       const extrusion = pick(cp, 'Extrusion');
-      if (extrusion)
+      if (extrusion) {
         return buildExtrusionParam(
           extrusion,
           paramId,
           baseId,
           'FillerProcessing'
         );
+      }
 
       const centrif = pick(cp, 'Centrifugation');
       if (hasText(centrif)) {
@@ -1025,8 +1038,9 @@ function buildFillerProcessing(pnc, baseId) {
       }
 
       const mixing = pick(cp, 'Mixing');
-      if (mixing)
+      if (mixing) {
         return buildMixingParam(mixing, paramId, baseId, 'FillerProcessing');
+      }
 
       const other = pick(cp, 'Other');
       if (hasText(other)) {
@@ -1047,6 +1061,97 @@ function buildFillerProcessing(pnc, baseId) {
     '@id': `${baseId}/FillerProcessing`,
     '@type': 'mm:FillerProcessing',
     'sio:hasAttribute': paramNodes
+  };
+}
+
+/** Build FillerComposition under Filler. */
+function buildFillerComposition(pnc, baseId) {
+  const comp = pick(
+    pnc,
+    'PolymerNanocomposite.MATERIALS.Filler.FillerComposition'
+  );
+  if (!comp) return null;
+
+  const attrs = [];
+  const uniqId = (base) => {
+    let id = base;
+    let i = 2;
+    while (attrs.some((a) => a['@id'] === id)) {
+      id = `${base}/${i++}`;
+    }
+    return id;
+  };
+
+  // Constituent (text)
+  const constituent = pick(comp, 'Constituent');
+  if (hasText(constituent)) {
+    attrs.push({
+      '@id': `${baseId}/Filler/FillerComposition/Constituent`,
+      '@type': 'mm:Constituent',
+      'sio:hasValue': litStr(constituent)
+    });
+  }
+
+  // Helper for numeric fraction fields — supports nested or direct value
+  const addNum = (paths, idSuffix, typeIri) => {
+    let v = null;
+    let vsource = null;
+    for (const p of paths) {
+      vsource = pick(comp, `${p}.source`);
+      const val = pick(comp, `${p}.value`);
+      if (val != null) {
+        v = val;
+        break;
+      }
+      const direct = pick(comp, p);
+      if (direct != null) {
+        v = direct;
+        break;
+      }
+    }
+    const vLit = litNum(v);
+    if (!vLit) return;
+    const vsourceLit = litStr(vsource);
+
+    const idBase = `${baseId}/Filler/FillerComposition/${idSuffix}`;
+    attrs.push({
+      '@id': uniqId(idBase),
+      '@type': typeIri,
+      'sio:hasValue': vLit,
+      ...(vsourceLit && { 'prov:hadPrimarySource': vsourceLit })
+    });
+  };
+
+  // Fraction → Mass / Volume OR direct Mass / Volume
+  addNum(['Fraction.Mass', 'Mass'], 'MassFraction', 'mm:MassFraction');
+  addNum(['Fraction.Volume', 'Volume'], 'VolumeFraction', 'mm:VolumeFraction');
+
+  // NonAgglomerateFraction → Mass / Volume OR direct
+  addNum(['NonAgglomerateFraction.Mass'], 'MassFraction', 'mm:MassFraction');
+  addNum(
+    ['NonAgglomerateFraction.Volume'],
+    'VolumeFraction',
+    'mm:VolumeFraction'
+  );
+
+  // NumberOfAgglomeration → Mass / Volume OR direct
+  addNum(['NumberOfAgglomeration.Mass'], 'MassFraction', 'mm:MassFraction');
+  addNum(
+    ['NumberOfAgglomeration.Volume'],
+    'VolumeFraction',
+    'mm:VolumeFraction'
+  );
+
+  // AgglomerateFraction → Mass / Volume OR direct
+  addNum(['AgglomerateFraction.Mass'], 'MassFraction', 'mm:MassFraction');
+  addNum(['AgglomerateFraction.Volume'], 'VolumeFraction', 'mm:VolumeFraction');
+
+  if (!attrs.length) return null;
+
+  return {
+    '@id': `${baseId}/FillerComposition`,
+    '@type': 'mm:FillerComposition',
+    'sio:hasAttribute': attrs
   };
 }
 
@@ -1106,16 +1211,19 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
   let fillerNode = null;
   if (hasFillerInXml) {
     const fillerProcessing = buildFillerProcessing(pnc, baseId);
+    const fillerComposition = buildFillerComposition(pnc, baseId);
     fillerNode = {
       '@id': `${baseId}/filler`,
       ...(fillerProcessing
         ? { 'mm:hasFillerProcessing': fillerProcessing }
+        : {}),
+      ...(fillerComposition
+        ? { 'mm:hasFillerComposition': fillerComposition }
         : {})
-      // mm:hasFillerComponent / mm:hasFillerComposition will be added later
     };
   }
 
-  /** FIX #3: Gate mm:hasMaterials — emit only if matrix and/or filler content exists */
+  /** Gate mm:hasMaterials — emit only if matrix and/or filler content exists */
   let hasMaterials = null;
   if (hasMatrix || fillerNode) {
     hasMaterials = {
@@ -1191,8 +1299,9 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           };
           const unitIri = mapUnit(microLengthUnit);
           if (unitIri) wAttr['sio:hasUnit'] = unitIri;
-          else if (hasText(microLengthUnit))
+          else if (hasText(microLengthUnit)) {
             wAttr['sio:hasUnit'] = String(microLengthUnit);
+          }
           dimSubAttrs.push(wAttr);
         }
         if (heightLit) {
@@ -1203,8 +1312,9 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           };
           const unitIri = mapUnit(microLengthUnit);
           if (unitIri) hAttr['sio:hasUnit'] = unitIri;
-          else if (hasText(microLengthUnit))
+          else if (hasText(microLengthUnit)) {
             hAttr['sio:hasUnit'] = String(microLengthUnit);
+          }
           dimSubAttrs.push(hAttr);
         }
         if (dimSubAttrs.length) {
