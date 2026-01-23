@@ -454,13 +454,14 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     pick(mix, 'ChemicalUsed.description') ?? pick(mix, 'ChemicalUsed')
   ).filter(hasText);
   chemicals.forEach((c, i) => {
+    const ch = c?.description || c;
     subAttrs.push({
       '@id':
         i === 0
           ? `${rootBaseId}/${scope}/Mixing/ChemicalUsed`
           : `${rootBaseId}/${scope}/Mixing/ChemicalUsed/${i + 1}`,
       '@type': 'mm:ChemicalUsed',
-      'sio:hasValue': litStr(c)
+      'sio:hasValue': litStr(ch)
     });
   });
 
@@ -1155,6 +1156,615 @@ function buildFillerComposition(pnc, baseId) {
   };
 }
 
+/** Build FillerComponent node (single) from Filler.FillerComponent[*] */
+function buildFillerComponent(fc, fcId, rootBaseId) {
+  const attrs = [];
+
+  const pushText = (localId, typeIri, v, attrbs = attrs) => {
+    if (hasText(v)) {
+      attrbs.push({
+        '@id': `${fcId}/${localId}`,
+        '@type': typeIri,
+        'sio:hasValue': litStr(v)
+      });
+    }
+  };
+
+  // Simple text fields
+  pushText('ChemicalName', 'mm:ChemicalName', pick(fc, 'ChemicalName'));
+  pushText(
+    'StdChemicalName',
+    'mm:StdChemicalName',
+    pick(fc, 'StdChemicalName')
+  );
+  pushText('PubChemRef', 'mm:PubChemReference', pick(fc, 'PubChemRef'));
+  pushText('Abbreviation', 'mm:Abbreviation', pick(fc, 'Abbreviation'));
+  pushText(
+    'ManufacturerOrSourceName',
+    'mm:ManufacturerOrSourceName',
+    pick(fc, 'ManufacturerOrSourceName')
+  );
+  pushText('TradeName', 'mm:TradeName', pick(fc, 'TradeName'));
+
+  // Density (+ uncertainty)
+  const dens = pick(fc, 'Density');
+  if (dens) {
+    const desc = pick(dens, 'description');
+    const v = pick(dens, 'value');
+    const u = pick(dens, 'unit');
+    const vLit = litNum(v) || litStr(v);
+    if (
+      vLit ||
+      hasText(desc) ||
+      hasText(pick(dens, 'uncertainty.type')) ||
+      hasText(pick(dens, 'uncertainty.value'))
+    ) {
+      const node = {
+        '@id': `${fcId}/Density`,
+        '@type': 'mm:Density',
+        ...(hasText(desc) && { 'rdfs:label': desc }),
+        ...(vLit && { 'sio:hasValue': vLit })
+      };
+      const unitIri = mapUnit(u);
+      if (unitIri) node['sio:hasUnit'] = unitIri;
+      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+      const ut = pick(dens, 'uncertainty.type');
+      const uv = pick(dens, 'uncertainty.value');
+      if (hasText(ut) || hasText(uv)) {
+        node['mm:hasUncertainty'] = {
+          '@type': 'mm:Type',
+          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+        };
+      }
+      attrs.push(node);
+    }
+  }
+
+  // CrystalPhase (text)
+  pushText('CrystalPhase', 'mm:CrystalPhase', pick(fc, 'CrystalPhase'));
+
+  // SphericalParticleDiameter (+ uncertainty)
+  const spd = pick(fc, 'SphericalParticleDiameter');
+  if (spd) {
+    const v = pick(spd, 'value');
+    const u = pick(spd, 'unit');
+    const vLit = litNum(v) || litStr(v);
+    if (
+      vLit ||
+      hasText(pick(spd, 'uncertainty.type')) ||
+      hasText(pick(spd, 'uncertainty.value'))
+    ) {
+      const node = {
+        '@id': `${fcId}/SphericalParticleDiameter`,
+        '@type': 'mm:SphericalParticleDiameter',
+        ...(vLit && { 'sio:hasValue': vLit })
+      };
+      const unitIri = mapUnit(u);
+      if (unitIri) node['sio:hasUnit'] = unitIri;
+      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+      const ut = pick(spd, 'uncertainty.type');
+      const uv = pick(spd, 'uncertainty.value');
+      if (hasText(ut) || hasText(uv)) {
+        node['mm:hasUncertainty'] = {
+          '@type': 'mm:Type',
+          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+        };
+      }
+      attrs.push(node);
+    }
+  }
+
+  // SurfaceArea → hasSpecific / hasTotal
+  const sa = pick(fc, 'SurfaceArea');
+  if (sa) {
+    const saNode = {
+      '@id': `${fcId}/SurfaceArea`,
+      '@type': 'mm:FillerPhaseSurfaceArea'
+    };
+    const specDesc = pick(sa, 'specific.description');
+    const specVal = pick(sa, 'specific.value');
+    const specUnit = pick(sa, 'specific.unit');
+    const specLit = litNum(specVal) || litStr(specVal);
+    if (specLit || hasText(specDesc) || hasText(specUnit)) {
+      const obj = {
+        ...(hasText(specDesc) && { 'rdfs:label': specDesc }),
+        ...(specLit && { 'sio:hasValue': specLit })
+      };
+      const unitIri = mapUnit(specUnit);
+      if (unitIri) obj['sio:hasUnit'] = unitIri;
+      else if (hasText(specUnit)) obj['sio:hasUnit'] = String(specUnit);
+      saNode['mm:hasSpecific'] = obj;
+    }
+
+    const totDesc = pick(sa, 'total.description');
+    const totVal = pick(sa, 'total.value');
+    const totUnit = pick(sa, 'total.unit');
+    const totLit = litNum(totVal) || litStr(totVal);
+    if (totLit || hasText(totDesc) || hasText(totUnit)) {
+      const obj = {
+        ...(hasText(totDesc) && { 'rdfs:label': totDesc }),
+        ...(totLit && { 'sio:hasValue': totLit })
+      };
+      const unitIri = mapUnit(totUnit);
+      if (unitIri) obj['sio:hasUnit'] = unitIri;
+      else if (hasText(totUnit)) obj['sio:hasUnit'] = String(totUnit);
+      saNode['mm:hasTotal'] = obj;
+    }
+
+    if (saNode['mm:hasSpecific'] || saNode['mm:hasTotal']) {
+      attrs.push(saNode);
+    }
+  }
+
+  // ParticleAspectRatio (+ uncertainty)
+  const par = pick(fc, 'ParticleAspectRatio');
+  if (par) {
+    const v = pick(par, 'value');
+    const u = pick(par, 'unit');
+    const vLit = litNum(v) || litStr(v);
+    if (
+      vLit ||
+      hasText(pick(par, 'uncertainty.type')) ||
+      hasText(pick(par, 'uncertainty.value'))
+    ) {
+      const node = {
+        '@id': `${fcId}/ParticleAspectRatio`,
+        '@type': 'mm:AspectRatio',
+        ...(vLit && { 'sio:hasValue': vLit })
+      };
+      const unitIri = mapUnit(u);
+      if (unitIri) node['sio:hasUnit'] = unitIri;
+      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+      const ut = pick(par, 'uncertainty.type');
+      const uv = pick(par, 'uncertainty.value');
+      if (hasText(ut) || hasText(uv)) {
+        node['mm:hasUncertainty'] = {
+          '@type': 'mm:Type',
+          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+        };
+      }
+      attrs.push(node);
+    }
+  }
+
+  // NonSphericalShape → hasWidth/hasLength/hasDepth (+ uncertainties). No @id on sub-objects per your structure.
+  const nss = pick(fc, 'NonSphericalShape');
+  if (nss) {
+    const nssNode = {
+      '@id': `${fcId}/NonSphericalShape`,
+      '@type': 'mm:NonSpherical'
+    };
+    const mkDim = (key, propKey) => {
+      const v = pick(nss, `${key}.value`) ?? pick(nss, key);
+      const u = pick(nss, `${key}.unit`);
+      const ut = pick(nss, `${key}.uncertainty.type`);
+      const uv = pick(nss, `${key}.uncertainty.value`);
+      const vLit = litNum(v) || litStr(v);
+      if (!vLit && !hasText(u) && !hasText(ut) && !hasText(uv)) return;
+
+      const obj = {
+        ...(vLit && { 'sio:hasValue': vLit })
+      };
+      const unitIri = mapUnit(u);
+      if (unitIri) obj['sio:hasUnit'] = unitIri;
+      else if (hasText(u)) obj['sio:hasUnit'] = String(u);
+
+      if (hasText(ut) || hasText(uv)) {
+        obj['mm:hasUncertainty'] = {
+          '@type': 'mm:Type',
+          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+        };
+      }
+      nssNode[propKey] = obj;
+    };
+    mkDim('Width', 'mm:hasWidth');
+    mkDim('Length', 'mm:hasLength');
+    mkDim('Depth', 'mm:hasDepth');
+
+    if (
+      nssNode['mm:hasWidth'] ||
+      nssNode['mm:hasLength'] ||
+      nssNode['mm:hasDepth']
+    ) {
+      attrs.push(nssNode);
+    }
+  }
+
+  // FillerComponentComposition (Mass / Volume)
+  const fcc = pick(fc, 'FillerComponentComposition');
+  if (fcc) {
+    const sub = [];
+    const mv = pick(fcc, 'Mass');
+    const mLit = litNum(mv) || litNum(pick(fcc, 'Mass.value'));
+    if (mLit) {
+      sub.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentComposition/Mass`,
+        '@type': 'mm:MassFraction',
+        'sio:hasValue': mLit
+      });
+    }
+    const vv = pick(fcc, 'Volume');
+    const vLit = litNum(vv) || litNum(pick(fcc, 'Volume.value'));
+    if (vLit) {
+      sub.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentComposition/Volume`,
+        '@type': 'mm:VolumeFraction',
+        'sio:hasValue': vLit
+      });
+    }
+    if (sub.length) {
+      attrs.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentComposition`,
+        '@type': 'mm:FillerComponentComposition',
+        'sio:hasAttribute': sub
+      });
+    }
+  }
+
+  // FillerComponentInComposite (Mass / Volume)
+  const fcic = pick(fc, 'FillerComponentInComposite');
+  if (fcic) {
+    const sub = [];
+    const mv = pick(fcic, 'Mass');
+    const mLit = litNum(mv) || litNum(pick(fcic, 'Mass.value'));
+    if (mLit) {
+      sub.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentInComposite/Mass`,
+        '@type': 'mm:MassFraction',
+        'sio:hasValue': mLit
+      });
+    }
+    const vv = pick(fcic, 'Volume');
+    const vLit = litNum(vv) || litNum(pick(fcic, 'Volume.value'));
+    if (vLit) {
+      sub.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentInComposite/Volume`,
+        '@type': 'mm:VolumeFraction',
+        'sio:hasValue': vLit
+      });
+    }
+    if (sub.length) {
+      attrs.push({
+        '@id': `${fcId}/FillerComponent/FillerComponentInComposite`,
+        '@type': 'mm:FillerComponentInComposite',
+        'sio:hasAttribute': sub
+      });
+    }
+  }
+
+  // ParticleSurfaceTreatment (+ nested pieces)
+  const pst = pick(fc, 'ParticleSurfaceTreatment');
+  if (pst) {
+    const pstAttrs = [];
+
+    const pstPush = (name, typeIri, path) =>
+      pushText(
+        `ParticleSurfaceTreatment/${name}`,
+        typeIri,
+        pick(pst, path),
+        pstAttrs
+      );
+
+    pstPush('ChemicalName', 'mm:ChemicalName', 'ChemicalName');
+    pstPush('Abbreviation', 'mm:Abbreviation', 'Abbreviation');
+    pstPush(
+      'ConstitutionalUnit',
+      'mm:ConstitutionalUnit',
+      'ConstitutionalUnit'
+    );
+    pstPush('TradeName', 'mm:TradeName', 'TradeName');
+
+    // PST Density (+ uncertainty)
+    const pd = pick(pst, 'Density');
+    if (pd) {
+      const desc = pick(pd, 'description');
+      const v = pick(pd, 'value');
+      const u = pick(pd, 'unit');
+      const vLit = litNum(v) || litStr(v);
+      if (
+        vLit ||
+        hasText(desc) ||
+        hasText(pick(pd, 'uncertainty.type')) ||
+        hasText(pick(pd, 'uncertainty.value'))
+      ) {
+        const node = {
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/Density`,
+          '@type': 'mm:Density',
+          ...(hasText(desc) && { 'rdfs:label': desc }),
+          ...(vLit && { 'sio:hasValue': vLit })
+        };
+        const unitIri = mapUnit(u);
+        if (unitIri) node['sio:hasUnit'] = unitIri;
+        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+        const ut = pick(pd, 'uncertainty.type');
+        const uv = pick(pd, 'uncertainty.value');
+        if (hasText(ut) || hasText(uv)) {
+          node['mm:hasUncertainty'] = {
+            '@type': 'mm:Type',
+            ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+            ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+          };
+        }
+        pstAttrs.push(node);
+      }
+    }
+
+    // GraftDensity (+ uncertainty)
+    const gd = pick(pst, 'GraftDensity');
+    if (gd) {
+      const desc = pick(gd, 'description');
+      const v = pick(gd, 'value');
+      const u = pick(gd, 'unit');
+      const vLit = litNum(v) || litStr(v);
+      if (
+        vLit ||
+        hasText(desc) ||
+        hasText(pick(gd, 'uncertainty.type')) ||
+        hasText(pick(gd, 'uncertainty.value'))
+      ) {
+        const node = {
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/GraftDensity`,
+          '@type': 'mm:GraftDensity',
+          ...(hasText(desc) && { 'rdfs:label': desc }),
+          ...(vLit && { 'sio:hasValue': vLit })
+        };
+        const unitIri = mapUnit(u);
+        if (unitIri) node['sio:hasUnit'] = unitIri;
+        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+        const ut = pick(gd, 'uncertainty.type');
+        const uv = pick(gd, 'uncertainty.value');
+        if (hasText(ut) || hasText(uv)) {
+          node['mm:hasUncertainty'] = {
+            '@type': 'mm:Type',
+            ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+            ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+          };
+        }
+        pstAttrs.push(node);
+      }
+    }
+
+    // PST MolecularWeight (+ uncertainty)
+    const pmw = pick(pst, 'MolecularWeight');
+    if (pmw) {
+      const desc = pick(pmw, 'description');
+      const v = pick(pmw, 'value');
+      const u = pick(pmw, 'unit');
+      const vLit = litNum(v) || litStr(v);
+      if (
+        vLit ||
+        hasText(desc) ||
+        hasText(pick(pmw, 'uncertainty.type')) ||
+        hasText(pick(pmw, 'uncertainty.value'))
+      ) {
+        const node = {
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/MolecularWeight`,
+          '@type': 'mm:MolecularWeight',
+          ...(hasText(desc) && { 'rdfs:label': desc }),
+          ...(vLit && { 'sio:hasValue': vLit })
+        };
+        const unitIri = mapUnit(u);
+        if (unitIri) node['sio:hasUnit'] = unitIri;
+        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+
+        const ut = pick(pmw, 'uncertainty.type');
+        const uv = pick(pmw, 'uncertainty.value');
+        if (hasText(ut) || hasText(uv)) {
+          node['mm:hasUncertainty'] = {
+            '@type': 'mm:Type',
+            ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+            ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
+          };
+        }
+        pstAttrs.push(node);
+      }
+    }
+
+    // PST_Composition
+    const pstc = pick(pst, 'PST_Composition');
+    if (pstc) {
+      const compAttrs = [];
+
+      const cst = pick(pstc, 'Constituent');
+      if (hasText(cst)) {
+        compAttrs.push({
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/PST_Composition/Constituent`,
+          '@type': 'mm:ConstitutionalUnit',
+          'sio:hasValue': litStr(cst)
+        });
+      }
+
+      const frMass = pick(pstc, 'Fraction.Mass') ?? pick(pstc, 'Mass');
+      const frVol = pick(pstc, 'Fraction.Volume') ?? pick(pstc, 'Volume');
+      const frAttrs = [];
+      const mLit = litNum(frMass);
+      if (mLit) {
+        frAttrs.push({
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/PST_Composition/Fraction/Mass`,
+          '@type': 'mm:MassFraction',
+          'sio:hasValue': mLit
+        });
+      }
+      const vLit2 = litNum(frVol);
+      if (vLit2) {
+        frAttrs.push({
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/PST_Composition/Fraction/Volume`,
+          '@type': 'mm:VolumeFraction',
+          'sio:hasValue': vLit2
+        });
+      }
+      if (frAttrs.length) {
+        compAttrs.push({
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/PST_Composition/Fraction`,
+          '@type': 'mm:ConstitutionalUnit',
+          'sio:hasAttribute': frAttrs
+        });
+      }
+
+      if (compAttrs.length) {
+        pstAttrs.push({
+          '@id': `${fcId}/FillerComponent/ParticleSurfaceTreatment/PST_Composition`,
+          '@type': 'mm:ParticleSurfaceTreatmentComposition',
+          'sio:hasAttribute': compAttrs
+        });
+      }
+    }
+
+    // SurfaceChemistryProcessing → reuse MatrixProcessing parameter logic
+    const scp = pick(pst, 'SurfaceChemistryProcessing');
+    if (scp) {
+      const params = toArray(pick(scp, 'ChooseParameter'));
+      const paramNodes = params
+        .map((cp, i) => {
+          const idx = i + 1;
+          const paramId = `${fcId}/ParticleSurfaceTreatment/SurfaceChemistryProcessing/parameter${idx}`;
+
+          const curing = pick(cp, 'Curing');
+          if (curing) {
+            return buildCuringLike('mm:Curing', 'curing', curing, paramId);
+          }
+
+          const add = pick(cp, 'Additive');
+          if (add) return buildAdditiveParam(add, paramId);
+
+          const sol = pick(cp, 'Solvent');
+          if (sol) return buildSolventParam(sol, paramId);
+
+          const heating = pick(cp, 'Heating');
+          if (heating) {
+            return buildCuringLike('mm:Heating', 'heating', heating, paramId);
+          }
+
+          const cooling = pick(cp, 'Cooling');
+          if (cooling) {
+            return buildCuringLike('mm:Cooling', 'cooling', cooling, paramId);
+          }
+
+          const drying =
+            pick(cp, 'Drying-Evaporation') || (cp && cp['Drying-Evaporation']);
+          if (drying) {
+            return buildCuringLike(
+              'mm:Drying-Evaporation',
+              'Drying-Evaporation',
+              drying,
+              paramId
+            );
+          }
+
+          const extrusion = pick(cp, 'Extrusion');
+          if (extrusion) {
+            return buildExtrusionParam(
+              extrusion,
+              paramId,
+              fcId,
+              'ParticleSurfaceTreatment/SurfaceChemistryProcessing'
+            );
+          }
+
+          const centrif = pick(cp, 'Centrifugation');
+          if (hasText(centrif)) {
+            return {
+              '@id': paramId,
+              '@type': 'mm:Centrifugation',
+              'sio:hasValue': litStr(centrif)
+            };
+          }
+
+          const molding = pick(cp, 'Molding');
+          if (molding) {
+            const subAttrs = [];
+            const mode = pick(molding, 'MoldingMode');
+            if (hasText(mode)) {
+              const m = mode.toString().toLowerCase();
+              let typeIri = 'mm:MoldingMode';
+              if (m.includes('hot')) typeIri = 'mm:HotPressing';
+              else if (m.includes('cast')) typeIri = 'mm:Casting';
+              else if (m.includes('inject')) typeIri = 'mm:InjectionMolding';
+              else if (m.includes('rotat')) typeIri = 'mm:RotationalMolding';
+              else if (m.includes('vacuum')) typeIri = 'mm:VacuumMolding';
+
+              subAttrs.push({
+                '@id': `${fcId}/ParticleSurfaceTreatment/SurfaceChemistryProcessing/Molding/MoldingMode`,
+                '@type': typeIri,
+                'sio:hasValue': litStr(mode)
+              });
+            }
+            const info = pick(molding, 'MoldingInfo');
+            if (info) {
+              const infoNode = buildCuringLike(
+                'mm:Molding',
+                'Molding/MoldingInfo',
+                info,
+                `${paramId}/MoldingInfo`
+              );
+              if (infoNode) subAttrs.push(infoNode);
+            }
+            return subAttrs.length
+              ? {
+                  '@id': paramId,
+                  '@type': 'mm:Molding',
+                  'sio:hasAttribute': subAttrs
+                }
+              : null;
+          }
+
+          const mixing = pick(cp, 'Mixing');
+          if (mixing) {
+            return buildMixingParam(
+              mixing,
+              paramId,
+              fcId,
+              'ParticleSurfaceTreatment/SurfaceChemistryProcessing'
+            );
+          }
+
+          const other = pick(cp, 'Other');
+          if (hasText(other)) {
+            return {
+              '@id': paramId,
+              '@type': 'mm:Other',
+              'sio:hasValue': litStr(other)
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean);
+
+      if (paramNodes.length) {
+        pstAttrs.push({
+          '@id': `${fcId}/ParticleSurfaceTreatment/SurfaceChemistryProcessing`,
+          '@type': 'mm:SurfaceChemistryProcessing',
+          'sio:hasAttribute': paramNodes
+        });
+      }
+    }
+
+    if (pstAttrs.length) {
+      attrs.push({
+        '@id': `${fcId}/ParticleSurfaceTreatment`,
+        '@type': 'mm:ParticleSurfaceTreatment',
+        'sio:hasAttribute': pstAttrs
+      });
+    }
+  }
+
+  return {
+    '@id': fcId,
+    '@type': 'mm:FillerComponent',
+    ...(attrs.length ? { 'sio:hasAttribute': attrs } : {})
+  };
+}
+
 /* ------------------------ Materials + Microstructure (nested) ------------------------ */
 function buildMaterialsAndMicrostructure(pnc, baseId) {
   const materialsId = `${baseId}/attr/materials`;
@@ -1212,8 +1822,32 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
   if (hasFillerInXml) {
     const fillerProcessing = buildFillerProcessing(pnc, baseId);
     const fillerComposition = buildFillerComposition(pnc, baseId);
+    const fillerComponents = toArray(
+      pick(pnc, 'PolymerNanocomposite.MATERIALS.Filler.FillerComponent')
+    );
+
+    let fillerComponentValue = null;
+    if (fillerComponents.length > 1) {
+      // index all items starting at 1
+      fillerComponentValue = fillerComponents.map((fc, i) => {
+        const fcId = `${baseId}/FillerComponent/${i + 1}`;
+        return buildFillerComponent(fc, fcId, baseId);
+        // (Note: rootBaseId kept for symmetry; IDs are derived from fcId)
+      });
+    } else if (fillerComponents.length === 1) {
+      const fcId = `${baseId}/FillerComponent`;
+      fillerComponentValue = buildFillerComponent(
+        fillerComponents[0],
+        fcId,
+        baseId
+      );
+    }
+
     fillerNode = {
       '@id': `${baseId}/filler`,
+      ...(fillerComponentValue
+        ? { 'mm:hasFillerComponent': fillerComponentValue }
+        : {}),
       ...(fillerProcessing
         ? { 'mm:hasFillerProcessing': fillerProcessing }
         : {}),
@@ -1346,6 +1980,185 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
   return { hasMaterials, hasMicrostructure };
 }
 
+/** Build a single ChooseParameter branch with same logic as MatrixProcessing. */
+function buildProcessingParam(cp, paramId, baseId, scopePath) {
+  const curing = pick(cp, 'Curing');
+  if (curing) return buildCuringLike('mm:Curing', 'curing', curing, paramId);
+
+  const add = pick(cp, 'Additive');
+  if (add) return buildAdditiveParam(add, paramId);
+
+  const sol = pick(cp, 'Solvent');
+  if (sol) return buildSolventParam(sol, paramId);
+
+  const heating = pick(cp, 'Heating');
+  if (heating)
+    return buildCuringLike('mm:Heating', 'heating', heating, paramId);
+
+  const cooling = pick(cp, 'Cooling');
+  if (cooling)
+    return buildCuringLike('mm:Cooling', 'cooling', cooling, paramId);
+
+  const drying =
+    pick(cp, 'Drying-Evaporation') || (cp && cp['Drying-Evaporation']);
+  if (drying) {
+    return buildCuringLike(
+      'mm:Drying-Evaporation',
+      'Drying-Evaporation',
+      drying,
+      paramId
+    );
+  }
+
+  const extrusion = pick(cp, 'Extrusion');
+  if (extrusion) {
+    return buildExtrusionParam(
+      extrusion,
+      paramId,
+      baseId,
+      `processing/${scopePath}`
+    );
+  }
+
+  const centrif = pick(cp, 'Centrifugation');
+  if (hasText(centrif)) {
+    return {
+      '@id': paramId,
+      '@type': 'mm:Centrifugation',
+      'sio:hasValue': litStr(centrif)
+    };
+  }
+
+  const molding = pick(cp, 'Molding');
+  if (molding) {
+    const subAttrs = [];
+    const mode = pick(molding, 'MoldingMode');
+    if (hasText(mode)) {
+      const m = mode.toString().toLowerCase();
+      let typeIri = 'mm:MoldingMode';
+      if (m.includes('hot')) typeIri = 'mm:HotPressing';
+      else if (m.includes('cast')) typeIri = 'mm:Casting';
+      else if (m.includes('inject')) typeIri = 'mm:InjectionMolding';
+      else if (m.includes('rotat')) typeIri = 'mm:RotationalMolding';
+      else if (m.includes('vacuum')) typeIri = 'mm:VacuumMolding';
+
+      subAttrs.push({
+        '@id': `${baseId}/processing/${scopePath}/Molding/MoldingMode`,
+        '@type': typeIri,
+        'sio:hasValue': litStr(mode)
+      });
+    }
+    const info = pick(molding, 'MoldingInfo');
+    if (info) {
+      const infoNode = buildCuringLike(
+        'mm:Molding',
+        'Molding/MoldingInfo',
+        info,
+        `${paramId}/MoldingInfo`
+      );
+      if (infoNode) subAttrs.push(infoNode);
+    }
+    return subAttrs.length
+      ? { '@id': paramId, '@type': 'mm:Molding', 'sio:hasAttribute': subAttrs }
+      : null;
+  }
+
+  const mixing = pick(cp, 'Mixing');
+  if (mixing) {
+    return buildMixingParam(mixing, paramId, baseId, `processing/${scopePath}`);
+  }
+
+  const other = pick(cp, 'Other');
+  if (hasText(other)) {
+    return {
+      '@id': paramId,
+      '@type': 'mm:Other',
+      'sio:hasValue': litStr(other)
+    };
+  }
+
+  return null;
+}
+
+/** Build a PROCESSING section (SolutionProcessing, MeltMixing, In-SituPolymerization, Other_Processing). */
+function buildProcessingSection(sectionObj, baseId, scopePath, typeIri) {
+  if (!sectionObj) return null;
+  const params = toArray(pick(sectionObj, 'ChooseParameter'));
+  if (!params.length) return null;
+
+  const paramNodes = params
+    .map((cp, i) => {
+      const idx = i + 1;
+      const paramId = `${baseId}/processing/${scopePath}/parameter${idx}`;
+      return buildProcessingParam(cp, paramId, baseId, scopePath);
+    })
+    .filter(Boolean);
+
+  if (!paramNodes.length) return null;
+
+  return {
+    '@id': `${baseId}/processing/${scopePath}`,
+    '@type': typeIri,
+    'sio:hasAttribute': paramNodes
+  };
+}
+
+/** Root builder for PolymerNanocomposite.PROCESSING */
+function buildProcessing(pnc, baseId) {
+  const proc = pick(pnc, 'PolymerNanocomposite.PROCESSING');
+  if (!proc) return null;
+
+  // ExperimentalProcedure (simple text)
+  const expText = pick(proc, 'ExperimentalProcedure');
+  const experimentalProcedure = hasText(expText)
+    ? {
+        '@id': `${baseId}/processing/ExperimentalProcedure`,
+        '@type': 'mm:ExperimentalProcedure',
+        'sio:hasValue': litStr(expText)
+      }
+    : null;
+
+  // Sections that mirror MatrixProcessing param logic
+  const solution = buildProcessingSection(
+    pick(proc, 'SolutionProcessing'),
+    baseId,
+    'SolutionProcessing',
+    'mm:SolutionProcessing'
+  );
+  const melt = buildProcessingSection(
+    pick(proc, 'MeltMixing'),
+    baseId,
+    'MeltMixing',
+    'mm:MeltMixing'
+  );
+  const insitu = buildProcessingSection(
+    pick(proc, 'In-SituPolymerization'),
+    baseId,
+    'In-SituPolymerization',
+    'mm:In-SituPolymerization'
+  );
+  const otherp = buildProcessingSection(
+    pick(proc, 'Other_Processing'),
+    baseId,
+    'Other_Processing',
+    'mm:Other_Processing'
+  );
+
+  if (!experimentalProcedure && !solution && !melt && !insitu && !otherp)
+    return null;
+
+  return {
+    '@id': `${baseId}/attr/processing`,
+    ...(experimentalProcedure
+      ? { 'mm:hasExperimentalProcedure': experimentalProcedure }
+      : {}),
+    ...(solution ? { 'mm:hasSolutionProcessing': solution } : {}),
+    ...(melt ? { 'mm:hasMeltMixing': melt } : {}),
+    ...(insitu ? { 'mm:hasIn-SituPolymerization': insitu } : {}),
+    ...(otherp ? { 'mm:hasOtherProcessing': otherp } : {})
+  };
+}
+
 /* ------------------------ Transform: XML(JS) → Nanopub JSON-LD ------------------------ */
 async function transformXmlToNanopub(xmlObj, logger) {
   const pnc = xmlObj;
@@ -1372,6 +2185,7 @@ async function transformXmlToNanopub(xmlObj, logger) {
     pnc,
     baseId
   );
+  const hasProcessing = buildProcessing(pnc, baseId);
 
   // Assertion: sample with nested materials & microstructure only
   const sample = {
@@ -1379,6 +2193,7 @@ async function transformXmlToNanopub(xmlObj, logger) {
     '@type': 'mm:MaterialSample',
     'schema:name': String(id),
     ...(hasMaterials ? { 'mm:hasMaterials': hasMaterials } : {}),
+    ...(hasProcessing ? { 'mm:hasProcessing': hasProcessing } : {}),
     ...(hasMicrostructure ? { 'mm:hasMicrostructure': hasMicrostructure } : {})
   };
 
