@@ -318,20 +318,154 @@ const extractBlobId = (s) => {
   }
 };
 
+// function pick(obj, path, fallback = undefined) {
+//   try {
+//     return (
+//       path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj) ??
+//       fallback
+//     );
+//   } catch {
+//     return fallback;
+//   }
+// }
+
 function pick(obj, path, fallback = undefined) {
   try {
     return (
-      path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj) ??
-      fallback
+      path.split('.').reduce((o, k) => {
+        if (o == null) return undefined;
+
+        // Find the actual key in the current object level that matches 'k' case-insensitively
+        const target = k.toLowerCase();
+        const actualKey = Object.keys(o).find(
+          (key) => key.toLowerCase() === target
+        );
+
+        return actualKey ? o[actualKey] : undefined;
+      }, obj) ?? fallback
     );
   } catch {
     return fallback;
   }
 }
+
 const toArray = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const asDecimal = (v) =>
   v == null || v === '' ? undefined : Number.isFinite(+v) ? +v : undefined;
 const mapUnit = (u) => (u ? UNIT_IRI[String(u).trim()] || null : null);
+
+/* ------------------------ Value helpers ------------------------ */
+const litStr = (v) =>
+  v == null ? null : { '@value': String(v), '@type': 'xsd:string' };
+
+const litNum = (v) => {
+  if (v == null) return null;
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? { '@value': n, '@type': 'xsd:double' } : null;
+};
+
+/* ---------- helper: dataset/table helper ---------- */
+function buildSioDatasetFromTable(table, datasetId, desc = null) {
+  if (!table) return null;
+
+  // Extract text from xml2js-style nodes: { _: 'value', $: { id: '0' } }
+  const textOf = (val) => {
+    if (val == null) return null;
+    if (typeof val === 'object') {
+      if (Object.prototype.hasOwnProperty.call(val, '_')) return val._;
+      if (Object.prototype.hasOwnProperty.call(val, 'value')) return val.value;
+      if (Object.prototype.hasOwnProperty.call(val, 'text')) return val.text;
+      return null;
+    }
+    return val;
+  };
+
+  // Normalize a list of nodes into { id?, idx, text }, sorted by numeric id if all present
+  const normItems = (list) => {
+    const arr = toArray(list);
+    const mapped = arr.map((v, idx) => ({
+      id:
+        v && typeof v === 'object' && v.$ && v.$.id != null
+          ? Number(v.$.id)
+          : null,
+      idx,
+      text: textOf(v)
+    }));
+    if (mapped.length && mapped.every((m) => Number.isFinite(m.id))) {
+      mapped.sort((a, b) => a.id - b.id);
+    }
+    return mapped;
+  };
+
+  // -------- headers ----------
+  let headers = [];
+  const headerItems = normItems(pick(table, 'headers.column'));
+  if (headerItems.length) {
+    headers = headerItems
+      .map((h) => h.text)
+      .filter(hasText)
+      .map(String);
+  } else {
+    const headerFallback = normItems(pick(table, 'headers'));
+    const alt = headerFallback
+      .map((h) => h.text)
+      .filter(hasText)
+      .map(String);
+    if (alt.length) headers = alt;
+  }
+
+  // -------- rows ----------
+  let rows = toArray(pick(table, 'rows.row'));
+  if (!rows.length) rows = toArray(pick(table, 'rows'));
+
+  const parts = [];
+  rows.forEach((row) => {
+    // Prefer explicit <column> children; otherwise treat row as a plain list
+    let cols = normItems(pick(row, 'column'));
+    if (!cols.length) cols = normItems(row);
+
+    const attrs = [];
+    cols.forEach((c, i) => {
+      const label =
+        headers[i] != null && hasText(headers[i])
+          ? String(headers[i])
+          : `column ${i + 1}`;
+      const raw = c.text;
+      if (raw == null || raw === '') return;
+
+      const vLit = litNum(raw) || litStr(raw);
+      if (!vLit) return;
+
+      attrs.push({
+        '@type': 'sio:attribute',
+        'rdfs:label': label,
+        'sio:hasValue': vLit
+      });
+    });
+
+    if (attrs.length) {
+      parts.push({
+        '@type': 'sio:row',
+        'sio:hasAttribute': attrs
+      });
+    }
+  });
+
+  // Optional dataset description
+  const commentRaw =
+    desc ?? pick(table, 'description') ?? pick(table, 'Description');
+  // const commentRaw = pick(table, 'description') ?? pick(table, 'Description');
+  const comment = textOf(commentRaw);
+
+  if (!parts.length && !hasText(comment)) return null;
+
+  return {
+    '@id': datasetId,
+    '@type': 'sio:dataset',
+    ...(hasText(comment) ? { 'rdfs:comment': String(comment) } : {}),
+    ...(parts.length ? { 'sio:hasPart': parts } : {})
+  };
+}
 
 /* ---------- helper: normalize potentially quoted XML ---------- */
 function normalizeXml(xml) {
@@ -595,17 +729,22 @@ function prepareForValidation(doc) {
   return clone;
 }
 
-exports.extractBareDOI = extractBareDOI;
-exports.toDoiIri = toDoiIri;
-exports.fetchPaperDetails = fetchPaperDetails;
-exports.pick = pick;
-exports.toArray = toArray;
-exports.mapUnit = mapUnit;
-exports.asDecimal = asDecimal;
-exports.slug = slug;
-exports.getText = getText;
-exports.hasText = hasText;
-exports.extractBlobId = extractBlobId;
-exports.normalizeXml = normalizeXml;
-exports.validateXmlAgainstXsd = validateXmlAgainstXsd;
-exports.prepareForValidation = prepareForValidation;
+module.exports = {
+  extractBareDOI,
+  toDoiIri,
+  fetchPaperDetails,
+  pick,
+  litStr,
+  litNum,
+  toArray,
+  mapUnit,
+  asDecimal,
+  slug,
+  getText,
+  hasText,
+  extractBlobId,
+  normalizeXml,
+  validateXmlAgainstXsd,
+  prepareForValidation,
+  buildSioDatasetFromTable
+};
