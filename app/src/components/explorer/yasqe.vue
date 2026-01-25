@@ -2,76 +2,71 @@
   <div :id="id" />
 </template>
 
-<script setup lang="ts">
-import { ref, watch, onMounted, getCurrentInstance } from 'vue';
-import { useStore } from 'vuex';
+<script>
 import Yasqe from '@triply/yasqe';
 
-interface Props {
-  id?: string;
-  value?: string;
-  endpoint?: string;
-  showBtns?: boolean;
-  readOnly?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  id: 'YASQE',
-  value: '',
-  endpoint: '/api/knowledge/sparql',
-  showBtns: true,
-  readOnly: false,
-});
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void;
-  (e: 'input', value: string): void;
-  (e: 'query-error', args: any): void;
-  (e: 'query-success', response: any): void;
-}>();
-
-const store = useStore();
-const instance = getCurrentInstance();
-const yasqe = ref<any>(null);
-
-onMounted(() => {
-  const token = store.getters['auth/token'];
-  const el = instance?.proxy?.$el;
-
-  yasqe.value = new Yasqe(el, {
-    readOnly: props.readOnly,
-    showQueryButton: props.showBtns,
-    requestConfig: {
-      endpoint: props.endpoint,
-      method: 'POST',
-      headers: () => ({
-        authorization: 'Bearer ' + token,
-      }),
+export default {
+  name: 'yasqe',
+  props: {
+    id: {
+      type: String,
+      default: () => 'YASQE',
     },
-  });
-
-  yasqe.value.setValue(props.value);
-  setTimeout(() => yasqe.value.refresh(), 1);
-
-  yasqe.value.on('error', function (...args: any[]) {
-    console.error('YASQE query error', args);
-    emit('query-error', args);
-  });
-
-  yasqe.value.on('queryResults', function (yasqeInstance: any, response: any, duration: number) {
-    emit('input', yasqe.value.getValue());
-    emit('query-success', response);
-  });
-});
-
-watch(
-  () => props.value,
-  (newValue) => {
-    if (yasqe.value && newValue !== yasqe.value.getValue()) {
-      yasqe.value.setValue(newValue);
-    }
-  }
-);
+    value: {
+      type: String,
+      default: () => '',
+    },
+    endpoint: {
+      type: String,
+      default: () => '/api/knowledge/sparql',
+    },
+    showBtns: {
+      type: Boolean,
+      default: true,
+    },
+    readOnly: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  data() {
+    return {
+      editorValue: this.value,
+    };
+  },
+  mounted() {
+    const token = this.$store.getters['auth/token'];
+    const yasqeContext = this;
+    this.yasqe = new Yasqe(this.$el, {
+      readOnly: this.readOnly,
+      showQueryButton: this.showBtns,
+      requestConfig: {
+        endpoint: this.endpoint,
+        method: 'POST',
+        headers: () => ({
+          authorization: 'Bearer ' + token,
+        }),
+      },
+    });
+    this.yasqe.setValue(this.value);
+    setTimeout(() => this.yasqe.refresh(), 1);
+    this.yasqe.on('error', function () {
+      console.error('YASQE query error', arguments);
+      yasqeContext.$emit('query-error', arguments);
+    });
+    this.yasqe.on('queryResults', function (yasqe, response, duration) {
+      yasqeContext.$emit('input', yasqeContext.yasqe.getValue());
+      yasqeContext.$emit('query-success', response);
+    });
+  },
+  watch: {
+    value(value) {
+      if (value !== this.editorValue) {
+        this.yasqe.setValue(value);
+      }
+    },
+  },
+};
 </script>
 
 <style css src="@triply/yasqe/build/yasqe.min.css"></style>
