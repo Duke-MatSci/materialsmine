@@ -10,14 +10,13 @@ def push_to_fuseki(
     ontology_graph: Graph,
     ontology_format: str,
     graph_uri: Optional[str],
-    replace: bool = True,
+    replace: bool,
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Push the ontology into Fuseki using the Graph Store Protocol.
     If graph_uri is None, writes to the default graph.
     """
-    # base = Config.FUSEKI_BASE_URL or "http://localhost:3030"
-    base = "http://host.docker.internal:3030"
+    base = Config.FUSEKI_BASE_URL or "http://host.docker.internal:3030"
     dataset = Config.FUSEKI_DATASET
     user = Config.FUSEKI_USER
     pwd = Config.FUSEKI_PWD
@@ -85,8 +84,7 @@ def upsert_np_graphs_strict_transaction(
     Runs as a single transactional operation in Fuseki.
     Returns (ok, report).
     """
-        # base = Config.FUSEKI_BASE_URL or "http://localhost:3030"
-    base = ("http://host.docker.internal:3030").rstrip("/")
+    base = Config.FUSEKI_BASE_URL or "http://host.docker.internal:3032"
     dataset = Config.FUSEKI_DATASET
     user = Config.FUSEKI_USER
     pwd = Config.FUSEKI_PWD
