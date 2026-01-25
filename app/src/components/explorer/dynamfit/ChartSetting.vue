@@ -464,11 +464,18 @@
           v-on:click="useSampleFile"
           ><span class="md-body-1">Use Sample </span></a
         >
+        <!-- TODO: Fix here-->
+        <a
+          v-else
+          class="btn-text"
+          :class="{ disabled: updateBtn }"
+          style="border-radius: 0% !important"
+          href="#"
+          v-on:click="useSampleFile"
+          ><span class="md-body-1">Update</span></a
+        >
         <span
-          ><md-icon
-            v-if="!dynamfit.fileUpload.length"
-            class="u_superscript-icon utility-color"
-            :title="sampleTitle()"
+          ><md-icon class="u_superscript-icon utility-color" :title="sampleTitle()"
             >help_outline</md-icon
           ></span
         >
@@ -556,6 +563,7 @@ const ttspEAValue = ref(null);
 const tLEstimated = ref(false);
 const eAEstimated = ref(false);
 const sentRequest = ref(false);
+const updateBtn = ref(false);
 
 // Computed properties
 const token = computed(() => store.getters['auth/token']);
@@ -614,7 +622,9 @@ const decreaseStepper = (): void => {
 
 const sampleTitle = (): string => {
   // eslint-disable-next-line
-  return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
+  return dynamfit.value.fileUpload.length
+    ? `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`
+    : `Click to resubmit your changes`;
 };
 
 const downloadTitle = (): string => {
@@ -866,5 +876,12 @@ watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov
   if (cv[2] && cv[2] === true) ttspC2Value.value = null;
   if (cv[3] && cv[3] === true) ttspTLValue.value = null;
   if (cv[4] && cv[4] === true) ttspEAValue.value = null;
+  if (cv !== ov) updateBtn.value = true;
 });
 </script>
+<style>
+a.disabled {
+  pointer-events: none;
+  cursor: default;
+}
+</style>
