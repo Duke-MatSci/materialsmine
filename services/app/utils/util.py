@@ -94,7 +94,8 @@ def upload_init(file_name, domain):
         elif domain == 'temperature':
             df.columns =['Temperature', 'E Storage', 'E Loss']
         else:
-            df.columns =['', 'E Storage', 'E Loss']
+            df.columns =['UNKNOWN', 'E Storage', 'E Loss']
+        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
         return df.to_dict("records")
     except pd.errors.EmptyDataError as e:
         raise ValueError("File is Empty")
@@ -151,6 +152,7 @@ def shift_upload_init(file_name):
 
         # Rename columns
         df.columns =['Temperature', 'a_T']
+        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
         return df.to_dict("records")
     except pd.errors.EmptyDataError as e:
         raise ValueError("File is Empty")

@@ -723,7 +723,8 @@ const updateChart = async (): Promise<void> => {
       if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
     }
   } else if (transformMethod.value && isManual.value) {
-    payload.shift_file_name = mFile;
+    payload.transform_method = transformMethod.value;
+    payload.shift_file_name = mFile.value;
   }
 
   isSidebarOpen.value = false;
