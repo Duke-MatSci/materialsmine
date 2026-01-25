@@ -21,14 +21,8 @@
           <md-icon>chevron_right</md-icon>
         </md-button>
         <p class="display-text">
-          <span
-            v-for="(segment, index) in selectedTemplate.displaySegments"
-            :key="index"
-          >
-            <span
-              v-if="segment.type == TextSegmentType.TEXT"
-              v-html="segment.text"
-            ></span>
+          <span v-for="(segment, index) in selectedTemplate.displaySegments" :key="index">
+            <span v-if="segment.type == TextSegmentType.TEXT" v-html="segment.text"></span>
             <span v-else>
               <select
                 v-model="varSelections[segment.varName!]"
@@ -65,9 +59,7 @@
             >
               Search Query
             </button>
-            <md-switch class="md-primary" v-model="autoRefresh">
-              Auto Refresh
-            </md-switch>
+            <md-switch class="md-primary" v-model="autoRefresh"> Auto Refresh </md-switch>
             <div class="u_display-flex button-row">
               <div>
                 <button class="btn btn--primary" @click="selectQueryForVizEditor()">
@@ -77,11 +69,7 @@
             </div>
           </div>
           <div class="u_display-flex results-progress" v-show="runningQuery">
-            <spinner
-              :loading="runningQuery"
-              text="Loading your request..."
-              v-if="runningQuery"
-            />
+            <spinner :loading="runningQuery" text="Loading your request..." v-if="runningQuery" />
           </div>
           <div v-show="!runningQuery">
             <yasr v-if="results" :results="results" />
@@ -242,10 +230,7 @@ const buildQuery = (): void => {
   const activeReplacements = Object.fromEntries(
     Object.entries(selectedTemplate.value.replacements).map(([varName, varObj]) => {
       // find the actively selected option
-      return [
-        varName,
-        varObj.varFormat.replace('${' + 'var}', varSelections.value[varObj.subVar]),
-      ];
+      return [varName, varObj.varFormat.replace('${' + 'var}', varSelections.value[varObj.subVar])];
     })
   );
   if (Object.keys(activeReplacements).length > 0) {

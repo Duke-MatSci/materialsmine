@@ -2,36 +2,112 @@
 @prefix schema: <http://schema.org/> .
 @prefix sp: <http://spinrdf.org/sp> .
 @prefix spin: <http://spinrdf.org/spin#> .
-@prefix spl: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spl#> .
 @prefix whyis: <http://vocab.rpi.edu/whyis/> .
 @prefix materialsmine_templates: <http://materialsmine.org/query/> .
 @prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
 
 materialsmine_templates:PQ01 a whyis:SparqlTemplate;
-  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler} filler surrounded by {?Matrix} matrix, along with the {?AmountType} fraction of filler and reported values of {?AttributeType}.";
+  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?FillerParam} filler surrounded by {?MatrixParam} matrix, along with the {?AmountType} fraction of filler and reported values of {?PropertyType}.";
   sp:text """
-PREFIX sio: <http://semanticscience.org/resource/>
-PREFIX mm: <http://materialsmine.org/ns/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT DISTINCT ?Sample ?Filler ?FillerAmount ?Matrix ?AttributeValue ?UnitOfMeasure WHERE {
-  ?Sample a mm:PolymerNanocomposite ;
-          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
-                                 a [ rdfs:label ?Filler ] ;
-                                 sio:hasAttribute [ a ?AmountType ;
-                                                    sio:hasValue ?FillerAmount] ] ,
-                               [ sio:hasRole [ a mm:Matrix ] ;
-                                 a [ rdfs:label ?Matrix ] ] ;
-          sio:hasAttribute  ?Attr .
-  ?Attr a ?AttributeType ;
-     sio:hasValue ?AttributeValue .
-  OPTIONAL { ?Attr sio:hasUnit ?UnitOfMeasure }
+PREFIX mm:     <http://materialsmine.org/resource/>
+PREFIX schema: <http://schema.org/>
+PREFIX sio:    <http://semanticscience.org/resource/>
+PREFIX prov:   <http://www.w3.org/ns/prov#>
+PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+SELECT DISTINCT
+  (STR(?sampleName)              AS ?Sample)
+  (LCASE(STR(?fillerName))       AS ?Filler)
+  ?FillerAmount
+  (STR(?matrixName)              AS ?Matrix)
+  ?AttributeValue
+  (STR(?unitOfMeasure)           AS ?UnitOfMeasure)
+WHERE {
+  # --------------------
+  # Sample
+  # --------------------
+  ?sample a mm:MaterialSample ;
+          schema:name ?sampleName ;
+          mm:hasMaterials ?materials ;
+          mm:hasProperties ?props .
+  # --------------------
+  # Matrix name: prefer StdChemicalName, else ChemicalName
+  # --------------------
+  ?materials mm:hasMatrix ?matrix .
+  ?matrix mm:hasMatrixComponent ?matrixComp .
+  OPTIONAL {
+    ?matrixComp sio:hasAttribute ?mStdNode .
+    ?mStdNode a mm:StdChemicalName ;
+              sio:hasValue ?mStdVal .
+  }
+  OPTIONAL {
+    ?matrixComp sio:hasAttribute ?mChemNode .
+    ?mChemNode a mm:ChemicalName ;
+               sio:hasValue ?mChemVal .
+  }
+  BIND(COALESCE(?mStdVal, ?mChemVal) AS ?matrixName)
+  FILTER(BOUND(?matrixName))
+  FILTER(
+    LCASE(STR(?MatrixParam)) = "any"
+    || LCASE(STR(?matrixName)) = LCASE(STR(?MatrixParam))
+  )
+  # --------------------
+  # Filler name: prefer StdChemicalName, else ChemicalName
+  # --------------------
+  ?materials mm:hasFiller ?filler .
+  ?filler mm:hasFillerComponent ?fillerComp .
+  OPTIONAL {
+    ?fillerComp sio:hasAttribute ?fStdNode .
+    ?fStdNode a mm:StdChemicalName ;
+              sio:hasValue ?fStdVal .
+  }
+  OPTIONAL {
+    ?fillerComp sio:hasAttribute ?fChemNode .
+    ?fChemNode a mm:ChemicalName ;
+               sio:hasValue ?fChemVal .
+  }
+  BIND(COALESCE(?fStdVal, ?fChemVal) AS ?fillerName)
+  FILTER(BOUND(?fillerName))
+  FILTER(
+    LCASE(STR(?FillerParam)) = "any"
+    || LCASE(STR(?fillerName)) = LCASE(STR(?FillerParam))
+  )
+  # --------------------
+  # Filler fraction (parameterized: VolumeFraction, MassFraction, etc.)
+  # --------------------
+  ?filler mm:hasFillerComposition ?fillerCompn .
+  ?fillerCompn sio:hasAttribute ?fractionNode .
+  ?fractionNode a ?AmountType ;
+                sio:hasValue ?FillerAmount .
+
+  # If you want “reported only”, add:
+  # ?fractionNode prov:hadPrimarySource ?src .
+  # FILTER(LCASE(STR(?src)) = "reported")
+  # --------------------
+  # Property (parameterized: GlassTransitionTemperature, etc.)
+  # --------------------
+  {
+    # Thermal path (e.g., GlassTransitionTemperature)
+    ?props mm:hasThermalProperty ?propNode .
+  }
+  UNION
+  {
+    # Mechanical path (e.g., TensileModulus)
+    ?props mm:hasMechanicalProperty ?mechGroup .
+    ?mechGroup sio:hasAttribute ?propNode .
+  }
+  ?propNode a ?PropertyType ;
+            sio:hasValue ?AttributeValue .
+  OPTIONAL { ?propNode sio:hasUnit ?unitOfMeasure }
 }
+ORDER BY ?sampleName
 """;
   spin:constraint [
     a spl:Argument ;
-    sp:varName "Filler";
+    sp:varName "FillerParam";
     schema:option [
         rdfs:label "any";
+        schema:value "any" ;
         schema:position 1
       ],
       [
@@ -107,9 +183,10 @@ SELECT DISTINCT ?Sample ?Filler ?FillerAmount ?Matrix ?AttributeValue ?UnitOfMea
   ],
   [
     a spl:Argument ;
-    sp:varName "Matrix";
+    sp:varName "MatrixParam";
     schema:option [
         rdfs:label "any";
+        schema:value "any" ;
         schema:position 1
       ],
       [
@@ -190,125 +267,40 @@ SELECT DISTINCT ?Sample ?Filler ?FillerAmount ?Matrix ?AttributeValue ?UnitOfMea
   ],
   [
     a spl:Argument ;
-    sp:varName "AmountType";
+    sp:varName "AmountType" ;
     schema:option [
         rdfs:label "volume";
-        schema:identifier <http://materialsmine.org/ns/VolumeFraction>;
+        schema:identifier <http://materialsmine.org/resource/VolumeFraction>;
         schema:position 1
       ],
       [
         rdfs:label "mass";
-        schema:identifier <http://materialsmine.org/ns/MassFraction>;
+        schema:identifier <http://materialsmine.org/resource/MassFraction>;
         schema:position 2
       ]
   ],
   [
     a spl:Argument ;
-    sp:varName "AttributeType";
+    sp:varName "PropertyType" ;
     schema:option [
         rdfs:label "glass transition temperature";
-        schema:identifier <http://materialsmine.org/ns/GlassTransitionTemperature>;
+        schema:identifier <http://materialsmine.org/resource/GlassTransitionTemperature>;
         schema:position 1
       ],
       [
         rdfs:label "elastic modulus";
-        schema:identifier <http://materialsmine.org/ns/TensileModulus>;
-        schema:position 2
+        schema:identifier <http://materialsmine.org/resource/TensileModulus>;
+        schema:position 2 
       ],
       [
-        rdfs:label "crystallization temperature";
-        schema:identifier <http://materialsmine.org/ns/CrystallizationTemperature>;
+        rdfs:label "tensile stress at break";
+        schema:identifier <http://materialsmine.org/resource/TensileStressAtBreak>;
         schema:position 3
       ],
       [
         rdfs:label "elongation at break";
-        schema:identifier <http://materialsmine.org/ns/ElongationAtBreak>;
+        schema:identifier <http://materialsmine.org/resource/ElongationAtBreak>;
         schema:position 4
-      ],
-      [
-        rdfs:label "tensile stress at break";
-        schema:identifier <http://materialsmine.org/ns/TensileStressAtBreak>;
-        schema:position 5
-      ],
-      [
-        rdfs:label "electrical conductivity";
-        schema:identifier <http://materialsmine.org/ns/ElectricalConductivity>;
-        schema:position 6
-      ],
-      [
-        rdfs:label "thermal decomposition temperature";
-        schema:identifier <http://materialsmine.org/ns/ThermalDecompositionTemperature>;
-        schema:position 7
-      ],
-      [
-        rdfs:label "melting temperature";
-        schema:identifier <http://materialsmine.org/ns/MeltingTemperature>;
-        schema:position 8
-      ],
-      [
-        rdfs:label "tensile stress at yield";
-        schema:identifier <http://materialsmine.org/ns/TensileStressAtYield>;
-        schema:position 9
-      ],
-      [
-        rdfs:label "volume resistivity";
-        schema:identifier <http://materialsmine.org/ns/VolumeResistivity>;
-        schema:position 10
-      ],
-      [
-        rdfs:label "flexural modulus";
-        schema:identifier <http://materialsmine.org/ns/FlexuralModulus>;
-        schema:position 11
-      ],
-      [
-        rdfs:label "thermal conductivity";
-        schema:identifier <http://materialsmine.org/ns/ThermalConductivity>;
-        schema:position 12
-      ],
-      [
-        rdfs:label "elongation at yield";
-        schema:identifier <http://materialsmine.org/ns/ElongationAtYield>;
-        schema:position 13
-      ],
-      [
-        rdfs:label "flexural stress at break";
-        schema:identifier <http://materialsmine.org/ns/FlexuralStressAtBreak>;
-        schema:position 14
-      ],
-      [
-        rdfs:label "surface resistivity";
-        schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
-        schema:position 15
-      ],
-      [
-        rdfs:label "dielectric constant";
-        schema:identifier <http://materialsmine.org/ns/DielectricConstant>;
-        schema:position 16
-      ],
-      [
-        rdfs:label "breakdown strength";
-        schema:identifier <http://materialsmine.org/ns/BreakdownStrength>;
-        schema:position 17
-      ],
-      [
-        rdfs:label "conductivity";
-        schema:identifier <http://materialsmine.org/ns/Conductivity>;
-        schema:position 18
-      ],
-      [
-        rdfs:label "halflife of crystallization";
-        schema:identifier <http://materialsmine.org/ns/HalflifeOfCrystallization>;
-        schema:position 19
-      ],
-      [
-        rdfs:label "loss modulus";
-        schema:identifier <http://materialsmine.org/ns/LossModulus>;
-        schema:position 20
-      ],
-      [
-        rdfs:label "storage modulus";
-        schema:identifier <http://materialsmine.org/ns/StorageModulus>;
-        schema:position 21
       ]
   ];
   mmpq:replacement
@@ -319,6 +311,6 @@ SELECT DISTINCT ?Sample ?Filler ?FillerAmount ?Matrix ?AttributeValue ?UnitOfMea
   ],
   [
     sp:varName "AttributeValue";
-    mmpq:subVar "AttributeType" ;
+    mmpq:subVar "PropertyType" ;
     mmpq:varFormat "${var}";
   ].
