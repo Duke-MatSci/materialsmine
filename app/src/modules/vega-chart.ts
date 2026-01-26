@@ -270,6 +270,7 @@ async function saveChart(chart: Chart): Promise<any> {
   return await postNewNanopub(chartLd);
 }
 
+// TODO: Remove after migration. This is the old way of submitting data into Whyis
 async function saveXml(xml: XmlData, token: string): Promise<SaveXmlResponse> {
   try {
     // const xmlLd = buildXmlLd(xml, xmlId);

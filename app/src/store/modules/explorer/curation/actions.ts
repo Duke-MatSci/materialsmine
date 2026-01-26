@@ -471,7 +471,10 @@ export default {
     return responseData;
   },
 
-  async approveCuration({ commit, rootGetters }: Context, { xml }: { xml: any }): Promise<void> {
+  async approveCuration(
+    { commit, rootGetters, dispatch }: Context,
+    { xml }: { xml: any }
+  ): Promise<void> {
     const isAdmin = rootGetters['auth/isAdmin'];
     const token = rootGetters['auth/token'];
     if (!isAdmin) {
@@ -493,7 +496,28 @@ export default {
       { root: true }
     );
     try {
-      await saveXml(xml, token);
+      const response = await fetch('/api/curate/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify({
+          xml: `http://localhost/explorer/xmlvisualizer/${xml.id}?isNewCuration=${xml.isNewCuration}`,
+          inference: 'rdfs',
+          resolveUrls: true,
+        }),
+      });
+      if (!response || response.status !== 200) {
+        return commit(
+          'setSnackbar',
+          {
+            message: 'Something went wrong during the request',
+            action: () => dispatch('approveCuration', { xml }),
+          },
+          { root: true }
+        );
+      }
       return commit('setDialogBox', true, { root: true });
     } catch (error) {
       commit(

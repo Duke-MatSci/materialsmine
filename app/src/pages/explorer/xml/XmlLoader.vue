@@ -1,17 +1,22 @@
 <template>
   <div class="xmlLoader">
     <Dialog :minWidth="40" :active="dialogBoxActive">
-      <template #title>Success</template>
+      <template #title v-if="approvalInProgress">Confirmation</template>
+      <template #title v-else>Success</template>
       <template #content>
         <div class="u_display-flex u_centralize_items u--margin-posmd">
           <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
             >check_circle</md-icon
           >
-          <span>XML has been approved and successfully ingested into the knowledge graph</span>
+          <span v-if="approvalInProgress">Please confirm your submission</span>
+          <span v-else
+            >XML has been approved and successfully ingested into the knowledge graph</span
+          >
         </div>
       </template>
       <template #actions>
-        <md-button @click.prevent="closeDialogBox">Ok</md-button>
+        <md-button v-if="approvalInProgress" @click="approval({ xmlViewer })">Submit</md-button>
+        <md-button @click.prevent="closeDialogBox">Close</md-button>
       </template>
     </Dialog>
     <section
@@ -92,7 +97,7 @@
               xmlViewer.curationState === 'Editing'
             "
           >
-            Request Approval
+            {{ !isAdmin ? 'Request Approval' : 'Submit' }}
           </md-button>
         </md-content>
       </div>
@@ -122,7 +127,7 @@
         </md-button>
 
         <md-button
-          @click="approveCuration({ xmlViewer })"
+          @click="approveCuration"
           v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -178,6 +183,7 @@ const codeBlock = ref<HTMLElement>();
 const showSidepanel = ref(false);
 const type = ref('xml');
 const xmlViewer = ref<any>({});
+const approvalInProgress = ref(false);
 
 // Apollo query
 const { result, loading, refetch } = useQuery(
@@ -264,13 +270,26 @@ const openHistory = () => {
   return router.push({ name: 'SampleHistory', params, query });
 };
 
-// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
-const approveCuration = async ({ xmlViewer }: { xmlViewer: any }) => {
+const approval = async ({ xmlViewer }: { xmlViewer: any }) => {
+  closeDialogBox();
+  approvalInProgress.value = false;
   await store.dispatch('explorer/curation/approveCuration', { xml: xmlViewer });
 };
 
+// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
+const approveCuration = async () => {
+  // xmlViewer.curationState !== 'Completed'
+  // TODO: Remove the above logic in line 126 and use here. Check if is completed and show a dialog box to double check with the user if they really want to re-submit
+  // If the above logic if is true, use a different icon and tooltip label
+  approvalInProgress.value = true;
+  store.commit('setDialogBox', true, { root: true });
+};
+
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {
-  await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
+  if (isAdmin.value) {
+    approvalInProgress.value = true;
+    store.commit('setDialogBox', true, { root: true });
+  } else return await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
 };
 
 // Lifecycle
