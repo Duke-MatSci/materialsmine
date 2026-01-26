@@ -29,7 +29,11 @@ onMounted(() => {
 
   yasgui.value = new YASGUI(el, {
     requestConfig: {
-      endpoint: '/api/knowledge/sparql',
+      /**
+       * TODO: Remove isNew after migration. Used to differentiate between
+       * query relying on Whyis and query relying on new KG system.
+       */
+      endpoint: '/api/knowledge/sparql?isNew="true"',
       headers: () => ({
         authorization: 'Bearer ' + token,
       }),

@@ -10,6 +10,7 @@ interface QuerySparqlOptions {
   body?: any;
   method?: string;
   whyisPath?: string;
+  isNew?: boolean;
 }
 
 interface SparqlResponse {
@@ -27,14 +28,14 @@ async function querySparql(
     headers = {},
     body = null,
     method = 'GET',
-    whyisPath = undefined
+    whyisPath = undefined,
+    isNew = false,
   }: QuerySparqlOptions = {}
 ): Promise<SparqlResponse> {
   let urlEncodedQuery = `${endpoint}?output=json`;
   if (query) {
-    urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(
-      query
-    )}&output=json`;
+    console.log('test parameterized query', isNew);
+    urlEncodedQuery = `${endpoint}?isNew=${isNew}&query=${encodeURIComponent(query)}&output=json`;
   }
 
   // Get user Token
@@ -44,8 +45,8 @@ async function querySparql(
     headers: {
       Authorization: 'Bearer ' + token,
       accept: 'application/sparql-results+json',
-      ...headers
-    }
+      ...headers,
+    },
   };
 
   if (whyisPath) {
@@ -83,7 +84,10 @@ function parseSparql(response: SparqlResponse): Array<Record<string, any>> {
   return queryResults;
 }
 
-async function queryAndParseSparql(query: string, endpoint: string = SPARQL_ENDPOINT): Promise<Array<Record<string, any>>> {
+async function queryAndParseSparql(
+  query: string,
+  endpoint: string = SPARQL_ENDPOINT
+): Promise<Array<Record<string, any>>> {
   return parseSparql(await querySparql(query, { endpoint }));
 }
 

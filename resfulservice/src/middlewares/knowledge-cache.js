@@ -12,8 +12,11 @@ const elasticSearch = require('../utils/elasticSearch');
  */
 exports.isKnowledgeCached = async (req, res, next) => {
   const query = req.query.query ?? req.body?.query;
-  // 1. NOT caching curation submissions
+  // 1. NOT caching curation submissions or new KG System
+  const sparqlPage = `${req.headers.origin}/explorer/sparql`;
+  const isSparQLPage = req.headers.referer === sparqlPage;
   if (req.query.whyisPath === 'pub') return next();
+  if (req.query.isNew === 'true' || isSparQLPage) return next();
 
   // 2. NOT Caching for nanopub listing. Usually this is used for deleting nanopublications
   if (req.query.whyisPath?.includes('about?view=nanopublications&uri=')) {
@@ -36,27 +39,41 @@ exports.isKnowledgeCached = async (req, res, next) => {
       'knowledge'
     );
 
+    if (!cacheResult.data.hits.hits.length) {
+      return res.status(200).json({
+        head: { vars: ['s', 'p', 'o'] },
+        results: { bindings: [] }
+      });
+    }
     if (cacheResult.data.hits.hits.length) {
       const {
         _id,
-        _source: { response, date }
+        _source: { response }
+        // _source: { response, date }
       } = cacheResult.data.hits.hits[0];
       kgResponse = response;
       knowledgeId = _id;
 
+      return res.status(200).json(response);
+      /**
+       * 25th January, 2026
+       * Continue supporting queries relying on legacy Whyis KG cache during migration; new KG system bypasses existing cache logic.
+       * Commenting codes below this line:
+       */
+
       // Get today's date in string format (YYYY-MM-DD);
-      const todayDate = new Date().toISOString().slice(0, 10);
+      // const todayDate = new Date().toISOString().slice(0, 10);
 
       // check if date is today's date
-      if (date === todayDate) {
-        return res.status(200).json(response);
-      }
+      // if (date === todayDate) {
+      //   return res.status(200).json(response);
+      // }
 
       // check if Task with same elasticsearch _id has already been created
-      const task = await Task.findOne({ 'info.knowledgeId': _id });
-      if (task) {
-        return res.status(200).json(response);
-      }
+      // const task = await Task.findOne({ 'info.knowledgeId': _id });
+      // if (task) {
+      //   return res.status(200).json(response);
+      // }
     }
   } catch (error) {
     return next();

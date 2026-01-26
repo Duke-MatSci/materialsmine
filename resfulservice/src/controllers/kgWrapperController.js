@@ -4,8 +4,8 @@ const constant = require('../../config/constant');
 const { setInternal } = require('../middlewares/isInternal');
 const elasticSearch = require('../utils/elasticSearch');
 const { errorWriter, successWriter } = require('../utils/logWriter');
-const { cacheKnowledge } = require('../middlewares/knowledge-cache');
-const { stringifyError } = require('../utils/exit-utils');
+// const { cacheKnowledge } = require('../middlewares/knowledge-cache');
+// const { stringifyError } = require('../utils/exit-utils');
 
 const httpsAgent = {
   rejectUnauthorized: false
@@ -183,48 +183,72 @@ exports.getKnowledge = async (req, res, next) => {
 exports.getSparql = async (req, res, next) => {
   const log = req.logger;
   log.info('getSparql(): Function entry');
-  const whyisPath = req.query.whyisPath;
   try {
-    if (!req.env.KNOWLEDGE_ADDRESS) {
+    const query = req.query.query || req.body.query;
+    if (!query) {
       return next(
-        errorWriter(req, 'Knowledge endpoint address missing', 'getSparql', 422)
+        errorWriter(req, 'Missing query in request', 'getSparql', 422)
       );
     }
 
-    req.query.queryString = req.body.query ?? req.query.query;
-    req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
-
-    if (whyisPath) {
-      // Append whyis paths before making a request call
-      req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${whyisPath}`;
-
-      // The request body returns an array
-      req.knowlegeGraphPayloadBody = req.body;
-
-      const cookieValue = _createOutboundJwt(req, res, next);
-      if (cookieValue) {
-        req.outboundCookie = cookieValue;
+    const FUSEKI_URL = `${req.env.FUSEKI_BASE_URL}/${req.env.FUSEKI_DATASET}/sparql`;
+    const response = await axios.post(
+      FUSEKI_URL,
+      new URLSearchParams({ query }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/sparql-results+json'
+        },
+        auth: {
+          username: req.env.FUSEKI_USER,
+          password: req.env.FUSEKI_PWD
+        }
       }
-    }
+    );
 
-    successWriter(req, { message: 'sending request' }, 'getSparql');
-    const response = await _outboundRequest(req, next);
+    return res.status(200).json(response?.data);
 
-    successWriter(req, { message: 'success' }, 'getSparql');
+    /**
+     * 25th January, 2026
+     * Continue supporting queries relying on legacy Whyis KG cache during migration; new KG system bypasses existing cache logic.
+     * Commenting codes below this line:
+     */
+    //  const whyisPath = req.query.whyisPath;
+    // req.query.queryString = req.body.query ?? req.query.query;
+    // req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${constant.sparql}`;
 
-    // Caching starts...
-    if (response.data?.results?.bindings.length) {
-      await cacheKnowledge(req, res, next, response?.data);
-    } else {
-      log.info(
-        `getSparql = () => Empty knowledge response (${stringifyError(
-          response.data?.results
-        )})`
-      );
-    }
-    if (req.isBackendCall) return response?.data;
+    // if (whyisPath) {
+    //   // Append whyis paths before making a request call
+    //   req.query.uri = `${req.env.KNOWLEDGE_ADDRESS}/${whyisPath}`;
 
-    return res.status(200).json({ ...response?.data });
+    //   // The request body returns an array
+    //   req.knowlegeGraphPayloadBody = req.body;
+
+    //   const cookieValue = _createOutboundJwt(req, res, next);
+    //   if (cookieValue) {
+    //     req.outboundCookie = cookieValue;
+    //   }
+    // }
+
+    // successWriter(req, { message: 'sending request' }, 'getSparql');
+    // const response = await _outboundRequest(req, next);
+
+    // successWriter(req, { message: 'success' }, 'getSparql');
+
+    // // Caching starts...
+    // if (response.data?.results?.bindings.length) {
+    //   await cacheKnowledge(req, res, next, response?.data);
+    // } else {
+    //   log.info(
+    //     `getSparql = () => Empty knowledge response (${stringifyError(
+    //       response.data?.results
+    //     )})`
+    //   );
+    // }
+    // if (req.isBackendCall) return response?.data;
+
+    // return res.status(200).json({ ...response?.data });
   } catch (err) {
     next(errorWriter(req, err, 'getSparql'));
   }

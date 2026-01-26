@@ -256,7 +256,11 @@ const execQuery = async (): Promise<void> => {
   results.value = null;
   lastRunQuery.value = query.value;
   runningQuery.value = true;
-  results.value = await querySparql(query.value);
+  /**
+   * TODO: Remove isNew after migration. Used to differentiate between
+   * query relying on Whyis and query relying on new KG system.
+   */
+  results.value = await querySparql(query.value, { isNew: true });
   runningQuery.value = false;
 };
 
