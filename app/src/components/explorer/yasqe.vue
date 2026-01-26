@@ -36,6 +36,7 @@ export default {
   },
   mounted() {
     const token = this.$store.getters['auth/token'];
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const yasqeContext = this;
     this.yasqe = new Yasqe(this.$el, {
       readOnly: this.readOnly,
