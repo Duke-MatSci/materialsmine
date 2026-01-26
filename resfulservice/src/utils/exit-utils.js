@@ -1,7 +1,7 @@
 const cluster = require('cluster');
 const mongoose = require('mongoose');
 
-async function onExit(rawError, log) {
+async function onExit (rawError, log) {
   const error = rawError ?? {};
 
   try {
@@ -41,7 +41,7 @@ async function onExit(rawError, log) {
   }
 }
 
-function stringifyError(obj) {
+function stringifyError (obj) {
   try {
     return JSON.stringify(
       obj,

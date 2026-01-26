@@ -43,7 +43,7 @@ const OUTPUT_CONTEXT = {
 
 /* ------------------------ Article/meta extraction (for prov/pubinfo) ------------------------ */
 async function buildArticle(common, logger) {
-  const xmlPublication = pick(common, 'Publication');
+  // const xmlPublication = pick(common, 'Publication');
   const xmlDOI = pick(common, 'DOI');
   const xmlPublicationYear = pick(common, 'PublicationYear');
   const xmlAuthors = toArray(pick(common, 'Author'));
@@ -537,8 +537,8 @@ function buildExtrusionParam(
   const variant = twin
     ? 'TwinScrewExtrusion'
     : single
-    ? 'SingleScrewExtrusion'
-    : null;
+      ? 'SingleScrewExtrusion'
+      : null;
   const nodeObj = twin || single;
   if (!variant || !nodeObj) return null;
 
@@ -2088,10 +2088,12 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         return a;
       };
 
-      if (hasText(xName) || hasText(xUnit))
+      if (hasText(xName) || hasText(xUnit)) {
         axisArr.push(makeAxis('x', 'X-Axis Label', xUnit));
-      if (hasText(yName) || hasText(yUnit))
+      }
+      if (hasText(yName) || hasText(yUnit)) {
         axisArr.push(makeAxis('y', 'Y-Axis Label', yUnit));
+      }
       if (axisArr.length) node['mm:hasAxisLabel'] = axisArr;
 
       // Optional dataset
@@ -3206,6 +3208,7 @@ async function toTurtleAssertionOnly(nanopub, assertionId) {
     if (o.startsWith('<')) oTerm = namedNode(o.slice(1, -1));
     else {
       const litMatch = o.match(
+        // eslint-disable-next-line no-useless-escape
         /^"([\s\S]*)"(?:\^\^<([^>]+)>|@([a-zA-Z\-]+))?$/
       );
       if (!litMatch) continue;
@@ -3250,6 +3253,7 @@ async function toTriG(nanopub) {
     if (o.startsWith('<')) oTerm = namedNode(o.slice(1, -1));
     else {
       const litMatch = o.match(
+        // eslint-disable-next-line no-useless-escape
         /^"([\s\S]*)"(?:\^\^<([^>]+)>|@([a-zA-Z\-]+))?$/
       );
       if (!litMatch) continue;

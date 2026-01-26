@@ -1,7 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const constant = require('../../config/constant');
-const { setInternal } = require('../middlewares/isInternal');
+// const { setInternal } = require('../middlewares/isInternal');
 const elasticSearch = require('../utils/elasticSearch');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 // const { cacheKnowledge } = require('../middlewares/knowledge-cache');
@@ -11,26 +11,27 @@ const httpsAgent = {
   rejectUnauthorized: false
 };
 
-const _createOutboundJwt = (req, res, next) => {
-  const log = req.logger;
-  if (!req.user) {
-    log.info('_createOutboundJwt(): User is unauthorized');
-    return;
-  }
+// TODO: Remove after KG migration. Used by the old Whyis KG for auth
+// const _createOutboundJwt = (req, res, next) => {
+//   const log = req.logger;
+//   if (!req.user) {
+//     log.info('_createOutboundJwt(): User is unauthorized');
+//     return;
+//   }
 
-  const displayName = req.user.displayName;
-  const mail = req.user.email;
+//   const displayName = req.user.displayName;
+//   const mail = req.user.email;
 
-  const jwToken = setInternal(req, {
-    givenName: displayName,
-    mail,
-    isAdmin: req.user?.isAdmin ?? false,
-    sub: req.user._id,
-    sn: displayName
-  });
+//   const jwToken = setInternal(req, {
+//     givenName: displayName,
+//     mail,
+//     isAdmin: req.user?.isAdmin ?? false,
+//     sub: req.user._id,
+//     sn: displayName
+//   });
 
-  return `token=${jwToken}`;
-};
+//   return `token=${jwToken}`;
+// };
 
 const _outboundRequest = async (req, next) => {
   const log = req.logger;
