@@ -294,7 +294,8 @@ const { result, loading, refetch } = useQuery(
     input: {
       pageNumber: pageNumber.value,
       pageSize: parseInt(pageSize.value.toString()),
-      filter: { param: route.query?.q, ...filterParams.value },
+      filter: { ...filterParams.value },
+      // filter: { param: route.query?.q, ...filterParams.value },
     },
   }),
   () => ({
@@ -349,8 +350,7 @@ const localSearchMethod = async (): Promise<void> => {
     isNewCuration: selectedFilters.value.includes('isNew') ? isNew.value === 'Yes' : null,
     status: apprStatus.value,
     curationState: curationState.value,
-    user: user.value,
-    author: author.value,
+    param: author.value || user.value || searchWord.value,
   };
   for (const key in filterParamsObj) {
     if ((filterParamsObj as any)[key] === null) delete (filterParamsObj as any)[key];
@@ -364,7 +364,6 @@ const {
   pageNumber: composablePageNumber,
   pageSize: composablePageSize,
   loadPrevNextImage,
-  updateParamsAndCall,
   resetSearch,
   loadParams,
 } = useExplorerQueryParams({
@@ -391,7 +390,7 @@ const submitSearch = async () => {
   error.value = null;
   searchEnabled.value = !!searchWord.value || !!filtersActive.value;
   pageNumber.value = 1;
-  return await updateParamsAndCall(true);
+  await localSearchMethod();
 };
 
 const customReset = async (type: string) => {

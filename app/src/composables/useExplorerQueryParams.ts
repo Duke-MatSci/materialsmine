@@ -22,17 +22,13 @@ interface ExplorerQueryParamsReturn {
   checkPageSize: (pageSize: number) => void;
 }
 
-export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): ExplorerQueryParamsReturn {
+export function useExplorerQueryParams(
+  options: ExplorerQueryParamsOptions
+): ExplorerQueryParamsReturn {
   const route = useRoute();
   const router = useRouter();
 
-  const {
-    localSearchMethod,
-    hasPageSize = true,
-    filtersActive,
-    filter,
-    renderText
-  } = options;
+  const { localSearchMethod, hasPageSize = true, filtersActive, filter, renderText } = options;
 
   // Reactive state
   const pageNumber = ref<number>(1);
@@ -59,11 +55,11 @@ export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): Exp
   };
 
   const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
-    searchEnabled.value = !!searchWord.value || !!(filtersActive?.value);
+    searchEnabled.value = !!searchWord.value || !!filtersActive?.value;
 
     if (pushNewRoute) {
       const query: Record<string, string | number> = {
-        page: pageNumber.value
+        page: pageNumber.value,
       };
 
       if (hasPageSize) {
@@ -84,14 +80,15 @@ export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): Exp
     await localSearchMethod();
   };
 
-  const loadParams = async (query: Record<string, LocationQueryValue | LocationQueryValue[]>): Promise<void> => {
+  const loadParams = async (
+    query: Record<string, LocationQueryValue | LocationQueryValue[]>
+  ): Promise<void> => {
     const pageQuery = query.page;
     const sizeQuery = query.size;
     const qQuery = query.q;
 
-    pageNumber.value = pageQuery && typeof pageQuery === 'string' && parseInt(pageQuery)
-      ? +pageQuery
-      : 1;
+    pageNumber.value =
+      pageQuery && typeof pageQuery === 'string' && parseInt(pageQuery) ? +pageQuery : 1;
 
     if (hasPageSize) {
       if (sizeQuery && typeof sizeQuery === 'string' && parseInt(sizeQuery)) {
@@ -130,15 +127,12 @@ export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): Exp
     }
   );
 
-  watch(
-    pageSize,
-    (newValue, oldValue) => {
-      if (newValue !== oldValue) {
-        checkPageSize(newValue);
-        updateParamsAndCall(true);
-      }
+  watch(pageSize, (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+      checkPageSize(newValue);
+      updateParamsAndCall(true);
     }
-  );
+  });
 
   return {
     pageNumber,
@@ -150,6 +144,6 @@ export function useExplorerQueryParams(options: ExplorerQueryParamsOptions): Exp
     loadPrevNextImage,
     updateSearchWord,
     resetSearch,
-    checkPageSize
+    checkPageSize,
   };
 }
