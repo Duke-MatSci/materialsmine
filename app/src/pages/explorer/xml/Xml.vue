@@ -259,7 +259,6 @@ const xmlFinder = ref<XmlFinderResponse>({
 });
 const pageNumber = ref(DEFAULT_PAGE_NUMBER);
 const pageSize = ref(DEFAULT_PAGE_SIZE);
-const searchEnabled = ref(false);
 const searchWord = ref('');
 const selectedFilters = ref<string[]>([]);
 const apprStatus = ref<string | null>(null);
@@ -270,13 +269,14 @@ const isNew = ref<string | null>(null);
 const filterParams = ref<any>({});
 const error = ref<string | null>(null);
 const dialogBoxAction = ref<(() => void) | null>(null);
+const paramsReady = ref(false);
 
 // Computed properties
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const userId = computed(() => store.getters['auth/userId']);
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
-
+const searchEnabled = computed(() => !!searchWord.value || !!filtersActive.value);
 const isEmpty = computed(() => {
   return !xmlFinder.value.xmlData?.length || xmlFinder.value.totalItems === 0;
 });
@@ -300,6 +300,7 @@ const { result, loading, refetch } = useQuery(
   }),
   () => ({
     fetchPolicy: 'cache-and-network',
+    enabled: paramsReady.value,
   })
 );
 
@@ -356,28 +357,35 @@ const localSearchMethod = async (): Promise<void> => {
     if ((filterParamsObj as any)[key] === null) delete (filterParamsObj as any)[key];
   }
   filterParams.value = filterParamsObj;
-  await refetch();
 };
 
 // Setup useExplorerQueryParams with localSearchMethod
 const {
   pageNumber: composablePageNumber,
   pageSize: composablePageSize,
+  searchWord: composablesearchWord,
   loadPrevNextImage,
+  updateParamsAndCall,
+  updateSearchWord,
   resetSearch,
   loadParams,
 } = useExplorerQueryParams({
   localSearchMethod,
   hasPageSize: true,
+  onSearchWordChange: (word) => {
+    searchWord.value = word;
+  },
+  onPageNumberChange: (page) => {
+    pageNumber.value = page;
+  },
+  onPageSizeChange: (size) => {
+    pageSize.value = size;
+  },
 });
 
-// Sync composable refs with local refs used in Apollo query
-watch(composablePageNumber, (newVal) => {
-  pageNumber.value = newVal;
-});
-
-watch(composablePageSize, (newVal) => {
-  pageSize.value = newVal;
+// Sync search word to keep input reactive with url state
+watch(composablesearchWord, (newVal) => {
+  searchWord.value = newVal;
 });
 
 const submitSearch = async () => {
@@ -388,9 +396,10 @@ const submitSearch = async () => {
     });
   }
   error.value = null;
-  searchEnabled.value = !!searchWord.value || !!filtersActive.value;
-  pageNumber.value = 1;
-  await localSearchMethod();
+  composablePageNumber.value = 1;
+  composablePageSize.value = pageSize.value;
+  updateSearchWord(searchWord.value);
+  await updateParamsAndCall(true);
 };
 
 const customReset = async (type: string) => {
@@ -489,22 +498,21 @@ const duplicateCuration = async (id: string, isNew: boolean) => {
 
 // Initialize component state based on route params
 const initializeGallery = () => {
-  const query = route.query;
-  if (query?.page || query?.size || query?.q) {
-    return loadParams(route.query);
-  } else {
-    // If no query params, just refetch with default state
-    return refetch();
-  }
+  return loadParams(route.query);
 };
 
 // Lifecycle
 onMounted(() => {
-  initializeGallery();
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
 });
 
 // Refetch data when component is activated (e.g., when navigating back from detail view)
 onActivated(() => {
-  initializeGallery();
+  paramsReady.value = false;
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
 });
 </script>

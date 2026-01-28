@@ -7,6 +7,9 @@ interface ExplorerQueryParamsOptions {
   filtersActive?: Ref<boolean>;
   filter?: Ref<string>;
   renderText?: Ref<string>;
+  onSearchWordChange?: (searchWord: string) => void;
+  onPageNumberChange?: (pageNumber: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 interface ExplorerQueryParamsReturn {
@@ -28,7 +31,16 @@ export function useExplorerQueryParams(
   const route = useRoute();
   const router = useRouter();
 
-  const { localSearchMethod, hasPageSize = true, filtersActive, filter, renderText } = options;
+  const {
+    localSearchMethod,
+    hasPageSize = true,
+    filtersActive,
+    filter,
+    renderText,
+    onSearchWordChange,
+    onPageNumberChange,
+    onPageSizeChange,
+  } = options;
 
   // Reactive state
   const pageNumber = ref<number>(1);
@@ -45,6 +57,9 @@ export function useExplorerQueryParams(
     } else {
       pageSize.value = size;
     }
+    if (onPageSizeChange) {
+      onPageSizeChange(pageSize.value);
+    }
   };
 
   const updateSearchWord = (word: string): void => {
@@ -52,6 +67,9 @@ export function useExplorerQueryParams(
       searchEnabled.value = false;
     }
     searchWord.value = word;
+    if (onSearchWordChange) {
+      onSearchWordChange(word);
+    }
   };
 
   const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
@@ -75,6 +93,7 @@ export function useExplorerQueryParams(
       }
 
       await router.push({ query: query as any });
+      return;
     }
 
     await localSearchMethod();
@@ -89,6 +108,9 @@ export function useExplorerQueryParams(
 
     pageNumber.value =
       pageQuery && typeof pageQuery === 'string' && parseInt(pageQuery) ? +pageQuery : 1;
+    if (onPageNumberChange) {
+      onPageNumberChange(pageNumber.value);
+    }
 
     if (hasPageSize) {
       if (sizeQuery && typeof sizeQuery === 'string' && parseInt(sizeQuery)) {

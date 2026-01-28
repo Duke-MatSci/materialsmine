@@ -1,21 +1,20 @@
 <template>
   <div class="xmlLoader">
     <Dialog :minWidth="40" :active="dialogBoxActive">
-      <template #title v-if="approvalInProgress">Confirmation</template>
-      <template #title v-else>Success</template>
+      <template #title>{{ dialogTitle }}</template>
       <template #content>
         <div class="u_display-flex u_centralize_items u--margin-posmd">
           <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
             >check_circle</md-icon
           >
-          <span v-if="approvalInProgress">Please confirm your submission</span>
-          <span v-else
-            >XML has been approved and successfully ingested into the knowledge graph</span
-          >
+          <span>{{ dialogMessage }}</span>
         </div>
       </template>
       <template #actions>
-        <md-button v-if="approvalInProgress" @click="approval({ xmlViewer })">Submit</md-button>
+        <md-button v-if="dialogMode === 'edit'" @click="confirmEditCuration">Submit</md-button>
+        <md-button v-else-if="approvalInProgress" @click="approval({ xmlViewer })"
+          >Submit</md-button
+        >
         <md-button @click.prevent="closeDialogBox">Close</md-button>
       </template>
     </Dialog>
@@ -118,7 +117,7 @@
         </md-button>
 
         <md-button
-          @click.prevent="editCuration(xmlViewer.id, xmlViewer.isNewCuration)"
+          @click.prevent="openEditDialog"
           v-if="isAuth && (xmlViewer.user === userId || isAdmin)"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -144,6 +143,16 @@
       <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
         This XML no longer exists or has been moved
       </h2>
+      <div class="u_margin-top-small u_centralize_text">
+        <a @click.prevent="navBack" class="btn btn--primary btn--noradius u_color_white">Go Back</a>
+      </div>
+      <!-- <button
+        type="submit"
+        class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+        @click.prevent="submitSearch"
+      >
+        Search Xml
+      </button> -->
     </section>
   </div>
 </template>
@@ -184,6 +193,7 @@ const showSidepanel = ref(false);
 const type = ref('xml');
 const xmlViewer = ref<any>({});
 const approvalInProgress = ref(false);
+const dialogMode = ref<'approval' | 'edit'>('approval');
 
 // Apollo query
 const { result, loading, refetch } = useQuery(
@@ -215,6 +225,20 @@ const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const userId = computed(() => store.getters['auth/userId']);
 const dialogBoxActive = computed(() => store.getters.dialogBox);
+const dialogTitle = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Edit ${xmlViewer.value.id} Sample`;
+  }
+  return approvalInProgress.value ? 'Confirmation' : 'Success';
+});
+const dialogMessage = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Please confirm your action to edit ${xmlViewer.value.id} xml sample`;
+  }
+  return approvalInProgress.value
+    ? 'Please confirm your submission'
+    : 'XML has been approved and successfully ingested into the knowledge graph';
+});
 
 const isSmallTabView = computed(() => {
   return screen.width < 760;
@@ -229,6 +253,7 @@ const isActiveXmlView = computed(() => !route.query.isYaml && !route.query.isHis
 // Methods
 const closeDialogBox = () => {
   store.commit('setDialogBox');
+  dialogMode.value = 'approval';
 };
 
 const navBack = () => {
@@ -242,6 +267,17 @@ const editCuration = (id: string, isNew: boolean) => {
       query: { isNew: String(isNew), id: id },
     });
   }
+};
+
+const openEditDialog = () => {
+  dialogMode.value = 'edit';
+  approvalInProgress.value = false;
+  store.commit('setDialogBox', true, { root: true });
+};
+
+const confirmEditCuration = () => {
+  closeDialogBox();
+  editCuration(xmlViewer.value.id, xmlViewer.value.isNewCuration);
 };
 
 const openYaml = () => {
@@ -281,12 +317,14 @@ const approveCuration = async () => {
   // xmlViewer.curationState !== 'Completed'
   // TODO: Remove the above logic in line 126 and use here. Check if is completed and show a dialog box to double check with the user if they really want to re-submit
   // If the above logic if is true, use a different icon and tooltip label
+  dialogMode.value = 'approval';
   approvalInProgress.value = true;
   store.commit('setDialogBox', true, { root: true });
 };
 
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {
   if (isAdmin.value) {
+    dialogMode.value = 'approval';
     approvalInProgress.value = true;
     store.commit('setDialogBox', true, { root: true });
   } else return await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
