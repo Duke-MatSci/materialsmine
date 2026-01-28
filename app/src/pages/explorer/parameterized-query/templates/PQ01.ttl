@@ -301,6 +301,16 @@ ORDER BY ?sampleName
         rdfs:label "elongation at break";
         schema:identifier <http://materialsmine.org/resource/ElongationAtBreak>;
         schema:position 4
+      ],
+      [
+        rdfs:label "crystallization temperature";
+        schema:identifier <http://materialsmine.org/resource/CrystallizationTemperature>;
+        schema:position 5
+      ],
+      [
+        rdfs:label "thermal decomposition temperature";
+        schema:identifier <http://materialsmine.org/resource/ThermalDecompositionTemperature>;
+        schema:position 6
       ]
   ];
   mmpq:replacement
