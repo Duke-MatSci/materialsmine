@@ -6,79 +6,51 @@
     <div class="utility-roverflow" v-else-if="dataset">
       <div class="utility-content__result teams_partner">
         <div class="utility-space search_box_form u--layout-flex-justify-end">
-          <md-button
-            id="navbackBtn"
-            class="md-icon-button"
-            @click.prevent="navBack"
-          >
+          <md-button id="navbackBtn" class="md-icon-button" @click.prevent="navBack">
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
           </md-button>
-          <md-button
-            id="shareChartBtn"
-            class="md-icon-button"
-            @click.prevent="handleShare"
-          >
+          <md-button id="shareChartBtn" class="md-icon-button" @click.prevent="handleShare">
             <md-tooltip> {{ shareToolTip }} </md-tooltip>
             <md-icon>share</md-icon>
           </md-button>
-          <div v-if="isAuth && isAdmin">
-            <md-button
-              class="md-icon-button"
-              @click.prevent="editDataset"
-            >
+          <!-- <div v-if="isAuth && isAdmin">
+            <md-button class="md-icon-button" @click.prevent="editDataset">
               <md-tooltip> Edit Dataset </md-tooltip>
               <md-icon>edit</md-icon>
             </md-button>
           </div>
           <div v-if="isAuth && isAdmin">
-            <md-button
-              class="md-icon-button"
-              @click.prevent="linkDataset"
-            >
+            <md-button class="md-icon-button" @click.prevent="linkDataset">
               <md-tooltip> Link to SDD </md-tooltip>
               <md-icon>link</md-icon>
             </md-button>
-          </div>
+          </div> -->
         </div>
       </div>
 
-      <md-card
-        md-theme="green-card"
-        class="md-primary u--shadow-none u--padding-zero-mobile"
-      >
+      <md-card md-theme="green-card" class="md-primary u--shadow-none u--padding-zero-mobile">
         <md-card-header class="section_md-header">
           <md-card-header-text class="section_text-col flex-item">
-            <div
-              v-if="dataset[datasetFields['title']]"
-              class="md-title u--margin-header"
-            >
-              {{
-                optionalChaining(
-                  () => dataset[datasetFields['title']][0]['@value']
-                ) || 'Curated Dataset'
-              }}
+            <div v-if="dataset && dataset.label" class="md-title u--margin-header">
+              {{ optionalChaining(() => dataset.label) || 'Curated Dataset' }}
             </div>
-            <div v-if="dataset[datasetFields['doi']]">
-              DOI: <a class="u--b-rad" @click="nav_to_doi(doi)">{{ doi }}</a>
+            <div v-if="dataset && dataset.doi">
+              DOI: <span class="u--b-rad">{{ doi }}</span>
             </div>
-            <div v-if="dataset[datasetFields['description']]">
-              {{ dataset[datasetFields['description']][0]['@value'] }}
+            <div v-if="dataset && dataset.description">
+              {{ dataset.description }}
             </div>
           </md-card-header-text>
           <div
-            v-if="dataset[datasetFields['depiction']]"
+            v-if="dataset && dataset.thumbnail"
             class="quicklinks_content flex-item u--padding-zero"
             style="max-width: 20rem"
           >
             <img
               v-if="thumbnail"
-              :src="optionalChaining(() => thumbnail[0]['@value'])"
-              :alt="
-                `${optionalChaining(
-                  () => dataset[datasetFields['title']][0]['@value']
-                )} image` || 'Dataset Thumbnail'
-              "
+              :src="optionalChaining(() => thumbnail)"
+              :alt="`${optionalChaining(() => dataset.label)} image` || 'Dataset Thumbnail'"
               class="facet_viewport img"
             />
           </div>
@@ -95,7 +67,7 @@
             'u--margin-rightmd': true,
             'section_tabb-controller': !tabbed_content.ds_active,
             u_pointer: true,
-            'u--padding-rl-xs': true
+            'u--padding-rl-xs': true,
           }"
         >
           Distributions
@@ -107,23 +79,23 @@
             'u--margin-rightmd': true,
             'section_tabb-controller': !tabbed_content.md_active,
             u_pointer: true,
-            'u--padding-rl-xs': true
+            'u--padding-rl-xs': true,
           }"
         >
           Metadata
         </div>
-        <div
+        <!-- <div
           @click="nav_to_tab"
           name="au_active"
           :class="{
             'u--margin-rightmd': true,
             'section_tabb-controller': !tabbed_content.au_active,
             u_pointer: true,
-            'u--padding-rl-xs': true
+            'u--padding-rl-xs': true,
           }"
         >
           Authors
-        </div>
+        </div> -->
       </div>
 
       <div>
@@ -133,14 +105,14 @@
             search_box_form: true,
             'u--layout-flex-justify-se': true,
             explorer_page_header: true,
-            'u--layout-flex-switch': tabbed_content.ds_active
+            'u--layout-flex-switch': tabbed_content.ds_active,
           }"
         >
           <div class="search_box_form howto_item-header">
             <md-button
               :class="{
                 'md-icon-button': true,
-                'u--layout-hide': hideAssetNavLeft
+                'u--layout-hide': hideAssetNavLeft,
               }"
               @click.prevent="reduceAsset('prev')"
             >
@@ -148,9 +120,7 @@
               <md-icon>arrow_back</md-icon>
             </md-button>
 
-            <div
-              class="section_md-header u_display-flex image-detail-page__relatedImg"
-            >
+            <div class="section_md-header u_display-flex image-detail-page__relatedImg">
               <md-card
                 v-for="(item, index) in distributions"
                 class="md-card-class u--margin-none"
@@ -160,8 +130,7 @@
                 <a :href="optionalChaining(() => item.downloadLink)">
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
-                      <md-icon
-                        class="explorer_page-nav-card_icon u_margin-top-small"
+                      <md-icon class="explorer_page-nav-card_icon u_margin-top-small"
                         >description</md-icon
                       >
                     </md-card-media>
@@ -200,7 +169,7 @@
             'u--layout-flex-justify-se': true,
             explorer_page_header: true,
             'u--layout-flex-switch': tabbed_content.md_active,
-            metadata: true
+            metadata: true,
           }"
         >
           <div class="u--margin-pos" v-if="!!organizations.length">
@@ -212,32 +181,18 @@
               :key="`org_${index}`"
               class="u--color-grey-sec"
             >
-              <a
-                v-if="index == 0"
-                :href="optionalChaining(() => org[0].id)"
-                target="_blank"
-              >
+              <a v-if="index == 0" :href="optionalChaining(() => org[0].id)" target="_blank">
                 {{ optionalChaining(() => org[0].name) }}
               </a>
-              <a
-                v-else
-                :href="optionalChaining(() => org[0].id)"
-                target="_blank"
-              >
+              <a v-else :href="optionalChaining(() => org[0].id)" target="_blank">
                 , {{ optionalChaining(() => org[0].name) }}
               </a>
             </span>
           </div>
           <div class="u--margin-pos" v-if="dataset[datasetFields['datePub']]">
-            <span class="u--font-emph-xl u--color-black">
-              Date Published:
-            </span>
+            <span class="u--font-emph-xl u--color-black"> Date Published: </span>
             <span class="u--font-emph-xl u--color-grey-sec">
-              {{
-                optionalChaining(
-                  () => dataset[datasetFields['datePub']][0]['@value']
-                ) || 'N/A'
-              }}
+              {{ optionalChaining(() => dataset[datasetFields['datePub']][0]['@value']) || 'N/A' }}
             </span>
           </div>
           <div v-else-if="!organizations.length">
@@ -245,37 +200,29 @@
           </div>
         </div>
 
-        <div
+        <!-- <div
           v-if="dataset"
           id="authors"
           :class="{
             search_box_form: true,
             'u--layout-flex-justify-se': false,
             explorer_page_header: true,
-            'u--layout-flex-switch': tabbed_content.au_active
+            'u--layout-flex-switch': tabbed_content.au_active,
           }"
         >
           <div class="u--margin-pos" v-if="orcidData">
             <span class="u--font-emph-xl u--color-black"> Contact Point: </span>
             <span id="microscropy" class="u--font-emph-xl u--color-grey-sec">
               {{
-                optionalChaining(
-                  () => orcidData['http://schema.org/givenName'][0]['@value']
-                ) || ''
+                optionalChaining(() => orcidData['http://schema.org/givenName'][0]['@value']) || ''
               }}
               {{
-                optionalChaining(
-                  () => orcidData['http://schema.org/familyName'][0]['@value']
-                ) || ''
+                optionalChaining(() => orcidData['http://schema.org/familyName'][0]['@value']) || ''
               }}
             </span>
             <div>
               ORCiD:
-              <a
-                class="u--b-rad"
-                :href="optionalChaining(() => orcidData['@id'])"
-                target="_blank"
-              >
+              <a class="u--b-rad" :href="optionalChaining(() => orcidData['@id'])" target="_blank">
                 {{
                   optionalChaining(() => orcidData['@id']) ||
                   optionalChaining(() => dataset[datasetFields.cp][0]['@id']) ||
@@ -287,10 +234,7 @@
               Contact Email:
               {{
                 optionalChaining(
-                  () =>
-                    orcidData['http://www.w3.org/2006/vcard/ns#email'][0][
-                      '@value'
-                    ]
+                  () => orcidData['http://www.w3.org/2006/vcard/ns#email'][0]['@value']
                 ) || 'N/A'
               }}
             </div>
@@ -298,7 +242,7 @@
           <div class="u--margin-pos" v-else>
             <span class="u--font-emph-xl u--color-grey-sec"> N/A </span>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
     <div v-else class="utility-roverflow u_centralize_text u_margin-top-med">
@@ -366,7 +310,7 @@ const shareToolTip = ref<string>('Share Dataset');
 const tabbed_content = reactive<TabbedContent>({
   ds_active: false,
   md_active: true,
-  au_active: true
+  au_active: true,
 });
 
 const datasetFields = reactive<DatasetFields>({
@@ -377,7 +321,7 @@ const datasetFields = reactive<DatasetFields>({
   cp: 'http://www.w3.org/ns/dcat#contactpoint',
   distribution: 'http://www.w3.org/ns/dcat#distribution',
   depiction: 'http://xmlns.com/foaf/0.1/depiction',
-  organization: 'http://xmlns.com/foaf/0.1/Organization'
+  organization: 'http://xmlns.com/foaf/0.1/Organization',
 });
 
 const distributions = ref<Record<string, Distribution>>({});
@@ -385,18 +329,18 @@ const organizations = ref<RorOrganization[][]>([]);
 const loading = ref<boolean>(true);
 
 // Computed properties
-const dialogBoxActive = computed(() => store.getters.dialogBox);
-const isAuth = computed(() => store.getters['auth/isAuthenticated']);
-const isAdmin = computed(() => store.getters['auth/isAdmin']);
+// const dialogBoxActive = computed(() => store.getters.dialogBox);
+// const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+// const isAdmin = computed(() => store.getters['auth/isAdmin']);
+// const rorData = computed(() => store.getters['explorer/curation/getRorData']);
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
 const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
-const rorData = computed(() => store.getters['explorer/curation/getRorData']);
 const routeInfo = computed(() => store.getters.getRouteInfo);
 
 const doi = computed(() => {
-  if (dataset.value?.[datasetFields.doi]) {
-    const doiString = dataset.value[datasetFields.doi][0]['@value'];
+  if (dataset.value?.doi) {
+    const doiString = dataset.value.doi;
     return doiString.replace('http://dx.doi.org/', '');
   }
   return '';
@@ -407,22 +351,13 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
+const optionalChaining = <T>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
     console.log(e);
     return undefined;
   }
-};
-
-// Methods from reducer mixin
-const reduceDescription = (args: string, size = 50): string => {
-  const arr = args.split(' ');
-  arr.splice(size);
-  const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
-  const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return `${res}...`;
 };
 
 const reduceAsset = (args: 'prev' | 'next'): boolean | void => {
@@ -465,29 +400,11 @@ const reduceAsset = (args: 'prev' | 'next'): boolean | void => {
 // Component methods
 const loadDataset = async (): Promise<void> => {
   try {
-    await store.dispatch(
-      'explorer/fetchSingleDataset',
-      fullDatasetUri.value
-    );
+    await store.dispatch('explorer/fetchSingleDataset', fullDatasetUri.value);
   } catch (e) {
     store.commit('setSnackbar', { message: e });
     loading.value = false;
   }
-};
-
-const lookupOrcid = (id: string): void => {
-  store.dispatch('explorer/curation/lookupOrcid', id);
-};
-
-const parseRorList = (rorList: any[]): void => {
-  Promise.all(
-    rorList.map((org) => {
-      const id = org?.['@id'].replace('https://ror.org/', '');
-      return store.dispatch('explorer/curation/searchRor', { id });
-    })
-  ).then((results) => {
-    organizations.value = results as RorOrganization[][];
-  });
 };
 
 const navBack = (): void => {
@@ -523,55 +440,36 @@ const handleShare = (): void => {
   }, 2000);
 };
 
-const editDataset = (): void => {
-  router.push(`/explorer/curate/sdd/edit/${props.id}`);
-};
+// const editDataset = (): void => {
+//   router.push(`/explorer/curate/sdd/edit/${props.id}`);
+// };
 
-const linkDataset = (): void => {
-  router.push(`/explorer/curate/sdd/link/${props.id}`);
-};
+// const linkDataset = (): void => {
+//   router.push(`/explorer/curate/sdd/link/${props.id}`);
+// };
 
 // Watchers
 watch(dataset, (newValues, oldValues) => {
   loading.value = false;
   if (!newValues) return;
 
-  // Note: Initial sets of SDD curations are missing 'www'
-  let cp = newValues?.[datasetFields.cp];
-  if (!cp) {
-    cp = newValues?.['http://w3.org/ns/dcat#contactpoint'];
-    datasetFields.cp = 'http://w3.org/ns/dcat#contactpoint';
-  }
-  if (cp) {
-    const orcid = dataset.value[datasetFields.cp][0]['@id'];
-    const trimmedId = orcid
-      .replace('http://orcid.org/', '')
-      .replace(`${window.location.origin}/`, '');
-    lookupOrcid(trimmedId);
-  }
-  if (newValues?.[datasetFields.organization]) {
-    const rorList = dataset.value[datasetFields.organization];
-    parseRorList(rorList);
-  }
-  if (newValues?.[datasetFields.depiction]) {
-    const thumbnailUri =
-      dataset.value[datasetFields.depiction][0]['@id'];
-    store.dispatch('explorer/fetchDatasetThumbnail', thumbnailUri);
+  if (newValues?.organization) {
+    organizations.value = newValues?.organization?.map((name: string, id: number) => ({
+      name,
+      id,
+    }));
   }
 
-  // Note: Initial sets of SDD curations are missing 'www'
-  let dist = newValues?.[datasetFields.distribution];
-  if (!dist) {
-    dist = newValues?.['http://w3.org/ns/dcat#distribution'];
-    datasetFields.distribution = 'http://w3.org/ns/dcat#distribution';
+  if (newValues?.thumbnail) {
+    store.dispatch('explorer/fetchDatasetThumbnail', newValues?.thumbnail);
   }
-  if (dist) {
-    for (const index in newValues[datasetFields.distribution]) {
-      const downloadLink =
-        newValues[datasetFields.distribution][index]?.['@id'];
+
+  if (newValues?.distribution) {
+    for (const index in newValues.distribution) {
+      const downloadLink = newValues.distribution[index];
       distributions.value[index] = {
         downloadLink,
-        label: parseFileName(downloadLink)
+        label: parseFileName(downloadLink),
       };
     }
   }

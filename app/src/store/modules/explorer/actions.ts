@@ -57,56 +57,54 @@ export default {
     if (!uri) {
       return;
     }
-    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET',
-    });
 
-    if (response?.statusText !== 'OK') {
-      const error = new Error(
-        response?.statusText || 'Something went wrong while fetching dataset'
-      );
-      throw error;
+    let datasets = context.rootGetters['explorer/sddDatasets/getAllDatasets'];
+
+    if (datasets.length < 9) {
+      await context.dispatch('explorer/sddDatasets/loadDatasets', {}, { root: true });
+      datasets = context.rootGetters['explorer/sddDatasets/getAllDatasets'];
     }
 
-    let responseData = await response.json();
-    if (Array.isArray(responseData)) responseData = responseData[0];
-    context.commit('setCurrentDataset', responseData);
-    return responseData;
+    const dataset = datasets.find((item: any) => item._source.identifier === uri);
+    context.commit('setCurrentDataset', dataset._source);
+    return dataset._source;
   },
   async fetchDatasetThumbnail(context: Context, uri: string): Promise<string | undefined> {
     if (!uri) {
       return undefined;
     }
-    const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
-      method: 'GET',
-    });
+    // const response = await fetch(`/api/knowledge/instance?uri=${uri}`, {
+    //   method: 'GET',
+    // });
 
-    if (response?.statusText !== 'OK') {
-      const snackbar = {
-        message: response.statusText || 'Something went wrong while fetching thumbnail',
-        duration: 5000,
-      };
-      context.commit('setSnackbar', snackbar, { root: true });
-      return undefined;
-    }
+    // if (response?.statusText !== 'OK') {
+    //   const snackbar = {
+    //     message: response.statusText || 'Something went wrong while fetching thumbnail',
+    //     duration: 5000,
+    //   };
+    //   context.commit('setSnackbar', snackbar, { root: true });
+    //   return undefined;
+    // }
 
-    const responseData = await response.json();
-    let accessURL: string | undefined;
-    if (Array.isArray(responseData)) {
-      accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL'];
-      // Note: Initial sets of SDD curations are missing 'www'
-      if (!accessURL) {
-        accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'];
-      }
-    } else {
-      accessURL = responseData['http://www.w3.org/ns/dcat#accessURL'];
-      // Note: Initial sets of SDD curations are missing 'www'
-      if (!accessURL) {
-        accessURL = responseData['http://w3.org/ns/dcat#accessURL'];
-      }
-    }
-    context.commit('setCurrentDatasetThumbnail', accessURL);
-    return accessURL;
+    // const responseData = await response.json();
+    // let accessURL: string | undefined;
+    // if (Array.isArray(responseData)) {
+    //   accessURL = responseData[0]['http://www.w3.org/ns/dcat#accessURL'];
+    //   // Note: Initial sets of SDD curations are missing 'www'
+    //   if (!accessURL) {
+    //     accessURL = responseData[0]['http://w3.org/ns/dcat#accessURL'];
+    //   }
+    // } else {
+    //   accessURL = responseData['http://www.w3.org/ns/dcat#accessURL'];
+    //   // Note: Initial sets of SDD curations are missing 'www'
+    //   if (!accessURL) {
+    //     accessURL = responseData['http://w3.org/ns/dcat#accessURL'];
+    //   }
+    // }
+    // context.commit('setCurrentDatasetThumbnail', accessURL);
+    // return accessURL;
+    context.commit('setCurrentDatasetThumbnail', uri);
+    return uri;
   },
   async fetchViscoelasticData(
     { commit, dispatch }: Context,

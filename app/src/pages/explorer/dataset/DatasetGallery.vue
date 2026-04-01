@@ -19,16 +19,12 @@
                   required
                   v-model.lazy="searchWord"
                 />
-                <label
-                  htmlFor="search"
-                  class="form__label search_box_form_label"
+                <label htmlFor="search" class="form__label search_box_form_label"
                   >Search Datasets</label
                 >
               </div>
             </div>
-            <div
-              class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg"
-            >
+            <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg">
               <!-- <div class="form__field md-field">
               <select class="form__select"
                 v-model="filter" name="filter" id="filter">
@@ -69,31 +65,19 @@
       </div>
       <template v-if="!!items && !!items.length">
         <div class="gallery-grid grid grid_col-5">
-          <md-card
-            v-for="(result, index) in items"
-            :key="index"
-            class="btn--animated gallery-item"
-          >
+          <md-card v-for="(result, index) in items" :key="index" class="btn--animated gallery-item">
             <div class="u_gridicon u_gridbg">
               <a download :href="optionalChaining(() => result.distribution)">
-                <md-icon
-                  class="u_color_white"
-                  style="font-size: 14px !important"
-                >
+                <md-icon class="u_color_white" style="font-size: 14px !important">
                   download</md-icon
                 >
               </a>
-              <div
-                v-if="isAuth && isAdmin"
-                @click.prevent="editDataset(result)"
-              >
+              <div v-if="isAuth && isAdmin" @click.prevent="editDataset(result)">
                 <md-icon class="u_color_white">edit</md-icon>
               </div>
               <div
                 v-if="isAuth && isAdmin"
-                @click.prevent="
-                  renderDialog('Delete Dataset?', 'delete', result, 80)
-                "
+                @click.prevent="renderDialog('Delete Dataset?', 'delete', result, 80)"
               >
                 <md-icon class="u_color_white">delete_outline</md-icon>
               </div>
@@ -102,23 +86,20 @@
               v-if="result.identifier"
               :to="{
                 name: 'DatasetVisualizer',
-                params: { id: getDatasetId(result) }
+                params: { id: getDatasetId(result) },
               }"
             >
               <md-card-media-cover md-solid>
                 <md-card-media v-if="result.thumbnail" md-ratio="4:3">
                   <img :src="result.thumbnail" :alt="result.label" />
                 </md-card-media>
-                <md-card-media v-else md-ratio="4:3" class="u--bg-grey">
-                </md-card-media>
+                <md-card-media v-else md-ratio="4:3" class="u--bg-grey"> </md-card-media>
                 <md-card-area class="u_gridbg">
                   <md-card-header class="u_show_hide">
                     <span class="md-subheading">
                       <strong>{{ result.label }}</strong>
                     </span>
-                    <span class="md-body-1">{{
-                      reduceDescription(result.description, 15)
-                    }}</span>
+                    <span class="md-body-1">{{ reduceDescription(result.description, 15) }}</span>
                   </md-card-header>
                 </md-card-area>
               </md-card-media-cover>
@@ -137,15 +118,10 @@
       >
         <h3 class="visualize_header-h3 u_margin-top-med">
           Invalid page number,
-          <a @click.prevent="loadPrevNextImage(totalPages)"
-            >return to page {{ totalPages }}?</a
-          >
+          <a @click.prevent="loadPrevNextImage(totalPages)">return to page {{ totalPages }}?</a>
         </h3>
       </div>
-      <div
-        class="utility-roverflow u_centralize_text u_margin-top-med section_loader"
-        v-else
-      >
+      <div class="utility-roverflow u_centralize_text u_margin-top-med section_loader" v-else>
         <h1 class="visualize_header-h1 u_margin-top-med">No Datasets Found</h1>
       </div>
     </div>
@@ -158,8 +134,7 @@
               This will permanently remove the dataset
               <b>{{ dialog.dataset.label }}</b>
             </div>
-            with identifier <b>{{ dialog.dataset.identifier }}</b> and any
-            associated files.
+            with identifier <b>{{ dialog.dataset.identifier }}</b> and any associated files.
           </md-content>
         </div>
         <div v-if="dialogLoading">
@@ -168,28 +143,23 @@
       </template>
       <template v-slot:actions>
         <span v-if="dialog.type == 'delete' && dialog.dataset">
-          <md-button @click.prevent="toggleDialogBox">
-            No, cancel
-          </md-button>
-          <md-button @click.prevent="deleteDataset(dialog.dataset)">
-            Yes, delete.
-          </md-button>
+          <md-button @click.prevent="toggleDialogBox"> No, cancel </md-button>
+          <md-button @click.prevent="deleteDataset(dialog.dataset)"> Yes, delete. </md-button>
         </span>
-        <md-button v-else @click.prevent="toggleDialogBox"
-          >Close</md-button
-        >
+        <md-button v-else @click.prevent="toggleDialogBox">Close</md-button>
       </template>
     </dialogbox>
   </div>
 </template>
 
 <script setup lang="ts">
+// TODO: @tholulomo remove commented sections here
 import { ref, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
 import pagination from '@/components/explorer/Pagination.vue';
-import Dialog from '@/components/Dialog.vue';
+// import Dialog from '@/components/Dialog.vue';
 
 defineOptions({
   name: 'viz-grid',
@@ -215,11 +185,11 @@ const router = useRouter();
 const route = useRoute();
 
 // Data
+// const baseUrl = ref<string>(`${window.location.origin}/api/files/`);
 const loading = ref<boolean>(true);
 const pageNumber = ref<number>(1);
-const baseUrl = ref<string>(`${window.location.origin}/api/files/`);
 const dialog = ref<DialogState>({
-  title: ''
+  title: '',
 });
 const dialogLoading = ref<boolean>(false);
 const filter = ref<string>('');
@@ -238,7 +208,7 @@ const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
 const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
+const optionalChaining = <T>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
@@ -276,7 +246,7 @@ const localSearchMethod = async (): Promise<void> => {
   if (searchEnabled.value) {
     store.dispatch('explorer/sddDatasets/searchDatasetKeyword', {
       searchTerm: searchWord.value,
-      page: pageNumber.value
+      page: pageNumber.value,
     });
   } else await loadItems(pageNumber.value);
   loading.value = false;
@@ -286,11 +256,17 @@ const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
   searchEnabled.value = !!searchWord.value;
   if (pushNewRoute) {
     const query: Record<string, any> = {
-      page: pageNumber.value
+      page: pageNumber.value,
     };
-    if (pageSize.value) { query.size = pageSize.value; }
-    if (searchWord.value) { query.q = searchWord.value; }
-    if (filter.value) { query.type = filter.value; }
+    if (pageSize.value) {
+      query.size = pageSize.value;
+    }
+    if (searchWord.value) {
+      query.q = searchWord.value;
+    }
+    if (filter.value) {
+      query.type = filter.value;
+    }
     router.push({ query });
   }
   await localSearchMethod();
@@ -328,7 +304,7 @@ const renderDialog = (title: string, type: string, result: DatasetItem, minWidth
     title,
     type,
     minWidth,
-    dataset: result
+    dataset: result,
   };
   toggleDialogBox();
 };
@@ -348,13 +324,10 @@ const customReset = async (type?: string): Promise<void> => {
 const deleteDataset = async (dataset: DatasetItem): Promise<void> => {
   if (!isAdmin.value) return; // temporary safeguard
   dialogLoading.value = true;
-  await store.dispatch(
-    'explorer/curation/deleteEntityNanopub',
-    dataset.identifier
-  );
+  await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.identifier);
   await store.dispatch('explorer/curation/deleteEntityES', {
     identifier: dataset.identifier,
-    type: 'datasets'
+    type: 'datasets',
   });
   toggleDialogBox();
   dialogLoading.value = false;
@@ -362,27 +335,25 @@ const deleteDataset = async (dataset: DatasetItem): Promise<void> => {
 };
 
 const editDataset = (dataset: DatasetItem): void => {
-  router.push(
-    `/explorer/curate/sdd/edit/${getDatasetId(dataset)}`
-  );
+  router.push(`/explorer/curate/sdd/edit/${getDatasetId(dataset)}`);
 };
 
-const downloadFiles = (item: DatasetItem): void => {
-  if (item.distribution) {
-    fetch(item.distribution);
-  }
-};
+// const downloadFiles = (item: DatasetItem): void => {
+//   if (item.distribution) {
+//     fetch(item.distribution);
+//   }
+// };
 
 const loadItems = async (pageCurrent = 1): Promise<void> => {
   loading.value = true;
   try {
     await store.dispatch('explorer/sddDatasets/loadDatasets', {
-      page: pageCurrent
+      page: pageCurrent,
     });
   } catch (error) {
     store.commit('setSnackbar', {
       message: error || 'Something went wrong',
-      action: () => loadItems(pageCurrent)
+      action: () => loadItems(pageCurrent),
     });
   } finally {
     loading.value = false;
@@ -394,11 +365,14 @@ const getDatasetId = (dataset: DatasetItem): string => {
 };
 
 // Watchers from explorerQueryParams mixin
-watch(() => route.query, (newValue, oldValue) => {
-  if (newValue !== oldValue) {
-    loadParams(newValue);
+watch(
+  () => route.query,
+  (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+      loadParams(newValue);
+    }
   }
-});
+);
 
 watch(pageSize, (newValue, oldValue) => {
   if (newValue !== oldValue) {
