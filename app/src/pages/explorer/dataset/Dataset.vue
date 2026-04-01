@@ -351,7 +351,7 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T>(fn: () => T): T | undefined => {
+const optionalChaining = <T,>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {

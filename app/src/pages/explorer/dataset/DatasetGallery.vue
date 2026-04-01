@@ -208,7 +208,7 @@ const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
 const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T>(fn: () => T): T | undefined => {
+const optionalChaining = <T,>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
