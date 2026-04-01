@@ -65,9 +65,9 @@ export default {
       datasets = context.rootGetters['explorer/sddDatasets/getAllDatasets'];
     }
 
-    const dataset = datasets.find((item: any) => item._source.identifier === uri);
-    context.commit('setCurrentDataset', dataset._source);
-    return dataset._source;
+    const dataset = datasets.find((item: any) => item.identifier === uri);
+    context.commit('setCurrentDataset', dataset);
+    return dataset;
   },
   async fetchDatasetThumbnail(context: Context, uri: string): Promise<string | undefined> {
     if (!uri) {
