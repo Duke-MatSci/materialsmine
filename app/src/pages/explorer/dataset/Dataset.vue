@@ -333,9 +333,9 @@ const loading = ref<boolean>(true);
 // const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 // const isAdmin = computed(() => store.getters['auth/isAdmin']);
 // const rorData = computed(() => store.getters['explorer/curation/getRorData']);
+// const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
-const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 const routeInfo = computed(() => store.getters.getRouteInfo);
 
 const doi = computed(() => {
@@ -410,11 +410,12 @@ const loadDataset = async (): Promise<void> => {
 const navBack = (): void => {
   // Note: A check to go back to gallery after curating a dataset
   const { from } = routeInfo.value;
-  if (from.name === 'CurateSDD') {
-    router.push('/explorer/curate');
-  } else {
-    router.back();
-  }
+  if (from) router.back();
+  // if (from.name === 'CurateSDD') {
+  //   router.push('/explorer/curate');
+  // } else {
+  //   router.back();
+  // }
 };
 
 const nav_to_tab = (e: Event): void => {
@@ -428,9 +429,9 @@ const nav_to_tab = (e: Event): void => {
   }
 };
 
-const nav_to_doi = (doi: string): void => {
-  router.push(`/explorer/article/${doi}`);
-};
+// const nav_to_doi = (doi: string): void => {
+//   router.push(`/explorer/article/${doi}`);
+// };
 
 const handleShare = (): void => {
   navigator.clipboard.writeText(fullDatasetUri.value);
@@ -454,9 +455,9 @@ watch(dataset, (newValues, oldValues) => {
   if (!newValues) return;
 
   if (newValues?.organization) {
-    organizations.value = newValues?.organization?.map((name: string, id: number) => ({
+    organizations.value = newValues?.organization?.map((name: string, index: number) => ({
       name,
-      id,
+      id: index,
     }));
   }
 
