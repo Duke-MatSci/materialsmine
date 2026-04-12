@@ -213,3 +213,16 @@ defineOptions({
   name: 'Drawers',
 });
 </script>
+
+<style scoped>
+/* Target md-list-item text color */
+.md-app-internal-drawer :deep(.md-list-item-content) {
+  color: #08233c;
+}
+
+/* Change appearance on hover */
+.md-app-internal-drawer :deep(.md-list-item-content:hover) {
+  color: #ffffff;
+  background-color: #08233c;
+}
+</style>
