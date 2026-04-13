@@ -34,7 +34,6 @@ async function querySparql(
 ): Promise<SparqlResponse> {
   let urlEncodedQuery = `${endpoint}?output=json`;
   if (query) {
-    console.log('test parameterized query', isNew);
     urlEncodedQuery = `${endpoint}?isNew=${isNew}&query=${encodeURIComponent(query)}&output=json`;
   }
 
