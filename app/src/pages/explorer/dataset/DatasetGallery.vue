@@ -67,6 +67,11 @@
         <div class="gallery-grid grid grid_col-5">
           <md-card v-for="(result, index) in items" :key="index" class="btn--animated gallery-item">
             <div class="u_gridicon u_gridbg">
+              <div v-if="isAuth" @click.prevent="copyDataDictionary(result)">
+                <md-icon class="u_color_white" style="font-size: 14px !important">
+                  recycling</md-icon
+                >
+              </div>
               <a download :href="optionalChaining(() => result.distribution)">
                 <md-icon class="u_color_white" style="font-size: 14px !important">
                   download</md-icon
@@ -332,6 +337,26 @@ const deleteDataset = async (dataset: DatasetItem): Promise<void> => {
   toggleDialogBox();
   dialogLoading.value = false;
   await loadItems();
+};
+
+const copyDataDictionary = async (dataset: DatasetItem): Promise<void> => {
+  const distribution = dataset.distribution || '';
+  const links = distribution.split(',');
+  const xlsLink = links.find((link) => /\.xlsx?/i.test(link.split('?')[0]));
+
+  if (!xlsLink) {
+    store.commit('setSnackbar', {
+      message: 'No data dictionary found',
+      duration: 3000,
+    });
+    return;
+  }
+
+  await navigator.clipboard.writeText(xlsLink.trim());
+  store.commit('setSnackbar', {
+    message: 'Data dictionary link copied to clipboard',
+    duration: 3000,
+  });
 };
 
 const editDataset = (dataset: DatasetItem): void => {
