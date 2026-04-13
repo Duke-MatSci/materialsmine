@@ -57,8 +57,9 @@
               <MdCardMediaCover md-solid>
                 <MdCardMedia md-ratio="4:3">
                   <img
-                    :src="baseUrl + result.thumbnail"
+                    :src="getChartThumbnailSrc(index)"
                     :alt="result.label"
+                    @error="onThumbnailError(index, result.thumbnail)"
                     v-if="result.thumbnail"
                   />
                   <img src="../assets/img/rdf_flyer.svg" :alt="result.label" v-else />
@@ -101,7 +102,9 @@
         </div>
       </template>
       <template #actions>
-        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart(dialog.chart)">Delete</MdButton>
+        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart(dialog.chart)"
+          >Delete</MdButton
+        >
         <MdButton @click="closeDialog">Cancel</MdButton>
       </template>
     </Dialog>
@@ -109,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeMount, watch, Ref } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeMount, watch, Ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useReduce } from '@/composables/useReduce';
@@ -149,13 +152,52 @@ const localSearchMethod = async (): Promise<void> => {
 
 const { pageNumber, pageSize, loadParams, loadPrevNextImage } = useExplorerQueryParams({
   localSearchMethod,
-  hasPageSize: true
+  hasPageSize: true,
 });
 
 // Reactive data
 const loading = ref(false);
 const otherArgs = ref(null);
 const baseUrl = ref(`${window.location.origin}/api/knowledge/images?uri=`);
+const defaultImg = new URL('../assets/img/rdf_flyer.svg', import.meta.url).href;
+const thumbnailSrcs: Record<number, string> = reactive({});
+const thumbnailFallbackStep: Record<number, number> = {};
+
+const extractThumbnailId = (thumbnail: string): string => {
+  const segment = thumbnail.split('/').pop() || '';
+  return segment.replace(/_depiction$/, '');
+};
+
+const getIdx = (idx: number | string) => (typeof idx === 'string' ? parseInt(idx) : idx);
+
+const getChartThumbnailSrc = (idx: number | string): string => {
+  const index = getIdx(idx);
+  if (thumbnailSrcs[index]) return thumbnailSrcs[index];
+  const result = galleryChartItems.value[index];
+  const id = extractThumbnailId(result.thumbnail);
+  const src = `/img/charts/${id}.png`;
+  thumbnailSrcs[index] = src;
+  thumbnailFallbackStep[index] = 0;
+  return src;
+};
+
+const onThumbnailError = (idx: number | string, thumbnail: string): void => {
+  const index = getIdx(idx);
+  const id = extractThumbnailId(thumbnail);
+  const step = (thumbnailFallbackStep[index] ?? 0) + 1;
+  thumbnailFallbackStep[index] = step;
+
+  const fallbacks = [
+    `/img/charts/${id}.jpg`,
+    `/img/charts/${id}.svg`,
+    `${baseUrl.value}${thumbnail}`,
+    defaultImg,
+  ];
+
+  if (step <= fallbacks.length) {
+    thumbnailSrcs[index] = fallbacks[step - 1];
+  }
+};
 const dialog: Ref<any> = ref({
   title: 'Test',
   type: '',
@@ -184,6 +226,11 @@ const galleryChartItems = computed(() => {
   } else {
     return favoriteChartItems.value;
   }
+});
+
+watch(galleryChartItems, () => {
+  Object.keys(thumbnailSrcs).forEach((key) => delete thumbnailSrcs[+key]);
+  Object.keys(thumbnailFallbackStep).forEach((key) => delete thumbnailFallbackStep[+key]);
 });
 
 const formatText = computed(() => {
@@ -244,6 +291,14 @@ const deleteChart = async (chart: any, retry = false) => {
 };
 
 const editChart = (chart: any) => {
+  if (chart.thumbnail?.endsWith('_depiction')) {
+    store.commit('setSnackbar', {
+      message:
+        'This chart is based on a legacy ontology and cannot be edited. Please recreate it using the updated FAIR-compliant ontology',
+      duration: 60000,
+    });
+    return;
+  }
   return router.push(`/explorer/chart/editor/edit/${getChartId(chart)}`);
 };
 
