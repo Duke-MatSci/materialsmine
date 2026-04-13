@@ -385,7 +385,7 @@ watch(pageSize, (newValue, oldValue) => {
 onMounted(async () => {
   const query = route.query;
   if (query && Object.keys(query).length > 0) {
-    await loadParams(query as Record<string, any>, false);
+    await loadParams(query as Record<string, any>);
   } else {
     await loadItems();
   }

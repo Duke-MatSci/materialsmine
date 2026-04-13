@@ -303,18 +303,8 @@
       <label for="fitSettings" class="md-body-2">Additional Settings</label>
       <div class="u--layout-flex u--layout-flex-justify-sb">
         <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
-          ω-T Transformation
+          Perform TTSP
         </md-checkbox>
-        <!-- <md-checkbox
-          :disabled="disableInput"
-          v-model="ttsp"
-          :class="[
-            disableInput ? 'nuplot-masked' : '',
-            'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
-          ]"
-        >
-          ω-T Transformation
-        </md-checkbox> -->
         <md-checkbox
           :disabled="disableInput"
           v-model="dynamfit.fitSettings"
@@ -327,130 +317,72 @@
         </md-checkbox>
       </div>
     </div>
-    <div class="utility-margin-top u_margin-bottom-small" v-if="ttsp">
+    <div style="margin-bottom: 1rem" v-if="ttsp">
       <!-- Transform Method Dropdown -->
-      <label for="transformMethods" class="md-body-2">Transform Method:</label>
-      <div class="u--margin-neg" id="transformMethods">
-        <md-radio id="transformMethodWLF" v-model="transformMethod" value="WLF"
-          >WLF <small>(Default)</small></md-radio
+      <div class="md-field viz-u-mgbottom-big">
+        <select
+          :disabled="!ttsp"
+          v-model="transformMethod"
+          :class="[!ttsp ? 'nuplot-masked' : '', 'form__select u--b-rad']"
+          name="transformMethod"
+          id="transformMethod"
         >
-        <md-radio id="transformMethodHybrid" v-model="transformMethod" value="hybrid"
-          >Hybrid</md-radio
-        >
-        <md-radio id="transformMethodManual" v-model="transformMethod" value="manual"
-          >Manual</md-radio
-        >
+          <option value="">Transform Method</option>
+          <option value="WLF">WLF</option>
+          <option value="Manual">Manual</option>
+        </select>
       </div>
 
-      <!-- Manual Display Fields -->
-      <div v-if="isManual" class="md-alert md-alert--info utility-margin-top">
-        <md-icon class="md-alert-icon u--color-primary" style="margin-right: 0.8rem">info</md-icon>
-        <span class="md-alert-content" v-if="mFile" style="vertical-align: bottom">
-          <strong>Filename:</strong> {{ reduceDescription(mFile, 15, true) }}
-        </span>
-        <span class="md-alert-content" style="vertical-align: bottom" v-else
-          ><strong>Filename:</strong> No file uploaded yet.</span
-        >
-      </div>
-      <!-- TTSP Form Fields -->
+      <!-- TTSP Checkbox -->
       <!-- TTSP Tg Value -->
-      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
-        <md-field style="max-width: 40% !important">
-          <md-input
-            v-model="ttspTgValue"
-            name="ttspTgValue"
-            id="ttspTgValue"
-            placeholder="Tg"
-            :disabled="!ttsp || tgEstimated"
-          ></md-input>
-        </md-field>
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspTgValue"
+          name="ttspTgValue"
+          id="ttspTgValue"
+          placeholder="Tg"
+          :disabled="!ttsp"
+        ></md-input>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="tgEstimated"
           class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
-          style="align-items: center"
         >
           Use Estimated Tg
         </md-checkbox>
       </div>
       <!-- TTSP C1 Value -->
-      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
-        <md-field style="max-width: 40% !important">
-          <md-input
-            v-model="ttspC1Value"
-            name="ttspC1Value"
-            id="ttspC1Value"
-            placeholder="C1"
-            :disabled="!ttsp || c1Estimated"
-          ></md-input>
-        </md-field>
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspC1Value"
+          name="ttspC1Value"
+          id="ttspC1Value"
+          placeholder="C1"
+          :disabled="!ttsp"
+        ></md-input>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="c1Estimated"
           class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
-          style="align-items: center"
         >
           Use Estimated C1
         </md-checkbox>
       </div>
       <!-- TTSP C2 Value -->
-      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
-        <md-field style="max-width: 40% !important">
-          <md-input
-            v-model="ttspC2Value"
-            name="ttspC2Value"
-            id="ttspC2Value"
-            placeholder="C2"
-            :disabled="!ttsp || c2Estimated"
-          ></md-input>
-        </md-field>
+      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showTtsp">
+        <md-input
+          v-model="ttspC2Value"
+          name="ttspC2Value"
+          id="ttspC2Value"
+          placeholder="C2"
+          :disabled="!ttsp"
+        ></md-input>
         <md-checkbox
           :disabled="ttspDisabled"
           v-model="c2Estimated"
           class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
-          style="align-items: center"
         >
           Use Estimated C2
-        </md-checkbox>
-      </div>
-      <!-- TTSP C2 Value -->
-      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
-        <md-field style="max-width: 40% !important">
-          <md-input
-            v-model="ttspTLValue"
-            name="ttspTLValue"
-            id="ttspTLValue"
-            placeholder="TL"
-            :disabled="!ttsp || tLEstimated"
-          ></md-input>
-        </md-field>
-        <md-checkbox
-          :disabled="ttspDisabled"
-          v-model="tLEstimated"
-          class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
-          style="align-items: center"
-        >
-          Use Estimated TL
-        </md-checkbox>
-      </div>
-      <!-- TTSP C2 Value -->
-      <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
-        <md-field style="max-width: 40% !important">
-          <md-input
-            v-model="ttspEAValue"
-            name="ttspEAValue"
-            id="ttspEAValue"
-            placeholder="EA"
-            :disabled="!ttsp || eAEstimated"
-          ></md-input>
-        </md-field>
-        <md-checkbox
-          :disabled="ttspDisabled"
-          v-model="eAEstimated"
-          class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
-          style="align-items: center"
-        >
-          Use Estimated EA
         </md-checkbox>
       </div>
     </div>
@@ -464,18 +396,11 @@
           v-on:click="useSampleFile"
           ><span class="md-body-1">Use Sample </span></a
         >
-        <!-- TODO: Fix here-->
-        <a
-          v-else
-          class="btn-text"
-          :class="{ disabled: updateBtn }"
-          style="border-radius: 0% !important"
-          href="#"
-          v-on:click="useSampleFile"
-          ><span class="md-body-1">Update</span></a
-        >
         <span
-          ><md-icon class="u_superscript-icon utility-color" :title="sampleTitle()"
+          ><md-icon
+            v-if="!dynamfit.fileUpload.length"
+            class="u_superscript-icon utility-color"
+            :title="sampleTitle()"
             >help_outline</md-icon
           ></span
         >
@@ -502,7 +427,6 @@
 import { ref, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
-import { useReduce } from '@/composables/useReduce';
 import Pagination from '@/components/explorer/Pagination.vue';
 
 // Component name for debugging
@@ -533,7 +457,6 @@ interface SelectedItemProperty {
 
 // Composables
 const { optionalChaining } = useOptionalChaining();
-const { reduceDescription } = useReduce();
 const store = useStore();
 
 // Reactive state
@@ -552,23 +475,16 @@ const stepper = ref(1);
 const dataType = ref<string | undefined>(undefined);
 const ttsp = ref(false);
 const transformMethod = ref('');
-const ttspTgValue = ref(null);
+const ttspTgValue = ref('');
 const tgEstimated = ref(false);
-const ttspC1Value = ref(null);
+const ttspC1Value = ref('');
 const c1Estimated = ref(false);
-const ttspC2Value = ref(null);
+const ttspC2Value = ref('');
 const c2Estimated = ref(false);
-const ttspTLValue = ref(null);
-const ttspEAValue = ref(null);
-const tLEstimated = ref(false);
-const eAEstimated = ref(false);
-const sentRequest = ref(false);
-const updateBtn = ref(false);
 
 // Computed properties
-const token = computed(() => store.getters['auth/token']);
 const dynamfit = computed(() => store.getters['explorer/dynamfit']);
-const mFile = computed(() => store.getters['explorer/getDynamfitManualFile']);
+const token = computed(() => store.getters['auth/token']);
 
 const disableInput = computed(() => {
   return !dynamfitData.value || !Object.keys(dynamfitData.value).length;
@@ -579,19 +495,16 @@ const dynamfitData = computed(() => {
 });
 
 const updateControls = computed(() => {
-  return !!dynamfit.value?.fileUpload || !!results.value?.xmls?.length;
+  return !!dynamfit.value.fileUpload || !!results.value?.xmls?.length;
 });
 
 const ttspDisabled = computed(() => {
   return selectedProperty.value === 'frequency';
 });
 
-const isWLF = computed(() => {
+const showTtsp = computed(() => {
   return ttsp.value && transformMethod.value === 'WLF';
 });
-
-const isManual = computed(() => ttsp.value && transformMethod.value === 'manual');
-const isHybrid = computed(() => ttsp.value && transformMethod.value === 'hybrid');
 
 // Methods
 const resetAll = (): void => {
@@ -622,9 +535,7 @@ const decreaseStepper = (): void => {
 
 const sampleTitle = (): string => {
   // eslint-disable-next-line
-  return dynamfit.value.fileUpload.length
-    ? `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`
-    : `Click to resubmit your changes`;
+  return `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`;
 };
 
 const downloadTitle = (): string => {
@@ -671,9 +582,6 @@ const resetChart = async (): Promise<void> => {
   const name = dynamfit.value.fileUpload || selectedItemProperty.value?.index;
   if (!name) return;
 
-  // Clear snackbar if exist on UI
-  store.commit('resetSnackbar');
-
   // DO NOT call BE to delete for sample file
   if (!useSample.value) {
     const { deleted, error } = await store.dispatch('deleteFile', {
@@ -707,35 +615,18 @@ const clearDynamfitData = (): void => {
 const updateChart = async (): Promise<void> => {
   // If user is exploring XML
   if ((selectedItemProperty.value?.index ?? -1) >= 0) {
+    console.log('Selected item property:', selectedItemProperty.value);
     return await handleSelect();
   }
 
-  const payload: any = { useSample: useSample.value, file_name: dynamfit.value.fileUpload };
-  payload.number_of_prony = dynamfit.value.range;
-  payload.model = dynamfit.value.model;
-  payload.fit_settings = dynamfit.value.fitSettings;
-  payload.domain = selectedProperty.value;
-
-  // TTSP Args
-  if (transformMethod.value && !isManual.value) {
-    payload.transform_method = transformMethod.value;
-    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
-
-    if (isHybrid.value) {
-      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTLValue.value) payload.TL = ttspTLValue.value;
-      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
-    }
-  } else if (transformMethod.value && isManual.value) {
-    payload.transform_method = transformMethod.value;
-    payload.shift_file_name = mFile.value;
-  }
+  const payload = {
+    fileName: dynamfit.value.fileUpload,
+    numberOfProny: dynamfit.value.range,
+    model: dynamfit.value.model,
+    fitSettings: dynamfit.value.fitSettings,
+    useSample: useSample.value,
+    domain: selectedProperty.value,
+  };
 
   isSidebarOpen.value = false;
   store.commit('explorer/setDynamfitDomain', selectedProperty.value);
@@ -756,9 +647,6 @@ const goBack = (): void => {
 };
 
 const handleSelect = async (): Promise<void> => {
-  if (sentRequest.value)
-    store.commit('setSnackbar', { message: 'Please wait & try after a few sec' });
-
   if (!selectedItemProperty.value) {
     store.commit('setSnackbar', {
       message: 'Please select an item before proceeding.',
@@ -768,7 +656,6 @@ const handleSelect = async (): Promise<void> => {
     return;
   }
 
-  sentRequest.value = true;
   isSidebarOpen.value = false;
   try {
     const payload = {
@@ -791,16 +678,13 @@ const handleSelect = async (): Promise<void> => {
     // get response data and check if response is ok then commit to store
     const resp = await response.json();
     if (!response.ok) {
-      sentRequest.value = false;
       throw new Error(resp.message);
     }
 
     const data = resp?.response ?? {};
     store.commit('explorer/setDynamfitDomain', selectedProperty.value);
     store.commit('explorer/setDynamfitData', data);
-    sentRequest.value = false;
   } catch (err) {
-    sentRequest.value = false;
     const error = err as Error;
     store.commit('setSnackbar', {
       message: error.message || 'Something went wrong. Please try again.',
@@ -849,13 +733,6 @@ const goToPage = async (page: number): Promise<void> => {
 };
 
 // Watchers
-watch(transformMethod, (newValue) => {
-  store.commit(
-    'explorer/setDynamfitTransformMethod',
-    newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
-  );
-});
-
 watch(
   dynamfit,
   (newVal) => {
@@ -868,20 +745,4 @@ watch(
 watch(limit, () => {
   return search();
 });
-
-watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov) => {
-  // nTgE = new Tg Estimated
-  if (cv[0] && cv[0] === true) ttspTgValue.value = null;
-  if (cv[1] && cv[1] === true) ttspC1Value.value = null;
-  if (cv[2] && cv[2] === true) ttspC2Value.value = null;
-  if (cv[3] && cv[3] === true) ttspTLValue.value = null;
-  if (cv[4] && cv[4] === true) ttspEAValue.value = null;
-  if (cv !== ov) updateBtn.value = true;
-});
 </script>
-<style>
-a.disabled {
-  pointer-events: none;
-  cursor: default;
-}
-</style>

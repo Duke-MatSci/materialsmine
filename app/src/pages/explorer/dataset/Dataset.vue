@@ -408,14 +408,9 @@ const loadDataset = async (): Promise<void> => {
 };
 
 const navBack = (): void => {
-  // Note: A check to go back to gallery after curating a dataset
-  const { from } = routeInfo.value;
-  if (from) router.back();
-  // if (from.name === 'CurateSDD') {
-  //   router.push('/explorer/curate');
-  // } else {
-  //   router.back();
-  // }
+  const page = store.getters['explorer/sddDatasets/getPage'] || 1;
+  const size = store.getters['explorer/sddDatasets/getPageSize'] || 20;
+  router.push({ name: 'DatasetGallery', query: { page, size } });
 };
 
 const nav_to_tab = (e: Event): void => {
