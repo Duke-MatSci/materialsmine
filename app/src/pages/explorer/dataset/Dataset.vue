@@ -10,6 +10,10 @@
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
           </md-button>
+          <md-button v-if="isAuth" class="md-icon-button" @click.prevent="copyDataDictionary(distributions)">
+            <md-tooltip> Copy Data Dictionary Link </md-tooltip>
+            <md-icon>recycling</md-icon>
+          </md-button>
           <md-button id="shareChartBtn" class="md-icon-button" @click.prevent="handleShare">
             <md-tooltip> {{ shareToolTip }} </md-tooltip>
             <md-icon>share</md-icon>
@@ -257,6 +261,7 @@ import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
 import { parseFileName } from '@/modules/whyis-dataset';
+import { useDataDictionary } from '@/composables/useDataDictionary';
 
 defineOptions({
   name: 'DatasetDetailView',
@@ -297,6 +302,9 @@ const props = defineProps<Props>();
 
 const store = useStore();
 const router = useRouter();
+const { copyDataDictionary } = useDataDictionary();
+
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 
 // Data from reducer mixin
 const hideAssetNavLeft = ref<boolean>(false);
