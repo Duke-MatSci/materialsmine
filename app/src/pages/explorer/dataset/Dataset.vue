@@ -10,8 +10,12 @@
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
           </md-button>
-          <md-button v-if="isAuth" class="md-icon-button" @click.prevent="copyDataDictionary(distributions)">
-            <md-tooltip> Copy Data Dictionary Link </md-tooltip>
+          <md-button
+            v-if="isAuth"
+            class="md-icon-button"
+            @click.prevent="copyDataDictionary(distributions)"
+          >
+            <md-tooltip> Grab Data Dictionary Link </md-tooltip>
             <md-icon>recycling</md-icon>
           </md-button>
           <md-button id="shareChartBtn" class="md-icon-button" @click.prevent="handleShare">
@@ -359,7 +363,7 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
+const optionalChaining = <T>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {

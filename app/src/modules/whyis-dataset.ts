@@ -241,7 +241,8 @@ async function saveDataset(
   dataset: Dataset,
   fileList: FileItem[],
   imageList: FileItem[],
-  guuid?: string
+  guuid?: string,
+  externalSddLink?: string
 ): Promise<any> {
   const oldFiles = fileList.filter((file) => file.status === 'complete');
   const oldDepiction = imageList.filter((file) => file.status === 'complete');
@@ -266,6 +267,9 @@ async function saveDataset(
   const datasetLd = buildDatasetLd(dataset);
   let allFiles = [...oldFiles];
   if (distrRes?.files) allFiles = [...allFiles, ...distrRes.files];
+  if (externalSddLink) {
+    allFiles.push({ uri: externalSddLink, name: parseFileName(externalSddLink), status: 'complete' });
+  }
   if (allFiles?.length) {
     datasetLd[datasetFieldUris.distribution] = buildDistrLd(allFiles);
   }
@@ -276,8 +280,22 @@ async function saveDataset(
     datasetLd[datasetFieldUris.depiction] = buildDepictionLd(oldDepiction[0], dataset.uri!);
   }
 
-  return postNewNanopub(datasetLd);
-  // TODO: Error handling
+  try {
+    return await postNewNanopub(datasetLd);
+  } catch (err) {
+    const uploadedFiles: FileItem[] = [];
+    if (distrRes?.files) uploadedFiles.push(...distrRes.files);
+    if (imgRes?.files) uploadedFiles.push(...imgRes.files);
+
+    await Promise.allSettled(
+      uploadedFiles.map((file) => {
+        const fileId = parseFileName(file.filename || '', true);
+        return deleteFile(fileId);
+      })
+    );
+
+    throw err;
+  }
 }
 
 async function saveDatasetFiles(fileList: FileItem[]): Promise<any> {

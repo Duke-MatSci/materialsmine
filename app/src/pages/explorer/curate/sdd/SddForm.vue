@@ -508,6 +508,29 @@
                             </li>
                           </ul>
                         </div>
+                        <div v-if="!hasDataDictionary" class="u_margin-bottom-small">
+                          <div class="md-subhead" style="color: #ff5252; margin-top: 10px">
+                            No data dictionary (.xls/.xlsx) found in uploaded files.
+                            You can reuse an existing one from the dataset gallery or go back and upload your own.
+                          </div>
+                          <div class="md-layout md-gutter" style="align-items: center; margin-top: 10px">
+                            <div class="md-layout-item">
+                              <md-field>
+                                <label>Paste data dictionary link here</label>
+                                <md-input v-model="externalSddLink"></md-input>
+                              </md-field>
+                            </div>
+                            <div>
+                              <md-button
+                                class="md-icon-button"
+                                @click.prevent="openDatasetGallery"
+                              >
+                                <md-tooltip>Browse Dataset Gallery</md-tooltip>
+                                <md-icon>azm</md-icon>
+                              </md-button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       <div class="u_margin-bottom-small">
                         <h3>Description:</h3>
@@ -536,7 +559,7 @@
         </div>
       </div>
     </div>
-    <dialogbox
+    <Dialog
       :active="dialogBoxActive"
       :minWidth="dialog.minWidth"
       :disableClose="dialog.disableClose"
@@ -589,17 +612,17 @@
           <md-button @click="useDoiData()">Yes, use imported data</md-button>
         </div>
       </template>
-    </dialogbox>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { debounce } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
-import FileDrop from '@/components/curate/FileDrop.vue';
+import FileInput from '@/components/curate/FileDrop.vue';
 import FilePreview from '@/components/curate/FilePreview.vue';
 import Dialog from '@/components/Dialog.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
@@ -749,6 +772,7 @@ const dialog = ref<DialogConfig>({
   disableClose: false,
 });
 const uploadInProgress = ref<string | null>(null);
+const externalSddLink = ref('');
 
 // Computed
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
@@ -780,6 +804,13 @@ const generatedUUID = computed(() => {
   return uuidv4();
 });
 
+const hasDataDictionary = computed(() => {
+  const xlsRegex = /\.xlsx?$/i;
+  const newFiles = distrFiles.value.some((f: any) => xlsRegex.test(f.file?.name?.split('?')[0] || ''));
+  const oldFiles = oldDistributions.value.some((f) => xlsRegex.test(f.name?.split('?')[0] || ''));
+  return newFiles || oldFiles;
+});
+
 // Watch
 watch(orcidData, (newValue) => {
   if (newValue === 'invalid') {
@@ -787,12 +818,9 @@ watch(orcidData, (newValue) => {
   } else {
     invalid.value.orcid = false;
     dataset.value.contactPoint['@id'] = orcidData.value?.['@id'];
-    dataset.value.contactPoint.firstName =
-      orcidData.value?.['http://schema.org/givenName']?.[0]?.['@value'];
-    dataset.value.contactPoint.lastName =
-      orcidData.value?.['http://schema.org/familyName']?.[0]?.['@value'];
-    dataset.value.contactPoint.cpEmail =
-      orcidData.value?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value'];
+    dataset.value.contactPoint.firstName = orcidData.value?.firstName;
+    dataset.value.contactPoint.lastName = orcidData.value?.lastName;
+    dataset.value.contactPoint.cpEmail = orcidData.value?.email;
   }
 });
 
@@ -888,6 +916,13 @@ const goToStep = (id: string, index?: string) => {
     if (id === 'second') invalid.value.second = null;
     if (index) {
       active.value = index;
+      if (index === 'third' && !hasDataDictionary.value) {
+        store.commit('setSnackbar', {
+          message:
+            'No data dictionary (.xls/.xlsx) found. You can reuse an existing one from the dataset gallery or go back and upload your own.',
+          duration: 10000,
+        });
+      }
     }
   }
 };
@@ -902,9 +937,15 @@ const lookupOrcid = async (e: any) => {
   }
 };
 
+const openDatasetGallery = (): void => {
+  const routeData = router.resolve({ name: 'DatasetGallery' });
+  window.open(routeData.href, '_blank');
+};
+
 const lookupDoi = async (e: Event) => {
   const target = e.target as HTMLInputElement;
   await store.dispatch('explorer/curation/lookupDoi', target.value);
+  await nextTick();
   if (doiData.value) {
     dataset.value.refby = doiData.value?.URL;
     renderDialog('Use imported DOI data?', 'doiData', 40);
@@ -1081,7 +1122,8 @@ const submitForm = async () => {
         dataset.value,
         processedFiles,
         processedImg,
-        generatedUUID.value
+        generatedUUID.value,
+        externalSddLink.value
       );
       await store.dispatch('explorer/curation/cacheNewEntityResponse', {
         identifier: dataset.value.uri,

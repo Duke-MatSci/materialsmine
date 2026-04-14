@@ -168,6 +168,13 @@ const extractThumbnailId = (thumbnail: string): string => {
   return segment.replace(/_depiction$/, '');
 };
 
+const chartEnv = (() => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return 'dev';
+  if (hostname.startsWith('qa.materialsmine')) return 'stage';
+  return 'prod';
+})();
+
 const getIdx = (idx: number | string) => (typeof idx === 'string' ? parseInt(idx) : idx);
 
 const getChartThumbnailSrc = (idx: number | string): string => {
@@ -175,7 +182,7 @@ const getChartThumbnailSrc = (idx: number | string): string => {
   if (thumbnailSrcs[index]) return thumbnailSrcs[index];
   const result = galleryChartItems.value[index];
   const id = extractThumbnailId(result.thumbnail);
-  const src = `/img/charts/${id}.png`;
+  const src = `/img/charts/${chartEnv}/${id}.png`;
   thumbnailSrcs[index] = src;
   thumbnailFallbackStep[index] = 0;
   return src;
@@ -188,8 +195,8 @@ const onThumbnailError = (idx: number | string, thumbnail: string): void => {
   thumbnailFallbackStep[index] = step;
 
   const fallbacks = [
-    `/img/charts/${id}.jpg`,
-    `/img/charts/${id}.svg`,
+    `/img/charts/${chartEnv}/${id}.jpg`,
+    `/img/charts/${chartEnv}/${id}.svg`,
     `${baseUrl.value}${thumbnail}`,
     defaultImg,
   ];
