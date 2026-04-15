@@ -85,7 +85,7 @@ def construct_data_dictionary(metrics, ontology_info, submission_details, turtle
             "Description": ontology_info[1],
             "Status": "Alpha",
             "Format": ontology_info[0],
-            "Contact": "Marc Palmeri, Ph.D., marc.j.palmeri@duke.edu",
+            "Contact": "Cate L. Brinson, Ph.D., cate.brinson@duke.edu",
             "Categories": "Chemical, Development, Physicochemical",
         },
         "metrics": metrics,
