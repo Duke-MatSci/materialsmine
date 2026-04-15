@@ -9,7 +9,7 @@ const CH = require('../utils/curation-utility'); // Curation Helper
 const Builder = require('../utils/curation-builder');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
-const { NP_BASE } = require('../../config/constant');
+// const { NP_BASE } = require('../../config/constant'); // Now used only in curation-builder
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
 const {
@@ -1927,10 +1927,9 @@ exports.getChangeLogs = async (req, res, next) => {
   try {
     const resourceChangeLog = await ChangeLog.findOne({
       resourceID: resourceId
-    });
+    }).populate('changes.user', 'givenName surName');
 
     if (!resourceChangeLog) {
-      // return next(errorWriter(req, 'Change log not found', 'getChangeLogs', 404));
       return res.status(200).json({ changes: [] });
     }
 
@@ -1947,10 +1946,23 @@ exports.getChangeLogs = async (req, res, next) => {
       changeLogs = resourceChangeLog.changes.slice(startIndex, endIndex);
     }
 
-    // TODO (November 7, 2025): Remove successWriter after testing
-    successWriter(req, JSON.stringify(changeLogs), 'getChangeLogs');
+    // Map user objects to concatenated full name
+    const formatUser = (entry) => {
+      const obj = typeof entry.toObject === 'function' ? entry.toObject() : entry;
+      const u = obj.user;
+      const name = u && typeof u === 'object'
+        ? `${u.givenName || ''} ${u.surName || ''}`.trim()
+        : u;
+      return { ...obj, user: name || 'Unknown' };
+    };
+
+    const formatted = Array.isArray(changeLogs)
+      ? changeLogs.map(formatUser)
+      : changeLogs ? formatUser(changeLogs) : changeLogs;
+
+    successWriter(req, JSON.stringify(formatted), 'getChangeLogs');
     latency.latencyCalculator(res);
-    return res.status(200).json({ changes: changeLogs });
+    return res.status(200).json({ changes: formatted });
   } catch (err) {
     next(errorWriter(req, err, 'getChangeLogs', 500));
   }
@@ -2067,68 +2079,28 @@ exports.curationETL = async (req, res, next) => {
           await Builder.transformXmlToNanopub(parsed, req.logger);
         sampleIdForFailure = nanopubId;
 
-        // Serialize per desired output
-        let content, format, extension, mime;
-        if (output === 'trig') {
-          content = await Builder.toTriG(nanopub);
-          format = 'trig';
-          extension = '.trig';
-          mime = 'application/trig';
-        } else if (output === 'ttl') {
-          content = await Builder.toTurtleAssertionOnly(nanopub, assertionId);
-          format = 'turtle';
-          extension = '.ttl';
-          mime = 'text/turtle';
-        } else {
-          content = await Builder.toJsonLd(nanopub);
-          format = 'json-ld';
-          extension = '.jsonld';
-          mime = 'application/ld+json';
-        }
-
-        // SHACL validation (Calling Managed Service)
-        const shacl = await Builder.validateWithSHACL({
-          data: content,
-          format,
-          inference,
-          resolveUrls,
-          ontologyLink,
-          req,
-          res,
-          next
-        });
-        const sh = shacl?.response?.shacl;
-        if (!sh || sh.conforms !== true) {
-          failed.push({
+        // Serialize → SHACL validate → changelog (shared logic)
+        const { success, result, failure } =
+          await Builder.serializeAndValidate({
+            nanopubId,
+            nanopub,
+            assertionId,
+            output,
+            inference,
+            resolveUrls,
+            ontologyLink,
             id,
-            sampleID: nanopubId,
-            stage: 'shacl',
-            errors: sh
-              ? sh.violations || [{ message: 'Unknown SHACL failure' }]
-              : [{ message: 'No SHACL report' }]
+            req,
+            res,
+            next,
+            createChangeLogCb: this.createChangeLog
           });
+
+        if (!success) {
+          failed.push(failure);
           continue;
         }
-
-        // Success
-        processed.push({
-          id,
-          sampleID: nanopubId,
-          nanopub: `${NP_BASE}${encodeURIComponent(nanopubId)}`,
-          format: mime,
-          extension,
-          // content,
-          shacl: { conforms: true, violation_count: sh.violation_count || 0 }
-        });
-
-        // Add to change log
-        await Builder.publishToChangeLog(
-          { resp: shacl?.response, id, failed, sampleIdForFailure },
-          req,
-          res,
-          next,
-          this.createChangeLog
-        );
+        processed.push(result);
       } catch (e) {
         failed.push({
           id: idForFailure,
@@ -2150,6 +2122,108 @@ exports.curationETL = async (req, res, next) => {
     });
   } catch (err) {
     return next(errorWriter(req, err, 'curationETL', 500));
+  }
+};
+
+/**
+ * sddCurationETL
+ * @description ETL endpoint for SDD (Semantic Data Dictionary) nanopublications.
+ *   Accepts a pre-built nanopub skeleton from the frontend and processes it
+ *   through the same serialize → SHACL validate → changelog pipeline as curationETL.
+ * @param {Object} req - The request object
+ * @param {Object} res - The response object
+ * @param {Function} next - The next middleware function
+ * @returns {Object} - The ETL result (same shape as curationETL)
+ */
+exports.sddCurationETL = async (req, res, next) => {
+  const { logger, body } = req;
+  logger.info('sddCurationETL(): Function Entry');
+
+  const {
+    nanopubSkeleton,
+    output = 'jsonld',
+    inference = 'rdfs',
+    resolveUrls = true,
+    ontologyLink
+  } = body || {};
+
+  if (!nanopubSkeleton) {
+    const err = new Error('Provide "nanopubSkeleton" in the request body.');
+    return next(errorWriter(req, err, 'sddCurationETL', 400));
+  }
+
+  try {
+    const processed = [];
+    const failed = [];
+
+    const rawId = nanopubSkeleton.id || `sdd-${Date.now()}`;
+    const id = rawId.split('/').pop() || rawId;
+
+    try {
+      // Transform skeleton → nanopub
+      const { nanopubId, nanopub, assertionId } =
+        await Builder.transformSddToNanopub(nanopubSkeleton, logger);
+
+      // Serialize → SHACL validate → changelog (shared logic)
+      const { success, result, failure } =
+        await Builder.serializeAndValidate({
+          nanopubId,
+          nanopub,
+          assertionId,
+          output,
+          inference,
+          resolveUrls,
+          ontologyLink,
+          id,
+          req,
+          res,
+          next,
+          createChangeLogCb: this.createChangeLog
+        });
+
+      if (!success) {
+        failed.push(failure);
+      } else {
+        processed.push(result);
+      }
+    } catch (e) {
+      failed.push({
+        id,
+        sampleID: null,
+        stage: 'unexpected',
+        errors: [String(e?.message || e)]
+      });
+    }
+
+    if (failed.length) {
+      latency.latencyCalculator(res);
+      return res.status(400).json({ ok: false, failed });
+    }
+
+    // Build response from nanopubSkeleton fields
+    const distArr =
+      nanopubSkeleton.distribution?.['mm:hasDistribution']?.[
+        'dcat:distribution'
+      ] || [];
+    const depictionFile =
+      nanopubSkeleton.depiction?.['mm:hasDepiction']?.['foaf:depiction']?.[0];
+
+    latency.latencyCalculator(res);
+    return res.status(200).json({
+      description: nanopubSkeleton.description || '',
+      identifier: nanopubSkeleton.id || '',
+      label: nanopubSkeleton.title || '',
+      thumbnail: depictionFile?.['dcat:accessURL'] || '',
+      doi: nanopubSkeleton.doi || '',
+      organization: (nanopubSkeleton.organizations || []).map(
+        (org) => org.name
+      ),
+      distribution: (Array.isArray(distArr) ? distArr : [distArr]).map(
+        (d) => d['@id']
+      )
+    });
+  } catch (err) {
+    return next(errorWriter(req, err, 'sddCurationETL', 500));
   }
 };
 
