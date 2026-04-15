@@ -92,6 +92,18 @@
         >
           Metadata
         </div>
+        <div
+          @click="nav_to_tab"
+          name="hs_active"
+          :class="{
+            'u--margin-rightmd': true,
+            'section_tabb-controller': !tabbed_content.hs_active,
+            u_pointer: true,
+            'u--padding-rl-xs': true,
+          }"
+        >
+          History
+        </div>
         <!-- <div
           @click="nav_to_tab"
           name="au_active"
@@ -208,6 +220,25 @@
           </div>
         </div>
 
+        <div
+          v-if="dataset"
+          id="history"
+          :class="{
+            search_box_form: true,
+            'u--layout-flex-justify-se': true,
+            explorer_page_header: true,
+            'u--layout-flex-switch': tabbed_content.hs_active,
+          }"
+        >
+          <div class="wrapper u_margin-top-med" style="min-width: 90%">
+            <TableComponent
+              emptyState="No revision history found for this dataset"
+              :tableData="changeLogs"
+              sortBy="timestamp"
+            />
+          </div>
+        </div>
+
         <!-- <div
           v-if="dataset"
           id="authors"
@@ -264,6 +295,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
+import TableComponent from '@/components/explorer/TableComponent.vue';
 import { parseFileName } from '@/modules/whyis-dataset';
 import { useDataDictionary } from '@/composables/useDataDictionary';
 
@@ -279,6 +311,7 @@ interface TabbedContent {
   ds_active: boolean;
   md_active: boolean;
   au_active: boolean;
+  hs_active: boolean;
 }
 
 interface DatasetFields {
@@ -323,6 +356,7 @@ const tabbed_content = reactive<TabbedContent>({
   ds_active: false,
   md_active: true,
   au_active: true,
+  hs_active: true,
 });
 
 const datasetFields = reactive<DatasetFields>({
@@ -348,6 +382,7 @@ const loading = ref<boolean>(true);
 // const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
+const changeLogs = computed(() => store.getters['explorer/curation/getChangeLogs']);
 const routeInfo = computed(() => store.getters.getRouteInfo);
 
 const doi = computed(() => {
@@ -367,7 +402,6 @@ const optionalChaining = <T>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
-    console.log(e);
     return undefined;
   }
 };
@@ -462,10 +496,12 @@ watch(dataset, (newValues, oldValues) => {
   if (!newValues) return;
 
   if (newValues?.organization) {
-    organizations.value = newValues?.organization?.map((name: string, index: number) => ({
-      name,
-      id: index,
-    }));
+    organizations.value = newValues?.organization?.map((name: string, index: number) => [
+      {
+        name,
+        id: index,
+      },
+    ]);
   }
 
   if (newValues?.thumbnail) {
@@ -487,5 +523,6 @@ watch(dataset, (newValues, oldValues) => {
 onMounted(() => {
   loading.value = true;
   loadDataset();
+  store.dispatch('explorer/curation/fetchChangeLogs', props.id);
 });
 </script>

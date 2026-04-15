@@ -615,7 +615,6 @@ const clearDynamfitData = (): void => {
 const updateChart = async (): Promise<void> => {
   // If user is exploring XML
   if ((selectedItemProperty.value?.index ?? -1) >= 0) {
-    console.log('Selected item property:', selectedItemProperty.value);
     return await handleSelect();
   }
 

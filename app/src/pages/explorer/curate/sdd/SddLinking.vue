@@ -18,8 +18,8 @@
           >
             <md-steppers class="form__stepper" v-model:md-active-step="active" md-linear>
               <md-step id="first" md-label="Dataset Info">
-                Linking has not been completed for this dataset. Are you ready to finish linking
-                the data?
+                Linking has not been completed for this dataset. Are you ready to finish linking the
+                data?
                 <a>Click here</a> if you'd like to request assistance from an admin.
 
                 <md-card-header>
@@ -58,24 +58,20 @@
                   <div v-if="orcidData" class="u_margin-bottom-small">
                     <span>
                       <h3>Contact Point:</h3>
-                      {{
-                        orcidData?.['http://schema.org/givenName']?.[0]?.['@value'] || ''
-                      }}
+                      {{ orcidData?.['http://schema.org/givenName']?.[0]?.['@value'] || '' }}
                       {{ orcidData?.['http://schema.org/familyName']?.[0]?.['@value'] || '' }}
                     </span>
                     <div>
                       <a class="u--b-rad" :href="orcidData?.['@id']" target="_blank">
                         {{
-                          orcidData?.['@id'] ||
-                          dataset?.[datasetFields.cp]?.[0]?.['@id'] ||
-                          'N/A'
+                          orcidData?.['@id'] || dataset?.[datasetFields.cp]?.[0]?.['@id'] || 'N/A'
                         }}
                       </a>
                     </div>
                     <div v-if="orcidData?.['http://www.w3.org/2006/vcard/ns#email']">
                       {{
                         orcidData?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value'] ||
-                          'N/A'
+                        'N/A'
                       }}
                     </div>
                   </div>
@@ -101,7 +97,10 @@
                   </div>
                 </md-card-content>
                 <div class="md-card-actions md-alignment-right chart_editor__right-view">
-                  <md-button @click="goToStep('first', 'second')" class="md-theme-default md-button_next">
+                  <md-button
+                    @click="goToStep('first', 'second')"
+                    class="md-theme-default md-button_next"
+                  >
                     Next
                   </md-button>
                 </div>
@@ -527,7 +526,6 @@ const submitForm = async () => {
   Promise.all(promises)
     .then((response) => {
       // TODO: Remove later - consume response in snackbar
-      console.log(response);
       return store.commit('setSnackbar', {
         message: 'SDD linking completed successfully',
         // explorer/dataset/4acae5dd-8986-4177-8836-38901591fce0

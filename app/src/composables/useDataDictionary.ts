@@ -3,10 +3,14 @@ import { useStore } from 'vuex';
 export function useDataDictionary() {
   const store = useStore();
 
-  const findDataDictionaryLink = (distribution: string | Record<string, { downloadLink?: string }>): string | undefined => {
+  const findDataDictionaryLink = (
+    distribution: string | string[] | Record<string, { downloadLink?: string }>
+  ): string | undefined => {
     let links: string[] = [];
 
-    if (typeof distribution === 'string') {
+    if (Array.isArray(distribution)) {
+      links = distribution.map((l) => (typeof l === 'string' ? l.trim() : ''));
+    } else if (typeof distribution === 'string') {
       links = distribution.split(',').map((l) => l.trim());
     } else if (distribution && typeof distribution === 'object') {
       links = Object.values(distribution)
@@ -17,7 +21,9 @@ export function useDataDictionary() {
     return links.find((link) => /\.xlsx?/i.test(link.split('?')[0]));
   };
 
-  const copyDataDictionary = async (distribution: string | Record<string, { downloadLink?: string }>): Promise<void> => {
+  const copyDataDictionary = async (
+    distribution: string | string[] | Record<string, { downloadLink?: string }>
+  ): Promise<void> => {
     const xlsLink = findDataDictionaryLink(distribution);
 
     if (!xlsLink) {

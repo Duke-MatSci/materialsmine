@@ -64,36 +64,36 @@ export default {
     };
   },
 
-  async createDatasetInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
-    const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
+  // async createDatasetInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
+  //   const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
 
-    // Return if not able to retrieve chart object
-    if (!datasetObject) {
-      return new Error('Caching error. Dataset object is missing');
-    }
+  //   // Return if not able to retrieve chart object
+  //   if (!datasetObject) {
+  //     return new Error('Caching error. Dataset object is missing');
+  //   }
 
-    // Build chart instance object
-    return {
-      description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
-      identifier: datasetObject['@id'],
-      label:
-        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/title']?.['@value'],
-      thumbnail:
-        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
-          'http://www.w3.org/ns/dcat#accessURL'
-        ],
-      doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
-        return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
-      }),
-      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
-        return dist?.['@id'];
-      }),
-    };
-  },
+  //   // Build chart instance object
+  //   return {
+  //     description:
+  //       datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+  //     identifier: datasetObject['@id'],
+  //     label:
+  //       datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/title']?.['@value'],
+  //     thumbnail:
+  //       datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+  //         'http://www.w3.org/ns/dcat#accessURL'
+  //       ],
+  //     doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
+  //     organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
+  //       return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
+  //     }),
+  //     distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
+  //       return dist?.['@id'];
+  //     }),
+  //   };
+  // },
 
   async deleteEntityNanopub(_context: Context, entityUri: string): Promise<any> {
     // TODO: refactor delete function to generalize to other entity types
@@ -130,7 +130,7 @@ export default {
     if (type === 'charts') {
       resourceInstanceObject = await dispatch('createChartInstanceObject', resourceNanopub);
     } else if (type === 'datasets') {
-      resourceInstanceObject = await dispatch('createDatasetInstanceObject', resourceNanopub);
+      resourceInstanceObject = resourceNanopub;
     } else {
       return new Error('Caching error. Type parameter is missing or invalid');
     }
@@ -481,9 +481,7 @@ export default {
       country: {
         country_code: item.locations?.[0]?.geonames_details?.country_code || '',
       },
-      addresses: [
-        { city: item.locations?.[0]?.geonames_details?.name || '' },
-      ],
+      addresses: [{ city: item.locations?.[0]?.geonames_details?.name || '' }],
     }));
     commit('setRorData', normalized);
     return normalized;

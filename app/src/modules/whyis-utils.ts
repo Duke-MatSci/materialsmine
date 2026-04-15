@@ -5,7 +5,7 @@ const lodPrefix = window.location.origin;
 const deleteNanopub = async (uri: string): Promise<any> => {
   return await querySparql('', {
     method: 'DELETE',
-    whyisPath: `about?uri=${encodeURIComponent(uri)}`
+    whyisPath: `about?uri=${encodeURIComponent(uri)}`,
   });
 };
 
@@ -23,7 +23,7 @@ interface Nanopub {
 
 async function listNanopubs(uri: string): Promise<Nanopub[]> {
   const response = await querySparql('', {
-    whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}`
+    whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}`,
   });
   return Object.values(response);
 }
@@ -56,7 +56,11 @@ interface NanopubData {
   };
 }
 
-const postNewNanopub = async (pubData: any, isXSD?: boolean, context?: Record<string, any>): Promise<NanopubData> => {
+const postNewNanopub = async (
+  pubData: any,
+  isXSD?: boolean,
+  context?: Record<string, any>
+): Promise<NanopubData> => {
   let nanopub: NanopubData;
   if (!isXSD) {
     nanopub = getNanopubSkeleton();
@@ -74,7 +78,7 @@ const postNewNanopub = async (pubData: any, isXSD?: boolean, context?: Record<st
     body: nanopub,
     method: 'POST',
     whyisPath: 'pub',
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   });
   return nanopub;
 };
@@ -86,7 +90,7 @@ function getNanopubSkeleton(): NanopubData {
     '@context': {
       '@vocab': lodPrefix + '/',
       '@base': lodPrefix + '/',
-      np: 'http://www.nanopub.org/nschema#'
+      np: 'http://www.nanopub.org/nschema#',
     },
     '@id': npId,
     '@graph': {
@@ -95,24 +99,24 @@ function getNanopubSkeleton(): NanopubData {
       'np:hasAssertion': {
         '@id': npId + '_assertion',
         '@type': 'np:Assertion',
-        '@graph': []
+        '@graph': [],
       },
       'np:hasProvenance': {
         '@id': npId + '_provenance',
         '@type': 'np:Provenance',
         '@graph': {
-          '@id': npId + '_assertion'
-        }
+          '@id': npId + '_assertion',
+        },
       },
       'np:hasPublicationInfo': {
         '@id': npId + '_pubinfo',
         '@type': 'np:PublicationInfo',
         '@graph': {
-          '@id': npId
-        }
-      }
-    }
+          '@id': npId,
+        },
+      },
+    },
   };
 }
 
-export { deleteNanopub, postNewNanopub, listNanopubs, lodPrefix };
+export { deleteNanopub, makeNanopubId, postNewNanopub, listNanopubs, lodPrefix };

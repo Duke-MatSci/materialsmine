@@ -121,6 +121,7 @@ import Spinner from '@/components/Spinner.vue';
 import Pagination from '@/components/explorer/Pagination.vue';
 import Dialog from '@/components/Dialog.vue';
 import { toChartId } from '@/modules/vega-chart';
+import { prodFailingCharts } from '@/modules/kg-utils';
 
 // Component name for debugging
 defineOptions({
@@ -219,7 +220,11 @@ const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const items = computed(() => store.getters['explorer/gallery/items']);
 const page = computed(() => store.getters['explorer/gallery/page']);
-const total = computed(() => store.getters['explorer/gallery/total']);
+const rawTotal = computed(() => store.getters['explorer/gallery/total']);
+const total = computed(() => {
+  if (chartEnv !== 'prod') return rawTotal.value;
+  return Math.max(0, rawTotal.value - prodFailingCharts.length);
+});
 const totalPages = computed(() => store.getters['explorer/gallery/totalPages']);
 const queryTimeMillis = computed(() => store.getters['explorer/gallery/queryTimeMillis']);
 const newChartExist = computed(() => store.getters['explorer/curation/getNewChartExist']);
@@ -228,11 +233,12 @@ const totalFavorites = computed(() => store.getters['explorer/gallery/totalFavor
 const missingCharts = computed(() => store.getters['explorer/gallery/missingCharts']);
 
 const galleryChartItems = computed(() => {
-  if (!props.isFavourite) {
-    return items.value;
-  } else {
-    return favoriteChartItems.value;
-  }
+  const source = props.isFavourite ? favoriteChartItems.value : items.value;
+  if (chartEnv !== 'prod' || !source) return source;
+  return source.filter((chart: any) => {
+    const id = chart.identifier?.split('/').pop() || '';
+    return !prodFailingCharts.includes(id);
+  });
 });
 
 watch(galleryChartItems, () => {

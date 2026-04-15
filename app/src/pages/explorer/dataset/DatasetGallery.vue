@@ -72,11 +72,11 @@
                   recycling</md-icon
                 >
               </div>
-              <a download :href="optionalChaining(() => result.distribution)">
+              <div @click.prevent="downloadFiles(result.distribution)">
                 <md-icon class="u_color_white" style="font-size: 14px !important">
                   download</md-icon
                 >
-              </a>
+              </div>
               <div v-if="isAuth && isAdmin" @click.prevent="editDataset(result)">
                 <md-icon class="u_color_white">edit</md-icon>
               </div>
@@ -213,16 +213,6 @@ const items = computed(() => store.getters['explorer/sddDatasets/getAllDatasets'
 const page = computed(() => store.getters['explorer/sddDatasets/getPage']);
 const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
 const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
-
-// Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
-  try {
-    return fn();
-  } catch (e) {
-    console.log(e);
-    return undefined;
-  }
-};
 
 // Methods from reducer mixin
 const reduceDescription = (args: string, size = 50): string => {
@@ -365,6 +355,18 @@ const loadItems = async (pageCurrent = 1): Promise<void> => {
   } finally {
     loading.value = false;
   }
+};
+
+const downloadFiles = (distribution: string | string[]): void => {
+  const links = Array.isArray(distribution) ? distribution : [distribution];
+  links.filter(Boolean).forEach((link) => {
+    const a = document.createElement('a');
+    a.href = link;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
 };
 
 const getDatasetId = (dataset: DatasetItem): string => {

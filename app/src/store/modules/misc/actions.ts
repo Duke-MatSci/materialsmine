@@ -167,13 +167,12 @@ export default {
       };
 
       request.onupgradeneeded = (event) => {
-        console.log('IndexedDB upgrade needed');
+        // console.log('IndexedDB upgrade needed');
         const db = (event.target as IndexedDBRequest)?.result;
 
         // Delete old object store if it exists to ensure clean state
         if (db.objectStoreNames.contains('requests')) {
           db.deleteObjectStore('requests');
-          console.log('Deleted old "requests" object store');
         }
 
         // Create fresh object store
@@ -182,7 +181,6 @@ export default {
           autoIncrement: true,
         });
         store.createIndex('request_hash', 'hash', { unique: true });
-        console.log('Created new "requests" object store');
       };
 
       request.onsuccess = async (event) => {
