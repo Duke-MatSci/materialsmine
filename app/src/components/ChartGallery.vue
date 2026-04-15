@@ -59,7 +59,7 @@
                   <img
                     :src="getChartThumbnailSrc(index)"
                     :alt="result.label"
-                    @error="onThumbnailError(index, result.thumbnail)"
+                    @error="onThumbnailError(index)"
                     v-if="result.thumbnail"
                   />
                   <img src="../assets/img/rdf_flyer.svg" :alt="result.label" v-else />
@@ -159,10 +159,8 @@ const { pageNumber, pageSize, loadParams, loadPrevNextImage } = useExplorerQuery
 // Reactive data
 const loading = ref(false);
 const otherArgs = ref(null);
-const baseUrl = ref(`${window.location.origin}/api/knowledge/images?uri=`);
 const defaultImg = new URL('../assets/img/rdf_flyer.svg', import.meta.url).href;
 const thumbnailSrcs: Record<number, string> = reactive({});
-const thumbnailFallbackStep: Record<number, number> = {};
 
 const extractThumbnailId = (thumbnail: string): string => {
   const segment = thumbnail.split('/').pop() || '';
@@ -183,28 +181,13 @@ const getChartThumbnailSrc = (idx: number | string): string => {
   if (thumbnailSrcs[index]) return thumbnailSrcs[index];
   const result = galleryChartItems.value[index];
   const id = extractThumbnailId(result.thumbnail);
-  const src = `/img/charts/${chartEnv}/${id}.png`;
-  thumbnailSrcs[index] = src;
-  thumbnailFallbackStep[index] = 0;
-  return src;
+  thumbnailSrcs[index] = `/img/charts/${chartEnv}/${id}.png`;
+  return thumbnailSrcs[index];
 };
 
-const onThumbnailError = (idx: number | string, thumbnail: string): void => {
+const onThumbnailError = (idx: number | string): void => {
   const index = getIdx(idx);
-  const id = extractThumbnailId(thumbnail);
-  const step = (thumbnailFallbackStep[index] ?? 0) + 1;
-  thumbnailFallbackStep[index] = step;
-
-  const fallbacks = [
-    `/img/charts/${chartEnv}/${id}.jpg`,
-    `/img/charts/${chartEnv}/${id}.svg`,
-    `${baseUrl.value}${thumbnail}`,
-    defaultImg,
-  ];
-
-  if (step <= fallbacks.length) {
-    thumbnailSrcs[index] = fallbacks[step - 1];
-  }
+  thumbnailSrcs[index] = defaultImg;
 };
 const dialog: Ref<any> = ref({
   title: 'Test',
@@ -243,7 +226,6 @@ const galleryChartItems = computed(() => {
 
 watch(galleryChartItems, () => {
   Object.keys(thumbnailSrcs).forEach((key) => delete thumbnailSrcs[+key]);
-  Object.keys(thumbnailFallbackStep).forEach((key) => delete thumbnailFallbackStep[+key]);
 });
 
 const formatText = computed(() => {
