@@ -28,12 +28,10 @@
                 <md-icon>integration_instructions</md-icon>
             </md-button>
         </div>
-        <router-link class="md-icon-button"  :to="{name: 'ChartDataVoyager', params: {chartId: chartId} }" v-slot="{navigate, href}" custom>
-            <md-button class="md-icon-button"  :href="href" @click="navigate">
-                <md-tooltip> View Data in Voyager </md-tooltip>
-                <md-icon>dynamic_form</md-icon>
-            </md-button>
-        </router-link>
+        <md-button class="md-icon-button" @click.prevent="openVoyager">
+            <md-tooltip> View Data in Voyager </md-tooltip>
+            <md-icon>dynamic_form</md-icon>
+        </md-button>
         <div v-if="isAuth && isAdmin">
             <md-button class="md-icon-button" @click.prevent="editChart">
                 <md-tooltip> Edit Chart </md-tooltip>
@@ -92,7 +90,7 @@
     </div>
 </div>
 
-<dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+<Dialog :active="dialogBoxActive" :min-width="dialog.minWidth">
     <template v-slot:title>{{dialog.title}}</template>
     <template v-slot:content>
         <div v-if="dialog.type=='share'">
@@ -144,7 +142,7 @@
         </span>
         <md-button v-else @click.prevent="toggleDialogBox">Close</md-button>
     </template>
-</dialogbox>
+</Dialog>
 </div>
 </template>
 
@@ -250,6 +248,16 @@ const loadVisualization = async (): Promise<void> => {
 
 const navBack = (): void => {
   router.push('/explorer/chart');
+};
+
+const openVoyager = (): void => {
+  if (!props.chartId) {
+    store.commit('setSnackbar', {
+      message: 'Data Voyager is not available for the currently viewed chart',
+    });
+    return;
+  }
+  router.push({ name: 'ChartDataVoyager', params: { chartId: props.chartId } });
 };
 
 const editChart = (): void => {
