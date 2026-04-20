@@ -47,14 +47,14 @@ def extract_data_from_file(request_id):
             return jsonify({'message': 'No file name provided'})
         
        
-        uploadData = upload_init(file_name)
+        uploadData = upload_init(file_name, domain)
         # Check if the file content is empty
         if not uploadData:
             return jsonify({'message': f"File '{file_name}' is empty"}), 400
         
         # Assuming the update_line_chart function returns values in a specific order
         # Print uploadData for debugging
-        print("Upload Data:", uploadData)
+        # print("Upload Data:", uploadData)
         result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain)
 
         # Unpacking values into a dictionary
