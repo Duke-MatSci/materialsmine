@@ -1,11 +1,13 @@
 <template>
-  <search-gallery
+  <!-- @ts-ignore -->
+  <SearchGallery
     :isEmpty="isEmpty"
     :totalItems="xmlFinder.totalItems || 0"
-    :loading="$apollo.loading"
+    :loading="loading"
     :error="!!error"
   >
-    <template #search_input>
+    <!-- @ts-ignore -->
+    <template v-slot:search_input>
       <input
         type="text"
         ref="search_input"
@@ -18,24 +20,19 @@
       />
     </template>
 
-    <template #filter_inputs>
-      <div
-        v-if="selectedFilters.includes('apprStatus')"
-        class="u--margin-rightsm"
-      >
+    <!-- @ts-ignore -->
+    <template v-slot:filter_inputs>
+      <div v-if="selectedFilters.includes('apprStatus')" class="u--margin-rightsm">
         <md-chip
           class="u--bg u_margin-bottom-small"
           md-deletable
           @md-delete="removeChip('apprStatus')"
         >
-          Admin Approval Status: {{ apprStatus }}</md-chip
-        >
+          Admin Approval Status: {{ apprStatus }}
+        </md-chip>
       </div>
 
-      <div
-        v-if="selectedFilters.includes('curationState')"
-        class="u--margin-rightsm"
-      >
+      <div v-if="selectedFilters.includes('curationState')" class="u--margin-rightsm">
         <md-chip
           class="u--bg u_margin-bottom-small"
           @md-delete="removeChip('curationState')"
@@ -45,11 +42,11 @@
       </div>
 
       <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
-        <md-chip
+        <md-chips
           class="u--bg u_margin-bottom-small"
           @md-delete="removeChip('isNew')"
           md-deletable=""
-          >is New: {{ isNew }}</md-chip
+          >is New: {{ isNew }}</md-chips
         >
       </div>
 
@@ -57,16 +54,14 @@
         <label>Curating User</label>
         <md-input v-model="user"></md-input>
       </md-field>
-      <md-field
-        v-if="selectedFilters.includes('author')"
-        style="max-width: 100%"
-      >
+      <md-field v-if="selectedFilters.includes('author')" style="max-width: 100%">
         <label>Author</label>
         <md-input v-model="author"></md-input>
       </md-field>
     </template>
 
-    <template #action_buttons>
+    <!-- @ts-ignore -->
+    <template v-slot:action_buttons>
       <div class="form__field md-field">
         <select
           @change="(e) => selectFilters(e)"
@@ -75,12 +70,8 @@
           id="filterBy"
         >
           <option value="" disabled selected>Filter by...</option>
-          <option value="apprStatus::Approved">
-            Admin Approval Status (Approved)
-          </option>
-          <option value="apprStatus::Not_Approved">
-            Admin Approval Status (Not_Approved)
-          </option>
+          <option value="apprStatus::Approved">Admin Approval Status (Approved)</option>
+          <option value="apprStatus::Not_Approved">Admin Approval Status (Not_Approved)</option>
           <option value="curationState::Edit">Editing State</option>
           <option value="curationState::Review">Reviewing State</option>
           <option value="curationState::Curated">Curated</option>
@@ -107,7 +98,8 @@
       </button>
     </template>
 
-    <template #page_input>
+    <!-- @ts-ignore -->
+    <template v-slot:page_input>
       <input
         type="number"
         id="pagesize"
@@ -119,11 +111,7 @@
       />
     </template>
 
-    <template
-      v-if="
-        !!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length && !error
-      "
-    >
+    <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length && !error">
       <md-card
         v-for="(xml, index) in xmlFinder.xmlData"
         :key="index"
@@ -156,14 +144,12 @@
           :to="{
             name: 'XmlVisualizer',
             params: { id: xml.id },
-            query: { isNewCuration: xml.isNewCuration }
+            query: { isNewCuration: xml.isNewCuration },
           }"
         >
           <md-card-media-cover md-solid>
             <md-card-media md-ratio="4:3">
-              <md-icon class="explorer_page-nav-card_icon u_margin-top-small"
-                >code_off</md-icon
-              >
+              <md-icon class="explorer_page-nav-card_icon u_margin-top-small">code_off</md-icon>
             </md-card-media>
             <md-card-area class="u_gridbg">
               <md-card-header class="u_show_hide">
@@ -179,20 +165,20 @@
     </template>
 
     <!-- Dialog Box -->
-    <dialog-box v-if="dialogBoxActive" :minWidth="40" :active="dialogBoxActive">
+    <Dialog v-if="dialogBoxActive" :minWidth="40" :active="dialogBoxActive">
       <template v-slot:title>Delete Curation</template>
       <template v-slot:content
-        >Are you sure? This action would permanently remove this curation from
-        our server.</template
+        >Are you sure? This action would permanently remove this curation from our server.</template
       >
       <template v-slot:actions>
-        <md-button @click.native.prevent="closeDialogBox">Cancel</md-button>
-        <md-button @click.native.prevent="confirmAction">Delete</md-button>
+        <md-button @click.prevent="closeDialogBox">Cancel</md-button>
+        <md-button @click.prevent="confirmAction">Delete</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
 
-    <template #pagination>
-      <pagination
+    <!-- @ts-ignore -->
+    <template v-slot:pagination>
+      <Pagination
         v-if="xmlFinder && xmlFinder.xmlData"
         :cpage="pageNumber"
         :tpages="xmlFinder.totalPages || 1"
@@ -200,218 +186,333 @@
       />
     </template>
 
-    <template #errorMessage>{{
+    <!-- @ts-ignore -->
+    <template v-slot:errorMessage>{{
       !!error ? 'Cannot Load Xml List' : 'Sorry! No Xml Found'
     }}</template>
-  </search-gallery>
+  </SearchGallery>
 </template>
 
-<script>
-import pagination from '@/components/explorer/Pagination'
-import { XML_FINDER } from '../../../modules/gql/xml-gql'
-import explorerQueryParams from '@/mixins/explorerQueryParams'
-import SearchGallery from '@/components/XmlSearchUtil'
-import { mapGetters, mapMutations } from 'vuex'
-import dialogBox from '@/components/Dialog.vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, onActivated, watch, watchEffect } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter, useRoute } from 'vue-router';
+import { useQuery } from '@vue/apollo-composable';
+import { XML_FINDER } from '@/modules/gql/xml-gql';
+import { useExplorerQueryParams } from '@/composables/useExplorerQueryParams';
+import SearchGallery from '@/components/XmlSearchUtil.vue';
+import Pagination from '@/components/explorer/Pagination.vue';
+import Dialog from '@/components/Dialog.vue';
 
-export default {
-  name: 'XmlGallery',
-  data () {
-    return {
-      baseUrl: window.location.origin,
-      renderText: 'Showing all XML',
-      xmlFinder: [],
-      pageNumber: 1,
-      pageSize: 20,
-      searchEnabled: false,
-      searchWord: '',
-      selectedFilters: [],
-      apprStatus: null,
-      curationState: null,
-      user: null,
-      author: null,
-      isNew: null,
-      filterParams: {},
-      error: null,
-      dialogBoxAction: null
-    }
-  },
-  mixins: [explorerQueryParams],
-  components: {
-    SearchGallery,
-    pagination,
-    dialogBox
-  },
-  computed: {
-    ...mapGetters({
-      isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin',
-      userId: 'auth/userId',
-      dialogBoxActive: 'dialogBox'
-    }),
-    isEmpty () {
-      if (
-        this.xmlFinder.length === 0 ||
-        !Object.keys(this.xmlFinder).length ||
-        this.xmlFinder.totalItems === 0
-      ) {
-        return true
-      }
-      return false
-    },
-    filtersActive () {
-      return (
-        !!this.apprStatus ||
-        !!this.curationState ||
-        !!this.user ||
-        !!this.isNew ||
-        !!this.author
-      )
-    }
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    closeDialogBox () {
-      if (this.dialogBoxActive) {
-        this.toggleDialogBox()
-      }
-      this.dialogBoxAction = null
-    },
-    openDialogBox (id, isNew, func = null) {
-      if (!id) return
-      this.dialogBoxAction = !func
-        ? () => this.deleteXmlCuration(id, isNew)
-        : func
-      if (!this.dialogBoxActive) {
-        this.toggleDialogBox()
-      }
-    },
-    confirmAction () {
-      if (this.dialogBoxAction) {
-        this.dialogBoxAction()
-        this.closeDialogBox()
-      }
-    },
-    isAuthorized (xmlUser) {
-      return this.isAuth && (xmlUser === this.userId || this.isAdmin)
-    },
-    async localSearchMethod () {
-      // TODO @aswallace: Update to user query params instead
-      const filterParams = {
-        isNewCuration: this.selectedFilters.includes('isNew')
-          ? this.isNew === 'Yes'
-          : null,
-        status: this?.apprStatus,
-        curationState: this?.curationState,
-        user: this?.user,
-        author: this?.author
-      }
-      for (const key in filterParams) {
-        if (filterParams[key] === null) delete filterParams[key]
-      }
-      this.filterParams = filterParams
-      await this.$apollo.queries.xmlFinder.refetch()
-    },
-    async submitSearch () {
-      if (!this.searchWord && !this.filtersActive) {
-        return this.$store.commit('setSnackbar', {
-          message: 'Enter a XML sample file name or select a filter type',
-          duration: 10000
-        })
-      }
-      this.error = null
-      this.searchEnabled = !!this.searchWord || !!this.filtersActive
-      this.pageNumber = 1
-      return await this.updateParamsAndCall(true)
-    },
-    async customReset (type) {
-      this.apprStatus = null
-      this.curationState = null
-      this.user = null
-      this.isNew = null
-      this.author = null
-      this.selectedFilters = []
-      this.filterParams = {}
-      this.error = null
-      await this.resetSearch(type)
-    },
-    editCuration (id, isNew) {
-      this.$router.push({
-        name: 'EditXmlCuration',
-        query: { isNew, id }
-      })
-    },
-    selectFilters (e) {
-      const value = e.target.value
-      const arrValue = value.split('::')
-      if (!this.selectedFilters.includes(arrValue[0])) {
-        this.selectedFilters.push(arrValue[0])
-      }
-      this[arrValue[0]] = arrValue[1] && arrValue[1]
-      e.target.value = ''
-    },
-    removeChip (str) {
-      const index = this.selectedFilters.indexOf(str)
-      if (index < 0) return
-      this.selectedFilters.splice(index, 1) // 2nd parameter means remove one item only
-      this[str] = null
-    },
-    async deleteXmlCuration (id, isNew = null) {
-      if (id && isNew !== null) {
-        await this.$store.dispatch('explorer/curation/deleteCuration', {
-          xmlId: id,
-          isNew: isNew
-        })
-        return await this.$apollo.queries.xmlFinder.refetch()
-      }
-    },
-    async duplicateCuration (id, isNew) {
-      const response = await this.$store.dispatch('explorer/duplicateXml', {
-        id,
-        isNew
-      })
-      if (response?.id) {
-        this.editCuration(response.id, response.isNew)
-      }
-    }
-  },
-  created () {
-    const query = this.$route.query
-    if (query?.page || query?.size || query?.q) {
-      return this.loadParams(this.$route.query)
-    }
-  },
-  apollo: {
-    xmlFinder: {
-      query: XML_FINDER,
-      variables () {
-        return {
-          input: {
-            pageNumber: this.pageNumber,
-            pageSize: parseInt(this.pageSize),
-            filter: { param: this.$route.query?.q, ...this.filterParams }
-          }
-        }
-      },
-      fetchPolicy: 'cache-first',
-      result ({ data, loading }) {
-        if (!loading && data) this.error = null
-      },
-      error (error) {
-        if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-        } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
-        }
-        this.$store.commit('setSnackbar', {
-          message: this.error,
-          duration: 10000
-        })
-      }
-    }
+// Type declaration for SearchGallery component
+declare module '@/components/XmlSearchUtil.vue' {
+  interface SearchGallery {
+    $slots: {
+      search_input: any;
+      filter_inputs: any;
+      action_buttons: any;
+      page_input: any;
+      pagination: any;
+      errorMessage: any;
+      default: any;
+    };
   }
 }
+
+// Component name for debugging
+defineOptions({
+  name: 'XmlGallery',
+});
+
+// Constants
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_NUMBER = 1;
+
+// Store and router
+const store = useStore();
+const router = useRouter();
+const route = useRoute();
+
+// TypeScript interfaces
+interface XmlData {
+  id: string;
+  title?: string;
+  user: string;
+  isNewCuration: boolean;
+}
+
+interface XmlFinderResponse {
+  xmlData: XmlData[];
+  totalItems: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+// Reactive data
+const xmlFinder = ref<XmlFinderResponse>({
+  xmlData: [],
+  totalItems: 0,
+  totalPages: 0,
+  pageNumber: DEFAULT_PAGE_NUMBER,
+  pageSize: DEFAULT_PAGE_SIZE,
+});
+const pageNumber = ref(DEFAULT_PAGE_NUMBER);
+const pageSize = ref(DEFAULT_PAGE_SIZE);
+const searchWord = ref('');
+const selectedFilters = ref<string[]>([]);
+const apprStatus = ref<string | null>(null);
+const curationState = ref<string | null>(null);
+const user = ref<string | null>(null);
+const author = ref<string | null>(null);
+const isNew = ref<string | null>(null);
+const filterParams = ref<any>({});
+const error = ref<string | null>(null);
+const dialogBoxAction = ref<(() => void) | null>(null);
+const paramsReady = ref(false);
+
+// Computed properties
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const userId = computed(() => store.getters['auth/userId']);
+const dialogBoxActive = computed(() => store.getters['dialogBox']);
+const searchEnabled = computed(() => !!searchWord.value || !!filtersActive.value);
+const isEmpty = computed(() => {
+  return !xmlFinder.value.xmlData?.length || xmlFinder.value.totalItems === 0;
+});
+
+const filtersActive = computed(() => {
+  return (
+    !!apprStatus.value || !!curationState.value || !!user.value || !!isNew.value || !!author.value
+  );
+});
+
+// GraphQL query
+const { result, loading, refetch } = useQuery(
+  XML_FINDER,
+  () => ({
+    input: {
+      pageNumber: pageNumber.value,
+      pageSize: parseInt(pageSize.value.toString()),
+      filter: { ...filterParams.value },
+      // filter: { param: route.query?.q, ...filterParams.value },
+    },
+  }),
+  () => ({
+    fetchPolicy: 'cache-and-network',
+    enabled: paramsReady.value,
+  })
+);
+
+// Watch for query results
+watchEffect(() => {
+  if (result.value?.xmlFinder) {
+    xmlFinder.value = result.value.xmlFinder;
+    if (!loading.value) {
+      error.value = null;
+    }
+  }
+});
+
+// Methods
+const toggleDialogBox = () => {
+  store.commit('setDialogBox');
+};
+
+const closeDialogBox = () => {
+  if (dialogBoxActive.value) {
+    toggleDialogBox();
+  }
+  dialogBoxAction.value = null;
+};
+
+const openDialogBox = (id: string, isNew: boolean, func: (() => void) | null = null) => {
+  if (!id) return;
+  dialogBoxAction.value = !func ? () => deleteXmlCuration(id, isNew) : func;
+  if (!dialogBoxActive.value) {
+    toggleDialogBox();
+  }
+};
+
+const confirmAction = () => {
+  if (dialogBoxAction.value) {
+    dialogBoxAction.value();
+    closeDialogBox();
+  }
+};
+
+const isAuthorized = (xmlUser: string) => {
+  return isAuth.value && (xmlUser === userId.value || isAdmin.value);
+};
+
+const localSearchMethod = async (): Promise<void> => {
+  // TODO @aswallace: Update to user query params instead
+  const filterParamsObj = {
+    isNewCuration: selectedFilters.value.includes('isNew') ? isNew.value === 'Yes' : null,
+    status: apprStatus.value,
+    curationState: curationState.value,
+    param: author.value || user.value || searchWord.value,
+  };
+  for (const key in filterParamsObj) {
+    if ((filterParamsObj as any)[key] === null) delete (filterParamsObj as any)[key];
+  }
+  filterParams.value = filterParamsObj;
+};
+
+// Setup useExplorerQueryParams with localSearchMethod
+const {
+  pageNumber: composablePageNumber,
+  pageSize: composablePageSize,
+  searchWord: composablesearchWord,
+  loadPrevNextImage,
+  updateParamsAndCall,
+  updateSearchWord,
+  resetSearch,
+  loadParams,
+} = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true,
+  onSearchWordChange: (word) => {
+    searchWord.value = word;
+  },
+  onPageNumberChange: (page) => {
+    pageNumber.value = page;
+  },
+  onPageSizeChange: (size) => {
+    pageSize.value = size;
+  },
+});
+
+// Sync search word to keep input reactive with url state
+watch(composablesearchWord, (newVal) => {
+  searchWord.value = newVal;
+});
+
+const submitSearch = async () => {
+  if (!searchWord.value && !filtersActive.value) {
+    return store.commit('setSnackbar', {
+      message: 'Enter a XML sample file name or select a filter type',
+      duration: 10000,
+    });
+  }
+  error.value = null;
+  composablePageNumber.value = 1;
+  composablePageSize.value = pageSize.value;
+  updateSearchWord(searchWord.value);
+  await updateParamsAndCall(true);
+};
+
+const customReset = async (type: string) => {
+  apprStatus.value = null;
+  curationState.value = null;
+  user.value = null;
+  isNew.value = null;
+  author.value = null;
+  selectedFilters.value = [];
+  filterParams.value = {};
+  error.value = null;
+  await resetSearch(type);
+};
+
+const editCuration = (id: string, isNew: boolean) => {
+  router.push({
+    name: 'EditXmlCuration',
+    query: { isNew: isNew.toString(), id },
+  });
+};
+
+const selectFilters = (e: Event) => {
+  const target = e.target as HTMLSelectElement;
+  const value = target.value;
+  const arrValue = value.split('::');
+  if (!selectedFilters.value.includes(arrValue[0])) {
+    selectedFilters.value.push(arrValue[0]);
+  }
+
+  // Assign to the correct ref based on filter name
+  switch (arrValue[0]) {
+    case 'apprStatus':
+      apprStatus.value = arrValue[1] || null;
+      break;
+    case 'curationState':
+      curationState.value = arrValue[1] || null;
+      break;
+    case 'user':
+      user.value = arrValue[1] || null;
+      break;
+    case 'author':
+      author.value = arrValue[1] || null;
+      break;
+    case 'isNew':
+      isNew.value = arrValue[1] || null;
+      break;
+  }
+
+  target.value = '';
+};
+
+const removeChip = (str: string) => {
+  const index = selectedFilters.value.indexOf(str);
+  if (index < 0) return;
+  selectedFilters.value.splice(index, 1);
+
+  // Reset the correct ref based on filter name
+  switch (str) {
+    case 'apprStatus':
+      apprStatus.value = null;
+      break;
+    case 'curationState':
+      curationState.value = null;
+      break;
+    case 'user':
+      user.value = null;
+      break;
+    case 'author':
+      author.value = null;
+      break;
+    case 'isNew':
+      isNew.value = null;
+      break;
+  }
+};
+
+const deleteXmlCuration = async (id: string, isNew: boolean | null = null) => {
+  if (id && isNew !== null) {
+    await store.dispatch('explorer/curation/deleteCuration', {
+      xmlId: id,
+      isNew: isNew,
+    });
+    return await refetch();
+  }
+};
+
+const duplicateCuration = async (id: string, isNew: boolean) => {
+  const response = await store.dispatch('explorer/duplicateXml', {
+    id,
+    isNew,
+  });
+  if (response?.id) {
+    editCuration(response.id, response.isNew);
+  }
+};
+
+// Initialize component state based on route params
+const initializeGallery = () => {
+  return loadParams(route.query);
+};
+
+// Lifecycle
+onMounted(() => {
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
+});
+
+// Refetch data when component is activated (e.g., when navigating back from detail view)
+onActivated(() => {
+  paramsReady.value = false;
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
+});
 </script>

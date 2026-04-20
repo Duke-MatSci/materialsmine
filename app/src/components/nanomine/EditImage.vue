@@ -12,7 +12,7 @@
 -->
 
 <template>
-  <div class='u_display-flex editImage_modal' v-if='value'>
+  <div class='u_display-flex editImage_modal' v-if='modelValue'>
     <div class='image-cropper-container'>
 
       <h1>{{ computedTitle }}</h1>
@@ -74,166 +74,222 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { Cropper } from 'vue-advanced-cropper';
 
-import { Cropper } from 'vue-advanced-cropper'
-
-export default {
+defineOptions({
   name: 'EditImage',
-  components: {
-    Cropper
-  },
-  props: {
-    value: {
-      required: true
-    },
-    file: Object,
-    type: String,
-    aspectRatio: String
-  },
-  watch: {
-    // update phase dot information when new image is opened in modal
-    file: {
-      deep: true,
-      handler (newValue, oldValue) {
-        if (newValue.name !== oldValue.name) {
-          this.phaseDotVisibility = false
-        }
-        this.phase = newValue.phase
-      }
-    }
-  },
-  mounted () {
-    // locks the aspect ratio at which the user can crop an image
-    if (this.aspectRatio === 'square') {
-      this.stencilProps.aspectRatio = 1
-    } else if (this.aspectRatio === 'free') {
-      if ('aspectRatio' in this.stencilProps) {
-        delete this.stencilProps.aspectRatio
-      }
-    }
-  },
-  data () {
-    return {
-      title: '',
-      croppedURL: null,
-      coordinates: null,
-      stencilProps: {},
-      phase: { xOffset: 0, yOffset: 0 },
-      phaseDotVisibility: false,
-      calibrationLine: {
-        width: 0,
-        left: 0,
-        top: 0,
-        drawLine: false
-      },
-      calibratedDimensions: {
-        width: 0,
-        height: 0
-      },
-      scaleBar: {
-        width: 0,
-        units: null
-      }
-    }
-  },
-  methods: {
-    onPhaseChange (e) {
-      // takes the click offset from top left of image and multiplies that by how much the image is scaled up/down to fit the modal
-      this.phase.xOffset = parseInt(e.offsetX * (this.file.pixelSize.width / e.target.clientWidth))
-      this.phase.yOffset = parseInt(e.offsetY * (this.file.pixelSize.height / e.target.clientHeight))
+});
 
-      this.phaseDotVisibility = true
-    },
-    mouseDown (e) {
-      this.calibrationLine.top = e.offsetY
-      this.calibrationLine.left = ((this.$refs.calibrationContainer.clientWidth - e.target.clientWidth) / 2) + e.offsetX
-      this.calibrationLine.width = 0
-      this.calibrationLine.drawLine = true
-    },
-    mouseMove (e) {
-      if (this.calibrationLine.drawLine === true) {
-        this.calibrationLine.width = (((this.$refs.calibrationContainer.clientWidth - e.target.clientWidth) / 2) + e.offsetX) - this.calibrationLine.left
-      }
-      if (e.offsetX > e.target.clientWidth - 10) {
-        this.drawLine = false
-      }
-    },
-    mouseUp () {
-      this.calibrationLine.drawLine = false
-      this.calculateScale()
-    },
-    calculateScale () {
-      this.calibratedDimensions.width = parseInt(this.scaleBar.width * (this.$refs.calibrationImage.clientWidth / this.calibrationLine.width))
-      this.calibratedDimensions.height = parseInt(this.scaleBar.width * (this.$refs.calibrationImage.clientHeight / this.calibrationLine.width))
-    },
-    onCropChange ({ coordinates, canvas }) {
-      this.croppedURL = canvas.toDataURL()
-      this.coordinates = coordinates
-    },
-    closeModal () {
-      this.$emit('input', !this.value)
-    },
-    saveImage () {
-      if (this.type === 'crop') {
-        this.$emit('setCroppedImage', this.croppedURL, this.file.name, this.coordinates)
-      } else if (this.type === 'phase') {
-        this.$emit('setPhase', this.file.name, this.phase)
-      } else if (this.type === 'calibrate') {
-        this.$emit('setCalibration', this.calibratedDimensions, this.scaleBar)
-      }
-      this.closeModal()
-    }
-  },
+interface Props {
+  modelValue: boolean;
+  file: FileData;
+  type: 'crop' | 'phase' | 'calibrate';
+  aspectRatio: 'square' | 'free';
+}
 
-  // computed variables are for the phase dot (to determine position and toggle visibility), and modal title
-  computed: {
-    // phase dot position is calculated from the offset from the top left corner of its parent div
+interface FileData {
+  url: string;
+  name: string;
+  pixelSize: {
+    width: number;
+    height: number;
+  };
+  phase: {
+    x_offset: number;
+    y_offset: number;
+  };
+}
 
-    // gives the y offset of the phase dot
-    computedTop: function () {
-      if (this.$refs.phaseImage === undefined) { return this.phase.yOffset * 0 } // refs are not yet rendered on first run
-      var scaleFactor = this.$refs.phaseImage.clientHeight / this.file.pixelSize.height // image might be scaled up/down to fit the modal.
-      return ((this.phase.yOffset * scaleFactor) - 3) + 'px' // -3 pixels to center dot on where they click
-    },
+interface Coordinates {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+}
 
-    // gives the x offset of the phase dot
-    computedLeft: function () {
-      if (this.$refs.phaseImage === undefined) { return this.phase.xOffset * 0 } // refs are not yet rendered on first run
-      var scaleFactor = this.$refs.phaseImage.clientWidth / this.file.pixelSize.width // image might be scaled up/down to fit the modal.
-      var extraOffset = (this.$refs.imageWrapperDiv.clientWidth - this.$refs.phaseImage.clientWidth) / 2 // phase dot is anchored to the div that contains img. Div width may be larger than img width.
-      return ((this.phase.xOffset * scaleFactor) + extraOffset - 3) + 'px' // -3 pixels to center dot on where they click
-    },
+interface Phase {
+  xOffset: number;
+  yOffset: number;
+}
 
-    // computed background and computed border determine whether phase dot is displayed
+interface CalibratedDimensions {
+  width: number;
+  height: number;
+}
 
-    computedBackground: function () {
-      if (this.phaseDotVisibility === true) {
-        return 'white'
-      } else {
-        return 'transparent'
-      }
-    },
-    computedBorder: function () {
-      if (this.phaseDotVisibility === true) {
-        return '1px solid black'
-      } else {
-        return '1px solid transparent'
-      }
-    },
+interface ScaleBar {
+  width: number;
+  units: string | null;
+}
 
-    // determines the title of the modal
-    computedTitle: function () {
-      if (this.type === 'crop') {
-        return 'Crop image'
-      } else if (this.type === 'phase') {
-        return 'Set phase'
-      } else if (this.type === 'calibrate') {
-        return 'Scale bar calibration'
-      } else {
-        return ''
-      }
+interface StencilProps {
+  aspectRatio?: number;
+}
+
+const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'setCroppedImage', croppedURL: string | null, fileName: string, coordinates: Coordinates | null): void;
+  (e: 'setPhase', fileName: string, phase: Phase): void;
+  (e: 'setCalibration', dimensions: CalibratedDimensions, scaleBar: ScaleBar): void;
+}>();
+
+// Refs
+const imageWrapperDiv = ref<HTMLDivElement | null>(null);
+const phaseImage = ref<HTMLImageElement | null>(null);
+const calibrationContainer = ref<HTMLDivElement | null>(null);
+const calibrationImage = ref<HTMLImageElement | null>(null);
+const calibrationLine = ref<HTMLDivElement | null>(null);
+
+// Data
+const title = ref<string>('');
+const croppedURL = ref<string | null>(null);
+const coordinates = ref<Coordinates | null>(null);
+const stencilProps = ref<StencilProps>({});
+const phase = ref<Phase>({ xOffset: 0, yOffset: 0 });
+const phaseDotVisibility = ref<boolean>(false);
+const calibrationLineData = ref({
+  width: 0,
+  left: 0,
+  top: 0,
+  drawLine: false
+});
+const calibratedDimensions = ref<CalibratedDimensions>({
+  width: 0,
+  height: 0
+});
+const scaleBar = ref<ScaleBar>({
+  width: 0,
+  units: null
+});
+
+// Computed
+const computedTop = computed<string>(() => {
+  if (phaseImage.value === null) { return phase.value.yOffset * 0 + 'px'; } // refs are not yet rendered on first run
+  const scaleFactor = phaseImage.value.clientHeight / props.file.pixelSize.height; // image might be scaled up/down to fit the modal.
+  return ((phase.value.yOffset * scaleFactor) - 3) + 'px'; // -3 pixels to center dot on where they click
+});
+
+const computedLeft = computed<string>(() => {
+  if (phaseImage.value === null || imageWrapperDiv.value === null) { return phase.value.xOffset * 0 + 'px'; } // refs are not yet rendered on first run
+  const scaleFactor = phaseImage.value.clientWidth / props.file.pixelSize.width; // image might be scaled up/down to fit the modal.
+  const extraOffset = (imageWrapperDiv.value.clientWidth - phaseImage.value.clientWidth) / 2; // phase dot is anchored to the div that contains img. Div width may be larger than img width.
+  return ((phase.value.xOffset * scaleFactor) + extraOffset - 3) + 'px'; // -3 pixels to center dot on where they click
+});
+
+const computedBackground = computed<string>(() => {
+  if (phaseDotVisibility.value === true) {
+    return 'white';
+  } else {
+    return 'transparent';
+  }
+});
+
+const computedBorder = computed<string>(() => {
+  if (phaseDotVisibility.value === true) {
+    return '1px solid black';
+  } else {
+    return '1px solid transparent';
+  }
+});
+
+const computedTitle = computed<string>(() => {
+  if (props.type === 'crop') {
+    return 'Crop image';
+  } else if (props.type === 'phase') {
+    return 'Set phase';
+  } else if (props.type === 'calibrate') {
+    return 'Scale bar calibration';
+  } else {
+    return '';
+  }
+});
+
+// Methods
+const onPhaseChange = (e: MouseEvent): void => {
+  const target = e.target as HTMLImageElement;
+  // takes the click offset from top left of image and multiplies that by how much the image is scaled up/down to fit the modal
+  phase.value.xOffset = parseInt(String(e.offsetX * (props.file.pixelSize.width / target.clientWidth)));
+  phase.value.yOffset = parseInt(String(e.offsetY * (props.file.pixelSize.height / target.clientHeight)));
+
+  phaseDotVisibility.value = true;
+};
+
+const mouseDown = (e: MouseEvent): void => {
+  const target = e.target as HTMLImageElement;
+  calibrationLineData.value.top = e.offsetY;
+  if (calibrationContainer.value) {
+    calibrationLineData.value.left = ((calibrationContainer.value.clientWidth - target.clientWidth) / 2) + e.offsetX;
+  }
+  calibrationLineData.value.width = 0;
+  calibrationLineData.value.drawLine = true;
+};
+
+const mouseMove = (e: MouseEvent): void => {
+  const target = e.target as HTMLImageElement;
+  if (calibrationLineData.value.drawLine === true && calibrationContainer.value) {
+    calibrationLineData.value.width = (((calibrationContainer.value.clientWidth - target.clientWidth) / 2) + e.offsetX) - calibrationLineData.value.left;
+  }
+  if (e.offsetX > target.clientWidth - 10) {
+    calibrationLineData.value.drawLine = false;
+  }
+};
+
+const mouseUp = (): void => {
+  calibrationLineData.value.drawLine = false;
+  calculateScale();
+};
+
+const calculateScale = (): void => {
+  if (calibrationImage.value) {
+    calibratedDimensions.value.width = parseInt(String(scaleBar.value.width * (calibrationImage.value.clientWidth / calibrationLineData.value.width)));
+    calibratedDimensions.value.height = parseInt(String(scaleBar.value.width * (calibrationImage.value.clientHeight / calibrationLineData.value.width)));
+  }
+};
+
+const onCropChange = ({ coordinates: coords, canvas }: { coordinates: Coordinates; canvas: HTMLCanvasElement }): void => {
+  croppedURL.value = canvas.toDataURL();
+  coordinates.value = coords;
+};
+
+const closeModal = (): void => {
+  emit('update:modelValue', !props.modelValue);
+};
+
+const saveImage = (): void => {
+  if (props.type === 'crop') {
+    emit('setCroppedImage', croppedURL.value, props.file.name, coordinates.value);
+  } else if (props.type === 'phase') {
+    emit('setPhase', props.file.name, phase.value);
+  } else if (props.type === 'calibrate') {
+    emit('setCalibration', calibratedDimensions.value, scaleBar.value);
+  }
+  closeModal();
+};
+
+// Watchers
+watch(() => props.file, (newValue, oldValue) => {
+  if (newValue.name !== oldValue.name) {
+    phaseDotVisibility.value = false;
+  }
+  phase.value = {
+    xOffset: newValue.phase.x_offset,
+    yOffset: newValue.phase.y_offset
+  };
+}, { deep: true });
+
+// Lifecycle
+onMounted(() => {
+  // locks the aspect ratio at which the user can crop an image
+  if (props.aspectRatio === 'square') {
+    stencilProps.value.aspectRatio = 1;
+  } else if (props.aspectRatio === 'free') {
+    if ('aspectRatio' in stencilProps.value) {
+      delete stencilProps.value.aspectRatio;
     }
   }
-}
+});
 </script>

@@ -35,11 +35,11 @@
           </div>
         </template>
         <template v-slot:actions>
-          <md-button v-if="isSuccess" @click.native.prevent="closeDialogBox"
+          <md-button v-if="isSuccess" @click.prevent="closeDialogBox"
             >Ok</md-button
           >
 
-          <md-button v-if="isError" @click.native.prevent="deploy('ontology')"
+          <md-button v-if="isError" @click.prevent="deploy('ontology')"
             >Try again</md-button
           >
           <a href="/nm/contact" v-if="isError"
@@ -47,12 +47,12 @@
           >
           <md-button
             v-if="!isSuccess && !isError"
-            @click.native.prevent="deploy('ontology')"
+            @click.prevent="deploy('ontology')"
             >Yes</md-button
           >
           <md-button
             v-if="!isSuccess && !isError"
-            @click.native.prevent="closeDialogBox"
+            @click.prevent="closeDialogBox"
             >No</md-button
           >
         </template>
@@ -86,23 +86,75 @@
   </div>
 </template>
 
-<script>
-import dialogBox from '@/components/Dialog.vue'
-import Spinner from '@/components/Spinner'
-import deployVersion from '@/mixins/deployVersion'
-export default {
-  mixins: [deployVersion],
-  name: 'OntologyDeployment',
-  components: {
-    dialogBox,
-    Spinner
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', {
-      icon: '',
-      name: 'Ontology Deployment'
-    })
-    this.$store.commit('portal/setCurrentVersion', 'latest')
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import dialogBox from '@/components/Dialog.vue';
+import Spinner from '@/components/Spinner';
+
+const store = useStore();
+
+// Data
+const errorMsg = ref<string>('Deployment Failed');
+
+// Computed properties from store
+const dialogBoxActive = computed<boolean>(() => store.getters.dialogBox);
+const token = computed<string>(() => store.getters['auth/token']);
+const isAdmin = computed<boolean>(() => store.getters['auth/isAdmin']);
+const isSuccess = computed<boolean>(() => store.state.portal.isSuccess);
+const isError = computed<boolean>(() => store.state.portal.isError);
+const isLoading = computed<boolean>(() => store.state.portal.isLoading);
+const currentVersion = computed<string>(() => store.state.portal.currentVersion);
+const loadingMessage = computed<string>(() => store.state.portal.loadingMessage);
+const dockerVersions = computed<string[]>(() => store.state.portal.dockerVersions);
+
+// Computed property for production check
+const isProduction = computed<boolean>(() => {
+  // Version toggling is only enabled for production and not lower environment.
+  return new URL(window.location.origin)?.host === 'materialsmine.org';
+  // return new URL(window.location.origin)?.host === 'localhost';
+});
+
+// Methods
+const toggleDialogBox = (): void => {
+  store.commit('setDialogBox');
+};
+
+const resetDeploymentStatus = (): void => {
+  store.commit('portal/resetDeploymentStatus');
+};
+
+const closeDialogBox = (): void => {
+  toggleDialogBox();
+  resetDeploymentStatus();
+};
+
+const setVersion = (e: Event): void => {
+  const target = e.target as HTMLSelectElement;
+  store.commit('portal/setCurrentVersion', target.value);
+};
+
+const fetchVersions = (): void => {
+  store.dispatch('portal/fetchVersions');
+};
+
+const deploy = (type: string): void => {
+  store.dispatch('portal/deploy', type);
+};
+
+// Watchers
+watch(dialogBoxActive, (newValue) => {
+  if (newValue === false) {
+    resetDeploymentStatus();
   }
-}
+});
+
+// Lifecycle hooks
+onMounted(() => {
+  store.commit('setAppHeaderInfo', {
+    icon: '',
+    name: 'Ontology Deployment'
+  });
+  store.commit('portal/setCurrentVersion', 'latest');
+});
 </script>

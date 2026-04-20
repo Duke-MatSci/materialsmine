@@ -7,7 +7,7 @@
             <md-icon v-if="!datasetHideSelector">expand_more</md-icon>
             <md-icon v-else>expand_less</md-icon>
           </md-button>
-          <md-button v-if="auth && auth.isLoggedIn()" class="md-primary md-raised md-icon-button"
+          <md-button v-if="isAuth" class="md-primary md-raised md-icon-button"
             @click="toggleDatasetCard">
             <md-icon>library_add</md-icon>
           </md-button>
@@ -34,7 +34,7 @@
           <div class="md-toolbar-section-start">
             <h1 v-if="mineOnlyAlways" class="md-title">Datasets you've created</h1>
           </div>
-          <div v-if="auth && auth.isLoggedIn() && !mineOnlyAlways">
+          <div v-if="isAuth && !mineOnlyAlways">
             <md-checkbox v-model="showMineOnly" class="md-primary">Show mine only</md-checkbox>
           </div>
           <md-field md-clearable class="md-toolbar-section-end">
@@ -55,21 +55,21 @@
         </template>
       </md-table>
     </md-card>
-    <dialog-box :active="dialogBoxActive">
-      <template v-slot:title>{{ dialog.title }}</template>
-      <template v-slot:content>{{ dialog.content }}</template>
-      <template v-slot:actions>
-        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+    <Dialog :active="dialogBoxActive">
+      <template #title>{{ dialog.title }}</template>
+      <template #content>{{ dialog.content }}</template>
+      <template #actions>
+        <md-button @click.prevent="toggleDialogBox">Close</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
     <!--
 
     Dataset Info Dialog
 
     -->
-    <dialog-box v-if="datasetInfoDialogActive">
-      <template v-slot:title>Dataset Information</template>
-      <template v-slot:content>
+    <Dialog :active="datasetInfoDialogActive">
+      <template #title>Dataset Information</template>
+      <template #content>
         <md-list class="md-double-line">
           <md-list-item v-for="(item, index) in datasetDialogInfo.items" :key="index">
             <v-subheader v-if="item.header" :key="item.header">
@@ -85,258 +85,295 @@
           </md-list-item>
         </md-list>
       </template>
-      <template v-slot:actions>
-        <md-button @click="datasetInfoDialogActive=false">
-          <md-icon>close</md-icon>
-        </md-button>
+      <template #actions>
+        <md-button @click="datasetInfoDialogActive = false">Close</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
 
   </div>
 </template>
 
-<script>
-// import { Auth } from '@/modules/Auth.js'
-import Dialog from '@/components/Dialog.vue'
-import * as _ from 'lodash'
+<script setup lang="ts">
+import { ref, computed, watch, onBeforeMount } from 'vue';
+import { useStore } from 'vuex';
+import Dialog from '@/components/Dialog.vue';
+import * as _ from 'lodash';
 
-export default {
+defineOptions({
   name: 'DatasetCreateOrSelect',
-  components: {
-    dialogBox: Dialog
-  },
-  props: {
-    datasetOptions: { // Valid options: {mineOnly: 'true'|'false'|'always'}
-      type: Object,
-      default: () => {
-        return {}
-      }
-    },
-    selectHeader: {
-      type: String,
-      default: 'Choose a dataset'
-    },
-    selectedHandler: {
-      type: Function,
-      default: null
-    }
-  },
-  data () {
-    return {
-      msg: 'Hi',
-      showMineOnly: true,
-      mineOnlyAlways: false,
-      addDatasetDialogActive: false,
-      addDatasetComment: '',
-      datasetsError: false,
-      datasetsErrorMsg: '',
-      datasetTransformed: {},
-      datasetHideSelector: true,
-      datasetList: [],
-      datasetSearch: '',
-      displayDatasets: [],
-      datasetSelected: null,
-      datasetInfoDialogActive: false,
-      datasetDialogInfo: {},
-      auth: {
-      // AUTH MOCKED because auth is not yet implemented
-        getUserID: () => '0',
-        getRunAsUser: () => false,
-        isLoggedIn: () => false
-      },
-      dialogBoxActive: false,
-      dialog: {}
-    }
-  },
-  watch: {
-    datasetOptions: function (options) {
-      if (options) {
-        this.overrideOptions(this.datasetOptions)
-      } else {
-        this.datasetOptions = {}
-      }
-    },
-    datasetSearch: function () {
-      this.datasetsFiltered()
-    },
-    datasetList: function () {
-      this.datasetsFiltered()
-    }
-  },
-  computed: {
-    datasetsHeaderTitle () {
-      if (this.datasetSelected) {
-        return 'Selected Dataset:'
-      } else {
-        return this.selectHeader
-      }
-    },
-    datasetsHeaderInfoIcon () {
-      return !!this.datasetSelected
-    },
-    headerDOI () {
-      if (this.datasetSelected) {
-        // TODO need a remote config call to get values like this from server
-        if (!this.datasetSelected.doi || this.datasetSelected.doi.length < 1 || this.datasetSelected.doi === 'unpublished-initial-create') {
-          return this.datasetSelected.datasetComment
-        } else {
-          return this.datasetSelected.doi
-        }
-      }
-      return null
-    }
-  },
-  beforeMount () {
-    const vm = this
-    // vm.auth = new Auth()
-    vm.getDatasets()
-    vm.overrideOptions(vm.datasetOptions)
-    this.datasetsFiltered()
-  },
-  methods: {
-    overrideOptions (datasetOptions) {
-      this.mineOnlyAlways = false
-      if (datasetOptions.mineOnly === 'always') {
-        this.mineOnlyAlways = true
-        this.mineOnly = true
-      } else if (datasetOptions.mineOnly === 'true') {
-        this.mineOnly = true
-      } else {
-        this.mineOnly = false
-      }
-    },
-    datasetInfoDialog: function () {
-      this.datasetInfoDialogActive = true
-    },
-    toggleDatasetHide () {
-      const vm = this
-      vm.datasetHideSelector = !vm.datasetHideSelector
-      vm.datasetSelected = null
-      if (vm.selectedHandler && typeof vm.selectedHandler === 'function') {
-        vm.selectedHandler(vm.datasetSelected)
-      }
-    },
-    getDatasets () {
-      const vm = this
-      fetch('/api/dataset')
-        .then(function (resp) {
-          resp.data.data.forEach(function (v) {
-            vm.datasetList.push(v)
-          })
-        })
-        .catch(function (err) {
-          vm.datasetsError = err
-          if (vm.auth.isLoggedIn()) {
-            vm.renderDialog('Datasets Error', 'Please try again later.')
-          }
-        })
-    },
-    transformDataset (entry) {
-      const vm = this
-      const transformed = {}
-      _.keys(entry).forEach((k) => {
-        if (k !== 'filesets' && k !== '__v' && k !== 'dttm_created' && k !== 'dttm_updated') {
-          if (Array.isArray(entry[k])) {
-            if (entry[k].length > 0) {
-              transformed[k] = entry[k].join('; ')
-            } else {
-              transformed[k] = 'N/A'
-            }
-          } else {
-            transformed[k] = entry[k]
-          }
-          if (transformed[k] === null) {
-            transformed[k] = 'N/A'
-          }
-        }
-      })
-      this.datasetDialogInfo = {
-        items: [
-          { header: transformed.doi }
-        ]
-      }
-      _.keys(transformed).forEach((k) => {
-        vm.datasetDialogInfo.items.push({
-          title: k,
-          subtitle: transformed[k]
-        })
-        vm.datasetDialogInfo.items.push({
-          divider: true,
-          inset: true
-        })
-      })
-      return transformed
-    },
-    datasetClick (entry) {
-      this.datasetSelected = entry
-      this.datasetTransformed = this.transformDataset(entry)
-      this.datasetHideSelector = true
-      this.filesetsList = this.datasetSelected.filesets
-      this.Selected = null
-      this.datasetsError = false
-      this.datasetsErrorMsg = ''
-      if (this.selectedHandler && typeof this.selectedHandler === 'function') {
-        this.selectedHandler(this.datasetSelected)
-      }
-    },
-    toggleDatasetCard () {
-      this.addDatasetDialogActive = !this.addDatasetDialogActive
-    },
-    addDatasetSave () {
-      const vm = this
-      fetch('/api/dataset/create', {
-        method: 'POST',
-        body: JSON.stringify({
-          dsInfo: {
-            datasetComment: vm.addDatasetComment,
-            isPublic: false,
-            ispublished: false
-          }
-        })
-      })
-        .then(function (resp) {
-          vm.addDatasetComment = ''
-          vm.datasetsError = false
-          vm.datasetsErrorMsg = ''
-          vm.addDatasetDialogActive = false
-          vm.getDatasets()
-        })
-        .catch(function (err) {
-          vm.datasetsError = err
-          vm.renderDialog('Dataset Error', 'Please make sure you are logged in, or try again later.')
-        })
-    },
-    toggleDialogBox () {
-      this.dialogBoxActive = !this.dialogBoxActive
-    },
-    renderDialog (title, content, closeHandler) {
-      this.dialog = {
-        title,
-        content
-      }
-      this.toggleDialogBox()
-    },
-    datasetsFiltered () {
-      const userID = this.auth.getUserID()
-      const runAsUser = this.auth.getRunAsUser()
-      const vm = this
-      const filteredDatasets = this.datasetList.filter((i) => {
-        if (vm.showMineOnly) {
-          return i.userID && (i.userID === userID || i.userID === runAsUser)
-        } else {
-          return true
-        }
-      })
-      if (this.datasetSearch) {
-        this.displayDatasets = filteredDatasets.filter((i) => {
-          return (`${i.seq || ''}${i.doi || ''}${i.title || ''}${i.datasetComment || ''}`.includes(this.datasetSearch))
-        })
-      } else {
-        this.displayDatasets = filteredDatasets
-      }
+});
+
+interface Props {
+  datasetOptions?: DatasetOptions;
+  selectHeader?: string;
+  selectedHandler?: ((dataset: Dataset | null) => void) | null;
+}
+
+interface DatasetOptions {
+  mineOnly?: 'true' | 'false' | 'always';
+}
+
+interface Dataset {
+  _id: string;
+  seq?: number;
+  doi?: string;
+  title?: string;
+  datasetComment?: string;
+  userID?: string;
+  filesets?: any[];
+  [key: string]: any;
+}
+
+interface DialogState {
+  title: string;
+  content: string;
+}
+
+interface DatasetDialogInfo {
+  items: Array<{
+    header?: string;
+    divider?: boolean;
+    inset?: boolean;
+    title?: string;
+    subtitle?: string;
+  }>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  datasetOptions: () => ({}),
+  selectHeader: 'Choose a dataset',
+  selectedHandler: null
+});
+
+const store = useStore();
+
+// Data
+const msg = ref<string>('Hi');
+const showMineOnly = ref<boolean>(true);
+const mineOnlyAlways = ref<boolean>(false);
+const addDatasetDialogActive = ref<boolean>(false);
+const addDatasetComment = ref<string>('');
+const datasetsError = ref<boolean>(false);
+const datasetsErrorMsg = ref<string>('');
+const datasetTransformed = ref<Record<string, any>>({});
+const datasetHideSelector = ref<boolean>(true);
+const datasetList = ref<Dataset[]>([]);
+const datasetSearch = ref<string>('');
+const displayDatasets = ref<Dataset[]>([]);
+const datasetSelected = ref<Dataset | null>(null);
+const datasetInfoDialogActive = ref<boolean>(false);
+const datasetDialogInfo = ref<DatasetDialogInfo>({ items: [] });
+const dialogBoxActive = ref<boolean>(false);
+const dialog = ref<DialogState>({ title: '', content: '' });
+
+// Computed
+const isAuth = computed<boolean>(() => store.getters['auth/isAuthenticated']);
+const userId = computed<string>(() => store.getters['auth/userId'] || '0');
+const runAsUser = computed<string | false>(() => store.getters['auth/runAsUser'] || false);
+
+const datasetsHeaderTitle = computed<string>(() => {
+  if (datasetSelected.value) {
+    return 'Selected Dataset:';
+  } else {
+    return props.selectHeader;
+  }
+});
+
+const datasetsHeaderInfoIcon = computed<boolean>(() => {
+  return !!datasetSelected.value;
+});
+
+const headerDOI = computed<string | null>(() => {
+  if (datasetSelected.value) {
+    if (!datasetSelected.value.doi || datasetSelected.value.doi.length < 1 || datasetSelected.value.doi === 'unpublished-initial-create') {
+      return datasetSelected.value.datasetComment || '';
+    } else {
+      return datasetSelected.value.doi;
     }
   }
-}
+  return null;
+});
+
+// Methods
+const overrideOptions = (datasetOptions: DatasetOptions): void => {
+  mineOnlyAlways.value = false;
+  if (datasetOptions.mineOnly === 'always') {
+    mineOnlyAlways.value = true;
+    showMineOnly.value = true;
+  } else if (datasetOptions.mineOnly === 'true') {
+    showMineOnly.value = true;
+  } else {
+    showMineOnly.value = false;
+  }
+};
+
+const datasetInfoDialog = (): void => {
+  datasetInfoDialogActive.value = true;
+};
+
+const toggleDatasetHide = (): void => {
+  datasetHideSelector.value = !datasetHideSelector.value;
+  datasetSelected.value = null;
+  if (props.selectedHandler && typeof props.selectedHandler === 'function') {
+    props.selectedHandler(datasetSelected.value);
+  }
+};
+
+const getDatasets = (): void => {
+  fetch('/api/dataset')
+    .then(function (resp) {
+      return resp.json();
+    })
+    .then(function (data) {
+      data.data.forEach(function (v: Dataset) {
+        datasetList.value.push(v);
+      });
+    })
+    .catch(function (err) {
+      datasetsError.value = true;
+      if (isAuth.value) {
+        renderDialog('Datasets Error', 'Please try again later.');
+      }
+    });
+};
+
+const transformDataset = (entry: Dataset): Record<string, any> => {
+  const transformed: Record<string, any> = {};
+  _.keys(entry).forEach((k) => {
+    if (k !== 'filesets' && k !== '__v' && k !== 'dttm_created' && k !== 'dttm_updated') {
+      if (Array.isArray(entry[k])) {
+        if (entry[k].length > 0) {
+          transformed[k] = entry[k].join('; ');
+        } else {
+          transformed[k] = 'N/A';
+        }
+      } else {
+        transformed[k] = entry[k];
+      }
+      if (transformed[k] === null) {
+        transformed[k] = 'N/A';
+      }
+    }
+  });
+  datasetDialogInfo.value = {
+    items: [
+      { header: transformed.doi }
+    ]
+  };
+  _.keys(transformed).forEach((k) => {
+    datasetDialogInfo.value.items.push({
+      title: k,
+      subtitle: transformed[k]
+    });
+    datasetDialogInfo.value.items.push({
+      divider: true,
+      inset: true
+    });
+  });
+  return transformed;
+};
+
+const datasetClick = (entry: Dataset): void => {
+  datasetSelected.value = entry;
+  datasetTransformed.value = transformDataset(entry);
+  datasetHideSelector.value = true;
+  datasetsError.value = false;
+  datasetsErrorMsg.value = '';
+  if (props.selectedHandler && typeof props.selectedHandler === 'function') {
+    props.selectedHandler(datasetSelected.value);
+  }
+};
+
+const toggleDatasetCard = (): void => {
+  addDatasetDialogActive.value = !addDatasetDialogActive.value;
+};
+
+const addDatasetSave = (): void => {
+  fetch('/api/dataset/create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      dsInfo: {
+        datasetComment: addDatasetComment.value,
+        isPublic: false,
+        ispublished: false
+      }
+    })
+  })
+    .then(function (resp) {
+      return resp.json();
+    })
+    .then(function (data) {
+      addDatasetComment.value = '';
+      datasetsError.value = false;
+      datasetsErrorMsg.value = '';
+      addDatasetDialogActive.value = false;
+      getDatasets();
+    })
+    .catch(function (err) {
+      datasetsError.value = true;
+      renderDialog('Dataset Error', 'Please make sure you are logged in, or try again later.');
+    });
+};
+
+const toggleDialogBox = (): void => {
+  dialogBoxActive.value = !dialogBoxActive.value;
+};
+
+const renderDialog = (title: string, content: string): void => {
+  dialog.value = {
+    title,
+    content
+  };
+  toggleDialogBox();
+};
+
+const datasetsFiltered = (): void => {
+  const userIDValue = userId.value;
+  const runAsUserValue = runAsUser.value;
+  const filteredDatasets = datasetList.value.filter((i) => {
+    if (showMineOnly.value) {
+      return i.userID && (i.userID === userIDValue || i.userID === runAsUserValue);
+    } else {
+      return true;
+    }
+  });
+  if (datasetSearch.value) {
+    displayDatasets.value = filteredDatasets.filter((i) => {
+      return (`${i.seq || ''}${i.doi || ''}${i.title || ''}${i.datasetComment || ''}`.includes(datasetSearch.value));
+    });
+  } else {
+    displayDatasets.value = filteredDatasets;
+  }
+};
+
+// Watchers
+watch(() => props.datasetOptions, (options) => {
+  if (options) {
+    overrideOptions(props.datasetOptions);
+  }
+}, { deep: true });
+
+watch(datasetSearch, () => {
+  datasetsFiltered();
+});
+
+watch(datasetList, () => {
+  datasetsFiltered();
+}, { deep: true });
+
+watch(showMineOnly, () => {
+  datasetsFiltered();
+});
+
+// Lifecycle
+onBeforeMount(() => {
+  getDatasets();
+  overrideOptions(props.datasetOptions);
+  datasetsFiltered();
+});
 </script>
 
 <style scoped>

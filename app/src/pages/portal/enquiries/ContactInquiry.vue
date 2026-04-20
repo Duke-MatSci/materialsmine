@@ -4,7 +4,7 @@
       <template v-slot:title>Reply Inquiry</template>
       <template v-slot:content>
         <div>
-          <TextEditor :contentEditable=contentEditable :value="message" />
+          <TextEditor :contentEditable="contentEditable" :value="message" />
         </div>
       </template>
       <template v-slot:actions>
@@ -47,66 +47,53 @@
   </div>
 </template>
 
-<script>
-import Spinner from '@/components/Spinner'
-import ContactBox from '@/components/portal/Contact.vue'
-import ContactCard from '@/components/portal/ContactCard.vue'
-import { mapMutations, mapGetters, mapActions } from 'vuex'
-import pagination from '@/components/explorer/Pagination'
-import TextEditor from '@/components/TextEditor'
-import Dialog from '@/components/Dialog.vue'
-export default {
-  name: 'ContactInquiry',
-  data () {
-    return {
-      showResolved: false,
-      pageSize: 10
-    }
-  },
-  components: {
-    Spinner,
-    pagination,
-    ContactBox,
-    ContactCard,
-    TextEditor,
-    Dialog
-  },
-  computed: {
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox',
-      loading: 'contact/getIsLoading',
-      pageNumber: 'contact/getPageNumber',
-      totalPages: 'contact/getTotalPages',
-      contactInquiries: 'contact/getContactInquiries',
-      singleInquiry: 'contact/getSingleInquiry',
-      contentEditable: 'contact/getContentEditable'
-    }),
-    message () {
-      return this.$store.getters['contact/getMessage']
-    }
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    ...mapActions({
-      loadItems: 'contact/loadItems',
-      send: 'contact/send'
-    }),
-    loadContacts (num = 1) {
-      const payload = {
-        showResolved: this.showResolved,
-        page: num,
-        pageSize: this.pageSize
-      }
-      this.loadItems(payload)
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Contact Inquiries' })
-  },
-  mounted () {
-    this.loadContacts(this.pageNumber)
-  }
-}
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import Spinner from '@/components/Spinner.vue';
+import ContactBox from '@/components/portal/Contact.vue';
+import ContactCard from '@/components/portal/ContactCard.vue';
+import pagination from '@/components/explorer/Pagination.vue';
+import TextEditor from '@/components/TextEditor.vue';
+import Dialog from '@/components/Dialog.vue';
+
+const store = useStore();
+
+const showResolved = ref(false);
+const pageSize = ref(10);
+
+const dialogBoxActive = computed(() => store.getters['dialogBox']);
+const loading = computed(() => store.getters['contact/getIsLoading']);
+const pageNumber = computed(() => store.getters['contact/getPageNumber']);
+const totalPages = computed(() => store.getters['contact/getTotalPages']);
+const contactInquiries = computed(() => store.getters['contact/getContactInquiries']);
+const singleInquiry = computed(() => store.getters['contact/getSingleInquiry']);
+const contentEditable = computed(() => store.getters['contact/getContentEditable']);
+const message = computed(() => store.getters['contact/getMessage']);
+
+const toggleDialogBox = () => {
+  store.commit('setDialogBox');
+};
+
+const loadItems = (payload: any) => {
+  store.dispatch('contact/loadItems', payload);
+};
+
+const send = (resolveInquiry: boolean) => {
+  store.dispatch('contact/send', resolveInquiry);
+};
+
+const loadContacts = (num = 1) => {
+  const payload = {
+    showResolved: showResolved.value,
+    page: num,
+    pageSize: pageSize.value
+  };
+  loadItems(payload);
+};
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Contact Inquiries' });
+  loadContacts(pageNumber.value);
+});
 </script>

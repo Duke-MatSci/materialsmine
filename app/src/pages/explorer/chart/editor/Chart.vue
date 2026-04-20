@@ -39,13 +39,13 @@
             :showBtns="true"
           >
           </yasqe>
-          <v-jsoneditor
+          <json-editor
             v-show="leftTab === 2"
             v-model="chart.baseSpec"
             :options="specJsonEditorOpts"
             v-if="chart.baseSpec"
           >
-          </v-jsoneditor>
+          </json-editor>
           <form v-show="leftTab === 3">
             <md-field>
               <label>Title</label>
@@ -57,7 +57,7 @@
               <md-textarea v-model="chart.description"></md-textarea>
             </md-field>
 
-            <button class="btn btn--primary" @click.prevent="saveChart">
+            <button class="btn btn--primary" @click.prevent="onSaveChart">
               {{ actionType }} <md-icon class="u--color-success">check</md-icon>
             </button>
           </form>
@@ -122,168 +122,181 @@
   </div>
 </template>
 
-<script>
-import { querySparql } from '@/modules/sparql'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+import { querySparql } from '@/modules/sparql';
 import {
   saveChart,
   getDefaultChart,
   buildSparqlSpec,
   loadChart,
   toChartId
-} from '@/modules/vega-chart'
-import VJsoneditor from 'v-jsoneditor'
-import VegaLite from '@/components/explorer/VegaLiteWrapper.vue'
-import yasqe from '@/components/explorer/yasqe'
-import yasr from '@/components/explorer/yasr'
-import spinner from '@/components/Spinner'
-export default {
-  name: 'ChartCreate',
-  components: {
-    VJsoneditor,
-    VegaLite,
-    yasqe,
-    yasr,
-    spinner
-  },
-  data () {
-    return {
-      loading: true,
-      mouseIsDown: false,
-      x: 0,
-      y: 0,
-      leftTab: 1,
-      rightTab: 1,
-      results: null,
-      specJsonEditorOpts: {
-        mode: 'code',
-        mainMenuBar: false
-      },
-      chart: {
-        baseSpec: null,
-        query: null,
-        title: null,
-        description: null
-      },
-      actionType: 'Save Chart',
-      submittedIdentifier: undefined
-    }
-  },
-  props: ['chartId'],
-  computed: {
-    spec () {
-      const spec = buildSparqlSpec(this.chart.baseSpec, this.results) ?? {}
-      return spec
-    }
-  },
-  methods: {
-    getSparqlData () {
-      const vm = this
-      querySparql(vm.chart.query)
-        .then(this.onQuerySuccess)
-        .then((this.loading = false))
-        .catch((this.loading = false))
-    },
-    onQuerySuccess (results) {
-      this.results = results
-    },
-    onSpecJsonError () {
-      // console.log('bad', arguments)
-    },
-    async onNewVegaView (view) {
-      const blob = await view
-        .toImageURL('png')
-        .then((url) => fetch(url))
-        .then((resp) => resp.blob())
-      const fr = new FileReader()
-      fr.addEventListener('load', () => {
-        this.chart.depiction = fr.result
-      })
-      fr.readAsDataURL(blob)
-    },
-    async loadChart () {
-      // this.types = 'new, edit, restore & delete'
-      let getChartPromise
-      if (this.$route.params.type === 'new') {
-        this.actionType = 'Save Chart'
-        getChartPromise = Promise.resolve(getDefaultChart())
-      } else if (this.$route.params.type === 'edit') {
-        // fetch chart from knowledge graph
-        this.actionType = 'Edit Chart'
-        getChartPromise = Promise.resolve(loadChart(this.chartId))
-      } else {
-        // Get chart from mongo backup
-        this.actionType = 'Restore Chart'
-        this.reloadRestored()
-      }
-      getChartPromise
-        .then((chart) => {
-          this.chart = chart
-          return this.getSparqlData()
-        })
-        .catch((this.loading = false))
-    },
-    async reloadRestored () {
-      // 1. Fetch backup from mongo
-      // 2. Post each chart (schema + sparql) to knowledge graph
-      // 3. Toggle restore flag in mongo
-    },
-    async saveChart () {
-      this.loading = true
-      // Todo (ticket xx): Move this into vuex
-      try {
-        const chartNanopub = await saveChart(this.chart)
+} from '@/modules/vega-chart';
+import JsonEditor from '@/components/JsonEditor.vue';
+import VegaLite from '@/components/explorer/VegaLiteWrapper.vue';
+import yasqe from '@/components/explorer/yasqe.vue';
+import yasr from '@/components/explorer/yasr.vue';
+import spinner from '@/components/Spinner.vue';
 
-        if (this.$route.params.type === 'new') {
-          // Save chart to MongoDB - async operation
-        } else {
-          await this.$store.dispatch('explorer/curation/deleteEntityES', {
-            // TODO: Can we change these to a materialsmine.org uri or will that break things?
-            identifier: `http://nanomine.org/viz/${this.chartId}`,
-            type: 'charts'
-          })
-          // Find in mongo and update - async operation
-        }
+defineOptions({
+  name: 'ChartCreate'
+});
 
-        const resp = await this.$store.dispatch(
-          'explorer/curation/cacheNewEntityResponse',
-          {
-            identifier: this.submittedIdentifier,
-            resourceNanopub: chartNanopub,
-            type: 'charts'
-          }
-        )
-
-        if (resp.identifier) {
-          this.submittedIdentifier = resp.identifier
-        }
-
-        // This next line tells the gallery page to fetch cos a new chart exist
-        this.$store.commit('explorer/curation/setNewChartExist', true)
-        this.loading = false
-        // Change button name after submission
-        this.actionType = 'Edit Chart'
-        this.$store.commit('setSnackbar', {
-          message: 'Chart saved successfully!',
-          duration: 15000
-        })
-
-        if (this.$route.params.type === 'new') {
-          return this.$router.push(
-            `/explorer/chart/editor/edit/${toChartId(resp.identifier)}`
-          )
-        }
-      } catch (err) {
-        // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
-        return alert(err)
-      }
-    },
-    goToExplorer () {
-      this.$router.push('/explorer/chart')
-    }
-  },
-  created () {
-    this.loading = true
-    this.loadChart()
-  }
+interface ChartData {
+  baseSpec: Record<string, any> | null;
+  query: string | null;
+  title: string | null;
+  description: string | null;
+  uri?: string;
+  depiction?: string;
 }
+
+interface Props {
+  chartId?: string;
+}
+
+const props = defineProps<Props>();
+
+const route = useRoute();
+const router = useRouter();
+const store = useStore();
+
+const loading = ref<boolean>(true);
+const leftTab = ref<number>(1);
+const rightTab = ref<number>(1);
+const results = ref<any>(null);
+const specJsonEditorOpts = ref<Record<string, any>>({
+  mode: 'code',
+  mainMenuBar: false
+});
+const chart = ref<ChartData>({
+  baseSpec: null,
+  query: null,
+  title: null,
+  description: null
+});
+const actionType = ref<string>('Save Chart');
+const submittedIdentifier = ref<string | undefined>(undefined);
+
+const spec = computed(() => {
+  const builtSpec = buildSparqlSpec(chart.value.baseSpec, results.value) ?? {};
+  return builtSpec;
+});
+
+const getSparqlData = (): void => {
+  if (chart.value.query) {
+    querySparql(chart.value.query)
+      .then(onQuerySuccess)
+      .then(() => { loading.value = false; })
+      .catch(() => { loading.value = false; });
+  }
+};
+
+const onQuerySuccess = (queryResults: any): void => {
+  results.value = queryResults;
+};
+
+const onNewVegaView = async (view: any): Promise<void> => {
+  const blob = await view
+    .toImageURL('png')
+    .then((url: string) => fetch(url))
+    .then((resp: Response) => resp.blob());
+  const fr = new FileReader();
+  fr.addEventListener('load', () => {
+    chart.value.depiction = fr.result as string;
+  });
+  fr.readAsDataURL(blob);
+};
+
+const loadChartData = async (): Promise<void> => {
+  // this.types = 'new, edit, restore & delete'
+  let getChartPromise: Promise<any>;
+  if (route.params.type === 'new') {
+    actionType.value = 'Save Chart';
+    getChartPromise = Promise.resolve(getDefaultChart());
+  } else if (route.params.type === 'edit') {
+    // fetch chart from knowledge graph
+    actionType.value = 'Edit Chart';
+    getChartPromise = Promise.resolve(loadChart(props.chartId!));
+  } else {
+    // Get chart from mongo backup
+    actionType.value = 'Restore Chart';
+    await reloadRestored();
+    return;
+  }
+  getChartPromise
+    .then((loadedChart) => {
+      chart.value = loadedChart;
+      return getSparqlData();
+    })
+    .catch(() => { loading.value = false; });
+};
+
+const reloadRestored = async (): Promise<void> => {
+  // 1. Fetch backup from mongo
+  // 2. Post each chart (schema + sparql) to knowledge graph
+  // 3. Toggle restore flag in mongo
+};
+
+const onSaveChart = async (): Promise<void> => {
+  loading.value = true;
+  // Todo (ticket xx): Move this into vuex
+  try {
+    const chartNanopub = await saveChart(chart.value as any);
+
+    if (route.params.type === 'new') {
+      // Save chart to MongoDB - async operation
+    } else {
+      await store.dispatch('explorer/curation/deleteEntityES', {
+        // TODO: Can we change these to a materialsmine.org uri or will that break things?
+        identifier: `http://nanomine.org/viz/${props.chartId}`,
+        type: 'charts'
+      });
+      // Find in mongo and update - async operation
+    }
+
+    const resp = await store.dispatch(
+      'explorer/curation/cacheNewEntityResponse',
+      {
+        identifier: submittedIdentifier.value,
+        resourceNanopub: chartNanopub,
+        type: 'charts'
+      }
+    );
+
+    if (resp.identifier) {
+      submittedIdentifier.value = resp.identifier;
+    }
+
+    // This next line tells the gallery page to fetch cos a new chart exist
+    store.commit('explorer/curation/setNewChartExist', true);
+    loading.value = false;
+    // Change button name after submission
+    actionType.value = 'Edit Chart';
+    store.commit('setSnackbar', {
+      message: 'Chart saved successfully!',
+      duration: 15000
+    });
+
+    if (route.params.type === 'new') {
+      return router.push(
+        `/explorer/chart/editor/edit/${toChartId(resp.identifier)}`
+      );
+    }
+  } catch (err: any) {
+    // TODO (Ticket xxx): USE THE APP DIALOGUE BOX INSTEAD OF ALERT BOX
+    return alert(err);
+  }
+};
+
+const goToExplorer = (): void => {
+  router.push('/explorer/chart');
+};
+
+onMounted(() => {
+  loading.value = true;
+  loadChartData();
+});
 </script>

@@ -11,7 +11,7 @@
       <h1 class="visualize_header-h1 u--margin-topxl">Unable to load form</h1>
       <md-button
         class="md-fab md-fab-top-right md-dense btn--primary"
-        @click.native.prevent="navBack"
+        @click.prevent="navBack"
       >
         <md-tooltip> Go Back </md-tooltip>
         <md-icon>arrow_back</md-icon>
@@ -26,7 +26,7 @@
       <form ref="curationForm" @submit.prevent="submit" class="modal-content">
         <md-steppers
           v-if="!!titles.length"
-          :md-active-step.sync="active"
+          v-model:md-active-step="active"
           @md-changed="(e) => sortCurate(e)"
           class="form__stepper form__stepper-curate"
         >
@@ -108,7 +108,7 @@
               <!-- Vertical Steppers  -->
               <md-steppers
                 v-if="!!tempInputObj[title].length"
-                :md-active-step.sync="verticalActive"
+                v-model:md-active-step="verticalActive"
                 md-vertical
                 md-dynamic-height
               >
@@ -315,504 +315,555 @@
         <template v-slot:title>Alert</template>
         <template v-slot:content>{{ dialogBoxText }}</template>
         <template v-slot:actions>
-          <md-button @click.native.prevent="closeDialogBox">No</md-button>
-          <md-button @click.native.prevent="confirmAction">Yes</md-button>
+          <md-button @click.prevent="closeDialogBox">No</md-button>
+          <md-button @click.prevent="confirmAction">Yes</md-button>
         </template>
       </dialog-box>
     </div>
   </div>
 </template>
 
-<script>
-import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import InputComponent from '@/components/explorer/InputComponent.vue'
-import dialogBox from '@/components/Dialog.vue'
-import spinner from '@/components/Spinner'
-import MultipleInputComponent from '@/components/explorer/MultipleInputComponent.vue'
-import { mapActions, mapState, mapGetters, mapMutations } from 'vuex'
-export default {
-  name: 'CurationForm',
-  components: {
-    spinner,
-    dialogBox,
-    CurateNavBar,
-    InputComponent,
-    MultipleInputComponent
-  },
-  data () {
-    return {
-      editRouteParent: [
-        {
-          label: 'Curate',
-          path: '/explorer/curate'
-        },
-        {
-          label: 'Curation Form',
-          path: '/explorer/curate/stepper'
-        }
-      ],
-      tempInputObj: {},
-      vStepError: {},
-      titles: [],
-      listItems: [], // for temporarily holding list items when open
-      loadingList: false, // loading state for lists
-      loading: true,
-      loadingText: 'Loading Curation Form',
-      error: false,
-      active: '',
-      verticalActive: 'v_1',
-      dialogBoxText: '',
-      dialogBoxAction: null,
-      searchKeyword: '',
-      searchResult: [],
-      showDropdown: false,
-      resetVStep: true
-    }
-  },
-  methods: {
-    ...mapActions({
-      fetchData: 'explorer/curation/fetchCurationData',
-      fetchXlsList: 'explorer/curation/fetchXlsList',
-      submitCurationData: 'explorer/curation/submitCurationData',
-      generateControlID: 'explorer/curation/createControlId'
-    }),
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    hasProperty (obj, prop) {
-      return Object.hasOwnProperty.call(obj, prop)
-    },
-    navBack () {
-      this.$router.back()
-    },
-    searchCurationForm () {
-      this.searchResult = []
-      if (this.searchKeyword.length < 3) return
-      const searchResult = []
-      const regex = new RegExp(this.searchKeyword, 'gi')
-      for (const key in this.tempInputObj) {
-        const arr = this.tempInputObj[key]
-        for (let i = 0; i < arr.length; i++) {
-          if (
-            !!arr[i].ref.length &&
-            !!arr[i].ref.find((e) => e.search(regex) !== -1)
-          ) {
-            searchResult.push([key, ...arr[i].ref])
-          }
-        }
-      }
-      this.searchResult = searchResult
-      this.showDropdown = true
-    },
-    async showInputLocation (arr = [], title = null) {
-      this.resetVStep = false
-      await this.$nextTick()
-      const ref = arr
-      const formTitle = !title ? ref.shift() : title
-      const formArr = this.tempInputObj[formTitle]
-      const matchIndex = formArr.findIndex(
-        (currVal) => JSON.stringify(currVal.ref) === JSON.stringify([...ref])
-      )
-      const hIndex = this.titles.findIndex((val) => val === formTitle)
-      const vIndex = Math.floor(matchIndex / 5) + 1
-      await this.$nextTick()
-      this.active = `stepper_${hIndex}`
-      this.verticalActive = `v_${vIndex}`
-      this.searchKeyword = ''
-    },
-    async disableRender (e) {
-      const selected = e.target.closest('.search_box')
-      if (!selected) {
-        this.showDropdown = false
-      }
-    },
-    closeDialogBox () {
-      if (this.dialogBoxActive) {
-        this.toggleDialogBox()
-      }
-      this.dialogBoxText = ''
-      this.dialogBoxAction = null
-    },
-    updateStepError (title, step) {
-      if (!this.vStepError[title].includes(step)) {
-        return this.vStepError[title].push(step)
-      }
-    },
-    checkErrorsLocation () {
-      for (let i = 0; i < this.titles.length; i++) {
-        if (this.hasProperty(this.errors, this.titles[i])) {
-          this.showErrorsLocation(
-            this.titles[i],
-            this.errors[this.titles[i]],
-            []
-          )
-        }
-      }
-    },
-    showErrorsLocation (title, obj, ref = []) {
-      for (const key in obj) {
-        if (Array.isArray(obj[key])) {
-          for (let i = 0; i < obj[key].length; i++) {
-            this.showErrorsLocation(title, obj[key][i], [...ref, key])
-          }
-        } else if (typeof obj[key] === 'object') {
-          this.showErrorsLocation(title, obj[key], [...ref, key])
-        } else {
-          const arr = this.tempInputObj[title]
-          let matchIndex = arr.findIndex(
-            (currVal) =>
-              JSON.stringify(currVal.ref) === JSON.stringify([...ref, key])
-          )
-          if (matchIndex === -1) {
-            matchIndex = arr.findIndex(
-              (currVal) =>
-                JSON.stringify(currVal.ref) === JSON.stringify([...ref])
-            )
-          }
-          if (matchIndex < 5 && matchIndex !== -1) {
-            this.updateStepError(title, 1)
-          } else if (matchIndex !== -1) {
-            this.updateStepError(title, Math.floor(matchIndex / 5) + 1)
-          }
-        }
-      }
-    },
-    submitForm () {
-      this.submit()
-      this.closeDialogBox()
-    },
-    async submit () {
-      this.loading = true
-      this.error = false
-      this.loadingText = 'Uploading Data Entry'
-      for (let i = 0; i < this.titles.length; i++) {
-        this.vStepError[this.titles[i]] = []
-      }
-      try {
-        await this.validateForm(this.tempInputObj)
-        if (this.isEditMode) {
-          const query = this.$route.query
-          await this.submitCurationData({
-            xlsxObjectId: query?.id,
-            isNew: query?.isNew
-          })
-        } else {
-          await this.submitCurationData()
-        }
-      } catch (error) {
-        if (Object.keys(this.errors).length) this.checkErrorsLocation()
-        this.$store.commit('setSnackbar', {
-          message: error?.message ?? 'Something went wrong',
-          action: () => this.submit()
-        })
-      } finally {
-        this.loading = false
-      }
-    },
-    isFieldEmpty (obj) {
-      return obj.type === 'replace_nested'
-        ? !obj.values.length
-        : !obj.cellValue
-    },
-    async validateForm (obj) {
-      this.$store.commit('explorer/curation/setCurationFormError', {})
-      const errorObj = {}
-      for (const key in obj) {
-        const arr = obj[key]
-        for (let i = 0; i < arr.length; i++) {
-          const detail = obj[key][i]?.detail ?? {}
-          if (detail.required) {
-            if (this.isFieldEmpty(detail)) {
-              errorObj[key] = this.hasProperty(errorObj, key)
-                ? errorObj[key]
-                : {}
-              const refArr = obj[key][i]?.ref || []
-              if (!refArr.length) {
-                errorObj[key] = `${obj[key][i].name} is a required field`
-              } else {
-                refArr.reduce(function (o, x, index) {
-                  return index === refArr.length - 1
-                    ? (o[x] = `${obj[key][i].name} is a required field`)
-                    : (o[x] = typeof o[x] === 'object' ? o[x] : {})
-                }, errorObj[key])
-              }
-            }
-          }
-        }
-      }
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
+import { useStore } from 'vuex';
+import CurateNavBar from '@/components/curate/CurateNavBar.vue';
+import InputComponent from '@/components/explorer/InputComponent.vue';
+import DialogBox from '@/components/Dialog.vue';
+import Spinner from '@/components/Spinner.vue';
+import MultipleInputComponent from '@/components/explorer/MultipleInputComponent.vue';
 
-      this.$store.commit('explorer/curation/setCurationFormError', errorObj)
-    },
-    goToStep (id, index) {
-      if (index) this.verticalActive = index
-    },
-    async fetchListValues (arg) {
-      this.listItems = []
-      this.loadingList = true
-      try {
-        const result = await this.fetchXlsList({ field: arg })
-        this.listItems = result?.columns[0]?.values || []
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: 'Something went wrong',
-          action: () => this.fetchListValues(arg)
-        })
-      } finally {
-        this.loadingList = false
-      }
-    },
-    fetchParameterValues (arr = []) {
-      this.listItems = []
-      const data = arr.reduce((acc, val) => acc.concat(Object.keys(val)), [])
-      this.listItems = data
-    },
-    sortCurate (arg) {
-      var id = arg.slice(-1)
-      this.verticalActive = this.resetVStep ? 'v_1' : this.verticalActive
-      this.resetVStep = true
-      if (!this.tempInputObj[this.titles[id]].length) {
-        return this.filterData(
-          this.titles[id],
-          this.curate[this.titles[id]],
-          []
-        )
-      }
-    },
-    sort_variedMultiple_alt (title, arr, parent) {
-      for (let i = 0; i < arr.length; i++) {
-        if (this.hasProperty(arr[i], 'ChooseParameter')) {
-          const ref = [...parent, 'ChooseParameter']
-          this.tempInputObj[title].push({
-            detail: arr[i].ChooseParameter,
-            name: 'ChooseParameter',
-            ref: ref
-          })
-        }
-      }
-    },
-    addVariedMultiple (title, arr, parent) {
-      const obj = JSON.parse(JSON.stringify(arr[0]))
-      this.clearFields(obj)
-      const refArr = parent || []
-      const refData = refArr.reduce(function (o, x) {
-        return typeof o === 'undefined' || o === null ? o : o[x]
-      }, this.curate[title])
+// Component name for debugging
+defineOptions({
+  name: 'CurationForm'
+});
 
+// Router and store
+const route = useRoute();
+const router = useRouter();
+const store = useStore();
+
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface InputDetail {
+  type: string;
+  cellValue?: any;
+  values?: any[];
+  required?: boolean;
+  validList?: string;
+  edited?: boolean;
+}
+
+interface TempInputItem {
+  detail: InputDetail;
+  name: string;
+  ref: string[];
+}
+
+interface TempInputObj {
+  [key: string]: TempInputItem[];
+}
+
+interface VStepError {
+  [key: string]: number[];
+}
+
+// Refs
+const curationForm = ref<HTMLFormElement | null>(null);
+const editRouteParent = ref<NavRoute[]>([
+  {
+    label: 'Curate',
+    path: '/explorer/curate'
+  },
+  {
+    label: 'Curation Form',
+    path: '/explorer/curate/stepper'
+  }
+]);
+const tempInputObj = ref<TempInputObj>({});
+const vStepError = ref<VStepError>({});
+const titles = ref<string[]>([]);
+const listItems = ref<any[]>([]);
+const loadingList = ref<boolean>(false);
+const loading = ref<boolean>(true);
+const loadingText = ref<string>('Loading Curation Form');
+const error = ref<boolean>(false);
+const active = ref<string>('');
+const verticalActive = ref<string>('v_1');
+const dialogBoxText = ref<string>('');
+const dialogBoxAction = ref<(() => void) | null>(null);
+const searchKeyword = ref<string>('');
+const searchResult = ref<any[]>([]);
+const showDropdown = ref<boolean>(false);
+const resetVStep = ref<boolean>(true);
+
+// Computed
+const curate = computed(() => store.state.explorer.curation.curationFormData);
+const errors = computed(() => store.state.explorer.curation.curationFormError);
+const dialogBoxActive = computed(() => store.getters.dialogBox);
+
+const reduceSpacing = computed(() => {
+  return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 };
+});
+
+const setDropdownPosition = computed(() => {
+  return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' };
+});
+
+const inputSizesm = computed(() => {
+  return 'md-size-40 md-medium-size-45 md-small-size-50 ';
+});
+
+const isEditMode = computed(() => {
+  return !!Object.keys(route.query).length;
+});
+
+const navRoutes = computed(() => {
+  if (isEditMode.value) return [...editRouteParent.value];
+  return [editRouteParent.value[0]];
+});
+
+// Methods
+const hasProperty = (obj: any, prop: string): boolean => {
+  return Object.hasOwnProperty.call(obj, prop);
+};
+
+const navBack = (): void => {
+  router.back();
+};
+
+const searchCurationForm = (): void => {
+  searchResult.value = [];
+  if (searchKeyword.value.length < 3) return;
+  const results: any[] = [];
+  const regex = new RegExp(searchKeyword.value, 'gi');
+  for (const key in tempInputObj.value) {
+    const arr = tempInputObj.value[key];
+    for (let i = 0; i < arr.length; i++) {
       if (
-        this.hasProperty(refData, 'values') &&
-        Array.isArray(refData?.values)
+        !!arr[i].ref.length &&
+        !!arr[i].ref.find((e) => e.search(regex) !== -1)
       ) {
-        refData.values.push(obj)
-        const length = refData.values.length
-        this.sort_variedMultiple_alt(
-          title,
-          [refData.values[length - 1]],
-          parent
-        )
-      }
-    },
-    filterData (title, obj, parent = []) {
-      if (
-        this.hasProperty(obj, 'type') &&
-        this.hasProperty(obj, 'cellValue') &&
-        !parent.length
-      ) {
-        obj.cellValue = this.$route?.query?.id ? obj.cellValue : null
-        return this.tempInputObj[title].push({
-          detail: obj,
-          name: title,
-          ref: [...parent, title]
-        })
-      }
-      for (const prop in obj) {
-        const ref = parent
-        if (!obj[prop]?.type && typeof (obj[prop] === 'object')) {
-          this.filterData(title, obj[prop], [...parent, prop])
-        } else {
-          if (
-            obj[prop].type === 'replace_nested' &&
-            !this.hasProperty(obj[prop], 'edited')
-          ) {
-            obj[prop].values = this.$route?.query?.id ? obj[prop].values : []
-            this.$store.commit('explorer/curation/setReplaceNestedRef', [
-              title,
-              ...ref,
-              prop
-            ])
-          } else if (
-            obj[prop].type === 'multiples' &&
-            !this.$route?.query?.id
-          ) {
-            this.clearFields(obj[prop])
-          } else if (!this.$route?.query?.id) {
-            obj[prop].cellValue = null
-          }
-          this.tempInputObj[title].push({
-            detail: obj[prop],
-            name: prop,
-            ref: [...ref, prop]
-          })
-          if (
-            obj[prop].type === 'varied_multiples' &&
-            !this.$route?.query?.id
-          ) {
-            this.clearFields(obj[prop])
-          }
-          if (
-            obj[prop].type === 'varied_multiples' &&
-            !!this.$route?.query?.id &&
-            !!obj[prop].cellValue
-          ) {
-            this.sort_variedMultiple_alt(title, obj[prop].values, [
-              ...ref,
-              prop
-            ])
-          }
-        }
-      }
-    },
-    clearFields (obj) {
-      if (this.hasProperty(obj, 'type')) {
-        if (obj.type === 'multiples' || obj.type === 'varied_multiples') {
-          const arr = obj.values
-          for (let i = 0; i < arr.length; i++) {
-            this.clearFields(arr[i])
-          }
-        } else if (obj.type === 'replace_nested') {
-          obj.values = []
-        } else {
-          obj.cellValue = null
-        }
-      } else {
-        for (const key in obj) {
-          this.clearFields(obj[key])
-        }
-      }
-    },
-    filterCurationData () {
-      this.titles = Object.keys(this.curate).filter((word) => word !== 'ID')
-      if (!this.isEditMode) this.clearFields(this.curate.ID)
-      const objArr = {}
-      const errArr = {}
-      for (let i = 0; i < this.titles.length; i++) {
-        objArr[this.titles[i]] = []
-        errArr[this.titles[i]] = []
-        this.vStepError = Object.assign({}, this.vStepError, errArr)
-        this.tempInputObj = Object.assign({}, this.tempInputObj, objArr)
-        this.filterData(this.titles[i], this.curate[this.titles[i]], [])
-      }
-    },
-    async fetchCurationData () {
-      this.loading = true
-      this.error = false
-      this.loadingText = 'Loading Curation Form'
-      const query = this.$route.query
-      this.$store.commit('explorer/curation/clearReplaceNestedRef')
-      try {
-        const arg = this.isEditMode
-          ? { isNew: query.isNew, id: query.id }
-          : null
-        if (
-          this.isEditMode &&
-          (!this.hasProperty(query, 'isNew') || !this.hasProperty(query, 'id'))
-        ) {
-          throw new Error('Incorrect Route Parameters')
-        }
-        await this.fetchData(arg)
-        this.filterCurationData()
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: error?.message || 'Something went wrong',
-          action: () => this.fetchCurationData()
-        })
-        this.error = true
-      } finally {
-        this.loading = false
-      }
-    },
-    resetState () {
-      this.loading = true
-      this.tempInputObj = {}
-      this.vStepError = {}
-      this.titles = []
-      this.active = ''
-      this.verticalActive = 'v_1'
-      this.dialogBoxText = ''
-      this.dialogBoxAction = null
-      this.$store.commit('explorer/curation/setCurationFormData', {})
-      this.$store.commit('explorer/curation/setCurationFormError', {})
-      this.$store.commit('explorer/curation/clearReplaceNestedRef')
-    },
-    openDialogBox (msg = null, func = null) {
-      this.dialogBoxText = !msg ? 'Are you sure you want to submit?' : msg
-      this.dialogBoxAction = !func ? () => this.submitForm() : func
-      if (!this.dialogBoxActive) {
-        this.toggleDialogBox()
-      }
-    },
-    confirmAction () {
-      if (this.dialogBoxAction) {
-        this.dialogBoxAction()
-        this.closeDialogBox()
-      }
-    }
-  },
-  async created () {
-    this.$store.commit('explorer/curation/setDatasetId', null)
-    await this.fetchCurationData()
-    !this.isEditMode && (await this.generateControlID())
-  },
-  beforeRouteLeave (to, _, next) {
-    let msg = ''
-    if (to.name === 'XmlVisualizer') return next()
-    if (this.error) return next()
-    if (to.path === '/explorer/curate/stepper') {
-      msg =
-        'Do you want to create a new curation? You would lose any unsaved changes!'
-      return this.openDialogBox(msg, () => {
-        next()
-        this.resetState()
-        this.fetchCurationData()
-      })
-    }
-    msg = 'Do you really want to leave? You would lose any unsaved changes!'
-    return this.openDialogBox(msg, () => {
-      next()
-      this.resetState()
-    })
-  },
-  computed: {
-    ...mapState({
-      curate: (state) => state.explorer.curation.curationFormData,
-      errors: (state) => state.explorer.curation.curationFormError
-    }),
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox'
-    }),
-    reduceSpacing () {
-      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 }
-    },
-    setDropdownPosition () {
-      return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
-    },
-    inputSizesm () {
-      return 'md-size-40 md-medium-size-45 md-small-size-50 '
-    },
-    isEditMode () {
-      return !!Object.keys(this.$route.query).length
-    },
-    navRoutes () {
-      // TODO (@tee) FE: The below if statement returns entire array. Refactor!
-      if (this.isEditMode) return [...this.editRouteParent]
-      return [this.editRouteParent[0]]
-    }
-  },
-  watch: {
-    searchKeyword (newVal) {
-      if (newVal) {
-        this.searchCurationForm()
+        results.push([key, ...arr[i].ref]);
       }
     }
   }
-}
+  searchResult.value = results;
+  showDropdown.value = true;
+};
+
+const showInputLocation = async (arr: any[] = [], title: string | null = null): Promise<void> => {
+  resetVStep.value = false;
+  await nextTick();
+  const ref = arr;
+  const formTitle = !title ? ref.shift() : title;
+  const formArr = tempInputObj.value[formTitle];
+  const matchIndex = formArr.findIndex(
+    (currVal) => JSON.stringify(currVal.ref) === JSON.stringify([...ref])
+  );
+  const hIndex = titles.value.findIndex((val) => val === formTitle);
+  const vIndex = Math.floor(matchIndex / 5) + 1;
+  await nextTick();
+  active.value = `stepper_${hIndex}`;
+  verticalActive.value = `v_${vIndex}`;
+  searchKeyword.value = '';
+};
+
+const disableRender = async (e: Event): Promise<void> => {
+  const target = e.target as HTMLElement;
+  const selected = target.closest('.search_box');
+  if (!selected) {
+    showDropdown.value = false;
+  }
+};
+
+const closeDialogBox = (): void => {
+  if (dialogBoxActive.value) {
+    store.commit('setDialogBox');
+  }
+  dialogBoxText.value = '';
+  dialogBoxAction.value = null;
+};
+
+const updateStepError = (title: string, step: number): void => {
+  if (!vStepError.value[title].includes(step)) {
+    vStepError.value[title].push(step);
+  }
+};
+
+const checkErrorsLocation = (): void => {
+  for (let i = 0; i < titles.value.length; i++) {
+    if (hasProperty(errors.value, titles.value[i])) {
+      showErrorsLocation(
+        titles.value[i],
+        errors.value[titles.value[i]],
+        []
+      );
+    }
+  }
+};
+
+const showErrorsLocation = (title: string, obj: any, ref: string[] = []): void => {
+  for (const key in obj) {
+    if (Array.isArray(obj[key])) {
+      for (let i = 0; i < obj[key].length; i++) {
+        showErrorsLocation(title, obj[key][i], [...ref, key]);
+      }
+    } else if (typeof obj[key] === 'object') {
+      showErrorsLocation(title, obj[key], [...ref, key]);
+    } else {
+      const arr = tempInputObj.value[title];
+      let matchIndex = arr.findIndex(
+        (currVal) =>
+          JSON.stringify(currVal.ref) === JSON.stringify([...ref, key])
+      );
+      if (matchIndex === -1) {
+        matchIndex = arr.findIndex(
+          (currVal) =>
+            JSON.stringify(currVal.ref) === JSON.stringify([...ref])
+        );
+      }
+      if (matchIndex < 5 && matchIndex !== -1) {
+        updateStepError(title, 1);
+      } else if (matchIndex !== -1) {
+        updateStepError(title, Math.floor(matchIndex / 5) + 1);
+      }
+    }
+  }
+};
+
+const submitForm = (): void => {
+  submit();
+  closeDialogBox();
+};
+
+const submit = async (): Promise<void> => {
+  loading.value = true;
+  error.value = false;
+  loadingText.value = 'Uploading Data Entry';
+  for (let i = 0; i < titles.value.length; i++) {
+    vStepError.value[titles.value[i]] = [];
+  }
+  try {
+    await validateForm(tempInputObj.value);
+    if (isEditMode.value) {
+      const query = route.query;
+      await store.dispatch('explorer/curation/submitCurationData', {
+        xlsxObjectId: query?.id,
+        isNew: query?.isNew
+      });
+    } else {
+      await store.dispatch('explorer/curation/submitCurationData');
+    }
+  } catch (err: any) {
+    if (Object.keys(errors.value).length) checkErrorsLocation();
+    store.commit('setSnackbar', {
+      message: err?.message ?? 'Something went wrong',
+      action: () => submit()
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const isFieldEmpty = (obj: InputDetail): boolean => {
+  return obj.type === 'replace_nested'
+    ? !obj.values?.length
+    : !obj.cellValue;
+};
+
+const validateForm = async (obj: TempInputObj): Promise<void> => {
+  store.commit('explorer/curation/setCurationFormError', {});
+  const errorObj: any = {};
+  for (const key in obj) {
+    const arr = obj[key];
+    for (let i = 0; i < arr.length; i++) {
+      const detail = obj[key][i]?.detail ?? {};
+      if (detail.required) {
+        if (isFieldEmpty(detail)) {
+          errorObj[key] = hasProperty(errorObj, key)
+            ? errorObj[key]
+            : {};
+          const refArr = obj[key][i]?.ref || [];
+          if (!refArr.length) {
+            errorObj[key] = `${obj[key][i].name} is a required field`;
+          } else {
+            refArr.reduce(function (o: any, x: string, index: number) {
+              return index === refArr.length - 1
+                ? (o[x] = `${obj[key][i].name} is a required field`)
+                : (o[x] = typeof o[x] === 'object' ? o[x] : {});
+            }, errorObj[key]);
+          }
+        }
+      }
+    }
+  }
+
+  store.commit('explorer/curation/setCurationFormError', errorObj);
+};
+
+const goToStep = (id: string, index?: string): void => {
+  if (index) verticalActive.value = index;
+};
+
+const fetchListValues = async (arg: string): Promise<void> => {
+  listItems.value = [];
+  loadingList.value = true;
+  try {
+    const result = await store.dispatch('explorer/curation/fetchXlsList', { field: arg });
+    listItems.value = result?.columns[0]?.values || [];
+  } catch (err) {
+    store.commit('setSnackbar', {
+      message: 'Something went wrong',
+      action: () => fetchListValues(arg)
+    });
+  } finally {
+    loadingList.value = false;
+  }
+};
+
+const fetchParameterValues = (arr: any[] = []): void => {
+  listItems.value = [];
+  const data = arr.reduce((acc, val) => acc.concat(Object.keys(val)), []);
+  listItems.value = data;
+};
+
+const sortCurate = (arg: string): void => {
+  const id = arg.slice(-1);
+  verticalActive.value = resetVStep.value ? 'v_1' : verticalActive.value;
+  resetVStep.value = true;
+  if (!tempInputObj.value[titles.value[Number(id)]].length) {
+    return filterData(
+      titles.value[Number(id)],
+      curate.value[titles.value[Number(id)]],
+      []
+    );
+  }
+};
+
+const sort_variedMultiple_alt = (title: string, arr: any[], parent: string[]): void => {
+  for (let i = 0; i < arr.length; i++) {
+    if (hasProperty(arr[i], 'ChooseParameter')) {
+      const ref = [...parent, 'ChooseParameter'];
+      tempInputObj.value[title].push({
+        detail: arr[i].ChooseParameter,
+        name: 'ChooseParameter',
+        ref: ref
+      });
+    }
+  }
+};
+
+const addVariedMultiple = (title: string, arr: any[], parent: string[]): void => {
+  const obj = JSON.parse(JSON.stringify(arr[0]));
+  clearFields(obj);
+  const refArr = parent || [];
+  const refData = refArr.reduce(function (o: any, x: string) {
+    return typeof o === 'undefined' || o === null ? o : o[x];
+  }, curate.value[title]);
+
+  if (
+    hasProperty(refData, 'values') &&
+    Array.isArray(refData?.values)
+  ) {
+    refData.values.push(obj);
+    const length = refData.values.length;
+    sort_variedMultiple_alt(
+      title,
+      [refData.values[length - 1]],
+      parent
+    );
+  }
+};
+
+const filterData = (title: string, obj: any, parent: string[] = []): void => {
+  if (
+    hasProperty(obj, 'type') &&
+    hasProperty(obj, 'cellValue') &&
+    !parent.length
+  ) {
+    obj.cellValue = route?.query?.id ? obj.cellValue : null;
+    return tempInputObj.value[title].push({
+      detail: obj,
+      name: title,
+      ref: [...parent, title]
+    });
+  }
+  for (const prop in obj) {
+    const ref = parent;
+    if (!obj[prop]?.type && typeof (obj[prop] === 'object')) {
+      filterData(title, obj[prop], [...parent, prop]);
+    } else {
+      if (
+        obj[prop].type === 'replace_nested' &&
+        !hasProperty(obj[prop], 'edited')
+      ) {
+        obj[prop].values = route?.query?.id ? obj[prop].values : [];
+        store.commit('explorer/curation/setReplaceNestedRef', [
+          title,
+          ...ref,
+          prop
+        ]);
+      } else if (
+        obj[prop].type === 'multiples' &&
+        !route?.query?.id
+      ) {
+        clearFields(obj[prop]);
+      } else if (!route?.query?.id) {
+        obj[prop].cellValue = null;
+      }
+      tempInputObj.value[title].push({
+        detail: obj[prop],
+        name: prop,
+        ref: [...ref, prop]
+      });
+      if (
+        obj[prop].type === 'varied_multiples' &&
+        !route?.query?.id
+      ) {
+        clearFields(obj[prop]);
+      }
+      if (
+        obj[prop].type === 'varied_multiples' &&
+        !!route?.query?.id &&
+        !!obj[prop].cellValue
+      ) {
+        sort_variedMultiple_alt(title, obj[prop].values, [
+          ...ref,
+          prop
+        ]);
+      }
+    }
+  }
+};
+
+const clearFields = (obj: any): void => {
+  if (hasProperty(obj, 'type')) {
+    if (obj.type === 'multiples' || obj.type === 'varied_multiples') {
+      const arr = obj.values;
+      for (let i = 0; i < arr.length; i++) {
+        clearFields(arr[i]);
+      }
+    } else if (obj.type === 'replace_nested') {
+      obj.values = [];
+    } else {
+      obj.cellValue = null;
+    }
+  } else {
+    for (const key in obj) {
+      clearFields(obj[key]);
+    }
+  }
+};
+
+const filterCurationData = (): void => {
+  titles.value = Object.keys(curate.value).filter((word) => word !== 'ID');
+  if (!isEditMode.value) clearFields(curate.value.ID);
+  const objArr: TempInputObj = {};
+  const errArr: VStepError = {};
+  for (let i = 0; i < titles.value.length; i++) {
+    objArr[titles.value[i]] = [];
+    errArr[titles.value[i]] = [];
+    vStepError.value = Object.assign({}, vStepError.value, errArr);
+    tempInputObj.value = Object.assign({}, tempInputObj.value, objArr);
+    filterData(titles.value[i], curate.value[titles.value[i]], []);
+  }
+};
+
+const fetchCurationData = async (): Promise<void> => {
+  loading.value = true;
+  error.value = false;
+  loadingText.value = 'Loading Curation Form';
+  const query = route.query;
+  store.commit('explorer/curation/clearReplaceNestedRef');
+  try {
+    const arg = isEditMode.value
+      ? { isNew: query.isNew, id: query.id }
+      : null;
+    if (
+      isEditMode.value &&
+      (!hasProperty(query, 'isNew') || !hasProperty(query, 'id'))
+    ) {
+      throw new Error('Incorrect Route Parameters');
+    }
+    await store.dispatch('explorer/curation/fetchCurationData', arg);
+    filterCurationData();
+  } catch (err: any) {
+    store.commit('setSnackbar', {
+      message: err?.message || 'Something went wrong',
+      action: () => fetchCurationData()
+    });
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const resetState = (): void => {
+  loading.value = true;
+  tempInputObj.value = {};
+  vStepError.value = {};
+  titles.value = [];
+  active.value = '';
+  verticalActive.value = 'v_1';
+  dialogBoxText.value = '';
+  dialogBoxAction.value = null;
+  store.commit('explorer/curation/setCurationFormData', {});
+  store.commit('explorer/curation/setCurationFormError', {});
+  store.commit('explorer/curation/clearReplaceNestedRef');
+};
+
+const openDialogBox = (msg: string | null = null, func: (() => void) | null = null): void => {
+  dialogBoxText.value = !msg ? 'Are you sure you want to submit?' : msg;
+  dialogBoxAction.value = !func ? () => submitForm() : func;
+  if (!dialogBoxActive.value) {
+    store.commit('setDialogBox');
+  }
+};
+
+const confirmAction = (): void => {
+  if (dialogBoxAction.value) {
+    dialogBoxAction.value();
+    closeDialogBox();
+  }
+};
+
+// Watch
+watch(searchKeyword, (newVal) => {
+  if (newVal) {
+    searchCurationForm();
+  }
+});
+
+// Lifecycle
+onMounted(async () => {
+  store.commit('explorer/curation/setDatasetId', null);
+  await fetchCurationData();
+  !isEditMode.value && (await store.dispatch('explorer/curation/createControlId'));
+});
+
+// Navigation Guard
+onBeforeRouteLeave((to, _, next) => {
+  let msg = '';
+  if (to.name === 'XmlVisualizer') return next();
+  if (error.value) return next();
+  if (to.path === '/explorer/curate/stepper') {
+    msg =
+      'Do you want to create a new curation? You would lose any unsaved changes!';
+    return openDialogBox(msg, () => {
+      next();
+      resetState();
+      fetchCurationData();
+    });
+  }
+  msg = 'Do you really want to leave? You would lose any unsaved changes!';
+  return openDialogBox(msg, () => {
+    next();
+    resetState();
+  });
+});
 </script>

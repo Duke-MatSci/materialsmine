@@ -1,0 +1,365 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+@prefix mmpq: <http://materialsmine.org/explorer/parameterized_query/>.
+
+materialsmine_templates:PQ09 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me <b>polymer nanocomposite samples</b> containing {?Filler1}, {?Filler2}, or {?Filler3} as a filler material, along with the associated matrix materials and the reported value of {?AttributeType}.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT ?Sample ?Filler ?Matrix ?AttributeValue ?UnitOfMeasure WHERE {
+  ?Sample a mm:PolymerNanocomposite ;
+          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
+                                 a [ rdfs:label ?Filler ] ] ,
+                               [ sio:hasRole [ a mm:Matrix ] ;
+                                 a [ rdfs:label ?Matrix] ] ;
+          sio:hasAttribute ?Attr .
+  ?Attr a ?AttributeType ;
+     sio:hasValue ?AttributeValue .
+  OPTIONAL { ?Attr sio:hasUnit ?UnitOfMeasure }
+  FILTER((?Filler = ?Filler1) || (?Filler = ?Filler2) || (?Filler = ?Filler3))
+}
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Filler1";
+    schema:option [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 1
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 2
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 3
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 4
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 5
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 6
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 7
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 8
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 9
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 10
+      ],
+      [
+        rdfs:label "reduced graphene oxide";
+        schema:value "Reduced graphene oxide";
+        schema:position 11
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 12
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 13
+      ],
+      [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 14
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Filler2";
+    schema:option [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 1
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 2
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 3
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 4
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 5
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 6
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 7
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 8
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 9
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 10
+      ],
+      [
+        rdfs:label "reduced graphene oxide";
+        schema:value "Reduced graphene oxide";
+        schema:position 11
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 12
+      ],
+      [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 13
+      ],
+      [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 14
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "Filler3";
+    schema:option [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 1
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 2
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 3
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 4
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 5
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 6
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 7
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 8
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 9
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 10
+      ],
+      [
+        rdfs:label "reduced graphene oxide";
+        schema:value "Reduced graphene oxide";
+        schema:position 11
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 12
+      ],
+      [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 13
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 14
+      ]
+  ],
+  [
+    a spl:Argument ;
+    sp:varName "AttributeType";
+    schema:option [
+        rdfs:label "glass transition temperature";
+        schema:identifier <http://materialsmine.org/ns/GlassTransitionTemperature>;
+        schema:position 1
+      ],
+      [
+        rdfs:label "elastic modulus";
+        schema:identifier <http://materialsmine.org/ns/TensileModulus>;
+        schema:position 2
+      ],
+      [
+        rdfs:label "crystallization temperature";
+        schema:identifier <http://materialsmine.org/ns/CrystallizationTemperature>;
+        schema:position 3
+      ],
+      [
+        rdfs:label "elongation at break";
+        schema:identifier <http://materialsmine.org/ns/ElongationAtBreak>;
+        schema:position 4
+      ],
+      [
+        rdfs:label "tensile stress at break";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtBreak>;
+        schema:position 5
+      ],
+      [
+        rdfs:label "electrical conductivity";
+        schema:identifier <http://materialsmine.org/ns/ElectricalConductivity>;
+        schema:position 6
+      ],
+      [
+        rdfs:label "thermal decomposition temperature";
+        schema:identifier <http://materialsmine.org/ns/ThermalDecompositionTemperature>;
+        schema:position 7
+      ],
+      [
+        rdfs:label "melting temperature";
+        schema:identifier <http://materialsmine.org/ns/MeltingTemperature>;
+        schema:position 8
+      ],
+      [
+        rdfs:label "tensile stress at yield";
+        schema:identifier <http://materialsmine.org/ns/TensileStressAtYield>;
+        schema:position 9
+      ],
+      [
+        rdfs:label "volume resistivity";
+        schema:identifier <http://materialsmine.org/ns/VolumeResistivity>;
+        schema:position 10
+      ],
+      [
+        rdfs:label "flexural modulus";
+        schema:identifier <http://materialsmine.org/ns/FlexuralModulus>;
+        schema:position 11
+      ],
+      [
+        rdfs:label "thermal conductivity";
+        schema:identifier <http://materialsmine.org/ns/ThermalConductivity>;
+        schema:position 12
+      ],
+      [
+        rdfs:label "elongation at yield";
+        schema:identifier <http://materialsmine.org/ns/ElongationAtYield>;
+        schema:position 13
+      ],
+      [
+        rdfs:label "flexural stress at break";
+        schema:identifier <http://materialsmine.org/ns/FlexuralStressAtBreak>;
+        schema:position 14
+      ],
+      [
+        rdfs:label "surface resistivity";
+        schema:identifier <http://materialsmine.org/ns/SurfaceResistivity>;
+        schema:position 15
+      ],
+      [
+        rdfs:label "dielectric constant";
+        schema:identifier <http://materialsmine.org/ns/DielectricConstant>;
+        schema:position 16
+      ],
+      [
+        rdfs:label "breakdown strength";
+        schema:identifier <http://materialsmine.org/ns/BreakdownStrength>;
+        schema:position 17
+      ],
+      [
+        rdfs:label "conductivity";
+        schema:identifier <http://materialsmine.org/ns/Conductivity>;
+        schema:position 18
+      ],
+      [
+        rdfs:label "halflife of crystallization";
+        schema:identifier <http://materialsmine.org/ns/HalflifeOfCrystallization>;
+        schema:position 19
+      ],
+      [
+        rdfs:label "loss modulus";
+        schema:identifier <http://materialsmine.org/ns/LossModulus>;
+        schema:position 20
+      ],
+      [
+        rdfs:label "storage modulus";
+        schema:identifier <http://materialsmine.org/ns/StorageModulus>;
+        schema:position 21
+      ]
+  ];
+  mmpq:replacement
+  [
+    sp:varName "AttributeValue";
+    mmpq:subVar "AttributeType" ;
+    mmpq:varFormat "${var}";
+  ].

@@ -53,35 +53,33 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'SDFCharacterize',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      job: {
-        aspectRatio: 'square',
-        getImageDimensions: true,
-        submitJobTitle: 'SDFCharacterize',
-        acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
-        useWebsocket: false
-      },
-      references: [
-        '10.1115/DETC201886154',
-        '10.1115/1.4036582',
-        '10.1073/pnas.1704711114'
-      ]
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const job = ref({
+  aspectRatio: 'square' as const,
+  getImageDimensions: true,
+  submitJobTitle: 'SDFCharacterize',
+  acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
+  useWebsocket: false
+});
+
+const references = ref<string[]>([
+  '10.1115/DETC201886154',
+  '10.1115/1.4036582',
+  '10.1073/pnas.1704711114'
+]);
 </script>

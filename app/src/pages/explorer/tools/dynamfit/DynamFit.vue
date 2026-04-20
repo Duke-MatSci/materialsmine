@@ -9,14 +9,14 @@
       aria-label="dynamfit-main"
       class="u--margin-posmd md-layout md-alignment-top-space-around u_relative"
     >
-      <div
+      <!-- <div
         class="viz-u-postion__abs header_404_nav"
         style="top: -3rem; right: 2rem; z-index: 1000"
       >
         <a class="btn-text" href="#" v-on:click="toggleDialogBox"
           >Toggle C1/C2</a
         >
-      </div>
+      </div> -->
       <!-- aside  -->
       <aside
         aria-label="dynamfit-setting"
@@ -47,8 +47,8 @@
         </div>
       </template>
       <template v-slot:actions>
-        <md-button @click.native.prevent="toggleDialogBox"> Submit </md-button>
-        <md-button @click.native.prevent="toggleDialogBox">Close</md-button>
+        <md-button @click.prevent="toggleDialogBox"> Submit </md-button>
+        <md-button @click.prevent="toggleDialogBox">Close</md-button>
       </template>
       <!-- <template v-slot:actions>
         <button
@@ -62,36 +62,35 @@
   </article>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useStore } from 'vuex';
 import ChartSetting from '@/components/explorer/dynamfit/ChartSetting.vue';
 import ChartVisualizer from '@/components/explorer/dynamfit/ChartVisualizer.vue';
 import Dialog from '@/components/Dialog.vue';
-import { mapMutations, mapGetters } from 'vuex';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'DynamFit',
-  components: {
-    ChartSetting,
-    ChartVisualizer,
-    dialogbox: Dialog
-  },
-  data() {
-    return {
-      selectedProp: 'select',
-      dialog: {
-        title: 'Select'
-      }
-    };
-  },
-  computed: {
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox'
-    })
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    })
-  }
+});
+
+// Components
+const dialogbox = Dialog;
+
+// Store
+const store = useStore();
+
+// Reactive state
+const selectedProp = ref('select');
+const dialog = ref({
+  title: 'Select',
+});
+
+// Computed properties
+const dialogBoxActive = computed(() => store.getters.dialogBox);
+
+// Methods
+const toggleDialogBox = (): void => {
+  store.commit('setDialogBox');
 };
 </script>

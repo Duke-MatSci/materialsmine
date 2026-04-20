@@ -1,37 +1,45 @@
+const cluster = require('cluster');
 const mongoose = require('mongoose');
 
-module.exports = {
-  onExit: async (error, log) => {
-    try {
-      if (error.reason) {
-        log.info('*** Closing Application ***');
-        log.error(
-          `Unhandled Rejection at:
-          ${stringifyError(error.promise)},
-          reason:
-          ${stringifyError(error.reason)}`
-        );
-      } else {
-        log.info('*** Closing Application ***');
-        log.error(stringifyError(error));
-      }
+async function onExit (rawError, log) {
+  const error = rawError ?? {};
 
-      // Disconnect from database
+  try {
+    log.info('*** Closing Application ***');
+
+    if (error.reason) {
+      log.error(
+        `Unhandled Rejection at:\n${stringifyError(
+          error.promise
+        )}\nreason:\n${stringifyError(error.reason)}`
+      );
+    } else if (error.signal) {
+      log.error(`Received ${error.signal}, shutting down.`);
+    } else if (Object.keys(error).length) {
+      log.error(stringifyError(error));
+    } else {
+      log.error(error);
+    }
+
+    if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
       log.info('Disconnected from database');
-
-      // Forcefully shut down after 5 seconds
-      return setTimeout(() => {
-        log.error('Forcefully shutting down');
-        process.exit(1);
-      }, 5000);
-    } catch (error) {
-      log.error(stringifyError(error));
-      process.exit(1);
     }
-  },
-  stringifyError
-};
+  } catch (disconnectError) {
+    log.error(stringifyError(disconnectError));
+  } finally {
+    if (cluster.isMaster) {
+      cluster.disconnect();
+    }
+
+    setTimeout(() => {
+      log.error('Forcefully shutting down');
+      process.exit(1);
+    }, 5000).unref();
+
+    process.exit(1);
+  }
+}
 
 function stringifyError (obj) {
   try {
@@ -53,3 +61,5 @@ function stringifyError (obj) {
     return String(obj);
   }
 }
+
+module.exports = { onExit, stringifyError };

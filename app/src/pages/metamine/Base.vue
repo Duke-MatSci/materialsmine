@@ -111,7 +111,7 @@
         </div>
       </div>
     </md-app-toolbar>
-    <md-app-drawer :md-active.sync="toggleMenuVisibility">
+    <md-app-drawer v-model:md-active="toggleMenuVisibility">
       <drawers />
     </md-app-drawer>
     <md-app-content class="u_height--max">
@@ -120,29 +120,26 @@
   </md-app>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-import Drawers from '@/components/Drawer.vue'
-export default {
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import { useStore } from 'vuex';
+import Drawers from '@/components/Drawer.vue';
+
+defineOptions({
   name: 'MetamineBase',
-  components: {
-    Drawers
-  },
-  computed: {
-    ...mapGetters({
-      isAuth: 'auth/isAuthenticated',
-      displayName: 'auth/displayName'
-    })
-  },
-  data () {
-    return {
-      toggleMenuVisibility: false
-    }
-  },
-  methods: {
-    toggleMenu () {
-      this.toggleMenuVisibility = !this.toggleMenuVisibility
-    }
-  }
-}
+});
+
+const store = useStore();
+
+// Data
+const toggleMenuVisibility = ref<boolean>(false);
+
+// Computed
+const isAuth = computed<boolean>(() => store.getters['auth/isAuthenticated']);
+const displayName = computed<string>(() => store.getters['auth/displayName']);
+
+// Methods
+const toggleMenu = (): void => {
+  toggleMenuVisibility.value = !toggleMenuVisibility.value;
+};
 </script>

@@ -12,7 +12,7 @@
         <dialog-box disableClose :active="dialogBoxActiveKnn">
           <template v-slot:content> <NeighborPanel /> </template>
           <template v-slot:actions>
-            <md-button @click.native.prevent="closeDialogBox">Close</md-button>
+            <md-button @click.prevent="closeDialogBox">Close</md-button>
           </template>
         </dialog-box>
         <button
@@ -24,7 +24,7 @@
         <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
           <template v-slot:content> <SaveDataPanel /> </template>
           <template v-slot:actions>
-            <md-button @click.native.prevent="toggleDialogBoxSaveData">
+            <md-button @click.prevent="toggleDialogBoxSaveData">
               Close
             </md-button>
           </template>
@@ -60,13 +60,16 @@
         screen devices.</template
       >
       <template v-slot:actions>
-        <md-button @click.native.prevent="goHome">Go Home</md-button>
+        <md-button @click.prevent="goHome">Go Home</md-button>
       </template>
     </dialog-box>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import Scatter from '@/components/metamine/visualizationNU/scatter.vue'
 import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
 import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
@@ -79,75 +82,62 @@ import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.v
 import Dialog from '@/components/Dialog.vue'
 import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
 import DataInfo from '@/components/metamine/visualizationNU/DataInfo.vue'
-import { mapState } from 'vuex'
 
-export default {
-  name: 'ScatterPage',
-  components: {
-    Scatter,
-    DataSelector,
-    RangeSelector,
-    Youngs,
-    Poisson,
-    Structure,
-    MaterialInformation,
-    NeighborPanel,
-    SaveDataPanel,
-    dialogBox: Dialog,
-    VisualizationLayout,
-    DataInfo
+const router = useRouter()
+const store = useStore()
+
+const dialogBoxActiveSaveData = ref<boolean>(false)
+const reset = ref<boolean>(false)
+const windowWidth = ref<number>(window.innerWidth)
+const link = ref({
+  to: '/mm/metamaterial_visualization_nu',
+  text: 'Visualize In Pairwise Plot'
+})
+
+const dialogBoxActiveKnn = computed(() => {
+  return store.state.metamineNU.dialogBoxActiveKnn
+})
+
+const enableKnn = computed({
+  get() {
+    return store.state.metamineNU.enableKnn
   },
-  data () {
-    return {
-      dialogBoxActiveSaveData: false,
-      reset: false,
-      windowWidth: window.innerWidth,
-      link: {
-        to: '/mm/metamaterial_visualization_nu',
-        text: 'Visualize In Pairwise Plot'
-      }
-    }
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn
-    }),
-    enableKnn: {
-      get () {
-        return this.$store.state.metamineNU.enableKnn
-      },
-      set (value) {
-        this.$store.commit('metamineNU/updateEnableKnn', value)
-      }
-    },
-    isMiniDevice () {
-      return this.windowWidth <= 650
-    }
-  },
-  mounted () {
-    this.$nextTick(() => {
-      window.addEventListener('resize', this.onResize)
-    })
-  },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.onResize)
-  },
-  methods: {
-    closeDialogBox () {
-      this.$store.commit('metamineNU/setDialogBoxActiveKnn', false)
-    },
-    toggleDialogBoxSaveData () {
-      this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData
-    },
-    handleReset () {
-      this.$store.commit('metamineNU/setReset', true)
-    },
-    goHome () {
-      this.$router.push('/mm')
-    },
-    onResize () {
-      this.windowWidth = window.innerWidth
-    }
+  set(value: boolean) {
+    store.commit('metamineNU/updateEnableKnn', value)
   }
+})
+
+const isMiniDevice = computed(() => {
+  return windowWidth.value <= 650
+})
+
+const closeDialogBox = () => {
+  store.commit('metamineNU/setDialogBoxActiveKnn', false)
 }
+
+const toggleDialogBoxSaveData = () => {
+  dialogBoxActiveSaveData.value = !dialogBoxActiveSaveData.value
+}
+
+const handleReset = () => {
+  store.commit('metamineNU/setReset', true)
+}
+
+const goHome = () => {
+  router.push('/mm')
+}
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  nextTick(() => {
+    window.addEventListener('resize', onResize)
+  })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
 </script>

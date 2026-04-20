@@ -23,12 +23,7 @@
                 v-if="!!Object.keys(xmlBulkResponse.bulkErrors).length"
               >
                 <div class="u_width--max md-content utility-roverflow">
-                  <h2
-                    class="md-title u--color-black"
-                    style="margin-bottom: 0.4rem"
-                  >
-                    Errors
-                  </h2>
+                  <h2 class="md-title u--color-black" style="margin-bottom: 0.4rem">Errors</h2>
                 </div>
 
                 <md-list class="md-dense md-double-line">
@@ -38,7 +33,7 @@
                     :key="index + '_err'"
                   >
                     <div class="u--font-emph-l" md-elevation="0">
-                      <a :href="optionalChaining(() => file.filename)" download>
+                      <a :href="file.filename" download>
                         <span class="md-body-2 u--color-black">{{
                           file.filename.split('/').pop()
                         }}</span>
@@ -50,21 +45,15 @@
                     <div v-if="typeof file.errors === 'object'">
                       <li
                         class="md-list-item md-inset"
-                        v-for="(error, index) in file.errors"
-                        :key="`${file}_${index}`"
+                        v-for="(error, errorIndex) in file.errors"
+                        :key="`${file}_${errorIndex}`"
                       >
-                        <div
-                          class="md-list-item-link md-list-item-container md-button-clean"
-                        >
+                        <div class="md-list-item-link md-list-item-container md-button-clean">
                           <div
                             class="md-list-item-content md-list-item-content-reduce u--layout-flex-justify-fs md-ripple"
                           >
-                            <div class="md-body-1 u--color-grey-sec">
-                              - {{ index }}: &nbsp;
-                            </div>
-                            <div class="md-body-1 u--color-error">
-                              {{ error }}
-                            </div>
+                            <div class="md-body-1 u--color-grey-sec">- {{ errorIndex }}: &nbsp;</div>
+                            <div class="md-body-1 u--color-error">{{ error }}</div>
                           </div>
                         </div>
                       </li>
@@ -72,15 +61,11 @@
 
                     <div v-else>
                       <li class="md-list-item md-inset">
-                        <div
-                          class="md-list-item-link md-list-item-container md-button-clean"
-                        >
+                        <div class="md-list-item-link md-list-item-container md-button-clean">
                           <div
                             class="md-list-item-content md-list-item-content-reduce u--layout-flex-justify-fs md-ripple"
                           >
-                            <span class="md-body-1 u--color-grey-sec"
-                              >- {{ file.errors }}</span
-                            >
+                            <span class="md-body-1 u--color-grey-sec">- {{ file.errors }}</span>
                           </div>
                         </div>
                       </li>
@@ -91,10 +76,7 @@
             </div>
             <div v-if="!!xmlBulkResponse.bulkCurations">
               <div class="u_width--max md-content utility-roverflow">
-                <h2
-                  class="md-title u--color-black"
-                  style="margin-bottom: 1.4rem"
-                >
+                <h2 class="md-title u--color-black" style="margin-bottom: 1.4rem">
                   Successful Curations
                 </h2>
               </div>
@@ -115,7 +97,7 @@
                     :to="{
                       name: 'XmlVisualizer',
                       params: { id: xml.sampleID },
-                      query: { isNewCuration: 'true' }
+                      query: { isNewCuration: 'true' },
                     }"
                   >
                     <md-card-media-cover md-solid>
@@ -133,8 +115,7 @@
                         </div>
                       </div>
                       <md-card-media md-ratio="4:3">
-                        <md-icon
-                          class="explorer_page-nav-card_icon u_margin-top-small"
+                        <md-icon class="explorer_page-nav-card_icon u_margin-top-small"
                           >code_off</md-icon
                         >
                       </md-card-media>
@@ -142,9 +123,7 @@
                       <md-card-area class="u_gridbg">
                         <md-card-header class="u_show_hide">
                           <span class="md-subheading">
-                            <strong>{{
-                              optionalChaining(() => xml.sampleID)
-                            }}</strong>
+                            <strong>{{ xml.sampleID }}</strong>
                           </span>
                           <span class="md-body-1">Click to view</span>
                         </md-card-header>
@@ -158,26 +137,15 @@
         </div>
         <div v-else>
           <h2 class="visualize_header-h1">Upload samples in bulk</h2>
-          <md-steppers
-            md-vertical
-            md-linear
-            :md-active-step.sync="active"
-            class="form__stepper"
-          >
-            <md-step
-              id="first"
-              md-label="Download blank template"
-              :md-done.sync="first"
-            >
+          <md-steppers md-vertical md-linear v-model:md-active-step="active" class="form__stepper">
+            <md-step id="first" md-label="Download blank template" v-model:md-done="first">
               <div class="utility-line-height-sm">
-                <a href="/master_template.xlsx" download> Click here</a> to
-                download the template spreadsheet, and fill it out with your
-                data.
+                <a href="/master_template.xlsx" download> Click here</a> to download the template
+                spreadsheet, and fill it out with your data.
               </div>
 
               <div class="utility-line-height-sm">
-                Skip this step if you have already downloaded the template
-                spreadsheet.
+                Skip this step if you have already downloaded the template spreadsheet.
               </div>
               <md-button
                 type="submit"
@@ -187,18 +155,14 @@
                 Next
               </md-button>
             </md-step>
-            <md-step
-              id="second"
-              md-label="Select file for upload"
-              :md-done.sync="second"
-            >
+            <md-step id="second" md-label="Select file for upload" v-model:md-done="second">
               <div style="margin: 2rem 2rem 0; font-weight: 600">
-                The template spreadsheet for each sample in the .zip file must
-                contain 'master_template.xlsx' in its name.
+                The template spreadsheet for each sample in the .zip file must contain
+                'master_template.xlsx' in its name.
               </div>
               <div style="margin: 0 2rem">
-                -> Title, Author, Citation Type and Publication Year, are
-                required entry in the master template.
+                -> Title, Author, Citation Type and Publication Year, are required entry in the
+                master template.
                 <br />
                 -> Only one .zip file can be processed at a time.
               </div>
@@ -225,9 +189,7 @@
               </DropZone>
 
               <div class="md-layout" v-show="spreadsheetFiles.length">
-                <md-list
-                  class="md-layout utility-transparentbg md-theme-default"
-                >
+                <md-list class="md-layout utility-transparentbg md-theme-default">
                   <FilePreview
                     v-for="file in spreadsheetFiles"
                     :key="file.id"
@@ -238,10 +200,7 @@
                   />
                 </md-list>
               </div>
-              <div
-                style="color: red; margin: 2rem 2rem 0; font-weight: 600"
-                v-if="!!invalidFile"
-              >
+              <div style="color: red; margin: 2rem 2rem 0; font-weight: 600" v-if="!!invalidFile">
                 {{ invalidFile }}
               </div>
               <div class="md-layout">
@@ -262,11 +221,7 @@
                 </md-button>
               </div>
             </md-step>
-            <md-step
-              id="third"
-              md-label="Confirm and submit"
-              :md-done.sync="third"
-            >
+            <md-step id="third" md-label="Confirm and submit" v-model:md-done="third">
               <h3>Selected zip file:</h3>
               <ul style="margin-left: 1rem">
                 <div v-for="(ss, index) in spreadsheetFiles" :key="index">
@@ -274,8 +229,8 @@
                 </div>
               </ul>
               <div style="margin: 2rem 0 2rem 0">
-                Please verify that every filled template spreadsheet in the .zip
-                file contains 'master_template' in its name.
+                Please verify that every filled template spreadsheet in the .zip file contains
+                'master_template' in its name.
               </div>
 
               <div class="md-layout">
@@ -307,149 +262,181 @@
   </div>
 </template>
 
-<script>
-import DropZone from '@/components/curate/FileDrop.vue'
-import FilePreview from '@/components/curate/FilePreview.vue'
-import LoginRequired from '@/components/LoginRequired.vue'
-import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import Spinner from '@/components/Spinner.vue'
-import useFileList from '@/modules/file-list'
-import {
-  VERIFY_AUTH_QUERY,
-  USER_DATASET_IDS_QUERY
-} from '@/modules/gql/dataset-gql'
-import { mapGetters, mapMutations, mapActions } from 'vuex'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useStore } from 'vuex';
+import { useQuery } from '@vue/apollo-composable';
+import DropZone from '@/components/curate/FileDrop.vue';
+import FilePreview from '@/components/curate/FilePreview.vue';
+import LoginRequired from '@/components/LoginRequired.vue';
+import CurateNavBar from '@/components/curate/CurateNavBar.vue';
+import Spinner from '@/components/Spinner.vue';
+import useFileList from '@/modules/file-list';
+import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY } from '@/modules/gql/dataset-gql';
 
-// Create separate file objects for spreadsheet vs supplementary files
-const spreadsheetFn = useFileList()
-
-export default {
+// Component name for debugging
+defineOptions({
   name: 'SpreadsheetBulk',
-  mixins: [optionalChainingUtil],
-  components: {
-    DropZone,
-    FilePreview,
-    CurateNavBar,
-    Spinner,
-    LoginReq: LoginRequired
-  },
-  data () {
-    return {
-      auth: true,
-      verifyUser: null,
-      invalidFile: null,
-      loading: true,
-      submitted: false,
-      selectedDataset: {
-        label: '',
-        id: null
-      },
-      spreadsheetFiles: spreadsheetFn.files,
-      active: 'first',
-      first: false,
-      second: false,
-      third: false,
-      fourth: false,
-      navRoutes: [
-        {
-          label: 'Curate',
-          path: '/explorer/curate'
-        },
-        {
-          label: 'Spreadsheet',
-          path: '/explorer/curate/spreadsheet'
-        }
-      ]
-    }
-  },
-  computed: {
-    ...mapGetters({
-      userId: 'auth/userId',
-      isAuthenticated: 'auth/isAuthenticated',
-      token: 'auth/token',
-      xmlBulkResponse: 'explorer/curation/getXmlBulkResponse'
-    })
-  },
-  methods: {
-    addSpreadsheet: spreadsheetFn.addFiles,
-    removeSpreadsheet: spreadsheetFn.removeFile,
-    modStatSpreadsheet: spreadsheetFn.modifyStatus,
-    clearAllFiles: spreadsheetFn.clearAllFiles,
-    ...mapActions({
-      submitBulkXml: 'explorer/curation/submitBulkXml'
-    }),
-    ...mapMutations({
-      clearSnackbar: 'resetSnackbar',
-      setDatasetId: 'explorer/curation/setDatasetId'
-    }),
-    navBack () {
-      this.$router.back()
-    },
-    // Format files for submission
-    processFiles () {
-      return this.spreadsheetFiles
-        .filter((file) => file.status === 'incomplete')
-        .map(({ file }) => file)
-    },
-    onInputChange (e) {
-      this.invalidFile = null
-      const reg = /\.(zip)$/
-      if (!reg.test(e.target.files[0].name)) {
-        this.invalidFile = 'Only .zip files are accepted'
-      } else if (this.spreadsheetFiles.length) {
-        this.invalidFile =
-          'Only one .zip file can be uploaded at a time. Your previously selected file has been removed.'
-        this.clearAllFiles()
-        this.addSpreadsheet(e.target.files)
-      } else this.addSpreadsheet(e.target.files)
+});
 
-      // reset so that selecting the same file again will still cause it to fire this change
-      e.target.value = null
-    },
-    goToStep (id, index) {
-      this.clearSnackbar()
-      this[id] = true
-      if (index) {
-        this.active = index
-      }
-    },
-    async submitFiles () {
-      this.submitted = true
-      this.loading = true
-      const files = this.processFiles()
-      try {
-        await this.submitBulkXml(files)
-        this.spreadsheetFiles.forEach((file, index) =>
-          this.modStatSpreadsheet(index, 'complete')
-        )
-        this.loading = false
-        this.setDatasetId('')
-        if (!this.$route?.query?.complete) { this.$router.push({ query: { complete: 'true' } }) }
-      } catch (error) {
-        this.loading = false
-        this.setDatasetId('')
-        this.$store.commit('setSnackbar', {
-          message: error
-        })
-      }
-    }
-  },
-  mounted () {
-    if (!!this.$route?.query?.complete && !!this.xmlBulkResponse) {
-      this.submitted = true
-      this.loading = false
-    }
-  },
-  apollo: {
-    verifyUser: {
-      query: VERIFY_AUTH_QUERY,
-      fetchPolicy: 'cache-and-network'
-    },
-    getUserDataset: {
-      query: USER_DATASET_IDS_QUERY,
-      fetchPolicy: 'cache-and-network'
-    }
-  }
+// Router and store
+const router = useRouter();
+const route = useRoute();
+const store = useStore();
+
+// Create file list composable
+const spreadsheetFn = useFileList();
+
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
 }
+
+interface SelectedDataset {
+  label: string;
+  id: string | null;
+}
+
+interface BulkError {
+  filename: string;
+  errors: Record<string, string> | string;
+}
+
+interface BulkCuration {
+  sampleID: string;
+  status: string;
+  isApproved: boolean;
+}
+
+interface XmlBulkResponse {
+  bulkErrors?: Record<string, BulkError>;
+  bulkCurations?: Record<string, BulkCuration>;
+}
+
+// Reactive data
+const auth = ref(true);
+const verifyUser = ref(null);
+const invalidFile = ref<string | null>(null);
+const loading = ref(true);
+const submitted = ref(false);
+const selectedDataset = ref<SelectedDataset>({
+  label: '',
+  id: null,
+});
+const spreadsheetFiles = spreadsheetFn.files;
+const active = ref('first');
+const first = ref(false);
+const second = ref(false);
+const third = ref(false);
+const fourth = ref(false);
+const navRoutes = ref<NavRoute[]>([
+  {
+    label: 'Curate',
+    path: '/explorer/curate',
+  },
+  {
+    label: 'Spreadsheet',
+    path: '/explorer/curate/spreadsheet',
+  },
+]);
+
+// Computed
+const userId = computed(() => store.getters['auth/userId']);
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
+const token = computed(() => store.getters['auth/token']);
+const xmlBulkResponse = computed<XmlBulkResponse | null>(
+  () => store.getters['explorer/curation/getXmlBulkResponse']
+);
+
+// GraphQL queries
+useQuery(VERIFY_AUTH_QUERY, {}, { fetchPolicy: 'cache-and-network' });
+useQuery(USER_DATASET_IDS_QUERY, {}, { fetchPolicy: 'cache-and-network' });
+
+// Methods
+const addSpreadsheet = (files: File[]) => spreadsheetFn.addFiles(files);
+const removeSpreadsheet = (file: any) => spreadsheetFn.removeFile(file);
+const modStatSpreadsheet = spreadsheetFn.modifyStatus;
+const clearAllFiles = spreadsheetFn.clearAllFiles;
+
+const clearSnackbar = () => {
+  store.commit('resetSnackbar');
+};
+
+const setDatasetId = (id: string) => {
+  store.commit('explorer/curation/setDatasetId', id);
+};
+
+const navBack = () => {
+  router.back();
+};
+
+// Format files for submission
+const processFiles = (): File[] => {
+  return spreadsheetFiles.value
+    .filter((file) => file.status === 'incomplete')
+    .map(({ file }) => file);
+};
+
+const onInputChange = (e: Event) => {
+  invalidFile.value = null;
+  const target = e.target as HTMLInputElement;
+  if (!target.files || !target.files[0]) return;
+
+  const reg = /\.(zip)$/;
+  if (!reg.test(target.files[0].name)) {
+    invalidFile.value = 'Only .zip files are accepted';
+  } else if (spreadsheetFiles.value.length) {
+    invalidFile.value =
+      'Only one .zip file can be uploaded at a time. Your previously selected file has been removed.';
+    clearAllFiles();
+    addSpreadsheet(Array.from(target.files));
+  } else {
+    addSpreadsheet(Array.from(target.files));
+  }
+
+  // reset so that selecting the same file again will still cause it to fire this change
+  target.value = '';
+};
+
+const goToStep = (id: string, index?: string) => {
+  clearSnackbar();
+  if (id === 'first') first.value = true;
+  if (id === 'second') second.value = true;
+  if (id === 'third') third.value = true;
+  if (id === 'fourth') fourth.value = true;
+  if (index) {
+    active.value = index;
+  }
+};
+
+const submitFiles = async () => {
+  submitted.value = true;
+  loading.value = true;
+  const files = processFiles();
+  try {
+    await store.dispatch('explorer/curation/submitBulkXml', files);
+    spreadsheetFiles.value.forEach((file, index) => modStatSpreadsheet(index, 'complete'));
+    loading.value = false;
+    setDatasetId('');
+    if (!route?.query?.complete) {
+      router.push({ query: { complete: 'true' } });
+    }
+  } catch (error: any) {
+    loading.value = false;
+    setDatasetId('');
+    store.commit('setSnackbar', {
+      message: error,
+    });
+  }
+};
+
+// Lifecycle
+onMounted(() => {
+  if (!!route?.query?.complete && !!xmlBulkResponse.value) {
+    submitted.value = true;
+    loading.value = false;
+  }
+});
 </script>

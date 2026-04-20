@@ -61,34 +61,32 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'DescriptorReconstruct',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      job: {
-        aspectRatio: 'free',
-        getImageDimensions: true,
-        submitJobTitle: 'DescriptorReconstruct',
-        acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
-        useWebsocket: false
-      },
-      references: [
-        '10.1115/1.4026649',
-        '10.1016/j.commatsci.2013.12.046'
-      ]
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const job = ref({
+  aspectRatio: 'free' as const,
+  getImageDimensions: true,
+  submitJobTitle: 'DescriptorReconstruct',
+  acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
+  useWebsocket: false
+});
+
+const references = ref<string[]>([
+  '10.1115/1.4026649',
+  '10.1016/j.commatsci.2013.12.046'
+]);
 </script>

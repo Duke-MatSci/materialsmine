@@ -16,22 +16,19 @@
       </div>
     </div>
   </div>
-  </template>
-<script>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useStore } from 'vuex'
 import Spinner from '@/components/Spinner'
-export default {
-  name: 'ManageCharts',
-  components: {
-    Spinner
-  },
-  data () {
-    return {
-      loading: false,
-      loadingMessage: ''
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'Manage Chart' })
-  }
-}
+
+const store = useStore()
+
+const loading = ref(false)
+const loadingMessage = ref('')
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: '', name: 'Manage Chart' })
+})
 </script>

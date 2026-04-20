@@ -1,0 +1,102 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sp: <http://spinrdf.org/sp> .
+@prefix spin: <http://spinrdf.org/spin#> .
+@prefix spl: <http://spinrdf.org/spin#> .
+@prefix whyis: <http://vocab.rpi.edu/whyis/> .
+@prefix materialsmine_templates: <http://materialsmine.org/query/> .
+
+materialsmine_templates:PQ06 a whyis:SparqlTemplate;
+  spin:labelTemplate "Show me distinct <b>matrix materials</b> containing {?Filler} as a filler material, ranked by the count of research articles linked to that material combination, as well as a list of the DOIs of the respective research articles.";
+  sp:text """
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX mm: <http://materialsmine.org/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dct: <http://purl.org/dc/terms/>
+SELECT DISTINCT ?Matrix (COUNT(DISTINCT ?doi) AS ?DOI_Count) (GROUP_CONCAT(DISTINCT ?doi ; SEPARATOR=", ") AS ?ListOfDOIs) WHERE {
+  ?Sample a mm:PolymerNanocomposite ;
+          sio:hasComponentPart [ sio:hasRole [ a mm:Filler ] ;
+                                 a [ rdfs:label ?Filler ] ] ,
+                               [ sio:hasRole [ a mm:Matrix ] ;
+                                 a [ rdfs:label ?Matrix ] ] .
+  ?doi a dct:BibliographicResource ;
+       sio:hasPart ?Sample .
+  FILTER(!REGEX(STR(?doi), "unpublished"))
+}
+GROUP BY ?Matrix
+ORDER BY DESC (?DOI_Count)
+""";
+  spin:constraint [
+    a spl:Argument ;
+    sp:varName "Filler";
+    schema:option [
+        rdfs:label "silica";
+        schema:value "Silicon dioxide";
+        schema:position 1
+      ],
+      [
+        rdfs:label "multi-wall CNTs";
+        schema:value "Multi-wall carbon nanotubes";
+        schema:position 2
+      ],
+      [
+        rdfs:label "barium titanate";
+        schema:value "Barium titanate";
+        schema:position 3
+      ],
+      [
+        rdfs:label "titania";
+        schema:value "Titanium dioxide";
+        schema:position 4
+      ],
+      [
+        rdfs:label "graphene";
+        schema:value "Graphene";
+        schema:position 5
+      ],
+      [
+        rdfs:label "carbon black";
+        schema:value "Carbon black";
+        schema:position 6
+      ],
+      [
+        rdfs:label "alumina";
+        schema:value "Aluminium oxide";
+        schema:position 7
+      ],
+      [
+        rdfs:label "graphite";
+        schema:value "Graphite";
+        schema:position 8
+      ],
+      [
+        rdfs:label "silver";
+        schema:value "Silver";
+        schema:position 9
+      ],
+      [
+        rdfs:label "graphene oxide";
+        schema:value "Graphene oxide";
+        schema:position 10
+      ],
+      [
+        rdfs:label "zinc oxide";
+        schema:value "Zinc oxide";
+        schema:position 11
+      ],
+      [
+        rdfs:label "montmorillonite";
+        schema:value "Montmorillonite";
+        schema:position 12
+      ],
+      [
+        rdfs:label "reduced graphene oxide";
+        schema:value "Reduced graphene oxide";
+        schema:position 13
+      ],
+      [
+        rdfs:label "single-wall CNTs";
+        schema:value "Single-wall carbon nanotubes";
+        schema:position 14
+      ]
+  ].

@@ -25,19 +25,18 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'Polymerizer',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
 </script>

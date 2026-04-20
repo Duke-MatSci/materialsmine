@@ -17,8 +17,8 @@
       Intelligent Characterization
     </template>
     <template #content>
-      The intelligent characterization tool selects the most suitable characterization method between the “physical
-      descriptors” and the “spectral density function (SDF)” approaches based on analyzing the user uploaded image(s).
+      The intelligent characterization tool selects the most suitable characterization method between the "physical
+      descriptors" and the "spectral density function (SDF)" approaches based on analyzing the user uploaded image(s).
       Results generated can be easily passed to the NanoMine Database.
     </template>
     <!-- tool page-specific slots-->
@@ -72,35 +72,32 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-import { VueMathjax } from 'vue-mathjax'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+import { VueMathjax } from 'vue-mathjax';
+
+defineOptions({
   name: 'IntelligentCharacterize',
-  components: {
-    ToolTemplate: MCRToolTemplate,
-    'vue-mathjax': VueMathjax
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      references: [
-        '10.1016/j.pmatsci.2018.01.005'
-      ],
-      job: {
-        aspectRatio: 'free',
-        getImageDimensions: true,
-        submitJobTitle: 'IntelligentCharacterize',
-        acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
-        useWebsocket: false
-      }
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const references = ref<string[]>([
+  '10.1016/j.pmatsci.2018.01.005'
+]);
+
+const job = ref({
+  aspectRatio: 'free' as const,
+  getImageDimensions: true,
+  submitJobTitle: 'IntelligentCharacterize',
+  acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
+  useWebsocket: false
+});
 </script>

@@ -2,10 +2,11 @@
   <div ref="scatterPlot"></div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useStore } from 'vuex'
 import * as d3 from 'd3'
-import { mapState } from 'vuex'
-import { nnColorAssignment } from '@/components/metamine/visualizationNU/constants.js'
+import { nnColorAssignment } from '@/components/metamine/visualizationNU/constants'
 
 const circleOriginalSize = 5
 const circleFocusSize = 8
@@ -29,452 +30,459 @@ const SIDE_BAR_SIZE = 100
 const WIDTH = vw * wFactor - MARGIN.LEFT - MARGIN.RIGHT - SIDE_BAR_SIZE
 const HEIGHT = vw * wFactor - 100 - MARGIN.TOP - MARGIN.BOTTOM - SIDE_BAR_SIZE
 
-function expo (x, f) {
+interface ChartData {
+  chart: boolean
+  svg?: any
+  xLabel?: any
+  yLabel?: any
+  xAxisGroup?: any
+  yAxisGroup?: any
+  xScaleForBrush?: any
+  yScaleForBrush?: any
+}
+
+const store = useStore()
+const scatterPlot = ref<HTMLElement | null>(null)
+
+const chartData = ref<ChartData>({
+  chart: false,
+  xScaleForBrush: null,
+  yScaleForBrush: null
+})
+
+const csvData = computed(() => store.state.metamineNU.datasets)
+const activeData = computed(() => store.state.metamineNU.activeData)
+const dataPoint = computed(() => store.state.metamineNU.dataPoint)
+const fetchedNames = computed(() => store.state.metamineNU.fetchedNames)
+const selectedData = computed(() => store.state.metamineNU.selectedData)
+const query1 = computed(() => store.state.metamineNU.query1)
+const query2 = computed(() => store.state.metamineNU.query2)
+const reset = computed(() => store.state.metamineNU.reset)
+const enableKnn = computed(() => store.state.metamineNU.enableKnn)
+
+function expo(x: number, f: number): string | number {
   if (x < 1000 && x > -1000) return x
   return Number(x).toExponential(f)
 }
 
-function isBrushed (brushCoords, cx, cy) {
-  var x0 = brushCoords[0][0]
-  var x1 = brushCoords[1][0]
-  var y0 = brushCoords[0][1]
-  var y1 = brushCoords[1][1]
-  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1 // This return TRUE or FALSE depending on if the points is in the selected area
+function isBrushed(brushCoords: [[number, number], [number, number]], cx: number, cy: number): boolean {
+  const x0 = brushCoords[0][0]
+  const x1 = brushCoords[1][0]
+  const y0 = brushCoords[0][1]
+  const y1 = brushCoords[1][1]
+  return x0 <= cx && cx <= x1 && y0 <= cy && cy <= y1
 }
 
-export default {
-  name: 'scatter-plot',
-  mounted: async function () {
-    this.$store.commit('metamineNU/setPage', 'scatter', { root: true })
-    // Create svg
-    this.createSvg({ container: this.container })
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      csvData: (state) => state.datasets,
-      activeData: (state) => state.activeData,
-      dataPoint: (state) => state.dataPoint,
-      fetchedNames: (state) => state.fetchedNames,
-      selectedData: (state) => state.selectedData,
-      query1: (state) => state.query1,
-      query2: (state) => state.query2,
-      reset: (state) => state.reset,
-      enableKnn: (state) => state.enableKnn
-    }),
-    container () {
-      return this.$refs.scatterPlot
-    }
-  },
-  data () {
-    return {
-      chart: false
-    }
-  },
-  watch: {
-    csvData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container
-        })
-      }
-    },
-    activeData: {
-      deep: true,
-      handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container
+function createSvg({ container }: { container: HTMLElement }) {
+  chartData.value.svg = d3
+    .select(container)
+    .append('svg')
+    .attr('width', WIDTH + MARGIN.LEFT + MARGIN.RIGHT)
+    .attr('height', HEIGHT + MARGIN.TOP + MARGIN.BOTTOM)
+    .attr('viewBox', [
+      -MARGIN.LEFT,
+      -MARGIN.TOP,
+      WIDTH + MARGIN.LEFT + MARGIN.RIGHT,
+      HEIGHT + MARGIN.TOP + MARGIN.BOTTOM
+    ])
+    .attr('style', 'max-width: 100%; overflow: visible;')
+
+  // brush
+  chartData.value.svg.append('g').attr('class', 'brush')
+
+  // Labels
+  chartData.value.xLabel = chartData.value.svg
+    .append('text')
+    .attr('x', WIDTH / 2)
+    .attr('y', HEIGHT + 50)
+    .attr('text-anchor', 'middle')
+    .style('fill', 'black')
+
+  chartData.value.yLabel = chartData.value.svg
+    .append('text')
+    .attr('x', -HEIGHT / 2)
+    .attr('y', -60)
+    .attr('text-anchor', 'middle')
+    .attr('transform', 'rotate(-90)')
+    .style('fill', 'black')
+  // Append group el to display both axes
+  chartData.value.xAxisGroup = chartData.value.svg
+    .append('g')
+    .attr('transform', `translate(0, ${HEIGHT})`)
+
+  // Append group el to display both axes
+  chartData.value.yAxisGroup = chartData.value.svg.append('g')
+
+  chartData.value.chart = true
+
+  chartData.value.xScaleForBrush = null
+  chartData.value.yScaleForBrush = null
+}
+
+function update({ container }: { container: HTMLElement }) {
+  const data = activeData.value
+  const datasets = data
+  const finalData = [].concat(...datasets)
+  const query1Value = query1.value
+  const query2Value = query2.value
+  const enableKnnValue = enableKnn.value
+  // remove elements to avoid repeated append
+  d3.selectAll('.legend').remove()
+  d3.select('.nuplot-tooltip').remove()
+  d3.selectAll('.dataCircle').remove()
+  d3.selectAll('defs').remove()
+  d3.selectAll('.clipPath').remove()
+
+  const yScale = d3
+    .scaleLinear()
+    .domain([
+      d3.min(finalData, (d: any) => d[query2Value]),
+      d3.max(finalData, (d: any) => d[query2Value])
+    ])
+    .range([HEIGHT, 0])
+
+  const xScale = d3
+    .scaleLinear()
+    .domain([
+      d3.min(finalData, (d: any) => d[query1Value]),
+      d3.max(finalData, (d: any) => d[query1Value])
+    ])
+    .range([0, WIDTH])
+
+  chartData.value.xScaleForBrush = xScale
+  chartData.value.yScaleForBrush = yScale
+
+  // Add a clipPath: everything out of this area won't be drawn.
+  chartData.value.svg
+    .append('defs')
+    .append('SVG:clipPath')
+    .attr('id', 'clip')
+    .append('SVG:rect')
+    .attr('width', WIDTH)
+    .attr('height', HEIGHT)
+    .attr('x', 0)
+    .attr('y', 0)
+
+  const xAxisCall = d3
+    .axisBottom(xScale)
+    .tickFormat((x: any) => `${expo(x, 2)}`)
+  chartData.value.xAxisGroup.transition().duration(500).call(xAxisCall)
+
+  const yAxisCall = d3.axisLeft(yScale).tickFormat((y: any) => `${expo(y, 2)}`)
+  chartData.value.yAxisGroup.transition().duration(500).call(yAxisCall)
+  chartData.value.xLabel.text(query1Value)
+  chartData.value.yLabel.text(query2Value)
+
+  const tooltip = d3
+    .select(container)
+    .append('div')
+    .attr('class', 'nuplot-tooltip')
+    .style('background-color', 'white')
+    .style('border', 'solid')
+    .style('border-width', '1px')
+    .style('border-radius', '5px')
+    .style('padding', '10px')
+    .style('visibility', 'hidden')
+    .style('z-index', 100)
+  const mouseover = function (e: any, d: any) {
+    d3.select(this)
+      .attr('r', circleFocusSize)
+      .style('stroke', 'black')
+      .style('stroke-width', 2)
+      .style('fill-opacity', 1)
+    store.commit('metamineNU/setDataPoint', d, {
+      root: true
+    })
+    tooltip.style('visibility', 'visible').transition().duration(200)
+  }
+
+  const mousemove = function (e: any, d: any) {
+    tooltip
+      .html(
+        'Dataset: ' +
+          d.name +
+          '<br>symmetry: ' +
+          d.symmetry +
+          '<br>C11: ' +
+          d.C11 +
+          '<br>C12: ' +
+          d.C12 +
+          '<br>C22: ' +
+          d.C22 +
+          '<br>C16: ' +
+          d.C16 +
+          '<br>C26: ' +
+          d.C26 +
+          '<br>C66: ' +
+          d.C66
+      )
+      .style('top', e.pageY + 10 + 'px')
+      .style('left', e.pageX + 10 + 'px')
+  }
+
+  const mouseleave = function (e: any, d: any) {
+    tooltip.style('visibility', 'hidden').transition().duration(200)
+    const circle = d3.select(this)
+    d3.select(this)
+      .attr(
+        'r',
+        circle.classed('scatter-highlighted')
+          ? circleFocusSize
+          : circleOriginalSize
+      )
+      .style('stroke', 'none')
+      .style('stroke-width', 2)
+      .style('fill-opacity', 0.8)
+  }
+
+  const mousedown = function (e: any, d: any) {
+    const inputData = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'].map(
+      (c) => d[c]
+    )
+    const target = d3.select(this)
+    target.classed('nuplot-selected', !target.classed('nuplot-selected'))
+
+    const selected: any[] = []
+    d3.selectAll('.nuplot-selected').each((d: any, i: number) => selected.push(d))
+    store.commit('metamineNU/setSelectedData', selected, {
+      root: true
+    })
+
+    target.classed('nuplot-selected', true)
+    if (enableKnnValue) {
+      getKnnData(inputData, finalData).then((res) => {
+        const indices = res.indices
+        const distances = res.distances
+        d3.selectAll('.dataCircle')
+          .data(finalData)
+          .classed('nuplot-highlighted', function (datum: any) {
+            return indices.includes(finalData.indexOf(datum))
           })
-        }
-      }
-    },
-    fetchedNames: {
-      handler (newVal, oldVal) {
-        this.update({
-          container: this.container
-        })
-      }
-    },
-    dataPoint: {
-      handler (newVal, oldVal) {
-        this.$store.commit('metamineNU/setDataPoint', newVal, {
-          root: true
-        })
-      }
-    },
-    query1: {
-      handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container,
-            query1: newVal
-          })
-        }
-      }
-    },
-    query2: {
-      handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container,
-            query2: newVal
-          })
-        }
-      }
-    },
-    reset: {
-      handler (newVal, oldVal) {
-        if (this.svg) {
-          this.update({
-            container: this.container
-          })
-        }
-      }
-    },
-    enableKnn: {
-      handler () {
-        if (this.svg) {
-          this.update({
-            container: this.container
-          })
-        }
-      }
-    }
-  },
-  methods: {
-    createSvg ({ container }) {
-      this.svg = d3
-        .select(container)
-        .append('svg')
-        .attr('width', WIDTH + MARGIN.LEFT + MARGIN.RIGHT)
-        .attr('height', HEIGHT + MARGIN.TOP + MARGIN.BOTTOM)
-        .attr('viewBox', [
-          -MARGIN.LEFT,
-          -MARGIN.TOP,
-          WIDTH + MARGIN.LEFT + MARGIN.RIGHT,
-          HEIGHT + MARGIN.TOP + MARGIN.BOTTOM
-        ])
-        .attr('style', 'max-width: 100%; overflow: visible;')
-
-      // brush
-      this.svg.append('g').attr('class', 'brush')
-
-      // Labels
-      this.xLabel = this.svg
-        .append('text')
-        .attr('x', WIDTH / 2)
-        .attr('y', HEIGHT + 50)
-        .attr('text-anchor', 'middle')
-        .style('fill', 'black')
-
-      this.yLabel = this.svg
-        .append('text')
-        .attr('x', -HEIGHT / 2)
-        .attr('y', -60)
-        .attr('text-anchor', 'middle')
-        .attr('transform', 'rotate(-90)')
-        .style('fill', 'black')
-      // Append group el to display both axes
-      this.xAxisGroup = this.svg
-        .append('g')
-        .attr('transform', `translate(0, ${HEIGHT})`)
-
-      // Append group el to display both axes
-      this.yAxisGroup = this.svg.append('g')
-
-      this.chart = true
-
-      this.xScaleForBrush = null
-      this.yScaleForBrush = null
-    },
-
-    update ({ container }) {
-      const data = this.activeData
-      const self = this
-      const datasets = data
-      const finalData = [].concat(...datasets)
-      const query1 = this.query1
-      const query2 = this.query2
-      const enableKnn = this.enableKnn
-      // remove elements to avoid repeated append
-      d3.selectAll('.legend').remove()
-      d3.select('.nuplot-tooltip').remove()
-      d3.selectAll('.dataCircle').remove()
-      d3.selectAll('defs').remove()
-      d3.selectAll('.clipPath').remove()
-
-      const yScale = d3
-        .scaleLinear()
-        .domain([
-          d3.min(finalData, (d) => d[query2]),
-          d3.max(finalData, (d) => d[query2])
-        ])
-        .range([HEIGHT, 0])
-
-      const xScale = d3
-        .scaleLinear()
-        .domain([
-          d3.min(finalData, (d) => d[query1]),
-          d3.max(finalData, (d) => d[query1])
-        ])
-        .range([0, WIDTH])
-
-      this.xScaleForBrush = xScale
-      this.yScaleForBrush = yScale
-
-      // Add a clipPath: everything out of this area won't be drawn.
-      this.svg
-        .append('defs')
-        .append('SVG:clipPath')
-        .attr('id', 'clip')
-        .append('SVG:rect')
-        .attr('width', WIDTH)
-        .attr('height', HEIGHT)
-        .attr('x', 0)
-        .attr('y', 0)
-
-      const xAxisCall = d3
-        .axisBottom(xScale)
-        .tickFormat((x) => `${expo(x, 2)}`)
-      this.xAxisGroup.transition().duration(500).call(xAxisCall)
-
-      const yAxisCall = d3.axisLeft(yScale).tickFormat((y) => `${expo(y, 2)}`)
-      this.yAxisGroup.transition().duration(500).call(yAxisCall)
-      this.xLabel.text(this.query1)
-      this.yLabel.text(this.query2)
-
-      const tooltip = d3
-        .select(container)
-        .append('div')
-        .attr('class', 'nuplot-tooltip')
-        .style('background-color', 'white')
-        .style('border', 'solid')
-        .style('border-width', '1px')
-        .style('border-radius', '5px')
-        .style('padding', '10px')
-        .style('visibility', 'hidden')
-        .style('z-index', 100)
-      const mouseover = function (e, d) {
-        d3.select(this)
-          .attr('r', circleFocusSize)
-          .style('stroke', 'black')
-          .style('stroke-width', 2)
-          .style('fill-opacity', 1)
-        self.$store.commit('metamineNU/setDataPoint', d, {
-          root: true
-        })
-        tooltip.style('visibility', 'visible').transition().duration(200)
-      }
-
-      const mousemove = function (e, d) {
-        tooltip
-          .html(
-            'Dataset: ' +
-              d.name +
-              '<br>symmetry: ' +
-              d.symmetry +
-              '<br>C11: ' +
-              d.C11 +
-              '<br>C12: ' +
-              d.C12 +
-              '<br>C22: ' +
-              d.C22 +
-              '<br>C16: ' +
-              d.C16 +
-              '<br>C26: ' +
-              d.C26 +
-              '<br>C66: ' +
-              d.C66
-          )
-          .style('top', e.pageY + 10 + 'px')
-          .style('left', e.pageX + 10 + 'px')
-      }
-
-      const mouseleave = function (e, d) {
-        tooltip.style('visibility', 'hidden').transition().duration(200)
-        const circle = d3.select(this)
-        d3.select(this)
-          .attr(
-            'r',
-            circle.classed('scatter-highlighted')
-              ? circleFocusSize
-              : circleOriginalSize
-          )
-          .style('stroke', 'none')
-          .style('stroke-width', 2)
-          .style('fill-opacity', 0.8)
-      }
-
-      const mousedown = function (e, d) {
-        const inputData = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'].map(
-          (c) => d[c]
-        )
-        const target = d3.select(this)
-        target.classed('nuplot-selected', !target.classed('nuplot-selected'))
-
-        const selected = []
-        d3.selectAll('.nuplot-selected').each((d, i) => selected.push(d))
-        self.$store.commit('metamineNU/setSelectedData', selected, {
-          root: true
-        })
-
-        target.classed('nuplot-selected', true)
-        if (enableKnn) {
-          self.getKnnData(inputData, finalData).then((res) => {
-            const indices = res.indices
-            const distances = res.distances
-            d3.selectAll('.dataCircle')
-              .data(finalData)
-              .classed('nuplot-highlighted', function (datum) {
-                return indices.includes(finalData.indexOf(datum))
-              })
-            d3.selectAll('.dataCircle').classed(
-              'nuplot-masked',
-              function (datum) {
-                return !this.getAttribute('class').includes(
-                  'nuplot-highlighted'
-                )
-              }
+        d3.selectAll('.dataCircle').classed(
+          'nuplot-masked',
+          function (datum: any) {
+            return !this.getAttribute('class')?.includes(
+              'nuplot-highlighted'
             )
+          }
+        )
 
-            const neighborElements = d3.selectAll('.nuplot-highlighted')
-            const masked = d3.selectAll('.nuplot-masked')
-            masked
-              .attr('fill', (d) => d.color)
-              .attr('r', circleOriginalSize)
-              .classed('nuplot-selected', false)
+        const neighborElements = d3.selectAll('.nuplot-highlighted')
+        const masked = d3.selectAll('.nuplot-masked')
+        masked
+          .attr('fill', (d: any) => d.color)
+          .attr('r', circleOriginalSize)
+          .classed('nuplot-selected', false)
 
-            const neighbors = []
-            neighborElements.each((d, i) => {
-              d.outline_color = nnColorAssignment[i]
-              d.distance = distances[indices.indexOf(finalData.indexOf(d))]
-              neighbors.push(d)
-            })
-            neighbors.sort((a, b) => a.distance - b.distance)
-            neighborElements
-              .attr('fill', (d) => d.outline_color)
-              .attr('r', circleFocusSize)
-
-            self.$store.commit('metamineNU/setNeighbors', neighbors)
-            self.$store.commit('metamineNU/setDialogBoxActiveKnn', true)
-          })
-        }
-      }
-
-      const chartExtent = [
-        [0, 0],
-        [WIDTH, HEIGHT]
-      ]
-
-      // Set the zoom and Pan features: how much you can zoom, on which part, and what to do when there is a zoom
-      const zoom = d3
-        .zoom()
-        .scaleExtent([0.1, 20]) // This control how much you can unzoom (x1) and zoom (x20)
-        .translateExtent(chartExtent)
-        .extent(chartExtent)
-        .on('zoom', (event) => {
-          // recover the new scale
-          const newXScale = event.transform.rescaleX(xScale)
-          const newYScale = event.transform.rescaleY(yScale)
-
-          // update axes with these new boundaries
-          const xAxisCall = d3
-            .axisBottom(newXScale)
-            .tickFormat((x) => `${expo(x, 2)}`)
-          const yAxisCall = d3
-            .axisLeft(newYScale)
-            .tickFormat((y) => `${expo(y, 2)}`)
-          this.xAxisGroup.transition().duration(500).call(xAxisCall)
-          this.yAxisGroup.transition().duration(500).call(yAxisCall)
-
-          this.xScaleForBrush = newXScale
-          this.yScaleForBrush = newYScale
-
-          d3.selectAll('.dataCircle')
-            .data(finalData)
-            .attr('cy', (d) => newYScale(d[query2]))
-            .attr('cx', (d) => newXScale(d[query1]))
+        const neighbors: any[] = []
+        neighborElements.each((d: any, i: number) => {
+          d.outline_color = nnColorAssignment[i]
+          d.distance = distances[indices.indexOf(finalData.indexOf(d))]
+          neighbors.push(d)
         })
+        neighbors.sort((a, b) => a.distance - b.distance)
+        neighborElements
+          .attr('fill', (d: any) => d.outline_color)
+          .attr('r', circleFocusSize)
 
-      const brush = d3.brush().on('brush end', (event) => {
-        if (event.sourceEvent?.type === 'zoom') return // ignore brush-by-zoom
-        if (event.selection) {
-          const _xScale = this.xScaleForBrush
-          const _yScale = this.yScaleForBrush
-          d3.selectAll('.dataCircle')
-            .data(finalData)
-            .classed('nuplot-selected', function (d) {
-              return (
-                d3.select(this).classed('nuplot-selected') ||
-                isBrushed(
-                  event.selection,
-                  _xScale(d[query1]),
-                  _yScale(d[query2])
-                )
-              )
-            })
-        }
-        const selected = []
-        d3.selectAll('.nuplot-selected').each((d, i) => selected.push(d))
-        self.$store.commit('metamineNU/setSelectedData', selected)
+        store.commit('metamineNU/setNeighbors', neighbors)
+        store.commit('metamineNU/setDialogBoxActiveKnn', true)
       })
-
-      // apply zoom and brush to svg
-      this.svg.select('g.brush').call(brush).on('wheel.zoom', null)
-      this.svg.call(zoom).on('mousedown.zoom', null)
-
-      const circles = this.svg
-        .append('g')
-        .attr('clip-path', 'url(#clip)')
-        .attr('class', 'clipPath')
-        .selectAll('.dataCircle')
-        .data(finalData)
-
-      circles.exit().transition().attr('r', 0).remove()
-      circles
-        .enter()
-        .append('circle')
-        .join(circles)
-        .attr('r', circleOriginalSize)
-        .attr('class', 'dataCircle')
-        .attr('fill', (d) => d.color)
-        .classed('nuplot-selected', function (d) {
-          return self.selectedData.includes(d)
-        })
-        .style('stroke', 'none')
-        .style('stroke-width', 2)
-        .style('fill-opacity', 0.8)
-        .on('mousedown', mousedown)
-        .on('mouseover', mouseover)
-        .on('mousemove', mousemove)
-        .on('mouseleave', mouseleave)
-        .attr('cx', (d) => xScale(d[query1]))
-        .attr('cy', (d) => yScale(d[query2]))
-
-      circles.exit().transition().attr('r', 0).remove()
-      if (this.reset) {
-        this.svg.call(zoom.transform, d3.zoomIdentity)
-        d3.selectAll('.nuplot-selected').classed('nuplot-selected', false)
-        this.$store.commit('metamineNU/setSelectedData', [])
-        this.$store.commit('metamineNU/setReset', false)
-      }
-    },
-    async getKnnData (dataPoint, data) {
-      const url = 'https://metamaterials-srv.northwestern.edu/model/' // TODO: change this. Will this be a problem?
-      const response = await fetch(url, {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify({
-          dataPoint: [dataPoint],
-          data: data.map((d) => [d.C11, d.C12, d.C22, d.C16, d.C26, d.C66])
-        })
-      }).catch((err) => {
-        alert(err.message)
-      })
-      const { distances, indices } = await response.json()
-      return { distances: distances, indices: indices }
     }
   }
+
+  const chartExtent: [[number, number], [number, number]] = [
+    [0, 0],
+    [WIDTH, HEIGHT]
+  ]
+
+  // Set the zoom and Pan features: how much you can zoom, on which part, and what to do when there is a zoom
+  const zoom = d3
+    .zoom()
+    .scaleExtent([0.1, 20]) // This control how much you can unzoom (x1) and zoom (x20)
+    .translateExtent(chartExtent)
+    .extent(chartExtent)
+    .on('zoom', (event) => {
+      // recover the new scale
+      const newXScale = event.transform.rescaleX(xScale)
+      const newYScale = event.transform.rescaleY(yScale)
+
+      // update axes with these new boundaries
+      const xAxisCall = d3
+        .axisBottom(newXScale)
+        .tickFormat((x: any) => `${expo(x, 2)}`)
+      const yAxisCall = d3
+        .axisLeft(newYScale)
+        .tickFormat((y: any) => `${expo(y, 2)}`)
+      chartData.value.xAxisGroup.transition().duration(500).call(xAxisCall)
+      chartData.value.yAxisGroup.transition().duration(500).call(yAxisCall)
+
+      chartData.value.xScaleForBrush = newXScale
+      chartData.value.yScaleForBrush = newYScale
+
+      d3.selectAll('.dataCircle')
+        .data(finalData)
+        .attr('cy', (d: any) => newYScale(d[query2Value]))
+        .attr('cx', (d: any) => newXScale(d[query1Value]))
+    })
+
+  const brush = d3.brush().on('brush end', (event) => {
+    if (event.sourceEvent?.type === 'zoom') return // ignore brush-by-zoom
+    if (event.selection) {
+      const _xScale = chartData.value.xScaleForBrush
+      const _yScale = chartData.value.yScaleForBrush
+      d3.selectAll('.dataCircle')
+        .data(finalData)
+        .classed('nuplot-selected', function (d: any) {
+          return (
+            d3.select(this).classed('nuplot-selected') ||
+            isBrushed(
+              event.selection,
+              _xScale(d[query1Value]),
+              _yScale(d[query2Value])
+            )
+          )
+        })
+    }
+    const selected: any[] = []
+    d3.selectAll('.nuplot-selected').each((d: any, i: number) => selected.push(d))
+    store.commit('metamineNU/setSelectedData', selected)
+  })
+
+  // apply zoom and brush to svg
+  chartData.value.svg.select('g.brush').call(brush).on('wheel.zoom', null)
+  chartData.value.svg.call(zoom).on('mousedown.zoom', null)
+
+  const circles = chartData.value.svg
+    .append('g')
+    .attr('clip-path', 'url(#clip)')
+    .attr('class', 'clipPath')
+    .selectAll('.dataCircle')
+    .data(finalData)
+
+  circles.exit().transition().attr('r', 0).remove()
+  circles
+    .enter()
+    .append('circle')
+    .join(circles)
+    .attr('r', circleOriginalSize)
+    .attr('class', 'dataCircle')
+    .attr('fill', (d: any) => d.color)
+    .classed('nuplot-selected', function (d: any) {
+      return selectedData.value.includes(d)
+    })
+    .style('stroke', 'none')
+    .style('stroke-width', 2)
+    .style('fill-opacity', 0.8)
+    .on('mousedown', mousedown)
+    .on('mouseover', mouseover)
+    .on('mousemove', mousemove)
+    .on('mouseleave', mouseleave)
+    .attr('cx', (d: any) => xScale(d[query1Value]))
+    .attr('cy', (d: any) => yScale(d[query2Value]))
+
+  circles.exit().transition().attr('r', 0).remove()
+  if (reset.value) {
+    chartData.value.svg.call(zoom.transform, d3.zoomIdentity)
+    d3.selectAll('.nuplot-selected').classed('nuplot-selected', false)
+    store.commit('metamineNU/setSelectedData', [])
+    store.commit('metamineNU/setReset', false)
+  }
 }
+
+async function getKnnData(dataPoint: number[], data: any[]): Promise<{ distances: number[]; indices: number[] }> {
+  const url = 'https://metamaterials-srv.northwestern.edu/model/'
+  const response = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    body: JSON.stringify({
+      dataPoint: [dataPoint],
+      data: data.map((d) => [d.C11, d.C12, d.C22, d.C16, d.C26, d.C66])
+    })
+  }).catch((err) => {
+    alert(err.message)
+  })
+  if (!response) {
+    return { distances: [], indices: [] }
+  }
+  const { distances, indices } = await response.json()
+  return { distances: distances, indices: indices }
+}
+
+onMounted(async () => {
+  store.commit('metamineNU/setPage', 'scatter', { root: true })
+  if (scatterPlot.value) {
+    createSvg({ container: scatterPlot.value })
+  }
+})
+
+watch(
+  csvData,
+  (newVal, oldVal) => {
+    if (scatterPlot.value) {
+      update({
+        container: scatterPlot.value
+      })
+    }
+  },
+  { deep: true }
+)
+
+watch(
+  activeData,
+  (newVal, oldVal) => {
+    if (chartData.value.svg && scatterPlot.value) {
+      update({
+        container: scatterPlot.value
+      })
+    }
+  },
+  { deep: true }
+)
+
+watch(fetchedNames, (newVal, oldVal) => {
+  if (scatterPlot.value) {
+    update({
+      container: scatterPlot.value
+    })
+  }
+})
+
+watch(dataPoint, (newVal, oldVal) => {
+  store.commit('metamineNU/setDataPoint', newVal, {
+    root: true
+  })
+})
+
+watch(query1, (newVal, oldVal) => {
+  if (chartData.value.svg && scatterPlot.value) {
+    update({
+      container: scatterPlot.value
+    })
+  }
+})
+
+watch(query2, (newVal, oldVal) => {
+  if (chartData.value.svg && scatterPlot.value) {
+    update({
+      container: scatterPlot.value
+    })
+  }
+})
+
+watch(reset, (newVal, oldVal) => {
+  if (chartData.value.svg && scatterPlot.value) {
+    update({
+      container: scatterPlot.value
+    })
+  }
+})
+
+watch(enableKnn, () => {
+  if (chartData.value.svg && scatterPlot.value) {
+    update({
+      container: scatterPlot.value
+    })
+  }
+})
 </script>

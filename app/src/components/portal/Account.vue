@@ -61,62 +61,56 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
-  name: 'Account',
-  data () {
-    return {
-      hours: 0
-    }
-  },
-  computed: {
-    ...mapGetters({
-      token: 'auth/token',
-      user: 'auth/user',
-      isAdmin: 'auth/isAdmin'
-    })
-  },
-  methods: {
-    async copyContent () {
-      try {
-        await navigator.clipboard.writeText(this.token)
-        this.$store.commit('setSnackbar', {
-          message: 'Token copied successfully',
-          duration: 4000
-        })
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: 'Something went wrong',
-          action: () => this.copyContent()
-        })
-      }
-    },
-    countDown () {
-      const tokenExpiration = localStorage.getItem('tokenExpiration')
-      if (!tokenExpiration) {
-        this.hours = 'Token already expired'
-        return
-      }
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
 
-      const expiresIn =
-        new Date(+tokenExpiration).getTime() - new Date().getTime()
-      if (expiresIn <= 0) {
-        this.hours = 'Token already expired'
-        return
-      }
+const store = useStore();
+const hours = ref<string>('0');
 
-      this.hours = `Expires in ${
-        Math.round((expiresIn / (60 * 60 * 1000)) * 100) / 100
-      } hours`
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', {
-      icon: '',
-      name: 'Account Information'
-    })
-    this.countDown()
+const token = computed(() => store.getters['auth/token']);
+const user = computed(() => store.getters['auth/user']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+
+const copyContent = async () => {
+  try {
+    await navigator.clipboard.writeText(token.value);
+    store.commit('setSnackbar', {
+      message: 'Token copied successfully',
+      duration: 4000,
+    });
+  } catch (error) {
+    store.commit('setSnackbar', {
+      message: 'Something went wrong',
+      action: () => copyContent(),
+    });
   }
-}
+};
+
+const countDown = () => {
+  const tokenExpiration = localStorage.getItem('tokenExpiration');
+  if (!tokenExpiration) {
+    hours.value = 'Token already expired';
+    return;
+  }
+
+  const expiresIn =
+    new Date(+tokenExpiration).getTime() - new Date().getTime();
+  if (expiresIn <= 0) {
+    hours.value = 'Token already expired';
+    return;
+  }
+
+  hours.value = `Expires in ${
+    Math.round((expiresIn / (60 * 60 * 1000)) * 100) / 100
+  } hours`;
+};
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', {
+    icon: '',
+    name: 'Account Information',
+  });
+  countDown();
+});
 </script>

@@ -19,10 +19,10 @@
   </md-card>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+defineOptions({
   name: 'ToolCard'
-}
+});
 </script>
 
 <style scoped>

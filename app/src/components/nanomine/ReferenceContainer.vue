@@ -10,38 +10,46 @@
   </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+
+defineOptions({
   name: 'ReferenceContainer',
-  props: {
-    references: {
-      type: Array,
-      required: true
-    },
-    openOnLoad: {
-      type: Boolean,
-      default: false,
-      required: false
-    }
-  },
-  data: () => {
-    return {
-      referenceOpen: false
-    }
-  },
-  methods: {
-    refOpen: function () {
-      this.referenceOpen = !this.referenceOpen
-    }
-  },
-  computed: {
-    referenceList () {
-      return Array.from(this.references, (id) => this.$store.getters.getReferenceById(id))
-        .filter(Boolean) // don't keep undefined or null references
-    }
-  },
-  mounted () {
-    this.referenceOpen = this.openOnLoad
-  }
+});
+
+interface Props {
+  references: string[];
+  openOnLoad?: boolean;
 }
+
+interface Reference {
+  title: string;
+  authors: string;
+  venue: string;
+  date: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  openOnLoad: false
+});
+
+const store = useStore();
+const referenceOpen = ref<boolean>(false);
+
+// Computed
+const referenceList = computed<Reference[]>(() => {
+  return Array.from(props.references, (id: string) => store.getters.getReferenceById(id))
+    .filter(Boolean) as Reference[]; // don't keep undefined or null references
+});
+
+// Methods
+const refOpen = (): void => {
+  referenceOpen.value = !referenceOpen.value;
+};
+
+// Lifecycle
+onMounted(() => {
+  referenceOpen.value = props.openOnLoad;
+});
 </script>

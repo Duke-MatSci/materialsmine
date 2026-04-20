@@ -54,46 +54,54 @@
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
 
-export default {
-  name: 'ParamSelector',
-  mounted: () => {
-    const slider = document.getElementById('parame-selector-slider')
-    const tooltip = document.getElementById('parame-selector-slider-id')
+const store = useStore();
 
+// Data
+const ticks = ref<number[]>([5, 25, 50]);
+
+// Computed
+const knnUmap = computed(() => store.state.metamineNU.knnUmap);
+
+// Methods
+const handleKnnUmapChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  store.commit('metamineNU/setKnnUmap', target.value);
+};
+
+// Lifecycle
+onMounted(() => {
+  const slider = document.getElementById('parame-selector-slider') as HTMLInputElement;
+  const tooltip = document.getElementById('parame-selector-slider-id') as HTMLElement;
+
+  if (slider && tooltip) {
     slider.addEventListener('input', () => {
-      const value = parseInt(slider.value)
-      tooltip.textContent = value
-      tooltip.style.left = `calc(${((value - 5) / 45) * 100}% - 15px)`
-    })
+      const value = parseInt(slider.value);
+      tooltip.textContent = value.toString();
+      tooltip.style.left = `calc(${((value - 5) / 45) * 100}% - 15px)`;
+    });
 
-    slider.addEventListener('mousemove', (e) => {
-      const value = parseInt(slider.value)
-      tooltip.style.left = `calc(${((value - 5) / 45) * 100}% - 15px)`
-      tooltip.style.display = 'block'
-      tooltip.style.top = `-${tooltip.offsetHeight + 5}px`
-    })
+    slider.addEventListener('mousemove', () => {
+      const value = parseInt(slider.value);
+      tooltip.style.left = `calc(${((value - 5) / 45) * 100}% - 15px)`;
+      tooltip.style.display = 'block';
+      tooltip.style.top = `-${tooltip.offsetHeight + 5}px`;
+    });
 
     slider.addEventListener('mouseout', () => {
-      tooltip.style.display = 'none'
-    })
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      knnUmap: (state) => state.knnUmap
-    })
-  },
-  data () {
-    return {
-      ticks: [5, 25, 50]
-    }
-  },
-  methods: {
-    handleKnnUmapChange (event) {
-      this.$store.commit('metamineNU/setKnnUmap', event.target.value)
-    }
+      tooltip.style.display = 'none';
+    });
   }
-}
+});
+</script>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
+  name: 'ParamSelector'
+});
 </script>

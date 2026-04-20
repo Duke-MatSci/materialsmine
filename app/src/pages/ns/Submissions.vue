@@ -25,42 +25,34 @@
     </div>
   </div>
 </template>
-<script>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
 import TableComponent from '@/components/explorer/TableComponent.vue'
 
-export default {
-  name: 'Submissions',
-  components: {
-    TableComponent
-  },
-  data () {
-    return {
-      loading: false
-    }
-  },
-  computed: {
-    submissions () {
-      return this.$store.state.ns.submissions
-    },
-    formattedSubmission () {
-      if (!this.submissions.length) return
-      const arr = [...this.submissions]
+const store = useStore()
 
-      const result = arr.map((val) => ({
-        Version: val?.version,
-        '': val?.description,
-        Released: this.formatDate(val?.released),
-        Uploaded: this.formatDate(val?.uploaded)
-      }))
+const loading = ref(false)
 
-      return result
-    }
-  },
-  methods: {
-    formatDate (d) {
-      const date = new Date(d)
-      return date.toLocaleDateString() // Example output: "DD/MM/YYYY" (format depends on your locale)
-    }
-  }
+const submissions = computed(() => store.state.ns.submissions)
+
+const formattedSubmission = computed(() => {
+  if (!submissions.value?.length) return
+  const arr = [...submissions.value]
+
+  const result = arr.map((val: any) => ({
+    Version: val?.version,
+    '': val?.description,
+    Released: formatDate(val?.released),
+    Uploaded: formatDate(val?.uploaded)
+  }))
+
+  return result
+})
+
+const formatDate = (d: string | Date): string => {
+  const date = new Date(d)
+  return date.toLocaleDateString() // Example output: "DD/MM/YYYY" (format depends on your locale)
 }
 </script>

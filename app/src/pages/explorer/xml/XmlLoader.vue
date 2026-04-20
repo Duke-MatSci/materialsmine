@@ -1,22 +1,23 @@
 <template>
   <div class="xmlLoader">
-    <dialog-box :minWidth="40" :active="dialogBoxActive">
-      <template v-slot:title>Success</template>
-      <template v-slot:content>
+    <Dialog :minWidth="40" :active="dialogBoxActive">
+      <template #title>{{ dialogTitle }}</template>
+      <template #content>
         <div class="u_display-flex u_centralize_items u--margin-posmd">
           <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
             >check_circle</md-icon
           >
-          <span
-            >XML has been approved and successfully ingested into the knowledge
-            graph</span
-          >
+          <span>{{ dialogMessage }}</span>
         </div>
       </template>
-      <template v-slot:actions>
-        <md-button @click.native.prevent="closeDialogBox">Ok</md-button>
+      <template #actions>
+        <md-button v-if="dialogMode === 'edit'" @click="confirmEditCuration">Submit</md-button>
+        <md-button v-else-if="approvalInProgress" @click="approval({ xmlViewer })"
+          >Submit</md-button
+        >
+        <md-button @click.prevent="closeDialogBox">Close</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
     <section
       class="u_width--max viz-u-postion__rel utility-roverflow"
       v-if="!!Object.keys(xmlViewer).length && xmlViewer.xmlString"
@@ -24,12 +25,9 @@
       <md-drawer
         class="md-right"
         :class="{ ' md-fixed': showSidepanel }"
-        :md-active.sync="showSidepanel"
+        v-model:md-active="showSidepanel"
       >
-        <comment
-          :type="type"
-          :identifier="optionalChaining(() => xmlViewer.id)"
-        ></comment>
+        <Comment :type="type" :identifier="optionalChaining(() => xmlViewer.id)"></Comment>
         <md-button
           @click="showSidepanel = false"
           class="md-fab md-fixed md-dense md-fab-top-right md-primary btn--primary"
@@ -50,22 +48,29 @@
               <a
                 href="#"
                 class="viz-tab__button"
-                :class="[!loadYaml && 'active u--color-primary']"
+                :class="[isActiveXmlView && 'active u--color-primary']"
                 >XML View</a
               >
               ||
               <a
                 class="viz-tab__button"
-                :class="[loadYaml && 'active u--color-primary']"
-                @click.prevent="openYaml(true)"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
+                @click.prevent="openYaml"
                 >YAML View</a
+              >
+              ||
+              <a
+                class="viz-tab__button"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
+                @click.prevent="openHistory"
+                >History</a
               >
             </div>
           </div>
           <!-- xml viewer  -->
           <div class="wrapper" style="min-width: 90%">
             <pre>
-              <code class="language-xml" >{{ optionalChaining(() => xmlViewer.xmlString) }}</code>
+              <code class="language-xml" ref="codeBlock">{{ optionalChaining(() => xmlViewer.xmlString) }}</code>
             </pre>
           </div>
         </md-content>
@@ -76,12 +81,12 @@
             :class="[
               isLargeTabView
                 ? 'viz-u-display__show u--margin-centered'
-                : 'viz-u-postion__abs utility-absolute-input visualize--link-bottom'
+                : 'viz-u-postion__abs utility-absolute-input visualize--link-bottom',
             ]"
             @click="
               requestApproval({
                 curationId: xmlViewer.id,
-                isNew: xmlViewer.isNewCuration
+                isNew: xmlViewer.isNewCuration,
               })
             "
             v-if="
@@ -91,36 +96,28 @@
               xmlViewer.curationState === 'Editing'
             "
           >
-            Request Approval
+            {{ !isAdmin ? 'Request Approval' : 'Submit' }}
           </md-button>
         </md-content>
       </div>
       <div
         :class="[
-          isSmallTabView
-            ? 'u_margin-top-small u_adjust-banner-text'
-            : 'u--margin-neg',
-          'md-fab md-fab-top-right u_width--max u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad'
+          isSmallTabView ? 'u_margin-top-small u_adjust-banner-text' : 'u--margin-neg',
+          'md-fab md-fab-top-right u_width--max u--shadow-none u--layout-flex u--layout-flex-justify-end u--b-rad',
         ]"
       >
-        <md-button
-          class="md-fab md-dense md-primary btn--primary"
-          @click.native.prevent="navBack"
-        >
-          <md-tooltip> Go Back </md-tooltip>
+        <md-button class="md-fab md-dense md-primary btn--primary" @click.prevent="navBack">
+          <md-tooltip>Go Back</md-tooltip>
           <md-icon>arrow_back</md-icon>
         </md-button>
 
-        <md-button
-          @click="showSidepanel = true"
-          class="md-fab md-dense md-primary btn--primary"
-        >
+        <md-button @click="showSidepanel = true" class="md-fab md-dense md-primary btn--primary">
           <md-tooltip md-direction="top">Comment</md-tooltip>
           <md-icon>comment</md-icon>
         </md-button>
 
         <md-button
-          @click.prevent="editCuration(xmlViewer.id, xmlViewer.isNewCuration)"
+          @click.prevent="openEditDialog"
           v-if="isAuth && (xmlViewer.user === userId || isAdmin)"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -129,7 +126,7 @@
         </md-button>
 
         <md-button
-          @click="approveCuration({ xmlViewer, reloadXml })"
+          @click="approveCuration"
           v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -139,134 +136,216 @@
       </div>
     </section>
 
-    <section class="section_loader u--margin-toplg" v-else-if="$apollo.loading">
-      <spinner :loading="$apollo.loading" text="Loading Xml" />
+    <section class="section_loader u--margin-toplg" v-else-if="loading">
+      <Spinner :loading="loading" text="Loading Xml" />
     </section>
     <section class="section_loader u--margin-toplg" v-else>
       <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
         This XML no longer exists or has been moved
       </h2>
+      <div class="u_margin-top-small u_centralize_text">
+        <a @click.prevent="navBack" class="btn btn--primary btn--noradius u_color_white">Go Back</a>
+      </div>
+      <!-- <button
+        type="submit"
+        class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+        @click.prevent="submitSearch"
+      >
+        Search Xml
+      </button> -->
     </section>
   </div>
 </template>
 
-<script>
-import Prism from 'prismjs'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-markup'
-import 'prismjs/themes/prism-coy.min.css'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
-import Comment from '@/components/explorer/Comment'
-import spinner from '@/components/Spinner'
-import { XML_VIEWER } from '@/modules/gql/xml-gql'
-import { mapGetters, mapActions, mapMutations } from 'vuex'
-import dialogBox from '@/components/Dialog.vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter, useRoute } from 'vue-router';
+import { useQuery } from '@vue/apollo-composable';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-xml-doc';
+import 'prismjs/components/prism-markup';
+import 'prismjs/themes/prism-coy.min.css';
+import { XML_VIEWER } from '@/modules/gql/xml-gql';
+import { useOptionalChaining } from '@/composables/useOptionalChaining';
+import Comment from '@/components/explorer/Comment.vue';
+import Spinner from '@/components/Spinner.vue';
+import Dialog from '@/components/Dialog.vue';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'XmlVisualizer',
-  mixins: [optionalChainingUtil],
-  components: {
-    Comment,
-    spinner,
-    dialogBox
-  },
-  data () {
-    return {
-      showSidepanel: false,
-      type: 'xml',
-      xmlViewer: {}
-    }
-  },
-  computed: {
-    ...mapGetters({
-      isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin',
-      userId: 'auth/userId',
-      dialogBoxActive: 'dialogBox'
-    }),
-    isSmallTabView () {
-      return screen.width < 760
-    },
-    isLargeTabView () {
-      return screen.width < 1024
-    },
-    loadYaml () {
-      return !!this.$route.query.isYaml
-    }
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    ...mapActions('explorer/curation', ['approveCuration', 'requestApproval']),
-    closeDialogBox () {
-      this.toggleDialogBox()
-    },
-    navBack () {
-      this.$router.back()
-    },
-    editCuration (id, isNew) {
-      if (!!id && typeof isNew === 'boolean') {
-        return this.$router.push({
-          name: 'EditXmlCuration',
-          query: { isNew: isNew, id: id }
-        })
-      }
-    },
-    async reloadXml () {
-      return await this.$apollo.queries.xmlFinder.refetch()
-    },
-    openYaml () {
-      const query = {
-        title: this.xmlViewer.title?.split('.')[0],
-        isNewCuration: this.$route.query?.isNewCuration,
-        isYaml: true
-      }
-      const params = {
-        id: this.$route.params.id
-      }
+});
 
-      return this.$router.push({ name: 'YamlVisualizer', params, query })
+// Store and router
+const store = useStore();
+const router = useRouter();
+const route = useRoute();
+
+// Composables
+const { optionalChaining } = useOptionalChaining();
+
+// Template refs
+const codeBlock = ref<HTMLElement>();
+
+// Reactive data
+const showSidepanel = ref(false);
+const type = ref('xml');
+const xmlViewer = ref<any>({});
+const approvalInProgress = ref(false);
+const dialogMode = ref<'approval' | 'edit'>('approval');
+
+// Apollo query
+const { result, loading, refetch } = useQuery(
+  XML_VIEWER,
+  computed(() => ({
+    input: {
+      id: route.params.id,
+      isNewCuration: route.query?.isNewCuration
+        ? JSON.parse(route.query.isNewCuration as string)
+        : false,
+    },
+  })),
+  { fetchPolicy: 'cache-and-network' }
+);
+
+// Watch for query results
+watch(
+  result,
+  (data) => {
+    if (data) {
+      xmlViewer.value = data.xmlViewer;
     }
   },
-  mounted () {
-    window.Prism = window.Prism || {}
-    window.Prism.manual = true
-  },
-  updated () {
-    const vm = this
-    setTimeout(() => {
-      Prism.highlightAll(vm.$refs.codeBlock)
-    }, 200)
-  },
-  apollo: {
-    xmlViewer: {
-      query: XML_VIEWER,
-      variables () {
-        return {
-          input: {
-            id: this.$route.params.id,
-            isNewCuration: this.$route?.query?.isNewCuration
-              ? JSON.parse(this.$route?.query?.isNewCuration)
-              : false
-          }
-        }
-      },
-      fetchPolicy: 'cache-and-network',
-      error (error) {
-        if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-        } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
-        }
-        this.$store.commit('setSnackbar', {
-          message:
-            error.networkError?.response?.statusText ?? error.graphQLErrors,
-          action: () => this.$apollo.queries.xmlViewer.refetch()
-        })
-      }
-    }
+  { immediate: true }
+);
+
+// Computed properties
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const userId = computed(() => store.getters['auth/userId']);
+const dialogBoxActive = computed(() => store.getters.dialogBox);
+const dialogTitle = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Edit ${xmlViewer.value.id} Sample`;
   }
-}
+  return approvalInProgress.value ? 'Confirmation' : 'Success';
+});
+const dialogMessage = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Please confirm your action to edit ${xmlViewer.value.id} xml sample`;
+  }
+  return approvalInProgress.value
+    ? 'Please confirm your submission'
+    : 'XML has been approved and successfully ingested into the knowledge graph';
+});
+
+const isSmallTabView = computed(() => {
+  return screen.width < 760;
+});
+
+const isLargeTabView = computed(() => {
+  return screen.width < 1024;
+});
+
+const isActiveXmlView = computed(() => !route.query.isYaml && !route.query.isHistory);
+
+// Methods
+const closeDialogBox = () => {
+  store.commit('setDialogBox');
+  dialogMode.value = 'approval';
+};
+
+const navBack = () => {
+  router.back();
+};
+
+const editCuration = (id: string, isNew: boolean) => {
+  if (!!id && typeof isNew === 'boolean') {
+    return router.push({
+      name: 'EditXmlCuration',
+      query: { isNew: String(isNew), id: id },
+    });
+  }
+};
+
+const openEditDialog = () => {
+  dialogMode.value = 'edit';
+  approvalInProgress.value = false;
+  store.commit('setDialogBox', true, { root: true });
+};
+
+const confirmEditCuration = () => {
+  closeDialogBox();
+  editCuration(xmlViewer.value.id, xmlViewer.value.isNewCuration);
+};
+
+const openYaml = () => {
+  const query = {
+    title: xmlViewer.value.title?.split('.')[0],
+    isNewCuration: route.query?.isNewCuration,
+    isYaml: true,
+  } as any;
+  const params = {
+    id: route.params.id,
+  };
+
+  return router.push({ name: 'YamlVisualizer', params, query });
+};
+
+const openHistory = () => {
+  const query = {
+    title: xmlViewer.value.title?.split('.')[0],
+    isNewCuration: route.query?.isNewCuration,
+    isHistory: true,
+  } as any;
+  const params = {
+    id: route.params.id,
+  };
+
+  return router.push({ name: 'SampleHistory', params, query });
+};
+
+const approval = async ({ xmlViewer }: { xmlViewer: any }) => {
+  closeDialogBox();
+  approvalInProgress.value = false;
+  await store.dispatch('explorer/curation/approveCuration', { xml: xmlViewer });
+};
+
+// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
+const approveCuration = async () => {
+  // xmlViewer.curationState !== 'Completed'
+  // TODO: Remove the above logic in line 126 and use here. Check if is completed and show a dialog box to double check with the user if they really want to re-submit
+  // If the above logic if is true, use a different icon and tooltip label
+  dialogMode.value = 'approval';
+  approvalInProgress.value = true;
+  store.commit('setDialogBox', true, { root: true });
+};
+
+const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {
+  if (isAdmin.value) {
+    dialogMode.value = 'approval';
+    approvalInProgress.value = true;
+    store.commit('setDialogBox', true, { root: true });
+  } else return await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
+};
+
+// Lifecycle
+onMounted(() => {
+  window.Prism = window.Prism || {};
+  window.Prism.manual = true;
+});
+
+// Watch for updates to highlight code
+watch(
+  () => xmlViewer.value.xmlString,
+  async () => {
+    await nextTick();
+    setTimeout(() => {
+      if (codeBlock.value) {
+        Prism.highlightAll();
+      }
+    }, 200);
+  }
+);
 </script>

@@ -72,27 +72,34 @@
   </div>
 </template>
 
-<script>
-import CurateNavBar from '@/components/curate/CurateNavBar.vue'
-import { mapActions } from 'vuex'
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useStore } from 'vuex';
+import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'SpreadsheetBase',
-  components: {
-    CurateNavBar
-  },
-  data () {
-    return {
-      navRoutes: [
-        {
-          label: 'Curate',
-          path: '/explorer/curate'
-        }
-      ]
-    }
-  },
-  methods: {
-    ...mapActions('explorer/curation', ['createDatasetIdVuex'])
-  }
+});
+
+// Store
+const store = useStore();
+
+// Data
+interface NavRoute {
+  label: string;
+  path: string;
 }
+
+const navRoutes = ref<NavRoute[]>([
+  {
+    label: 'Curate',
+    path: '/explorer/curate'
+  }
+]);
+
+// Methods
+const createDatasetIdVuex = () => {
+  store.dispatch('explorer/curation/createDatasetIdVuex', { isBulk: false });
+};
 </script>

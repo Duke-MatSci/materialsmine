@@ -20,7 +20,6 @@
               >
                 <router-link
                   to="/xsd/xsd-view"
-                  tag="div"
                   class="explorer_page-nav-card teams_container u--margin-rightml u--margin-none utility-roverflow u--shadow-none"
                 >
                   <i
@@ -37,7 +36,7 @@
                 </router-link>
               </div>
             </div>
-            <div class="gallery-item" @click="downloadJsonSchema">
+            <div class="gallery-item" @click="handleDownloadJsonSchema">
               <div class="md-layout md-layout-item_card u_margin-none">
                 <div
                   class="explorer_page-nav-card teams_container u--margin-rightml u--margin-none u--shadow-none"
@@ -56,7 +55,7 @@
                 </div>
               </div>
             </div>
-            <div class="gallery-item" @click="publishSchema">
+            <div class="gallery-item" @click="handlePublishSchema">
               <div
                 class="md-layout md-layout-item md-layout-item_card u_margin-none"
               >
@@ -84,23 +83,27 @@
   </div>
 </template>
 
-<script>
-import { mapGetters, mapActions } from 'vuex'
-export default {
-  name: 'ViewSchema',
-  data () {
-    return {}
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'View Schema' })
-  },
-  computed: {
-    ...mapGetters({
-      token: 'auth/token'
-    })
-  },
-  methods: {
-    ...mapActions('portal', ['downloadJsonSchema', 'publishSchema'])
-  }
-}
+<script setup lang="ts">
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+
+// Store
+const store = useStore();
+
+// Computed
+const token = computed(() => store.getters['auth/token']);
+
+// Methods
+const handleDownloadJsonSchema = async () => {
+  await store.dispatch('portal/downloadJsonSchema');
+};
+
+const handlePublishSchema = async () => {
+  await store.dispatch('portal/publishSchema');
+};
+
+// Lifecycle
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: '', name: 'View Schema' });
+});
 </script>

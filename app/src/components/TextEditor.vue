@@ -15,49 +15,63 @@
   </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useStore } from 'vuex';
+
+defineOptions({
   name: 'TextEditor',
-  props: {
-    value: {
-      type: String
-    },
-    contentEditable: {
-      type: Boolean,
-      default: () => true
-    }
-  },
-  data () {
-    return {
-      innerValue: this.value
-    }
-  },
-  methods: {
-    onInput (event) {
-      this.$store.commit('contact/setMessage', event.target.innerHTML)
-    },
-    applyBold () {
-      document.execCommand('bold')
-    },
-    applyItalic () {
-      document.execCommand('italic')
-    },
-    applyHeading () {
-      if (document.queryCommandValue('formatBlock') === 'h1') { return document.execCommand('formatBlock', false, 'div') }
-      document.execCommand('formatBlock', false, '<h1>')
-    },
-    applyUl () {
-      document.execCommand('insertUnorderedList')
-    },
-    applyOl () {
-      document.execCommand('insertOrderedList')
-    },
-    undo () {
-      document.execCommand('undo')
-    },
-    redo () {
-      document.execCommand('redo')
-    }
-  }
+});
+
+interface Props {
+  value?: string;
+  contentEditable?: boolean;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  value: '',
+  contentEditable: true,
+});
+
+const store = useStore();
+
+// Data
+const innerValue = ref<string>(props.value || '');
+
+// Methods
+const onInput = (event: Event): void => {
+  const target = event.target as HTMLElement;
+  store.commit('contact/setMessage', target.innerHTML);
+};
+
+const applyBold = (): void => {
+  document.execCommand('bold');
+};
+
+const applyItalic = (): void => {
+  document.execCommand('italic');
+};
+
+const applyHeading = (): void => {
+  if (document.queryCommandValue('formatBlock') === 'h1') {
+    return document.execCommand('formatBlock', false, 'div');
+  }
+  document.execCommand('formatBlock', false, '<h1>');
+};
+
+const applyUl = (): void => {
+  document.execCommand('insertUnorderedList');
+};
+
+const applyOl = (): void => {
+  document.execCommand('insertOrderedList');
+};
+
+const undo = (): void => {
+  document.execCommand('undo');
+};
+
+const redo = (): void => {
+  document.execCommand('redo');
+};
 </script>

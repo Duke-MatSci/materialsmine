@@ -31,28 +31,26 @@
 
 </style>
 
-<script>
-import { mapState } from 'vuex'
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStore } from 'vuex'
 import StructureKnnVue from '@/components/metamine/visualizationNU/StructureKnn.vue'
-import JsonCSV from 'vue-json-csv'
 
 const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66', 'distance']
 
-export default {
+const store = useStore()
+
+const neighbors = computed(() => store.state.metamineNU.neighbors)
+</script>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
+import JsonCSV from 'vue-json-csv'
+
+export default defineComponent({
   name: 'NeighborPanel',
   components: {
-    StructureKnnVue,
     downloadCsv: JsonCSV
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      neighbors: (state) => state.neighbors
-    })
-  },
-  data () {
-    return {
-      columns: columns
-    }
   }
-}
+})
 </script>

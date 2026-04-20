@@ -1,42 +1,38 @@
 <template>
   <md-app md-waterfall md-mode="fixed">
-    <md-app-toolbar id="header" :toggler="toggleMenuVisibility" />
-    <md-app-content
-      class="u--padding-zero u--layout-flex u--layout-flex-column"
-    >
+    <!-- <div :style="xFlow"> -->
+    <md-app-toolbar class="md-app-toolbar md-dense md-primary" id="reset_bg">
+      <app-toolbar id="header" :toggler="toggleMenuVisibility" />
+    </md-app-toolbar>
+    <!-- </div> -->
+    <md-app-content class="u--padding-zero u--layout-flex u--layout-flex-column">
       <HeroHeader />
       <router-view />
       <page-footer id="footer"></page-footer>
     </md-app-content>
-    <md-app-drawer :md-active.sync="menuVisible">
-      <mdDrawer id="leftdrawer"></mdDrawer>
+    <md-app-drawer v-model:mdActive="menuVisible">
+      <Drawer id="leftdrawer" />
     </md-app-drawer>
   </md-app>
 </template>
 
-<script>
-import PageHeader from '@/components/nanomine/PageHeader.vue'
-import HeroHeader from '@/components/nanomine/HeroHeader.vue'
-import PageFooter from '@/components/nanomine/PageFooter.vue'
-import Drawer from '@/components/Drawer.vue'
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import AppToolbar from '@/components/nanomine/PageHeader.vue';
+import HeroHeader from '@/components/nanomine/HeroHeader.vue';
+import PageFooter from '@/components/nanomine/PageFooter.vue';
+import Drawer from '@/components/Drawer.vue';
 
-export default {
+// Reactive data
+const menuVisible = ref<boolean>(false);
+
+// Methods
+const toggleMenuVisibility = (): void => {
+  menuVisible.value = !menuVisible.value;
+};
+const xFlow = computed(() => ({ overflowX: 'clip' as const }));
+// Define component name
+defineOptions({
   name: 'NanomineBase',
-  components: {
-    MdAppToolbar: PageHeader,
-    HeroHeader,
-    PageFooter,
-    MdDrawer: Drawer
-  },
-  data () {
-    return {
-      menuVisible: false
-    }
-  },
-  methods: {
-    toggleMenuVisibility () {
-      this.menuVisible = !this.menuVisible
-    }
-  }
-}
+});
 </script>

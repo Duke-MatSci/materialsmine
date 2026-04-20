@@ -22,24 +22,22 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
-  name: 'ProfileHeader',
-  computed: {
-    ...mapGetters({
-      info: 'appHeaderInfo',
-      displayName: 'auth/displayName',
-      user: 'auth/user'
-    }),
-    getInitials () {
-      if (this.user?.givenName && this.user?.surName) {
-        return `${this.user?.givenName?.charAt(0)}${this.user?.surName?.charAt(
-          0
-        )}`
-      }
-      return 'MM'
-    }
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
+
+const info = computed(() => store.getters['appHeaderInfo']);
+const displayName = computed(() => store.getters['auth/displayName']);
+const user = computed(() => store.getters['auth/user']);
+
+const getInitials = computed(() => {
+  if (user.value?.givenName && user.value?.surName) {
+    return `${user.value?.givenName?.charAt(0)}${user.value?.surName?.charAt(
+      0
+    )}`;
   }
-}
+  return 'MM';
+});
 </script>

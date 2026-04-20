@@ -79,42 +79,32 @@
     </main>
   </article>
 </template>
-<script>
-import ClassesList from '@/components/ns/classes/ClassesList.vue'
-import { mapGetters, mapState } from 'vuex'
 
-export default {
-  name: 'Namespace',
-  components: {
-    ClassesList
-  },
-  data () {
-    return {
-      loading: false
-    }
-  },
-  computed: {
-    ...mapState('ns', {
-      currentClass: (state) => state.currentClass
-    }),
-    ...mapGetters('ns', {
-      classes: 'getClasses',
-      lastUpdate: 'getLastUpdatedDate'
-    }),
-    objLength () {
-      const obj = this.currentClass ? this.currentClass : {}
-      return Object.keys(obj).length
-    },
-    pageTitle () {
-      return this.currentClass?.['Preferred Name'] ?? 'MaterialsMine Ontology'
-    }
-  },
-  methods: {
-    visualize (idUrl) {
-      const id = idUrl.split('/').pop().split('#').pop()
-      const url = `/ns/visualize?class=${id}`
-      this.$router.push(url)
-    }
-  }
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
+import ClassesList from '@/components/ns/classes/ClassesList.vue'
+
+const router = useRouter()
+const store = useStore()
+
+const loading = ref(false)
+
+const currentClass = computed(() => store.state.ns.currentClass)
+const classes = computed(() => store.getters['ns/getClasses'])
+const lastUpdate = computed(() => store.getters['ns/getLastUpdatedDate'])
+
+const objLength = computed(() => {
+  const obj = currentClass.value ? currentClass.value : {}
+  return Object.keys(obj).length
+})
+
+const pageTitle = computed(() => currentClass.value?.['Preferred Name'] ?? 'MaterialsMine Ontology')
+
+const visualize = (idUrl: string) => {
+  const id = idUrl.split('/').pop()?.split('#').pop()
+  const url = `/ns/visualize?class=${id}`
+  router.push(url)
 }
 </script>

@@ -29,58 +29,52 @@
   </div>
 </template>
 
-<script>
-import Spinner from '@/components/Spinner'
-import ContactBox from '@/components/portal/Contact.vue'
-import ContactCard from '@/components/portal/ContactCard.vue'
-import { mapMutations, mapGetters, mapActions } from 'vuex'
-import pagination from '@/components/explorer/Pagination'
-export default {
-  name: 'ContactInquiry',
-  data () {
-    return {
-      showResolved: true,
-      pageSize: 10
-    }
-  },
-  components: {
-    Spinner,
-    pagination,
-    ContactCard,
-    ContactBox
-  },
-  computed: {
-    ...mapGetters({
-      loading: 'contact/getIsLoading',
-      pageNumber: 'contact/getPageNumber',
-      totalPages: 'contact/getTotalPages',
-      contactInquiries: 'contact/getContactInquiries',
-      singleInquiry: 'contact/getSingleInquiry'
-    })
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    ...mapActions({
-      loadItems: 'contact/loadItems',
-      send: 'contact/send',
-      renderDialog: 'contact/renderDialog'
-    }),
-    loadContacts (num = 1) {
-      const payload = {
-        showResolved: this.showResolved,
-        page: num,
-        pageSize: this.pageSize
-      }
-      this.loadItems(payload)
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Resolved Inquiries' })
-  },
-  mounted () {
-    this.loadContacts(this.pageNumber)
-  }
-}
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import Spinner from '@/components/Spinner.vue';
+import ContactBox from '@/components/portal/Contact.vue';
+import ContactCard from '@/components/portal/ContactCard.vue';
+import pagination from '@/components/explorer/Pagination.vue';
+
+const store = useStore();
+
+const showResolved = ref(true);
+const pageSize = ref(10);
+
+const loading = computed(() => store.getters['contact/getIsLoading']);
+const pageNumber = computed(() => store.getters['contact/getPageNumber']);
+const totalPages = computed(() => store.getters['contact/getTotalPages']);
+const contactInquiries = computed(() => store.getters['contact/getContactInquiries']);
+const singleInquiry = computed(() => store.getters['contact/getSingleInquiry']);
+
+const toggleDialogBox = () => {
+  store.commit('setDialogBox');
+};
+
+const loadItems = (payload: any) => {
+  store.dispatch('contact/loadItems', payload);
+};
+
+const send = (resolveInquiry: boolean) => {
+  store.dispatch('contact/send', resolveInquiry);
+};
+
+const renderDialog = (payload: any) => {
+  store.dispatch('contact/renderDialog', payload);
+};
+
+const loadContacts = (num = 1) => {
+  const payload = {
+    showResolved: showResolved.value,
+    page: num,
+    pageSize: pageSize.value
+  };
+  loadItems(payload);
+};
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: 'mail', name: 'Resolved Inquiries' });
+  loadContacts(pageNumber.value);
+});
 </script>

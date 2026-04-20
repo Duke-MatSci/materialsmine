@@ -1,7 +1,7 @@
 <template>
   <div class="viz-u-postion__rel">
     <md-app-toolbar
-      class="md-large md-dense md-primary"
+      class="md-app-toolbar md-large md-dense md-primary md-theme-default"
       id="reset_bg"
       :style="[transition, !showTop && hideHeaderView]"
     >
@@ -23,8 +23,8 @@
             <ul>
               <li>
                 <router-link to="/nm" v-slot="{ navigate, href }" custom>
-                  <a :href="href" @click="navigate">NanoMine</a></router-link
-                >
+                  <a :href="href" @click="navigate">NanoMine</a>
+                </router-link>
               </li>
               <li>
                 <router-link to="/mm" v-slot="{ navigate, href }" custom>
@@ -33,8 +33,8 @@
               </li>
               <li>
                 <span v-if="isAuth" class="u_color_white u--font-emph-m">
-                  Hi {{ displayName }}</span
-                >
+                  Hi {{ displayName }}
+                </span>
                 <a
                   v-if="!isAuth"
                   class="md-icon-button large u_color_white u--font-emph-m u_margin-top-small"
@@ -47,67 +47,67 @@
           </div>
         </div>
       </div>
-      <!-- Toolbar -->
+      <!-- Toolbar Tabs -->
       <div class="md-toolbar-row u_margin-top-med u_toggle-display-off">
         <md-tabs class="md-primary" id="reset_tab_bg" md-sync-route>
-          <!-- Add _ to _menutabs as this is just a class selector for testing purposes only -->
-          <md-tab
-            class="_menutabs"
-            v-for="(route, i) in tabRoutes"
-            :key="i"
-            :to="route.path"
-            :id="`tab-${route.name || route.label}`"
-            :md-label="route.label"
-            :exact="route.exact"
-          />
+          <md-tab class="mm-ff" id="tab-home" md-label="Home" to="/"></md-tab>
+          <md-tab id="tab-pages" md-label="Pages" to="/pages"></md-tab>
+          <md-tab id="tab-posts" md-label="Posts" to="/posts"></md-tab>
+          <md-tab id="tab-favorites" md-label="Favorites" to="/favorites" :exact="true"></md-tab>
+          <!-- <md-tab
+        class="_menutabs"
+        v-for="(route, i) in tabRoutes"
+        :key="i"
+        :to="route.path"
+        :id="`tab-${route.name || route.label}`"
+        :md-label="route.label"
+        :exact="route.exact"
+      /> -->
         </md-tabs>
       </div>
     </md-app-toolbar>
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-import { HEADER_ROUTES } from '@/modules/nav-routes'
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { useStore } from 'vuex';
+import { HEADER_ROUTES } from '@/modules/nav-routes';
 
-export default {
-  name: 'ExpHeader',
-  props: ['toggler', 'showTop'],
-  data () {
-    return {
-      showBadge: false,
-      scrollPosition: 0
-    }
-  },
-  computed: {
-    ...mapGetters({
-      isAuth: 'auth/isAuthenticated',
-      displayName: 'auth/displayName'
-    }),
-    tabRoutes () {
-      const routeParent = this.$route.path.split('/')[1]
-      return HEADER_ROUTES?.[routeParent] ?? []
-    },
-    searchTerm: {
-      get () {
-        return this.$store.getters['explorer/getSearchKeyword']
-      },
-      set (payload) {
-        this.$store.commit('explorer/setSearchKeyword', payload)
-        if (!payload) {
-          this.$store.commit('explorer/setSearching')
-        }
-      }
-    },
-    searchEnabled () {
-      return this.$store.getters['explorer/getSearching']
-    },
-    hideHeaderView () {
-      return { top: `-${74}px` }
-    },
-    transition () {
-      return { transition: `all ${0.2}s linear` }
-    }
-  }
+interface Props {
+  toggler: () => void;
+  showTop: boolean;
 }
+
+const props = defineProps<Props>();
+
+const store = useStore();
+const route = useRoute();
+
+// Auth state
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const displayName = computed(() => store.getters['auth/displayName']);
+
+// Tabs
+const tabRoutes = computed(() => {
+  const routeParent = route.path.split('/')[1] as keyof typeof HEADER_ROUTES;
+  const routes = HEADER_ROUTES?.[routeParent] ?? [];
+  return routes;
+});
+
+// Explorer search bindings (kept for parity with legacy logic)
+const searchEnabled = computed(() => store.getters['explorer/getSearching']);
+const searchTerm = computed({
+  get: () => store.getters['explorer/getSearchKeyword'],
+  set: (payload: string) => {
+    store.commit('explorer/setSearchKeyword', payload);
+    if (!payload) store.commit('explorer/setSearching');
+  },
+});
+
+const hideHeaderView = computed(() => ({ top: `-${74}px` }));
+const transition = computed(() => ({ transition: `all ${0.2}s linear` }));
+
+defineOptions({ name: 'ExpHeader' });
 </script>

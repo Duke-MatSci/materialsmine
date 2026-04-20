@@ -63,75 +63,71 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import NamespaceAccordion from '@/components/ns/classes/NamespaceAccordion.vue'
-import { mapGetters } from 'vuex'
 
-export default {
-  name: 'ClassesList',
-  data () {
-    return {
-      loading: false,
-      searchKeyword: '',
-      isListVisible: true
-    }
-  },
-  components: {
-    NamespaceAccordion
-  },
-  computed: {
-    ...mapGetters({
-      classes: 'ns/getClasses',
-      currentClass: 'ns/getCurrentClass',
-      searchResult: 'ns/getSearchResults'
-    }),
-    setDropdownPosition () {
-      return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
-    },
+const store = useStore()
+const router = useRouter()
 
-    limitHeight () {
-      return { maxHeight: 6 + 'rem' }
+const loading = ref(false)
+const searchKeyword = ref('')
+const isListVisible = ref(true)
+
+const classes = computed(() => store.getters['ns/getClasses'])
+const currentClass = computed(() => store.getters['ns/getCurrentClass'])
+const searchResult = computed(() => store.getters['ns/getSearchResults'])
+
+const setDropdownPosition = computed(() => {
+  return { top: 100 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
+})
+
+const limitHeight = computed(() => {
+  return { maxHeight: 6 + 'rem' }
+})
+
+const toggleClass = (id: string) => {
+  const element = document.getElementById(id)
+  if (!element) return
+  element.classList.toggle('u--alt-bg')
+  openAncestor(id)
+}
+
+const openAncestor = (id: string) => {
+  const element = document.getElementById(id)
+  if (!element) return
+  let parent = element.parentElement
+  while (parent) {
+    if (parent.tagName.toLowerCase() === 'details') {
+      (parent as HTMLDetailsElement).open = true
     }
-  },
-  methods: {
-    toggleClass (id) {
-      const element = document.getElementById(id)
-      if (!element) return
-      element.classList.toggle('u--alt-bg')
-      this.openAncestor(id)
-    },
-    openAncestor (id) {
-      const element = document.getElementById(id)
-      let parent = element.parentElement
-      while (parent) {
-        if (parent.tagName.toLowerCase() === 'details') {
-          parent.open = true
-        }
-        parent = parent.parentElement
-      }
-    },
-    showClassInfo (id) {
-      const url = `/ns/${id.split('/').pop().split('#').pop()}`
-      this.$router.push(url)
-    },
-    async submitSearch () {
-      const query = this.searchKeyword
-      if (query.length < 3) {
-        return this.$store.commit('ns/clearSearchQueries')
-      }
-      await this.$store.dispatch('ns/searchNSData', {
-        query,
-        singleResult: false
-      })
-    }
-  },
-  mounted () {
-    this.toggleClass(this.$store.state.ns.selectedId)
-  },
-  watch: {
-    searchKeyword () {
-      this.submitSearch()
-    }
+    parent = parent.parentElement
   }
 }
+
+const showClassInfo = (id: string) => {
+  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`
+  router.push(url)
+}
+
+const submitSearch = async () => {
+  const query = searchKeyword.value
+  if (query.length < 3) {
+    return store.commit('ns/clearSearchQueries')
+  }
+  await store.dispatch('ns/searchNSData', {
+    query,
+    singleResult: false
+  })
+}
+
+watch(searchKeyword, () => {
+  submitSearch()
+})
+
+onMounted(() => {
+  toggleClass(store.state.ns.selectedId)
+})
 </script>

@@ -33,44 +33,32 @@
     </div>
   </div>
 </template>
-<script>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
 import SearchComponent from '@/components/ns/home/SearchComponent.vue'
 import OntologyDetails from '@/components/ns/home/OntologyDetails.vue'
 import OntologyMetrics from '@/components/ns/home/OntologyMetrics.vue'
 
-export default {
-  name: 'Namespace',
-  components: {
-    SearchComponent,
-    OntologyDetails,
-    OntologyMetrics
-  },
-  data () {
-    return {
-      loading: false,
-      errorMessage: "The class information you are looking for doesn't exist."
-    }
-  },
-  computed: {
-    namespace () {
-      return this.$route.params?.namespace
-    },
-    containerSize () {
-      return 'md-layout-item md-size-100 md-large-size-95 md-small-size-100 u_height--auto'
-    },
-    error () {
-      return this.$store.getters['ns/checkError']
-    }
-  },
-  methods: {
-    handleDropdown () {
-      const element = document.getElementById('searchMenuDropdown')
-      if (!element) return
-      this.$store.commit('ns/clearSearchQueries')
-    }
-  },
-  mounted () {
-    this.$store.commit('ns/clearSearchQueries')
-  }
+const route = useRoute()
+const store = useStore()
+
+const loading = ref(false)
+const errorMessage = ref("The class information you are looking for doesn't exist.")
+
+const namespace = computed(() => route.params?.namespace)
+const containerSize = computed(() => 'md-layout-item md-size-100 md-large-size-95 md-small-size-100 u_height--auto')
+const error = computed(() => store.getters['ns/checkError'])
+
+const handleDropdown = () => {
+  const element = document.getElementById('searchMenuDropdown')
+  if (!element) return
+  store.commit('ns/clearSearchQueries')
 }
+
+onMounted(() => {
+  store.commit('ns/clearSearchQueries')
+})
 </script>

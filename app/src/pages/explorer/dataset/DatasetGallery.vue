@@ -19,16 +19,12 @@
                   required
                   v-model.lazy="searchWord"
                 />
-                <label
-                  htmlFor="search"
-                  class="form__label search_box_form_label"
+                <label htmlFor="search" class="form__label search_box_form_label"
                   >Search Datasets</label
                 >
               </div>
             </div>
-            <div
-              class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg"
-            >
+            <div class="form__group search_box_form-item-2 explorer_page-nav u--margin-neg">
               <!-- <div class="form__field md-field">
               <select class="form__select"
                 v-model="filter" name="filter" id="filter">
@@ -69,31 +65,24 @@
       </div>
       <template v-if="!!items && !!items.length">
         <div class="gallery-grid grid grid_col-5">
-          <md-card
-            v-for="(result, index) in items"
-            :key="index"
-            class="btn--animated gallery-item"
-          >
+          <md-card v-for="(result, index) in items" :key="index" class="btn--animated gallery-item">
             <div class="u_gridicon u_gridbg">
-              <a download :href="optionalChaining(() => result.distribution)">
-                <md-icon
-                  class="u_color_white"
-                  style="font-size: 14px !important"
+              <div v-if="isAuth" @click.prevent="copyDataDictionary(result.distribution || '')">
+                <md-icon class="u_color_white" style="font-size: 14px !important">
+                  recycling</md-icon
                 >
+              </div>
+              <div @click.prevent="downloadFiles(result.distribution)">
+                <md-icon class="u_color_white" style="font-size: 14px !important">
                   download</md-icon
                 >
-              </a>
-              <div
-                v-if="isAuth && isAdmin"
-                @click.prevent="editDataset(result)"
-              >
+              </div>
+              <div v-if="isAuth && isAdmin" @click.prevent="editDataset(result)">
                 <md-icon class="u_color_white">edit</md-icon>
               </div>
               <div
                 v-if="isAuth && isAdmin"
-                @click.prevent="
-                  renderDialog('Delete Dataset?', 'delete', result, 80)
-                "
+                @click.prevent="renderDialog('Delete Dataset?', 'delete', result, 80)"
               >
                 <md-icon class="u_color_white">delete_outline</md-icon>
               </div>
@@ -102,23 +91,20 @@
               v-if="result.identifier"
               :to="{
                 name: 'DatasetVisualizer',
-                params: { id: getDatasetId(result) }
+                params: { id: getDatasetId(result) },
               }"
             >
               <md-card-media-cover md-solid>
                 <md-card-media v-if="result.thumbnail" md-ratio="4:3">
                   <img :src="result.thumbnail" :alt="result.label" />
                 </md-card-media>
-                <md-card-media v-else md-ratio="4:3" class="u--bg-grey">
-                </md-card-media>
+                <md-card-media v-else md-ratio="4:3" class="u--bg-grey"> </md-card-media>
                 <md-card-area class="u_gridbg">
                   <md-card-header class="u_show_hide">
                     <span class="md-subheading">
                       <strong>{{ result.label }}</strong>
                     </span>
-                    <span class="md-body-1">{{
-                      reduceDescription(result.description, 15)
-                    }}</span>
+                    <span class="md-body-1">{{ reduceDescription(result.description, 15) }}</span>
                   </md-card-header>
                 </md-card-area>
               </md-card-media-cover>
@@ -137,19 +123,14 @@
       >
         <h3 class="visualize_header-h3 u_margin-top-med">
           Invalid page number,
-          <a @click.prevent="loadPrevNextImage(totalPages)"
-            >return to page {{ totalPages }}?</a
-          >
+          <a @click.prevent="loadPrevNextImage(totalPages)">return to page {{ totalPages }}?</a>
         </h3>
       </div>
-      <div
-        class="utility-roverflow u_centralize_text u_margin-top-med section_loader"
-        v-else
-      >
+      <div class="utility-roverflow u_centralize_text u_margin-top-med section_loader" v-else>
         <h1 class="visualize_header-h1 u_margin-top-med">No Datasets Found</h1>
       </div>
     </div>
-    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+    <Dialog :active="dialogBoxActive" :min-width="dialog.minWidth">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
         <div v-if="dialog.type == 'delete'">
@@ -158,8 +139,7 @@
               This will permanently remove the dataset
               <b>{{ dialog.dataset.label }}</b>
             </div>
-            with identifier <b>{{ dialog.dataset.identifier }}</b> and any
-            associated files.
+            with identifier <b>{{ dialog.dataset.identifier }}</b> and any associated files.
           </md-content>
         </div>
         <div v-if="dialogLoading">
@@ -168,143 +148,262 @@
       </template>
       <template v-slot:actions>
         <span v-if="dialog.type == 'delete' && dialog.dataset">
-          <md-button @click.native.prevent="toggleDialogBox">
-            No, cancel
-          </md-button>
-          <md-button @click.native.prevent="deleteDataset(dialog.dataset)">
-            Yes, delete.
-          </md-button>
+          <md-button @click.prevent="toggleDialogBox"> No, cancel </md-button>
+          <md-button @click.prevent="deleteDataset(dialog.dataset)"> Yes, delete. </md-button>
         </span>
-        <md-button v-else @click.native.prevent="toggleDialogBox"
-          >Close</md-button
-        >
+        <md-button v-else @click.prevent="toggleDialogBox">Close</md-button>
       </template>
-    </dialogbox>
+    </Dialog>
   </div>
 </template>
-<script>
-import spinner from '@/components/Spinner'
-import pagination from '@/components/explorer/Pagination'
-import Dialog from '@/components/Dialog.vue'
-import { mapGetters, mapMutations } from 'vuex'
-import reducer from '@/mixins/reduce'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
-import explorerQueryParams from '@/mixins/explorerQueryParams'
 
-export default {
+<script setup lang="ts">
+// TODO: @tholulomo remove commented sections here
+import { ref, computed, watch, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter, useRoute } from 'vue-router';
+import { useDataDictionary } from '@/composables/useDataDictionary';
+import spinner from '@/components/Spinner.vue';
+import pagination from '@/components/explorer/Pagination.vue';
+import Dialog from '@/components/Dialog.vue';
+
+defineOptions({
   name: 'viz-grid',
-  mixins: [reducer, explorerQueryParams, optionalChainingUtil],
-  data () {
-    return {
-      loading: true,
-      pageNumber: 1,
-      baseUrl: `${window.location.origin}/api/files/`,
-      dialog: {
-        title: ''
-      },
-      dialogLoading: false,
-      filter: '',
-      searchWord: '',
-      searchEnabled: false
+});
+
+interface DatasetItem {
+  label: string;
+  description: string;
+  identifier: string;
+  thumbnail?: string;
+  distribution?: string;
+}
+
+interface DialogState {
+  title: string;
+  type?: string;
+  minWidth?: number;
+  dataset?: DatasetItem;
+}
+
+const store = useStore();
+const router = useRouter();
+const route = useRoute();
+const { copyDataDictionary } = useDataDictionary();
+
+// Data
+// const baseUrl = ref<string>(`${window.location.origin}/api/files/`);
+const loading = ref<boolean>(true);
+const pageNumber = ref<number>(1);
+const dialog = ref<DialogState>({
+  title: '',
+});
+const dialogLoading = ref<boolean>(false);
+const filter = ref<string>('');
+const searchWord = ref<string>('');
+const searchEnabled = ref<boolean>(false);
+const renderText = ref<string>('');
+const pageSize = ref<number>(20);
+
+// Computed
+const dialogBoxActive = computed(() => store.getters.dialogBox);
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const items = computed(() => store.getters['explorer/sddDatasets/getAllDatasets']);
+const page = computed(() => store.getters['explorer/sddDatasets/getPage']);
+const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
+const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
+
+// Methods from reducer mixin
+const reduceDescription = (args: string, size = 50): string => {
+  const arr = args.split(' ');
+  arr.splice(size);
+  const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
+  const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return `${res}...`;
+};
+
+// Methods from explorerQueryParams mixin
+const checkPageSize = (pageSizeValue: number): void => {
+  if (!pageSizeValue || (pageSizeValue && pageSizeValue < 1)) {
+    pageSize.value = 20;
+  } else if (pageSizeValue && pageSizeValue > 50) {
+    pageSize.value = 20;
+  } else {
+    pageSize.value = pageSizeValue;
+  }
+};
+
+const updateSearchWord = (searchWordValue: string): void => {
+  if (!searchWordValue && !searchWordValue.length) searchEnabled.value = false;
+  searchWord.value = searchWordValue;
+};
+
+const localSearchMethod = async (): Promise<void> => {
+  if (searchEnabled.value) {
+    store.dispatch('explorer/sddDatasets/searchDatasetKeyword', {
+      searchTerm: searchWord.value,
+      page: pageNumber.value,
+    });
+  } else await loadItems(pageNumber.value);
+  loading.value = false;
+};
+
+const updateParamsAndCall = async (pushNewRoute = false): Promise<void> => {
+  searchEnabled.value = !!searchWord.value;
+  if (pushNewRoute) {
+    const query: Record<string, any> = {
+      page: pageNumber.value,
+    };
+    if (pageSize.value) {
+      query.size = pageSize.value;
     }
-  },
-  components: {
-    pagination,
-    spinner,
-    dialogbox: Dialog
-  },
-  computed: {
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox',
-      isAuth: 'auth/isAuthenticated',
-      isAdmin: 'auth/isAdmin',
-      items: 'explorer/sddDatasets/getAllDatasets',
-      page: 'explorer/sddDatasets/getPage',
-      total: 'explorer/sddDatasets/getTotal',
-      totalPages: 'explorer/sddDatasets/getTotalPages'
-    })
-  },
-  methods: {
-    ...mapMutations({ toggleDialogBox: 'setDialogBox' }),
-    renderDialog (title, type, result, minWidth) {
-      this.dialog = {
-        title,
-        type,
-        minWidth,
-        dataset: result
-      }
-      this.toggleDialogBox()
-    },
-    async submitSearch () {
-      this.searchEnabled = !!this.searchWord // || !!this.filtersActive
-      this.pageNumber = 1
-      return await this.updateParamsAndCall(true)
-    },
-    async customReset (type) {
-      this.filter = ''
-      this.searchWord = null
-      await this.resetSearch(type)
-    },
-    async deleteDataset (dataset) {
-      if (!this.isAdmin) return // temporary safeguard
-      this.dialogLoading = true
-      await this.$store.dispatch(
-        'explorer/curation/deleteEntityNanopub',
-        dataset.identifier
-      )
-      await this.$store.dispatch('explorer/curation/deleteEntityES', {
-        identifier: dataset.identifier,
-        type: 'datasets'
-      })
-      this.toggleDialogBox()
-      this.dialogLoading = false
-      await this.loadItems()
-    },
-    editDataset (dataset) {
-      return this.$router.push(
-        `/explorer/curate/sdd/edit/${this.getDatasetId(dataset)}`
-      )
-    },
-    downloadFiles (item) {
-      if (item.distribution) {
-        fetch(item.distribution)
-      }
-    },
-    async localSearchMethod () {
-      if (this.searchEnabled) {
-        this.$store.dispatch('explorer/sddDatasets/searchDatasetKeyword', {
-          searchTerm: this.searchWord,
-          page: this.pageNumber
-        })
-      } else await this.loadItems(this.pageNumber)
-      this.loading = false
-    },
-    async loadItems (page = 1) {
-      this.loading = true
-      try {
-        await this.$store.dispatch('explorer/sddDatasets/loadDatasets', {
-          page
-        })
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: error || 'Something went wrong',
-          action: () => this.loadItems(page)
-        })
-      } finally {
-        this.loading = false
-      }
-    },
-    getDatasetId (dataset) {
-      return dataset.identifier.split('dataset/')[1]
+    if (searchWord.value) {
+      query.q = searchWord.value;
     }
-  },
-  async mounted () {
-    const query = this.$route.query
-    if (query) {
-      await this.loadParams(this.$route.query, false)
-    } else {
-      await this.loadItems()
+    if (filter.value) {
+      query.type = filter.value;
+    }
+    router.push({ query });
+  }
+  await localSearchMethod();
+};
+
+const loadPrevNextImage = async (event: number): Promise<void> => {
+  pageNumber.value = event;
+  await updateParamsAndCall(true);
+};
+
+const loadParams = async (query: Record<string, any>, performCall = true): Promise<void> => {
+  pageNumber.value = parseInt(query.page) ? +query.page : 1;
+  if (pageSize.value) {
+    parseInt(query.size) ? checkPageSize(+query.size) : checkPageSize(20);
+  }
+  query.q ? updateSearchWord(query.q) : updateSearchWord('');
+  if (performCall) {
+    await updateParamsAndCall();
+  }
+};
+
+const resetSearch = async (type?: string): Promise<void> => {
+  renderText.value = `Showing all ${type}`;
+  await router.replace({ query: {} });
+  return await loadParams({}, false);
+};
+
+// Component methods
+const toggleDialogBox = (): void => {
+  store.commit('setDialogBox');
+};
+
+const renderDialog = (title: string, type: string, result: DatasetItem, minWidth: number): void => {
+  dialog.value = {
+    title,
+    type,
+    minWidth,
+    dataset: result,
+  };
+  toggleDialogBox();
+};
+
+const submitSearch = async (): Promise<void> => {
+  searchEnabled.value = !!searchWord.value;
+  pageNumber.value = 1;
+  return await updateParamsAndCall(true);
+};
+
+const customReset = async (type?: string): Promise<void> => {
+  filter.value = '';
+  searchWord.value = '';
+  await resetSearch(type);
+};
+
+const deleteDataset = async (dataset: DatasetItem): Promise<void> => {
+  if (!isAdmin.value) return; // temporary safeguard
+  dialogLoading.value = true;
+  await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.identifier);
+  await store.dispatch('explorer/curation/deleteEntityES', {
+    identifier: dataset.identifier,
+    type: 'datasets',
+  });
+  toggleDialogBox();
+  dialogLoading.value = false;
+  await loadItems();
+};
+
+const editDataset = (dataset: DatasetItem): void => {
+  router.push(`/explorer/curate/sdd/edit/${getDatasetId(dataset)}`);
+};
+
+// const downloadFiles = (item: DatasetItem): void => {
+//   if (item.distribution) {
+//     fetch(item.distribution);
+//   }
+// };
+
+const loadItems = async (pageCurrent = 1): Promise<void> => {
+  loading.value = true;
+  try {
+    await store.dispatch('explorer/sddDatasets/loadDatasets', {
+      page: pageCurrent,
+    });
+  } catch (error) {
+    store.commit('setSnackbar', {
+      message: error || 'Something went wrong',
+      action: () => loadItems(pageCurrent),
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const downloadFiles = (distribution: string | string[]): void => {
+  const links = Array.isArray(distribution) ? distribution : [distribution];
+  links.filter(Boolean).forEach((link) => {
+    const a = document.createElement('a');
+    a.href = link;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+};
+
+const getDatasetId = (dataset: DatasetItem): string => {
+  return dataset.identifier.split('dataset/')[1];
+};
+
+// Watchers from explorerQueryParams mixin
+watch(
+  () => route.query,
+  (newValue, oldValue) => {
+    if (newValue !== oldValue) {
+      loadParams(newValue);
     }
   }
-}
+);
+
+watch(pageSize, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    checkPageSize(newValue);
+    updateParamsAndCall(true);
+  }
+});
+
+// Lifecycle
+onMounted(async () => {
+  const query = route.query;
+  if (query && Object.keys(query).length > 0) {
+    await loadParams(query as Record<string, any>);
+  } else {
+    await loadItems();
+  }
+
+  if (isAuth.value) {
+    store.commit('setSnackbar', {
+      message: 'ℹ️ Click the recycle icon on a dataset card to copy and reuse its SDD link',
+      duration: 20000,
+    });
+  }
+});
 </script>

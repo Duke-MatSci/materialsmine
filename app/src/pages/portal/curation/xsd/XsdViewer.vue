@@ -31,14 +31,14 @@
       >
         <md-button
           class="md-fab md-dense md-primary btn--primary"
-          @click.native.prevent="navBack"
+          @click.prevent="navBack"
         >
           <md-tooltip> Go Back </md-tooltip>
           <md-icon>arrow_back</md-icon>
         </md-button>
 
         <md-button
-          @click="downloadJsonSchema"
+          @click="downloadJsonSchemaHandler"
           v-if="isAuth && isAdmin"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -50,47 +50,57 @@
   </div>
 </template>
 
-<script>
-import spinner from '@/components/Spinner'
-import Prism from 'prismjs'
-import 'prismjs/components/prism-xml-doc'
-import 'prismjs/components/prism-markup'
-import 'prismjs/themes/prism-coy.min.css'
-import { mapGetters, mapActions } from 'vuex'
+<script setup lang="ts">
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import spinner from '@/components/Spinner.vue';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-xml-doc';
+import 'prismjs/components/prism-markup';
+import 'prismjs/themes/prism-coy.min.css';
 
-export default {
+defineOptions({
   name: 'XsdView',
   components: {
     spinner
-  },
-  async mounted () {
-    window.Prism = window.Prism || {}
-    window.Prism.manual = true
-    Prism.highlightAll()
-    this.fetchJsonSchema()
-  },
-
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'XSD Schema' })
-  },
-
-  computed: {
-    ...mapGetters({
-      token: 'auth/token',
-      isAdmin: 'auth/isAdmin',
-      isAuth: 'auth/isAuthenticated',
-      xsd: 'portal/xsd'
-    }),
-    isSmallTabView () {
-      return screen.width < 760
-    }
-  },
-
-  methods: {
-    ...mapActions('portal', ['downloadJsonSchema', 'fetchJsonSchema']),
-    navBack () {
-      this.$router.back()
-    }
   }
-}
+});
+
+const store = useStore();
+const router = useRouter();
+
+// Computed properties from store
+const token = computed(() => store.getters['auth/token']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const xsd = computed(() => store.getters['portal/xsd']);
+
+const isSmallTabView = computed(() => {
+  return screen.width < 760;
+});
+
+// Methods
+const downloadJsonSchemaHandler = () => {
+  store.dispatch('portal/downloadJsonSchema');
+};
+
+const fetchJsonSchemaHandler = () => {
+  store.dispatch('portal/fetchJsonSchema');
+};
+
+const navBack = () => {
+  router.back();
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  window.Prism = window.Prism || {};
+  window.Prism.manual = true;
+  Prism.highlightAll();
+  fetchJsonSchemaHandler();
+
+  // Set app header info
+  store.commit('setAppHeaderInfo', { icon: '', name: 'XSD Schema' });
+});
 </script>

@@ -18,7 +18,7 @@
   >
     <!-- file upload button -->
     <div class="md-layout-item fileButtonWrapper">
-      <md-button class="md-primary fileButton" @click="$refs.myUpload.click()"
+      <md-button class="md-primary fileButton" @click="myUpload?.click()"
         >Browse files</md-button
       >
       <input
@@ -102,7 +102,7 @@
             <md-select
               :label="select.title"
               v-model="selectedOptions[select.submitJobTitle]"
-              @change="$emit('set-selectors', selectedOptions)"
+              @change="emit('set-selectors', selectedOptions)"
             >
               <md-option
                 v-for="option of select.options"
@@ -114,7 +114,7 @@
           </md-field>
 
           <div v-else>
-            <md-field @change="$emit('set-selectors', selectedOptions)">
+            <md-field @change="emit('set-selectors', selectedOptions)">
               <label>{{ select.title }}</label>
               <md-input
                 v-model="selectedOptions[select.submitJobTitle]"
@@ -135,484 +135,508 @@
       @setPhase="phaseCallback"
       @setCalibration="calibrationCallback"
     ></EditImage>
-
-    <!-- table of uploaded images -->
-    <!-- <div v-if="fileUploaded" class='imageTable md-layout-item md-size-100'>
-
-      <div class='imageTableHeader'>
-        <h4>Name</h4>
-        <h4>Size</h4>
-        <div class='tooltipWrapper'>
-          <h4>Selected phase</h4>
-          <md-tooltip md-direction="top">
-            <template v-slot:activator="{ on, attrs }">
-              <md-icon v-bind="attrs" v-on="on">mdi-information</md-icon>
-            </template>
-            <span>Select which phase to analyze for each image</span>
-          </md-tooltip>
-        </div>
-        <h4>Options</h4>
-      </div>
-
-      <div class='imageTableContents' v-for="(file, index) in displayedFiles" :key='file.name'>
-
-        <p>{{ file.name }}</p>
-
-        <p :key='file.pixelSize.width'><span v-if="dimensionsEntered" :key='file.size.height'>{{ file.size.width }} x {{
-            file.size.height }} {{ file.size.units }} / </span>{{ file.pixelSize.width }} x {{ file.pixelSize.height }}
-          pixels <span v-if='file.errors.size' class='imageSizeError'>ERROR</span></p>
-
-        <p v-if="file.phase.x_offset !== 0 || file.phase.y_offset !== 0">Manually set (x-offset: {{ file.phase.x_offset
-          }}px, y-offset: {{ file.phase.y_offset }}px)</p>
-        <p v-else>Preset (bright phase)</p>
-
-        <div class='imageTableButtons' v-if='filesEditable'>
-          <v-btn small class='imageTableButton' :key='index' v-on:click="openImageEditor(index, 'crop')" color="primary">
-            Crop image</v-btn>
-          <v-btn small class='imageTableButton' :key='index' v-on:click="openImageEditor(index, 'phase')" color="primary">
-            Set phase</v-btn>
-        </div>
-
-      </div>
-
-    </div> -->
   </div>
 </template>
 
-<script>
-import EditImage from './EditImage.vue' // image cropping modal
-import Jszip from 'jszip' // for unzipping and rezipping files
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue';
+import EditImage from './EditImage.vue'; // image cropping modal
+import Jszip from 'jszip'; // for unzipping and rezipping files
 
-export default {
+defineOptions({
   name: 'ImageUpload',
+});
 
-  components: {
-    EditImage
-  },
+interface Props {
+  aspectRatio: 'square' | 'free';
+  selects?: SelectOption[];
+  collectDimensions: boolean;
+  acceptFileTypes: string;
+}
 
-  props: {
-    aspectRatio: String,
-    selects: Array,
-    collectDimensions: Boolean,
-    acceptFileTypes: String
-  },
+interface SelectOption {
+  title: string;
+  submitJobTitle: string;
+  options?: string[];
+}
 
-  data () {
-    return {
-      submissionFile: {},
-      displayedFiles: [],
-      selectedOptions: {},
+interface SubmissionFile {
+  name?: string;
+  url?: string;
+  fileType?: string;
+}
 
-      filesEditable: true,
-      errorAlert: {
-        count: 0,
-        text: 'Error: selected phase for one or more images falls outside the image(s). This is likely due to cropping the image after setting the phase.'
-      },
+interface DisplayedFile {
+  name: string;
+  originalName: string;
+  url: string;
+  fileType: string;
+  size: {
+    width: number;
+    height: number;
+    units: string | null;
+  };
+  pixelSize: {
+    width: number;
+    height: number;
+  };
+  originalSize?: {
+    width: number;
+    height: number;
+  };
+  phase: {
+    x_offset: number;
+    y_offset: number;
+  };
+  errors: {
+    size: boolean;
+  };
+}
 
-      dimensionsEntered: false,
-      inputtedDimensions: { units: null, width: 0, height: 0 },
+interface Coordinates {
+  width: number;
+  height: number;
+  left: number;
+  top: number;
+}
 
-      imageEditorOpen: false,
-      imageEditorData: {
-        url: null,
-        name: null,
-        phase: { x_offset: null, y_offset: null }
-      },
-      editImageType: 'crop'
+interface Phase {
+  x_offset: number;
+  y_offset: number;
+}
+
+interface CalibratedDimensions {
+  width: number;
+  height: number;
+}
+
+interface ScaleBar {
+  width: number;
+  units: string | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  selects: () => []
+});
+
+const emit = defineEmits<{
+  (e: 'setFiles', file: SubmissionFile): void;
+  (e: 'set-selectors', options: Record<string, any>): void;
+  (e: 'fileTypeAlert', data: { title: string; content: string; reason: string }): void;
+  (e: 'errorAlert', data: { title: string; content: string; reason: string }): void;
+}>();
+
+// Refs
+const myUpload = ref<HTMLInputElement | null>(null);
+const submissionFile = ref<SubmissionFile>({});
+const displayedFiles = ref<DisplayedFile[]>([]);
+const selectedOptions = ref<Record<string, any>>({});
+const filesEditable = ref<boolean>(true);
+const errorAlert = ref({
+  count: 0,
+  text: 'Error: selected phase for one or more images falls outside the image(s). This is likely due to cropping the image after setting the phase.'
+});
+const dimensionsEntered = ref<boolean>(false);
+const inputtedDimensions = ref<{ units: string | null; width: number; height: number }>({
+  units: null,
+  width: 0,
+  height: 0
+});
+const imageEditorOpen = ref<boolean>(false);
+const imageEditorData = ref<DisplayedFile>({
+  url: '',
+  name: '',
+  originalName: '',
+  fileType: '',
+  size: { width: 0, height: 0, units: null },
+  pixelSize: { width: 0, height: 0 },
+  phase: { x_offset: 0, y_offset: 0 },
+  errors: { size: false }
+});
+const editImageType = ref<'crop' | 'phase' | 'calibrate'>('crop');
+
+// Computed
+const fileUploaded = computed<boolean>(() => {
+  return displayedFiles.value.length > 0;
+});
+
+// Methods
+const uploadFiles = (e: Event): void => {
+  const target = e.target as HTMLInputElement;
+  const inputFile = target.files?.[0];
+  if (inputFile === undefined) {
+    return;
+  }
+
+  // reset file information
+  submissionFile.value = {};
+  displayedFiles.value = [];
+  filesEditable.value = true;
+  if ('phase' in selectedOptions.value) {
+    delete selectedOptions.value.phase;
+  }
+  if ('dimensions' in selectedOptions.value) {
+    selectedOptions.value.dimensions = {
+      units: inputtedDimensions.value.units,
+      width: parseInt(String(inputtedDimensions.value.width)),
+      height: parseInt(String(inputtedDimensions.value.height)),
+      ratio: null
+    };
+  }
+  emit('set-selectors', selectedOptions.value);
+
+  const fr = new FileReader();
+  fr.readAsDataURL(inputFile);
+  fr.addEventListener('load', async () => {
+    // get file information
+    submissionFile.value = {
+      name: inputFile.name.toLowerCase(),
+      url: fr.result as string,
+      fileType: inputFile.name.split('.').pop()?.toLowerCase()
+    };
+
+    // push to parent
+    emit('setFiles', submissionFile.value);
+
+    // push to displayed files
+    if (submissionFile.value.fileType === 'zip') {
+      unzipUploadedFiles(inputFile); // function unzips contents, sets editable status and gets image dimensions
+    } else {
+      const lowerCaseName = inputFile.name.toLowerCase();
+      displayedFiles.value = [
+        {
+          name: lowerCaseName,
+          originalName: lowerCaseName,
+          url: fr.result as string,
+          fileType: lowerCaseName.split('.').pop() || '',
+          size: { width: 0, height: 0, units: null },
+          pixelSize: { width: 0, height: 0 },
+          phase: { x_offset: 0, y_offset: 0 },
+          errors: { size: false }
+        }
+      ];
+      getInitialDimensions(0); // set pixel dimensions for image
+      if (displayableFileType(0) === false) {
+        filesEditable.value = false;
+      } // set displayable status for image
+      pushPhase(0);
+      pushImageDimensions();
     }
-  },
+  });
+};
 
-  computed: {
-    fileUploaded: function () {
-      if (this.displayedFiles.length > 0) {
-        return true
-      }
-      return false
+const getInitialDimensions = (index: number): void => {
+  if (displayableFileType(index) === false) {
+    return;
+  }
+
+  const img = new Image();
+  img.src = displayedFiles.value[index].url;
+  img.onload = function () {
+    displayedFiles.value[index].pixelSize = {
+      width: img.width,
+      height: img.height
+    };
+    displayedFiles.value[index].originalSize = {
+      width: img.width,
+      height: img.height
+    };
+    updateUserDimensions(index);
+    displayedFiles.value[index].name += ' ';
+    pushImageDimensions();
+  };
+};
+
+// unzip if the user uploads a zip file
+const unzipUploadedFiles = (inputFile: File): void => {
+  const jszipObj = new Jszip();
+
+  jszipObj.loadAsync(inputFile).then(async function (zip) {
+    Object.keys(zip.files).forEach(function (filename) {
+      zip.files[filename]
+        .async('base64')
+        .then(function (fileData) {
+          const lowerCaseName = filename.toLowerCase();
+          const filetype = lowerCaseName.split('.').pop() || '';
+          displayedFiles.value.push({
+            name: lowerCaseName,
+            originalName: lowerCaseName,
+            url: 'data:image/' + filetype + ';base64,' + fileData,
+            fileType: filetype,
+            size: { width: 0, height: 0, units: null },
+            pixelSize: { width: 0, height: 0 },
+            phase: { x_offset: 0, y_offset: 0 },
+            errors: { size: false }
+          });
+        })
+        .then(function () {
+          getInitialDimensions(displayedFiles.value.length - 1); // get image dimensions
+          pushPhase(displayedFiles.value.length - 1);
+          pushImageDimensions();
+          if (
+            displayableFileType(displayedFiles.value.length - 1) ===
+            false
+          ) {
+            filesEditable.value = false;
+          } // reduce functionality if image is tif or mat
+        });
+    });
+  });
+};
+
+const calibrationCallback = (dimensions: CalibratedDimensions, scaleBarData: ScaleBar): void => {
+  inputtedDimensions.value.width = dimensions.width;
+  inputtedDimensions.value.height = dimensions.height;
+  inputtedDimensions.value.units = scaleBarData.units;
+  userDimensionsCallback();
+};
+
+// callback function for when users enter data into the image dimensions section
+const userDimensionsCallback = (): void => {
+  if (
+    inputtedDimensions.value.units !== null &&
+    parseInt(String(inputtedDimensions.value.width)) > 0 &&
+    parseInt(String(inputtedDimensions.value.height)) > 0
+  ) {
+    dimensionsEntered.value = true;
+    for (let i = 0; i < displayedFiles.value.length; i++) {
+      updateUserDimensions(i);
     }
-  },
+    pushImageDimensions();
+  }
+};
 
-  methods: {
-    // process uploaded files
-    uploadFiles: function (e) {
-      // initial variable declaration and input validation
-      const inputFile = e.target.files[0]
-      if (inputFile === undefined) {
-        return
-      }
+// emit image dimensions data back to parent
+const pushImageDimensions = (): void => {
+  if (displayableFileType(0) === true) {
+    let ratio =
+      displayedFiles.value[0].size.width /
+      displayedFiles.value[0].pixelSize.width;
 
-      // reset file information
-      this.submissionFile = {}
-      this.displayedFiles = []
-      this.filesEditable = true
-      if ('phase' in this.selectedOptions) {
-        delete this.selectedOptions.phase
-      }
-      if ('dimensions' in this.selectedOptions) {
-        this.selectedOptions.dimensions = {
-          units: this.inputtedDimensions.units,
-          width: parseInt(this.inputtedDimensions.width),
-          height: parseInt(this.inputtedDimensions.height),
-          ratio: null
-        }
-      }
-      this.$emit('set-selectors', this.selectedOptions)
-
-      const fr = new FileReader()
-      fr.readAsDataURL(inputFile)
-      fr.addEventListener('load', async () => {
-        // get file information
-        this.submissionFile = {
-          name: inputFile.name.toLowerCase(),
-          url: fr.result,
-          fileType: inputFile.name.split('.').pop().toLowerCase()
-        }
-
-        // push to parent
-        this.$emit('setFiles', this.submissionFile)
-
-        // push to displayed files
-        if (this.submissionFile.fileType === 'zip') {
-          this.unzipUploadedFiles(inputFile) // function unzips contents, sets editable status and gets image dimensions
-        } else {
-          var lowerCaseName = inputFile.name.toLowerCase()
-          this.displayedFiles = [
-            {
-              name: lowerCaseName,
-              originalName: lowerCaseName,
-              url: fr.result,
-              fileType: lowerCaseName.split('.').pop(),
-              size: { width: 0, height: 0, units: null },
-              pixelSize: { width: 0, height: 0 },
-              phase: { x_offset: 0, y_offset: 0 },
-              errors: { size: false }
-            }
-          ]
-          this.getInitialDimensions(0) // set pixel dimensions for image
-          if (this.displayableFileType(0) === false) {
-            this.filesEditable = false
-          } // set displayable status for image
-          this.pushPhase(0)
-          this.pushImageDimensions()
-          // console.log(this.displayedFiles[0].size.width, this.displayedFiles[0].pixelSize.width)
-        }
-      })
-    },
-
-    getInitialDimensions: function (index) {
-      if (this.displayableFileType(index) === false) {
-        return
-      }
-
-      var img = new Image()
-      img.src = this.displayedFiles[index].url
-      const vm = this
-      img.onload = function () {
-        vm.displayedFiles[index].pixelSize = {
-          width: img.width,
-          height: img.height
-        }
-        vm.displayedFiles[index].originalSize = {
-          width: img.width,
-          height: img.height
-        }
-        vm.updateUserDimensions(index)
-        vm.displayedFiles[index].name += ' '
-        vm.pushImageDimensions()
-      }
-    },
-
-    // unzip if the user uploads a zip file
-    unzipUploadedFiles: function (inputFile) {
-      // initial variable declaration
-      const jszipObj = new Jszip()
-
-      // unzip
-      jszipObj.loadAsync(inputFile).then(async function (zip) {
-        // transform contents to base64
-        Object.keys(zip.files).forEach(function (filename) {
-          zip.files[filename]
-            .async('base64')
-            .then(function (fileData) {
-              var lowerCaseName = filename.toLowerCase()
-              var filetype = lowerCaseName.split('.').pop()
-              this.displayedFiles.push({
-                name: lowerCaseName,
-                originalName: lowerCaseName,
-                url: 'data:image/' + filetype + ';base64,' + fileData,
-                fileType: filetype,
-                size: { width: 0, height: 0, units: null },
-                pixelSize: { width: 0, height: 0 },
-                phase: { x_offset: 0, y_offset: 0 },
-                errors: { size: false }
-              })
-            })
-            .then(function () {
-              this.getInitialDimensions(this.displayedFiles.length - 1) // get image dimensions
-              this.pushPhase(this.displayedFiles.length - 1)
-              this.pushImageDimensions()
-              if (
-                this.displayableFileType(this.displayedFiles.length - 1) ===
-                false
-              ) {
-                this.filesEditable = false
-              } // reduce functionality if image is tif or mat
-            })
-        })
-      })
-    },
-
-    calibrationCallback: function (...args) {
-      this.inputtedDimensions.width = args[0].width
-      this.inputtedDimensions.height = args[0].height
-      this.inputtedDimensions.units = args[1].units
-      this.userDimensionsCallback()
-    },
-
-    // callback function for when users enter data into the image dimensions section
-    userDimensionsCallback: function () {
-      if (
-        this.inputtedDimensions.units !== null &&
-        parseInt(this.inputtedDimensions.width) > 0 &&
-        parseInt(this.inputtedDimensions.height) > 0
-      ) {
-        this.dimensionsEntered = true
-        for (let i = 0; i < this.displayedFiles.length; i++) {
-          this.updateUserDimensions(i)
-        }
-        this.pushImageDimensions()
-      }
-    },
-
-    // emit image dimensions data back to parent
-    pushImageDimensions: function () {
-      if (this.displayableFileType(0) === true) {
-        var ratio =
-          this.displayedFiles[0].size.width /
-          this.displayedFiles[0].pixelSize.width
-
-        if (this.inputtedDimensions.units === 'nanometers') {
-          ratio = ratio / 1000000000
-        } else if (this.inputtedDimensions.units === 'micrometers') {
-          ratio = ratio / 1000000
-        } else if (this.inputtedDimensions.units === 'millimeters') {
-          ratio = ratio / 1000
-        }
-
-        this.selectedOptions.dimensions = {
-          units: this.inputtedDimensions.units,
-          width: this.displayedFiles[0].size.width,
-          height: this.displayedFiles[0].size.height,
-          ratio: ratio
-        }
-      } else {
-        this.selectedOptions.dimensions = {
-          units: this.inputtedDimensions.units,
-          width: parseInt(this.inputtedDimensions.width),
-          height: parseInt(this.inputtedDimensions.height),
-          ratio: null
-        }
-      }
-      this.$emit('set-selectors', this.selectedOptions)
-    },
-
-    // scale user inputted dimensions by how much user has cropped the images
-    updateUserDimensions: function (index) {
-      this.displayedFiles[index].size.units = this.inputtedDimensions.units
-      this.displayedFiles[index].size.width = parseInt(
-        (parseInt(this.inputtedDimensions.width) /
-          this.displayedFiles[index].originalSize.width) *
-          this.displayedFiles[index].pixelSize.width
-      )
-      this.displayedFiles[index].size.height = parseInt(
-        (parseInt(this.inputtedDimensions.height) /
-          this.displayedFiles[index].originalSize.height) *
-          this.displayedFiles[index].pixelSize.height
-      )
-    },
-
-    // args: [fileName, phase]
-    phaseCallback: function (...args) {
-      // find index of object to change in array
-      const indexFunction = (object) => object.name === args[0]
-      const index = this.displayedFiles.findIndex(indexFunction)
-
-      // apply new phase
-      this.displayedFiles[index].phase = args[1]
-      if (this.displayedFiles[index].errors.size === true) {
-        this.displayedFiles[index].errors.size = false
-        this.errorAlert.count -= 1
-      }
-
-      this.displayedFiles[index].name += ' ' // force rerender
-
-      // push to parent
-      this.pushPhase(index)
-    },
-
-    pushPhase: function (index) {
-      if ('phase' in this.selectedOptions) {
-        this.selectedOptions.phase[this.displayedFiles[index].originalName] =
-          this.displayedFiles[index].phase
-      } else {
-        this.selectedOptions.phase = {}
-        this.selectedOptions.phase[this.displayedFiles[index].originalName] =
-          this.displayedFiles[index].phase
-      }
-      this.$emit('set-selectors', this.selectedOptions)
-    },
-
-    // args: [cropped image, filename of cropped image, coordinates]
-    cropCallback: async function (...args) {
-      for (let i = 0; i < this.displayedFiles.length; i++) {
-        if (this.displayedFiles[i].name === args[1]) {
-          await this.cropImage(args[0], args[2], i)
-        } else if (this.displayableFileType(i) === false) {
-          continue
-        } else {
-          await this.cropImage(null, args[2], i)
-        }
-
-        this.displayedFiles[i].name = 'cropped_' + this.displayedFiles[i].name // force rerender
-      }
-
-      // push to parent
-      if (this.submissionFile.fileType === 'zip') {
-        this.rezipFiles()
-      } else {
-        this.submissionFile.url = this.displayedFiles[0].url
-        this.$emit('setFiles', this.submissionFile)
-      }
-      this.pushImageDimensions()
-      for (let i = 0; i < this.displayedFiles.length; i++) {
-        this.pushPhase(i)
-      }
-    },
-
-    // crops a single image: update the image, the image's phase, and the image dimensions
-    cropImage: async function (url, coordinates, index) {
-      function awaitImageCrop (image) {
-        return new Promise((resolve, reject) => {
-          image.onload = function () {
-            ctx.drawImage(image, -1 * coordinates.left, -1 * coordinates.top)
-            this.displayedFiles[index].url = canvas.toDataURL()
-            resolve()
-          }
-        })
-      }
-
-      // crop the image
-      if (url !== null) {
-        this.displayedFiles[index].url = url
-      } else {
-        var canvas = document.createElement('canvas')
-        canvas.width = coordinates.width
-        canvas.height = coordinates.height
-
-        var ctx = canvas.getContext('2d')
-        var image = new Image()
-        image.src = this.displayedFiles[index].url
-
-        await awaitImageCrop(image) // done to ensure that all images are cropped before files are rezipped
-      }
-
-      // update the phase based on new top left of image
-      if (
-        this.displayedFiles[index].phase.x_offset !== 0 ||
-        this.displayedFiles[index].phase.y_offset !== 0
-      ) {
-        this.displayedFiles[index].phase.x_offset -= coordinates.left
-        this.displayedFiles[index].phase.y_offset -= coordinates.top
-
-        // validate that new phase is still within the image
-        if (
-          this.displayedFiles[index].phase.x_offset < 0 ||
-          this.displayedFiles[index].phase.y_offset < 0
-        ) {
-          this.errorAlert.count += 1
-          this.displayedFiles[index].errors.size = true
-        } else if (
-          this.displayedFiles[index].phase.x_offset > coordinates.width ||
-          this.displayedFiles[index].phase.y_offset > coordinates.height
-        ) {
-          this.errorAlert.count += 1
-          this.displayedFiles[index].errors.size = true
-        }
-      }
-
-      // update the image dimensions
-      this.displayedFiles[index].pixelSize.width = coordinates.width
-      this.displayedFiles[index].pixelSize.height = coordinates.height
-
-      if (this.dimensionsEntered === true) {
-        this.updateUserDimensions(index)
-      }
-    },
-
-    // rezip images when images are altered and emit that back to parent component
-    async rezipFiles () {
-      const jszipObj = new Jszip()
-
-      // add images to zip file
-      for (let i = 0; i < this.displayedFiles.length; i++) {
-        jszipObj.file(
-          this.displayedFiles[i].originalName,
-          this.displayedFiles[i].url.split(',').pop(),
-          { base64: true }
-        )
-      }
-
-      // create zip file
-      jszipObj
-        .generateAsync({ type: 'base64', compression: 'DEFLATE' })
-        .then(function (base64) {
-          this.submissionFile.url = 'data:application/zip;base64,' + base64
-          this.$emit('setFiles', this.submissionFile)
-        })
-    },
-
-    // opens image editor modal and passes information for specific image that is opened
-    openImageEditor: function (index, type) {
-      this.editImageType = type
-      this.imageEditorData = this.displayedFiles[index]
-      this.imageEditorOpen = !this.imageEditorOpen // toggle the image editor modal being open and closed
-    },
-
-    displayableFileType: function (index) {
-      if (!this.displayedFiles.length) {
-        return false
-      } else if (
-        this.displayedFiles[index].fileType === 'mat' ||
-        this.displayedFiles[index].fileType === 'tif'
-      ) {
-        return false
-      }
-      return true
+    if (inputtedDimensions.value.units === 'nanometers') {
+      ratio = ratio / 1000000000;
+    } else if (inputtedDimensions.value.units === 'micrometers') {
+      ratio = ratio / 1000000;
+    } else if (inputtedDimensions.value.units === 'millimeters') {
+      ratio = ratio / 1000;
     }
-  },
-  watch: {
-    // info alert that functionality is restricted if the user uploads tif or mat file type
-    filesEditable: function (newValue, oldValue) {
-      if (newValue) {
-        this.$emit('fileTypeAlert', {
-          title: 'File Type Alert',
-          content:
-            'Note: due to browser limitations, image editing functionality and pulling data about image dimensions ' +
-            'is not available for mat and tif file types. But, these file types can still be submitted for jobs.',
-          reason: 'fileTypeAlert'
-        })
-      }
-    },
 
-    // show error alert if count of errors is greater than 0
-    errorAlert: function () {
-      if (this.errorAlert.count) {
-        this.$emit('errorAlert', {
-          title: 'Likely Cropping Error',
-          content: this.errorAlert.text,
-          reason: 'croppingError'
-        })
-      }
+    selectedOptions.value.dimensions = {
+      units: inputtedDimensions.value.units,
+      width: displayedFiles.value[0].size.width,
+      height: displayedFiles.value[0].size.height,
+      ratio: ratio
+    };
+  } else {
+    selectedOptions.value.dimensions = {
+      units: inputtedDimensions.value.units,
+      width: parseInt(String(inputtedDimensions.value.width)),
+      height: parseInt(String(inputtedDimensions.value.height)),
+      ratio: null
+    };
+  }
+  emit('set-selectors', selectedOptions.value);
+};
+
+// scale user inputted dimensions by how much user has cropped the images
+const updateUserDimensions = (index: number): void => {
+  displayedFiles.value[index].size.units = inputtedDimensions.value.units;
+  if (displayedFiles.value[index].originalSize) {
+    displayedFiles.value[index].size.width = parseInt(
+      String((parseInt(String(inputtedDimensions.value.width)) /
+        displayedFiles.value[index].originalSize!.width) *
+        displayedFiles.value[index].pixelSize.width)
+    );
+    displayedFiles.value[index].size.height = parseInt(
+      String((parseInt(String(inputtedDimensions.value.height)) /
+        displayedFiles.value[index].originalSize!.height) *
+        displayedFiles.value[index].pixelSize.height)
+    );
+  }
+};
+
+const phaseCallback = (fileName: string, phaseData: { xOffset: number; yOffset: number }): void => {
+  // find index of object to change in array
+  const indexFunction = (object: DisplayedFile) => object.name === fileName;
+  const index = displayedFiles.value.findIndex(indexFunction);
+
+  // apply new phase
+  displayedFiles.value[index].phase = {
+    x_offset: phaseData.xOffset,
+    y_offset: phaseData.yOffset
+  };
+  if (displayedFiles.value[index].errors.size === true) {
+    displayedFiles.value[index].errors.size = false;
+    errorAlert.value.count -= 1;
+  }
+
+  displayedFiles.value[index].name += ' '; // force rerender
+
+  // push to parent
+  pushPhase(index);
+};
+
+const pushPhase = (index: number): void => {
+  if ('phase' in selectedOptions.value) {
+    selectedOptions.value.phase[displayedFiles.value[index].originalName] =
+      displayedFiles.value[index].phase;
+  } else {
+    selectedOptions.value.phase = {};
+    selectedOptions.value.phase[displayedFiles.value[index].originalName] =
+      displayedFiles.value[index].phase;
+  }
+  emit('set-selectors', selectedOptions.value);
+};
+
+const cropCallback = async (croppedImage: string | null, filename: string, coordinates: Coordinates | null): Promise<void> => {
+  if (!coordinates) return;
+
+  for (let i = 0; i < displayedFiles.value.length; i++) {
+    if (displayedFiles.value[i].name === filename) {
+      await cropImage(croppedImage, coordinates, i);
+    } else if (displayableFileType(i) === false) {
+      continue;
+    } else {
+      await cropImage(null, coordinates, i);
+    }
+
+    displayedFiles.value[i].name = 'cropped_' + displayedFiles.value[i].name; // force rerender
+  }
+
+  // push to parent
+  if (submissionFile.value.fileType === 'zip') {
+    rezipFiles();
+  } else {
+    submissionFile.value.url = displayedFiles.value[0].url;
+    emit('setFiles', submissionFile.value);
+  }
+  pushImageDimensions();
+  for (let i = 0; i < displayedFiles.value.length; i++) {
+    pushPhase(i);
+  }
+};
+
+// crops a single image: update the image, the image's phase, and the image dimensions
+const cropImage = async (url: string | null, coordinates: Coordinates, index: number): Promise<void> => {
+  function awaitImageCrop (image: HTMLImageElement): Promise<void> {
+    return new Promise((resolve, reject) => {
+      image.onload = function () {
+        ctx.drawImage(image, -1 * coordinates.left, -1 * coordinates.top);
+        displayedFiles.value[index].url = canvas.toDataURL();
+        resolve();
+      };
+    });
+  }
+
+  // crop the image
+  if (url !== null) {
+    displayedFiles.value[index].url = url;
+  } else {
+    var canvas = document.createElement('canvas');
+    canvas.width = coordinates.width;
+    canvas.height = coordinates.height;
+
+    var ctx = canvas.getContext('2d')!;
+    var image = new Image();
+    image.src = displayedFiles.value[index].url;
+
+    await awaitImageCrop(image); // done to ensure that all images are cropped before files are rezipped
+  }
+
+  // update the phase based on new top left of image
+  if (
+    displayedFiles.value[index].phase.x_offset !== 0 ||
+    displayedFiles.value[index].phase.y_offset !== 0
+  ) {
+    displayedFiles.value[index].phase.x_offset -= coordinates.left;
+    displayedFiles.value[index].phase.y_offset -= coordinates.top;
+
+    // validate that new phase is still within the image
+    if (
+      displayedFiles.value[index].phase.x_offset < 0 ||
+      displayedFiles.value[index].phase.y_offset < 0
+    ) {
+      errorAlert.value.count += 1;
+      displayedFiles.value[index].errors.size = true;
+    } else if (
+      displayedFiles.value[index].phase.x_offset > coordinates.width ||
+      displayedFiles.value[index].phase.y_offset > coordinates.height
+    ) {
+      errorAlert.value.count += 1;
+      displayedFiles.value[index].errors.size = true;
     }
   }
-}
+
+  // update the image dimensions
+  displayedFiles.value[index].pixelSize.width = coordinates.width;
+  displayedFiles.value[index].pixelSize.height = coordinates.height;
+
+  if (dimensionsEntered.value === true) {
+    updateUserDimensions(index);
+  }
+};
+
+// rezip images when images are altered and emit that back to parent component
+const rezipFiles = async (): Promise<void> => {
+  const jszipObj = new Jszip();
+
+  // add images to zip file
+  for (let i = 0; i < displayedFiles.value.length; i++) {
+    jszipObj.file(
+      displayedFiles.value[i].originalName,
+      displayedFiles.value[i].url.split(',').pop() || '',
+      { base64: true }
+    );
+  }
+
+  // create zip file
+  jszipObj
+    .generateAsync({ type: 'base64', compression: 'DEFLATE' })
+    .then(function (base64) {
+      submissionFile.value.url = 'data:application/zip;base64,' + base64;
+      emit('setFiles', submissionFile.value);
+    });
+};
+
+// opens image editor modal and passes information for specific image that is opened
+const openImageEditor = (index: number, type: 'crop' | 'phase' | 'calibrate'): void => {
+  editImageType.value = type;
+  imageEditorData.value = displayedFiles.value[index];
+  imageEditorOpen.value = !imageEditorOpen.value; // toggle the image editor modal being open and closed
+};
+
+const displayableFileType = (index: number): boolean => {
+  if (!displayedFiles.value.length) {
+    return false;
+  } else if (
+    displayedFiles.value[index].fileType === 'mat' ||
+    displayedFiles.value[index].fileType === 'tif'
+  ) {
+    return false;
+  }
+  return true;
+};
+
+// Watchers
+watch(filesEditable, (newValue) => {
+  if (!newValue) {
+    emit('fileTypeAlert', {
+      title: 'File Type Alert',
+      content:
+        'Note: due to browser limitations, image editing functionality and pulling data about image dimensions ' +
+        'is not available for mat and tif file types. But, these file types can still be submitted for jobs.',
+      reason: 'fileTypeAlert'
+    });
+  }
+});
+
+watch(() => errorAlert.value.count, (newValue) => {
+  if (newValue) {
+    emit('errorAlert', {
+      title: 'Likely Cropping Error',
+      content: errorAlert.value.text,
+      reason: 'croppingError'
+    });
+  }
+});
 </script>

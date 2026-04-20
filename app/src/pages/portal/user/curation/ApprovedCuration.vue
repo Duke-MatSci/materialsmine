@@ -3,7 +3,7 @@
     class="gallery-grid grid grid_col-3 u--margin-toplg"
     style="width: 65vw !important"
   >
-    <template v-if="xmlFinder.xmlData && xmlFinder.xmlData.length && !error">
+    <template v-if="xmlFinder?.xmlData && xmlFinder.xmlData.length && !error">
       <md-card
         v-for="(xml, index) in xmlFinder.xmlData"
         :key="index"
@@ -68,23 +68,36 @@
         our server.</template
       >
       <template v-slot:actions>
-        <md-button @click.native.prevent="closeDialogBox">Cancel</md-button>
-        <md-button @click.native.prevent="confirmAction">Delete</md-button>
+        <md-button @click.prevent="closeDialogBox">Cancel</md-button>
+        <md-button @click.prevent="confirmAction">Delete</md-button>
       </template>
     </dialog-box>
   </div>
 </template>
-<script>
-import xmlOperation from '@/mixins/xmlOperation'
 
-export default {
-  name: 'ApprovedCuration',
-  mixins: [xmlOperation],
-  created () {
-    this.$store.commit('setAppHeaderInfo', {
-      icon: '',
-      name: 'Approved Curation'
-    })
-  }
-}
+<script setup lang="ts">
+import { onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useXmlOperation } from '@/composables/useXmlOperation'
+import dialogBox from '@/components/Dialog.vue'
+
+const store = useStore()
+
+const {
+  xmlFinder,
+  error,
+  dialogBoxActive,
+  isOwner,
+  editCuration,
+  confirmAction,
+  openDialogBox,
+  closeDialogBox
+} = useXmlOperation()
+
+onMounted(() => {
+  store.commit('setAppHeaderInfo', {
+    icon: '',
+    name: 'Approved Curation'
+  })
+})
 </script>

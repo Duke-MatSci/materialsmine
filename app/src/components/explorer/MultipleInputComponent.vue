@@ -73,7 +73,7 @@
               "
             >
               <MultipleInputComponent
-                @update-step-error="$emit('update-step-error')"
+                @update-step-error="emit('update-step-error')"
                 :title="title"
                 :name="item.name"
                 :uniqueKey="item.ref"
@@ -87,7 +87,7 @@
               "
             >
               <MultipleInputComponent
-                @update-step-error="$emit('update-step-error')"
+                @update-step-error="emit('update-step-error')"
                 :title="title"
                 :name="item.ref[item.ref.length - 2]"
                 :uniqueKey="item.ref"
@@ -141,7 +141,7 @@
           </template>
           <template v-if="item.detail.type === 'multiples'">
             <MultipleInputComponent
-              @update-step-error="$emit('update-step-error')"
+              @update-step-error="emit('update-step-error')"
               :title="title"
               :name="
                 item.name !== 'ChooseParameter'
@@ -182,7 +182,7 @@
         {{ uniqueKey[uniqueKey.length - 2] || uniqueKey[uniqueKey.length - 1] }}
       </p>
       <InputComponent
-        @update-step-error="$emit('update-step-error')"
+        @update-step-error="emit('update-step-error')"
         :title="title"
         :name="name"
         :uniqueKey="uniqueKey"
@@ -192,186 +192,229 @@
   </div>
 </template>
 
-<script>
-import InputComponent from './InputComponent.vue'
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useStore } from 'vuex';
+import InputComponent from './InputComponent.vue';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'MultipleInputComponent',
-  props: {
-    inputObj: {
-      type: Object,
-      required: true
-    },
-    uniqueKey: {
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    title: {
-      type: String,
-      required: false
-    }
-  },
-  components: {
-    InputComponent
-  },
-  data () {
-    return {
-      inputArr: [],
-      tempInputObj: {},
-      selectedItems: [],
-      listItems: [],
-      loading: false,
-      noOfMultiplesAdded: 0
-    }
-  },
-  computed: {
-    showGridLine () {
-      if (this.listItems.length) return 'md-layout md-gutter'
-      return 'md-layout md-gutter utility-gridborder u--margin-header'
-    },
-    fullWidthClass () {
-      return 'md-layout-item md-size-100 u_height--auto'
-    },
-    noOfValueObj () {
-      return this.inputObj.values.length
-    },
-    noOfInputSheet () {
-      return this.inputArr.length / this.noOfValueObj
-    }
-  },
-  mounted () {
-    if (this.inputObj?.type === 'multiples') {
-      return this.sortMultiple(this.inputObj?.values, this.uniqueKey)
-    }
-  },
-  methods: {
-    async addExtra () {
-      if (!this.validateFields()) {
-        return this.$store.commit('setSnackbar', {
-          message: 'Fields are empty',
-          duration: 3000
-        })
-      }
-      const data = JSON.stringify(this.inputObj?.values)
-      const arr = JSON.parse(data)
-      this.clearFields(this.inputObj)
-      this.inputObj.values = [...arr, ...this.inputObj.values]
-      this.sortMultiple(this.inputObj?.values, this.uniqueKey)
-    },
-    validateFields () {
-      const array = this.inputArr || []
-      let noFieldValue = 0
-      for (let index = 0; index < array.length; index++) {
-        const obj = array[index].detail
-        if (Object.hasOwnProperty.call(obj, 'type')) {
-          if (
-            obj.type === 'String' ||
-            obj.type === 'List' ||
-            obj.type === 'File'
-          ) {
-            if (
-              !!array[index].detail.cellValue &&
-              !!array[index].detail.cellValue.length
-            ) { noFieldValue++ }
-          } else if (obj.type === 'replace_nested') {
-            if (array[index].detail.values.length) noFieldValue++
-          }
-        }
-      }
-      return !!noFieldValue
-    },
-    fetchParameterValues (arr = []) {
-      this.listItems = []
-      const data = arr.reduce((acc, val) => acc.concat(Object.keys(val)), [])
-      this.listItems = [...new Set(data)]
-      const objArr = {}
-      for (let i = 0; i < data.length; i++) {
-        objArr[data[i]] = !objArr[data[i]] ? [] : [...objArr[data[i]]]
-        this.tempInputObj = Object.assign({}, this.tempInputObj, objArr)
-        this.filterData(this.inputObj.values[i], this.uniqueKey, data[i])
-      }
-      if (Object.keys(this.$route.query).length) { this.selectedItems = [...this.listItems] }
-    },
-    sortMultiple (arr, parent = []) {
-      this.inputArr = []
-      if (arr.length === 1) {
-        return this.filterData(arr[0], parent)
-      }
-      const tempArr = []
-      for (let i = 0; i < arr.length; i++) {
-        tempArr.push(JSON.stringify(arr[i]))
-      }
-      const uniqueArr = [...new Set(tempArr)]
+});
+
+// Props
+interface InputObjValue {
+  type: string;
+  cellValue?: string | null;
+  values?: any[];
+  [key: string]: any;
+}
+
+interface InputItem {
+  detail: InputObjValue;
+  name: string;
+  ref: string[];
+}
+
+interface Props {
+  inputObj: InputObjValue;
+  uniqueKey: string[];
+  name: string;
+  title?: string;
+}
+
+const props = defineProps<Props>();
+
+// Emits
+const emit = defineEmits<{
+  (e: 'update-step-error'): void;
+  (e: 'update:inputObj', value: InputObjValue): void;
+}>();
+
+// Store and route
+const store = useStore();
+const route = useRoute();
+
+// Reactive data
+const inputArr = ref<InputItem[]>([]);
+const tempInputObj = ref<Record<string, InputItem[]>>({});
+const selectedItems = ref<string[]>([]);
+const listItems = ref<string[]>([]);
+const loading = ref(false);
+const noOfMultiplesAdded = ref(0);
+
+// Computed
+const showGridLine = computed(() => {
+  if (listItems.value.length) return 'md-layout md-gutter';
+  return 'md-layout md-gutter utility-gridborder u--margin-header';
+});
+
+const fullWidthClass = computed(() => {
+  return 'md-layout-item md-size-100 u_height--auto';
+});
+
+const noOfValueObj = computed(() => {
+  return props.inputObj.values?.length || 0;
+});
+
+const noOfInputSheet = computed(() => {
+  return inputArr.value.length / noOfValueObj.value;
+});
+
+// Methods
+const addExtra = async () => {
+  if (!validateFields()) {
+    return store.commit('setSnackbar', {
+      message: 'Fields are empty',
+      duration: 3000
+    });
+  }
+  if (!props.inputObj?.values) return;
+
+  const data = JSON.stringify(props.inputObj.values);
+  const arr = JSON.parse(data);
+  clearFields(props.inputObj);
+  const newValues = [...arr, ...props.inputObj.values];
+  emit('update:inputObj', { ...props.inputObj, values: newValues });
+  sortMultiple(newValues, props.uniqueKey);
+};
+
+const validateFields = (): boolean => {
+  const array = inputArr.value || [];
+  let noFieldValue = 0;
+  for (let index = 0; index < array.length; index++) {
+    const obj = array[index].detail;
+    if (Object.hasOwnProperty.call(obj, 'type')) {
       if (
-        uniqueArr.length === 1 ||
-        this.uniqueKey[this.uniqueKey.length - 1] !== 'ChooseParameter'
+        obj.type === 'String' ||
+        obj.type === 'List' ||
+        obj.type === 'File'
       ) {
-        for (let index = 0; index < uniqueArr.length; index++) {
-          uniqueArr[index] = JSON.parse(uniqueArr[index])
-          this.filterData(uniqueArr[index], parent)
-        }
-        this.inputObj.values = [...uniqueArr]
-        return
+        if (
+          !!array[index].detail.cellValue &&
+          !!array[index].detail.cellValue?.length
+        ) { noFieldValue++; }
+      } else if (obj.type === 'replace_nested') {
+        if (array[index].detail.values?.length) noFieldValue++;
       }
-
-      return this.fetchParameterValues(this.inputObj.values)
-    },
-    filterData (obj, parent = [], title = null) {
-      for (const prop in obj) {
-        const ref = parent
-        if (!obj[prop]?.type && typeof (obj[prop] === 'object')) {
-          this.filterData(obj[prop], [...parent, prop], title)
-        } else {
-          if (!title) {
-            this.inputArr.push({
-              detail: obj[prop],
-              name: prop,
-              ref: [...ref, prop]
-            })
-          } else {
-            this.tempInputObj[title].push({
-              detail: obj[prop],
-              name: prop,
-              ref: [...ref, prop]
-            })
-          }
-        }
-      }
-    },
-    clearFields (obj) {
-      if (Object.hasOwnProperty.call(obj, 'type')) {
-        if (obj.type === 'multiples' || obj.type === 'varied_multiples') {
-          const arr = obj.values
-          for (let i = 0; i < arr.length; i++) {
-            if (typeof arr[i] === 'string') {
-              arr.splice(i, 1)
-              i--
-            } else {
-              this.clearFields(arr[i])
-            }
-          }
-        } else if (obj.type === 'replace_nested') {
-          obj.values = []
-        } else {
-          obj.cellValue = null
-        }
-      } else {
-        for (const key in obj) {
-          this.clearFields(obj[key])
-        }
-      }
-    },
-    clearSpecificMultiple (str) {
-      const matchIndex = this.inputObj.values.findIndex((currVal) => {
-        return JSON.stringify(currVal).includes(str)
-      })
-
-      this.clearFields(this.inputObj.values[matchIndex])
-      this.sortMultiple(this.inputObj?.values, this.uniqueKey)
     }
   }
-}
+  return !!noFieldValue;
+};
+
+const fetchParameterValues = (arr: any[] = []) => {
+  if (!props.inputObj.values) return;
+
+  listItems.value = [];
+  const data: string[] = arr.reduce((acc, val) => acc.concat(Object.keys(val)), []);
+  listItems.value = [...new Set(data)] as string[];
+  const objArr: Record<string, any[]> = {};
+  for (let i = 0; i < data.length; i++) {
+    objArr[data[i]] = !objArr[data[i]] ? [] : [...objArr[data[i]]];
+    tempInputObj.value = Object.assign({}, tempInputObj.value, objArr);
+    if (props.inputObj.values[i]) {
+      filterData(props.inputObj.values[i], props.uniqueKey, data[i]);
+    }
+  }
+  if (Object.keys(route.query).length) { selectedItems.value = [...listItems.value]; }
+};
+
+const sortMultiple = (arr: any[], parent: string[] = []) => {
+  inputArr.value = [];
+  if (arr.length === 1) {
+    return filterData(arr[0], parent);
+  }
+  const tempArr: string[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    tempArr.push(JSON.stringify(arr[i]));
+  }
+  const uniqueArr = [...new Set(tempArr)];
+  if (
+    uniqueArr.length === 1 ||
+    props.uniqueKey[props.uniqueKey.length - 1] !== 'ChooseParameter'
+  ) {
+    const parsedArr: any[] = [];
+    for (let index = 0; index < uniqueArr.length; index++) {
+      const parsed = JSON.parse(uniqueArr[index]);
+      parsedArr.push(parsed);
+      filterData(parsed, parent);
+    }
+    if (props.inputObj.values) {
+      emit('update:inputObj', { ...props.inputObj, values: [...parsedArr] });
+    }
+    return;
+  }
+
+  if (props.inputObj.values) {
+    return fetchParameterValues(props.inputObj.values);
+  }
+};
+
+const filterData = (obj: any, parent: string[] = [], title: string | null = null) => {
+  for (const prop in obj) {
+    const ref = parent;
+    if (!obj[prop]?.type && typeof (obj[prop] === 'object')) {
+      filterData(obj[prop], [...parent, prop], title);
+    } else {
+      if (!title) {
+        inputArr.value.push({
+          detail: obj[prop],
+          name: prop,
+          ref: [...ref, prop]
+        });
+      } else {
+        tempInputObj.value[title].push({
+          detail: obj[prop],
+          name: prop,
+          ref: [...ref, prop]
+        });
+      }
+    }
+  }
+};
+
+const clearFields = (obj: any) => {
+  if (Object.hasOwnProperty.call(obj, 'type')) {
+    if (obj.type === 'multiples' || obj.type === 'varied_multiples') {
+      const arr = obj.values;
+      for (let i = 0; i < arr.length; i++) {
+        if (typeof arr[i] === 'string') {
+          arr.splice(i, 1);
+          i--;
+        } else {
+          clearFields(arr[i]);
+        }
+      }
+    } else if (obj.type === 'replace_nested') {
+      obj.values = [];
+    } else {
+      obj.cellValue = null;
+    }
+  } else {
+    for (const key in obj) {
+      clearFields(obj[key]);
+    }
+  }
+};
+
+const clearSpecificMultiple = (str: string) => {
+  if (!props.inputObj.values) return;
+
+  const matchIndex = props.inputObj.values.findIndex((currVal) => {
+    return JSON.stringify(currVal).includes(str);
+  });
+
+  if (matchIndex >= 0 && props.inputObj.values[matchIndex] && props.inputObj.values) {
+    clearFields(props.inputObj.values[matchIndex]);
+    sortMultiple(props.inputObj.values, props.uniqueKey);
+  }
+};
+
+// Lifecycle
+onMounted(() => {
+  if (props.inputObj?.type === 'multiples' && props.inputObj?.values) {
+    return sortMultiple(props.inputObj.values, props.uniqueKey);
+  }
+});
 </script>

@@ -2,7 +2,7 @@
   <div class="utility-roverflow">
     <md-app-drawer
       class="u_toggle-display-off"
-      :md-active.sync="sideBar"
+      v-model:md-active="sideBar"
       md-permanent="clipped"
     >
       <md-list class="md-dense">
@@ -116,89 +116,95 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'SideNav',
-  data () {
-    return {
-      sideBar: false,
-      links: [
-        {
-          name: 'Deploy',
-          children: [
-            {
-              name: 'General Deployment',
-              link: '/portal/general-deployment',
-              icon: 'launch'
-            },
-            {
-              name: 'Ontology Deployment',
-              link: '/portal/ontology-deployment',
-              icon: 'webhook'
-            }
-          ]
-        },
-        {
-          name: 'Chart',
-          children: [
-            {
-              name: 'Manage Charts',
-              link: '/portal/manage-chart',
-              icon: 'question_answer'
-            },
-            {
-              name: 'Favorite Charts',
-              link: '/portal/favoritechart',
-              icon: 'bookmark'
-            }
-          ]
-        },
-        {
-          name: 'Curation',
-          children: [
-            {
-              name: 'Manage Curation',
-              link: '/portal/manage-curation',
-              icon: 'upload'
-            },
-            // {
-            //   name: 'View Curation',
-            //   link: '/portal/view-curation',
-            //   icon: 'track_changes'
-            // },
-            { name: 'View Schema', link: '/portal/view-schema', icon: 'schema' }
-          ]
-          // hrefChildren: [
-          //   {
-          //     name: 'File Store',
-          //     href: '/api/admin/store',
-          //     icon: 'folder_open'
-          //   }
-          // ]
-        },
-        {
-          name: 'Enquiries',
-          children: [
-            {
-              name: 'Contact Enquiries',
-              link: '/portal/contact-inquiry',
-              icon: 'contact_mail'
-            },
-            {
-              name: 'Resolved Enquiries',
-              link: '/portal/resolved-inquiries',
-              icon: 'question_answer'
-            }
-          ]
-        },
-        {
-          name: 'User',
-          children: [
-            { name: 'Manage User', link: '/portal/users', icon: 'people' }
-          ]
-        }
-      ]
-    }
-  }
+<script setup lang="ts">
+import { ref } from 'vue';
+
+interface LinkChild {
+  name: string;
+  link?: string;
+  href?: string;
+  icon: string;
 }
+
+interface Link {
+  name: string;
+  children?: LinkChild[];
+  hrefChildren?: LinkChild[];
+}
+
+const sideBar = ref(false);
+const links = ref<Link[]>([
+  {
+    name: 'Deploy',
+    children: [
+      {
+        name: 'General Deployment',
+        link: '/portal/general-deployment',
+        icon: 'launch',
+      },
+      {
+        name: 'Ontology Deployment',
+        link: '/portal/ontology-deployment',
+        icon: 'webhook',
+      },
+    ],
+  },
+  {
+    name: 'Chart',
+    children: [
+      {
+        name: 'Manage Charts',
+        link: '/portal/manage-chart',
+        icon: 'question_answer',
+      },
+      {
+        name: 'Favorite Charts',
+        link: '/portal/favoritechart',
+        icon: 'bookmark',
+      },
+    ],
+  },
+  {
+    name: 'Curation',
+    children: [
+      {
+        name: 'Manage Curation',
+        link: '/portal/manage-curation',
+        icon: 'upload',
+      },
+      // {
+      //   name: 'View Curation',
+      //   link: '/portal/view-curation',
+      //   icon: 'track_changes'
+      // },
+      { name: 'View Schema', link: '/portal/view-schema', icon: 'schema' },
+    ],
+    // hrefChildren: [
+    //   {
+    //     name: 'File Store',
+    //     href: '/api/admin/store',
+    //     icon: 'folder_open'
+    //   }
+    // ]
+  },
+  {
+    name: 'Enquiries',
+    children: [
+      {
+        name: 'Contact Enquiries',
+        link: '/portal/contact-inquiry',
+        icon: 'contact_mail',
+      },
+      {
+        name: 'Resolved Enquiries',
+        link: '/portal/resolved-inquiries',
+        icon: 'question_answer',
+      },
+    ],
+  },
+  {
+    name: 'User',
+    children: [{ name: 'Manage User', link: '/portal/users', icon: 'people' }],
+  },
+]);
 </script>

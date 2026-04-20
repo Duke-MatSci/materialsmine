@@ -3,10 +3,7 @@
     <div class="adjust-padding" style="margin: 5px 0 0 5px">
       <div class="viz-u-postion__rel">
         <button v-if="validateLinkProp" class="nuplot-button-link">
-          <router-link
-            :to="link.to"
-            class="u--bg utility-transparentbg u--font-emph-700"
-          >
+          <router-link :to="link.to" class="u--bg utility-transparentbg u--font-emph-700">
             {{ link.text }}
           </router-link>
         </button>
@@ -32,13 +29,11 @@
           id="main_chart"
           :class="[
             !showSide ? 'md-size-80' : ' md-size-50',
-            'viz-u-postion__rel histogram-chart md-layout-item md-medium-size-100 viz-u-mgbottom-big'
+            'viz-u-postion__rel histogram-chart md-layout-item md-medium-size-100 viz-u-mgbottom-big',
           ]"
         >
           <slot name="main_chart">
-            <div
-              class="section_loader viz-u-postion__rel utility-margin-top-intro"
-            >
+            <div class="section_loader viz-u-postion__rel utility-margin-top-intro">
               <spinner text="Loading Chart Data" />
             </div>
           </slot>
@@ -62,55 +57,60 @@
   </div>
 </template>
 
-<script>
-import spinner from '@/components/Spinner'
-export default {
+<script setup lang="ts">
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useStore } from 'vuex';
+
+interface LinkProp {
+  to: string;
+  text: string;
+}
+
+interface Props {
+  link?: LinkProp | null;
+  dense?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  link: null,
+  dense: false,
+});
+
+const store = useStore();
+
+// Data
+const showSide = ref<boolean>(true);
+
+const validateLinkProp = computed(() => {
+  if (!props.link || typeof props.link !== 'object') return false;
+  return (
+    Object.hasOwnProperty.call(props.link, 'to') && Object.hasOwnProperty.call(props.link, 'text')
+  );
+});
+
+// Methods
+const hideSide = async () => {
+  showSide.value = !showSide.value;
+  store.commit('metamineNU/setLoadingState', true);
+  await nextTick();
+  store.commit('metamineNU/setLoadingState', false);
+};
+
+// Lifecycle
+onMounted(async () => {
+  store.commit('metamineNU/setRefreshStatus', true);
+  await store.dispatch('metamineNU/fetchMetamineDataset');
+});
+</script>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+import spinner from '@/components/Spinner.vue';
+
+export default defineComponent({
   name: 'VisualizationLayout',
   components: {
-    spinner
+    spinner,
   },
-  data () {
-    return {
-      showSide: true,
-      index: 1
-    }
-  },
-  props: {
-    link: {
-      type: Object,
-      validator: (val) =>
-        Object.hasOwnProperty.call(val, 'to') &&
-        Object.hasOwnProperty.call(val, 'text'),
-      default: null
-    },
-    dense: {
-      type: Boolean,
-      default: false
-    }
-  },
-  methods: {
-    async hideSide () {
-      this.showSide = !this.showSide
-      this.$store.commit('metamineNU/setLoadingState', true)
-      await this.$nextTick()
-      this.$store.commit('metamineNU/setLoadingState', false)
-    }
-  },
-  computed: {
-    loading () {
-      return this.$store.getters['metamineNU/getLoadingState']
-    },
-    validateLinkProp () {
-      if (!this.link || typeof this.link !== 'object') return false
-      return (
-        Object.hasOwnProperty.call(this.link, 'to') &&
-        Object.hasOwnProperty.call(this.link, 'text')
-      )
-    }
-  },
-  async mounted () {
-    this.$store.commit('metamineNU/setRefreshStatus', true)
-    await this.$store.dispatch('metamineNU/fetchMetamineDataset')
-  }
-}
+});
 </script>

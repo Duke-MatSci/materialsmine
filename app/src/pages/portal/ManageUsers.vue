@@ -100,12 +100,14 @@
             <md-table-empty-state md-label="No users found"
               :md-description="`No user found for this '${search}' query. Try a different search term or create a new user.`">
             </md-table-empty-state>
-            <md-table-row slot="md-table-row" slot-scope="{ item }" :class="getClass(item)" md-selectable="multiple">
-              <md-table-cell md-label="Firstname" md-sort-by="givenName">{{ item.givenName }}</md-table-cell>
-              <md-table-cell md-label="Lastname" md-sort-by="surName">{{ item.surName }}</md-table-cell>
-              <md-table-cell md-label="Display name" md-sort-by="displayName">{{ item.displayName }}</md-table-cell>
-              <md-table-cell md-label="Email" md-sort-by="email">{{ item.email }}</md-table-cell>
-            </md-table-row>
+            <template #md-table-row="{ item }">
+              <md-table-row :class="getClass(item)" md-selectable="multiple">
+                <md-table-cell md-label="Firstname" md-sort-by="givenName">{{ item.givenName }}</md-table-cell>
+                <md-table-cell md-label="Lastname" md-sort-by="surName">{{ item.surName }}</md-table-cell>
+                <md-table-cell md-label="Display name" md-sort-by="displayName">{{ item.displayName }}</md-table-cell>
+                <md-table-cell md-label="Email" md-sort-by="email">{{ item.email }}</md-table-cell>
+              </md-table-row>
+            </template>
           </md-table>
           <pagination :cpage="pageNumber || 1" :tpages="users.totalPages || 1"
             @go-to-page="loadPrevNextUsers($event)" />
@@ -116,194 +118,267 @@
   </div>
 </template>
 
-<script>
-import { mapMutations, mapGetters } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useQuery, useMutation } from '@vue/apollo-composable'
 import { USERS_QUERY, DELETE_USERS_QUERY, UPDATE_USER_QUERY } from '@/modules/gql/user-gql'
-import optionalChainingUtil from '@/mixins/optional-chaining-util.js'
+import { useOptionalChaining } from '@/composables/useOptionalChaining'
 import pagination from '@/components/explorer/Pagination'
 import dialogBox from '@/components/Dialog.vue'
 import Spinner from '@/components/Spinner'
-export default {
-  name: 'ManageUser',
-  mixins: [optionalChainingUtil],
-  components: {
-    pagination,
-    dialogBox,
-    Spinner
-  },
-  data () {
-    return {
-      loading: false,
-      loadingText: 'Loading',
-      pageNumber: 1,
-      selected: [],
-      selectedUser: {},
-      updateMode: false,
-      search: null,
-      searched: [],
-      users: {}
-    }
-  },
-  computed: {
-    ...mapGetters({
-      dialogBoxActive: 'dialogBox',
-      userId: 'auth/userId'
-    }),
-    tableData: {
-      get () {
-        return this.search ? this.searched : this.users.data
-      },
-      set (val) {
-        return val
-      }
-    }
-  },
-  methods: {
-    ...mapMutations({
-      toggleDialogBox: 'setDialogBox'
-    }),
-    openDialogBox () {
-      this.toggleDialogBox()
-    },
-    closeDialogBox () {
-      this.toggleDialogBox()
-    },
-    showUpdateForm () {
-      this.updateMode = true
-      this.selectedUser = { ...this.selected[0] }
-    },
-    closeUpdateForm () {
-      this.updateMode = false
-      this.selectedUser = {}
-      this.selected = []
-    },
-    getClass ({ _id }) {
-      return _id === this.selected?._id ? 'u--bg' : ''
-    },
-    getAlternateLabel (count) {
-      let plural = ''
-      if (count > 1) {
-        plural = 's'
-      }
-      return `${count} user${plural} selected`
-    },
-    async searchOnTable () {
-      this.pageNumber = 1
-      await this.$apollo.queries.users.refetch()
-      this.searched = this.users.data
-    },
-    onSelect (items) {
-      this.selected = items
-    },
-    async loadPrevNextUsers (event) {
-      this.pageNumber = event
-      await this.$apollo.queries.users.refetch()
-    },
 
-    async deleteUsers () {
-      const id = []
-      for (let i = 0; i < this.selected.length; i++) {
-        id.push(this.selected[i]._id)
-      }
-      if (id.includes(this.userId)) {
-        return this.$store.commit('setSnackbar', {
-          message: "Can't Delete Current User",
-          duration: 3000
-        })
-      }
-      this.loading = true
-      try {
-        await this.$apollo.mutate({
-          mutation: DELETE_USERS_QUERY,
-          variables: {
-            input: {
-              ids: id
-            }
-          }
-        })
-        this.$store.commit('setSnackbar', {
-          message: 'Users deleted successfully',
-          duration: 3000
-        })
-        await this.$apollo.queries.users.refetch()
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: error?.message || 'Something went wrong',
-          action: () => this.deleteUsers()
-        })
-      } finally {
-        this.loading = false
-      }
-    },
+// Component name for debugging
+defineOptions({
+  name: 'ManageUser'
+})
 
-    async updateUser () {
-      const data = this.selectedUser
-      if (!Object.keys(data).length) return
+// Interfaces
+interface User {
+  _id: string
+  alias?: string
+  givenName: string
+  surName: string
+  displayName: string
+  email: string
+  apiAccess?: boolean
+  roles: string
+}
 
-      if (this.userId === data._id && data.roles === 'member') {
-        return this.$store.commit('setSnackbar', {
-          message: 'Unable To Modify Current Role',
-          duration: 3000
-        })
-      }
+interface UsersData {
+  totalItems?: number
+  pageSize?: number
+  pageNumber?: number
+  totalPages?: number
+  hasPreviousPage?: boolean
+  hasNextPage?: boolean
+  data: User[]
+}
 
-      this.loading = true
-      this.loadingText = 'Updating User'
+interface UsersQueryResult {
+  users: UsersData
+}
 
-      try {
-        await this.$apollo.mutate({
-          mutation: UPDATE_USER_QUERY,
-          variables: {
-            input: {
-              _id: data._id,
-              givenName: data.givenName,
-              surName: data.surName,
-              roles: data.roles
-            }
-          }
-        })
-        this.$store.commit('setSnackbar', {
-          message: 'User Updated successfully',
-          duration: 3000
-        })
-        await this.$apollo.queries.users.refetch()
-        this.closeUpdateForm()
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: error?.message || 'Something went wrong',
-          action: () => this.updateUser()
-        })
-      } finally {
-        this.loading = false
-        this.loadingText = 'Loading'
-      }
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: '' })
-  },
-  apollo: {
-    users: {
-      query: USERS_QUERY,
-      variables () {
-        return {
-          input: { pageNumber: this.pageNumber, pageSize: 10, displayName: this.search }
-        }
-      },
-      fetchPolicy: 'cache-and-network',
-      error (error) {
-        if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-        } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
-        }
-        this.$store.commit('setSnackbar', {
-          message: error.networkError?.response?.statusText ?? error.graphQLErrors,
-          action: () => this.$apollo.queries.users.refetch()
-        })
-      }
-    }
+interface DeleteUsersInput {
+  input: {
+    ids: string[]
   }
 }
+
+interface UpdateUserInput {
+  input: {
+    _id: string
+    givenName: string
+    surName: string
+    roles: string
+  }
+}
+
+// Store
+const store = useStore()
+
+// Composables
+const { optionalChaining } = useOptionalChaining()
+
+// Reactive data
+const loading = ref(false)
+const loadingText = ref('Loading')
+const pageNumber = ref(1)
+const selected = ref<User[]>([])
+const selectedUser = ref<Partial<User>>({})
+const updateMode = ref(false)
+const search = ref<string | null>(null)
+const searched = ref<User[]>([])
+const users = ref<UsersData>({ data: [] })
+
+// Computed properties
+const dialogBoxActive = computed(() => store.getters.dialogBox)
+const userId = computed(() => store.getters['auth/userId'])
+
+const tableData = computed({
+  get() {
+    return search.value ? searched.value : users.value.data
+  },
+  set(val: User[]) {
+    return val
+  }
+})
+
+// GraphQL queries and mutations
+const {
+  result: usersResult,
+  loading: usersLoading,
+  refetch: refetchUsers,
+  onError: onUsersError
+} = useQuery<UsersQueryResult>(
+  USERS_QUERY,
+  () => ({
+    input: {
+      pageNumber: pageNumber.value,
+      pageSize: 10,
+      displayName: search.value
+    }
+  }),
+  () => ({
+    fetchPolicy: 'cache-and-network'
+  })
+)
+
+const { mutate: deleteUsersMutation } = useMutation(DELETE_USERS_QUERY)
+const { mutate: updateUserMutation } = useMutation(UPDATE_USER_QUERY)
+
+// Watch for query results
+watch(usersResult, (newResult) => {
+  if (newResult?.users) {
+    users.value = newResult.users
+  }
+})
+
+// Handle GraphQL errors
+onUsersError((error) => {
+  if (error.networkError) {
+    const err = error.networkError as any
+    store.commit('setSnackbar', {
+      message: `Network Error: ${err?.response?.status} ${err?.response?.statusText}`,
+      action: () => refetchUsers()
+    })
+  } else if (error.graphQLErrors) {
+    store.commit('setSnackbar', {
+      message: error.graphQLErrors,
+      action: () => refetchUsers()
+    })
+  }
+})
+
+// Methods
+const toggleDialogBox = () => {
+  store.commit('setDialogBox')
+}
+
+const openDialogBox = () => {
+  toggleDialogBox()
+}
+
+const closeDialogBox = () => {
+  toggleDialogBox()
+}
+
+const showUpdateForm = () => {
+  updateMode.value = true
+  selectedUser.value = { ...selected.value[0] }
+}
+
+const closeUpdateForm = () => {
+  updateMode.value = false
+  selectedUser.value = {}
+  selected.value = []
+}
+
+const getClass = ({ _id }: User) => {
+  return _id === (selected.value as any)?._id ? 'u--bg' : ''
+}
+
+const getAlternateLabel = (count: number) => {
+  let plural = ''
+  if (count > 1) {
+    plural = 's'
+  }
+  return `${count} user${plural} selected`
+}
+
+const searchOnTable = async () => {
+  pageNumber.value = 1
+  await refetchUsers()
+  searched.value = users.value.data
+}
+
+const onSelect = (items: User[]) => {
+  selected.value = items
+}
+
+const loadPrevNextUsers = async (event: number) => {
+  pageNumber.value = event
+  await refetchUsers()
+}
+
+const deleteUsers = async () => {
+  const id: string[] = []
+  for (let i = 0; i < selected.value.length; i++) {
+    id.push(selected.value[i]._id)
+  }
+  if (id.includes(userId.value)) {
+    store.commit('setSnackbar', {
+      message: "Can't Delete Current User",
+      duration: 3000
+    })
+    return
+  }
+  loading.value = true
+  try {
+    await deleteUsersMutation({
+      input: {
+        ids: id
+      }
+    } as DeleteUsersInput)
+    store.commit('setSnackbar', {
+      message: 'Users deleted successfully',
+      duration: 3000
+    })
+    await refetchUsers()
+    closeDialogBox()
+  } catch (error: any) {
+    store.commit('setSnackbar', {
+      message: error?.message || 'Something went wrong',
+      action: () => deleteUsers()
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const updateUser = async () => {
+  const data = selectedUser.value
+  if (!Object.keys(data).length) return
+
+  if (userId.value === data._id && data.roles === 'member') {
+    store.commit('setSnackbar', {
+      message: 'Unable To Modify Current Role',
+      duration: 3000
+    })
+    return
+  }
+
+  loading.value = true
+  loadingText.value = 'Updating User'
+
+  try {
+    await updateUserMutation({
+      input: {
+        _id: data._id,
+        givenName: data.givenName,
+        surName: data.surName,
+        roles: data.roles
+      }
+    } as UpdateUserInput)
+    store.commit('setSnackbar', {
+      message: 'User Updated successfully',
+      duration: 3000
+    })
+    await refetchUsers()
+    closeUpdateForm()
+  } catch (error: any) {
+    store.commit('setSnackbar', {
+      message: error?.message || 'Something went wrong',
+      action: () => updateUser()
+    })
+  } finally {
+    loading.value = false
+    loadingText.value = 'Loading'
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: '', name: '' })
+})
 </script>

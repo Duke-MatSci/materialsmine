@@ -10,7 +10,7 @@
       </div>
 
     </div>
-    <search-gallery :isEmpty="isEmpty" :totalItems="xmlFinder.totalItems || 0" :loading="$apollo.loading" :error="!!error"
+    <search-gallery :isEmpty="isEmpty" :totalItems="xmlFinder?.totalItems || 0" :loading="loading" :error="!!error"
       :dense="true">
       <template #search_input>
         <input type="text" ref="search_input" class="form__input form__input--flat" placeholder="Search XML" name="search"
@@ -72,7 +72,7 @@
           min="1" max="20">
       </template>
 
-      <template v-if="!!Object.keys(xmlFinder).length && !!xmlFinder.xmlData.length && !error">
+      <template v-if="!!Object.keys(xmlFinder || {}).length && !!xmlFinder?.xmlData?.length && !error">
         <md-card v-for="(xml, index) in xmlFinder.xmlData" :key="index" class="btn--animated gallery-item viz-u-mgup-md u_margin-none">
           <router-link
             :to="{ name: 'XmlVisualizer', params: { id: xml.id }, query: { isNewCuration: `${xml.isNewCuration}` } }">
@@ -102,135 +102,195 @@
   </div>
 </template>
 
-<script>
-import pagination from '@/components/explorer/Pagination'
-import { XML_FINDER } from '../../../modules/gql/xml-gql'
-import explorerQueryParams from '@/mixins/explorerQueryParams'
-import SearchGallery from '@/components/XmlSearchUtil'
-export default {
-  name: 'ManageCurations',
-  components: {
-    SearchGallery,
-    pagination
-  },
-  data () {
-    return {
-      baseUrl: window.location.origin,
-      renderText: 'Showing all XML',
-      xmlFinder: [],
-      pageNumber: 1,
-      pageSize: 20,
-      searchEnabled: false,
-      searchWord: '',
-      selectedFilters: [],
-      apprStatus: null,
-      curationState: null,
-      user: null,
-      isNew: null,
-      filterParams: {},
-      error: null
-    }
-  },
-  mixins: [explorerQueryParams],
-  computed: {
-    isEmpty () {
-      if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
-      return false
-    },
-    filtersActive () {
-      return !!this.apprStatus || !!this.curationState || !!this.user || (this.isNew !== null)
-    }
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useStore } from 'vuex';
+import { useQuery } from '@vue/apollo-composable';
+import pagination from '@/components/explorer/Pagination.vue';
+import { XML_FINDER } from '@/modules/gql/xml-gql';
+import { useExplorerQueryParams } from '@/composables';
+import SearchGallery from '@/components/XmlSearchUtil.vue';
 
-  },
-  methods: {
-    async localSearchMethod () {
-      // TODO @aswallace: Update to user query params instead
-      const filterParams = {
-        isNewCuration: this.selectedFilters.includes('isNew') ? this.isNew === 'Yes' : null,
-        status: this?.apprStatus,
-        curationState: this?.curationState,
-        user: this?.user
-      }
-      for (const key in filterParams) {
-        if (filterParams[key] === null) delete filterParams[key]
-      }
-      this.filterParams = filterParams
-      await this.$apollo.queries.xmlFinder.refetch()
-    },
-    async submitSearch () {
-      if (!this.searchWord && !this.filtersActive) {
-        return this.$store.commit('setSnackbar', {
-          message: 'Enter a XML sample file name  or select a filter type',
-          duration: 10000
-        })
-      }
-      this.error = null
-      this.searchEnabled = !!this.searchWord || !!this.filtersActive
-      this.pageNumber = 1
-      return await this.updateParamsAndCall(true)
-    },
-    async customReset (type) {
-      this.apprStatus = null
-      this.curationState = null
-      this.user = null
-      this.isNew = null
-      this.selectedFilters = []
-      this.filterParams = {}
-      this.error = null
-      await this.resetSearch(type)
-    },
-    selectFilters (e) {
-      const value = e.target.value
-      const arrValue = value.split('::')
-      if (!this.selectedFilters.includes(arrValue[0])) {
-        this.selectedFilters.push(arrValue[0])
-      }
-      this[arrValue[0]] = arrValue[1] && arrValue[1]
-      e.target.value = ''
-    },
-    removeChip (str) {
-      const index = this.selectedFilters.indexOf(str)
-      if (index < 0) return
-      this.selectedFilters.splice(index, 1) // 2nd parameter means remove one item only
-      this[str] = null
+// Store
+const store = useStore();
+const route = useRoute();
+
+// Data
+const baseUrl = ref(window.location.origin);
+const renderText = ref('Showing all XML');
+const selectedFilters = ref<string[]>([]);
+const apprStatus = ref<string | null>(null);
+const curationState = ref<string | null>(null);
+const user = ref<string | null>(null);
+const isNew = ref<string | null>(null);
+const filterParams = ref<Record<string, any>>({});
+const error = ref<string | null>(null);
+
+// Placeholder ref for Apollo query (will be assigned from composable)
+const pageNumber = ref<number>(1);
+const pageSize = ref<number>(20);
+
+// Apollo Query setup - uses refs that will be synced with composable
+const { result, loading, refetch, onError, onResult } = useQuery(
+  XML_FINDER,
+  () => ({
+    input: {
+      pageNumber: pageNumber.value,
+      pageSize: parseInt(pageSize.value.toString()),
+      filter: { param: route.query?.q, ...filterParams.value }
     }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'Manage Curation' })
-    const query = this.$route.query
-    if (query?.page || query?.size || query?.q) {
-      return this.loadParams(this.$route.query)
-    }
-  },
-  apollo: {
-    xmlFinder: {
-      query: XML_FINDER,
-      variables () {
-        return {
-          input: {
-            pageNumber: this.pageNumber,
-            pageSize: parseInt(this.pageSize),
-            filter: { param: this.$route.query?.q, ...this.filterParams }
-          }
-        }
-      },
-      fetchPolicy: 'cache-and-network',
-      result ({ data, loading }) {
-        if (!loading && data) this.error = null
-      },
-      error (error) {
-        if (error.networkError) {
-          const err = error.networkError
-          this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-        } else if (error.graphQLErrors) {
-          this.error = error.graphQLErrors
-        }
-        this.$store.commit('setSnackbar', {
-          message: this.error,
-          duration: 10000
-        })
-      }
-    }
+  }),
+  {
+    fetchPolicy: 'cache-and-network'
   }
-}
+);
+
+// Computed
+const xmlFinder = computed(() => result.value?.xmlFinder || {});
+
+const isEmpty = computed(() => {
+  if (!xmlFinder.value || xmlFinder.value.length === 0 || !Object.keys(xmlFinder.value).length || xmlFinder.value.totalItems === 0) return true;
+  return false;
+});
+
+const filtersActive = computed(() => {
+  return !!apprStatus.value || !!curationState.value || !!user.value || (isNew.value !== null);
+});
+
+// Local search method for query params composable
+const localSearchMethod = async (): Promise<void> => {
+  const params: Record<string, any> = {
+    isNewCuration: selectedFilters.value.includes('isNew') ? isNew.value === 'Yes' : null,
+    status: apprStatus.value,
+    curationState: curationState.value,
+    user: user.value
+  };
+
+  for (const key in params) {
+    if (params[key] === null) delete params[key];
+  }
+
+  filterParams.value = params;
+  await refetch();
+};
+
+// Composable
+const {
+  pageNumber: composablePageNumber,
+  pageSize: composablePageSize,
+  searchWord,
+  searchEnabled,
+  loadParams,
+  updateParamsAndCall,
+  loadPrevNextImage,
+  resetSearch
+} = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true
+});
+
+// Sync composable refs with local refs used in Apollo query
+watch(composablePageNumber, (newVal) => {
+  pageNumber.value = newVal;
+});
+
+watch(composablePageSize, (newVal) => {
+  pageSize.value = newVal;
+});
+
+const submitSearch = async () => {
+  if (!searchWord.value && !filtersActive.value) {
+    return store.commit('setSnackbar', {
+      message: 'Enter a XML sample file name  or select a filter type',
+      duration: 10000
+    });
+  }
+  error.value = null;
+  searchEnabled.value = !!searchWord.value || !!filtersActive.value;
+  pageNumber.value = 1;
+  return await updateParamsAndCall(true);
+};
+
+const customReset = async (type: string) => {
+  apprStatus.value = null;
+  curationState.value = null;
+  user.value = null;
+  isNew.value = null;
+  selectedFilters.value = [];
+  filterParams.value = {};
+  error.value = null;
+  await resetSearch(type);
+};
+
+const selectFilters = (e: Event) => {
+  const target = e.target as HTMLSelectElement;
+  const value = target.value;
+  const arrValue = value.split('::');
+
+  if (!selectedFilters.value.includes(arrValue[0])) {
+    selectedFilters.value.push(arrValue[0]);
+  }
+
+  if (arrValue[0] === 'apprStatus') {
+    apprStatus.value = arrValue[1] || null;
+  } else if (arrValue[0] === 'curationState') {
+    curationState.value = arrValue[1] || null;
+  } else if (arrValue[0] === 'user') {
+    user.value = arrValue[1] || null;
+  } else if (arrValue[0] === 'isNew') {
+    isNew.value = arrValue[1] || null;
+  }
+
+  target.value = '';
+};
+
+const removeChip = (str: string) => {
+  const index = selectedFilters.value.indexOf(str);
+  if (index < 0) return;
+  selectedFilters.value.splice(index, 1);
+
+  if (str === 'apprStatus') {
+    apprStatus.value = null;
+  } else if (str === 'curationState') {
+    curationState.value = null;
+  } else if (str === 'user') {
+    user.value = null;
+  } else if (str === 'isNew') {
+    isNew.value = null;
+  }
+};
+
+// Apollo Error Handler
+onError((err) => {
+  if (err.networkError) {
+    const networkErr = err.networkError as any;
+    error.value = `Network Error: ${networkErr?.response?.status} ${networkErr?.response?.statusText}`;
+  } else if (err.graphQLErrors) {
+    error.value = err.graphQLErrors.toString();
+  }
+  store.commit('setSnackbar', {
+    message: error.value,
+    duration: 10000
+  });
+});
+
+// Apollo Result Handler
+onResult(({ data, loading: isLoading }) => {
+  if (!isLoading && data) error.value = null;
+});
+
+// Watch for filter/search changes
+watch([apprStatus, curationState, user, isNew], async () => {
+  await localSearchMethod();
+});
+
+// Lifecycle
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: '', name: 'Manage Curation' });
+  const query = route.query;
+  if (query?.page || query?.size || query?.q) {
+    loadParams(route.query);
+  }
+});
 </script>

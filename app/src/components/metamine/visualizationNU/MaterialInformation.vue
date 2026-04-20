@@ -39,15 +39,11 @@
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStore } from 'vuex'
 
-export default {
-  name: 'MaterialInformation',
-  computed: {
-    ...mapState('metamineNU', {
-      dataPoint: (state) => state.dataPoint
-    })
-  }
-}
+const store = useStore()
+
+const dataPoint = computed(() => store.state.metamineNU.dataPoint)
 </script>

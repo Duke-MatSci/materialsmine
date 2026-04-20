@@ -1,7 +1,7 @@
 version: '3'
 services:
   mongo:
-    image: 'mongo:4.4'
+    image: 'mongo:5.0'
     restart: always
     container_name: mongo
     environment:
@@ -18,6 +18,7 @@ services:
       - ./mockDB/restore:/restore
       - ./mockDB/log:/var/log/mongodb
       - ./mockDB/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+    networks: [mm-net]
   es:
     image: 'docker.elastic.co/elasticsearch/elasticsearch:7.17.1'
     container_name: es
@@ -36,6 +37,7 @@ services:
       - '9200:9200'
     volumes:
       - ./mockDB/es:/usr/share/elasticsearch/data
+    networks: [mm-net]
   minio:
     container_name: minio
     image: minio/minio
@@ -48,6 +50,7 @@ services:
       - '9001:9001'
     volumes:
       - ./mockDB/minio:/data
+    networks: [mm-net]
   proxy:
     container_name: proxy
     depends_on:
@@ -59,6 +62,7 @@ services:
       context: ./nginx
     ports:
       - '80:80'
+    networks: [mm-net]
   api:
     depends_on:
       - es
@@ -115,8 +119,10 @@ services:
       - DEPLOYMENT_SECRET=${DEPLOYMENT_SECRET}
       - DYNAMFIT_TEST_FILE=${DYNAMFIT_TEST_FILE}
     ports:
-      - '3001:3001'
-      - '3002:3002'
+      - '3001:3001' # HTTP/App port
+      - '3002:3002' # worker
+      - '9229:9229' # inspector
+    networks: [mm-net]
   client:
     stdin_open: true
     container_name: frontend
@@ -125,12 +131,32 @@ services:
       - API_PORT=${PORT}
       - MINIO_PORT=${MINIO_PORT}
       - SERVICE_PORT=${HOST_PORT}
+      - MM_GHT=${MM_GHT}
     build:
       dockerfile: Dockerfile.dev
       context: ./app
+      args:
+        - MM_GHT=${MM_GHT}
     volumes:
       - /app/node_modules
       - ./app:/app
+    ports:
+      - '8080:8080'
+    networks: [mm-net]
+  # client:
+  #   stdin_open: true
+  #   container_name: frontend
+  #   environment:
+  #     - CHOKIDAR_USEPOLLING=true
+  #     - API_PORT=${PORT}
+  #     - MINIO_PORT=${MINIO_PORT}
+  #     - SERVICE_PORT=${HOST_PORT}
+  #   build:
+  #     dockerfile: Dockerfile.dev
+  #     context: ./old-app
+  #   volumes:
+  #     - /old-app/node_modules
+  #     - ./old-app:/app
   managedservices:
     container_name: managedservices
     # depends_on:
@@ -157,6 +183,30 @@ services:
       - REPO_NAME=${REPO_NAME}
       - FILE_PATH=${FILE_PATH}
       - BRANCH=${BRANCH}
+      - FUSEKI_BASE_URL=${FUSEKI_BASE_URL}
+      - FUSEKI_DATASET=${FUSEKI_DATASET}
+      - FUSEKI_USER=${FUSEKI_USER}
+      - FUSEKI_PWD=${FUSEKI_PWD}
+    networks: [mm-net]
+  kgraph:
+    image: stain/jena-fuseki
+    container_name: kgraph
+    ports:
+      - '3032:3030'
+    environment:
+      - FUSEKI_HOME=/fuseki
+      - ADMIN_PASSWORD=${FUSEKI_PWD} # Admin password from .env file
+    volumes:
+      - ./mockDB/data:/fuseki/databases # Persist data
+      - ./fuseki/shiro.ini:/fuseki/shiro.ini
+      - ./fuseki/config:/fuseki/config # Mount configuration files
+    entrypoint:
+      - java
+      - -jar
+      - fuseki-server.jar
+      - --config=/fuseki/config/assembler.ttl # Point to custom assembler
+    restart: unless-stopped
+    networks: [mm-net]
   # redis:
   #   image: 'redis:alpine'
   #   command: redis-server
@@ -232,6 +282,9 @@ services:
   #     - ./mockDB/fuseki:/fuseki
   #   mem_limit: 3072m
   #   cpus: '0.45'
-
+networks:
+  mm-net:
+    name: mm-net
+    driver: bridge
 volumes:
   mockDB:

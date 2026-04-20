@@ -56,49 +56,47 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'NiblackBinarization',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      job: {
-        submitJobTitle: 'otsu',
-        submitJobType: 'niblack',
-        aspectRatio: 'free',
-        getImageDimensions: false,
-        acceptableFileTypes: '.jpg, .png, .tif, .mat',
-        useWebsocket: true,
-        selects: [
-          {
-            title: 'Window Size (usually between 1 and 50)',
-            submitJobTitle: 'WindowSize'
-          },
-          {
-            title: 'K (Optional, usually between -0.2 and +0.2)',
-            submitJobTitle: 'KNiblack'
-          },
-          {
-            title: 'Offset (Optional, usually set to 0)',
-            submitJobTitle: 'OffsetNiblack'
-          }
-        ]
-      },
-      references: [
-        '978-0134806747',
-        '10.1117/12.805827'
-      ]
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const job = ref({
+  submitJobTitle: 'otsu',
+  submitJobType: 'niblack',
+  aspectRatio: 'free' as const,
+  getImageDimensions: false,
+  acceptableFileTypes: '.jpg, .png, .tif, .mat',
+  useWebsocket: true,
+  selects: [
+    {
+      title: 'Window Size (usually between 1 and 50)',
+      submitJobTitle: 'WindowSize'
+    },
+    {
+      title: 'K (Optional, usually between -0.2 and +0.2)',
+      submitJobTitle: 'KNiblack'
+    },
+    {
+      title: 'Offset (Optional, usually set to 0)',
+      submitJobTitle: 'OffsetNiblack'
+    }
+  ]
+});
+
+const references = ref<string[]>([
+  '978-0134806747',
+  '10.1117/12.805827'
+]);
 </script>

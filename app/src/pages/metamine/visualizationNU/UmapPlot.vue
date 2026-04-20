@@ -13,7 +13,7 @@
           <dialog-box disableClose :active="dialogBoxActiveKnn">
             <template v-slot:content> <NeighborPanel /> </template>
             <template v-slot:actions>
-              <md-button @click.native.prevent="closeDialogBox"
+              <md-button @click.prevent="closeDialogBox"
                 >Close</md-button
               >
             </template>
@@ -27,7 +27,7 @@
           <dialog-box :active="dialogBoxActiveSaveData" :disableClose="true">
             <template v-slot:content> <SaveDataPanel /> </template>
             <template v-slot:actions>
-              <md-button @click.native.prevent="toggleDialogBoxSaveData"
+              <md-button @click.prevent="toggleDialogBoxSaveData"
                 >Close</md-button
               >
             </template>
@@ -62,13 +62,16 @@
         screen devices.</template
       >
       <template v-slot:actions>
-        <md-button @click.native.prevent="goHome">Go Home</md-button>
+        <md-button @click.prevent="goHome">Go Home</md-button>
       </template>
     </dialog-box>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import Umap from '@/components/metamine/visualizationNU/umap.vue'
 import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
 import ParamSelector from '@/components/metamine/visualizationNU/ParamSelector.vue'
@@ -80,83 +83,72 @@ import SaveDataPanel from '@/components/metamine/visualizationNU/SaveDataPanel.v
 import Dialog from '@/components/Dialog.vue'
 import VisualizationLayout from '@/components/metamine/visualizationNU/VisualizationLayout.vue'
 import DataInfo from '@/components/metamine/visualizationNU/DataInfo.vue'
-import { mapState } from 'vuex'
 
-export default {
-  name: 'ScatterPage',
-  components: {
-    Umap,
-    DataSelector,
-    ParamSelector,
-    Youngs,
-    Poisson,
-    Structure,
-    NeighborPanel,
-    SaveDataPanel,
-    dialogBox: Dialog,
-    VisualizationLayout,
-    DataInfo
+const router = useRouter()
+const store = useStore()
+
+const dialogBoxActiveSaveData = ref<boolean>(false)
+const reset = ref<boolean>(false)
+const windowWidth = ref<number>(window.innerWidth)
+const link = ref({
+  to: '/mm/metamaterial_visualization_nu',
+  text: 'Visualize In Pairwise Plot'
+})
+const showUmap = ref<boolean>(false)
+
+const dialogBoxActiveKnn = computed(() => {
+  return store.state.metamineNU.dialogBoxActiveKnn
+})
+
+const isLoading = computed(() => {
+  return store.getters['metamineNU/getLoadingState']
+})
+
+const isMiniDevice = computed(() => {
+  return windowWidth.value <= 650
+})
+
+const enableKnn = computed({
+  get() {
+    return store.state.metamineNU.enableKnn
   },
-  data () {
-    return {
-      dialogBoxActiveSaveData: false,
-      reset: false,
-      windowWidth: window.innerWidth,
-      link: {
-        to: '/mm/metamaterial_visualization_nu',
-        text: 'Visualize In Pairwise Plot'
-      },
-      showUmap: false
-    }
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      dialogBoxActiveKnn: (state) => state.dialogBoxActiveKnn
-    }),
-    isLoading () {
-      return this.$store.getters['metamineNU/getLoadingState']
-    },
-    isMiniDevice () {
-      return this.windowWidth <= 650
-    },
-    enableKnn: {
-      get () {
-        return this.$store.state.metamineNU.enableKnn
-      },
-      set (value) {
-        this.$store.commit('metamineNU/updateEnableKnn', value)
-      }
-    }
-  },
-  mounted () {
-    this.$nextTick(() => {
-      window.addEventListener('resize', this.onResize)
-    })
-    // Note: This is done to introduce a custom delay in the rendering of the Umap
-    // Change the showUmap to true after .5 sec
-    setTimeout(() => {
-      this.showUmap = true
-    }, 300)
-  },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.onResize)
-  },
-  methods: {
-    closeDialogBox () {
-      this.$store.commit('metamineNU/setDialogBoxActiveKnn', false)
-    },
-    toggleDialogBoxSaveData () {
-      this.dialogBoxActiveSaveData = !this.dialogBoxActiveSaveData
-    },
-    handleReset () {
-      this.$store.commit('metamineNU/setReset', true)
-    },
-    goHome () {
-      this.$router.push('/mm')
-    },
-    onResize () {
-      this.windowWidth = window.innerWidth
-    }
+  set(value: boolean) {
+    store.commit('metamineNU/updateEnableKnn', value)
   }
+})
+
+const closeDialogBox = () => {
+  store.commit('metamineNU/setDialogBoxActiveKnn', false)
 }
+
+const toggleDialogBoxSaveData = () => {
+  dialogBoxActiveSaveData.value = !dialogBoxActiveSaveData.value
+}
+
+const handleReset = () => {
+  store.commit('metamineNU/setReset', true)
+}
+
+const goHome = () => {
+  router.push('/mm')
+}
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  nextTick(() => {
+    window.addEventListener('resize', onResize)
+  })
+  // Note: This is done to introduce a custom delay in the rendering of the Umap
+  // Change the showUmap to true after .5 sec
+  setTimeout(() => {
+    showUmap.value = true
+  }, 300)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
 </script>

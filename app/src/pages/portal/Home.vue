@@ -2,12 +2,6 @@
   <account />
 </template>
 
-<script>
-import account from '@/components/portal/Account.vue'
-export default {
-  name: 'PortalHome',
-  components: {
-    account
-  }
-}
+<script setup lang="ts">
+import Account from '@/components/portal/Account.vue';
 </script>

@@ -53,6 +53,7 @@ mockDB/es/
 
 #Min.io
 mockDB/minio/
+mockDB/data/
 
 #Whyis && Managed Services
 **/**/__pycache__/
@@ -62,6 +63,7 @@ mockDB/minio/
 
 # Ignore coverage
 app/coverage
+old-app/coverage
 resfulservice/coverage
 resfulservice/.nyc_output
 
@@ -72,3 +74,5 @@ __pycache__/
 sparqlqueries.html
 
 trash
+
+resfulservice/schemas/

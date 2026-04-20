@@ -15,7 +15,7 @@
           {{ name }}:
         </p>
         <md-input
-          v-model="inputObj.cellValue"
+          v-model="cellValue"
           :required="inputObj.required"
           :name="uniqueKey.join(',')"
           :id="uniqueKey.join(',')"
@@ -35,7 +35,7 @@
         :style="reduceSpacing"
       >
         <md-select
-          v-model="inputObj.cellValue"
+          v-model="cellValue"
           :name="uniqueKey.join(',')"
           :id="uniqueKey.join(',')"
           @md-opened="fetchValues"
@@ -69,7 +69,7 @@
       >
         <md-chips
           :class="[inputError ? 'md-invalid' : '', 'md-primary']"
-          v-model="inputObj.values"
+          v-model="valuesArray"
           :md-placeholder="`Enter ${name}`"
           :md-auto-insert="true"
         >
@@ -109,7 +109,7 @@
             <div
               :style="reduceSpacing"
               :class="[
-                fileError && !inputObj.cellValuecellValue ? 'md-invalid' : '',
+                fileError && !inputObj.cellValue ? 'md-invalid' : '',
                 inputObj.required ? 'md-required md-has-file' : '',
                 'md-field md-theme-default'
               ]"
@@ -143,7 +143,7 @@
         <div>
           <md-dialog-confirm
             :md-click-outside-to-close="false"
-            :md-active.sync="dialogActive"
+            v-model:md-active="dialogActive"
             :md-title="dialogTitle"
             :md-content="dialogText"
             md-confirm-text="Proceed"
@@ -158,233 +158,276 @@
   </div>
 </template>
 
-<script>
-import { mapState, mapGetters, mapActions } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useStore } from 'vuex';
 
-export default {
+// Component name for debugging
+defineOptions({
   name: 'InputComponent',
-  props: {
-    inputObj: {
-      type: Object,
-      required: true
-    },
-    uniqueKey: {
-      type: Array,
-      required: true
-    },
-    name: {
-      type: String,
-      required: true
-    },
-    title: {
-      type: String,
-      required: false
-    }
-  },
-  data () {
-    return {
-      loading: !!this.listValue,
-      error: false,
-      listItem: [],
-      dialogTitle: '',
-      dialogText: '',
-      dialogAction: '',
-      dialogActive: false,
-      tempFileContainer: {},
-      inFocus: false
-    }
-  },
-  computed: {
-    ...mapGetters({
-      token: 'auth/token'
-    }),
-    ...mapState({
-      errors: (state) => state.explorer.curation.curationFormError
-    }),
-    unitOfMeasureExists () {
-      return Object.hasOwnProperty.call(this.inputObj, 'unitofmeasurement')
-    },
-    noteExists () {
-      return Object.hasOwnProperty.call(this.inputObj, 'note')
-    },
-    reduceSpacing () {
-      return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 }
-    },
-    reduceCellValue () {
-      const arr = this.inputObj.cellValue.split('/')
-      return arr.length > 3 ? arr[3].substring(0, 40) : this.inputObj.cellValue
-    },
-    downloadLink () {
-      if (this.inputObj.cellValue.includes('nmr/blob')) {
-        // http:localhost/api/files/583e05f1e74a1d205f4e218c
-        return `/api/files/${this.inputObj.cellValue.split('id=')?.pop()}`
-      }
-      return this.inputObj.cellValue
-    },
-    errorRef () {
-      if (!this.title || !Object.hasOwnProperty.call(this.errors, this.title)) {
-        return false
-      }
-      const obj = this.errors[this.title]
-      const refData = this.uniqueKey.reduce(function (o, x, idx, arr) {
-        if (typeof o === 'undefined' || o === null) return o
-        if (Array.isArray(o[x])) {
-          for (let i = 0; i < o[x].length; i++) {
-            if (Object.hasOwnProperty.call(o[x][i], arr[idx + 1])) {
-              return o[x][i]
-            }
-          }
-        }
-        return o[x]
-      }, obj)
-      return !!refData
-    },
-    inputError () {
-      return this.errorRef && !this.inputObj.cellValue
-    },
-    fileError () {
-      return this.errorRef
-    },
-    isEditMode () {
-      return !!Object.keys(this.$route.query).length
-    },
-    parent () {
-      return this.uniqueKey.slice(0, this.uniqueKey.length - 1).join(' > ')
-    },
-    stringInputVal () {
-      if (typeof this.inputObj !== 'object') return false
-      return (
-        Object.hasOwnProperty.call(this.inputObj, 'cellValue') &&
-        this.inputObj.cellValue !== null &&
-        this.inputObj.cellValue.trim() === ''
-      )
-    }
-  },
-  watch: {
-    stringInputVal (newVal) {
-      if (newVal === true) {
-        this.inputObj.cellValue = null
-      }
-    }
-  },
-  methods: {
-    ...mapActions({
-      fetchXlsList: 'explorer/curation/fetchXlsList'
-    }),
-    hasProperty (obj, prop) {
-      return Object.hasOwnProperty.call(obj, prop)
-    },
-    async fetchValues () {
-      // set error and loading state
-      this.loading = true
-      this.error = false
-      try {
-        const result = await this.fetchXlsList({
-          field: this.inputObj.validList
-        })
-        this.listItem = result?.columns[0]?.values || []
-      } catch (error) {
-        this.$store.commit('setSnackbar', {
-          message: error || 'Something went wrong',
-          action: () => this.fetchValues()
-        })
-        this.error = true
-      } finally {
-        this.loading = false
-      }
-    },
-    toggleDialog () {
-      this.dialogActive = !this.dialogActive
-    },
-    confirmUpload (e) {
-      if (!e) return
-      this.tempFileContainer = e.target?.files ? [...e.target?.files] : []
-      this.dialogTitle = 'Confirm Upload'
-      this.dialogText = 'Are you sure you want to upload this file'
-      this.dialogAction = null
-      this.dialogActive = true
-      e.target.value = null
-    },
-    confirmDelete () {
-      this.dialogTitle = 'Confirm Data Removal'
-      const msg =
-        'Removing this file would clear all fields in this block. Please confirm your action'
-      const altMsg = 'This file would be permanently deleted from our server.'
-      this.dialogText = this.isEditMode ? altMsg : msg
-      this.dialogAction = () => this.removeImage()
-      this.dialogActive = true
-    },
-    onCancel (e) {
-      this.dialogTitle = ''
-      this.dialogText = ''
-      this.dialogAction = null
-      this.dialogActive = false
-      this.tempFileContainer = {}
-    },
-    onConfirm () {
-      if (!this.dialogAction) return this.onInputChange(this.tempFileContainer)
-      return this.dialogAction()
-    },
-    async onInputChange (arg) {
-      this.dialogActive = false
-      try {
-        const { fileLink } = await this.$store.dispatch('uploadFile', {
-          file: arg
-        })
-        this.inputObj.cellValue = fileLink
-        this.tempFileContainer = {}
-      } catch (err) {
-        this.$store.commit('setSnackbar', {
-          message: err?.message || 'Something went wrong',
-          action: () => this.onInputChange(arg)
-        })
-      } finally {
-        this.dialogAction = null
-      }
-    },
-    async removeImage () {
-      try {
-        let fetchLink
-        if (this.inputObj.cellValue.includes('/nmr/')) {
-          const blobId = this.inputObj.cellValue.split('=')[1]
-          fetchLink = `/api/files/${blobId}`
-        } else {
-          fetchLink = this.inputObj.cellValue
-        }
+});
 
-        const res = await fetch(fetchLink, {
-          headers: { Authorization: `Bearer ${this.token}` },
-          method: 'DELETE'
-        })
-        if (res.status === 200) {
-          // 06/20/2024
-          // Removing below code to allow complete removal of image data when an image is deleted on the curation form
-          // if (this.isEditMode) return (this.inputObj.cellValue = '');
-          this.$emit('data-file-deleted', this.inputObj.cellValue)
-          this.inputObj.cellValue = ''
-          this.onCancel()
-        }
-      } catch (err) {
-        this.$store.commit('setSnackbar', {
-          message: err?.message || 'Something went wrong',
-          action: () => this.removeImage()
-        })
-      }
-    },
-    async downloadImage (arg) {
-      const baseUrl = window.location.origin
-      const fileUrl = `${baseUrl}${arg}`
-      const encodedUrl = encodeURI(fileUrl)
-      const fileLink = document.createElement('a')
-      fileLink.href = encodedUrl
-      const name = arg?.split('?')[0]
-      fileLink.setAttribute('download', name)
-      document.body.appendChild(fileLink)
-      fileLink.click()
-    }
-  },
-  mounted () {
-    if (this.inputError || this.fileError) this.$emit('update-step-error')
-  }
+// Props
+interface InputObj {
+  type: string;
+  cellValue?: string | null;
+  values?: string[];
+  required?: boolean;
+  note?: string;
+  unitofmeasurement?: string;
+  validList?: string;
 }
+
+interface Props {
+  inputObj: InputObj;
+  uniqueKey: string[];
+  name: string;
+  title?: string;
+}
+
+const props = defineProps<Props>();
+
+// Emits
+const emit = defineEmits<{
+  (e: 'data-file-deleted', value: string): void;
+  (e: 'update-step-error'): void;
+  (e: 'update:inputObj', value: InputObj): void;
+}>();
+
+// Store and route
+const store = useStore();
+const route = useRoute();
+
+// Reactive data
+const loading = ref(false);
+const error = ref(false);
+const listItem = ref<string[]>([]);
+const dialogTitle = ref('');
+const dialogText = ref('');
+const dialogAction = ref<(() => void) | null>(null);
+const dialogActive = ref(false);
+const tempFileContainer = ref<File[]>([]);
+const inFocus = ref(false);
+
+// Computed
+const token = computed(() => store.getters['auth/token']);
+const errors = computed(() => store.state.explorer.curation.curationFormError);
+
+const unitOfMeasureExists = computed(() => {
+  return Object.hasOwnProperty.call(props.inputObj, 'unitofmeasurement');
+});
+
+const noteExists = computed(() => {
+  return Object.hasOwnProperty.call(props.inputObj, 'note');
+});
+
+const reduceSpacing = computed(() => {
+  return { alignItems: 'baseline', minHeight: 'auto', paddingTop: 0 };
+});
+
+const reduceCellValue = computed(() => {
+  if (!props.inputObj.cellValue) return '';
+  const arr = props.inputObj.cellValue.split('/');
+  return arr.length > 3 ? arr[3].substring(0, 40) : props.inputObj.cellValue;
+});
+
+const downloadLink = computed(() => {
+  if (!props.inputObj.cellValue) return '';
+  if (props.inputObj.cellValue.includes('nmr/blob')) {
+    return `/api/files/${props.inputObj.cellValue.split('id=')?.pop()}`;
+  }
+  return props.inputObj.cellValue;
+});
+
+const errorRef = computed(() => {
+  if (!props.title || !Object.hasOwnProperty.call(errors.value, props.title)) {
+    return false;
+  }
+  const obj = errors.value[props.title];
+  const refData = props.uniqueKey.reduce(function (o: any, x: string, idx: number, arr: string[]) {
+    if (typeof o === 'undefined' || o === null) return o;
+    if (Array.isArray(o[x])) {
+      for (let i = 0; i < o[x].length; i++) {
+        if (Object.hasOwnProperty.call(o[x][i], arr[idx + 1])) {
+          return o[x][i];
+        }
+      }
+    }
+    return o[x];
+  }, obj);
+  return !!refData;
+});
+
+const inputError = computed(() => {
+  return errorRef.value && !props.inputObj.cellValue;
+});
+
+const fileError = computed(() => {
+  return errorRef.value;
+});
+
+const isEditMode = computed(() => {
+  return !!Object.keys(route.query).length;
+});
+
+const parent = computed(() => {
+  return props.uniqueKey.slice(0, props.uniqueKey.length - 1).join(' > ');
+});
+
+const stringInputVal = computed(() => {
+  if (typeof props.inputObj !== 'object') return false;
+  return (
+    Object.hasOwnProperty.call(props.inputObj, 'cellValue') &&
+    props.inputObj.cellValue !== null &&
+    props.inputObj.cellValue !== undefined &&
+    props.inputObj.cellValue.trim() === ''
+  );
+});
+
+// Computed with getter/setter for v-model bindings to avoid prop mutation
+const cellValue = computed({
+  get: () => props.inputObj.cellValue,
+  set: (value) => {
+    emit('update:inputObj', { ...props.inputObj, cellValue: value });
+  }
+});
+
+const valuesArray = computed({
+  get: () => props.inputObj.values,
+  set: (value) => {
+    emit('update:inputObj', { ...props.inputObj, values: value });
+  }
+});
+
+// Watch
+watch(stringInputVal, (newVal) => {
+  if (newVal === true) {
+    cellValue.value = null;
+  }
+});
+
+// Methods
+const hasProperty = (obj: any, prop: string) => {
+  return Object.hasOwnProperty.call(obj, prop);
+};
+
+const fetchValues = async () => {
+  loading.value = true;
+  error.value = false;
+  try {
+    const result = await store.dispatch('explorer/curation/fetchXlsList', {
+      field: props.inputObj.validList
+    });
+    listItem.value = result?.columns[0]?.values || [];
+  } catch (err) {
+    store.commit('setSnackbar', {
+      message: err || 'Something went wrong',
+      action: () => fetchValues()
+    });
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const toggleDialog = () => {
+  dialogActive.value = !dialogActive.value;
+};
+
+const confirmUpload = (e: Event) => {
+  if (!e) return;
+  const target = e.target as HTMLInputElement;
+  tempFileContainer.value = target?.files ? Array.from(target.files) : [];
+  dialogTitle.value = 'Confirm Upload';
+  dialogText.value = 'Are you sure you want to upload this file';
+  dialogAction.value = null;
+  dialogActive.value = true;
+  target.value = '';
+};
+
+const confirmDelete = () => {
+  dialogTitle.value = 'Confirm Data Removal';
+  const msg =
+    'Removing this file would clear all fields in this block. Please confirm your action';
+  const altMsg = 'This file would be permanently deleted from our server.';
+  dialogText.value = isEditMode.value ? altMsg : msg;
+  dialogAction.value = () => removeImage();
+  dialogActive.value = true;
+};
+
+const onCancel = () => {
+  dialogTitle.value = '';
+  dialogText.value = '';
+  dialogAction.value = null;
+  dialogActive.value = false;
+  tempFileContainer.value = [];
+};
+
+const onConfirm = () => {
+  if (!dialogAction.value) return onInputChange(tempFileContainer.value);
+  return dialogAction.value();
+};
+
+const onInputChange = async (arg: File[]) => {
+  dialogActive.value = false;
+  try {
+    const { fileLink } = await store.dispatch('uploadFile', {
+      file: arg
+    });
+    cellValue.value = fileLink;
+    tempFileContainer.value = [];
+  } catch (err: any) {
+    store.commit('setSnackbar', {
+      message: err?.message || 'Something went wrong',
+      action: () => onInputChange(arg)
+    });
+  } finally {
+    dialogAction.value = null;
+  }
+};
+
+const removeImage = async () => {
+  try {
+    let fetchLink: string;
+    if (props.inputObj.cellValue && props.inputObj.cellValue.includes('/nmr/')) {
+      const blobId = props.inputObj.cellValue.split('=')[1];
+      fetchLink = `/api/files/${blobId}`;
+    } else {
+      fetchLink = props.inputObj.cellValue || '';
+    }
+
+    const res = await fetch(fetchLink, {
+      headers: { Authorization: `Bearer ${token.value}` },
+      method: 'DELETE'
+    });
+    if (res.status === 200) {
+      emit('data-file-deleted', props.inputObj.cellValue as string);
+      cellValue.value = '';
+      onCancel();
+    }
+  } catch (err: any) {
+    store.commit('setSnackbar', {
+      message: err?.message || 'Something went wrong',
+      action: () => removeImage()
+    });
+  }
+};
+
+const downloadImage = (arg: string) => {
+  const baseUrl = window.location.origin;
+  const fileUrl = `${baseUrl}${arg}`;
+  const encodedUrl = encodeURI(fileUrl);
+  const fileLink = document.createElement('a');
+  fileLink.href = encodedUrl;
+  const name = arg?.split('?')[0];
+  fileLink.setAttribute('download', name);
+  document.body.appendChild(fileLink);
+  fileLink.click();
+};
+
+// Lifecycle
+onMounted(() => {
+  if (inputError.value || fileError.value) emit('update-step-error');
+});
 </script>

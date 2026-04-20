@@ -4,52 +4,57 @@
   </div>
 </template>
 
-<script>
-import { CreateVoyager } from 'datavoyager'
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue';
+import { CreateVoyager } from 'datavoyager';
+
+interface Props {
+  data?: Record<string, any> | null;
+  spec?: Record<string, any> | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  data: null,
+  spec: null
+});
+
+const emit = defineEmits<{
+  (e: 'update:spec', spec: any): void;
+}>();
 
 const voyagerConf = {
   showDataSourceSelector: false,
   hideHeader: true,
   hideFooter: true
-}
+};
 
-export default {
-  name: 'DataVoyager',
-  data () {
-    return {
-      containerId: 'voyager-embed'
-    }
-  },
-  props: {
-    data: {
-      type: Object,
-      default: () => null
-    },
-    spec: {
-      type: Object,
-      default: () => null
-    }
-  },
-  methods: {
-    updateSpec () {
-      this.$emit('update:spec', this.voyagerInstance.getSpec())
-    },
-    createVoyager () {
-      const container = this.$refs[this.containerId]
-      this.voyagerInstance = CreateVoyager(container, voyagerConf, undefined)
-      this.voyagerInstance.onStateChange(() => this.updateSpec())
-      this.voyagerInstance.updateData(this.data)
-    }
-  },
-  watch: {
-    data () {
-      this.createVoyager()
-    }
-  },
-  mounted () {
-    this.createVoyager()
+const containerId = ref<string>('voyager-embed');
+const voyagerInstance = ref<any>(null);
+
+const updateSpec = (): void => {
+  if (voyagerInstance.value) {
+    emit('update:spec', voyagerInstance.value.getSpec());
   }
-}
+};
+
+const createVoyager = (): void => {
+  const container = document.getElementById(containerId.value);
+  if (container) {
+    voyagerInstance.value = CreateVoyager(container, voyagerConf, undefined);
+    voyagerInstance.value.onStateChange(() => updateSpec());
+    if (props.data) {
+      voyagerInstance.value.updateData(props.data);
+    }
+  }
+};
+
+watch(() => props.data, () => {
+  createVoyager();
+});
+
+onMounted(() => {
+  createVoyager();
+});
 </script>
 
 <style css src='datavoyager/build/style.css'>

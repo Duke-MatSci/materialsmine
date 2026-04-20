@@ -7,44 +7,34 @@
       <p>No templates were loaded</p>
     </div>
     <div v-else>
-      <h1 class="visualize_header-h1 u_margin-top-med u--margin-leftsm">{{ pageTitle[currentIndex] || 'parameterized query'}}</h1>
+      <h1 class="visualize_header-h1 u_margin-top-med u--margin-leftsm">
+        {{ pageTitle[currentIndex] || 'parameterized query' }}
+      </h1>
       <div class="viz-sample__header">
         <h3 class="md-title">Query Template</h3>
       </div>
       <div class="u_display-flex display">
-        <md-button
-          class="template-back"
-          @click="shiftTemplate(-1)"
-        >
+        <md-button class="template-back" @click="shiftTemplate(-1)">
           <md-icon>chevron_left</md-icon>
         </md-button>
-        <md-button
-          class="template-next"
-          @click="shiftTemplate(1)"
-        >
+        <md-button class="template-next" @click="shiftTemplate(1)">
           <md-icon>chevron_right</md-icon>
         </md-button>
         <p class="display-text">
-          <span
-            v-for="(segment, index) in selectedTemplate.displaySegments"
-            :key="index"
-          >
-            <span
-              v-if="segment.type == TextSegmentType.TEXT"
-              v-html="segment.text"
-            ></span>
+          <span v-for="(segment, index) in selectedTemplate.displaySegments" :key="index">
+            <span v-if="segment.type == TextSegmentType.TEXT" v-html="segment.text"></span>
             <span v-else>
               <select
-                v-model="varSelections[segment.varName]"
+                v-model="varSelections[segment.varName!]"
                 :id="segment.varName"
                 :name="segment.varName"
               >
                 <option
-                  v-for="(value, name) in selectedTemplate.options[segment.varName]"
+                  v-for="(value, name) in selectedTemplate.options[segment.varName!]"
                   :key="name"
                   :value="name"
                 >
-                  {{name}}
+                  {{ name }}
                 </option>
               </select>
             </span>
@@ -52,28 +42,15 @@
         </p>
       </div>
       <div class="display-count-indicator">
-        <p>Query template {{currentIndex + 1}} of {{totalTemplateCount}}</p>
+        <p>Query template {{ currentIndex + 1 }} of {{ totalTemplateCount }}</p>
       </div>
-      <div
-        class="query"
-        v-if="query"
-      >
-        <accordion
-          :startOpen="false"
-          title="SPARQL Query"
-        >
-          <yasqe
-            :value="query"
-            :readOnly="true"
-            :showBtns="false"
-          ></yasqe>
+      <div class="query" v-if="query">
+        <accordion :startOpen="false" title="SPARQL Query">
+          <yasqe :value="query" :readOnly="true" :showBtns="false"></yasqe>
         </accordion>
       </div>
       <div class="results">
-        <accordion
-          :startOpen="true"
-          title="SPARQL Results"
-        >
+        <accordion :startOpen="true" title="SPARQL Results">
           <div class="u_display-flex results-controls">
             <button
               class="btn btn--primary"
@@ -82,35 +59,20 @@
             >
               Search Query
             </button>
-            <md-switch
-              class="md-primary"
-              v-model="autoRefresh"
-            >
-              Auto Refresh
-            </md-switch>
+            <md-switch class="md-primary" v-model="autoRefresh"> Auto Refresh </md-switch>
             <div class="u_display-flex button-row">
               <div>
-                <button
-                    class="btn btn--primary"
-                    @click="selectQueryForVizEditor()"
-                  >
-                    Open in Datavoyager
+                <button class="btn btn--primary" @click="selectQueryForVizEditor()">
+                  Open in Datavoyager
                 </button>
               </div>
             </div>
           </div>
-          <div
-            class="u_display-flex results-progress"
-            v-show="runningQuery"
-          >
-            <spinner
-              :loading="runningQuery"
-              text='Loading your request...'
-              v-if="runningQuery"
-            />
+          <div class="u_display-flex results-progress" v-show="runningQuery">
+            <spinner :loading="runningQuery" text="Loading your request..." v-if="runningQuery" />
           </div>
           <div v-show="!runningQuery">
-            <yasr v-if="results" :results="results"/>
+            <yasr v-if="results" :results="results" />
             <p v-else class="no-results-message">
               No results yet. Press "Refresh Results" to run the query and see results.
             </p>
@@ -121,216 +83,240 @@
   </div>
 </template>
 
-<script>
-import { mapMutations } from 'vuex'
-import { querySparql } from '@/modules/sparql'
-// import { goToView, VIEW_URIS, DEFAULT_VIEWS } from "../../../utilities/views";
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import { querySparql } from '@/modules/sparql';
 import {
   loadSparqlTemplates,
   TextSegmentType,
-  OptValueType
-} from './sparql-templates'
-import debounce from '@/modules/debounce'
-import accordion from '@/components/accordion.vue'
-import yasr from '@/components/explorer/yasr'
-import yasqe from '@/components/explorer/yasqe'
-import spinner from '@/components/Spinner'
+  OptValueType,
+  SparqlTemplate,
+  OptValue,
+} from './sparql-templates';
+import debounce from '@/modules/debounce';
+import accordion from '@/components/Accordion.vue';
+import yasr from '@/components/explorer/yasr.vue';
+import yasqe from '@/components/explorer/yasqe.vue';
+import spinner from '@/components/Spinner.vue';
 
-export default {
-  components: {
-    accordion,
-    yasqe,
-    yasr,
-    spinner
-  },
-  data () {
-    return {
-      loadingTemplates: true,
-      runningQuery: false,
-      queryTemplates: {},
-      TextSegmentType,
-      selTemplateId: null,
-      query: '',
-      varSelections: {},
-      results: null,
-      autoRefresh: false,
-      lastRunQuery: '',
-      execQueryDebounced: debounce(this.autoExecQuery, 300),
-      pageTitle: []
-    }
-  },
-  computed: {
-    templateIds () {
-      return Object.keys(this.queryTemplates)
-    },
-    selectedTemplate () {
-      return this.queryTemplates[this.selTemplateId]
-    },
-    currentIndex () {
-      return this.templateIds.indexOf(this.selTemplateId)
-    },
-    totalTemplateCount () {
-      return this.templateIds.length
-    },
-    newQuery () {
-      return this.query !== this.lastRunQuery
-    }
-  },
-  methods: {
-    ...mapMutations('vega', ['setQuery']),
-    selectQueryForVizEditor () {
-      this.setQuery(this.query)
-      this.$router.push({ name: 'NewChartDataVoyager' })
-    },
-    async loadSparqlTemplates () {
-      this.loadingTemplates = true
-      try {
-        const templates = await loadSparqlTemplates()
-        this.queryTemplates = {}
-        templates.forEach((t) => {
-          this.queryTemplates[t.id] = t
-        })
-        this.selTemplateId = templates.length > 0 ? templates[0].id : null
-      } finally {
-        this.loadingTemplates = false
-      }
-    },
-    shiftTemplate (amount) {
-      let newIndex = this.currentIndex + amount
-      while (newIndex >= this.totalTemplateCount) {
-        newIndex -= this.totalTemplateCount
-      }
-      while (newIndex < 0) {
-        newIndex += this.totalTemplateCount
-      }
-      this.selTemplateId = this.templateIds[newIndex]
-    },
-    populateSelections () {
-      if (!this.selectedTemplate) {
-        return
-      }
-      this.varSelections = Object.fromEntries(
-        Object.entries(this.selectedTemplate.options).map(
-          ([varName, varOpts]) => [varName, Object.keys(varOpts)[0]]
-        )
-      )
-    },
-    getOptVal (varName, optName) {
-      return this.selectedTemplate.options[varName][optName]
-    },
-    buildQuery () {
-      if (!this.selectedTemplate) {
-        return
-      }
-      var tempQuery = this.selectedTemplate.SPARQL
+defineOptions({
+  name: 'ParameterizedQueryPage',
+});
 
-      // append VALUES clause to query if there are any active selections
-      const activeSelections = Object.fromEntries(
-        Object.entries(this.varSelections).filter(
-          (selEntry) => this.getOptVal(...selEntry).type !== OptValueType.ANY
-        )
-      )
-      if (Object.keys(activeSelections).length > 0) {
-        const varNames = Object.keys(activeSelections)
-          .map((varName) => `?${varName}`)
-          .join(' ')
+const store = useStore();
+const router = useRouter();
 
-        const optVals = Object.entries(activeSelections)
-          .map((selEntry) => {
-            const optVal = this.getOptVal(...selEntry)
-            let value
-            if (optVal.type === OptValueType.LITERAL) {
-              value = optVal.value
-              if (typeof value !== 'number') {
-                value = `"${value}"`
-              }
-            } else if (optVal.type === OptValueType.IDENTIFIER) {
-              value = `<${optVal.value}>`
-            } else {
-              throw new Error(`Unknown option value type: ${optVal.type}`)
-            }
-            return value
-          })
-          .join(' ')
-        const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`
+// Reactive state
+const loadingTemplates = ref(true);
+const runningQuery = ref(false);
+const queryTemplates = ref<Record<string, SparqlTemplate>>({});
+const selTemplateId = ref<string | null>(null);
+const query = ref('');
+const varSelections = ref<Record<string, string>>({});
+const results = ref<unknown>(null);
+const autoRefresh = ref(false);
+const lastRunQuery = ref('');
+const pageTitle = ref<string[]>([]);
 
-        tempQuery = tempQuery.replace(/(where\s*{)/i, '$1' + valuesBlock)
-      }
+// Computed properties
+const templateIds = computed(() => Object.keys(queryTemplates.value));
 
-      // find any replaceable variable names
-      const activeReplacements = Object.fromEntries(
-        Object.entries(this.selectedTemplate.replacements).map(
-          ([varName, varObj]) => {
-            // find the actively selected option
-            return [varName, varObj.varFormat.replace('${' + 'var}', this.varSelections[varObj.subVar])]
-          }
-        )
-      )
-      if (Object.keys(activeReplacements).length > 0) { // replacements are active
-        Object.keys(activeReplacements).map((varName) => {
-          // convert to variable names and replace in query
-          const replacement = `?${this.camelize(activeReplacements[varName])}`
-          var originalRE = new RegExp('\\?' + varName, 'g')
-          tempQuery = tempQuery.replaceAll(originalRE, replacement)
-        })
-      }
-      this.query = tempQuery
-    },
-    camelize (str) {
-      return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match, index) {
-        if (+match === 0) return ''
-        return match.toUpperCase()
-      })
-    },
-    async execQuery () {
-      this.results = null
-      this.lastRunQuery = this.query
-      this.runningQuery = true
-      this.results = await querySparql(this.query)
-      this.runningQuery = false
-    },
-    autoExecQuery () {
-      if (this.autoRefresh && this.newQuery) {
-        this.execQuery()
-      }
-    },
-    updatePageTitleArray () {
-      if (this.queryTemplates && Object.keys(this.queryTemplates).length > 0) {
-        this.pageTitle = Object.keys(this.queryTemplates).map(key => {
-          return this.queryTemplates[key]
-            .display
-            .match(/<b>(.*?)<\/b>/g)
-            .map(val => {
-              return val.replace(/<\/?b>/g, '')
-            }).pop()
-        })
-      }
-    }
-  },
-  created () {
-    this.loadSparqlTemplates()
-  },
-  watch: {
-    // The following reactive watchers are used due to limitations of not being
-    // able to deep watch dependencies of computed methods.
-    selectedTemplate: {
-      handler: 'populateSelections'
-    },
-    varSelections: {
-      handler: 'buildQuery',
-      deep: true
-    },
-    query: {
-      handler: 'execQueryDebounced'
-    },
-    autoRefresh: {
-      handler: 'execQueryDebounced'
-    },
-    queryTemplates: {
-      handler: 'updatePageTitleArray'
-    }
+const selectedTemplate = computed<SparqlTemplate>(() => {
+  return queryTemplates.value[selTemplateId.value!];
+});
+
+const currentIndex = computed(() => {
+  return templateIds.value.indexOf(selTemplateId.value!);
+});
+
+const totalTemplateCount = computed(() => {
+  return templateIds.value.length;
+});
+
+const newQuery = computed(() => {
+  return query.value !== lastRunQuery.value;
+});
+
+// Methods
+const selectQueryForVizEditor = (): void => {
+  store.commit('vega/setQuery', query.value);
+  router.push({ name: 'NewChartDataVoyager' });
+};
+
+const loadTemplates = async (): Promise<void> => {
+  loadingTemplates.value = true;
+  try {
+    const templates = await loadSparqlTemplates();
+    queryTemplates.value = {};
+    templates.forEach((t) => {
+      queryTemplates.value[t.id] = t;
+    });
+    selTemplateId.value = templates.length > 0 ? templates[0].id : null;
+  } finally {
+    loadingTemplates.value = false;
   }
-}
+};
+
+const shiftTemplate = (amount: number): void => {
+  let newIndex = currentIndex.value + amount;
+  while (newIndex >= totalTemplateCount.value) {
+    newIndex -= totalTemplateCount.value;
+  }
+  while (newIndex < 0) {
+    newIndex += totalTemplateCount.value;
+  }
+  selTemplateId.value = templateIds.value[newIndex];
+};
+
+const populateSelections = (): void => {
+  if (!selectedTemplate.value) {
+    return;
+  }
+  varSelections.value = Object.fromEntries(
+    Object.entries(selectedTemplate.value.options).map(([varName, varOpts]) => [
+      varName,
+      Object.keys(varOpts)[0],
+    ])
+  );
+};
+
+const getOptVal = (varName: string, optName: string): OptValue => {
+  return selectedTemplate.value.options[varName][optName];
+};
+
+const buildQuery = (): void => {
+  if (!selectedTemplate.value) {
+    return;
+  }
+  let tempQuery = selectedTemplate.value.SPARQL;
+
+  // append VALUES clause to query if there are any active selections
+  const activeSelections = Object.fromEntries(
+    Object.entries(varSelections.value).filter(
+      (selEntry) => getOptVal(...selEntry).type !== OptValueType.ANY
+    )
+  );
+  if (Object.keys(activeSelections).length > 0) {
+    const varNames = Object.keys(activeSelections)
+      .map((varName) => `?${varName}`)
+      .join(' ');
+
+    const optVals = Object.entries(activeSelections)
+      .map((selEntry) => {
+        const optVal = getOptVal(...selEntry);
+        let value: string;
+        if (optVal.type === OptValueType.LITERAL) {
+          let literalValue = optVal.value;
+          if (typeof literalValue !== 'number') {
+            literalValue = `"${literalValue}"`;
+          }
+          value = String(literalValue);
+        } else if (optVal.type === OptValueType.IDENTIFIER) {
+          value = `<${optVal.value}>`;
+        } else {
+          throw new Error(`Unknown option value type: ${optVal.type}`);
+        }
+        return value;
+      })
+      .join(' ');
+    const valuesBlock = `\n  VALUES (${varNames}) {\n    (${optVals})\n  }\n`;
+
+    tempQuery = tempQuery.replace(/(where\s*{)/i, '$1' + valuesBlock);
+  }
+
+  // find any replaceable variable names
+  const activeReplacements = Object.fromEntries(
+    Object.entries(selectedTemplate.value.replacements).map(([varName, varObj]) => {
+      // find the actively selected option
+      return [varName, varObj.varFormat.replace('${' + 'var}', varSelections.value[varObj.subVar])];
+    })
+  );
+  if (Object.keys(activeReplacements).length > 0) {
+    // replacements are active
+    Object.keys(activeReplacements).forEach((varName) => {
+      // convert to variable names and replace in query
+      const replacement = `?${camelize(activeReplacements[varName])}`;
+      const originalRE = new RegExp('\\?' + varName, 'g');
+      tempQuery = tempQuery.replaceAll(originalRE, replacement);
+    });
+  }
+  query.value = tempQuery;
+};
+
+const camelize = (str: string): string => {
+  return str.replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, function (match) {
+    if (+match === 0) return '';
+    return match.toUpperCase();
+  });
+};
+
+const execQuery = async (): Promise<void> => {
+  results.value = null;
+  lastRunQuery.value = query.value;
+  runningQuery.value = true;
+  /**
+   * TODO: Remove isNew after migration. Used to differentiate between
+   * query relying on Whyis and query relying on new KG system.
+   */
+  results.value = await querySparql(query.value, { isNew: true });
+  runningQuery.value = false;
+};
+
+const autoExecQuery = (): void => {
+  if (autoRefresh.value && newQuery.value) {
+    execQuery();
+  }
+};
+
+const updatePageTitleArray = (): void => {
+  if (queryTemplates.value && Object.keys(queryTemplates.value).length > 0) {
+    pageTitle.value = Object.keys(queryTemplates.value).map((key) => {
+      const matches = queryTemplates.value[key].display.match(/<b>(.*?)<\/b>/g);
+      return (
+        matches
+          ?.map((val) => {
+            return val.replace(/<\/?b>/g, '');
+          })
+          .pop() || ''
+      );
+    });
+  }
+};
+
+// Debounced function
+const execQueryDebounced = debounce(autoExecQuery, 300);
+
+// Lifecycle hooks
+onMounted(() => {
+  loadTemplates();
+});
+
+// Watchers
+watch(selectedTemplate, () => {
+  populateSelections();
+});
+
+watch(
+  varSelections,
+  () => {
+    buildQuery();
+  },
+  { deep: true }
+);
+
+watch(query, () => {
+  execQueryDebounced();
+});
+
+watch(autoRefresh, () => {
+  execQueryDebounced();
+});
+
+watch(queryTemplates, () => {
+  updatePageTitleArray();
+});
 </script>
 
 <style lang="scss" scoped>

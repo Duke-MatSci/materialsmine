@@ -94,274 +94,300 @@
   </div>
 </template>
 
-<script>
-import { mapActions, mapGetters } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useStore } from 'vuex'
 import Spinner from '@/components/Spinner.vue'
 import fcose from 'cytoscape-fcose'
 import dagre from 'cytoscape-dagre'
 
-import { styleObj, fcoseLayout, modifiedLayout } from './cytoscape'
+import { styleObj, fcoseLayout, modifiedLayout } from '@/pages/ns/cytoscape'
 
-export default {
-  components: {
-    Spinner
-  },
-  data () {
-    return {
-      loading: true,
-      showCard: false,
-      elements: [],
-      uniqueInd: 1,
-      config: { ...styleObj },
-      currentNodeData: {},
-      showNodeAncestry: false,
-      cy: null,
-      layoutOptions: { ...modifiedLayout },
-      key: true
+interface NodeData {
+  id: string
+  width?: number
+  height?: number
+  ancestors?: string[]
+  source?: string
+  target?: string
+  description?: string
+  branch?: string[]
+  group?: string
+}
+
+interface ElementDefinition {
+  data: NodeData
+  group?: string
+}
+
+interface ClassData {
+  ID: string
+  'Preferred Name': string
+  subClassOf: string
+  subClasses: ClassData[]
+}
+
+const router = useRouter()
+const route = useRoute()
+const store = useStore()
+
+const loading = ref(true)
+const showCard = ref(false)
+const elements = ref<ElementDefinition[]>([])
+const uniqueInd = ref(1)
+const config = ref({ ...styleObj })
+const currentNodeData = ref<NodeData>({} as NodeData)
+const showNodeAncestry = ref(false)
+const cy = ref<any>(null)
+const layoutOptions = ref({ ...modifiedLayout })
+const key = ref(true)
+const cyRef = ref<any>(null)
+
+const classes = computed(() => store.getters['ns/getClasses'])
+const currentClass = computed(() => store.getters['ns/getCurrentClass'])
+
+const parentClass = computed(() =>
+  currentClass.value?.subClassOf.split('/').pop()?.split('#').pop()
+)
+
+const parentLink = computed(() => `/ns/${parentClass.value}`)
+
+const currentClassLink = computed(() => {
+  const param = currentClass.value.ID.split('/').pop()?.split('#').pop()
+  return `/ns/${param}`
+})
+
+const layout = computed(() => fcose)
+
+const preConfig = (cytoscape: any) => {
+  cytoscape.use(layout.value)
+  cy.value = cytoscape
+}
+
+const afterCreated = (cyInstance: any) => {
+  cyInstance.add(elements.value)
+    .layout({ ...fcoseLayout })
+    .run()
+}
+
+const queryClass = (bool: boolean) => {
+  if (bool && Object.keys(currentNodeData.value).length) {
+    return router.push({ query: { class: currentNodeData.value.id } })
+  }
+  router.push({ query: undefined })
+}
+
+const selectNode = async (event: any, data: NodeData) => {
+  if (!event) {
+    showCard.value = false
+    return
+  }
+  showCard.value = true
+  currentNodeData.value = { ...data }
+  await store.dispatch('ns/searchNSData', { query: data.id, singleResult: true })
+}
+
+const hideCard = async () => {
+  showCard.value = false
+  await store.dispatch('ns/searchNSData', { query: '', singleResult: true })
+}
+
+const formatClassData = async () => {
+  if (!classes.value || !classes.value.length) {
+    loading.value = false
+    return
+  }
+  const arr = JSON.parse(JSON.stringify(classes.value))
+  const result = createNode(arr)
+  elements.value = [...result]
+
+  setTimeout(async () => {
+    loading.value = false
+    await nextTick()
+    if (route.query?.class) {
+      loadSingleNode(route.query.class as string)
     }
-  },
-  computed: {
-    ...mapGetters('ns', {
-      classes: 'getClasses',
-      currentClass: 'getCurrentClass'
-    }),
-    parentClass () {
-      return this.currentClass?.subClassOf.split('/').pop().split('#').pop()
-    },
-    parentLink () {
-      return `/ns/${this.parentClass}`
-    },
-    currentClassLink () {
-      const param = this.currentClass.ID.split('/').pop().split('#').pop()
-      return `/ns/${param}`
-    },
-    layout () {
-      return fcose
+  }, 300)
+}
+
+const createNode = (arr: ClassData[], nodeSize = 160, ancestors: string[] = []): ElementDefinition[] => {
+  if (!Array.isArray(arr)) {
+    return []
+  }
+  let results: ElementDefinition[] = []
+  for (let i = 0; i < arr.length; i++) {
+    const obj = arr[i]
+
+    const id = obj.ID.split('/').pop()?.split('#').pop() || ''
+    const subClassOf = obj.subClassOf.split('/').pop()?.split('#').pop() || ''
+
+    const node = createNodeObj(id, nodeSize, [
+      ...ancestors,
+      subClassOf,
+      id
+    ])
+    const line = createLineObj(id, subClassOf, [...ancestors])
+
+    if (node) results.push(node)
+
+    if (id !== subClassOf && line) {
+      results.push(line)
     }
-  },
-  methods: {
-    ...mapActions({
-      searchNSData: 'ns/searchNSData'
-    }),
-    preConfig (cytoscape) {
-      cytoscape.use(this.layout)
-      this.cy = cytoscape
-    },
-    afterCreated (cy) {
-      cy.add(this.elements)
-        .layout({ ...fcoseLayout })
-        .run()
-    },
-    queryClass (bool) {
-      if (bool && Object.keys(this.currentNodeData)) {
-        return this.$router.push({ query: { class: this.currentNodeData.id } })
-      }
-      this.$router.push({ query: null })
-    },
-    async selectNode (event, data) {
-      if (!event) {
-        this.showCard = false
-        return
-      }
-      this.showCard = true
-      this.currentNodeData = { ...data }
-      await this.searchNSData({ query: data.id, singleResult: true })
-    },
-    async hideCard () {
-      this.showCard = false
-      await this.searchNSData({ query: '', singleResult: true })
-    },
-    async formatClassData () {
-      if (!this.classes || !this.classes.length) {
-        this.loading = false
-        return
-      }
-      const arr = JSON.parse(JSON.stringify(this.classes))
-      const result = this.createNode(arr)
-      this.elements = [...result]
 
-      setTimeout(async () => {
-        this.loading = false
-        await this.$nextTick()
-        if (this.$route.query?.class) {
-          this.loadSingleNode(this.$route.query.class)
-        }
-      }, 300)
-    },
-
-    createNode (arr, nodeSize = 160, ancestors = []) {
-      if (!Array.isArray(arr)) {
-        return
-      }
-      let results = []
-      for (let i = 0; i < arr.length; i++) {
-        const obj = arr[i]
-
-        const id = obj.ID.split('/').pop().split('#').pop()
-        const subClassOf = obj.subClassOf.split('/').pop().split('#').pop()
-
-        const node = this.createNodeObj(id, nodeSize, [
-          ...ancestors,
-          subClassOf,
-          id
-        ])
-        const line = this.createLineObj(id, subClassOf, [...ancestors])
-
-        results.push(node)
-
-        if (id !== subClassOf) {
-          results.push(line)
-        }
-
-        if (obj.subClasses.length) {
-          const children = this.createNode(obj.subClasses, nodeSize, [
-            ...ancestors,
-            subClassOf,
-            id
-          ])
-          results = [...results, ...children]
-        }
-      }
-      return results
-    },
-    createNodeObj (id = null, size = 160, ancestors = []) {
-      if (!id) return
-      const uniqueSet = new Set(ancestors)
-      const obj = {
-        data: {
-          id: id,
-          width: size,
-          height: size,
-          ancestors: [...uniqueSet]
-        },
-        group: 'nodes'
-      }
-      return obj
-    },
-    createLineObj (source = null, target = null, branch = []) {
-      if (!source || !target) return
-      const uniqueSet = new Set(branch)
-      const obj = {
-        data: {
-          id: `${source}_&_${target}`,
-          source,
-          target,
-          description: `${source} is a subclass of ${target}`,
-          branch: [...uniqueSet],
-          group: 'edges'
-        }
-      }
-      return obj
-    },
-    traceAncestry () {
-      const gene = this.currentNodeData.ancestors
-      // let target
-      const arr = this.elements.filter(({ data }) => {
-        const subArr = data.id.split('_&_')
-        const isSub = subArr.every((element) => gene.includes(element))
-        if (isSub) return true
-      })
-
-      const descendants = this.traceDescendants() ?? []
-      this.isolateNodes([...arr, ...descendants])
-    },
-    traceDescendants (arr = null) {
-      const id = this.currentNodeData.id
-      const subClass =
-        !arr || !Array.isArray(arr) ? this.currentClass.subClasses : arr
-      if (!subClass.length) return
-
-      const child = this.elements.filter((val) => {
-        const ancestors = val.data?.ancestors ?? []
-        const branch = val.data?.branch ?? []
-        if (ancestors.includes(id) && ancestors[ancestors.length - 1] !== id) { return true }
-        if (branch.includes(id)) return true
-      })
-      return child
-    },
-    async isolateNodes (nodes = []) {
-      this.showNodeAncestry = true
-      const cy = await this.$refs?.cyRef?.cy
-
-      if (!cy || !nodes.length) return
-
-      const selectedNodes = []
-      for (let i = 0; i < nodes.length; i++) {
-        const element = cy.getElementById(nodes[i].data.id)
-        selectedNodes.push(element)
-      }
-
-      // Get all the nodes connected to the selected node
-      const relatedNodes = await cy.collection(selectedNodes) // Includes the selected node and its connected nodes
-      // Remove all elements from the graph
-      cy.remove(cy.elements())
-
-      // Add selected elements to the graph
-      cy.add(relatedNodes)
-
-      // Apply the new layout
-      this.cy.use(dagre)
-      cy.layout(this.layoutOptions).run()
-
-      // Optionally, adjust the viewport to fit the isolated nodes
-      cy.fit(relatedNodes, 30) // Adjust the zoom level as needed
-    },
-    async reset () {
-      const cy = await this.$refs?.cyRef?.cy
-      if (cy) {
-        // Remove all displayed elements
-        cy.remove(cy.elements())
-
-        // Add default elements
-        cy.add(this.elements)
-
-        // Use default layout
-        cy.layout({ ...fcoseLayout }).run()
-      }
-      // Hide card and reset data
-      this.hideCard()
-      this.currentNodeData = {}
-      this.showNodeAncestry = false
-    },
-    goTo (id) {
-      const path = `/ns/${id.split('/').pop().split('#').pop()}`
-      this.$router.push(path)
-    },
-    async loadSingleNode (id) {
-      const cy = await this.$refs?.cyRef?.cy
-      if (!cy) return
-      if (id === 'Thing') {
-        return this.queryClass(false)
-      }
-
-      const elem = cy.getElementById(id)
-      await elem.emit('click')
-      await elem.select()
-      this.traceAncestry()
-    },
-    async loadPageContent () {
-      setTimeout(async () => {
-        this.loading = false
-        await this.$nextTick()
-        if (this.$route.query?.class) {
-          this.loadSingleNode(this.$route.query.class)
-        }
-      }, 300)
-    }
-  },
-  async mounted () {
-    await this.formatClassData()
-  },
-  watch: {
-    '$route.query': {
-      immediate: true,
-      handler (newValue) {
-        if (newValue?.class && this.elements.length) {
-          return this.loadSingleNode(newValue?.class)
-        }
-        this.reset()
-      }
+    if (obj.subClasses?.length) {
+      const children = createNode(obj.subClasses, nodeSize, [
+        ...ancestors,
+        subClassOf,
+        id
+      ])
+      results = [...results, ...children]
     }
   }
+  return results
 }
+
+const createNodeObj = (id: string | null = null, size = 160, ancestors: string[] = []): ElementDefinition | undefined => {
+  if (!id) return
+  const uniqueSet = new Set(ancestors)
+  const obj: ElementDefinition = {
+    data: {
+      id: id,
+      width: size,
+      height: size,
+      ancestors: [...uniqueSet]
+    },
+    group: 'nodes'
+  }
+  return obj
+}
+
+const createLineObj = (source: string | null = null, target: string | null = null, branch: string[] = []): ElementDefinition | undefined => {
+  if (!source || !target) return
+  const uniqueSet = new Set(branch)
+  const obj: ElementDefinition = {
+    data: {
+      id: `${source}_&_${target}`,
+      source,
+      target,
+      description: `${source} is a subclass of ${target}`,
+      branch: [...uniqueSet],
+      group: 'edges'
+    }
+  }
+  return obj
+}
+
+const traceAncestry = () => {
+  const gene = currentNodeData.value.ancestors || []
+  const arr = elements.value.filter(({ data }) => {
+    const subArr = data.id.split('_&_')
+    const isSub = subArr.every((element) => gene.includes(element))
+    if (isSub) return true
+    return false
+  })
+
+  const descendants = traceDescendants() ?? []
+  isolateNodes([...arr, ...descendants])
+}
+
+const traceDescendants = (arr: ClassData[] | null = null): ElementDefinition[] | undefined => {
+  const id = currentNodeData.value.id
+  const subClass = !arr || !Array.isArray(arr) ? currentClass.value.subClasses : arr
+  if (!subClass?.length) return
+
+  const child = elements.value.filter((val) => {
+    const ancestors = val.data?.ancestors ?? []
+    const branch = val.data?.branch ?? []
+    if (ancestors.includes(id) && ancestors[ancestors.length - 1] !== id) { return true }
+    if (branch.includes(id)) return true
+    return false
+  })
+  return child
+}
+
+const isolateNodes = async (nodes: ElementDefinition[] = []) => {
+  showNodeAncestry.value = true
+  const cyInstance = await cyRef.value?.cy
+
+  if (!cyInstance || !nodes.length) return
+
+  const selectedNodes = []
+  for (let i = 0; i < nodes.length; i++) {
+    const element = cyInstance.getElementById(nodes[i].data.id)
+    selectedNodes.push(element)
+  }
+
+  // Get all the nodes connected to the selected node
+  const relatedNodes = await cyInstance.collection(selectedNodes) // Includes the selected node and its connected nodes
+  // Remove all elements from the graph
+  cyInstance.remove(cyInstance.elements())
+
+  // Add selected elements to the graph
+  cyInstance.add(relatedNodes)
+
+  // Apply the new layout
+  cy.value.use(dagre)
+  cyInstance.layout(layoutOptions.value).run()
+
+  // Optionally, adjust the viewport to fit the isolated nodes
+  cyInstance.fit(relatedNodes, 30) // Adjust the zoom level as needed
+}
+
+const reset = async () => {
+  const cyInstance = await cyRef.value?.cy
+  if (cyInstance) {
+    // Remove all displayed elements
+    cyInstance.remove(cyInstance.elements())
+
+    // Add default elements
+    cyInstance.add(elements.value)
+
+    // Use default layout
+    cyInstance.layout({ ...fcoseLayout }).run()
+  }
+  // Hide card and reset data
+  hideCard()
+  currentNodeData.value = {} as NodeData
+  showNodeAncestry.value = false
+}
+
+const goTo = (id: string) => {
+  const path = `/ns/${id.split('/').pop()?.split('#').pop()}`
+  router.push(path)
+}
+
+const loadSingleNode = async (id: string) => {
+  const cyInstance = await cyRef.value?.cy
+  if (!cyInstance) return
+  if (id === 'Thing') {
+    return queryClass(false)
+  }
+
+  const elem = cyInstance.getElementById(id)
+  await elem.emit('click')
+  await elem.select()
+  traceAncestry()
+}
+
+const loadPageContent = async () => {
+  setTimeout(async () => {
+    loading.value = false
+    await nextTick()
+    if (route.query?.class) {
+      loadSingleNode(route.query.class as string)
+    }
+  }, 300)
+}
+
+onMounted(async () => {
+  await formatClassData()
+})
+
+watch(() => route.query, (newValue) => {
+  if (newValue?.class && elements.value.length) {
+    return loadSingleNode(newValue.class as string)
+  }
+  reset()
+}, { immediate: true })
 </script>

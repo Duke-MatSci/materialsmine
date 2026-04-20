@@ -1,48 +1,52 @@
 <template>
-    <div :id="id"></div>
+  <div :id="id"></div>
 </template>
 
-<script>
-import YASR from '@triply/yasr'
+<script setup lang="ts">
+import { ref, watch, onMounted, getCurrentInstance } from 'vue';
+import YASR from '@triply/yasr';
 
-export default {
-  name: 'yasr',
-  props: {
-    id: {
-      type: String,
-      default: () => 'YASR'
-    },
-    results: {
-      type: Object,
-      default: () => null
-    }
-  },
-  methods: {
-    setResults (results) {
-      if (results) {
-        this.yasr.setResponse(results)
-      }
-    }
-  },
-  mounted () {
-    this.yasr = new YASR(this.$el, {
-      outputPlugins: ['table'],
-      useGoogleCharts: false,
-      persistency: {
-        results: {
-          key: () => false
-        }
-      }
-    })
-    this.setResults(this.results)
-  },
-  watch: {
-    results (newVal, oldVal) {
-      this.setResults(newVal)
-    }
-  }
+interface Props {
+  id?: string;
+  results?: Record<string, any> | null;
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  id: 'YASR',
+  results: null,
+});
+
+const instance = getCurrentInstance();
+const yasr = ref<any>(null);
+
+const setResults = (results: Record<string, any> | null): void => {
+  if (results && yasr.value) {
+    yasr.value.setResponse(results);
+  }
+};
+
+onMounted(() => {
+  const el = instance?.proxy?.$el;
+
+  yasr.value = new YASR(el, {
+    outputPlugins: ['table'],
+    useGoogleCharts: false,
+    persistency: {
+      results: {
+        key: () => false,
+      },
+    },
+  });
+
+  setResults(props.results);
+});
+
+watch(
+  () => props.results,
+  (newVal) => {
+    setResults(newVal);
+  }
+);
 </script>
 
-<style css src='@triply/yasr/build/yasr.min.css'>
-</style>
+<style css src="@triply/yasr/build/yasr.min.css"></style>

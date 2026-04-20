@@ -133,199 +133,205 @@
   </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
-import JsonCSV from 'vue-json-csv'
+<script setup lang="ts">
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute, useRouter } from 'vue-router';
 
-export default {
+interface DataItem {
+  name: string;
+  color: string;
+  [key: string]: any;
+}
+
+const store = useStore();
+const route = useRoute();
+const router = useRouter();
+
+// Data
+const columns = ref<string[]>(['C11', 'C12', 'C22', 'C16', 'C26', 'C66']);
+const query1Value = ref<string>('C11');
+const query2Value = ref<string>('C12');
+const selectedValueArr = ref<DataItem[]>([]);
+const jsonName = ref<string>('');
+const jsonData = ref<any>(null);
+
+// Computed
+const activeData = computed(() => store.state.metamineNU.activeData);
+const fetchedNames = computed(() => store.state.metamineNU.fetchedNames);
+const dataLibrary = computed(() => store.state.metamineNU.dataLibrary);
+const page = computed(() => store.state.metamineNU.page);
+const query1 = computed(() => store.state.metamineNU.query1);
+const query2 = computed(() => store.state.metamineNU.query2);
+
+const selectedValue = computed({
+  get() {
+    return fetchedNames.value.filter((item: DataItem) =>
+      activeData.value.map((data: DataItem) => data.name).includes(item.name)
+    );
+  },
+  set(val: DataItem[]) {
+    onSelect(val);
+  }
+});
+
+const fetchedNamesWithInfo = computed(() => {
+  return fetchedNames.value.map((element: any) => {
+    element.showDropDown = false;
+    return element;
+  });
+});
+
+const dynamfit = computed(() => store.state.explorer?.dynamfit);
+
+const disableInput = computed(() => {
+  return (
+    !dynamfit.value?.fileUpload ||
+    !dynamfitData.value ||
+    !Object.keys(dynamfitData.value).length
+  );
+});
+
+const dynamfitData = computed(() => {
+  return store.getters['explorer/getDynamfitData'];
+});
+
+// Methods
+const handleQuery1Change = () => {
+  changeRouteQuery();
+  store.commit('metamineNU/setQuery1', query1Value.value);
+};
+
+const handleQuery2Change = () => {
+  changeRouteQuery();
+  store.commit('metamineNU/setQuery2', query2Value.value);
+};
+
+const changeRouteQuery = () => {
+  const query = {
+    pairwise_query1: query1Value.value,
+    pairwise_query2: query2Value.value
+  };
+  router.push({ query });
+};
+
+const onSelect = (items: DataItem[]) => {
+  const selected = items;
+  fetchedNamesWithInfo.value.map((entry: any, index: number) =>
+    items.map((item: any) => item.key).includes(index)
+      ? (entry.showDropDown = true)
+      : (entry.showDropDown = false)
+  );
+  const unselected = fetchedNames.value.filter(
+    (item: DataItem) => !selected.includes(item)
+  );
+  selected.map((dataNameObj: DataItem) => {
+    let sourceItems = activeData.value;
+    let destItems = dataLibrary.value;
+    const checked = destItems.filter(
+      (item: DataItem) => item.name === dataNameObj.name
+    );
+    destItems = destItems.filter((item: DataItem) => item.name !== dataNameObj.name);
+    sourceItems = [...sourceItems, ...checked];
+    store.commit('metamineNU/setActiveData', sourceItems);
+    store.commit('metamineNU/setDataLibrary', destItems);
+  });
+  unselected.map((dataNameObj: DataItem) => {
+    let sourceItems = dataLibrary.value;
+    let destItems = activeData.value;
+    const unchecked = destItems.filter(
+      (item: DataItem) => item.name === dataNameObj.name
+    );
+    destItems = destItems.filter((item: DataItem) => item.name !== dataNameObj.name);
+    sourceItems = [...sourceItems, ...unchecked];
+    store.commit('metamineNU/setActiveData', destItems);
+    store.commit('metamineNU/setDataLibrary', sourceItems);
+  });
+};
+
+const onInputChange = async (e: Event) => {
+  displayInfo('Uploading File...');
+  const target = e.target as HTMLInputElement;
+  const file = target?.files ? [...target.files] : [];
+  const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
+  try {
+    const extension = file[0]?.type?.replace(/(.*)\//g, '');
+    if (!extension || !allowedTypes.includes(extension)) {
+      return displayInfo('Unsupported file format');
+    }
+    const { fileName } = await store.dispatch('uploadFile', {
+      file,
+      isVisualizationCSV: true
+    });
+    if (fileName) {
+      displayInfo('Upload Successful', 1500);
+      store.commit('metamineNU/setLoadingState', true);
+      await nextTick();
+      setTimeout(async () => {
+        store.commit('metamineNU/setRefreshStatus', true);
+        await store.dispatch('metamineNU/fetchMetamineDataset');
+      }, 500);
+    }
+  } catch (err: any) {
+    store.commit('setSnackbar', {
+      message: err?.message || 'Something went wrong',
+      action: () => onInputChange(e)
+    });
+  } finally {
+    target.value = '';
+  }
+};
+
+const displayInfo = (msg: string, duration?: number) => {
+  if (msg) {
+    store.commit('setSnackbar', {
+      message: msg,
+      duration: duration ?? 3000
+    });
+  }
+};
+
+const downloadFile = async () => {
+  const rawJson = store.getters['metamineNU/getRawJson'];
+  if (!rawJson) return;
+  for (let i = 0; i < selectedValue.value.length; i++) {
+    const name = selectedValue.value[i].name;
+    jsonName.value = name;
+    jsonData.value = rawJson[name];
+    await nextTick();
+    if (jsonData.value) {
+      const elem = (jsonName.value as any) as HTMLButtonElement;
+      await elem.click();
+      elem.dispatchEvent(new Event('click'));
+      await nextTick();
+    }
+    jsonName.value = '';
+    jsonData.value = null;
+  }
+};
+
+// Lifecycle
+onMounted(() => {
+  query1Value.value = query1.value
+    ? query1.value
+    : (route.query.pairwise_query1 as string);
+  query2Value.value = query2.value
+    ? query2.value
+    : (route.query.pairwise_query2 as string);
+  store.commit('metamineNU/setQuery1', route.query.pairwise_query1);
+  store.commit('metamineNU/setQuery2', route.query.pairwise_query2);
+  selectedValueArr.value = activeData.value;
+});
+</script>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+import JsonCSV from 'vue-json-csv';
+
+export default defineComponent({
   name: 'DataSelector',
   components: {
     downloadCsv: JsonCSV
-  },
-  mounted () {
-    this.query1Value = this.query1
-      ? this.query1
-      : this.$route.query.pairwise_query1
-    this.query2Value = this.query2
-      ? this.query2
-      : this.$route.query.pairwise_query2
-    this.$store.commit(
-      'metamineNU/setQuery1',
-      this.$route.query.pairwise_query1,
-      {
-        root: true
-      }
-    )
-    this.$store.commit(
-      'metamineNU/setQuery2',
-      this.$route.query.pairwise_query2,
-      {
-        root: true
-      }
-    )
-    this.selectedValueArr = this.activeData
-  },
-  data () {
-    return {
-      columns: ['C11', 'C12', 'C22', 'C16', 'C26', 'C66'],
-      query1Value: 'C11',
-      query2Value: 'C12',
-      selectedValueArr: [],
-      jsonName: '',
-      jsonData: null
-    }
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      activeData: (state) => state.activeData,
-      fetchedNames: (state) => state.fetchedNames,
-      dataLibrary: (state) => state.dataLibrary,
-      page: (state) => state.page,
-      query1: (state) => state.query1,
-      query2: (state) => state.query2
-    }),
-    selectedValue: {
-      get () {
-        return this.fetchedNames.filter((item) =>
-          this.activeData.map((data) => data.name).includes(item.name)
-        )
-      },
-      set (val) {
-        this.onSelect(val)
-      }
-    },
-    fetchedNamesWithInfo () {
-      return this.fetchedNames.map((element) => {
-        element.showDropDown = false
-        return element
-      })
-    },
-    ...mapState('explorer', {
-      dynamfit: (state) => state.dynamfit
-    }),
-    disableInput () {
-      return (
-        !this.dynamfit.fileUpload ||
-        !this.dynamfitData ||
-        !Object.keys(this.dynamfitData).length
-      )
-    },
-    dynamfitData () {
-      return this.$store.getters['explorer/getDynamfitData']
-    }
-  },
-  methods: {
-    handleQuery1Change () {
-      this.changeRouteQuery()
-      this.$store.commit('metamineNU/setQuery1', this.query1Value)
-    },
-    handleQuery2Change () {
-      this.changeRouteQuery()
-      this.$store.commit('metamineNU/setQuery2', this.query2Value)
-    },
-    changeRouteQuery () {
-      const query = {
-        pairwise_query1: this.query1Value,
-        pairwise_query2: this.query2Value
-      }
-      this.$router.push({ query })
-    },
-    onSelectInfo (items) {
-      this.showDropDown.map(
-        (entry, index) => !!items.map((item) => item.key).includes(index)
-      )
-    },
-    onSelect (items) {
-      const self = this
-      const selected = items
-      this.fetchedNamesWithInfo.map((entry, index) =>
-        items.map((item) => item.key).includes(index)
-          ? (entry.showDropDown = true)
-          : (entry.showDropDown = false)
-      )
-      const unselected = this.fetchedNames.filter(
-        (item) => !selected.includes(item)
-      )
-      selected.map((dataNameObj, index) => {
-        let sourceItems = self.activeData
-        let destItems = self.dataLibrary
-        const checked = destItems.filter(
-          (item) => item.name === dataNameObj.name
-        )
-        destItems = destItems.filter((item) => item.name !== dataNameObj.name)
-        sourceItems = [...sourceItems, ...checked]
-        self.$store.commit('metamineNU/setActiveData', sourceItems)
-        self.$store.commit('metamineNU/setDataLibrary', destItems)
-      })
-      unselected.map((dataNameObj, index) => {
-        let sourceItems = self.dataLibrary
-        let destItems = self.activeData
-        const unchecked = destItems.filter(
-          (item) => item.name === dataNameObj.name
-        )
-        destItems = destItems.filter((item) => item.name !== dataNameObj.name)
-        sourceItems = [...sourceItems, ...unchecked]
-        self.$store.commit('metamineNU/setActiveData', destItems)
-        self.$store.commit('metamineNU/setDataLibrary', sourceItems)
-      })
-    },
-    async onInputChange (e) {
-      this.displayInfo('Uploading File...')
-      const file = [...e.target?.files]
-      const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain']
-      try {
-        const extension = file[0]?.type?.replace(/(.*)\//g, '')
-        if (!extension || !allowedTypes.includes(extension)) {
-          return this.displayInfo('Unsupported file format')
-        }
-        const { fileName } = await this.$store.dispatch('uploadFile', {
-          file,
-          isVisualizationCSV: true
-        })
-        if (fileName) {
-          this.displayInfo('Upload Successful', 1500)
-          this.$store.commit('metamineNU/setLoadingState', true)
-          await this.$nextTick()
-          setTimeout(async () => {
-            this.$store.commit('metamineNU/setRefreshStatus', true)
-            await this.$store.dispatch('metamineNU/fetchMetamineDataset')
-          }, 500)
-        }
-      } catch (err) {
-        this.$store.commit('setSnackbar', {
-          message: err?.message || 'Something went wrong',
-          action: () => this.onInputChange(e)
-        })
-      } finally {
-        e.target.value = null
-      }
-    },
-    displayInfo (msg, duration) {
-      if (msg) {
-        this.$store.commit('setSnackbar', {
-          message: msg,
-          duration: duration ?? 3000
-        })
-      }
-    },
-    async downloadFile () {
-      const rawJson = this.$store.getters['metamineNU/getRawJson']
-      if (!rawJson) return
-      for (let i = 0; i < this.selectedValue.length; i++) {
-        const name = this.selectedValue[i].name
-        this.jsonName = name
-        this.jsonData = rawJson[name]
-        await this.$nextTick()
-        if (this.jsonData) {
-          const elem = this.$refs[this.jsonName]
-          await elem.click()
-          elem.dispatchEvent(new Event('click'))
-          await this.$nextTick()
-        }
-        this.jsonName = ''
-        this.jsonData = null
-      }
-    }
   }
-}
+});
 </script>

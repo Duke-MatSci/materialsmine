@@ -164,54 +164,113 @@
   </div>
 </template>
 
-<script>
-import reducer from '@/mixins/reduce'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+defineOptions({
   name: 'HomeMM',
-  mixins: [reducer],
-  data () {
-    return {
-      pushedAssetItem: [],
-      assetItems: [
-        {
-          label: 'Curation',
-          icon: 'people_alt',
-          link: '/explorer/curate',
-          description:
-            'Provide a curation platform for sharing of data across the community in ways that are findable, accessible, interoperable and reusable (FAIR).'
-        },
-        {
-          label: 'Visualizing Data',
-          icon: 'tune',
-          link: '/explorer',
-          description:
-            'Provide a platform for visualizing data, and mechanisms for visualization methods to be shared.'
-        },
-        {
-          label: 'Module Tools',
-          icon: 'grain',
-          link: '/mm/pixelunit',
-          description:
-            'Provide module tools for analysis and characterization of mechanical metamaterials.'
-        },
-        {
-          label: 'Simulation Tools',
-          icon: 'widgets',
-          link: '',
-          description:
-            'Improve the ability to design metamaterial through simulation and design tools.'
-        }
-      ]
-    }
+});
+
+interface AssetItem {
+  label: string;
+  icon: string;
+  link: string;
+  description: string;
+}
+
+const router = useRouter();
+
+// Data from reducer mixin
+const hideAssetNavLeft = ref<boolean>(false);
+const hideAssetNavRight = ref<boolean>(false);
+const screen = ref<number>(3);
+
+// Component data
+const pushedAssetItem = ref<AssetItem[]>([]);
+const assetItems = ref<AssetItem[]>([
+  {
+    label: 'Curation',
+    icon: 'people_alt',
+    link: '/explorer/curate',
+    description:
+      'Provide a curation platform for sharing of data across the community in ways that are findable, accessible, interoperable and reusable (FAIR).'
   },
-  methods: {
-    openLinks (arg) {
-      this.$router.push({
-        path: arg
-      })
+  {
+    label: 'Visualizing Data',
+    icon: 'tune',
+    link: '/explorer',
+    description:
+      'Provide a platform for visualizing data, and mechanisms for visualization methods to be shared.'
+  },
+  {
+    label: 'Module Tools',
+    icon: 'grain',
+    link: '/mm/pixelunit',
+    description:
+      'Provide module tools for analysis and characterization of mechanical metamaterials.'
+  },
+  {
+    label: 'Simulation Tools',
+    icon: 'widgets',
+    link: '',
+    description:
+      'Improve the ability to design metamaterial through simulation and design tools.'
+  }
+]);
+
+// Methods from reducer mixin
+const reduceDescription = (args: string, size = 50): string => {
+  const arr = args.split(' ');
+  arr.splice(size);
+  const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
+  const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return `${res}...`;
+};
+
+const reduceAsset = (args: 'prev' | 'next'): boolean | void => {
+  let movedAsset: AssetItem | undefined;
+
+  if (window.matchMedia('(max-width: 40.5em)').matches) {
+    screen.value = 1;
+  } else if (window.matchMedia('(max-width: 56.25em)').matches) {
+    screen.value = 2;
+  } else {
+    screen.value = 3;
+  }
+
+  if (args === 'prev') {
+    if (!pushedAssetItem.value.length) {
+      hideAssetNavLeft.value = true;
+      return false;
+    } else {
+      hideAssetNavLeft.value = false;
+      movedAsset = pushedAssetItem.value[pushedAssetItem.value.length - 1];
+      assetItems.value.unshift(movedAsset);
+      pushedAssetItem.value.pop();
+    }
+  } else {
+    if (!assetItems.value.length) {
+      hideAssetNavRight.value = true;
+      return false;
+    } else if (assetItems.value.length <= screen.value) {
+      hideAssetNavRight.value = true;
+      return false;
+    } else {
+      hideAssetNavRight.value = false;
+      movedAsset = assetItems.value[0];
+      pushedAssetItem.value.push(movedAsset);
+      assetItems.value.shift();
     }
   }
-}
+};
+
+// Component methods
+const openLinks = (arg: string): void => {
+  router.push({
+    path: arg
+  });
+};
 </script>
 
 <style lang="scss" scoped>

@@ -67,55 +67,53 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
-  name: 'SearchComponent',
-  props: {
-    searchError: {
-      type: Boolean,
-      default: false
-    },
-    showDropdown: {
-      type: Boolean,
-      default: true
-    }
-  },
-  data () {
-    return {
-      searchKeyword: '',
-      searchEnabled: false
-    }
-  },
-  computed: {
-    ...mapGetters('ns', {
-      classes: 'getClasses',
-      searchResult: 'getSearchResults',
-      lastUpdate: 'getLastUpdatedDate'
-    }),
-    setDropdownPosition () {
-      return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
-    },
-    isValidLength () {
-      return this.searchKeyword.length > 2
-    }
-  },
-  methods: {
-    async submitSearch () {
-      const query = this.searchKeyword
-      if (query.length < 3) return
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
-      // this.$store.commit('ns/showDropdown', true)
-      await this.$store.dispatch('ns/searchNSData', {
-        query,
-        singleResult: false
-      })
-    },
+interface Props {
+  searchError?: boolean
+  showDropdown?: boolean
+}
 
-    showClassInfo (id) {
-      const url = `/ns/${id.split('/').pop().split('#').pop()}`
-      this.$router.push(url)
-    }
-  }
+const props = withDefaults(defineProps<Props>(), {
+  searchError: false,
+  showDropdown: true
+})
+
+const store = useStore()
+const router = useRouter()
+
+const searchKeyword = ref('')
+const searchEnabled = ref(false)
+const search_input = ref<HTMLInputElement | null>(null)
+
+const classes = computed(() => store.getters['ns/getClasses'])
+const searchResult = computed(() => store.getters['ns/getSearchResults'])
+const lastUpdate = computed(() => store.getters['ns/getLastUpdatedDate'])
+
+const setDropdownPosition = computed(() => {
+  return { top: 81 + '%', zIndex: 10, right: 0, minHeight: 'auto' }
+})
+
+const isValidLength = computed(() => {
+  return searchKeyword.value.length > 2
+})
+
+const submitSearch = async () => {
+  const query = searchKeyword.value
+  if (query.length < 3) return
+
+  // store.commit('ns/showDropdown', true)
+  await store.dispatch('ns/searchNSData', {
+    query,
+    singleResult: false
+  })
+}
+
+const showClassInfo = (id: string) => {
+  const url = `/ns/${id.split('/').pop()?.split('#').pop()}`
+  router.push(url)
 }
 </script>

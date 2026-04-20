@@ -28,31 +28,29 @@
     </div>
 </template>
 
-<script>
-import { mapState } from 'vuex'
-import JsonCSV from 'vue-json-csv'
+<script setup lang="ts">
+import { computed, watch } from 'vue'
+import { useStore } from 'vuex'
 
 const columns = ['C11', 'C12', 'C22', 'C16', 'C26', 'C66']
 
-export default {
+const store = useStore()
+
+const selectedData = computed(() => store.state.metamineNU.selectedData)
+
+watch(selectedData, () => {
+  // Deep watch on selectedData
+}, { deep: true })
+</script>
+
+<script lang="ts">
+import { defineComponent } from 'vue'
+import JsonCSV from 'vue-json-csv'
+
+export default defineComponent({
   name: 'SaveDataPanel',
   components: {
     downloadCsv: JsonCSV
-  },
-  computed: {
-    ...mapState('metamineNU', {
-      selectedData: (state) => state.selectedData
-    })
-  },
-  data () {
-    return {
-      columns: columns
-    }
-  },
-  watch: {
-    selectedData: {
-      deep: true
-    }
   }
-}
+})
 </script>

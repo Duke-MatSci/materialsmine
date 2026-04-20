@@ -46,41 +46,39 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'CorrelationCharacterize',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      references: [
-        '10.1006/jcis.1996.4675',
-        '10.1103/PhysRevE.57.495'
-      ],
-      job: {
-        aspectRatio: 'square',
-        getImageDimensions: true,
-        submitJobTitle: 'CorrelationCharacterize',
-        acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
-        useWebsocket: false,
-        selects: [
-          {
-            title: 'Correlation Name',
-            submitJobTitle: 'CorrelationType',
-            options: ['Autocorrelation', 'Lineal Path Correlation', 'Cluster Correlation', 'Surface Correlation']
-          }
-        ]
-      }
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const references = ref<string[]>([
+  '10.1006/jcis.1996.4675',
+  '10.1103/PhysRevE.57.495'
+]);
+
+const job = ref({
+  aspectRatio: 'square' as const,
+  getImageDimensions: true,
+  submitJobTitle: 'CorrelationCharacterize',
+  acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
+  useWebsocket: false,
+  selects: [
+    {
+      title: 'Correlation Name',
+      submitJobTitle: 'CorrelationType',
+      options: ['Autocorrelation', 'Lineal Path Correlation', 'Cluster Correlation', 'Surface Correlation']
+    }
+  ]
+});
 </script>

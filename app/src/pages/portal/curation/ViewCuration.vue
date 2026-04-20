@@ -74,68 +74,88 @@
   </div>
 </template>
 
-<script>
-import pagination from '@/components/explorer/Pagination'
-import SearchGallery from '@/components/XmlSearchUtil'
-export default {
-  name: 'Deploy',
-  components: {
-    SearchGallery,
-    pagination
-  },
-  data () {
-    return {
-      baseUrl: window.location.origin,
-      renderText: 'Showing all XML Groups',
-      xmlFinder: {
-        totalItems: 4,
-        pageSize: 20,
-        pageNumber: 1,
-        totalPages: 1,
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import pagination from '@/components/explorer/Pagination.vue';
+import SearchGallery from '@/components/XmlSearchUtil.vue';
 
-        xmlData: [
-          {
-            groupId: '58587cfee74a1d205f4eae8d',
-            samples: 4,
-            approved: 1
-          },
-          {
-            groupId: 'L175_S6_O',
-            samples: 8,
-            approved: 3,
-            __typename: 'XmlCatalogs'
-          },
-          {
-            groupId: '58587cfee74a1d205f4eae8d',
-            samples: 1,
-            approved: 0,
-            __typename: 'XmlCatalogs'
-          },
-          {
-            groupId: 'L175_S6_O',
-            samples: 16,
-            approved: 12,
-            __typename: 'XmlCatalogs'
-          }
-        ],
-        __typename: 'XmlDataList'
-      },
-      pageNumber: 1,
-      pageSize: 20,
-      searchEnabled: false,
-      searchWord: '',
-      error: null,
-      loading: false
-    }
-  },
-  computed: {
-    isEmpty () {
-      if (this.xmlFinder.length === 0 || !Object.keys(this.xmlFinder).length || this.xmlFinder.totalItems === 0) return true
-      return false
-    }
-  },
-  created () {
-    this.$store.commit('setAppHeaderInfo', { icon: '', name: 'View Curation' })
-  }
+// Define interfaces
+interface XmlData {
+  groupId: string;
+  samples: number;
+  approved: number;
+  __typename?: string;
 }
+
+interface XmlFinderData {
+  totalItems: number;
+  pageSize: number;
+  pageNumber: number;
+  totalPages: number;
+  xmlData: XmlData[];
+  __typename?: string;
+}
+
+// Store
+const store = useStore();
+
+// Data
+const baseUrl = ref(window.location.origin);
+const renderText = ref('Showing all XML Groups');
+const xmlFinder = ref<XmlFinderData>({
+  totalItems: 4,
+  pageSize: 20,
+  pageNumber: 1,
+  totalPages: 1,
+  xmlData: [
+    {
+      groupId: '58587cfee74a1d205f4eae8d',
+      samples: 4,
+      approved: 1
+    },
+    {
+      groupId: 'L175_S6_O',
+      samples: 8,
+      approved: 3,
+      __typename: 'XmlCatalogs'
+    },
+    {
+      groupId: '58587cfee74a1d205f4eae8d',
+      samples: 1,
+      approved: 0,
+      __typename: 'XmlCatalogs'
+    },
+    {
+      groupId: 'L175_S6_O',
+      samples: 16,
+      approved: 12,
+      __typename: 'XmlCatalogs'
+    }
+  ],
+  __typename: 'XmlDataList'
+});
+const pageNumber = ref(1);
+const pageSize = ref(20);
+const searchEnabled = ref(false);
+const searchWord = ref('');
+const error = ref<string | null>(null);
+const loading = ref(false);
+
+// Computed
+const isEmpty = computed(() => {
+  if (xmlFinder.value.xmlData.length === 0 || !Object.keys(xmlFinder.value).length || xmlFinder.value.totalItems === 0) return true;
+  return false;
+});
+
+// Methods
+const loadPrevNextImage = async (event: number) => {
+  pageNumber.value = event;
+  // In the future, this would trigger a new data fetch
+};
+
+// Lifecycle
+onMounted(() => {
+  store.commit('setAppHeaderInfo', { icon: '', name: 'View Curation' });
+});
 </script>

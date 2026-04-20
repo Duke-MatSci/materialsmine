@@ -35,13 +35,16 @@
         screen devices.</template
       >
       <template v-slot:actions>
-        <md-button @click.native.prevent="goHome">Go Home</md-button>
+        <md-button @click.prevent="goHome">Go Home</md-button>
       </template>
     </Dialog>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 import PairwisePlot from '@/components/metamine/visualizationNU/pairwise.vue'
 import DataSelector from '@/components/metamine/visualizationNU/DataSelector.vue'
 import RangeSelector from '@/components/metamine/visualizationNU/RangeSelector.vue'
@@ -53,48 +56,34 @@ import VisualizationLayout from '@/components/metamine/visualizationNU/Visualiza
 import DataInfo from '@/components/metamine/visualizationNU/DataInfo.vue'
 import Dialog from '@/components/Dialog.vue'
 
-export default {
-  name: 'PairwisePlotPage',
-  components: {
-    PairwisePlot,
-    DataSelector,
-    RangeSelector,
-    Youngs,
-    Poisson,
-    Structure,
-    MaterialInformation,
-    DataInfo,
-    VisualizationLayout,
-    Dialog
-  },
-  data () {
-    return {
-      windowWidth: window.innerWidth
-    }
-  },
-  computed: {
-    isLoading () {
-      return this.$store.getters['metamineNU/getLoadingState']
-    },
-    isMiniDevice () {
-      return this.windowWidth <= 650
-    }
-  },
-  mounted () {
-    this.$nextTick(() => {
-      window.addEventListener('resize', this.onResize)
-    })
-  },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.onResize)
-  },
-  methods: {
-    goHome () {
-      this.$router.push('/mm')
-    },
-    onResize () {
-      this.windowWidth = window.innerWidth
-    }
-  }
+const router = useRouter()
+const store = useStore()
+
+const windowWidth = ref<number>(window.innerWidth)
+
+const isLoading = computed(() => {
+  return store.getters['metamineNU/getLoadingState']
+})
+
+const isMiniDevice = computed(() => {
+  return windowWidth.value <= 650
+})
+
+const goHome = () => {
+  router.push('/mm')
 }
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
+  nextTick(() => {
+    window.addEventListener('resize', onResize)
+  })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+})
 </script>

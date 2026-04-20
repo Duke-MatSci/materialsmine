@@ -5,149 +5,192 @@
         <h4 class="md-title">Comments</h4>
       </div>
 
-      <div v-for="(item, i) in optionalChaining(() => loadComment.comments)" :key="i"
-        :class="[isUserMessage(optionalChaining(() => item.user.displayName))
-          ? 'md-alignment-bottom-right u--margin-left-auto'
-          : 'md-alignment-top-left', 'md-layout-item md-size-85 md-layout u_margin-top-med']"
+      <div
+        v-for="(item, i) in optionalChaining(() => loadComment.comments)"
+        :key="i"
+        :class="[
+          isUserMessage(optionalChaining(() => item.user.displayName))
+            ? 'md-alignment-bottom-right u--margin-left-auto'
+            : 'md-alignment-top-left',
+          'md-layout-item md-size-85 md-layout u_margin-top-med',
+        ]"
       >
-        <div v-if="!isUserMessage(optionalChaining(() => item.user.displayName))" class="u--margin-right-1"><md-icon>account_circle</md-icon></div>
+        <div
+          v-if="!isUserMessage(optionalChaining(() => item.user.displayName))"
+          class="u--margin-right-1"
+        >
+          <MdIcon>account_circle</MdIcon>
+        </div>
 
-        <div style="padding: 1.6rem;border: 1px solid #A2A5A9;" :class="[isUserMessage(optionalChaining(() => item.user.displayName)) && 'u--margin-right-1', 'md-layout-item u--b-rad']" >
-          <p class="u--color-primary u--default-size">{{ item.user.givenName }} {{ item.user.surName }}</p>
+        <div
+          style="padding: 1.6rem; border: 1px solid #a2a5a9"
+          :class="[
+            isUserMessage(optionalChaining(() => item.user.displayName)) && 'u--margin-right-1',
+            'md-layout-item u--b-rad',
+          ]"
+        >
+          <p class="u--color-primary u--default-size">
+            {{ item.user.givenName }} {{ item.user.surName }}
+          </p>
           <p class="md-body-1">{{ item.comment }}</p>
           <p class="utility-align--right md-caption">{{ formatDate(item.createdAt) }}</p>
         </div>
 
-        <div v-if="isUserMessage(optionalChaining(() => item.user.displayName))"><md-icon>account_circle</md-icon></div>
+        <div v-if="isUserMessage(optionalChaining(() => item.user.displayName))">
+          <MdIcon>account_circle</MdIcon>
+        </div>
       </div>
     </div>
 
     <div class="wrapper u_margin-top-med">
       <form>
-        <md-field>
+        <MdField>
           <label>Message</label>
-          <md-textarea v-model="commentInput"></md-textarea>
-        </md-field>
+          <MdTextarea v-model="commentInput"></MdTextarea>
+        </MdField>
 
-        <button type="submit" @click.prevent="submitComment" class="btn btn--primary btn--noradius search_box_form_btn u--margin-bottommd u--margin-left-auto">Submit</button>
+        <button
+          type="submit"
+          @click.prevent="submitComment"
+          class="btn btn--primary btn--noradius search_box_form_btn u--margin-bottommd u--margin-left-auto"
+        >
+          Submit
+        </button>
       </form>
     </div>
   </div>
 </template>
 
-<script >
-import { mapGetters } from 'vuex'
-import { LOAD_COMMENTS, POST_COMMENT } from '@/modules/gql/comment-gql'
-import optionalChainingUtil from '@/mixins/optional-chaining-util'
-export default {
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useMutation, useQuery } from '@vue/apollo-composable';
+import { LOAD_COMMENTS, POST_COMMENT } from '@/modules/gql/comment-gql';
+import { useOptionalChaining } from '@/composables/useOptionalChaining';
+
+// Component name for debugging
+defineOptions({
   name: 'Comments',
-  mixins: [optionalChainingUtil],
-  props: {
-    type: {
-      type: String,
-      required: true,
-      default: undefined
-    },
-    identifier: {
-      type: String,
-      required: true,
-      default: undefined
-    }
-  },
-  data () {
-    return {
-      commentInput: '',
-      comments: [],
-      pageNumber: 1,
-      pageSize: 20,
-      loadComment: {
-        comments: []
-      }
-    }
-  },
-  computed: {
-    ...mapGetters({
-      displayName: 'auth/displayName',
-      isAuth: 'auth/isAuthenticated'
-    })
-  },
-  watch: {
-    identifier () {
-      this.$apollo.queries.loadComment.refetch()
-    }
-  },
-  methods: {
-    isUserMessage (arg) {
-      return arg === this.displayName
-    },
-    async submitComment () {
-      if (this.commentInput.length > 0) {
-        if (this.isAuth && this.identifier && this.type) {
-          try {
-            await this.$apollo.mutate({
-              mutation: POST_COMMENT,
-              variables: {
-                input: {
-                  identifier: this.identifier,
-                  type: this.type,
-                  comment: this.commentInput
-                }
-              },
-              errorPolicy: 'ignore'
-            })
-          } catch (error) {
-            return this.errorHandler(error)
-          }
-          this.commentInput = ''
-          return this.$apollo.queries.loadComment.refetch()
-        } else {
-          this.errorHandler({ graphQLErrors: 'You must be logged in to post comments' })
-        }
-      }
-    },
-    errorHandler (error) {
-      if (error.networkError) {
-        const err = error.networkError
-        this.error = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`
-      } else if (error.graphQLErrors) {
-        this.error = error.graphQLErrors
-      }
-      this.$store.commit('setSnackbar', {
-        message: this.error,
-        duration: 10000
-      })
-    },
-    isToday (date) {
-      return new Date().toDateString() === date.toDateString()
-    },
-    isYesterday (date) {
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
+});
 
-      return yesterday.toDateString() === date.toDateString()
+// Props
+interface Props {
+  type: string;
+  identifier: string;
+}
+
+const props = defineProps<Props>();
+
+// Store
+const store = useStore();
+
+// Composables
+const { optionalChaining } = useOptionalChaining();
+
+// Reactive data
+const commentInput = ref('');
+const pageNumber = ref(1);
+const pageSize = ref(20);
+
+// Computed properties
+const displayName = computed(() => store.getters['auth/displayName']);
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+
+// Apollo queries
+const { result: loadCommentResult, refetch: refetchComments } = useQuery(
+  LOAD_COMMENTS,
+  computed(() => ({
+    input: {
+      pageNumber: pageNumber.value,
+      pageSize: pageSize.value,
+      type: props.type,
+      identifier: props.identifier,
     },
-    formatDate (date) {
-      const givenDate = new Date(parseInt(date))
-      if (this.isToday(givenDate)) { return `Today ${givenDate.toLocaleTimeString()}` }
+  })),
+  {
+    fetchPolicy: 'cache-and-network',
+    errorPolicy: 'ignore',
+  }
+);
 
-      if (this.isYesterday(givenDate)) { return `Yesterday ${givenDate.toLocaleTimeString()}` }
+const loadComment = computed(() => loadCommentResult.value?.loadComment || { comments: [] });
 
-      return `${givenDate.toLocaleDateString()} ${givenDate.toLocaleTimeString()}`
-    }
-  },
-  apollo: {
-    loadComment: {
-      query: LOAD_COMMENTS,
-      variables () {
-        return {
-          input: { pageNumber: this.pageNumber, pageSize: this.pageSize, type: this.type, identifier: this.identifier }
-        }
-      },
-      fetchPolicy: 'cache-and-network',
-      error (error) {
-        return this.errorHandler(error)
+// Apollo mutations
+const { mutate: postCommentMutation } = useMutation(POST_COMMENT, {
+  errorPolicy: 'ignore',
+});
+
+// Methods
+const isUserMessage = (arg: string) => {
+  return arg === displayName.value;
+};
+
+const submitComment = async () => {
+  if (commentInput.value.length > 0) {
+    if (isAuth.value && props.identifier && props.type) {
+      try {
+        await postCommentMutation({
+          input: {
+            identifier: props.identifier,
+            type: props.type,
+            comment: commentInput.value,
+          },
+        });
+      } catch (error) {
+        return errorHandler(error);
       }
+      commentInput.value = '';
+      return refetchComments();
+    } else {
+      errorHandler({ graphQLErrors: 'You must be logged in to post comments' });
     }
   }
-}
+};
+
+const errorHandler = (error: any) => {
+  if (error.networkError) {
+    const err = error.networkError;
+    error.value = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
+  } else if (error.graphQLErrors) {
+    error.value = error.graphQLErrors;
+  }
+  store.commit('setSnackbar', {
+    message: error.value,
+    duration: 10000,
+  });
+};
+
+const isToday = (date: Date) => {
+  return new Date().toDateString() === date.toDateString();
+};
+
+const isYesterday = (date: Date) => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday.toDateString() === date.toDateString();
+};
+
+const formatDate = (date: string | number) => {
+  const givenDate = new Date(parseInt(date.toString()));
+  if (isToday(givenDate)) {
+    return `Today ${givenDate.toLocaleTimeString()}`;
+  }
+  if (isYesterday(givenDate)) {
+    return `Yesterday ${givenDate.toLocaleTimeString()}`;
+  }
+  return `${givenDate.toLocaleDateString()} ${givenDate.toLocaleTimeString()}`;
+};
+
+// Watchers
+watch(
+  () => props.identifier,
+  () => {
+    refetchComments();
+  }
+);
+
+// Lifecycle
+onMounted(() => {
+  // Component is ready
+});
 </script>

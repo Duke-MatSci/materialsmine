@@ -4,12 +4,6 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import account from '@/components/portal/Account.vue'
-export default {
-  name: 'UserPortalHome',
-  components: {
-    account
-  }
-}
 </script>

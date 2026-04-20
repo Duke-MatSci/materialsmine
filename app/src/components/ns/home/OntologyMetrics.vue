@@ -22,15 +22,12 @@
   </div>
 </template>
 
-<script>
-import { mapGetters } from 'vuex'
-export default {
-  name: 'OntologyMetrics',
-  computed: {
-    ...mapGetters({
-      metrics: 'ns/getMetrics',
-      loading: 'ns/getLoading'
-    })
-  }
-}
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+const metrics = computed(() => store.getters['ns/getMetrics'])
+const loading = computed(() => store.getters['ns/getLoading'])
 </script>

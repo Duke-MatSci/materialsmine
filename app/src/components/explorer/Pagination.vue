@@ -21,113 +21,136 @@
       <button @click.prevent="goToEnd" v-if="rowNumber < factor" class="md-button md-icon-button md-dense md-primary u--color-primary"> {{ tpages }} </button>
     </div>
   </div>
-
 </template>
-<script>
-export default {
-  name: 'pagination',
-  props: {
-    cpage: Number,
-    tpages: Number
-  },
-  data () {
-    return {
-      pageInput: this.cpage,
-      offset: 0,
-      rowNumber: 1
-    }
-  },
-  watch: {
-    // Necessary for when searching changes the page number
-    cpage (newValue, oldValues) {
-      if ((newValue !== oldValues) && this.pageExists(newValue)) {
-        this.pageInput = newValue
-      }
-    }
-  },
-  mounted () {
-    if (this.pageExists(this.cpage)) {
-      this.verifyRow()
-    } else {
-      this.goToEnd()
-    }
-  },
-  computed: {
-    factor () {
-      return Math.ceil(this.tpages / this.lengths)
-    },
-    lengths () {
-      if (window.matchMedia('(max-width: 27.5em)').matches) {
-        if (this.tpages <= 4) {
-          return this.tpages
-        }
-        return 3
-      } else {
-        if (this.tpages <= 7) {
-          return this.tpages
-        }
-        return 5
-      }
-    }
-  },
-  methods: {
-    pageExists (page) {
-      return page > 0 && page <= this.tpages
-    },
-    isActiveClass (e) {
-      return e === this.pageInput ? 'btn--primary' : 'u--color-primary'
-    },
-    verifyRow () {
-      if (this.cpage === 1) return
-      const limit = this.factor - 1
-      const rowNumber = Math.ceil(this.cpage / this.lengths)
-      if (this.cpage < this.tpages && rowNumber <= limit) {
-        this.offset = (rowNumber - 1) * this.lengths
-        this.rowNumber = rowNumber
-      } else {
-        this.goToLastRow()
-      }
-    },
-    goToBeginning () {
-      this.rowNumber = 1
-      this.offset = 0
-      this.goToPage(1)
-    },
-    goToLastRow () {
-      this.offset = this.tpages - this.lengths
-      this.rowNumber = this.factor
-    },
-    goToEnd () {
-      this.goToLastRow()
-      this.goToPage(this.tpages)
-    },
-    goToPage (page) {
-      if ((page !== this.cpage) && this.pageExists(page)) {
-        this.$emit('go-to-page', page)
-        this.pageInput = page
-      }
-    },
-    nextRow () {
-      if (this.rowNumber === this.factor) return
-      const limit = this.factor - 1
-      if (this.rowNumber < limit) {
-        this.offset += this.lengths
-        this.rowNumber += 1
-      } else {
-        this.goToLastRow()
-      }
-    },
-    prevRow () {
-      if (this.rowNumber === 1) return
-      if (this.rowNumber === this.factor) {
-        var elem = this.factor
-        this.offset = (elem - 2) * this.lengths
-        this.rowNumber -= 1
-      } else {
-        this.offset -= this.lengths
-        this.rowNumber -= 1
-      }
-    }
-  }
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue';
+
+// Component name for debugging
+defineOptions({
+  name: 'Pagination'
+});
+
+// Props
+interface Props {
+  cpage: number;
+  tpages: number;
 }
+
+const props = defineProps<Props>();
+
+// Emits
+interface Emits {
+  (e: 'go-to-page', page: number): void;
+}
+
+const emit = defineEmits<Emits>();
+
+// Data
+const pageInput = ref<number>(props.cpage);
+const offset = ref<number>(0);
+const rowNumber = ref<number>(1);
+
+// Computed
+const factor = computed(() => {
+  return Math.ceil(props.tpages / lengths.value);
+});
+
+const lengths = computed(() => {
+  if (window.matchMedia('(max-width: 27.5em)').matches) {
+    if (props.tpages <= 4) {
+      return props.tpages;
+    }
+    return 3;
+  } else {
+    if (props.tpages <= 7) {
+      return props.tpages;
+    }
+    return 5;
+  }
+});
+
+// Methods
+const pageExists = (page: number): boolean => {
+  return page > 0 && page <= props.tpages;
+};
+
+const isActiveClass = (e: number): string => {
+  return e === pageInput.value ? 'btn--primary' : 'u--color-primary';
+};
+
+const verifyRow = (): void => {
+  if (props.cpage === 1) return;
+  const limit = factor.value - 1;
+  const rowNum = Math.ceil(props.cpage / lengths.value);
+  if (props.cpage < props.tpages && rowNum <= limit) {
+    offset.value = (rowNum - 1) * lengths.value;
+    rowNumber.value = rowNum;
+  } else {
+    goToLastRow();
+  }
+};
+
+const goToBeginning = (): void => {
+  rowNumber.value = 1;
+  offset.value = 0;
+  goToPage(1);
+};
+
+const goToLastRow = (): void => {
+  offset.value = props.tpages - lengths.value;
+  rowNumber.value = factor.value;
+};
+
+const goToEnd = (): void => {
+  goToLastRow();
+  goToPage(props.tpages);
+};
+
+const goToPage = (page: number): void => {
+  if ((page !== props.cpage) && pageExists(page)) {
+    emit('go-to-page', page);
+    pageInput.value = page;
+  }
+};
+
+const nextRow = (): void => {
+  if (rowNumber.value === factor.value) return;
+  const limit = factor.value - 1;
+  if (rowNumber.value < limit) {
+    offset.value += lengths.value;
+    rowNumber.value += 1;
+  } else {
+    goToLastRow();
+  }
+};
+
+const prevRow = (): void => {
+  if (rowNumber.value === 1) return;
+  if (rowNumber.value === factor.value) {
+    const elem = factor.value;
+    offset.value = (elem - 2) * lengths.value;
+    rowNumber.value -= 1;
+  } else {
+    offset.value -= lengths.value;
+    rowNumber.value -= 1;
+  }
+};
+
+// Watch
+// Necessary for when searching changes the page number
+watch(() => props.cpage, (newValue, oldValue) => {
+  if ((newValue !== oldValue) && pageExists(newValue)) {
+    pageInput.value = newValue;
+  }
+});
+
+// Lifecycle
+onMounted(() => {
+  if (pageExists(props.cpage)) {
+    verifyRow();
+  } else {
+    goToEnd();
+  }
+});
 </script>

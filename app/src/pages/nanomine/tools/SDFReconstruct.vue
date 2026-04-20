@@ -57,42 +57,40 @@
   </tool-template>
 </template>
 
-<script>
-import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue'
-export default {
+<script setup lang="ts">
+import { ref } from 'vue';
+import MCRToolTemplate from './MCRToolTemplate/MCRToolTemplate.vue';
+
+defineOptions({
   name: 'SDFReconstruct',
-  components: {
-    ToolTemplate: MCRToolTemplate
-  },
-  props: {
-    card: {
-      type: Boolean,
-      required: false,
-      default: false
-    }
-  },
-  data: function () {
-    return {
-      references: [
-        '10.1115/DETC201886154',
-        '10.1115/1.4036582',
-        '10.1073/pnas.1704711114'
-      ],
-      job: {
-        aspectRatio: 'square',
-        getImageDimensions: true,
-        submitJobTitle: 'SDFReconstruct',
-        acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
-        useWebsocket: false,
-        selects: [
-          {
-            title: 'Number of Reconstructions',
-            submitJobTitle: 'NumOfReconstructs',
-            options: ['1', '2', '3', '4', '5']
-          }
-        ]
-      }
-    }
-  }
+});
+
+interface Props {
+  card?: boolean;
 }
+
+withDefaults(defineProps<Props>(), {
+  card: false
+});
+
+const references = ref<string[]>([
+  '10.1115/DETC201886154',
+  '10.1115/1.4036582',
+  '10.1073/pnas.1704711114'
+]);
+
+const job = ref({
+  aspectRatio: 'square' as const,
+  getImageDimensions: true,
+  submitJobTitle: 'SDFReconstruct',
+  acceptableFileTypes: '.jpg, .png, .tif, .zip, .mat',
+  useWebsocket: false,
+  selects: [
+    {
+      title: 'Number of Reconstructions',
+      submitJobTitle: 'NumOfReconstructs',
+      options: ['1', '2', '3', '4', '5']
+    }
+  ]
+});
 </script>

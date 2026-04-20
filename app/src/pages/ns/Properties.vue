@@ -8,13 +8,9 @@
     </div>
   </div>
 </template>
-<script>
-export default {
-  name: 'Namespace',
-  data () {
-    return {
-      loading: false
-    }
-  }
-}
+
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const loading = ref(false)
 </script>
