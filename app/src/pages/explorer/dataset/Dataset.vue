@@ -524,5 +524,12 @@ onMounted(() => {
   loading.value = true;
   loadDataset();
   store.dispatch('explorer/curation/fetchChangeLogs', props.id);
+
+  if (isAuth.value) {
+    store.commit('setSnackbar', {
+      message: 'ℹ️ Click the recycle icon to copy and reuse this dataset\'s SDD link',
+      duration: 15000,
+    });
+  }
 });
 </script>

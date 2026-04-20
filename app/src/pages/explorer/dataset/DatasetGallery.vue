@@ -130,7 +130,7 @@
         <h1 class="visualize_header-h1 u_margin-top-med">No Datasets Found</h1>
       </div>
     </div>
-    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+    <Dialog :active="dialogBoxActive" :min-width="dialog.minWidth">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
         <div v-if="dialog.type == 'delete'">
@@ -153,7 +153,7 @@
         </span>
         <md-button v-else @click.prevent="toggleDialogBox">Close</md-button>
       </template>
-    </dialogbox>
+    </Dialog>
   </div>
 </template>
 
@@ -165,7 +165,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useDataDictionary } from '@/composables/useDataDictionary';
 import spinner from '@/components/Spinner.vue';
 import pagination from '@/components/explorer/Pagination.vue';
-// import Dialog from '@/components/Dialog.vue';
+import Dialog from '@/components/Dialog.vue';
 
 defineOptions({
   name: 'viz-grid',
@@ -397,6 +397,13 @@ onMounted(async () => {
     await loadParams(query as Record<string, any>);
   } else {
     await loadItems();
+  }
+
+  if (isAuth.value) {
+    store.commit('setSnackbar', {
+      message: 'ℹ️ Click the recycle icon on a dataset card to copy and reuse its SDD link',
+      duration: 20000,
+    });
   }
 });
 </script>
