@@ -55,19 +55,19 @@
         </template>
       </md-table>
     </md-card>
-    <dialog-box :active="dialogBoxActive">
+    <Dialog :active="dialogBoxActive">
       <template #title>{{ dialog.title }}</template>
       <template #content>{{ dialog.content }}</template>
       <template #actions>
         <md-button @click.prevent="toggleDialogBox">Close</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
     <!--
 
     Dataset Info Dialog
 
     -->
-    <dialog-box v-if="datasetInfoDialogActive">
+    <Dialog :active="datasetInfoDialogActive">
       <template #title>Dataset Information</template>
       <template #content>
         <md-list class="md-double-line">
@@ -86,11 +86,9 @@
         </md-list>
       </template>
       <template #actions>
-        <md-button @click="datasetInfoDialogActive=false">
-          <md-icon>close</md-icon>
-        </md-button>
+        <md-button @click="datasetInfoDialogActive = false">Close</md-button>
       </template>
-    </dialog-box>
+    </Dialog>
 
   </div>
 </template>
