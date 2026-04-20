@@ -574,6 +574,7 @@ const onInputChange = async (e: Event): Promise<void> => {
 const useSampleFile = async (): Promise<void> => {
   closeSidebar();
   useSample.value = true;
+  selectedProperty.value = 'frequency';
   displayInfo('Using sample file', 1500);
   dynamfit.value.fileUpload = 'test.tsv';
 };
@@ -619,7 +620,7 @@ const updateChart = async (): Promise<void> => {
   }
 
   const payload = {
-    fileName: dynamfit.value.fileUpload,
+    file_name: dynamfit.value.fileUpload,
     numberOfProny: dynamfit.value.range,
     model: dynamfit.value.model,
     fitSettings: dynamfit.value.fitSettings,
