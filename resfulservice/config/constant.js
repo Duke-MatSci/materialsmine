@@ -20,8 +20,8 @@ module.exports = {
     'URL',
     'container-title'
   ],
-  rorApi: 'https://api.ror.org/organizations',
-  rorFields: ['id', 'name', 'aliases', 'links', 'country', 'addresses'],
+  rorApi: 'https://api.ror.org/v2/organizations',
+  rorFields: ['id', 'names', 'links', 'locations'],
   supportedBrowser: [
     'Firefox',
     'Chrome',
@@ -151,11 +151,12 @@ module.exports = {
     }
   },
   ManagedServiceRegister: {
-    dynamfit: '/dynamfit/extract/',
     chemprops: '/chemprops/call/',
+    dynamfit: '/dynamfit/extract/',
+    loadxml: 'loadxml',
     ontology: '/ontology/extract/',
-    'yaml-loader': '/yaml_converter/',
-    loadxml: 'loadxml'
+    'validate-ontology': '/ontology/validate/',
+    'yaml-loader': '/yaml_converter/'
   },
   MGD_SVC_ERR_CODE: {
     default: {
@@ -167,5 +168,21 @@ module.exports = {
   SEARCH_FIELD: {
     label: 'label',
     description: 'description'
+  },
+  DEFAULT_XSD_URL:
+    'https://raw.githubusercontent.com/Duke-MatSci/nanomine-schema/refs/heads/master/xml/PNC_schema_031822.xsd',
+  MM_BASE: 'http://materialsmine.org/resource/',
+  NP_BASE: 'http://materialsmine.org/np/',
+  UNIT_IRI: {
+    Celsius: 'http://qudt.org/vocab/unit/DEG_C',
+    hours: 'http://qudt.org/vocab/unit/HR',
+    hour: 'http://qudt.org/vocab/unit/HR',
+    minutes: 'http://qudt.org/vocab/unit/MIN',
+    minute: 'http://qudt.org/vocab/unit/MIN',
+    kV: 'http://qudt.org/vocab/unit/KiloV',
+    'g/cm^3': 'http://qudt.org/vocab/unit/GM-PER-CentiM3',
+    'MV/cm': 'http://qudt.org/vocab/unit/MegaV-PER-CentiM',
+    um: 'http://qudt.org/vocab/unit/MicroM',
+    Hz: 'http://qudt.org/vocab/unit/HZ'
   }
 };

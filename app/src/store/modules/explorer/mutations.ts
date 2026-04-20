@@ -1,76 +1,64 @@
-import { ExplorerState } from './index';
+import { ExplorerState } from './types';
 
 export default {
-  // Pagination mutations
-  SET_CURRENT_PAGE(state: ExplorerState, page: number) {
-    state.currentPage = page;
+  setMenuVisible(state: ExplorerState): void {
+    state.toggleMenuVisibility = !state.toggleMenuVisibility;
   },
-
-  SET_TOTAL_PAGES(state: ExplorerState, pages: number) {
-    state.totalPages = pages;
+  setResultsTab(state: ExplorerState, payload: string): void {
+    state.resultsTab = payload;
   },
-
-  SET_ITEMS_PER_PAGE(state: ExplorerState, items: number) {
-    state.itemsPerPage = items;
+  setSearchKeyword(state: ExplorerState, payload: string): void {
+    state.searchKeyword = payload;
   },
-
-  SET_TOTAL_ITEMS(state: ExplorerState, total: number) {
-    state.totalItems = total;
+  setFacetFilterMaterials(state: ExplorerState, payload: any[]): void {
+    state.facetFilterMaterials = payload;
   },
-
-  // Search mutations
-  SET_SEARCH_QUERY(state: ExplorerState, query: string) {
-    state.searchQuery = query;
+  setSelectedFacetFilterMaterials(state: ExplorerState, payload: Record<string, any>): void {
+    state.selectedFacetFilterMaterials = payload;
   },
-
-  SET_SEARCH_RESULTS(state: ExplorerState, results: any[]) {
-    state.searchResults = results;
+  setSelectedFacetFilterMaterialsValue(state: ExplorerState, payload: string | null): void {
+    state.selectedFacetFilterMaterialsValue = payload;
   },
+  setSearching(state: ExplorerState, payload?: { set: boolean }): void {
+    if (payload) {
+      state.searching = payload.set;
+      return;
+    }
 
-  SET_LOADING(state: ExplorerState, loading: boolean) {
-    state.isLoading = loading;
+    if (state.searchKeyword && state.searchKeyword.length) {
+      state.searching = true;
+    }
   },
-
-  SET_ERROR(state: ExplorerState, error: string | null) {
-    state.error = error;
+  setEnableAutosuggest(state: ExplorerState, payload: boolean): void {
+    state.enableAutosuggest = payload;
   },
-
-  // Filter and sort mutations
-  SET_FILTERS(state: ExplorerState, filters: Record<string, any>) {
-    state.filters = filters;
+  setCurrentDataset(state: ExplorerState, payload: any): void {
+    state.dataset = payload;
   },
-
-  SET_SORT_BY(state: ExplorerState, sortBy: string) {
-    state.sortBy = sortBy;
+  setCurrentDatasetThumbnail(state: ExplorerState, payload: string): void {
+    state.datasetThumbnail = payload;
   },
-
-  SET_SORT_ORDER(state: ExplorerState, order: 'asc' | 'desc') {
-    state.sortOrder = order;
+  setDynamfitData(state: ExplorerState, payload: Record<string, any>): void {
+    state.dynamfitData = payload;
   },
-
-  // Reset mutations
-  RESET_PAGINATION(state: ExplorerState) {
-    state.currentPage = 1;
-    state.totalPages = 1;
-    state.totalItems = 0;
+  resetDynamfitData(state: ExplorerState): void {
+    state.dynamfitData = {};
   },
-
-  RESET_SEARCH(state: ExplorerState) {
-    state.searchQuery = '';
-    state.searchResults = [];
-    state.error = null;
+  resetDynamfit(state: ExplorerState): void {
+    state.dynamfit = {
+      range: 100,
+      fitSettings: false,
+      model: 'Linear',
+      fileUpload: '',
+    };
   },
-
-  // Facet filter mutations
-  SET_FACET_FILTER_MATERIALS(state: ExplorerState, materials: any[]) {
-    state.facetFilterMaterials = materials;
+  setDynamfitDomain(state: ExplorerState, payload: string): void {
+    state.dynamfitDomain = payload;
   },
-
-  SET_SELECTED_FACET_FILTER_MATERIALS(state: ExplorerState, materials: any) {
-    state.selectedFacetFilterMaterials = materials;
+  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'Manual'): void {
+    state.dynamfitTransformMethod = payload;
   },
-
-  SET_SELECTED_FACET_FILTER_MATERIALS_VALUE(state: ExplorerState, value: string | null) {
-    state.selectedFacetFilterMaterialsValue = value;
+  setDynamfitManualFile(state: ExplorerState, payload: string): void {
+    state.dynamfitManualFile = payload;
   },
 };

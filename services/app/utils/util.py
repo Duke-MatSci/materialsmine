@@ -44,7 +44,7 @@ def check_extension(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 @log_errors
-def upload_init(file_name):
+def upload_init(file_name, domain):
     """
     Uploads a file and returns its content as a dictionary.
     
@@ -89,7 +89,70 @@ def upload_init(file_name):
         df = df.applymap(float)
 
         # Rename columns
-        df.columns =['Frequency', 'E Storage', 'E Loss']
+        if domain == 'frequency':
+            df.columns =['Frequency', 'E Storage', 'E Loss']
+        elif domain == 'temperature':
+            df.columns =['Temperature', 'E Storage', 'E Loss']
+        else:
+            df.columns =['UNKNOWN', 'E Storage', 'E Loss']
+        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
+        return df.to_dict("records")
+    except pd.errors.EmptyDataError as e:
+        raise ValueError("File is Empty")
+    except Exception as pe:
+        raise ValueError("Failed to parse file content")
+    
+@log_errors
+def shift_upload_init(file_name):
+    """
+    Uploads a file and returns its content as a dictionary.
+    
+    Args:
+        file_name (str): The name of the file to be uploaded.
+        
+    Returns:
+        dict: The content of the file as a dictionary.
+        
+    Raises:
+        ValueError: If the file extension is not supported.
+        ValueError: If the file is empty.
+        ValueError: If there is an error parsing the file content.
+    """
+    try:
+        if file_name is None:
+            return None
+        file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
+        extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
+        
+        if extension == '.csv':
+            delimiter = ','
+        elif extension == '.tsv' or extension == '.txt':
+            delimiter = '\t'
+        else:
+            raise ValueError("Unsupported file extension")
+        
+        df = pd.read_csv(file_path, delimiter=delimiter, header=None)
+        print(f'df: {df}')
+        if df.empty:
+            raise ValueError('File is empty')
+        # Find the first numeric row index
+        valid_start_index = None
+        for i, row in df.iterrows():
+            if is_numeric_row(row):
+                valid_start_index = i
+                break
+        if valid_start_index is None:
+            raise ValueError("No valid numeric rows found in the file")
+        
+        # Slice to valid rows only
+        df = df.iloc[valid_start_index:].reset_index(drop=True)
+
+        # Convert to float explicitly
+        df = df.applymap(float)
+
+        # Rename columns
+        df.columns =['Temperature', 'a_T']
+        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
         return df.to_dict("records")
     except pd.errors.EmptyDataError as e:
         raise ValueError("File is Empty")

@@ -1,97 +1,19 @@
-import { ActionContext } from 'vuex';
-import { CurationState } from './index';
 import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql';
-// import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/metamaterial-gql';
+import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/material-gql';
 import router from '@/router';
 import apollo from '@/modules/gql/apolloClient';
 import { deleteChart, saveXml } from '@/modules/vega-chart';
 import { isValidOrcid } from '@/modules/whyis-dataset';
+import { ActionContext } from 'vuex';
+import { CurationState } from './types';
 
-interface CreateDatasetIdPayload {
-  isBulk?: boolean;
-}
-
-interface BulkXmlPayload {
-  files: File[];
-}
-
-interface FetchXlsListPayload {
-  field: string;
-  pageNumber?: number;
-}
-
-interface CurationDataPayload {
-  id?: string;
-  isNew?: boolean;
-}
-
-interface SubmitCurationDataPayload {
-  xlsxObjectId?: string | null;
-  isNew?: boolean;
-}
-
-interface DeleteCurationPayload {
-  xmlId: string;
-  isNew: boolean;
-}
-
-interface SearchRorPayload {
-  query?: string;
-  id?: string;
-}
-
-interface ApproveCurationPayload {
-  xmlViewer: any;
-  callbackFn: () => void;
-}
-
-interface RequestApprovalPayload {
-  curationId: string;
-  isNew: boolean;
-}
-
-interface SubmitXmlFilesPayload {
-  files: Array<{ file: File }>;
-}
-
-interface DeleteEntityFilesPayload {
-  distribution: string[];
-  thumbnail?: string;
-}
-
-interface CacheNewEntityPayload {
-  identifier: string;
-  resourceNanopub: any;
-  type: 'charts' | 'datasets';
-}
-
-interface DeleteEntityESPayload {
-  identifier: string;
-  type: string;
-}
-
-interface ChartInstanceObject {
-  description?: string;
-  identifier: string;
-  label?: string;
-  thumbnail?: string;
-}
-
-interface DatasetInstanceObject {
-  description?: string;
-  identifier: string;
-  label?: string;
-  thumbnail?: string;
-  doi?: string;
-  organization?: string[];
-  distribution?: string[];
-}
+type Context = ActionContext<CurationState, any>;
 
 export default {
   async createDatasetIdVuex(
-    { commit, dispatch }: ActionContext<CurationState, any>,
-    { isBulk = false }: CreateDatasetIdPayload
-  ) {
+    { commit, dispatch }: Context,
+    { isBulk = false }: { isBulk?: boolean }
+  ): Promise<void> {
     await apollo
       .mutate({
         mutation: CREATE_DATASET_ID_MUTATION,
@@ -124,10 +46,7 @@ export default {
       });
   },
 
-  async createChartInstanceObject(
-    _context: ActionContext<CurationState, any>,
-    nanopubPayload: any
-  ): Promise<ChartInstanceObject | Error> {
+  async createChartInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
     const chartObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
 
     // Return if not able to retrieve chart object
@@ -145,50 +64,47 @@ export default {
     };
   },
 
-  async createDatasetInstanceObject(
-    _context: ActionContext<CurationState, any>,
-    nanopubPayload: any
-  ): Promise<DatasetInstanceObject | Error> {
-    const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
+  // async createDatasetInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
+  //   const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
 
-    // Return if not able to retrieve chart object
-    if (!datasetObject) {
-      return new Error('Caching error. Dataset object is missing');
-    }
+  //   // Return if not able to retrieve chart object
+  //   if (!datasetObject) {
+  //     return new Error('Caching error. Dataset object is missing');
+  //   }
 
-    // Build chart instance object
-    return {
-      description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
-      identifier: datasetObject['@id'],
-      label:
-        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/title']?.['@value'],
-      thumbnail:
-        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
-          'http://www.w3.org/ns/dcat#accessURL'
-        ],
-      doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
-        return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
-      }),
-      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
-        return dist?.['@id'];
-      }),
-    };
-  },
+  //   // Build chart instance object
+  //   return {
+  //     description:
+  //       datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+  //     identifier: datasetObject['@id'],
+  //     label:
+  //       datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/title']?.['@value'],
+  //     thumbnail:
+  //       datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+  //         'http://www.w3.org/ns/dcat#accessURL'
+  //       ],
+  //     doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
+  //     organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
+  //       return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
+  //     }),
+  //     distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
+  //       return dist?.['@id'];
+  //     }),
+  //   };
+  // },
 
-  async deleteEntityNanopub(_context: ActionContext<CurationState, any>, entityUri: string) {
+  async deleteEntityNanopub(_context: Context, entityUri: string): Promise<any> {
     // TODO: refactor delete function to generalize to other entity types
     const response = await deleteChart(entityUri);
     return response;
   },
 
   async deleteEntityES(
-    { rootGetters }: ActionContext<CurationState, any>,
-    payload: DeleteEntityESPayload
-  ) {
+    { rootGetters }: Context,
+    payload: { identifier: string; type: string }
+  ): Promise<void> {
     const { identifier, type } = payload;
     const url = '/api/admin/es';
     const token = rootGetters['auth/token'];
@@ -204,23 +120,19 @@ export default {
   },
 
   async cacheNewEntityResponse(
-    { commit, dispatch, rootGetters }: ActionContext<CurationState, any>,
-    payload: CacheNewEntityPayload
-  ) {
+    { commit, dispatch, rootGetters }: Context,
+    payload: { identifier: string; resourceNanopub: any; type: string }
+  ): Promise<{ response: any; identifier: string } | Error> {
     const { identifier, resourceNanopub, type } = payload;
 
     const url = '/api/admin/es';
-    let resourceInstanceObject: ChartInstanceObject | DatasetInstanceObject | Error;
+    let resourceInstanceObject;
     if (type === 'charts') {
       resourceInstanceObject = await dispatch('createChartInstanceObject', resourceNanopub);
     } else if (type === 'datasets') {
-      resourceInstanceObject = await dispatch('createDatasetInstanceObject', resourceNanopub);
+      resourceInstanceObject = resourceNanopub;
     } else {
       return new Error('Caching error. Type parameter is missing or invalid');
-    }
-
-    if (resourceInstanceObject instanceof Error) {
-      return resourceInstanceObject;
     }
 
     const token = rootGetters['auth/token'];
@@ -248,51 +160,55 @@ export default {
     return { response, identifier: resourceInstanceObject.identifier };
   },
 
-  async lookupOrcid({ commit }: ActionContext<CurationState, any>, orcidId: string) {
+  async lookupOrcid({ commit }: Context, orcidId: string): Promise<void> {
     const unhyphenated = /^\d{15}(\d|X)$/.test(orcidId);
-    if (unhyphenated) {
-      orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4');
-    }
+    unhyphenated &&
+      (orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4'));
 
     if (isValidOrcid(orcidId)) {
-      // TODO: update the endpoint route name
-      // const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`;
-      const url = `/api/knowledge/instance?uri=http://orcid.org/${orcidId}`;
-      const response = await fetch(url, {
-        method: 'GET',
-      });
-      if (response?.statusText !== 'OK') {
+      try {
+        const url = `https://pub.orcid.org/v3.0/${orcidId}/person`;
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) {
+          return commit('setOrcidData', 'invalid');
+        }
+
+        const data = await response.json();
+        const result = {
+          '@id': `http://orcid.org/${orcidId}`,
+          firstName: data.name?.['given-names']?.value || '',
+          lastName: data.name?.['family-name']?.value || '',
+          email: data.emails?.email?.[0]?.email || '',
+        };
+
+        if (result.firstName || result.lastName) {
+          return commit('setOrcidData', result);
+        } else {
+          return commit('setOrcidData', 'invalid');
+        }
+      } catch {
         const snackbar = {
-          message: (response as any).message || 'Something went wrong while fetching orcid data',
+          message: 'Something went wrong while fetching ORCID data',
           duration: 5000,
         };
         return commit('setSnackbar', snackbar, { root: true });
       }
-
-      const responseData = await response.json();
-      const cpResult = responseData.filter(
-        (entry: any) => entry['@id'] === `http://orcid.org/${orcidId}`
-      );
-      if (cpResult.length) {
-        return commit('setOrcidData', cpResult[0]);
-      } else {
-        // No results were returned
-        return commit('setOrcidData', 'invalid');
-      }
     } else {
-      // Incorrect format
       return commit('setOrcidData', 'invalid');
     }
   },
 
-  async lookupDoi({ commit }: ActionContext<CurationState, any>, inputDoi: string) {
+  async lookupDoi({ commit }: Context, inputDoi: string): Promise<void> {
     const url = `/api/knowledge/getdoi/${inputDoi}`;
     const response = await fetch(url, {
       method: 'GET',
     });
-    if (response?.statusText !== 'OK') {
+    if (!response.ok) {
       const snackbar = {
-        message: (response as any).message || 'Something went wrong while fetching DOI data',
+        message: response.statusText || 'Something went wrong while fetching DOI data',
         duration: 5000,
       };
       return commit('setSnackbar', snackbar, { root: true });
@@ -300,11 +216,10 @@ export default {
     const responseData = await response.json();
     return commit('setDoiData', responseData);
   },
-
   async submitBulkXml(
-    { commit, dispatch, rootGetters }: ActionContext<CurationState, any>,
+    { commit, dispatch, rootGetters }: Context,
     files: File[]
-  ) {
+  ): Promise<Response> {
     const token = rootGetters['auth/token'];
     await dispatch('createDatasetIdVuex', { isBulk: true });
     const url = `${window.location.origin}/api/curate/bulk?dataset=${rootGetters['explorer/curation/datasetId']}`;
@@ -319,38 +234,39 @@ export default {
       },
     });
     if (response?.statusText !== 'OK') {
-      throw new Error((response as any).message || 'Something went wrong while submitting XMLs');
+      throw new Error(response.statusText || 'Something went wrong while submitting XMLs');
     }
     const result = await response.json();
     commit('setXmlBulkResponse', result);
     return response;
   },
-
-  // async fetchXlsList(_context: ActionContext<CurationState, any>, payload: FetchXlsListPayload) {
-  //   if (!payload.field) return;
-  //   const response = await apollo.query({
-  //     query: SEARCH_SPREADSHEETLIST_QUERY,
-  //     variables: {
-  //       input: {
-  //         field: payload.field,
-  //         pageNumber: payload?.pageNumber ?? 1,
-  //         pageSize: 20,
-  //       },
-  //     },
-  //     fetchPolicy: 'no-cache',
-  //   });
-  //   if (!response) {
-  //     const error = new Error('Server error: Unable to access list!');
-  //     throw error;
-  //   }
-  //   const result = response?.data?.getXlsxCurationList || {};
-  //   return result;
-  // },
-
+  async fetchXlsList(
+    _context: Context,
+    payload: { field: string; pageNumber?: number }
+  ): Promise<any> {
+    if (!payload.field) return;
+    const response = await apollo.query({
+      query: SEARCH_SPREADSHEETLIST_QUERY,
+      variables: {
+        input: {
+          field: payload.field,
+          pageNumber: payload?.pageNumber ?? 1,
+          pageSize: 20,
+        },
+      },
+      fetchPolicy: 'no-cache',
+    });
+    if (!response) {
+      const error = new Error('Server error: Unable to access list!');
+      throw error;
+    }
+    const result = response?.data?.getXlsxCurationList || {};
+    return result;
+  },
   async fetchCurationData(
-    { commit, getters, rootGetters }: ActionContext<CurationState, any>,
-    payload: CurationDataPayload | null = null
-  ) {
+    { commit, getters, rootGetters }: Context,
+    payload: { id: string; isNew?: boolean } | null = null
+  ): Promise<void> {
     const url = !payload ? '/api/curate' : `/api/curate/get/${payload.id}?isNew=${payload?.isNew}`;
     const token = rootGetters['auth/token'];
     const curationData = getters?.getCurationFormData ?? {};
@@ -373,9 +289,9 @@ export default {
 
   // Curation Form Page Submit Function
   async submitCurationData(
-    { state, commit, rootGetters }: ActionContext<CurationState, any>,
-    { xlsxObjectId = null, isNew = true }: SubmitCurationDataPayload = {}
-  ) {
+    { state, commit, rootGetters }: Context,
+    { xlsxObjectId = null, isNew = true }: { xlsxObjectId?: string | null; isNew?: boolean } = {}
+  ): Promise<void> {
     const cId = state.curationFormData.Control_ID ?? state.curationFormData.CONTROL_ID ?? {};
 
     if (!cId?.cellValue && !xlsxObjectId) {
@@ -393,7 +309,7 @@ export default {
       const element = JSON.parse(replaceNestedRef[i]);
       const title = element.shift();
       const lastKey = element.pop();
-      const refData = element.reduce(function (o: any, x: any) {
+      const refData = element.reduce(function (o: any, x: string) {
         return typeof o === 'undefined' || o === null ? o : o[x];
       }, data[title]);
       refData[lastKey] = refData[lastKey].values;
@@ -442,7 +358,7 @@ export default {
         router.push({
           name: 'XmlVisualizer',
           params: { id: sampleId },
-          query: { isNewCuration: String(isNew) },
+          query: { isNewCuration: isNew.toString() },
         });
       } else {
         router.push({ name: 'XmlGallery' });
@@ -455,8 +371,7 @@ export default {
       return commit('setSnackbar', snackbar, { root: true });
     }
   },
-
-  async createControlId({ rootGetters, dispatch, commit }: ActionContext<CurationState, any>) {
+  async createControlId({ rootGetters, dispatch, commit }: Context): Promise<void> {
     const url = '/api/curate/newsampleid';
     const token = rootGetters['auth/token'];
 
@@ -488,16 +403,13 @@ export default {
       );
     }
   },
-
   async deleteCuration(
-    { commit, rootGetters, dispatch }: ActionContext<CurationState, any>,
-    payload: DeleteCurationPayload
-  ) {
+    { commit, rootGetters, dispatch }: Context,
+    payload: { xmlId: string; isNew: boolean }
+  ): Promise<void> {
     try {
       if (!payload || !payload?.xmlId) {
-        throw new Error('Incorrect query parameters', {
-          cause: 'Missing flag',
-        });
+        throw new Error('Incorrect query parameters');
       }
       const token = rootGetters['auth/token'];
       const { xmlId, isNew } = payload;
@@ -522,24 +434,22 @@ export default {
       };
       return commit('setSnackbar', snackbar, { root: true });
     } catch (error: any) {
-      let snackbar;
-      if ('cause' in error) {
-        snackbar = { message: error?.message, duration: 4000 };
-      } else {
-        snackbar = {
-          message: error?.message ?? 'Something went wrong',
-          action: () =>
-            dispatch('deleteCuration', {
-              xmlId: payload.xmlId,
-              isNew: payload.isNew,
-            }),
-        };
+      const snackbar: any = {
+        message: error?.message ?? 'Something went wrong',
+        action: () =>
+          dispatch('deleteCuration', {
+            xmlId: payload.xmlId,
+            isNew: payload.isNew,
+          }),
+      };
+      if (error.message === 'Incorrect query parameters') {
+        snackbar.duration = 4000;
+        delete snackbar.action;
       }
       commit('setSnackbar', snackbar, { root: true });
     }
   },
-
-  async searchRor({ commit }: ActionContext<CurationState, any>, payload: SearchRorPayload) {
+  async searchRor({ commit }: Context, payload: { query?: string; id?: string }): Promise<any> {
     const { query, id } = payload;
     let url: string;
     if (query) url = `/api/knowledge/ror?query=${query}`;
@@ -554,22 +464,33 @@ export default {
     const response = await fetch(url, {
       method: 'GET',
     });
-    if (response?.statusText !== 'OK') {
+    if (!response.ok) {
       const snackbar = {
-        message: (response as any).message || 'Something went wrong while fetching ROR data',
+        message: response.statusText || 'Something went wrong while fetching ROR data',
         duration: 5000,
       };
       return commit('setSnackbar', snackbar, { root: true });
     }
     const responseData = await response.json();
-    commit('setRorData', responseData);
-    return responseData;
+    const normalized = responseData.map((item: any) => ({
+      ...item,
+      name:
+        item.names?.find((n: any) => n.types?.includes('ror_display'))?.value ||
+        item.names?.[0]?.value ||
+        '',
+      country: {
+        country_code: item.locations?.[0]?.geonames_details?.country_code || '',
+      },
+      addresses: [{ city: item.locations?.[0]?.geonames_details?.name || '' }],
+    }));
+    commit('setRorData', normalized);
+    return normalized;
   },
 
   async approveCuration(
-    { commit, rootGetters }: ActionContext<CurationState, any>,
-    { xmlViewer, callbackFn }: ApproveCurationPayload
-  ) {
+    { commit, rootGetters, dispatch }: Context,
+    { xml }: { xml: any }
+  ): Promise<void> {
     const isAdmin = rootGetters['auth/isAdmin'];
     const token = rootGetters['auth/token'];
     if (!isAdmin) {
@@ -591,11 +512,29 @@ export default {
       { root: true }
     );
     try {
-      await saveXml(xmlViewer, token);
-      // TODO: FIX THIS LATER!
-      // commit('resetSnackbar', {}, { root: true });
-      commit('setDialogBox', true, { root: true });
-      return callbackFn();
+      const response = await fetch('/api/curate/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify({
+          xml: `http://localhost/explorer/xmlvisualizer/${xml.id}?isNewCuration=${xml.isNewCuration}`,
+          inference: 'rdfs',
+          resolveUrls: true,
+        }),
+      });
+      if (!response || response.status !== 200) {
+        return commit(
+          'setSnackbar',
+          {
+            message: 'Something went wrong during the request',
+            action: () => dispatch('approveCuration', { xml }),
+          },
+          { root: true }
+        );
+      }
+      return commit('setDialogBox', true, { root: true });
     } catch (error) {
       commit(
         'setSnackbar',
@@ -609,9 +548,9 @@ export default {
   },
 
   async requestApproval(
-    { commit, rootGetters, dispatch }: ActionContext<CurationState, any>,
-    { curationId, isNew }: RequestApprovalPayload
-  ) {
+    { commit, rootGetters, dispatch }: Context,
+    { curationId, isNew }: { curationId: string; isNew: boolean }
+  ): Promise<void> {
     const isAdmin = rootGetters['auth/isAdmin'];
     const token = rootGetters['auth/token'];
     if (isAdmin) {
@@ -662,11 +601,7 @@ export default {
       );
     }
   },
-
-  async submitXmlFiles(
-    { commit, rootGetters }: ActionContext<CurationState, any>,
-    files: Array<{ file: File }>
-  ) {
+  async submitXmlFiles({ commit, rootGetters }: Context, files: { file: File }[]): Promise<void> {
     const token = rootGetters['auth/token'];
     try {
       const formData = new FormData();
@@ -692,9 +627,10 @@ export default {
             },
             { root: true }
           );
-          return router.push('/explorer/xmls');
+          router.push('/explorer/xmls');
+          return;
         } else {
-          return commit(
+          commit(
             'setSnackbar',
             {
               message: `Submission failed for ${failedXML} out of ${totalXMLFiles} entries`,
@@ -703,23 +639,21 @@ export default {
             },
             { root: true }
           );
+          return;
         }
       }
     } catch (error: any) {
       return commit(
         'setSnackbar',
-        {
-          message: error.message ?? 'Something went wrong during the request',
-        },
+        { message: error.message ?? 'Something went wrong during the request' },
         { root: true }
       );
     }
   },
-
   async deleteEntityFiles(
-    { rootGetters }: ActionContext<CurationState, any>,
-    payload: DeleteEntityFilesPayload
-  ) {
+    { rootGetters }: Context,
+    payload: { distribution: string[]; thumbnail?: string }
+  ): Promise<void> {
     const { distribution, thumbnail } = payload;
     if (!distribution.length && !thumbnail) return;
 
@@ -756,5 +690,33 @@ export default {
         });
       }
     }
+  },
+  async fetchChangeLogs({ commit }: Context, curationId: string): Promise<void> {
+    const url = `/api/curate/changelogs/${curationId}`;
+    const resp = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (resp.status !== 200) {
+      // throw new Error(resp.statusText || 'Server error, cannot fetch change logs');
+      return commit(
+        'setSnackbar',
+        { message: resp.statusText || 'Server error, cannot fetch change logs' },
+        { root: true }
+      );
+    }
+    const response = await resp.json();
+
+    console.log('Fetched Change Logs:', response);
+    const parseLogs = response?.changes?.map((log: any) => ({
+      user: log.user,
+      timestamp: log.date,
+      changes: log.change[0] || 'No details available',
+    }));
+    commit('setChangeLogs', parseLogs || []);
   },
 };

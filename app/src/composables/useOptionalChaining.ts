@@ -1,9 +1,10 @@
 /**
- * Optional Chaining Utility Composable
- * Provides safe function execution with error handling
+ * Optional chaining utility composable
+ * Note: Modern JavaScript/TypeScript supports optional chaining natively with ?. operator
+ * This composable is provided for backward compatibility with legacy code
  */
 export function useOptionalChaining() {
-  const optionalChaining = (fn: () => any) => {
+  const optionalChaining = <T>(fn: () => T): T | undefined => {
     try {
       return fn();
     } catch (e) {

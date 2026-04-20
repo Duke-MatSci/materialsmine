@@ -36,8 +36,8 @@
               </label>
             </DropZone>
             <div class="u--margin-posmd u--color-primary teams_header">
-              <strong>Note:</strong> Title, Author, Citation Type and Publication Year, are required
-              entry in the XML.
+              <strong>Note:</strong> Title, Author, Citation Type and Publication Year, are
+              required entry in the XML.
             </div>
             <div class="md-layout" v-show="xmlFiles.length">
               <md-list class="md-layout utility-transparentbg md-theme-default">
@@ -62,7 +62,8 @@
           </md-step>
           <md-step id="second" md-label="Confirm and submit" v-model:md-done="second">
             <div class="u--color-primary teams_header">
-              <strong>Are you sure?</strong> Select <strong>Save & Submit</strong> to confirm or
+              <strong>Are you sure?</strong> Select
+              <strong>Save & Submit</strong> to confirm or
               <strong>Go Back</strong> to cancel
             </div>
             <div class="md-layout">
@@ -95,6 +96,7 @@ import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import DropZone from '@/components/curate/FileDrop.vue';
 import FilePreview from '@/components/curate/FilePreview.vue';
+import LoginRequired from '@/components/LoginRequired.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 import Spinner from '@/components/Spinner.vue';
 import useFileList from '@/modules/file-list';
@@ -111,6 +113,11 @@ const store = useStore();
 const xmlFilesFn = useFileList();
 
 // Reactive data
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
 const active = ref('first');
 const first = ref(false);
 const second = ref(false);
@@ -118,16 +125,14 @@ const xmlFiles = xmlFilesFn.files;
 const loading = ref(false);
 const uploadInProgress = ref<string | null>(null);
 const submitted = ref(false);
-const renameXlsx = ref(false);
-
-const navRoutes = [
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
   },
-];
+]);
 
-// Computed properties
+// Computed
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 
 // Methods
@@ -136,26 +141,19 @@ const removeXmlFile = (file: any) => xmlFilesFn.removeFile(file);
 const modStatXml = xmlFilesFn.modifyStatus;
 
 const goToStep = (id: string, index?: string) => {
-  // this.clearSnackbar();
-  if (id === 'first') {
-    first.value = true;
-  } else if (id === 'second') {
-    second.value = true;
-  }
+  if (id === 'first') first.value = true;
+  if (id === 'second') second.value = true;
   if (index) {
     active.value = index;
   }
 };
 
 const filterXml = (files: FileList | File[]) => {
-  renameXlsx.value = false;
   const newFiles = [...files];
   const filteredFiles: File[] = [];
   const regex = /.xml$/gi;
   for (let i = 0; i < newFiles.length; i++) {
-    if (!regex.test(newFiles[i].name)) {
-      renameXlsx.value = true;
-    } else {
+    if (regex.test(newFiles[i].name)) {
       filteredFiles.push(newFiles[i]);
     }
   }
@@ -164,9 +162,8 @@ const filterXml = (files: FileList | File[]) => {
 
 const onInputChange = (e: Event) => {
   const target = e.target as HTMLInputElement;
-  // TODO: Remove the if statement below and check that everything works correctly
-  if (target.id === 'xml-file-input') {
-    const uploadedXmlFiles = filterXml(target.files || []);
+  if (target.id === 'xml-file-input' && target.files) {
+    const uploadedXmlFiles = filterXml(target.files);
     addXmlFile(uploadedXmlFiles);
   }
   // reset so that selecting the same file again will still cause it to fire this change

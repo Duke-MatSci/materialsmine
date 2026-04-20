@@ -1,12 +1,39 @@
-import { processData } from '@/modules/metamine/utils/processData';
+import { processData, ProcessedData, RawData } from '@/modules/metamine/utils/processData';
+import { ActionContext } from 'vuex';
+import { MetamineNUState, FetchedName } from './mutations';
+
+interface RootState {
+  [key: string]: any;
+}
+
+interface FetchWrapperPayload {
+  url: string;
+  reset?: boolean;
+}
+
+interface FetchWrapperResponse {
+  val: RequestCache;
+}
+
+interface FetchedNamesResponse {
+  fetchedNames?: FetchedName[];
+}
+
+interface FetchedDataResponse {
+  fetchedData: RawData[];
+}
 
 export default {
-  async fetchMetamineDataset({ commit, getters, dispatch }: any) {
-    let csvData = getters.getDatasets;
-    let fetchedNames = getters.getFetchedNames;
-    const revalidateData = getters.getRefreshStatus;
-    const activeData: any[] = [];
-    const rawJson: any = {};
+  async fetchMetamineDataset({
+    commit,
+    getters,
+    dispatch,
+  }: ActionContext<MetamineNUState, RootState>) {
+    let csvData: ProcessedData[] = getters.getDatasets;
+    let fetchedNames: FetchedName[] = getters.getFetchedNames;
+    const revalidateData: boolean = getters.getRefreshStatus;
+    const activeData: ProcessedData[] = [];
+    const rawJson: Record<string, RawData[]> = {};
     commit('setLoadingState', true);
 
     if ((!csvData.length && !fetchedNames.length) || revalidateData) {
@@ -17,19 +44,19 @@ export default {
       csvData = [];
       // fetch data from Minio
       try {
-        const cache = await dispatch(
+        const cache: RequestCache = await dispatch(
           'fetchWrapper',
-          { url: '/api/files/metamine' },
+          { url: '/api/files/metamine' } as FetchWrapperPayload,
           { root: true }
-        ).then((res: any) => res.val);
-        const fetchedNamesResponse = await fetch('/api/files/metamine', {
+        ).then((res: FetchWrapperResponse) => res.val);
+        const fetchedNamesResponse: FetchedNamesResponse = await fetch('/api/files/metamine', {
           cache,
         })
           .then((response) => response.json())
           .catch(async (err) => {
             await dispatch(
               'fetchWrapper',
-              { url: '/api/files/metamine', reset: true },
+              { url: '/api/files/metamine', reset: true } as FetchWrapperPayload,
               { root: true }
             );
 
@@ -38,31 +65,33 @@ export default {
         // set fetchedNames
         fetchedNames = fetchedNamesResponse?.fetchedNames ?? [];
 
-        const getVisualizationList = fetchedNames.map(async function (item: any) {
+        const getVisualizationList = fetchedNames.map(async function (item: FetchedName) {
           item.name = decodeURI(item.name);
           const url = `/api/files/metamine/${encodeURI(item.name)}`;
-          const cache = await dispatch('fetchWrapper', { url }, { root: true }).then(
-            (res: any) => res.val
-          );
+          const cache: RequestCache = await dispatch(
+            'fetchWrapper',
+            { url } as FetchWrapperPayload,
+            { root: true }
+          ).then((res: FetchWrapperResponse) => res.val);
 
           return fetch(url, { cache });
         });
         await Promise.allSettled(getVisualizationList)
-          .then(async (visualizationListResponse) => {
+          .then(async (visualizationListResponse: PromiseSettledResult<Response>[]) => {
             for (const response of visualizationListResponse) {
-              if (response.status === 'fulfilled') {
-                const value = response.value as any;
+              const { status, value } = response as PromiseFulfilledResult<Response>;
+
+              if (status === 'fulfilled') {
                 const name = decodeURI(value.url.split('/metamine/')[1]);
-                const { fetchedData } = await value.json();
+                const { fetchedData }: FetchedDataResponse = await value.json();
                 rawJson[name] = fetchedData;
-                const processedData = fetchedData.map((dataset: any, index: number) =>
+                const processedData: ProcessedData[] = fetchedData.map((dataset, index) =>
                   processData(dataset, index)
                 );
 
-                processedData.map((p: any) => {
+                processedData.map((p) => {
                   p.name = name;
-                  p.color =
-                    fetchedNames.find((item: any) => item.name === name)?.color ?? '#08233c';
+                  p.color = fetchedNames.find((item) => item.name === name)?.color ?? '#08233c';
                 });
 
                 csvData.push(...processedData);

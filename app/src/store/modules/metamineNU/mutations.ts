@@ -1,53 +1,80 @@
+import { ProcessedData, RawData } from '@/modules/metamine/utils/processData';
+
+export interface FetchedName {
+  name: string;
+  color: string;
+}
+
+export interface MetamineNUState {
+  fetchedNames: FetchedName[];
+  datasets: ProcessedData[];
+  activeData: ProcessedData[];
+  dataLibrary: any[];
+  dataPoint: Partial<ProcessedData>;
+  selectedData: ProcessedData[];
+  page: string;
+  query1: string | null;
+  query2: string | null;
+  neighbors: any[];
+  reset: boolean;
+  knnUmap: number;
+  dialogBoxActiveKnn: boolean;
+  enableKnn: boolean;
+  refreshStatus: boolean;
+  loadingState: boolean;
+  rawJson: Record<string, RawData[]> | null;
+}
+
 export default {
-  setDataPoint(state: any, payload: any) {
+  setDataPoint(state: MetamineNUState, payload: Partial<ProcessedData>) {
     state.dataPoint = payload;
   },
-  setFetchedNames(state: any, payload: any) {
+  setFetchedNames(state: MetamineNUState, payload: FetchedName[]) {
     state.fetchedNames = payload;
   },
-  setDatasets(state: any, payload: any) {
+  setDatasets(state: MetamineNUState, payload: ProcessedData[]) {
     state.datasets = payload;
   },
-  setActiveData(state: any, payload: any) {
+  setActiveData(state: MetamineNUState, payload: ProcessedData[]) {
     state.activeData = payload;
   },
-  setDataLibrary(state: any, payload: any) {
+  setDataLibrary(state: MetamineNUState, payload: any[]) {
     state.dataLibrary = payload;
   },
-  setSelectedData(state: any, payload: any) {
+  setSelectedData(state: MetamineNUState, payload: ProcessedData[]) {
     state.selectedData = payload;
   },
-  setPage(state: any, payload: any) {
+  setPage(state: MetamineNUState, payload: string) {
     state.page = payload;
   },
-  setQuery1(state: any, payload: any) {
+  setQuery1(state: MetamineNUState, payload: string | null) {
     state.query1 = payload;
   },
-  setQuery2(state: any, payload: any) {
+  setQuery2(state: MetamineNUState, payload: string | null) {
     state.query2 = payload;
   },
-  setNeighbors(state: any, payload: any) {
+  setNeighbors(state: MetamineNUState, payload: any[]) {
     state.neighbors = payload;
   },
-  setReset(state: any, payload: any) {
+  setReset(state: MetamineNUState, payload: boolean) {
     state.reset = payload;
   },
-  setKnnUmap(state: any, payload: any) {
+  setKnnUmap(state: MetamineNUState, payload: number) {
     state.knnUmap = payload;
   },
-  setDialogBoxActiveKnn(state: any, payload: any) {
+  setDialogBoxActiveKnn(state: MetamineNUState, payload: boolean) {
     state.dialogBoxActiveKnn = payload;
   },
-  updateEnableKnn(state: any, payload: any) {
+  updateEnableKnn(state: MetamineNUState, payload: boolean) {
     state.enableKnn = payload;
   },
-  setRefreshStatus(state: any, payload: any) {
+  setRefreshStatus(state: MetamineNUState, payload: boolean) {
     state.refreshStatus = payload;
   },
-  setLoadingState(state: any, payload: any) {
+  setLoadingState(state: MetamineNUState, payload: boolean) {
     state.loadingState = payload;
   },
-  setRawJsonFile(state: any, payload: any) {
+  setRawJsonFile(state: MetamineNUState, payload: Record<string, RawData[]> | null) {
     state.rawJson = payload;
-  },
+  }
 };

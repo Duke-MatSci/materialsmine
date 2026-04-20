@@ -1,38 +1,34 @@
-import { GetterTree } from 'vuex';
-import { GalleryState } from './index';
+import { GalleryState } from './types';
 
-const getters: GetterTree<GalleryState, any> = {
-  allItems(state: GalleryState) {
-    // return state.allItems;
-    return null;
+export default {
+  allItems(state: GalleryState): any[] | null {
+    return (state as any).allItems;
   },
-  items(state: GalleryState) {
+  items(state: GalleryState): any[] | null {
     return state.items;
   },
-  pageSize(state: GalleryState) {
+  pageSize(state: GalleryState): number {
     return state.pageSize;
   },
-  page(state: GalleryState) {
+  page(state: GalleryState): number {
     return state.page;
   },
-  total(state: GalleryState) {
+  total(state: GalleryState): number {
     return state.total || 0;
   },
-  totalPages(state: GalleryState, getters: any) {
+  totalPages(_state: GalleryState, getters: any): number {
     return Math.ceil(getters.total / getters.pageSize);
   },
-  queryTimeMillis(state: GalleryState) {
+  queryTimeMillis(state: GalleryState): number {
     return state.queryTimeMillis;
   },
-  favoriteChartItems(state: GalleryState) {
+  favoriteChartItems(state: GalleryState): any[] {
     return state.favoriteChartItems;
   },
-  totalFavorites(state: GalleryState) {
+  totalFavorites(state: GalleryState): number {
     return state.totalFavorites || 0;
   },
-  missingCharts(state: GalleryState) {
+  missingCharts(state: GalleryState): any[] {
     return state.missingCharts;
-  },
+  }
 };
-
-export default getters;

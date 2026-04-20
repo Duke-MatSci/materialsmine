@@ -57,8 +57,9 @@
               <MdCardMediaCover md-solid>
                 <MdCardMedia md-ratio="4:3">
                   <img
-                    :src="baseUrl + result.thumbnail"
+                    :src="getChartThumbnailSrc(index)"
                     :alt="result.label"
+                    @error="onThumbnailError(index)"
                     v-if="result.thumbnail"
                   />
                   <img src="../assets/img/rdf_flyer.svg" :alt="result.label" v-else />
@@ -101,7 +102,9 @@
         </div>
       </template>
       <template #actions>
-        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart">Delete</MdButton>
+        <MdButton v-if="dialog.type == 'delete'" @click="deleteChart(dialog.chart)"
+          >Delete</MdButton
+        >
         <MdButton @click="closeDialog">Cancel</MdButton>
       </template>
     </Dialog>
@@ -109,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeMount, watch, Ref } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeMount, watch, Ref } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import { useReduce } from '@/composables/useReduce';
@@ -118,6 +121,7 @@ import Spinner from '@/components/Spinner.vue';
 import Pagination from '@/components/explorer/Pagination.vue';
 import Dialog from '@/components/Dialog.vue';
 import { toChartId } from '@/modules/vega-chart';
+import { prodFailingCharts } from '@/modules/kg-utils';
 
 // Component name for debugging
 defineOptions({
@@ -141,12 +145,50 @@ const router = useRouter();
 
 // Composables
 const { reduceDescription } = useReduce();
-const { loadParams, loadPrevNextImage } = useExplorerQueryParams();
+
+// Local search method for query params composable
+const localSearchMethod = async (): Promise<void> => {
+  await loadItems(pageNumber.value);
+};
+
+const { pageNumber, pageSize, loadParams, loadPrevNextImage } = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true,
+});
 
 // Reactive data
 const loading = ref(false);
 const otherArgs = ref(null);
-const baseUrl = ref(`${window.location.origin}/api/knowledge/images?uri=`);
+const defaultImg = new URL('../assets/img/rdf_flyer.svg', import.meta.url).href;
+const thumbnailSrcs: Record<number, string> = reactive({});
+
+const extractThumbnailId = (thumbnail: string): string => {
+  const segment = thumbnail.split('/').pop() || '';
+  return segment.replace(/_depiction$/, '');
+};
+
+const chartEnv = (() => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return 'dev';
+  if (hostname.startsWith('qa.materialsmine')) return 'stage';
+  return 'prod';
+})();
+
+const getIdx = (idx: number | string) => (typeof idx === 'string' ? parseInt(idx) : idx);
+
+const getChartThumbnailSrc = (idx: number | string): string => {
+  const index = getIdx(idx);
+  if (thumbnailSrcs[index]) return thumbnailSrcs[index];
+  const result = galleryChartItems.value[index];
+  const id = extractThumbnailId(result.thumbnail);
+  thumbnailSrcs[index] = `/img/charts/${chartEnv}/${id}.png`;
+  return thumbnailSrcs[index];
+};
+
+const onThumbnailError = (idx: number | string): void => {
+  const index = getIdx(idx);
+  thumbnailSrcs[index] = defaultImg;
+};
 const dialog: Ref<any> = ref({
   title: 'Test',
   type: '',
@@ -161,7 +203,11 @@ const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const items = computed(() => store.getters['explorer/gallery/items']);
 const page = computed(() => store.getters['explorer/gallery/page']);
-const total = computed(() => store.getters['explorer/gallery/total']);
+const rawTotal = computed(() => store.getters['explorer/gallery/total']);
+const total = computed(() => {
+  if (chartEnv !== 'prod') return rawTotal.value;
+  return Math.max(0, rawTotal.value - prodFailingCharts.length);
+});
 const totalPages = computed(() => store.getters['explorer/gallery/totalPages']);
 const queryTimeMillis = computed(() => store.getters['explorer/gallery/queryTimeMillis']);
 const newChartExist = computed(() => store.getters['explorer/curation/getNewChartExist']);
@@ -170,11 +216,16 @@ const totalFavorites = computed(() => store.getters['explorer/gallery/totalFavor
 const missingCharts = computed(() => store.getters['explorer/gallery/missingCharts']);
 
 const galleryChartItems = computed(() => {
-  if (!props.isFavourite) {
-    return items.value;
-  } else {
-    return favoriteChartItems.value;
-  }
+  const source = props.isFavourite ? favoriteChartItems.value : items.value;
+  if (chartEnv !== 'prod' || !source) return source;
+  return source.filter((chart: any) => {
+    const id = chart.identifier?.split('/').pop() || '';
+    return !prodFailingCharts.includes(id);
+  });
+});
+
+watch(galleryChartItems, () => {
+  Object.keys(thumbnailSrcs).forEach((key) => delete thumbnailSrcs[+key]);
 });
 
 const formatText = computed(() => {
@@ -197,6 +248,10 @@ const renderDialog = (title: string, type: string, result: any, minWidth: number
 
 const toggleDialogBox = () => {
   store.commit('setDialogBox');
+};
+
+const closeDialog = () => {
+  toggleDialogBox();
 };
 
 const deleteChart = async (chart: any, retry = false) => {
@@ -231,6 +286,14 @@ const deleteChart = async (chart: any, retry = false) => {
 };
 
 const editChart = (chart: any) => {
+  if (chart.thumbnail?.endsWith('_depiction')) {
+    store.commit('setSnackbar', {
+      message:
+        'This chart is based on a legacy ontology and cannot be edited. Please recreate it using the updated FAIR-compliant ontology',
+      duration: 60000,
+    });
+    return;
+  }
   return router.push(`/explorer/chart/editor/edit/${getChartId(chart)}`);
 };
 

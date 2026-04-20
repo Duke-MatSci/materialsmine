@@ -93,4 +93,4 @@ const portalRoutes: Array<RouteRecordRaw> = [
   },
 ];
 
-// export default portalRoutes;
+export default portalRoutes;

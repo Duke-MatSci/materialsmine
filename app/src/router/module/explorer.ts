@@ -12,14 +12,14 @@ const explorerRoutes: Array<RouteRecordRaw> = [
     component: Home,
     meta: { requiresAuth: false },
   },
-  // {
-  //   // DOIs usually have more than one segment, i.e. 10.1063/1.5046839
-  //   // extended path regex needed to match those multiple segments
-  //   path: 'article/:doi+',
-  //   name: 'Article',
-  //   component: Article,
-  //   meta: { requiresAuth: false },
-  // },
+  {
+    // DOIs usually have more than one segment, i.e. 10.1063/1.5046839
+    // extended path regex needed to match those multiple segments
+    path: 'article/:doi+',
+    name: 'Article',
+    component: Article,
+    meta: { requiresAuth: false },
+  },
   {
     path: 'visualization',
     name: 'ExplorerVisualization',
@@ -37,12 +37,12 @@ const explorerRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/explorer/Tools.vue'),
         meta: { requiresAuth: false },
       },
-      // {
-      //   path: 'dynamfit',
-      //   name: 'DynamFit',
-      //   component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
-      //   meta: { requiresAuth: true },
-      // },
+      {
+        path: 'dynamfit',
+        name: 'DynamFit',
+        component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {
@@ -72,22 +72,24 @@ const explorerRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/explorer/curate/spreadsheet/SpreadsheetUploadBulk.vue'),
         meta: { requiresAuth: true },
       },
-      //     // {
-      //     //   path: 'stepper',
-      //     //   name: 'CurationForm',
-      //     //   component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
-      //     //   meta: { requiresAuth: true },
-      //     // },
-      //     // {
-      //     //   path: 'stepper/edit',
-      //     //   name: 'EditXmlCuration',
-      //     //   component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
-      //     //   meta: { requiresAuth: true },
-      //     // },
-      //     {
-      //       path: 'xml',
-      //       component: () => import('@/pages/explorer/curate/xml/xmlUpload.vue'),
-      //     },
+      {
+        path: 'stepper',
+        name: 'CurationForm',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'stepper/edit',
+        name: 'EditXmlCuration',
+        component: () => import('@/pages/explorer/curate/form/CurationForm.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'xml',
+        name: 'XmlUpload',
+        component: () => import('@/pages/explorer/curate/xml/xmlUpload.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {
@@ -129,24 +131,24 @@ const explorerRoutes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/explorer/curate/CurateBase.vue'),
     meta: { requiresAuth: true },
     children: [
-      // {
-      //   path: '',
-      //   name: 'validList',
-      //   component: () => import('@/pages/explorer/curate/validlist/XlsList.vue'),
-      //   meta: { requiresAuth: true },
-      // },
-      // {
-      //   path: 'update',
-      //   name: 'xlsUpdate',
-      //   component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue'),
-      //   meta: { requiresAuth: true },
-      // },
-      // {
-      //   path: 'all',
-      //   name: 'validListAll',
-      //   component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue'),
-      //   meta: { requiresAuth: true },
-      // },
+      {
+        path: '',
+        name: 'validList',
+        component: () => import('@/pages/explorer/curate/validlist/XlsList.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'update',
+        name: 'xlsUpdate',
+        component: () => import('@/pages/explorer/curate/validlist/UpdateXlsList.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'all',
+        name: 'validListAll',
+        component: () => import('@/pages/explorer/curate/validlist/XlsListAll.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   // // {
@@ -184,12 +186,20 @@ const explorerRoutes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/explorer/Gallery.vue'),
         meta: { requiresAuth: false },
       },
-      ...['editor/:type', 'editor/:type/:chartId(.*)'].map((path) => ({
-        path,
+      {
+        path: 'editor/:type',
+        name: 'ChartCreate',
         component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
         props: true,
         meta: { requiresAuth: true },
-      })),
+      },
+      {
+        path: 'editor/:type/:chartId(.*)',
+        name: 'ChartEdit',
+        component: () => import('@/pages/explorer/chart/editor/Chart.vue'),
+        props: true,
+        meta: { requiresAuth: true },
+      },
       {
         path: 'view/:chartId(.*)',
         name: 'ChartView',
@@ -274,25 +284,31 @@ const explorerRoutes: Array<RouteRecordRaw> = [
     component: () => import('@/pages/explorer/xml/YamlLoader.vue'),
     meta: { requiresAuth: false },
   },
-  // {
-  //   path: 'dataset',
-  //   component: ChartBase,
-  //   children: [
-  //     {
-  //       path: '',
-  //       name: 'DatasetGallery',
-  //       component: () => import('@/pages/explorer/dataset/DatasetGallery.vue'),
-  //       meta: { requiresAuth: false },
-  //     },
-  //     {
-  //       path: ':id',
-  //       name: 'DatasetVisualizer',
-  //       component: () => import('@/pages/explorer/dataset/Dataset.vue'),
-  //       props: true,
-  //       meta: { requiresAuth: false },
-  //     },
-  //   ],
-  // },
+  {
+    path: 'sample-history/:id',
+    name: 'SampleHistory',
+    component: () => import('@/pages/explorer/xml/XmlHistory.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
+    path: 'dataset',
+    component: ChartBase,
+    children: [
+      {
+        path: '',
+        name: 'DatasetGallery',
+        component: () => import('@/pages/explorer/dataset/DatasetGallery.vue'),
+        meta: { requiresAuth: false },
+      },
+      {
+        path: ':id',
+        name: 'DatasetVisualizer',
+        component: () => import('@/pages/explorer/dataset/Dataset.vue'),
+        props: true,
+        meta: { requiresAuth: false },
+      },
+    ],
+  },
 ];
 
 export default explorerRoutes;

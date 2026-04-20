@@ -1,35 +1,32 @@
-import { GetterTree } from 'vuex';
-import { ResultsState } from './index';
+import { ResultsState } from './types';
 
-const getters: GetterTree<ResultsState, any> = {
+export default {
   // TODO:
-  getArticles(state: ResultsState) {
+  getArticles(state: ResultsState): any[] | null {
     return state.articles;
   },
-  getSamples(state: ResultsState) {
+  getSamples(state: ResultsState): any[] | null {
     return state.samples;
   },
-  getImages(state: ResultsState) {
+  getImages(state: ResultsState): any[] | null {
     return state.images;
   },
-  getCharts(state: ResultsState) {
+  getCharts(state: ResultsState): any[] | null {
     return state.charts;
   },
-  getMaterials(state: ResultsState) {
+  getMaterials(state: ResultsState): any[] | null {
     return state.materials;
   },
-  getSuggestions(state: ResultsState) {
+  getSuggestions(state: ResultsState): any[] {
     return state.suggestions;
   },
-  getTotal(state: ResultsState) {
+  getTotal(state: ResultsState): number {
     return state.total;
   },
-  getIsloading(state: ResultsState) {
+  getIsloading(state: ResultsState): boolean {
     return state.isLoading;
   },
-  getTotalGroupings(state: ResultsState) {
+  getTotalGroupings(state: ResultsState): ResultsState['totalGrouping'] {
     return state.totalGrouping;
-  },
+  }
 };
-
-export default getters;

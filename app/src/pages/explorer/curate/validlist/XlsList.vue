@@ -10,7 +10,9 @@
           </div>
         </div>
       </div>
-      <h1 class="visualize_header-h1 article_title u_centralize_text">Spreadsheet List Form</h1>
+      <h1 class="visualize_header-h1 article_title u_centralize_text">
+        Spreadsheet List Form
+      </h1>
 
       <div style="max-width: 99%">
         <div class="md-layout md-gutter md-alignment-top-center">
@@ -57,20 +59,22 @@
                 ><h1 class="md-title u--color-success">Successful Uploads</h1></md-table-toolbar
               >
 
-              <md-table-row slot="md-table-row" slot-scope="{ item }">
-                <md-table-cell md-label=""
-                  ><md-icon class="u--color-success">check</md-icon></md-table-cell
-                >
-                <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
-                <md-table-cell md-label="Value">
-                  <md-chip
-                    class="u_margin-bottom-small"
-                    v-for="(element, i) in item['values']"
-                    :key="`C${i}`"
-                    >{{ element }}</md-chip
+              <template #md-table-row="{ item }">
+                <md-table-row>
+                  <md-table-cell md-label=""
+                    ><md-icon class="u--color-success">check</md-icon></md-table-cell
                   >
-                </md-table-cell>
-              </md-table-row>
+                  <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
+                  <md-table-cell md-label="Value">
+                    <md-chip
+                      class="u_margin-bottom-small"
+                      v-for="(element, i) in item['values']"
+                      :key="`C${i}`"
+                      >{{ element }}</md-chip
+                    >
+                  </md-table-cell>
+                </md-table-row>
+              </template>
             </md-table>
 
             <md-table v-if="!!rejectedData.length && isSubmitted" v-model="rejectedData">
@@ -79,20 +83,22 @@
                 <span><a href="/explorer/curate/validlist/update">Update here</a></span>
               </md-table-toolbar>
 
-              <md-table-row slot="md-table-row" slot-scope="{ item }">
-                <md-table-cell md-label=""
-                  ><md-icon class="u--color-error">close</md-icon></md-table-cell
-                >
-                <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
-                <md-table-cell md-label="Value">
-                  <md-chip
-                    class="u_margin-bottom-small"
-                    v-for="(element, i) in item['values']"
-                    :key="`D${i}`"
-                    >{{ element }}</md-chip
+              <template #md-table-row="{ item }">
+                <md-table-row>
+                  <md-table-cell md-label=""
+                    ><md-icon class="u--color-error">close</md-icon></md-table-cell
                   >
-                </md-table-cell>
-              </md-table-row>
+                  <md-table-cell md-label="FieldName">{{ item.field }}</md-table-cell>
+                  <md-table-cell md-label="Value">
+                    <md-chip
+                      class="u_margin-bottom-small"
+                      v-for="(element, i) in item['values']"
+                      :key="`D${i}`"
+                      >{{ element }}</md-chip
+                    >
+                  </md-table-cell>
+                </md-table-row>
+              </template>
             </md-table>
 
             <div v-if="!uploadedData.length || !rejectedData.length">
@@ -114,7 +120,9 @@
                 </md-button>
               </md-field>
 
-              <div class="form__group search_box_form-item-2 explorer_page-nav u_margin-top-med">
+              <div
+                class="form__group search_box_form-item-2 explorer_page-nav u_margin-top-med"
+              >
                 <button
                   type="submit"
                   class="btn btn--tertiary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
@@ -152,27 +160,35 @@
 import { ref } from 'vue';
 import { useStore } from 'vuex';
 import { useMutation } from '@vue/apollo-composable';
-import { CREATEMATERIAL_QUERY } from '@/modules/gql/metamaterial-gql';
+import { CREATEMATERIAL_QUERY } from '@/modules/gql/material-gql';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 
+// Component name for debugging
 defineOptions({
   name: 'ExcelSheetForm',
 });
 
+// Store
 const store = useStore();
+
+// Interfaces
+interface TableDataItem {
+  field: string;
+  values: string[];
+}
 
 // Reactive data
 const index = ref(0);
-const tableData = ref<any[]>([]);
-const uploadedData = ref<any[]>([]);
-const rejectedData = ref<any[]>([]);
+const tableData = ref<TableDataItem[]>([]);
+const uploadedData = ref<TableDataItem[]>([]);
+const rejectedData = ref<TableDataItem[]>([]);
 const fieldName = ref('');
 const currValue = ref('');
-const value = ref<any[]>([]);
+const value = ref<string[]>([]);
 const isSubmitted = ref(false);
 
-// GraphQL mutations
-const { mutate: createMutation, loading: createLoading } = useMutation(CREATEMATERIAL_QUERY);
+// GraphQL mutation
+const { mutate: createMaterial } = useMutation(CREATEMATERIAL_QUERY);
 
 // Methods
 const insertValue = () => {
@@ -188,7 +204,7 @@ const insertValue = () => {
   });
 };
 
-const deleteValue = (arr: any[], e: number) => {
+const deleteValue = (arr: string[], e: number) => {
   arr.splice(e, 1);
   if (!arr.length) {
     sanitizeArr();
@@ -203,7 +219,10 @@ const sanitizeArr = () => {
 
 const addMore = () => {
   if (!!fieldName.value && !!value.value.length) {
-    const obj = { field: fieldName.value.trim().split(' ').join('_'), values: value.value };
+    const obj: TableDataItem = {
+      field: fieldName.value.trim().split(' ').join('_'),
+      values: value.value,
+    };
     tableData.value.push(obj);
     fieldName.value = '';
     currValue.value = '';
@@ -217,14 +236,12 @@ const submit = async () => {
   if (!tableData.value.length) return;
   isSubmitted.value = !isSubmitted.value;
   try {
-    const response = await createMutation({
-      variables: {
-        input: {
-          columns: tableData.value,
-        },
+    const response = await createMaterial({
+      input: {
+        columns: tableData.value,
       },
     });
-    if (response.data.createXlsxCurationList.columns.length) {
+    if (response?.data?.createXlsxCurationList?.columns?.length) {
       uploadedData.value = [...response.data.createXlsxCurationList.columns];
       tableData.value = [];
     }
@@ -236,7 +253,7 @@ const submit = async () => {
     const objReg = /\{[^}]*\}/gi;
     if (objReg.test(error.message)) {
       return handleDuplicateError(error.message.match(objReg));
-    } else if (error.message.search(/not authenticated/i) !== -1) {
+    } else if (error.message?.search(/not authenticated/i) !== -1) {
       return store.commit('setSnackbar', {
         message: error.message ?? 'Something went wrong',
         duration: 5000,
@@ -258,9 +275,14 @@ const clearInput = () => {
   rejectedData.value = [];
 };
 
-const handleDuplicateError = (arg: any) => {
+const handleDuplicateError = (arg: RegExpMatchArray | null) => {
+  if (!arg) return;
   const strReg = /"[^"]*"/i;
-  const data = arg.map((val: any) => JSON.parse(val.match(strReg)[0]));
+  const data = arg.map((val) => {
+    const match = val.match(strReg);
+    return match ? JSON.parse(match[0]) : null;
+  }).filter(Boolean);
+  
   tableData.value.forEach((val, index, arr) => {
     if (data.includes(val.field)) {
       rejectedData.value.push(arr[index]);

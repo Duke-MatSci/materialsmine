@@ -2,7 +2,7 @@
   <div
     class="md-app-internal-drawer u--layout-flex u--layout-flex-column u--layout-flex-justify-sb"
   >
-    <md-list md-expand-single="true" class="utility-transparentbg">
+    <md-list :md-expand-single="true" class="utility-transparentbg">
       <md-toolbar class="md-transparent u--font-emph-l u_toggle-display-off" md-elevation="0"
         ><small>App Navigation</small></md-toolbar
       >
@@ -186,7 +186,7 @@
       </md-list-item>
     </md-list>
   </div>
-  </template>
+</template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
@@ -214,3 +214,15 @@ defineOptions({
 });
 </script>
 
+<style scoped>
+/* Target md-list-item text color */
+.md-app-internal-drawer :deep(.md-list-item-content) {
+  color: #08233c;
+}
+
+/* Change appearance on hover */
+.md-app-internal-drawer :deep(.md-list-item-content:hover) {
+  color: #ffffff;
+  background-color: #08233c;
+}
+</style>

@@ -3,6 +3,12 @@ module.exports = {
   env: {
     node: true,
   },
+  ignorePatterns: [
+    'node_modules/',
+    'dist/',
+    '*.config.js',
+    '.eslintrc.js',
+  ],
   parser: 'vue-eslint-parser',
   parserOptions: {
     parser: '@typescript-eslint/parser',
@@ -25,6 +31,10 @@ module.exports = {
     'vue/multi-word-component-names': 'off',
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'import/named': 'off',
+    'import/default': 'off',
+    'import/no-named-as-default': 'off',
+    'import/no-named-as-default-member': 'off',
   },
   overrides: [
     {

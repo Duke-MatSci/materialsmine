@@ -1,46 +1,25 @@
 import { querySparql, parseSparql } from '@/modules/sparql';
-// import { deleteNanopub, listNanopubs, postNewNanopub } from './whyis-utils';
-// import { deleteResources } from './whyis-dataset';
+import { deleteNanopub, listNanopubs, postNewNanopub } from './whyis-utils';
+import { deleteResources } from './whyis-dataset';
 
-// Placeholder functions for missing imports
-const listNanopubs = async (uri: string): Promise<any[]> => {
-  console.log('listNanopubs called with:', uri);
-  return [];
-};
-const deleteNanopub = async (np: string): Promise<void> => {
-  console.log('deleteNanopub called with:', np);
-};
-const postNewNanopub = async (ld: any, isXml?: boolean): Promise<any> => {
-  console.log('postNewNanopub called with:', ld, isXml);
-  return {};
-};
-const deleteResources = async (uri: string): Promise<void> => {
-  console.log('deleteResources called with:', uri);
-};
-
-interface ChartSpec {
-  $schema: string;
-  mark: string;
-  encoding: {
-    x: {
-      field: string;
-      type: string;
-    };
-    y: {
-      field: string;
-      type: string;
-    };
+interface VegaSpec {
+  $schema?: string;
+  mark?: string;
+  encoding?: Record<string, any>;
+  data?: {
+    values: any[];
   };
-  data?: any;
+  [key: string]: any;
 }
 
 interface Chart {
   uri: string | null;
-  baseSpec: ChartSpec;
+  baseSpec: VegaSpec;
   query: string;
   title: string;
   description: string;
-  depiction: string | null;
+  depiction?: string | null;
+  [key: string]: any;
 }
 
 interface XmlData {
@@ -51,18 +30,31 @@ interface XmlData {
 }
 
 interface XsdData {
-  schema: string;
+  [key: string]: any;
+}
+
+interface ChartLd {
+  '@id': string | null;
+  '@type': string[];
+  [key: string]: any;
 }
 
 interface ChartResult {
-  uri: string;
-  downloadUrl?: string;
-  title?: string;
-  description?: string;
-  query?: string;
-  dataset?: string;
-  baseSpec?: string;
-  depiction?: string;
+  uri?: { value: string };
+  title?: { value: string };
+  description?: { value: string };
+  query?: { value: string };
+  dataset?: { value: string };
+  baseSpec?: { value: string };
+  depiction?: { value: string };
+  downloadUrl?: { value: string };
+  [key: string]: any;
+}
+
+interface SaveXmlResponse {
+  whyisId: string;
+  controlID: string;
+  status: string;
 }
 
 const defaultQuery = `
@@ -82,7 +74,7 @@ SELECT DISTINCT * WHERE {
 }
 `.trim();
 
-const defaultSpec: ChartSpec = {
+const defaultSpec: VegaSpec = {
   $schema: 'https://vega.github.io/schema/vega-lite/v4.json',
   mark: 'point',
   encoding: {
@@ -131,18 +123,18 @@ function generateChartId(isXml?: boolean): string {
   return isXml ? chartId : `${chartUriPrefix}${chartId}`;
 }
 
-function buildChartLd(chart: Chart): any {
-  const chartCopy = Object.assign({}, chart);
-  chartCopy.baseSpec = JSON.stringify(chartCopy.baseSpec) as any;
-  const chartLd: any = {
-    '@id': chartCopy.uri,
+function buildChartLd(chart: Chart): ChartLd {
+  chart = Object.assign({}, chart);
+  chart.baseSpec = JSON.stringify(chart.baseSpec) as any;
+  const chartLd: ChartLd = {
+    '@id': chart.uri,
     '@type': [chartType],
     [foafDepictionUri]: {
-      '@id': `${chartCopy.uri}_depiction`,
-      [hasContentUri]: chartCopy.depiction,
+      '@id': `${chart.uri}_depiction`,
+      [hasContentUri]: chart.depiction,
     },
   };
-  Object.entries(chartCopy)
+  Object.entries(chart)
     .filter(([field, value]) => chartFieldPredicates[field])
     .forEach(([field, value]) => {
       chartLd[chartFieldPredicates[field]] = [{ '@value': value }];
@@ -156,13 +148,13 @@ function matchValidXmlTitle(title: string): RegExpMatchArray | null {
 }
 
 function buildXmlLd(xmlData: XmlData, xmlId: string): string {
-  const nmRdfLodPrefix = `${new URL(window.location.href).host}`;
+  const nmRdfLodPrefix = `${new URL(window.location.href)?.host}`;
   const xmlTitle = xmlData.title;
   const b64XmlData = str2b64(xmlData.xmlString);
   const whyisId = xmlId;
   const tileArray = matchValidXmlTitle(xmlTitle);
-  const dataset = tileArray?.[1];
-  const dsSeq = tileArray?.[2];
+  const dataset = tileArray![1];
+  const dsSeq = tileArray![2];
 
   return `{
     '@context': {
@@ -208,8 +200,8 @@ function buildXmlLd(xmlData: XmlData, xmlId: string): string {
   }`;
 }
 
-function buildXsdLd(xsdData: string, xsdId: string, schemaName: string): any {
-  const nmRdfLodPrefix = `${new URL(window.location.href).host}`;
+function buildXsdLd(xsdData: string, xsdId: string, schemaName: string): Record<string, any> {
+  const nmRdfLodPrefix = `${new URL(window.location.href)?.host}`;
   const schemaText = xsdData.replace(/[\n]/g, '');
   const b64SchemaData = str2b64(schemaText);
   return {
@@ -256,14 +248,15 @@ function copyChart(sourceChart: Chart): Chart {
   // Shallow copy is OK for the current chart structure
   const newChart = Object.assign({}, sourceChart);
   newChart.uri = generateChartId();
-  delete (newChart as any).depiction;
+  delete newChart.depiction;
   return newChart;
 }
 
-async function deleteChart(chartUri: string): Promise<void> {
-  const nanopubs = await listNanopubs(chartUri);
-  if (!nanopubs || !nanopubs.length) return;
-  await Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
+async function deleteChart(chartUri: string): Promise<any> {
+  return listNanopubs(chartUri).then((nanopubs) => {
+    if (!nanopubs || !nanopubs.length) return;
+    return Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
+  });
 }
 
 async function saveChart(chart: Chart): Promise<any> {
@@ -277,73 +270,40 @@ async function saveChart(chart: Chart): Promise<any> {
   return await postNewNanopub(chartLd);
 }
 
-async function saveXml(
-  xml: XmlData,
-  token: string
-): Promise<{ whyisId: string; controlID: string; status: string }> {
-  let xmlId: string;
+// TODO: Remove after migration. This is the old way of submitting data into Whyis
+async function saveXml(xml: XmlData, token: string): Promise<SaveXmlResponse> {
   try {
-    const changeLogResponse = await fetch(`/api/curate/changelogs/${xml.id}?published=true`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (changeLogResponse.ok) {
-      const latestPublishedXml = await changeLogResponse.json();
-      const latestPublishedXmlUri = latestPublishedXml?.change?.[0];
-      if (latestPublishedXmlUri) {
-        await deleteResources(latestPublishedXmlUri);
-        xmlId = latestPublishedXmlUri;
-      } else {
-        xmlId = generateChartId(true);
-      }
-    } else {
-      throw new Error(`Failed to get latest published xml: ${changeLogResponse.statusText}`);
-    }
-    const xmlLd = buildXmlLd(xml, xmlId);
-    const nanopub = await postNewNanopub(xmlLd, true);
+    // const xmlLd = buildXmlLd(xml, xmlId);
+    // const nanopub = await postNewNanopub(xmlLd, true);
 
-    if (nanopub) {
-      const approvalPromise = fetch('/api/curate/approval', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ curationId: xml.id, isNew: xml.isNewCuration }),
-      });
-
-      const changeLogPromise = fetch(`/api/curate/changelogs/${xml.id}`, {
+    if (xml.id) {
+      const isNewCuration = xml.isNewCuration == true ? true : false;
+      const approvalPromise = fetch('/api/curate/publish', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          resourceId: xml.id,
-          change: [xmlId],
-          published: true,
+          xml: `${window.location.origin}/explorer/xmlvisualizer/${xml.id}?isNewCuration=${isNewCuration}`,
+          inference: 'rdfs',
+          resolveUrls: true,
         }),
       });
 
-      const [approvalResponse, changeLogResponse] = await Promise.all([
-        approvalPromise,
-        changeLogPromise,
-      ]);
+      // ar = approval response
+      const [ar] = await Promise.all([approvalPromise]);
 
-      // TODO: What happens if one fail & one passes?
-      if (!approvalResponse.ok) {
-        throw new Error(`Failed to approve a curation: ${approvalResponse.statusText}`);
+      if (!ar.ok) {
+        throw new Error(`Failed to approve a curation: ${ar.statusText}`);
       }
-      if (!changeLogResponse.ok) {
-        throw new Error(`Failed to post change log: ${changeLogResponse.statusText}`);
-      }
+
+      console.log('ar', ar);
     }
 
-    return { whyisId: xmlId, controlID: xml.title, status: 'ok' };
-  } catch (error) {
-    throw new Error(`Error in saveXml: ${(error as Error).message}`);
+    return { whyisId: '', controlID: xml.title, status: 'ok' };
+  } catch (error: any) {
+    throw new Error(`Error in saveXml: ${error.message}`);
   }
 }
 
@@ -417,19 +377,19 @@ async function loadChart(chartUri: string): Promise<Chart> {
 
   const valuesBlock = `\n  VALUES (?uri) { (<${chartUrl}>) }`;
   const singleChartQuery = chartQuery.replace(/(where\s*{)/i, '$1' + valuesBlock);
-  const response = await querySparql(singleChartQuery);
-  const rows = response.results?.bindings || [];
+  const { results } = await querySparql(singleChartQuery);
+  const rows = results?.bindings;
 
-  if (rows.length < 1) {
+  if (!rows || rows.length < 1) {
     throw new Error(`No data found for the specified chart URI: ${chartUrl}`);
   }
 
   return await readChartSparqlRow(rows[0]);
 }
 
-async function readChartSparqlRow(chartResult: any): Promise<Chart> {
+async function readChartSparqlRow(chartResult: ChartResult): Promise<Chart> {
   const chart: any = {};
-  Object.entries(chartResult).forEach(([field, value]: [string, any]) => {
+  Object.entries(chartResult).forEach(([field, value]) => {
     chart[field] = value.value;
   });
   if (chart.baseSpec) {
@@ -441,7 +401,7 @@ async function readChartSparqlRow(chartResult: any): Promise<Chart> {
   return chart;
 }
 
-function buildSparqlSpec(baseSpec: ChartSpec, sparqlResults: any): ChartSpec | null {
+function buildSparqlSpec(baseSpec: VegaSpec | null, sparqlResults: any): VegaSpec | null {
   if (!baseSpec) {
     return null;
   }
@@ -450,7 +410,7 @@ function buildSparqlSpec(baseSpec: ChartSpec, sparqlResults: any): ChartSpec | n
   return spec;
 }
 
-function buildCsvSpec(baseSpec: ChartSpec, csvResults: any): ChartSpec | null {
+function buildCsvSpec(baseSpec: VegaSpec | null, csvResults: any[]): VegaSpec | null {
   if (!baseSpec) {
     return null;
   }
@@ -459,7 +419,7 @@ function buildCsvSpec(baseSpec: ChartSpec, csvResults: any): ChartSpec | null {
   return spec;
 }
 
-function toChartId(chartUri: string): string | undefined {
+function toChartId(chartUri: string | null | undefined): string | undefined {
   if (chartUri && !chartUri.startsWith(chartUriPrefix)) {
     // We should not get in this if logic. The issue with chart URI using a different
     // lodPrefix is now fixed (e.g. http://nanomine.org/viz/chartId instead of http://purl.org/chart/view/chartId)
@@ -500,5 +460,3 @@ export {
   shareableChartUri,
   chartUriPrefix,
 };
-
-export type { Chart, ChartSpec, XmlData, XsdData, ChartResult };

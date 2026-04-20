@@ -1,17 +1,21 @@
 <template>
   <div class="xmlLoader">
     <Dialog :minWidth="40" :active="dialogBoxActive">
-      <template #title>Success</template>
+      <template #title>{{ dialogTitle }}</template>
       <template #content>
         <div class="u_display-flex u_centralize_items u--margin-posmd">
           <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
             >check_circle</md-icon
           >
-          <span>XML has been approved and successfully ingested into the knowledge graph</span>
+          <span>{{ dialogMessage }}</span>
         </div>
       </template>
       <template #actions>
-        <md-button @click.prevent="closeDialogBox">Ok</md-button>
+        <md-button v-if="dialogMode === 'edit'" @click="confirmEditCuration">Submit</md-button>
+        <md-button v-else-if="approvalInProgress" @click="approval({ xmlViewer })"
+          >Submit</md-button
+        >
+        <md-button @click.prevent="closeDialogBox">Close</md-button>
       </template>
     </Dialog>
     <section
@@ -41,15 +45,25 @@
               {{ optionalChaining(() => xmlViewer.title) }}
             </h2>
             <div class="u_centralize_text viz-u-mgbottom-sm">
-              <a href="#" class="viz-tab__button" :class="[!loadYaml && 'active u--color-primary']"
+              <a
+                href="#"
+                class="viz-tab__button"
+                :class="[isActiveXmlView && 'active u--color-primary']"
                 >XML View</a
               >
               ||
               <a
                 class="viz-tab__button"
-                :class="[loadYaml && 'active u--color-primary']"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
                 @click.prevent="openYaml"
                 >YAML View</a
+              >
+              ||
+              <a
+                class="viz-tab__button"
+                :class="[!isActiveXmlView && 'active u--color-primary']"
+                @click.prevent="openHistory"
+                >History</a
               >
             </div>
           </div>
@@ -82,7 +96,7 @@
               xmlViewer.curationState === 'Editing'
             "
           >
-            Request Approval
+            {{ !isAdmin ? 'Request Approval' : 'Submit' }}
           </md-button>
         </md-content>
       </div>
@@ -103,7 +117,7 @@
         </md-button>
 
         <md-button
-          @click.prevent="editCuration(xmlViewer.id, xmlViewer.isNewCuration)"
+          @click.prevent="openEditDialog"
           v-if="isAuth && (xmlViewer.user === userId || isAdmin)"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -112,7 +126,7 @@
         </md-button>
 
         <md-button
-          @click="approveCuration({ xmlViewer, reloadXml })"
+          @click="approveCuration"
           v-if="isAuth && isAdmin && xmlViewer.curationState !== 'Completed'"
           class="md-fab md-dense md-primary btn--primary"
         >
@@ -129,6 +143,16 @@
       <h2 class="visualize_header-h1 u_margin-top-med u_centralize_text">
         This XML no longer exists or has been moved
       </h2>
+      <div class="u_margin-top-small u_centralize_text">
+        <a @click.prevent="navBack" class="btn btn--primary btn--noradius u_color_white">Go Back</a>
+      </div>
+      <!-- <button
+        type="submit"
+        class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text u--margin-pos"
+        @click.prevent="submitSearch"
+      >
+        Search Xml
+      </button> -->
     </section>
   </div>
 </template>
@@ -168,6 +192,8 @@ const codeBlock = ref<HTMLElement>();
 const showSidepanel = ref(false);
 const type = ref('xml');
 const xmlViewer = ref<any>({});
+const approvalInProgress = ref(false);
+const dialogMode = ref<'approval' | 'edit'>('approval');
 
 // Apollo query
 const { result, loading, refetch } = useQuery(
@@ -199,6 +225,20 @@ const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const userId = computed(() => store.getters['auth/userId']);
 const dialogBoxActive = computed(() => store.getters.dialogBox);
+const dialogTitle = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Edit ${xmlViewer.value.id} Sample`;
+  }
+  return approvalInProgress.value ? 'Confirmation' : 'Success';
+});
+const dialogMessage = computed(() => {
+  if (dialogMode.value === 'edit') {
+    return `Please confirm your action to edit ${xmlViewer.value.id} xml sample`;
+  }
+  return approvalInProgress.value
+    ? 'Please confirm your submission'
+    : 'XML has been approved and successfully ingested into the knowledge graph';
+});
 
 const isSmallTabView = computed(() => {
   return screen.width < 760;
@@ -208,13 +248,12 @@ const isLargeTabView = computed(() => {
   return screen.width < 1024;
 });
 
-const loadYaml = computed(() => {
-  return !!route.query.isYaml;
-});
+const isActiveXmlView = computed(() => !route.query.isYaml && !route.query.isHistory);
 
 // Methods
 const closeDialogBox = () => {
   store.commit('setDialogBox');
+  dialogMode.value = 'approval';
 };
 
 const navBack = () => {
@@ -230,8 +269,15 @@ const editCuration = (id: string, isNew: boolean) => {
   }
 };
 
-const reloadXml = async () => {
-  return await refetch();
+const openEditDialog = () => {
+  dialogMode.value = 'edit';
+  approvalInProgress.value = false;
+  store.commit('setDialogBox', true, { root: true });
+};
+
+const confirmEditCuration = () => {
+  closeDialogBox();
+  editCuration(xmlViewer.value.id, xmlViewer.value.isNewCuration);
 };
 
 const openYaml = () => {
@@ -247,18 +293,41 @@ const openYaml = () => {
   return router.push({ name: 'YamlVisualizer', params, query });
 };
 
-const approveCuration = async ({
-  xmlViewer,
-  reloadXml,
-}: {
-  xmlViewer: any;
-  reloadXml: () => void;
-}) => {
-  await store.dispatch('explorer/curation/approveCuration', { xmlViewer, reloadXml });
+const openHistory = () => {
+  const query = {
+    title: xmlViewer.value.title?.split('.')[0],
+    isNewCuration: route.query?.isNewCuration,
+    isHistory: true,
+  } as any;
+  const params = {
+    id: route.params.id,
+  };
+
+  return router.push({ name: 'SampleHistory', params, query });
+};
+
+const approval = async ({ xmlViewer }: { xmlViewer: any }) => {
+  closeDialogBox();
+  approvalInProgress.value = false;
+  await store.dispatch('explorer/curation/approveCuration', { xml: xmlViewer });
+};
+
+// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
+const approveCuration = async () => {
+  // xmlViewer.curationState !== 'Completed'
+  // TODO: Remove the above logic in line 126 and use here. Check if is completed and show a dialog box to double check with the user if they really want to re-submit
+  // If the above logic if is true, use a different icon and tooltip label
+  dialogMode.value = 'approval';
+  approvalInProgress.value = true;
+  store.commit('setDialogBox', true, { root: true });
 };
 
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {
-  await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
+  if (isAdmin.value) {
+    dialogMode.value = 'approval';
+    approvalInProgress.value = true;
+    store.commit('setDialogBox', true, { root: true });
+  } else return await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
 };
 
 // Lifecycle

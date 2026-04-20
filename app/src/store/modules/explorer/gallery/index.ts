@@ -1,18 +1,7 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-
-export interface GalleryState {
-  // allItems: any[] | null;
-  items: any[] | null;
-  pageSize: number;
-  page: number;
-  queryTimeMillis: number;
-  total: number;
-  totalFavorites: number;
-  missingCharts: any[];
-  favoriteChartItems: any[];
-}
+import { GalleryState } from './types';
 
 export default {
   namespaced: true,
@@ -26,10 +15,10 @@ export default {
       total: 0,
       totalFavorites: 0,
       missingCharts: [],
-      favoriteChartItems: [],
+      favoriteChartItems: []
     };
   },
   mutations,
   actions,
-  getters,
+  getters
 };

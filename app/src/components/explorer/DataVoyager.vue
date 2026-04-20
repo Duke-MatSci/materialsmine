@@ -1,18 +1,12 @@
 <template>
   <div>
-    <div :id="containerId" ref="containerEl"></div>
+    <div :id="containerId" :ref="containerId"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { CreateVoyager } from 'datavoyager';
-
-const voyagerConf = {
-  showDataSourceSelector: false,
-  hideHeader: true,
-  hideFooter: true,
-} as const;
 
 interface Props {
   data?: Record<string, any> | null;
@@ -21,52 +15,47 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   data: null,
-  spec: null,
+  spec: null
 });
 
-const emit = defineEmits<{ (e: 'update:spec', value: any): void }>();
+const emit = defineEmits<{
+  (e: 'update:spec', spec: any): void;
+}>();
 
-const containerId = 'voyager-embed';
-const containerEl = ref<HTMLElement | null>(null);
+const voyagerConf = {
+  showDataSourceSelector: false,
+  hideHeader: true,
+  hideFooter: true
+};
+
+const containerId = ref<string>('voyager-embed');
 const voyagerInstance = ref<any>(null);
 
-const updateSpec = () => {
-  if (voyagerInstance.value?.getSpec) {
+const updateSpec = (): void => {
+  if (voyagerInstance.value) {
     emit('update:spec', voyagerInstance.value.getSpec());
   }
 };
 
-const createVoyager = () => {
-  const container = containerEl.value as HTMLElement | null;
-  if (!container) return;
-
-  // Create a fresh instance (parity with legacy behavior)
-  voyagerInstance.value = CreateVoyager(container, voyagerConf, undefined);
-  if (voyagerInstance.value?.onStateChange) {
+const createVoyager = (): void => {
+  const container = document.getElementById(containerId.value);
+  if (container) {
+    voyagerInstance.value = CreateVoyager(container, voyagerConf, undefined);
     voyagerInstance.value.onStateChange(() => updateSpec());
-  }
-  if (props.data && voyagerInstance.value?.updateData) {
-    voyagerInstance.value.updateData(props.data);
+    if (props.data) {
+      voyagerInstance.value.updateData(props.data);
+    }
   }
 };
 
-// Ensure container is in DOM before instantiating
-onMounted(async () => {
-  await nextTick();
+watch(() => props.data, () => {
   createVoyager();
 });
 
-// Recreate when data changes (matches legacy watch behavior)
-watch(
-  () => props.data,
-  async () => {
-    await nextTick();
-    createVoyager();
-  }
-);
-
-// Expose name for devtools clarity
-defineOptions({ name: 'DataVoyager' });
+onMounted(() => {
+  createVoyager();
+});
 </script>
 
-<style scoped src="datavoyager/build/style.css"></style>
+<style css src='datavoyager/build/style.css'>
+</style>

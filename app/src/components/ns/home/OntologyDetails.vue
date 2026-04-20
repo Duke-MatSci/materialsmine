@@ -26,25 +26,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from 'vue'
+import { useStore } from 'vuex'
 
-// Component name for debugging
-defineOptions({
-  name: 'OntologyDetails',
-});
+const store = useStore()
 
-const store = useStore();
-
-// Computed properties
-const details = computed(() => store.getters['ns/getDetails']);
-const loading = computed(() => store.getters['ns/getLoading']);
+const details = computed(() => store.getters['ns/getDetails'])
+const loading = computed(() => store.getters['ns/getLoading'])
 
 const objLength = computed(() => {
-  return Object.keys(details.value).length;
-});
+  return Object.keys(details.value).length
+})
 
 const sortedKeys = computed(() => {
-  return Object.keys(details.value).sort();
-});
+  return Object.keys(details.value).sort()
+})
 </script>

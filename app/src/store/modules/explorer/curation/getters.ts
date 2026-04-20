@@ -1,28 +1,31 @@
-import { CurationState } from './index';
+import { CurationState } from './types';
 
 export default {
-  datasetId(state: CurationState) {
+  datasetId(state: CurationState): string | null {
     return state.datasetId;
   },
-  getFieldNameSelected(state: CurationState) {
+  getFieldNameSelected(state: CurationState): string {
     return state.fieldNameSelected;
   },
-  getNewChartExist(state: CurationState) {
+  getNewChartExist(state: CurationState): boolean {
     return state.newChartExist;
   },
-  getDoiData(state: CurationState) {
+  getDoiData(state: CurationState): any {
     return state.doiData;
   },
-  getOrcidData(state: CurationState) {
+  getOrcidData(state: CurationState): any {
     return state.orcidData;
   },
-  getRorData(state: CurationState) {
+  getRorData(state: CurationState): any[] {
     return state.rorData;
   },
-  getXmlBulkResponse(state: CurationState) {
+  getXmlBulkResponse(state: CurationState): any {
     return state.xmlBulkResponse;
   },
-  getCurationFormData(state: CurationState) {
+  getCurationFormData(state: CurationState): Record<string, any> {
     return state.curationFormData;
+  },
+  getChangeLogs(state: CurationState): any[] {
+    return state.changeLogs;
   },
 };

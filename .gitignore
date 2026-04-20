@@ -53,6 +53,7 @@ mockDB/es/
 
 #Min.io
 mockDB/minio/
+mockDB/data/
 
 #Whyis && Managed Services
 **/**/__pycache__/
@@ -73,3 +74,5 @@ __pycache__/
 sparqlqueries.html
 
 trash
+
+resfulservice/schemas/

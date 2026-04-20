@@ -1,15 +1,22 @@
 <template>
   <article class="u_width--max">
     <header aria-label="dynamfit-header" class="explorer_page_header">
-      <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">DynamFit</h1>
+      <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">
+        DynamFit
+      </h1>
     </header>
     <main
       aria-label="dynamfit-main"
       class="u--margin-posmd md-layout md-alignment-top-space-around u_relative"
     >
-      <div class="viz-u-postion__abs header_404_nav" style="top: -3rem; right: 2rem; z-index: 1000">
-        <a class="btn-text" href="#" @click="toggleDialogBox">Toggle C1/C2</a>
-      </div>
+      <!-- <div
+        class="viz-u-postion__abs header_404_nav"
+        style="top: -3rem; right: 2rem; z-index: 1000"
+      >
+        <a class="btn-text" href="#" v-on:click="toggleDialogBox"
+          >Toggle C1/C2</a
+        >
+      </div> -->
       <!-- aside  -->
       <aside
         aria-label="dynamfit-setting"
@@ -25,11 +32,14 @@
         <ChartVisualizer />
       </section>
     </main>
-    <Dialog :active="dialogBoxActive" :minWidth="40">
+    <dialogbox :active="dialogBoxActive" :minWidth="40">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
         <div>
-          <select class="form__input form__input--adjust utility-padding-sm" v-model="selectedProp">
+          <select
+            class="form__input form__input--adjust utility-padding-sm"
+            v-model="selectedProp"
+          >
             <option value="select">Select Domain</option>
             <option value="c1">C1</option>
             <option value="c2">C2</option>
@@ -48,7 +58,7 @@
           Close
         </button>
       </template> -->
-    </Dialog>
+    </dialogbox>
   </article>
 </template>
 
@@ -64,20 +74,23 @@ defineOptions({
   name: 'DynamFit',
 });
 
+// Components
+const dialogbox = Dialog;
+
 // Store
 const store = useStore();
 
-// Reactive data
+// Reactive state
 const selectedProp = ref('select');
 const dialog = ref({
   title: 'Select',
 });
 
 // Computed properties
-const dialogBoxActive = computed(() => store.getters['dialogBox']);
+const dialogBoxActive = computed(() => store.getters.dialogBox);
 
 // Methods
-const toggleDialogBox = () => {
+const toggleDialogBox = (): void => {
   store.commit('setDialogBox');
 };
 </script>

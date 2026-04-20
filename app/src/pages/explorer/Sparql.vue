@@ -6,5 +6,5 @@
 </template>
 
 <script lang="ts" setup>
-import yasgui from '@/components/explorer/Yasgui.vue';
+import yasgui from '@/components/explorer/yasgui.vue';
 </script>

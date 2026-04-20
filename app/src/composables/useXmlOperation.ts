@@ -1,147 +1,255 @@
-import { ref, computed, watch } from 'vue';
-import { useStore } from 'vuex';
+import { ref, computed, Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useExplorerQueryParams } from './useExplorerQueryParams';
+import { useStore } from 'vuex';
 import { useQuery } from '@vue/apollo-composable';
 import { XML_FINDER } from '@/modules/gql/xml-gql';
+import { useExplorerQueryParams } from './useExplorerQueryParams';
 
 const NULL_INIT = null;
 
-/**
- * XML Operation Composable
- * Manages XML curation operations and GraphQL queries
- */
-export function useXmlOperation() {
-  const store = useStore();
+interface XmlData {
+  id: string;
+  title: string;
+  status: string;
+  isNewCuration: boolean;
+  sequence: string;
+  user: string;
+}
+
+interface XmlFinderResult {
+  totalItems: number;
+  pageSize: number;
+  pageNumber: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  xmlData: XmlData[];
+}
+
+interface XmlOperationOptions {
+  autoFetch?: boolean;
+}
+
+interface XmlOperationReturn {
+  // Data
+  xmlFinder: Ref<XmlFinderResult | null>;
+  xmlData: Ref<XmlData[]>;
+  error: Ref<string | null>;
+  loading: Ref<boolean>;
+  dialogBoxActive: Ref<boolean>;
+  dialogBoxAction: Ref<(() => Promise<void>) | null>;
+
+  // From useExplorerQueryParams
+  pageNumber: Ref<number>;
+  pageSize: Ref<number>;
+  searchWord: Ref<string>;
+  searchEnabled: Ref<boolean>;
+
+  // Computed
+  isAuth: Ref<boolean>;
+  isAdmin: Ref<boolean>;
+  userId: Ref<string | null>;
+  filterParams: Ref<Record<string, any>>;
+
+  // Methods
+  refetchXmlFinder: () => Promise<void>;
+  isOwner: (xmlUser: string) => boolean;
+  editCuration: (id: string, isNew: boolean) => void;
+  confirmAction: () => void;
+  openDialogBox: (id: string, isNew: boolean) => void;
+  closeDialogBox: () => void;
+  deleteXmlCuration: (id: string, isNew?: boolean | null) => Promise<void>;
+  updateFilterParams: () => Record<string, any> | false;
+  toggleDialogBox: () => void;
+
+  // Query params methods
+  loadParams: (query: Record<string, any>) => Promise<void>;
+  updateParamsAndCall: (pushNewRoute?: boolean) => Promise<void>;
+  loadPrevNextImage: (event: number) => Promise<void>;
+  updateSearchWord: (searchWord: string) => void;
+  resetSearch: (type: string) => Promise<void>;
+  checkPageSize: (pageSize: number) => void;
+}
+
+export function useXmlOperation(options: XmlOperationOptions = {}): XmlOperationReturn {
+  const { autoFetch = true } = options;
+
   const route = useRoute();
   const router = useRouter();
+  const store = useStore();
 
-  // Import explorer query params functionality
-  const explorerQueryParams = useExplorerQueryParams();
+  // State
+  const error = ref<string | null>(null);
+  const dialogBoxAction = ref<(() => Promise<void>) | null>(NULL_INIT);
+  const filterParams = ref<Record<string, any>>({});
 
-  // Reactive data
-  const xmlFinder = ref([]);
-  const pageNumber = ref(1);
-  const pageSize = ref(20);
-  const filterParams = ref({});
-  const error = ref(null);
-  const dialogBoxAction = ref<(() => Promise<void>) | null>(null);
-
-  // Computed properties
+  // Computed from store
   const isAuth = computed(() => store.getters['auth/isAuthenticated']);
   const isAdmin = computed(() => store.getters['auth/isAdmin']);
   const userId = computed(() => store.getters['auth/userId']);
-  const dialogBoxActive = computed(() => store.getters['misc/dialogBox']);
+  const dialogBoxActive = computed(() => store.getters.dialogBox);
 
-  // Apollo queries
-  const { result: xmlFinderResult, refetch: refetchXmlFinder } = useQuery(
+  // Update filter params based on auth
+  const updateFilterParams = (): Record<string, any> | false => {
+    if (isAuth.value) {
+      filterParams.value = { user: userId.value };
+      return filterParams.value;
+    }
+    return false;
+  };
+
+  // Initialize filter params
+  updateFilterParams();
+
+  // Local search method for explorerQueryParams
+  const localSearchMethod = async (): Promise<void> => {
+    await refetchXmlFinder();
+  };
+
+  // Use explorerQueryParams composable
+  const {
+    pageNumber,
+    pageSize,
+    searchWord,
+    searchEnabled,
+    loadParams,
+    updateParamsAndCall,
+    loadPrevNextImage,
+    updateSearchWord,
+    resetSearch,
+    checkPageSize
+  } = useExplorerQueryParams({
+    localSearchMethod,
+    hasPageSize: true
+  });
+
+  // Apollo GraphQL Query
+  const { result, loading, refetch, onError } = useQuery(
     XML_FINDER,
-    computed(() => getXmlFinderVariables()),
+    () => {
+      updateFilterParams();
+      return {
+        input: {
+          pageNumber: pageNumber.value,
+          pageSize: parseInt(String(pageSize.value)),
+          filter: {
+            param: route.query?.q,
+            ...filterParams.value,
+            // User Portal Page: Show curation based on status depending on route
+            ...(route.name === 'ApprovedCuration'
+              ? { status: 'Approved' }
+              : { status: 'Not_Approved' })
+          }
+        }
+      };
+    },
     {
-      fetchPolicy: 'cache-and-network',
-      errorPolicy: 'ignore',
+      fetchPolicy: 'cache-first',
+      enabled: autoFetch
     }
   );
 
+  // Extract xmlFinder data
+  const xmlFinder = computed(() => result.value?.xmlFinder || null);
+  const xmlData = computed(() => xmlFinder.value?.xmlData || []);
+
+  // Handle GraphQL errors
+  onError((errorObj) => {
+    if (errorObj.networkError) {
+      const err = errorObj.networkError as any;
+      error.value = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
+    } else if (errorObj.graphQLErrors) {
+      error.value = errorObj.graphQLErrors.map(e => e.message).join(', ');
+    }
+
+    store.commit('setSnackbar', {
+      message: error.value,
+      duration: 10000
+    });
+  });
+
+  // When result loads successfully, clear errors
+  const xmlFinderWithErrorHandling = computed(() => {
+    if (!loading.value && result.value) {
+      error.value = NULL_INIT;
+    }
+    return xmlFinder.value;
+  });
+
   // Methods
-  const toggleDialogBox = () => {
-    store.commit('misc/setDialogBox');
+  const refetchXmlFinder = async (): Promise<void> => {
+    if (refetch) {
+      await refetch();
+    }
   };
 
-  const isOwner = (xmlUser: string) => {
+  const isOwner = (xmlUser: string): boolean => {
     return isAuth.value && xmlUser === userId.value;
   };
 
-  const editCuration = (id: string, isNew: boolean) => {
+  const editCuration = (id: string, isNew: boolean): void => {
     router.push({
       name: 'EditXmlCuration',
-      query: { isNew: isNew.toString(), id: id },
+      query: { isNew: String(isNew), id }
     });
   };
 
-  const confirmAction = () => {
+  const toggleDialogBox = (): void => {
+    store.commit('setDialogBox');
+  };
+
+  const confirmAction = (): void => {
     if (dialogBoxAction.value) {
-      // TODO (@tee): Check if xml is not ingested into KG before calling `dialogBoxAction()` to delete
-      // dialogBoxAction();
+      // TODO (@tee): Check if xml is not ingested into KG before calling deleteXmlCuration
+      // dialogBoxAction.value();
       closeDialogBox();
     }
   };
 
-  const openDialogBox = (id: string, isNew: boolean) => {
+  const openDialogBox = (id: string, isNew: boolean): void => {
     if (!id) return;
     dialogBoxAction.value = () => deleteXmlCuration(id, isNew);
     toggleDialogBox();
   };
 
-  const closeDialogBox = () => {
+  const closeDialogBox = (): void => {
     dialogBoxAction.value = NULL_INIT;
     toggleDialogBox();
   };
 
-  const deleteXmlCuration = async (id: string, isNew: boolean | null = null) => {
+  const deleteXmlCuration = async (id: string, isNew: boolean | null = NULL_INIT): Promise<void> => {
     if (id && isNew !== null) {
       await store.dispatch('explorer/curation/deleteCuration', {
         xmlId: id,
-        isNew: isNew,
+        isNew
       });
-      // Refetch XML data after deletion
       await refetchXmlFinder();
     }
   };
 
-  const updateFilterParams = () => {
-    return isAuth.value && (filterParams.value = { user: userId.value });
-  };
-
-  // Apollo query variables (for use with Vue Apollo)
-  const getXmlFinderVariables = () => {
-    updateFilterParams();
-    return {
-      input: {
-        pageNumber: pageNumber.value,
-        pageSize: parseInt(pageSize.value.toString()),
-        filter: {
-          param: route.query?.q,
-          ...filterParams.value,
-          // User Portal Page: Show curation based on status depending on a route a user entered.
-          ...(route.name === 'ApprovedCuration'
-            ? { status: 'Approved' }
-            : { status: 'Not_Approved' }),
-        },
-      },
-    };
-  };
-
-  // Error handling for GraphQL queries
-  const handleGraphQLError = (error: any) => {
-    if (error.networkError) {
-      const err = error.networkError;
-      const errorMessage = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
-      error.value = errorMessage;
-    } else if (error.graphQLErrors) {
-      error.value = error.graphQLErrors;
-    }
-    store.commit('misc/setSnackbar', {
-      message: error.value,
-      duration: 10000,
-    });
-  };
-
   return {
-    // Reactive data
-    xmlFinder: xmlFinderResult,
-    filterParams,
+    // Data
+    xmlFinder: xmlFinderWithErrorHandling,
+    xmlData,
     error,
+    loading,
+    dialogBoxActive,
     dialogBoxAction,
+
+    // From useExplorerQueryParams
+    pageNumber,
+    pageSize,
+    searchWord,
+    searchEnabled,
 
     // Computed
     isAuth,
     isAdmin,
     userId,
-    dialogBoxActive,
+    filterParams,
 
     // Methods
-    toggleDialogBox,
+    refetchXmlFinder,
     isOwner,
     editCuration,
     confirmAction,
@@ -149,10 +257,14 @@ export function useXmlOperation() {
     closeDialogBox,
     deleteXmlCuration,
     updateFilterParams,
-    getXmlFinderVariables,
-    handleGraphQLError,
+    toggleDialogBox,
 
-    // Explorer query params
-    ...explorerQueryParams,
+    // Query params methods
+    loadParams,
+    updateParamsAndCall,
+    loadPrevNextImage,
+    updateSearchWord,
+    resetSearch,
+    checkPageSize
   };
 }

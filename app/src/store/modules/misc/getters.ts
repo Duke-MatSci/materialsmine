@@ -1,17 +1,19 @@
+import { MiscState, AppHeaderInfo, Snackbar, RouteInfo } from './mutations';
+
 export default {
-  appHeaderInfo(state: any): any {
+  appHeaderInfo(state: MiscState): AppHeaderInfo {
     return state.appHeaderInfo;
   },
-  countDownDate(state: any): number {
+  countDownDate(state: MiscState): number {
     return state.countDownDate;
   },
-  dialogBox(state: any): boolean {
+  dialogBox(state: MiscState): boolean {
     return state.dialogBox;
   },
-  getSnackbar(state: any): any {
+  getSnackbar(state: MiscState): Snackbar {
     return state.snackbar;
   },
-  getRouteInfo(state: any): any {
+  getRouteInfo(state: MiscState): RouteInfo {
     return state.routeInfo;
   },
 };

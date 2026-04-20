@@ -7,6 +7,7 @@ import metamineNU from './modules/metamineNU/index';
 import contact from './modules/contact/index';
 import portal from './modules/portal/index';
 import ns from './modules/ns/index';
+import vega from './modules/vega/index';
 
 export default createStore({
   modules: {
@@ -18,5 +19,6 @@ export default createStore({
     contact,
     portal,
     ns,
+    vega,
   },
 });

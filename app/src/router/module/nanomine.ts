@@ -1,6 +1,6 @@
 import { RouteRecordRaw } from 'vue-router';
 import HomeNM from '@/pages/nanomine/Home/Home.vue';
-// import { toolRoutes, toolSetRoutes } from './tools';
+import { toolRoutes, toolSetRoutes } from './tools';
 
 const nanomineRoutes: Array<RouteRecordRaw> = [
   {
@@ -9,13 +9,13 @@ const nanomineRoutes: Array<RouteRecordRaw> = [
     component: HomeNM,
     meta: { requiresAuth: false },
   },
-  // {
-  //   path: 'xml-uploader',
-  //   name: 'XmlUploader',
-  //   component: () =>
-  //     import(/* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'),
-  //   meta: { requiresAuth: false },
-  // },
+  {
+    path: 'xml-uploader',
+    name: 'XmlUploader',
+    component: () =>
+      import(/* webpackChunkName: "xmlupload" */ '@/pages/nanomine/xmlUploader/XmlUploader.vue'),
+    meta: { requiresAuth: false },
+  },
   // {
   //   name: 'ToolSets',
   //   path: 'tools',
@@ -23,13 +23,13 @@ const nanomineRoutes: Array<RouteRecordRaw> = [
   //     import(/* webpackChunkName: "toolsetbase" */ '@/pages/nanomine/toolSets/ToolSetBase.vue'),
   //   children: [...toolSetRoutes],
   // },
-  // {
-  //   name: 'Tools',
-  //   path: 'tools',
-  //   component: () =>
-  //     import(/* webpackChunkName: "toolsetbase" */ '@/pages/nanomine/tools/ToolBase.vue'),
-  //   children: [...toolRoutes],
-  // },
+  {
+    name: 'Tools',
+    path: 'tools',
+    component: () =>
+      import(/* webpackChunkName: "toolsetbase" */ '@/pages/nanomine/tools/ToolBase.vue'),
+    children: [...toolRoutes],
+  },
   {
     path: 'about',
     name: 'About',

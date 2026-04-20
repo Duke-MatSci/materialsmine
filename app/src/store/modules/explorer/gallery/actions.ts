@@ -1,17 +1,11 @@
-import { ActionTree } from 'vuex';
-import { GalleryState } from './index';
 import router from '@/router';
+import { ActionContext } from 'vuex';
+import { GalleryState } from './types';
 
-interface LoadItemsPayload {
-  page?: number;
-}
+type Context = ActionContext<GalleryState, any>;
 
-interface BookmarkChartPayload {
-  chart: any;
-}
-
-const actions: ActionTree<GalleryState, any> = {
-  async loadItems({ commit, getters, dispatch }, { page = 1 }: LoadItemsPayload = {}) {
+export default {
+  async loadItems({ commit, getters, dispatch }: Context, { page = 1 } = {}): Promise<void> {
     if (getters.totalPages > 0) {
       if (page < 1 || (page > 1 && page > getters.totalPages)) {
         throw new Error(
@@ -48,7 +42,10 @@ const actions: ActionTree<GalleryState, any> = {
     return dispatch('fetchFavoriteCharts');
   },
 
-  async fetchFavoriteCharts({ commit, rootGetters, dispatch }, root = true) {
+  async fetchFavoriteCharts(
+    { commit, rootGetters, dispatch }: Context,
+    root = true
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const name = rootGetters['auth/displayName'];
     const isAdmin = rootGetters['auth/isAdmin'];
@@ -84,7 +81,7 @@ const actions: ActionTree<GalleryState, any> = {
         'setSnackbar',
         {
           message: `Hi ${name}, you have ${faveLength} favourite charts`,
-          ...(!faveLength && { duration: 15000 }),
+          ...(!faveLength && { duration: 1500 }),
           ...(!!faveLength && {
             callToActionText: 'click to view',
             action: () => router.push(`/portal${favoriteUrl}`),
@@ -105,7 +102,10 @@ const actions: ActionTree<GalleryState, any> = {
     }
   },
 
-  async bookmarkChart({ commit, rootGetters, dispatch }, { chart }: BookmarkChartPayload) {
+  async bookmarkChart(
+    { commit, rootGetters, dispatch }: Context,
+    { chart }: { chart: any }
+  ): Promise<void> {
     const token = rootGetters['auth/token'];
     const storeCharts = rootGetters['explorer/gallery/favoriteChartItems'];
     let totalData: any[] = [];
@@ -139,5 +139,3 @@ const actions: ActionTree<GalleryState, any> = {
     }
   },
 };
-
-export default actions;

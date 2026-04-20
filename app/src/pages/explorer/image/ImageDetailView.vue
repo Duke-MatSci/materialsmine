@@ -1,7 +1,7 @@
 <template>
   <div class="image-detail-page">
     <div class="section_loader" v-if="loading">
-      <Spinner :loading="loading" text="Loading Images" />
+      <spinner :loading="loading" text="Loading Images" />
     </div>
     <div class="utility-roverflow" v-else-if="getSingleImages && getSingleImages.images">
       <div class="utility-content__result teams_partner">
@@ -120,7 +120,10 @@
         >
           <div class="search_box_form howto_item-header">
             <md-button
-              :class="{ 'md-icon-button': true, 'u--layout-hide': hideAssetNavLeft }"
+              :class="{
+                'md-icon-button': true,
+                'u--layout-hide': hideAssetNavLeft,
+              }"
               @click.prevent="reduceAsset('prev')"
             >
               <md-tooltip> Show Left </md-tooltip>
@@ -152,7 +155,9 @@
                         }}</strong>
                       </span>
                       <span class="md-body-1">
-                        {{ reduceDescription(image.metaData.title || 'polymer nanocomposite', 8) }}
+                        {{
+                          reduceDescription(image.metaData.title || 'polymer nanocomposite', 8)
+                        }}
                       </span>
                     </md-card-header>
                   </md-card-area>
@@ -211,8 +216,9 @@
           <div class="u--margin-pos">
             <span class="u--font-emph-xl u--color-black"> Dimension: </span>
             <span class="u--font-emph-xl u--color-grey-sec">
-              width: {{ currentImage.dimension.width || 'N/A' }} | height:
-              {{ currentImage.dimension.height || 'N/A' }}
+              width: {{ currentImage.dimension.width || 'N/A' }} | height: {{
+                currentImage.dimension.height || 'N/A'
+              }}
             </span>
           </div>
           <div class="u--margin-pos">
@@ -246,7 +252,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
 import { SINGLE_IMAGE_QUERY } from '@/modules/gql/image-gql';
@@ -275,8 +281,7 @@ const { reduceDescription } = useReduce();
 // Reactive data
 const baseUrl = ref(window.location.origin);
 const shareToolTip = ref('Share Image');
-const error = ref({ status: false, message: null });
-const getSingleImages = ref<any>({});
+const error = ref({ status: false, message: null as string | null });
 const tabbed_content = ref({
   ri_active: true,
   kw_active: true,
@@ -289,9 +294,9 @@ const assetItems = ref<any[]>([]);
 const pushedAssetItem = ref<any[]>([]);
 const screen = ref(0);
 
-// Computed properties
+// Computed
 const hideAssetNavLeft = computed(() => {
-  // This logic would need to be implemented based on the original component's behavior
+  // TODO: Implement logic for hiding left nav
   return false;
 });
 
@@ -301,16 +306,17 @@ const { result, loading } = useQuery(
   () => ({
     input: { id: route.params.id },
   }),
-  () => ({
+  {
     fetchPolicy: 'cache-and-network',
-  })
+  }
 );
 
-// Watch for query result changes
-watch(result, (newResult) => {
-  if (newResult?.getSingleImages) {
-    getSingleImages.value = newResult.getSingleImages;
-    setCurrentImage(newResult.getSingleImages);
+const getSingleImages = computed(() => result.value?.getSingleImages || {});
+
+// Watch for query results
+watch(getSingleImages, (newValues) => {
+  if (newValues) {
+    setCurrentImage(newValues);
   }
 });
 
@@ -328,12 +334,12 @@ const navBack = () => {
 
 const nav_to_tab = (e: Event) => {
   const target = e.target as HTMLElement;
+  Object.keys(tabbed_content.value).forEach((el) => {
+    tabbed_content.value[el as keyof typeof tabbed_content.value] = true;
+  });
   const name = target.getAttribute('name');
-  if (name) {
-    Object.keys(tabbed_content.value).forEach((el) => {
-      (tabbed_content.value as any)[el] = true;
-    });
-    (tabbed_content.value as any)[name] = false;
+  if (name && name in tabbed_content.value) {
+    tabbed_content.value[name as keyof typeof tabbed_content.value] = false;
   }
 };
 
@@ -362,8 +368,8 @@ const handleShare = (imgUrl: string) => {
   }, 2000);
 };
 
-const reduceAsset = (direction: string) => {
-  // This method would need to be implemented based on the original component's behavior
-  console.log('reduceAsset called with direction:', direction);
+const reduceAsset = (direction: 'prev' | 'next') => {
+  // TODO: Implement asset navigation logic
+  console.log('Navigate asset:', direction);
 };
 </script>

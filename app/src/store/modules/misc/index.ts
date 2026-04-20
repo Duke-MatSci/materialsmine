@@ -1,31 +1,31 @@
-import mutations from './mutations';
+import mutations, { MiscState } from './mutations';
 import actions from './actions';
 import getters from './getters';
 
 export default {
   // namespaced: true,
-  state(): any {
+  state(): MiscState {
     return {
       appHeaderInfo: {
         icon: '',
         pagetype: 'home',
         name: 'MaterialsMine',
         subtitle:
-          'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)',
+          'An open source repository for nanocomposite data (NanoMine), and mechanical metamaterials data (MetaMine)'
       },
       dialogBox: false,
       snackbar: {
         message: '',
         action: null,
         duration: false,
-        callToActionText: 'Retry',
+        callToActionText: 'Retry'
       },
       countDownDate: new Date('March 22, 2023 13:30:00').getTime(),
       uploadedFile: null,
-      routeInfo: {},
+      routeInfo: {}
     };
   },
   mutations,
   actions,
-  getters,
+  getters
 };

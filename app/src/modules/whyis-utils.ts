@@ -16,15 +16,52 @@ function makeNanopubId(): string {
   return Math.random().toString(36).substr(2, 10);
 }
 
-async function listNanopubs(uri: string): Promise<any[]> {
+interface Nanopub {
+  np: string;
+  [key: string]: any;
+}
+
+async function listNanopubs(uri: string): Promise<Nanopub[]> {
   const response = await querySparql('', {
     whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}`,
   });
   return Object.values(response);
 }
 
-const postNewNanopub = async (pubData: any, isXSD?: boolean, context?: any): Promise<any> => {
-  let nanopub: any;
+interface NanopubData {
+  '@context'?: Record<string, any>;
+  '@id': string;
+  '@graph': {
+    '@id': string;
+    '@type': string;
+    'np:hasAssertion': {
+      '@id': string;
+      '@type': string;
+      '@graph': any[];
+    };
+    'np:hasProvenance': {
+      '@id': string;
+      '@type': string;
+      '@graph': {
+        '@id': string;
+      };
+    };
+    'np:hasPublicationInfo': {
+      '@id': string;
+      '@type': string;
+      '@graph': {
+        '@id': string;
+      };
+    };
+  };
+}
+
+const postNewNanopub = async (
+  pubData: any,
+  isXSD?: boolean,
+  context?: Record<string, any>
+): Promise<NanopubData> => {
+  let nanopub: NanopubData;
   if (!isXSD) {
     nanopub = getNanopubSkeleton();
     if (context) {
@@ -46,7 +83,7 @@ const postNewNanopub = async (pubData: any, isXSD?: boolean, context?: any): Pro
   return nanopub;
 };
 
-function getNanopubSkeleton(): any {
+function getNanopubSkeleton(): NanopubData {
   // doot
   const npId = `${lodPrefix}/pub/${makeNanopubId()}`; // make sure this change doesn't break other things
   return {
@@ -82,4 +119,4 @@ function getNanopubSkeleton(): any {
   };
 }
 
-export { deleteNanopub, postNewNanopub, listNanopubs, lodPrefix };
+export { deleteNanopub, makeNanopubId, postNewNanopub, listNanopubs, lodPrefix };

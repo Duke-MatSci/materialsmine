@@ -25,14 +25,25 @@
             </h2>
             <div class="u_centralize_text viz-u-mgbottom-sm">
               <a
-                @click.prevent="openYaml(true)"
+                @click.prevent="openXml"
                 class="viz-tab__button"
-                :class="[!loadYaml && 'active u--color-primary']"
+                :class="[!isActiveYamlView && 'active u--color-primary']"
                 >XML View</a
               >
               ||
-              <a class="viz-tab__button" :class="[loadYaml && 'active u--color-primary']" href="#"
+              <a
+                class="viz-tab__button"
+                :class="[isActiveYamlView && 'active u--color-primary']"
+                href="#"
                 >YAML View</a
+              >
+              ||
+              <a
+                @click.prevent="openHistory"
+                class="viz-tab__button"
+                :class="[!isActiveYamlView && 'active u--color-primary']"
+                href="#"
+                >History</a
               >
             </div>
           </div>
@@ -133,7 +144,6 @@ const xmlViewer = ref<any>({});
 // Computed properties
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
-const userId = computed(() => store.getters['auth/userId']);
 
 const isSmallTabView = computed(() => {
   return screen.width < 760;
@@ -143,8 +153,8 @@ const isLargeTabView = computed(() => {
   return screen.width < 1024;
 });
 
-const loadYaml = computed(() => {
-  return !!route.query.isYaml;
+const isActiveYamlView = computed(() => {
+  return !!route.query.isYaml && !route.query.isHistory;
 });
 
 const xmlId = computed(() => {
@@ -152,7 +162,9 @@ const xmlId = computed(() => {
 });
 
 const controlID = computed(() => {
-  return route.query?.title?.split('.')[0];
+  const title = route.query?.title;
+  const titleStr = Array.isArray(title) ? title[0] : title ?? '';
+  return String(titleStr).split('.')[0];
 });
 
 // Methods
@@ -183,7 +195,7 @@ const openAsYaml = async () => {
   }
 };
 
-const openYaml = () => {
+const openXml = () => {
   const query = {
     isNewCuration: route.query?.isNewCuration,
   };
@@ -192,6 +204,19 @@ const openYaml = () => {
   };
 
   return router.push({ name: 'XmlVisualizer', params, query });
+};
+
+const openHistory = () => {
+  const query = {
+    title: controlID.value,
+    isNewCuration: route.query?.isNewCuration,
+    isHistory: true,
+  } as any;
+  const params = {
+    id: route.params.id,
+  };
+
+  return router.push({ name: 'SampleHistory', params, query });
 };
 
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {

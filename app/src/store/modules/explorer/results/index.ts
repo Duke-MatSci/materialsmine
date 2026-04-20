@@ -1,25 +1,7 @@
 import mutations from './mutations';
 import actions from './actions';
 import getters from './getters';
-
-export interface ResultsState {
-  // TODO:
-  articles: any[] | null;
-  samples: any[] | null;
-  images: any[] | null;
-  charts: any[] | null;
-  materials: any[] | null;
-  suggestions: string[];
-  total: number;
-  isLoading: boolean;
-  totalGrouping: {
-    getArticles: number;
-    getSamples: number;
-    getImages: number;
-    getCharts: number;
-    getMaterials: number;
-  };
-}
+import { ResultsState } from './types';
 
 export default {
   namespaced: true,
@@ -39,11 +21,11 @@ export default {
         getSamples: 0,
         getImages: 0,
         getCharts: 0,
-        getMaterials: 0,
-      },
+        getMaterials: 0
+      }
     };
   },
   mutations,
   actions,
-  getters,
+  getters
 };

@@ -1,31 +1,28 @@
-import { MutationTree } from 'vuex';
-import { GalleryState } from './index';
+import { GalleryState } from './types';
 
-const mutations: MutationTree<GalleryState> = {
-  setAllItems(state: GalleryState, allItems: any[]) {
-    // state.allItems = allItems;
+export default {
+  setAllItems(state: GalleryState, allItems: any[]): void {
+    (state as any).allItems = allItems;
   },
-  setItems(state: GalleryState, items: any[]) {
+  setItems(state: GalleryState, items: any[]): void {
     state.items = items;
   },
-  setPage(state: GalleryState, page: number) {
+  setPage(state: GalleryState, page: number): void {
     state.page = page;
   },
-  setTotal(state: GalleryState, total: number) {
+  setTotal(state: GalleryState, total: number): void {
     state.total = total;
   },
-  setQueryTimeMillis(state: GalleryState, queryTimeMillis: number) {
+  setQueryTimeMillis(state: GalleryState, queryTimeMillis: number): void {
     state.queryTimeMillis = queryTimeMillis;
   },
-  setfavoriteChartItems(state: GalleryState, items: any[]) {
+  setfavoriteChartItems(state: GalleryState, items: any[]): void {
     state.favoriteChartItems = items;
   },
-  setMissingCharts(state: GalleryState, payload: any[]) {
+  setMissingCharts(state: GalleryState, payload: any[]): void {
     state.missingCharts = payload;
   },
-  setTotalFavorites(state: GalleryState, totalFavorites: number) {
+  setTotalFavorites(state: GalleryState, totalFavorites: number): void {
     state.totalFavorites = totalFavorites;
-  },
+  }
 };
-
-export default mutations;

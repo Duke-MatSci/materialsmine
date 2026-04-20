@@ -42,11 +42,11 @@
       </div>
 
       <div v-if="selectedFilters.includes('isNew')" class="u--margin-rightsm">
-        <md-chip
+        <md-chips
           class="u--bg u_margin-bottom-small"
           @md-delete="removeChip('isNew')"
           md-deletable=""
-          >is New: {{ isNew }}</md-chip
+          >is New: {{ isNew }}</md-chips
         >
       </div>
 
@@ -194,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onActivated, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
@@ -224,21 +224,41 @@ defineOptions({
   name: 'XmlGallery',
 });
 
+// Constants
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_NUMBER = 1;
+
 // Store and router
 const store = useStore();
 const router = useRouter();
 const route = useRoute();
 
-// Composables
-const { updateParamsAndCall, resetSearch, loadParams } = useExplorerQueryParams();
+// TypeScript interfaces
+interface XmlData {
+  id: string;
+  title?: string;
+  user: string;
+  isNewCuration: boolean;
+}
+
+interface XmlFinderResponse {
+  xmlData: XmlData[];
+  totalItems: number;
+  totalPages: number;
+  pageNumber: number;
+  pageSize: number;
+}
 
 // Reactive data
-const baseUrl = ref(window.location.origin);
-const renderText = ref('Showing all XML');
-const xmlFinder = ref<any>([]);
-const pageNumber = ref(1);
-const pageSize = ref(20);
-const searchEnabled = ref(false);
+const xmlFinder = ref<XmlFinderResponse>({
+  xmlData: [],
+  totalItems: 0,
+  totalPages: 0,
+  pageNumber: DEFAULT_PAGE_NUMBER,
+  pageSize: DEFAULT_PAGE_SIZE,
+});
+const pageNumber = ref(DEFAULT_PAGE_NUMBER);
+const pageSize = ref(DEFAULT_PAGE_SIZE);
 const searchWord = ref('');
 const selectedFilters = ref<string[]>([]);
 const apprStatus = ref<string | null>(null);
@@ -249,22 +269,16 @@ const isNew = ref<string | null>(null);
 const filterParams = ref<any>({});
 const error = ref<string | null>(null);
 const dialogBoxAction = ref<(() => void) | null>(null);
+const paramsReady = ref(false);
 
 // Computed properties
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const userId = computed(() => store.getters['auth/userId']);
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
-
+const searchEnabled = computed(() => !!searchWord.value || !!filtersActive.value);
 const isEmpty = computed(() => {
-  if (
-    xmlFinder.value.length === 0 ||
-    !Object.keys(xmlFinder.value).length ||
-    xmlFinder.value.totalItems === 0
-  ) {
-    return true;
-  }
-  return false;
+  return !xmlFinder.value.xmlData?.length || xmlFinder.value.totalItems === 0;
 });
 
 const filtersActive = computed(() => {
@@ -280,18 +294,20 @@ const { result, loading, refetch } = useQuery(
     input: {
       pageNumber: pageNumber.value,
       pageSize: parseInt(pageSize.value.toString()),
-      filter: { param: route.query?.q, ...filterParams.value },
+      filter: { ...filterParams.value },
+      // filter: { param: route.query?.q, ...filterParams.value },
     },
   }),
   () => ({
-    fetchPolicy: 'cache-first',
+    fetchPolicy: 'cache-and-network',
+    enabled: paramsReady.value,
   })
 );
 
 // Watch for query results
-watch(result, (newResult) => {
-  if (newResult?.xmlFinder) {
-    xmlFinder.value = newResult.xmlFinder;
+watchEffect(() => {
+  if (result.value?.xmlFinder) {
+    xmlFinder.value = result.value.xmlFinder;
     if (!loading.value) {
       error.value = null;
     }
@@ -329,21 +345,48 @@ const isAuthorized = (xmlUser: string) => {
   return isAuth.value && (xmlUser === userId.value || isAdmin.value);
 };
 
-const localSearchMethod = async () => {
+const localSearchMethod = async (): Promise<void> => {
   // TODO @aswallace: Update to user query params instead
   const filterParamsObj = {
     isNewCuration: selectedFilters.value.includes('isNew') ? isNew.value === 'Yes' : null,
     status: apprStatus.value,
     curationState: curationState.value,
-    user: user.value,
-    author: author.value,
+    param: author.value || user.value || searchWord.value,
   };
   for (const key in filterParamsObj) {
     if ((filterParamsObj as any)[key] === null) delete (filterParamsObj as any)[key];
   }
   filterParams.value = filterParamsObj;
-  await refetch();
 };
+
+// Setup useExplorerQueryParams with localSearchMethod
+const {
+  pageNumber: composablePageNumber,
+  pageSize: composablePageSize,
+  searchWord: composablesearchWord,
+  loadPrevNextImage,
+  updateParamsAndCall,
+  updateSearchWord,
+  resetSearch,
+  loadParams,
+} = useExplorerQueryParams({
+  localSearchMethod,
+  hasPageSize: true,
+  onSearchWordChange: (word) => {
+    searchWord.value = word;
+  },
+  onPageNumberChange: (page) => {
+    pageNumber.value = page;
+  },
+  onPageSizeChange: (size) => {
+    pageSize.value = size;
+  },
+});
+
+// Sync search word to keep input reactive with url state
+watch(composablesearchWord, (newVal) => {
+  searchWord.value = newVal;
+});
 
 const submitSearch = async () => {
   if (!searchWord.value && !filtersActive.value) {
@@ -353,9 +396,10 @@ const submitSearch = async () => {
     });
   }
   error.value = null;
-  searchEnabled.value = !!searchWord.value || !!filtersActive.value;
-  pageNumber.value = 1;
-  return await updateParamsAndCall(true);
+  composablePageNumber.value = 1;
+  composablePageSize.value = pageSize.value;
+  updateSearchWord(searchWord.value);
+  await updateParamsAndCall(true);
 };
 
 const customReset = async (type: string) => {
@@ -384,15 +428,52 @@ const selectFilters = (e: Event) => {
   if (!selectedFilters.value.includes(arrValue[0])) {
     selectedFilters.value.push(arrValue[0]);
   }
-  (this as any)[arrValue[0]] = arrValue[1] && arrValue[1];
+
+  // Assign to the correct ref based on filter name
+  switch (arrValue[0]) {
+    case 'apprStatus':
+      apprStatus.value = arrValue[1] || null;
+      break;
+    case 'curationState':
+      curationState.value = arrValue[1] || null;
+      break;
+    case 'user':
+      user.value = arrValue[1] || null;
+      break;
+    case 'author':
+      author.value = arrValue[1] || null;
+      break;
+    case 'isNew':
+      isNew.value = arrValue[1] || null;
+      break;
+  }
+
   target.value = '';
 };
 
 const removeChip = (str: string) => {
   const index = selectedFilters.value.indexOf(str);
   if (index < 0) return;
-  selectedFilters.value.splice(index, 1); // 2nd parameter means remove one item only
-  (this as any)[str] = null;
+  selectedFilters.value.splice(index, 1);
+
+  // Reset the correct ref based on filter name
+  switch (str) {
+    case 'apprStatus':
+      apprStatus.value = null;
+      break;
+    case 'curationState':
+      curationState.value = null;
+      break;
+    case 'user':
+      user.value = null;
+      break;
+    case 'author':
+      author.value = null;
+      break;
+    case 'isNew':
+      isNew.value = null;
+      break;
+  }
 };
 
 const deleteXmlCuration = async (id: string, isNew: boolean | null = null) => {
@@ -415,30 +496,23 @@ const duplicateCuration = async (id: string, isNew: boolean) => {
   }
 };
 
-const loadPrevNextImage = (event: number) => {
-  pageNumber.value = event;
-  localSearchMethod();
-};
-
-// Error handling
-const handleError = (error: any) => {
-  if (error.networkError) {
-    const err = error.networkError;
-    error.value = `Network Error: ${err?.response?.status} ${err?.response?.statusText}`;
-  } else if (error.graphQLErrors) {
-    error.value = error.graphQLErrors;
-  }
-  store.commit('setSnackbar', {
-    message: error.value,
-    duration: 10000,
-  });
+// Initialize component state based on route params
+const initializeGallery = () => {
+  return loadParams(route.query);
 };
 
 // Lifecycle
 onMounted(() => {
-  const query = route.query;
-  if (query?.page || query?.size || query?.q) {
-    return loadParams(route.query);
-  }
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
+});
+
+// Refetch data when component is activated (e.g., when navigating back from detail view)
+onActivated(() => {
+  paramsReady.value = false;
+  initializeGallery().finally(() => {
+    paramsReady.value = true;
+  });
 });
 </script>

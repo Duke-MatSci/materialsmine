@@ -2,7 +2,7 @@
   <div>
     <div>
       <CurateNavBar active="Edit" :navRoutes="navRoutes" />
-      <div v-if="!verifyUser.isAuth">
+      <div v-if="!verifyUser?.isAuth">
         <LoginReq />
       </div>
       <div v-else>
@@ -11,15 +11,15 @@
             <h2 class="visualize_header-h1">Select a dataset to edit</h2>
             <div class="md-layout md-alignment-bottom-left" style="margin-bottom: 2rem">
               <div class="md-layout-item" style="align-items: end">
-                <span><b>User:</b> {{ verifyUser.user.username }}</span>
+                <span><b>User:</b> {{ verifyUser?.user?.username }}</span>
               </div>
             </div>
           </div>
           <div class="section_loader u--margin-toplg" v-if="loading">
-            <Spinner :loading="loading" text="Loading Datasets" />
+            <spinner :loading="loading" text="Loading Datasets" />
           </div>
 
-          <div v-else-if="getUserDataset.datasets">
+          <div v-else-if="getUserDataset?.datasets">
             <div class="u_content__result u_margin-top-small">
               <span class="u_color utility-navfont" id="css-adjust-navfont">
                 <span v-if="getUserDataset.totalItems === 0"> No results </span>
@@ -45,10 +45,7 @@
                 <md-card-header>
                   <md-card-header-text>
                     <router-link
-                      :to="{
-                        name: 'DatasetSingleView',
-                        params: { id: dataset.datasetGroupId },
-                      }"
+                      :to="{ name: 'DatasetSingleView', params: { id: dataset.datasetGroupId } }"
                     >
                       <div class="md-title">
                         <a>Dataset ID: {{ dataset.datasetGroupId }}</a>
@@ -87,14 +84,11 @@
                   </md-menu>
                 </md-card-header>
                 <md-card-content class="grid grid_col-3 curate-grid-icons">
-                  <div v-for="(fileset, index) in dataset.filesetInfo" :key="index">
+                  <div v-for="(fileset, filesetIndex) in dataset.filesetInfo" :key="filesetIndex">
                     <router-link
                       :to="{
                         name: 'FilesetSingleView',
-                        params: {
-                          id: dataset.datasetGroupId,
-                          filesetId: fileset.filesetName,
-                        },
+                        params: { id: dataset.datasetGroupId, filesetId: fileset.filesetName },
                       }"
                     >
                       <md-button>
@@ -106,7 +100,7 @@
                 </md-card-content>
               </md-card>
             </div>
-            <Pagination
+            <pagination
               :cpage="getUserDataset.pageNumber || getUserDataset.pageNumber"
               :tpages="getUserDataset.totalPages || getUserDataset.totalPages"
               @go-to-page="loadPrevNextImage($event)"
@@ -127,29 +121,57 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
-import { VERIFY_AUTH_QUERY, USER_DATASETS_QUERY } from '@/modules/gql/dataset-gql';
 import Spinner from '@/components/Spinner.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 import Pagination from '@/components/explorer/Pagination.vue';
 import LoginRequired from '@/components/LoginRequired.vue';
+import { VERIFY_AUTH_QUERY, USER_DATASETS_QUERY } from '@/modules/gql/dataset-gql';
 
 // Component name for debugging
 defineOptions({
   name: 'UserDatasets',
 });
 
-// Router
-const router = useRouter();
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface User {
+  username: string;
+}
+
+interface VerifyUserData {
+  isAuth: boolean;
+  user: User;
+}
+
+interface Fileset {
+  filesetName: string;
+}
+
+interface Dataset {
+  datasetGroupId: string;
+  doi?: string;
+  author?: string[];
+  datasetComment?: string;
+  filesetInfo: Fileset[];
+}
+
+interface UserDatasetData {
+  datasets: Dataset[];
+  pageNumber: number;
+  totalPages: number;
+  totalItems: number;
+}
 
 // Reactive data
-const radio = ref(false);
-const verifyUser = ref<any>({});
-const getUserDataset = ref<any>([]);
 const pageNumber = ref(1);
-const pageSize = ref(12);
-const navRoutes = ref([
+const pageSize = ref<string | number>('12');
+
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
@@ -161,51 +183,44 @@ const navRoutes = ref([
 ]);
 
 // GraphQL queries
-const { result: verifyUserResult, loading: verifyUserLoading } = useQuery(
+const { result: verifyUserResult } = useQuery<{ verifyUser: VerifyUserData }>(
   VERIFY_AUTH_QUERY,
-  () => ({}),
-  () => ({
+  {},
+  {
     fetchPolicy: 'cache-and-network',
-  })
+  }
 );
 
 const {
-  result: getUserDatasetResult,
-  loading: getUserDatasetLoading,
+  result: userDatasetResult,
+  loading,
   refetch: refetchUserDataset,
-} = useQuery(
+} = useQuery<{ getUserDataset: UserDatasetData }>(
   USER_DATASETS_QUERY,
   () => ({
-    input: { pageNumber: pageNumber.value, pageSize: parseInt(pageSize.value.toString()) },
+    input: {
+      pageNumber: pageNumber.value,
+      pageSize: parseInt(pageSize.value as string),
+    },
   }),
-  () => ({
+  {
     fetchPolicy: 'cache-and-network',
-  })
+  }
 );
 
-// Watch for query results
-watch(verifyUserResult, (newResult) => {
-  if (newResult?.verifyUser) {
-    verifyUser.value = newResult.verifyUser;
-  }
-});
-
-watch(getUserDatasetResult, (newResult) => {
-  if (newResult?.getUserDataset) {
-    getUserDataset.value = newResult.getUserDataset;
-  }
-});
-
-// Computed properties
-const loading = computed(() => verifyUserLoading.value || getUserDatasetLoading.value);
+// Computed
+const verifyUser = computed(() => verifyUserResult.value?.verifyUser);
+const getUserDataset = computed(() => userDatasetResult.value?.getUserDataset);
 
 // Methods
-const navBack = () => {
-  router.back();
-};
-
 const loadPrevNextImage = (event: number) => {
   pageNumber.value = event;
   refetchUserDataset();
 };
+
+// Watch for pageSize changes to refetch data
+watch(pageSize, () => {
+  pageNumber.value = 1; // Reset to first page when page size changes
+  refetchUserDataset();
+});
 </script>

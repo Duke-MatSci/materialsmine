@@ -48,23 +48,46 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
-import JsonCSV from 'vue-json-csv';
 
+// Component name for debugging
 defineOptions({
   name: 'ChartVisualizer',
 });
 
+// Type definitions
+interface DynamfitData {
+  'complex-chart'?: unknown;
+  'complex-tand-chart'?: unknown;
+  'complex-temp-chart'?: unknown;
+  'temp-tand-chart'?: unknown;
+  'relaxation-chart'?: unknown;
+  'relaxation-spectrum-chart'?: unknown;
+  mytable?: Record<string, unknown>[];
+  'upload-data'?: Record<string, unknown>[];
+}
+
+// Components
+// const downloadCsv = JsonCSV;
+
+// Store
 const store = useStore();
 
-const dynamfitData = computed(() => store.getters['explorer/getDynamfitData']);
-const dynamfitDomain = computed(() => store.getters['explorer/getDynamfitDomain']);
+// Computed properties
+const dynamfitData = computed<DynamfitData>(() => store.getters['explorer/getDynamfitData']);
 
-const prony = computed(() => store.state.explorer.dynamfitData?.mytable ?? []);
-const upload = computed(() => store.state.explorer.dynamfitData?.['upload-data'] ?? []);
+const dynamfitDomain = computed<string>(() => store.getters['explorer/getDynamfitDomain']);
+
+const prony = computed<Record<string, unknown>[]>(
+  () => store.state.explorer.dynamfitData?.mytable ?? []
+);
+
+const upload = computed<Record<string, unknown>[]>(
+  () => store.state.explorer.dynamfitData?.['upload-data'] ?? []
+);
 
 const isFrequencyData = computed(() => {
   return dynamfitDomain.value === 'frequency' && dynamfitData.value['complex-chart'];
@@ -74,14 +97,13 @@ const isTempData = computed(() => {
   return dynamfitDomain.value === 'temperature' && dynamfitData.value['complex-temp-chart'];
 });
 
-// Vue 3 watch dynamfitData and console log it both old and new values
-watch(
-  dynamfitData,
-  (newVal, oldVal) => {
-    console.log('New Value:', newVal);
-    console.log('Old Value:', oldVal);
-  },
-  { deep: true, immediate: true }
-);
+// Watchers
+// watch(
+//   dynamfitData,
+//   (newVal, oldVal) => {
+//     console.log('New Value:', newVal);
+//     console.log('Old Value:', oldVal);
+//   },
+//   { deep: true, immediate: true }
+// );
 </script>
-

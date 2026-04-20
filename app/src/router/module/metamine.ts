@@ -1,9 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
 import HomeMM from '@/pages/metamine/Home.vue';
-// import PairwisePlot from '@/pages/metamine/visualizationNU/PairwisePlot.vue';
-// import HistogramPlot from '@/pages/metamine/visualizationNU/HistogramPlot.vue';
-// import ScatterPlot from '@/pages/metamine/visualizationNU/ScatterPlot.vue';
-// import UmapPlot from '@/pages/metamine/visualizationNU/UmapPlot.vue';
 
 const metamineRoutes: Array<RouteRecordRaw> = [
   {
@@ -31,47 +27,47 @@ const metamineRoutes: Array<RouteRecordRaw> = [
       requiresAuth: false,
     },
   },
-  // {
-  //   path: 'metamaterial_visualization',
-  //   name: 'MetamaterialPlot',
-  //   component: () =>
-  //     import(/* webpackChunkName: "about" */ '@/pages/metamine/visualization/MetamaterialPlot.vue'),
-  //   meta: {
-  //     requiresAuth: false,
-  //   },
-  // },
-  // {
-  //   path: 'metamaterial_visualization_nu',
-  //   name: 'PairwisePlot',
-  //   component: PairwisePlot,
-  //   meta: {
-  //     requiresAuth: false,
-  //   },
-  // },
-  // {
-  //   path: 'metamaterial_visualization_nu/hist',
-  //   name: 'Histogram',
-  //   component: HistogramPlot,
-  //   meta: {
-  //     requiresAuth: false,
-  //   },
-  // },
-  // {
-  //   path: 'metamaterial_visualization_nu/scatter',
-  //   name: 'Scatter',
-  //   component: ScatterPlot,
-  //   meta: {
-  //     requiresAuth: false,
-  //   },
-  // },
-  // {
-  //   path: 'metamaterial_visualization_nu/umap',
-  //   name: 'Umap',
-  //   component: UmapPlot,
-  //   meta: {
-  //     requiresAuth: false,
-  //   },
-  // },
+  {
+    path: 'metamaterial_visualization',
+    name: 'MetamaterialPlot',
+    component: () =>
+      import(/* webpackChunkName: "about" */ '@/pages/metamine/visualization/MetamaterialPlot.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    path: 'metamaterial_visualization_nu',
+    name: 'PairwisePlot',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/PairwisePlot.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    path: 'metamaterial_visualization_nu/hist',
+    name: 'Histogram',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/HistogramPlot.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    path: 'metamaterial_visualization_nu/scatter',
+    name: 'Scatter',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/ScatterPlot.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
+  {
+    path: 'metamaterial_visualization_nu/umap',
+    name: 'Umap',
+    component: () => import(/* webpackChunkName: "about" */ '@/pages/metamine/visualizationNU/UmapPlot.vue'),
+    meta: {
+      requiresAuth: false,
+    },
+  },
 ];
 
 export default metamineRoutes;

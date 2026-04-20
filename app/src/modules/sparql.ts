@@ -4,24 +4,20 @@ import store from '@/store';
 
 const SPARQL_ENDPOINT = '/api/knowledge/sparql';
 
-interface SparqlOptions {
+interface QuerySparqlOptions {
   endpoint?: string;
   headers?: Record<string, string>;
   body?: any;
   method?: string;
   whyisPath?: string;
-}
-
-interface SparqlResult {
-  value: string;
-  type: string;
-  datatype?: string;
+  isNew?: boolean;
 }
 
 interface SparqlResponse {
   results?: {
-    bindings: Record<string, SparqlResult>[];
+    bindings?: Array<Record<string, any>>;
   };
+  [key: string]: any;
 }
 
 // Todo (ticket xx): Remove endpoint from function arg and update refactor code everywhere
@@ -33,11 +29,12 @@ async function querySparql(
     body = null,
     method = 'GET',
     whyisPath = undefined,
-  }: SparqlOptions = {}
+    isNew = false,
+  }: QuerySparqlOptions = {}
 ): Promise<SparqlResponse> {
   let urlEncodedQuery = `${endpoint}?output=json`;
   if (query) {
-    urlEncodedQuery = `${endpoint}?query=${encodeURIComponent(query)}&output=json`;
+    urlEncodedQuery = `${endpoint}?isNew=${isNew}&query=${encodeURIComponent(query)}&output=json`;
   }
 
   // Get user Token
@@ -61,20 +58,16 @@ async function querySparql(
 
   const res = await fetch(urlEncodedQuery, requestOptions);
 
-  if (res.status !== 200) {
-    throw new Error(res.statusText || 'Server error, please try again');
-  }
+  if (res.status !== 200) throw new Error((res as any).message || 'Server error, please try again');
 
   const results = await res.json();
   return results;
 }
 
-function parseSparql(response: SparqlResponse): Record<string, any>[] {
-  const queryResults: Record<string, any>[] = [];
+function parseSparql(response: SparqlResponse): Array<Record<string, any>> {
+  const queryResults: Array<Record<string, any>> = [];
 
-  if (!response || !response.results || !response.results.bindings) {
-    return queryResults;
-  }
+  if (!response || !response.results || !response.results.bindings) return queryResults;
 
   for (const row of response.results.bindings) {
     const rowData: Record<string, any> = {};
@@ -93,9 +86,8 @@ function parseSparql(response: SparqlResponse): Record<string, any>[] {
 async function queryAndParseSparql(
   query: string,
   endpoint: string = SPARQL_ENDPOINT
-): Promise<Record<string, any>[]> {
+): Promise<Array<Record<string, any>>> {
   return parseSparql(await querySparql(query, { endpoint }));
 }
 
-export { querySparql, parseSparql, queryAndParseSparql };
-export type { SparqlOptions, SparqlResponse, SparqlResult };
+export { querySparql, parseSparql, queryAndParseSparql }; // queryAndParseSparql as default ?

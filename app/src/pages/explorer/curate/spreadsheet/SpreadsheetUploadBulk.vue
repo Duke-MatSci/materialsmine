@@ -11,7 +11,7 @@
             Curation Result(s)
           </h2>
           <div v-if="loading">
-            <Spinner text="Upload in progress" />
+            <spinner text="Upload in progress" />
           </div>
           <div v-else-if="!!xmlBulkResponse">
             <div
@@ -33,7 +33,7 @@
                     :key="index + '_err'"
                   >
                     <div class="u--font-emph-l" md-elevation="0">
-                      <a :href="optionalChaining(() => file.filename)" download>
+                      <a :href="file.filename" download>
                         <span class="md-body-2 u--color-black">{{
                           file.filename.split('/').pop()
                         }}</span>
@@ -45,17 +45,15 @@
                     <div v-if="typeof file.errors === 'object'">
                       <li
                         class="md-list-item md-inset"
-                        v-for="(error, index) in file.errors"
-                        :key="`${file}_${index}`"
+                        v-for="(error, errorIndex) in file.errors"
+                        :key="`${file}_${errorIndex}`"
                       >
                         <div class="md-list-item-link md-list-item-container md-button-clean">
                           <div
                             class="md-list-item-content md-list-item-content-reduce u--layout-flex-justify-fs md-ripple"
                           >
-                            <div class="md-body-1 u--color-grey-sec">- {{ index }}: &nbsp;</div>
-                            <div class="md-body-1 u--color-error">
-                              {{ error }}
-                            </div>
+                            <div class="md-body-1 u--color-grey-sec">- {{ errorIndex }}: &nbsp;</div>
+                            <div class="md-body-1 u--color-error">{{ error }}</div>
                           </div>
                         </div>
                       </li>
@@ -82,7 +80,10 @@
                   Successful Curations
                 </h2>
               </div>
-              <div v-if="!Object.keys(xmlBulkResponse.bulkCurations).length" class="u--margin-pos">
+              <div
+                v-if="!Object.keys(xmlBulkResponse.bulkCurations).length"
+                class="u--margin-pos"
+              >
                 No results received.
               </div>
 
@@ -102,7 +103,9 @@
                     <md-card-media-cover md-solid>
                       <div class="utility-align--right">
                         <div>
-                          <p class="u--color-primary"><strong>Status: </strong>{{ xml.status }}</p>
+                          <p class="u--color-primary">
+                            <strong>Status: </strong>{{ xml.status }}
+                          </p>
                         </div>
                         <div>
                           <p class="u--color-primary">
@@ -120,7 +123,7 @@
                       <md-card-area class="u_gridbg">
                         <md-card-header class="u_show_hide">
                           <span class="md-subheading">
-                            <strong>{{ optionalChaining(() => xml.sampleID) }}</strong>
+                            <strong>{{ xml.sampleID }}</strong>
                           </span>
                           <span class="md-body-1">Click to view</span>
                         </md-card-header>
@@ -193,7 +196,7 @@
                     :file="file"
                     tag="div"
                     classname="md-layout-item"
-                    @remove="(file: any) => removeSpreadsheet(file)"
+                    @remove="removeSpreadsheet"
                   />
                 </md-list>
               </div>
@@ -260,9 +263,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useStore } from 'vuex';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useStore } from 'vuex';
 import { useQuery } from '@vue/apollo-composable';
 import DropZone from '@/components/curate/FileDrop.vue';
 import FilePreview from '@/components/curate/FilePreview.vue';
@@ -270,7 +273,6 @@ import LoginRequired from '@/components/LoginRequired.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
 import Spinner from '@/components/Spinner.vue';
 import useFileList from '@/modules/file-list';
-import { useOptionalChaining } from '@/composables/useOptionalChaining';
 import { VERIFY_AUTH_QUERY, USER_DATASET_IDS_QUERY } from '@/modules/gql/dataset-gql';
 
 // Component name for debugging
@@ -278,26 +280,50 @@ defineOptions({
   name: 'SpreadsheetBulk',
 });
 
-// Store and router
-const store = useStore();
+// Router and store
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
 
-// Composables
-const { optionalChaining } = useOptionalChaining();
-
-// Create separate file objects for spreadsheet vs supplementary files
+// Create file list composable
 const spreadsheetFn = useFileList();
+
+// Interfaces
+interface NavRoute {
+  label: string;
+  path: string;
+}
+
+interface SelectedDataset {
+  label: string;
+  id: string | null;
+}
+
+interface BulkError {
+  filename: string;
+  errors: Record<string, string> | string;
+}
+
+interface BulkCuration {
+  sampleID: string;
+  status: string;
+  isApproved: boolean;
+}
+
+interface XmlBulkResponse {
+  bulkErrors?: Record<string, BulkError>;
+  bulkCurations?: Record<string, BulkCuration>;
+}
 
 // Reactive data
 const auth = ref(true);
-const verifyUser = ref<any>(null);
+const verifyUser = ref(null);
 const invalidFile = ref<string | null>(null);
 const loading = ref(true);
 const submitted = ref(false);
-const selectedDataset = ref({
+const selectedDataset = ref<SelectedDataset>({
   label: '',
-  id: null as string | null,
+  id: null,
 });
 const spreadsheetFiles = spreadsheetFn.files;
 const active = ref('first');
@@ -305,7 +331,7 @@ const first = ref(false);
 const second = ref(false);
 const third = ref(false);
 const fourth = ref(false);
-const navRoutes = ref([
+const navRoutes = ref<NavRoute[]>([
   {
     label: 'Curate',
     path: '/explorer/curate',
@@ -316,46 +342,21 @@ const navRoutes = ref([
   },
 ]);
 
-// Computed properties
+// Computed
 const userId = computed(() => store.getters['auth/userId']);
 const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
 const token = computed(() => store.getters['auth/token']);
-const xmlBulkResponse = computed(() => store.getters['explorer/curation/getXmlBulkResponse']);
+const xmlBulkResponse = computed<XmlBulkResponse | null>(
+  () => store.getters['explorer/curation/getXmlBulkResponse']
+);
 
 // GraphQL queries
-const { result: verifyUserResult } = useQuery(
-  VERIFY_AUTH_QUERY,
-  () => ({}),
-  () => ({
-    fetchPolicy: 'cache-and-network',
-  })
-);
-
-const { result: getUserDatasetResult } = useQuery(
-  USER_DATASET_IDS_QUERY,
-  () => ({}),
-  () => ({
-    fetchPolicy: 'cache-and-network',
-  })
-);
-
-// Watch for query results
-watch(verifyUserResult, (newResult) => {
-  if (newResult?.verifyUser) {
-    verifyUser.value = newResult.verifyUser;
-  }
-});
-
-watch(getUserDatasetResult, (newResult) => {
-  if (newResult?.getUserDataset) {
-    // Store the result for use in autocomplete
-    (getUserDatasetResult as any).value = newResult.getUserDataset;
-  }
-});
+useQuery(VERIFY_AUTH_QUERY, {}, { fetchPolicy: 'cache-and-network' });
+useQuery(USER_DATASET_IDS_QUERY, {}, { fetchPolicy: 'cache-and-network' });
 
 // Methods
-const addSpreadsheet = spreadsheetFn.addFiles;
-const removeSpreadsheet = spreadsheetFn.removeFile;
+const addSpreadsheet = (files: File[]) => spreadsheetFn.addFiles(files);
+const removeSpreadsheet = (file: any) => spreadsheetFn.removeFile(file);
 const modStatSpreadsheet = spreadsheetFn.modifyStatus;
 const clearAllFiles = spreadsheetFn.clearAllFiles;
 
@@ -367,34 +368,32 @@ const setDatasetId = (id: string) => {
   store.commit('explorer/curation/setDatasetId', id);
 };
 
-const submitBulkXml = async (files: File[]) => {
-  return store.dispatch('explorer/curation/submitBulkXml', files);
-};
-
 const navBack = () => {
   router.back();
 };
 
 // Format files for submission
-const processFiles = () => {
+const processFiles = (): File[] => {
   return spreadsheetFiles.value
-    .filter((file: any) => file.status === 'incomplete')
-    .map(({ file }: any) => file);
+    .filter((file) => file.status === 'incomplete')
+    .map(({ file }) => file);
 };
 
 const onInputChange = (e: Event) => {
-  const target = e.target as HTMLInputElement;
   invalidFile.value = null;
+  const target = e.target as HTMLInputElement;
+  if (!target.files || !target.files[0]) return;
+
   const reg = /\.(zip)$/;
-  if (!target.files || !target.files[0] || !reg.test(target.files[0].name)) {
+  if (!reg.test(target.files[0].name)) {
     invalidFile.value = 'Only .zip files are accepted';
   } else if (spreadsheetFiles.value.length) {
     invalidFile.value =
       'Only one .zip file can be uploaded at a time. Your previously selected file has been removed.';
     clearAllFiles();
-    addSpreadsheet(target.files);
+    addSpreadsheet(Array.from(target.files));
   } else {
-    addSpreadsheet(target.files);
+    addSpreadsheet(Array.from(target.files));
   }
 
   // reset so that selecting the same file again will still cause it to fire this change
@@ -403,7 +402,10 @@ const onInputChange = (e: Event) => {
 
 const goToStep = (id: string, index?: string) => {
   clearSnackbar();
-  (this as any)[id] = true;
+  if (id === 'first') first.value = true;
+  if (id === 'second') second.value = true;
+  if (id === 'third') third.value = true;
+  if (id === 'fourth') fourth.value = true;
   if (index) {
     active.value = index;
   }
@@ -414,10 +416,8 @@ const submitFiles = async () => {
   loading.value = true;
   const files = processFiles();
   try {
-    await submitBulkXml(files);
-    spreadsheetFiles.value.forEach((file: any, index: number) =>
-      modStatSpreadsheet(index, 'complete')
-    );
+    await store.dispatch('explorer/curation/submitBulkXml', files);
+    spreadsheetFiles.value.forEach((file, index) => modStatSpreadsheet(index, 'complete'));
     loading.value = false;
     setDatasetId('');
     if (!route?.query?.complete) {
@@ -440,4 +440,3 @@ onMounted(() => {
   }
 });
 </script>
-
