@@ -512,21 +512,24 @@
                             No data dictionary (.xls/.xlsx) found in uploaded files. You can reuse
                             an existing one from the dataset gallery or go back and upload your own.
                           </div>
-                          <div
-                            class="md-layout md-gutter"
-                            style="align-items: center; margin-top: 10px"
-                          >
-                            <div class="md-layout-item">
+                          <div style="margin-top: 10px">
+                            <div>
                               <md-field>
                                 <label>Paste data dictionary link here</label>
                                 <md-input v-model="externalSddLink"></md-input>
                               </md-field>
                             </div>
-                            <div>
-                              <md-button class="md-icon-button" @click.prevent="openDatasetGallery">
-                                <md-tooltip>Browse Dataset Gallery</md-tooltip>
-                                <md-icon>arrow_outward</md-icon>
-                              </md-button>
+                            <div style="text-align: center">
+                              <button
+                                type="button"
+                                class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text"
+                                @click.prevent="openDatasetGallery"
+                              >
+                                Click to copy existing SDD from library
+                                <md-icon style="color: white; margin-left: 4px"
+                                  >arrow_outward</md-icon
+                                >
+                              </button>
                             </div>
                           </div>
                         </div>
