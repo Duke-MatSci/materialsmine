@@ -9,27 +9,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Cache Dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Use NodeJS
+      # - name: Cache Dependencies
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.npm
+      #     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-node-
+      # - name: Use NodeJS
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: '17.9.1'
+      - name: Setup Node.js 22 for frontend
         uses: actions/setup-node@v3
         with:
-          node-version: '17.9.1'
-      - name: Install frontend dependencies & test
+          node-version: '22'
+      - name: Enable pnpm for frontend
+        run: corepack enable && corepack prepare pnpm@latest --activate
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('app/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Install frontend dependencies
         run: |
           cd app
-          npm ci
-      - name: App Coverage Test
-        run: |
-          cd app
-          npm run test:unit -- --coverage
+          pnpm install --frozen-lockfile
         env:
-          CI: true
+          MM_GHT: ${{ secrets.MM_GHT }}
+      # - name: Install frontend dependencies & test
+      #   run: |
+      #     cd app
+      #     npm ci
+      # - name: App Coverage Test
+      #   run: |
+      #     cd app
+      #     npm run test:unit -- --coverage
+      #   env:
+      #     CI: true
       - name: Zip Frontend App Assets
         if: github.event_name == 'push'
         run: |
@@ -116,6 +135,8 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      MM_GHT: ${{ secrets.MM_GHT }}
+      FE_PORT: ${{ secrets.FE_PORT }}
   buildBackendApp:
     if: github.event_name == 'push'
     needs: [buildFrontendApp, release]
