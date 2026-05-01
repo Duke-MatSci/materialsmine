@@ -1,21 +1,7 @@
 import router from '@/router';
-import { getTokenExp } from '@/modules/auth-utils';
+import { getTokenExp, clearAuthStorage } from '@/modules/auth-utils';
 
 let timer: any;
-
-// Helper function to clear local storage items
-const clearAuthStorage = (): void => {
-  const items = [
-    'token',
-    'userId',
-    'displayName',
-    'surName',
-    'givenName',
-    'isAdmin',
-    'tokenExpiration',
-  ];
-  items.forEach((item) => localStorage.removeItem(item));
-};
 
 // Helper function to set local storage items
 const setAuthStorage = (data: any): void => {
