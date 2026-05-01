@@ -28,6 +28,7 @@ const DatasetId = require('../models/datasetId');
 const FsFile = require('../models/fsFiles');
 const Task = require('../sw/models/task');
 const ChangeLog = require('../models/changeLog');
+const JobsController = require('./jobs');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 const { loadViscoelasticPropPipeline } = require('../pipelines/xml-pipeline');
@@ -2100,6 +2101,12 @@ exports.curationETL = async (req, res, next) => {
           failed.push(failure);
           continue;
         }
+
+        // Silently update curation status to Completed
+        try {
+          await JobsController.updateStatus(id, 'Completed');
+        } catch (_e) { /* silent */ }
+
         processed.push(result);
       } catch (e) {
         failed.push({
