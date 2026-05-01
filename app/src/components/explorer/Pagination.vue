@@ -142,6 +142,7 @@ const prevRow = (): void => {
 watch(() => props.cpage, (newValue, oldValue) => {
   if ((newValue !== oldValue) && pageExists(newValue)) {
     pageInput.value = newValue;
+    verifyRow();
   }
 });
 
