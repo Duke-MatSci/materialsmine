@@ -8,9 +8,14 @@ async function getHttpContext ({ req }) {
     return { undefined, req };
   }
   logger.info('[getHttpContext]: Setting up req http ctx');
-  const { email } = decodeToken(req, req.headers.authorization);
-  const user = await User.findOne({ email }).lean();
-  if (user) return { user, req, isAuthenticated: true };
+  try {
+    const { email } = decodeToken(req, req.headers.authorization);
+    const user = await User.findOne({ email }).lean();
+    if (user) return { user, req, isAuthenticated: true };
+  } catch (err) {
+    logger.error(`[getHttpContext]: Token decode failed - ${err.message}`);
+    return { req, isAuthenticated: false };
+  }
 }
 
 module.exports = getHttpContext;

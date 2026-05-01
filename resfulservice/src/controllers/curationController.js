@@ -28,6 +28,7 @@ const DatasetId = require('../models/datasetId');
 const FsFile = require('../models/fsFiles');
 const Task = require('../sw/models/task');
 const ChangeLog = require('../models/changeLog');
+const JobsController = require('./jobs');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 const { loadViscoelasticPropPipeline } = require('../pipelines/xml-pipeline');
@@ -1541,9 +1542,8 @@ exports.createMaterialObject = async (
                 path: file.path
               };
 
-              filteredObject[
-                BaseObjectSubstitutionMap[property] ?? property
-              ] = `/api/files/${filename}?isStore=true`;
+              filteredObject[BaseObjectSubstitutionMap[property] ?? property] =
+                `/api/files/${filename}?isStore=true`;
 
               const isTif = CH.isTifFile(file.path);
               if (isParentCall || isTif) {
@@ -1904,8 +1904,6 @@ exports.createChangeLog = async (req, res, next) => {
     };
 
     const changeLog = await ChangeLog.findOneAndUpdate(filter, update, options);
-
-    successWriter(req, JSON.stringify(changeLog), 'createChangeLog');
     latency.latencyCalculator(res);
 
     if (req.isBackendCall) return changeLog;
@@ -1948,17 +1946,21 @@ exports.getChangeLogs = async (req, res, next) => {
 
     // Map user objects to concatenated full name
     const formatUser = (entry) => {
-      const obj = typeof entry.toObject === 'function' ? entry.toObject() : entry;
+      const obj =
+        typeof entry.toObject === 'function' ? entry.toObject() : entry;
       const u = obj.user;
-      const name = u && typeof u === 'object'
-        ? `${u.givenName || ''} ${u.surName || ''}`.trim()
-        : u;
+      const name =
+        u && typeof u === 'object'
+          ? `${u.givenName || ''} ${u.surName || ''}`.trim()
+          : u;
       return { ...obj, user: name || 'Unknown' };
     };
 
     const formatted = Array.isArray(changeLogs)
       ? changeLogs.map(formatUser)
-      : changeLogs ? formatUser(changeLogs) : changeLogs;
+      : changeLogs
+        ? formatUser(changeLogs)
+        : changeLogs;
 
     successWriter(req, JSON.stringify(formatted), 'getChangeLogs');
     latency.latencyCalculator(res);
@@ -2080,8 +2082,8 @@ exports.curationETL = async (req, res, next) => {
         sampleIdForFailure = nanopubId;
 
         // Serialize → SHACL validate → changelog (shared logic)
-        const { success, result, failure } =
-          await Builder.serializeAndValidate({
+        const { success, result, failure } = await Builder.serializeAndValidate(
+          {
             nanopubId,
             nanopub,
             assertionId,
@@ -2094,12 +2096,21 @@ exports.curationETL = async (req, res, next) => {
             res,
             next,
             createChangeLogCb: this.createChangeLog
-          });
+          }
+        );
 
         if (!success) {
           failed.push(failure);
           continue;
         }
+
+        // Silently update curation status to Completed
+        try {
+          await JobsController.updateStatus(id, 'Completed');
+        } catch (_e) {
+          /* silent */
+        }
+
         processed.push(result);
       } catch (e) {
         failed.push({
@@ -2165,21 +2176,20 @@ exports.sddCurationETL = async (req, res, next) => {
         await Builder.transformSddToNanopub(nanopubSkeleton, logger);
 
       // Serialize → SHACL validate → changelog (shared logic)
-      const { success, result, failure } =
-        await Builder.serializeAndValidate({
-          nanopubId,
-          nanopub,
-          assertionId,
-          output,
-          inference,
-          resolveUrls,
-          ontologyLink,
-          id,
-          req,
-          res,
-          next,
-          createChangeLogCb: this.createChangeLog
-        });
+      const { success, result, failure } = await Builder.serializeAndValidate({
+        nanopubId,
+        nanopub,
+        assertionId,
+        output,
+        inference,
+        resolveUrls,
+        ontologyLink,
+        id,
+        req,
+        res,
+        next,
+        createChangeLogCb: this.createChangeLog
+      });
 
       if (!success) {
         failed.push(failure);

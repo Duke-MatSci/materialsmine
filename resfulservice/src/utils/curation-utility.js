@@ -294,7 +294,7 @@ async function getText(maybeUrlOrXml) {
       throw new Error(`GraphQL errors: ${String(errors)}`);
     }
     return {
-      id: data?.data?.xmlViewer?.id || '',
+      id: data?.data?.id || data?.data?.xmlViewer?.id || '',
       rawXml: data?.data?.xmlViewer?.xmlString || ''
     };
   }
@@ -476,7 +476,7 @@ function normalizeXml(xml) {
   // if entire payload is wrapped in the SAME quote char, unwrap once
   const first = s[0];
   const last = s[s.length - 1];
-  if ((first === '\'' && last === '\'') || (first === '"' && last === '"')) {
+  if ((first === "'" && last === "'") || (first === '"' && last === '"')) {
     const inner = s.slice(1, -1);
     if (inner.includes('<') && inner.includes('>')) s = inner;
   }

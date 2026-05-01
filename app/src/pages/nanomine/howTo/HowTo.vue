@@ -73,11 +73,6 @@ const store = useStore();
 // Reactive data
 const videos = ref<any[]>([]);
 
-// Methods
-const showBox = () => {
-  console.log('showBox called');
-};
-
 const hideVideos = (idx: number) => {
   let noTouch: number | null = null;
   if (idx >= 0) {
