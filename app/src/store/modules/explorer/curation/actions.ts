@@ -711,7 +711,6 @@ export default {
     }
     const response = await resp.json();
 
-    console.log('Fetched Change Logs:', response);
     const parseLogs = response?.changes?.map((log: any) => ({
       user: log.user,
       timestamp: log.date,
