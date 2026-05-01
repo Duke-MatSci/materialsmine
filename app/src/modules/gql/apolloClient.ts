@@ -1,6 +1,13 @@
-import { ApolloClient, ApolloLink, InMemoryCache, HttpLink, Observable, from } from '@apollo/client/core';
+import {
+  ApolloClient,
+  ApolloLink,
+  InMemoryCache,
+  HttpLink,
+  Observable,
+  from,
+} from '@apollo/client/core';
 import { onError } from '@apollo/client/link/error';
-import { isTokenExpired, forceLogout } from '@/modules/auth-utils';
+import { isTokenExpired, forceLogout } from '../auth-utils';
 
 const BASE = window.location.origin;
 const uri = `${BASE}/api/graphql`;
