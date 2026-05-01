@@ -12,7 +12,7 @@
       </template>
       <template #actions>
         <md-button v-if="dialogMode === 'edit'" @click="confirmEditCuration">Submit</md-button>
-        <md-button v-else-if="approvalInProgress" @click="approval({ xmlViewer })"
+        <md-button v-else-if="approvalInProgress" @click="approval"
           >Submit</md-button
         >
         <md-button @click.prevent="closeDialogBox">Close</md-button>
@@ -161,13 +161,12 @@
 import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
-import { useQuery } from '@vue/apollo-composable';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-xml-doc';
 import 'prismjs/components/prism-markup';
 import 'prismjs/themes/prism-coy.min.css';
-import { XML_VIEWER } from '@/modules/gql/xml-gql';
 import { useOptionalChaining } from '@/composables/useOptionalChaining';
+import { useXmlViewer } from '@/composables/useXmlViewer';
 import Comment from '@/components/explorer/Comment.vue';
 import Spinner from '@/components/Spinner.vue';
 import Dialog from '@/components/Dialog.vue';
@@ -184,6 +183,16 @@ const route = useRoute();
 
 // Composables
 const { optionalChaining } = useOptionalChaining();
+const {
+  xmlViewer,
+  loading,
+  isAuth,
+  isAdmin,
+  dialogBoxActive,
+  closeDialogBox: baseCloseDialogBox,
+  approveCuration: baseApproveCuration,
+  approval: baseApproval,
+} = useXmlViewer();
 
 // Template refs
 const codeBlock = ref<HTMLElement>();
@@ -191,40 +200,11 @@ const codeBlock = ref<HTMLElement>();
 // Reactive data
 const showSidepanel = ref(false);
 const type = ref('xml');
-const xmlViewer = ref<any>({});
 const approvalInProgress = ref(false);
 const dialogMode = ref<'approval' | 'edit'>('approval');
 
-// Apollo query
-const { result, loading, refetch } = useQuery(
-  XML_VIEWER,
-  computed(() => ({
-    input: {
-      id: route.params.id,
-      isNewCuration: route.query?.isNewCuration
-        ? JSON.parse(route.query.isNewCuration as string)
-        : false,
-    },
-  })),
-  { fetchPolicy: 'cache-and-network' }
-);
-
-// Watch for query results
-watch(
-  result,
-  (data) => {
-    if (data) {
-      xmlViewer.value = data.xmlViewer;
-    }
-  },
-  { immediate: true }
-);
-
 // Computed properties
-const isAuth = computed(() => store.getters['auth/isAuthenticated']);
-const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const userId = computed(() => store.getters['auth/userId']);
-const dialogBoxActive = computed(() => store.getters.dialogBox);
 const dialogTitle = computed(() => {
   if (dialogMode.value === 'edit') {
     return `Edit ${xmlViewer.value.id} Sample`;
@@ -252,7 +232,7 @@ const isActiveXmlView = computed(() => !route.query.isYaml && !route.query.isHis
 
 // Methods
 const closeDialogBox = () => {
-  store.commit('setDialogBox');
+  baseCloseDialogBox();
   dialogMode.value = 'approval';
 };
 
@@ -306,27 +286,21 @@ const openHistory = () => {
   return router.push({ name: 'SampleHistory', params, query });
 };
 
-const approval = async ({ xmlViewer }: { xmlViewer: any }) => {
+const approval = async () => {
   closeDialogBox();
   approvalInProgress.value = false;
-  await store.dispatch('explorer/curation/approveCuration', { xml: xmlViewer });
+  await baseApproval();
 };
 
-// TODO: This should ONLY be sending xml id alone, not the whole xmlViewer object
-const approveCuration = async () => {
-  // xmlViewer.curationState !== 'Completed'
-  // TODO: Remove the above logic in line 126 and use here. Check if is completed and show a dialog box to double check with the user if they really want to re-submit
-  // If the above logic if is true, use a different icon and tooltip label
+const approveCuration = () => {
   dialogMode.value = 'approval';
   approvalInProgress.value = true;
-  store.commit('setDialogBox', true, { root: true });
+  baseApproveCuration();
 };
 
 const requestApproval = async ({ curationId, isNew }: { curationId: string; isNew: boolean }) => {
   if (isAdmin.value) {
-    dialogMode.value = 'approval';
-    approvalInProgress.value = true;
-    store.commit('setDialogBox', true, { root: true });
+    approveCuration();
   } else return await store.dispatch('explorer/curation/requestApproval', { curationId, isNew });
 };
 
