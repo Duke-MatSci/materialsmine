@@ -1,4 +1,5 @@
 import router from '@/router';
+import { getTokenExp } from '@/modules/auth-utils';
 
 let timer: any;
 
@@ -124,8 +125,10 @@ export default {
     const surName = res.surName ?? null;
     const givenName = res.givenName ?? null;
     const isAdmin = res.isAdmin ?? false;
-    const expiresIn = 9000 * 60 * 60;
-    const expirationDate = new Date().getTime() + expiresIn;
+
+    const exp = token ? getTokenExp(token) : null;
+    const expirationDate = exp ? exp * 1000 : new Date().getTime() + 8 * 60 * 60 * 1000;
+    const expiresIn = expirationDate - Date.now();
 
     if (token && userId && displayName) {
       setAuthStorage({
