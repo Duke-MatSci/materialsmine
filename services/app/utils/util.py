@@ -1,11 +1,13 @@
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
+import numpy as np
+
 from typing import Any, Dict
 from app.config import Config
 from functools import wraps
-from flask import request, jsonify, current_app as app # type: ignore
+from flask import request, jsonify, has_app_context, current_app as app # type: ignore
 import jwt # type: ignore
-import pandas as pd # type: ignore
 from datetime import datetime, timedelta, timezone
 import functools
 import jwt # type: ignore
@@ -18,8 +20,8 @@ def log_errors(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            func_name = func.__name__
-            app.logger.info(f"Error in {func_name} function: {e}")
+            if has_app_context():
+                app.logger.info(f"Error in {func.__name__} function: {e}")
             raise
     return wrapper
 
@@ -50,6 +52,7 @@ def upload_init(file_name, domain):
     
     Args:
         file_name (str): The name of the file to be uploaded.
+        domain (str): The domain of data to interpret columns.
         
     Returns:
         dict: The content of the file as a dictionary.
@@ -60,102 +63,46 @@ def upload_init(file_name, domain):
         ValueError: If there is an error parsing the file content.
     """
     try:
-        file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
+        file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
         extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
-        
+
         if extension == '.csv':
             delimiter = ','
         elif extension == '.tsv' or extension == '.txt':
             delimiter = '\t'
         else:
             raise ValueError("Unsupported file extension")
-        
-        df = pd.read_csv(file_path, delimiter=delimiter, header=None)
-        if df.empty:
+
+        with open(file_path, 'r') as f:
+            csvlines = f.readlines()
+
+        if not csvlines:
             raise ValueError('File is empty')
         # Find the first numeric row index
         valid_start_index = None
-        for i, row in df.iterrows():
-            if is_numeric_row(row):
+        for i, row in enumerate(csvlines):
+            if is_numeric_row(row.strip().split(delimiter)):
                 valid_start_index = i
                 break
         if valid_start_index is None:
             raise ValueError("No valid numeric rows found in the file")
-        
-        # Slice to valid rows only
-        df = df.iloc[valid_start_index:].reset_index(drop=True)
 
-        # Convert to float explicitly
-        df = df.applymap(float)
+        # Parse valid rows only
+        data = np.loadtxt(csvlines, delimiter=delimiter, skiprows=valid_start_index, dtype=float, unpack=True)
+        sortind = np.argsort(data[0])
+        data = data[:, sortind]
 
-        # Rename columns
+        # Name columns
         if domain == 'frequency':
-            df.columns =['Frequency', 'E Storage', 'E Loss']
+            columns =['Frequency', 'E Storage', 'E Loss']
         elif domain == 'temperature':
-            df.columns =['Temperature', 'E Storage', 'E Loss']
+            columns =['Temperature', 'E Storage', 'E Loss']
+        elif domain == 'shift':
+            columns = ['Temperature', 'a_T']
         else:
-            df.columns =['UNKNOWN', 'E Storage', 'E Loss']
-        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
-        return df.to_dict("records")
-    except pd.errors.EmptyDataError as e:
-        raise ValueError("File is Empty")
-    except Exception as pe:
-        raise ValueError("Failed to parse file content")
-    
-@log_errors
-def shift_upload_init(file_name):
-    """
-    Uploads a file and returns its content as a dictionary.
-    
-    Args:
-        file_name (str): The name of the file to be uploaded.
-        
-    Returns:
-        dict: The content of the file as a dictionary.
-        
-    Raises:
-        ValueError: If the file extension is not supported.
-        ValueError: If the file is empty.
-        ValueError: If there is an error parsing the file content.
-    """
-    try:
-        if file_name is None:
-            return None
-        file_path = os.path.join(Config.FILES_DIRECTORY, file_name) 
-        extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
-        
-        if extension == '.csv':
-            delimiter = ','
-        elif extension == '.tsv' or extension == '.txt':
-            delimiter = '\t'
-        else:
-            raise ValueError("Unsupported file extension")
-        
-        df = pd.read_csv(file_path, delimiter=delimiter, header=None)
-        print(f'df: {df}')
-        if df.empty:
-            raise ValueError('File is empty')
-        # Find the first numeric row index
-        valid_start_index = None
-        for i, row in df.iterrows():
-            if is_numeric_row(row):
-                valid_start_index = i
-                break
-        if valid_start_index is None:
-            raise ValueError("No valid numeric rows found in the file")
-        
-        # Slice to valid rows only
-        df = df.iloc[valid_start_index:].reset_index(drop=True)
+            raise AssertionError("Unknown domain:", domain)
 
-        # Convert to float explicitly
-        df = df.applymap(float)
-
-        # Rename columns
-        df.columns =['Temperature', 'a_T']
-        df = df.sort_values(by=df.columns[0], ascending=False).reset_index(drop=True) #sort the data
-        return df.to_dict("records")
-    except pd.errors.EmptyDataError as e:
-        raise ValueError("File is Empty")
+        return dict(zip(columns, data))
     except Exception as pe:
         raise ValueError("Failed to parse file content")
 

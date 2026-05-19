@@ -3,7 +3,7 @@ from flask import request, Blueprint, jsonify,  Response
 import json
 import datetime
 from app.dynamfit.dynamfit2 import update_line_chart,  check_file_exists, estimate_shift_model_parameters
-from app.utils.util import token_required, upload_init, shift_upload_init, request_logger, log_errors
+from app.utils.util import token_required, upload_init, request_logger, log_errors
 
 dynamfit = Blueprint("dynamfit", __name__, url_prefix="/dynamfit")
 # NEW
@@ -88,7 +88,7 @@ def extract_data_from_file(request_id):
         data = request.get_json()
         file_name = data.get('file_name')
         number_of_prony = data.get('number_of_prony', 100)
-        model = data.get('model', 'Linear')
+        smoothness = data.get('smoothness', 0)
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
         shift_model = data.get('transform_method', 'hybrid')
@@ -117,8 +117,8 @@ def extract_data_from_file(request_id):
         if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
             return jsonify({'message': 'The number of prony must be between 1 and 100'}), 400
         
-        if model not in ['Linear', 'LASSO', 'Ridge']:
-            return jsonify({'message': 'The model must be one of Linear, LASSO, Ridge'}), 400
+        if smoothness < 0:
+            return jsonify({'message': 'The smoothness must be non-negative'}), 400
         
         if fit_settings not in [True, False]:
             return jsonify({'message': 'The fit settings must be either True or False'}), 400
@@ -142,7 +142,7 @@ def extract_data_from_file(request_id):
         # print("Upload Data:", uploadData)
 
         print("before shift_upload_init")
-        shiftData = shift_upload_init(shift_file_name)
+        shiftData = upload_init(shift_file_name, 'shift')
         print("after shift_upload_init")
         # add a function for handling shift data:
         # shiftData = upload_shift_init(shift_file_name)
@@ -176,7 +176,8 @@ def extract_data_from_file(request_id):
 
         # Assuming the update_line_chart function returns values in a specific order
         print("before update_line_chart")
-        result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, **shift_params)
+        result = update_line_chart(uploadData, number_of_prony, smoothness,
+                                   fit_settings, domain, **shift_params)
         print("after update_line_chart")
         # # Note: add shift factor prediction here
         # # Prerequisite boolean detection

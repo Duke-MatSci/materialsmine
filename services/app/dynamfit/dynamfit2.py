@@ -1,11 +1,15 @@
-import pandas as pd
-import numpy as np
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 from app.config import Config
+import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app.dynamfit.helper import prony_linear_fit, compute_rspectum, tts_frequency_to_temperature, tts_temperature_to_frequency, tts_temperature_to_frequency_V2, estimate_Tg, estimate_TL
+from app.dynamfit.helper import smooth_prony_fit, compute_relaxation_spectrum, \
+    tts_frequency_to_temperature, tts_temperature_to_frequency, \
+    tts_temperature_to_frequency_V2, estimate_Tg, estimate_TL, compute_complex, \
+    compute_relaxation_modulus
 from app.utils.util import log_errors
 
 def estimate_shift_model_parameters(uploadData, shift_model, Tg_estimate, C1_estimate, C2_estimate, Ea_estimate, TL_estimate, domain):
@@ -49,14 +53,15 @@ def check_file_exists(file_name):
     
 
 @log_errors
-def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None):
+def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
+                      Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None):
     """
     Updates a line chart based on the provided data.
 
     Parameters:
         uploadData (pd.DataFrame): The data to be used for the chart.
         number_of_prony (int): The number of terms in the Prony series.
-        model: The model to be used for fitting.
+        smoothness (float): The smoothing regularization to use for the fit.
         fit_settings: A flag indicating whether to use fit settings.
 
     Returns:
@@ -70,7 +75,6 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
     """
     try:
         dfl = uploadData
-        model = model
         N = number_of_prony
 
         
@@ -269,9 +273,13 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
             # Frequency Domain:
             
             # Fit prony series
-            tau, E, complex, relax = prony_linear_fit(df, N, model)
-            N_nz = np.count_nonzero(E)
+            tau_i, E_i = smooth_prony_fit(
+                omega=df['Frequency'].to_numpy(), E_stor=df['E Storage'].to_numpy(),
+                E_loss=df['E Loss'].to_numpy(), N=N, smoothness=smoothness)
+            N_nz = np.count_nonzero(E_i)
 
+            complex = compute_complex(tau_i, E_i)
+            relax = compute_relaxation_modulus(tau_i, E_i)
             # Get the column names of the first two columns as x and y
             x_column_name = df.columns[0]
             y_column_name = df.columns[1]
@@ -349,8 +357,8 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                 )
             
             basis_df = pd.DataFrame()
-            basis_df["Time"] = tau
-            basis_df["E"] = E
+            basis_df["Time"] = tau_i
+            basis_df["E"] = E_i[len(E_i)-len(tau_i):]
             basis_df["Type"] = f"{N_nz}-Term Basis"
             # basis_df["Modulus"] = "E Storage"
 
@@ -386,7 +394,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
             )
 
 
-            rspectrum = compute_rspectum(tau, E)
+            rspectrum = compute_relaxation_spectrum(tau_i, E_i)
 
             rspectrum["Type"] = f"{N_nz}-Term Prony"
             fig3a = px.line(rspectrum, x="Time", y="H", 
@@ -433,7 +441,7 @@ def update_line_chart(uploadData, number_of_prony, model, fit_settings, domain, 
                 fig2 = fig2a
                 fig3 = fig3a
                 
-            coef = {"tau_i":tau, "E_i":E,}
+            coef = {"tau_i":tau_i, "E_i":E_i[len(E_i)-len(tau_i):], }
             coef_df = pd.DataFrame(coef)
             coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
             # df.reset_index(inplace=True)

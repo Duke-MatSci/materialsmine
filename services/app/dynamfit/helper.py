@@ -1,193 +1,167 @@
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
-from sklearn import linear_model
+from scipy.optimize import minimize
 from scipy.signal import find_peaks
 
 float_correction = 1e-7
 R = 8.31446261815324  # J/(mol*K)
 
-def real_basis(omega,tau):
-    """
-	Calculates N(number of relaxation time units) real basis functions evaluated at M frequency points.
 
-	Parameters:
-	- omega: The frequency points. Shape (M,).
-	- tau: The relaxation time units. Shape (N,).
+def prony_basis(freq, relaxations, solid):
+    dt = dimensionless_time = np.outer(freq, relaxations)
 
-	Returns:
-	- result: The calculated real basis functions. Shape (M, N).
-	"""
-    omega = np.expand_dims(omega,axis=1)
-    tau = np.expand_dims(tau,axis=0)
-    return (omega**2*tau**2)/(1+omega**2*tau**2)
+    dt2 = dt * dt
+    dt2p1 = dt2 + 1
+    ep_basis = dt2 / dt2p1
+    epp_basis = dt / dt2p1
 
-	
-def imag_basis(omega,tau): ##calculates N imaginary basis functions evaluated at M frequency points
-    """
-	Calculates N imaginary basis functions evaluated at M frequency points.
+    if solid:
+        ep_basis=np.concatenate(
+            (np.ones_like(ep_basis, shape=(len(ep_basis), 1)), ep_basis), axis=1
+        )
+        epp_basis=np.concatenate(
+            (np.zeros_like(epp_basis, shape=(len(epp_basis), 1)), epp_basis), axis=1
+        )
 
-	Parameters:
-	- omega: 1-D array-like
-		An array of shape (M,) representing the frequency points.
-	- tau: 1-D array-like
-		An array of shape (N,) representing the basis function parameters.
+    return np.concatenate((ep_basis, epp_basis), axis=0)
 
-	Returns:
-	- result: ndarray
-		An array of shape (M,N) representing the calculated imaginary basis functions.
 
-	"""
-    omega = np.expand_dims(omega,axis=1) ##shape (M,1)
-    tau = np.expand_dims(tau,axis=0) ##shape (1,N)
-    return (omega*tau)/(1+omega**2*tau**2) ##shape (M,N)
+def prony_relaxation_space(tau_min, tau_max, N):
+    return np.logspace(np.log10(tau_min), np.log10(tau_max), N, endpoint=True)
 
-def compute_prony2(data,tau,w):
-    """
-    Compute the Prony2 approximation for the given data.
 
-    Parameters:
-    - data: numpy array of shape (n, 2)
-        The input data containing the frequency and complex amplitude values.
-    - tau: float
-        The time constant parameter for the Prony2 approximation.
-    - w: numpy array of shape (m,)
-        The weight vector for the Prony2 approximation.
-
-    Returns:
-    - approximation: numpy array of shape (n, 4)
-        The Prony2 approximation of the input data, where each row contains the
-        frequency, real approximation, imaginary approximation, and complex
-        amplitude values.
-    """
-    omega = data[:,0]
-    eps_inft = data[0,1]
-    real_approximation = np.expand_dims(np.add(np.matmul(real_basis(omega,tau),w),eps_inft),axis=1)
-    imag_approximation = np.expand_dims(np.matmul(imag_basis(omega,tau),w),axis=1)
-    approximation = np.concatenate((np.expand_dims(omega,axis=1),real_approximation,imag_approximation),axis=1)
-    return approximation
-
-def compute_complex(data,tau,w):
+def compute_complex(tau_i,E_i):
     """
     Compute the complex values of a given dataset.
-
-    Parameters:
-        data (numpy.ndarray): The input data containing frequency and epsilon values.
-        tau (float): The tau value used for computations.
-        w (numpy.ndarray): The weight vector used for computations.
-
-    Returns:
-        pandas.DataFrame: A DataFrame containing the computed frequency, real and imaginary values.
-    """
-    omega = data[:,0]
-    eps_inft = data[0,1]
-    real = (real_basis(omega,tau) @ w) + eps_inft
-    imag = (imag_basis(omega,tau) @ w)
-    # return np.concatenate((omega, real, imag))
-    return pd.DataFrame(data={"Frequency":omega, "E Storage":real, "E Loss":imag})
-
-def compute_relax(tau_i,E_i):
-    """
-    Compute the relaxation curve using the given parameters.
-
-    Parameters:
-        tau_i (list): A list of relaxation times.
-        E_i (list): A list of corresponding relaxation energies.
-
-    Returns:
-        pd.DataFrame: A DataFrame containing the computed relaxation curve with two columns: "Time" and "E".
-    """
-    t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), 1000)
-
-    E = 0
-    for i , v in enumerate(E_i):
-        E += E_i[i] * np.exp(-t/tau_i[i])
-    return pd.DataFrame(data={"Time":t, "E":E})
-
-def compute_rspectum(tau_i,E_i):
-    """
-    Compute the rspectum of the given data.
 
     Parameters:
         tau_i (array-like): The time constants for each energy value.
         E_i (array-like): The energy values corresponding to each time constant.
 
     Returns:
-        pd.DataFrame: A DataFrame containing the computed rspectum values with the
-        following columns:
-            - Time: The time values.
-            - H: The computed rspectum values.
+        pandas.DataFrame: A DataFrame containing the computed frequency, real and imaginary values.
+    """
+    omega = np.logspace(-np.log10(np.max(tau_i)), -np.log10(np.min(tau_i)), 1000)
+    basis = prony_basis(omega,tau_i, solid=not (len(E_i) == len(tau_i)))
+    complex = basis @ E_i
+    real, imag = complex.reshape(2,1000)
+
+    return pd.DataFrame(data={"Frequency":omega, "E Storage":real, "E Loss":imag})
+
+
+def compute_relaxation_modulus(tau_i,E_i):
+    """
+    Compute the relaxation modulus using the given parameters.
+
+    Parameters:
+        tau_i (array-like): The time constants for each energy value.
+        E_i (array-like): The energy values corresponding to each time constant.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the computed relaxation curve with two columns: "Time" and "E".
     """
     t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), 1000)
+    dt = dimensionless_time = np.outer(t, 1/tau_i)
+    solid = not (len(E_i) == len(tau_i))
+    E = np.exp(-dt) @ E_i[solid:]
+    return pd.DataFrame(data={"Time":t, "E":E})
 
-    H = 0
-    for i , v in enumerate(E_i):
-        H += (t/tau_i[i]) * E_i[i] * np.exp(-t/tau_i[i])
+
+def compute_relaxation_spectrum(tau_i,E_i):
+    """
+    Compute the relaxation spectrum of the given data.
+
+    Parameters:
+        tau_i (array-like): The time constants for each energy value.
+        E_i (array-like): The energy values corresponding to each time constant.
+
+    Returns:
+        pd.DataFrame: A DataFrame containing the computed relaxation spectrum values with the
+        following columns:
+            - Time: The time values.
+            - H: The computed relaxation spectrum values.
+    """
+    t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), 1000)
+    dt = dimensionless_time = np.outer(t, 1/tau_i)
+    solid = not (len(E_i) == len(tau_i))
+    H = (dt * np.exp(-dt)) @ E_i[solid:]
     return pd.DataFrame(data={"Time":t, "H":H})
 
-def prony_linear_fit(df, N, model):
+
+def prony_objective(logcoefs, data, std, basis, smoothness, solid):
+    coefs = np.exp(logcoefs)
+    estimate = basis @ coefs
+    resid = (data - estimate) / std
+    loss = resid@resid
+    if smoothness:
+        curve = smoothness * np.diff(logcoefs[solid:], n=2)
+        loss += curve@curve
+
+    grad = -(basis.T @ (resid / std))
+
+    # apply chain rule because these are functions of
+    # coefs rather than logcoefs
+    grad *= coefs
+
+    if smoothness:
+        diffs = smoothness * curve  # smoothness*np.diff(logcoefs[solid:], n=2)
+        grad_slice = grad[solid:]
+        grad_slice[:-2] += diffs
+        grad_slice[1:-1] -= 2 * diffs
+        grad_slice[2:] += diffs
+
+    return loss, 2 * grad  # more chain rule (squared errors)
+
+
+def smooth_prony_fit(omega, E_stor, E_loss, N, smoothness, solid=True):
     """
-    Perform a linear fit using the Prony method.
+    Perform a fit using the Prony method with coefficient smoothing.
     
     Parameters:
-    - df: pandas DataFrame
-        The input DataFrame containing the training data.
+    - omega: ndarray
+        The input array containing frequency data.
+    - E_stor: ndarray
+        The input array containing storage modulus data.
+    - E_loss: ndarray
+        The input array containing loss modulus data.
     - N: int
         The number of points to generate in the logarithmic time grid.
-    - model: str
-        The type of linear regression model to use. Options are "Linear", "LASSO", and "Ridge".
+    - smoothness: float
+        Amount of smoothing regularization to apply to the log-coefficients
+    - solid: bool
+        Whether to add an extra coefficient for solid-like behavior
     
     Returns:
     - tuple
         A tuple containing the following elements:
-        - tau: ndarray
+        - tau_i: ndarray
             The logarithmic time grid.
-        - E: ndarray
+        - E_i: ndarray
             The fitted coefficients.
-        - prony: ndarray
-            The complex values calculated using the Prony method.
-        - relax: ndarray
-            The relaxation values calculated using the Prony method.
     """
-    df.sort_values(by=[df.columns[0]], inplace=True)
-    train_data = df.to_numpy()
 
-    omega = train_data[:,0]
-    eps_inft = train_data[0,1]
-    eps_real = train_data[:,1]
-    eps_imag = train_data[:,2]
+    tau_max = 1 / np.min(omega)
+    tau_min = 1 / np.max(omega)
+    tau_i = prony_relaxation_space(tau_min, tau_max, N)
 
-    Tau_max = 1/train_data[0,0]
-    Tau_min = 1/train_data[-1,0]
+    basis = prony_basis(omega, tau_i, solid)
 
-    tau = np.logspace(np.log10(Tau_min),np.log10(Tau_max),N,endpoint=True)
+    y = np.concatenate((E_stor,E_loss))
 
-    model_dict = {
-            "Linear":linear_model.LinearRegression(positive=True, fit_intercept=False),
-            "LASSO":linear_model.Lasso(positive=True, fit_intercept=False),
-            "Ridge":linear_model.Ridge(positive=True, fit_intercept=False),
-            }
-    clf = model_dict[model]
-    # alpha = 1.0
-    # clf = linear_model.LinearRegression(positive=True, fit_intercept=False)
+    y_std = np.absolute(E_stor+1.0j*E_loss)
+    y_std *= 0.2 # TODO: make this an input to the function
+    y_std = np.concatenate((y_std, y_std))
 
-    D_real = real_basis(omega,tau).T @ real_basis(omega,tau)
-    D_imag = imag_basis(omega,tau).T @ imag_basis(omega,tau)
-
-    y_real = real_basis(omega,tau).T @ (eps_real - eps_inft)
-    y_imag = imag_basis(omega,tau).T @ eps_imag
-
-    X = D_real + D_imag
-    y = y_real + y_imag
-
-    clf.fit(X, y)
-    E = clf.coef_
-
-    # print(f'Non-Zero Weights Used: {np.count_nonzero(W)}')
-    prony = compute_complex(train_data,tau,E)
-    relax = compute_relax(tau,E)
+    with np.errstate(over='ignore', invalid='ignore'):
+        result = minimize(
+            fun=prony_objective,
+            x0=np.full(N+solid,7.) ,
+            args=(y, y_std, basis, smoothness, solid),
+            jac=True,
+        )
+    E_i = np.exp(result.x)
     
-    return (tau, E, prony, relax)
+    return tau_i, E_i
 
 # OLD Method
 # def wlf_shift(T, T_ref, C1, C2):
