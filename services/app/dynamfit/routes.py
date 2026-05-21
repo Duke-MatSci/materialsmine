@@ -1,72 +1,32 @@
-# WIP
-from flask import request, Blueprint, jsonify,  Response
+import os
 import json
 import datetime
-from app.dynamfit.dynamfit2 import update_line_chart,  check_file_exists, estimate_shift_model_parameters
+
+from flask import request, Blueprint, jsonify,  Response
+
+from app.dynamfit.dynamfit2 import (
+    update_line_chart, argmax_peak,
+    UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+)
 from app.utils.util import token_required, upload_init, request_logger, log_errors
+from app.config import Config
 
 dynamfit = Blueprint("dynamfit", __name__, url_prefix="/dynamfit")
-# NEW
-# estimate = Blueprint("estimate", __name__, url_prefix="/dynamfit/estimate")
 
-# ISSUE: TL and Tg estimators use data from the upload to perform estimation. extract route both extracts and plots. Should we still do this first?
-# Current soln is to import again (Messy and slow)
-# Still need to predict the shift factors. do we do this in estimate call, or on its own?
-# @dynamfit.route('/estimate/', methods=['POST'])
-# @log_errors
-# @request_logger
-# @token_required
-# def estimate_fit_values(request_id):
-#     try:
-#         start_time = datetime.datetime.now()
-#         # Read inputs to API call
-#         input_data = request.get_json()
-#         file_name = input_data.get('file_name')
-#         shift_model = input_data.get('model', 'hybrid')
 
-#         if  not check_file_exists(file_name):
-#             return jsonify({'message': f"File '{file_name}' not found"}), 404
-        
-#         if shift_model not in ['WLF', 'hybrid']:
-#             return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
-        
-#         if not file_name or file_name == '':
-#             return jsonify({'message': 'No file name provided'})
-        
-#         # Import the Data
-#         uploadData = upload_init(file_name)
+def check_file_exists(file_name):
+    """
+    Checks if a file exists.
 
-#         # Perform estimation
-#         C1, C2, Tg, Ea, TL = estimate_shift_model_parameters(uploadData, shift_model)
-        
-#         # Constructing the data dictionary
-#         data = {
-#             "multi": True,
-#             "response": {
-#                 "C1": C1,
-#                 "C2": C2,
-#                 "Tg": Tg,
-#                 "Ea": Ea,
-#                 "TL": TL,
-#             }
-#         }
-#         end_time = datetime.datetime.now()
-#         latency = f"{((end_time - start_time)).total_seconds()} seconds"
-       
-#         # Manually serialize JSON to ensure order is maintained
-#         json_data = json.dumps(data, indent=4)  # data is your dictionary
+    Args:
+        file_name (str): The name of the file to check.
 
-#         # Create a Flask response
-#         response = Response(json_data, content_type='application/json; charset=utf-8', status=200)
-#         response.headers['startTime'] = start_time
-#         response.headers['endTime'] = end_time
-#         response.headers['latency'] = str(latency)
-#         response.headers['responseId'] = request_id
-#         return response
-#     except ValueError as ve:
-#         return jsonify({'message': str(ve)}), 400
-#     except Exception as e:
-#         return jsonify({'message': str(e)}), 500
+    Returns:
+        bool: True if the file exists, False otherwise.
+    """
+    file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
+    return os.path.exists(file_path)
+
 
 @dynamfit.route('/extract/', methods=['POST'])
 @log_errors
@@ -108,86 +68,61 @@ def extract_data_from_file(request_id):
         # add manual shift factor upload
         shift_file_name = data.get('shift_file_name', None)
         
-        if  not check_file_exists(file_name):
+        if not file_name:
+            return jsonify({'message': 'No file name provided'}), 400
+
+        if not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
-        
-        # if  not check_file_exists(shift_file_name):
-        #     return jsonify({'message': f"Shift file '{shift_file_name}' not found"}), 404
 
         if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
             return jsonify({'message': 'The number of prony must be between 1 and 100'}), 400
-        
+
         if smoothness < 0:
             return jsonify({'message': 'The smoothness must be non-negative'}), 400
-        
+
         if fit_settings not in [True, False]:
             return jsonify({'message': 'The fit settings must be either True or False'}), 400
-        
-        if not file_name or file_name == '':
-            return jsonify({'message': 'No file name provided'})
 
         if shift_model not in ['WLF', 'hybrid', 'manual']:
             return jsonify({'message': 'The shift factor model must be one of WLF, hybrid, manual'}), 400
         
-        print("before upload_init")
         uploadData = upload_init(file_name, domain)
-        print("after upload_init")
-        # add a function for handling shift data:
-        # shiftData = upload_shift_init(shift_file_name)
-        # Check if the file content is empty
         if not uploadData:
             return jsonify({'message': f"File '{file_name}' is empty"}), 400
-        
-        # Print uploadData for debugging
-        # print("Upload Data:", uploadData)
 
-        print("before shift_upload_init")
-        shiftData = upload_init(shift_file_name, 'shift')
-        print("after shift_upload_init")
-        # add a function for handling shift data:
-        # shiftData = upload_shift_init(shift_file_name)
-        # Check if the file content is empty
-        # if not shiftData:
-        #     return jsonify({'message': f"Shift file '{shift_file_name}' is empty"}), 400
-        # check that shift data and uploadData lengths align align
-        if shiftData and (len(uploadData) != len(shiftData)):
-             return jsonify({'message': f"Shift file and Upload File must have the same number of rows."}), 400
-        
-        # Print shiftData for debugging
-        # print("Shift Upload Data:", shiftData)
+        if shift_file_name:
+            shiftData = upload_init(shift_file_name, 'shift')
+        else:
+            shiftData = None
+        # Row-count alignment between uploadData and shiftData is verified
+        # inside tts_temperature_to_frequency_V2, which raises ValueError → 400
+        # if they differ.
 
-        # # Assuming the update_line_chart function returns values in a specific order
-        # result = update_line_chart(uploadData, number_of_prony, model, fit_settings, domain)
-        
         # Perform shift variable estimation
-        estimate_bools = dict(Tg_estimate=Tg_estimate, C1_estimate=C1_estimate, C2_estimate=C2_estimate, Ea_estimate=Ea_estimate, TL_estimate=TL_estimate, domain=domain)
-        print("before estimate_shift_model")
-        C1_est, C2_est, Tg_est, Ea_est, TL_est = estimate_shift_model_parameters(uploadData, shift_model, **estimate_bools)
-        print("after estimate_shift_model")
 
-        # Assign the new values for each variable based on the boolean switches:
-        Tg = Tg_est if Tg_estimate else Tg
-        C1 = C1_est if C1_estimate else C1
-        C2 = C2_est if C2_estimate else C2
-        Ea = Ea_est if Ea_estimate else Ea
-        TL = TL_est if TL_estimate else TL
+        # "Universal" Estimations for C1, C2
+        if C1_estimate:
+            C1 = UNIVERSAL_WLF_C1
+        if C2_estimate:
+            C2 = UNIVERSAL_WLF_C2
+        if Tg_estimate or TL_estimate:
+            domain_col = {"temperature": "Temperature", "frequency": "Frequency"}[domain]
+            # Tg from the tan-δ peak
+            if Tg_estimate:
+                tan_delta = (uploadData["E Loss"] / uploadData["E Storage"])
+                Tg = uploadData[domain_col][argmax_peak(tan_delta)]
+            # TL from the E_loss peak
+            if TL_estimate:
+                TL =  uploadData[domain_col][argmax_peak(uploadData["E Loss"])]
+        # Use "generic" Ea for thermoplastic elastomers
+        if Ea_estimate:
+            Ea = 200  # kJ/mol
 
         shift_params = dict(Tg=Tg, C1=C1, C2=C2, Ea=Ea, TL=TL, shift_model=shift_model, shiftData=shiftData)
 
         # Assuming the update_line_chart function returns values in a specific order
-        print("before update_line_chart")
         result = update_line_chart(uploadData, number_of_prony, smoothness,
                                    fit_settings, domain, **shift_params)
-        print("after update_line_chart")
-        # # Note: add shift factor prediction here
-        # # Prerequisite boolean detection
-        # # Only predict the shift factors if this statement resolves to true
-        # b = (Tg and C1 and C2 and (shift_model is "WLF")) or (Tg and C1 and C2 and TL and Ea and (shift_model is "hybrid")) or (shiftData)
-        # if b:
-        #     # perform TTSP shifting
-        #     # Note: add TTSP here (separate from update_line_chart)
-        #     # Inputs: domain, shift_model, Tg, C1, C2, TL, Ea)
-        #     print("Remove This Temporary Print. Here for python correctness only")
 
         # Unpacking values into a dictionary
         chart_data = {
@@ -236,4 +171,9 @@ def extract_data_from_file(request_id):
     except ValueError as ve:
         return jsonify({'message': str(ve)}), 400
     except Exception as e:
+        # XXX: leaks internal error text to clients — raw exception messages
+        # (including AssertionError contract-violation strings naming server-bug
+        # details) reach the response body. Should log+correlate via request_id
+        # and return a generic "Internal server error" message. Needs upstream
+        # decision on logging infra before changing.
         return jsonify({'message': str(e)}), 500

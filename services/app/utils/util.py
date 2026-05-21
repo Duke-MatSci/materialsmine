@@ -10,7 +10,6 @@ from flask import request, jsonify, has_app_context, current_app as app # type: 
 import jwt # type: ignore
 from datetime import datetime, timedelta, timezone
 import functools
-import jwt # type: ignore
 import uuid
 
 
@@ -32,79 +31,92 @@ def filter_none(**kwargs):
     return {k: v for k, v in kwargs.items() if v is None}
 
 
-def check_extension(filename):
-    """
-    Check if the given filename has a valid extension.
-
-    Parameters:
-        filename (str): The name of the file to check.
-
-    Returns:
-        bool: True if the filename has a valid extension, False otherwise.
-    """
-    print("filename", filename)
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
-
 @log_errors
 def upload_init(file_name, domain):
     """
-    Uploads a file and returns its content as a dictionary.
-    
-    Args:
-        file_name (str): The name of the file to be uploaded.
-        domain (str): The domain of data to interpret columns.
-        
+    Read a tabular data file and return its columns as a dict of 1-D float arrays.
+
+    Reads CSV (.csv), TSV (.tsv), or whitespace-separated (.txt) files,
+    skipping non-numeric leading rows (headers/comments). Rows are sorted
+    ascending by the first column before return.
+
+    Parameters:
+        file_name (str): Filename to load, relative to Config.FILES_DIRECTORY.
+        domain (str): Domain tag controlling expected column count and the
+            keys of the returned dict. One of:
+                'frequency'   → 3 cols: ['Frequency', 'E Storage', 'E Loss']
+                'temperature' → 3 cols: ['Temperature', 'E Storage', 'E Loss']
+                'shift'       → 2 cols: ['Temperature', 'a_T']
+
     Returns:
-        dict: The content of the file as a dictionary.
-        
+        dict[str, np.ndarray]: Column-name → 1-D float ndarray (all of equal
+        length), in the column order listed above for the chosen domain.
+
     Raises:
-        ValueError: If the file extension is not supported.
-        ValueError: If the file is empty.
-        ValueError: If there is an error parsing the file content.
+        ValueError: If domain is unrecognized, the file extension is not
+            supported, the file is missing or empty, no numeric rows are
+            found, the file has the wrong number of columns for the chosen
+            domain, or the file's numeric contents cannot be parsed as floats.
     """
+    columns_by_domain = {
+        'frequency':   ['Frequency', 'E Storage', 'E Loss'],
+        'temperature': ['Temperature', 'E Storage', 'E Loss'],
+        'shift':       ['Temperature', 'a_T'],
+    }
+    if domain not in columns_by_domain:
+        raise ValueError(
+            f"Unknown domain {domain!r}. Expected one of {list(columns_by_domain)}."
+        )
+    columns = columns_by_domain[domain]
+
+    extension = os.path.splitext(file_name)[1].lower()
+    if extension == '.csv':
+        delimiter = ','
+    elif extension in ('.tsv', '.txt'):
+        delimiter = '\t'
+    else:
+        raise ValueError(
+            f"Unsupported file extension {extension!r}. Use .csv, .tsv, or .txt."
+        )
+
+    file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
+    with open(file_path, 'r') as f:
+        csvlines = f.readlines()
+
+    if not csvlines:
+        raise ValueError(f"File {file_name} is empty.")
+
+    valid_start_index = None
+    for i, row in enumerate(csvlines):
+        if is_numeric_row(row.strip().split(delimiter)):
+            valid_start_index = i
+            break
+    if valid_start_index is None:
+        raise ValueError(f"No numeric rows found in {file_name}.")
+
     try:
-        file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
-        extension = os.path.splitext(file_name)[1].lower()  # Get the file extension
+        data = np.loadtxt(
+            csvlines, delimiter=delimiter, skiprows=valid_start_index,
+            dtype=float, unpack=True,
+        )
+    except ValueError as e:
+        raise ValueError(f"Could not parse numeric data in {file_name}: {e}")
 
-        if extension == '.csv':
-            delimiter = ','
-        elif extension == '.tsv' or extension == '.txt':
-            delimiter = '\t'
-        else:
-            raise ValueError("Unsupported file extension")
+    # np.loadtxt with unpack=True returns 1-D for a single-column file; reshape
+    # so data.shape[0] is always the column count.
+    if data.ndim == 1:
+        data = data.reshape(1, -1)
 
-        with open(file_path, 'r') as f:
-            csvlines = f.readlines()
+    if data.shape[0] != len(columns):
+        raise ValueError(
+            f"Expected {len(columns)} columns for {domain} domain "
+            f"({', '.join(columns)}), but {file_name} has {data.shape[0]}."
+        )
 
-        if not csvlines:
-            raise ValueError('File is empty')
-        # Find the first numeric row index
-        valid_start_index = None
-        for i, row in enumerate(csvlines):
-            if is_numeric_row(row.strip().split(delimiter)):
-                valid_start_index = i
-                break
-        if valid_start_index is None:
-            raise ValueError("No valid numeric rows found in the file")
+    sortind = np.argsort(data[0])
+    data = data[:, sortind]
 
-        # Parse valid rows only
-        data = np.loadtxt(csvlines, delimiter=delimiter, skiprows=valid_start_index, dtype=float, unpack=True)
-        sortind = np.argsort(data[0])
-        data = data[:, sortind]
-
-        # Name columns
-        if domain == 'frequency':
-            columns =['Frequency', 'E Storage', 'E Loss']
-        elif domain == 'temperature':
-            columns =['Temperature', 'E Storage', 'E Loss']
-        elif domain == 'shift':
-            columns = ['Temperature', 'a_T']
-        else:
-            raise AssertionError("Unknown domain:", domain)
-
-        return dict(zip(columns, data))
-    except Exception as pe:
-        raise ValueError("Failed to parse file content")
+    return dict(zip(columns, data))
 
 # Decorator
 def token_required(f):
@@ -200,7 +212,7 @@ def request_logger(func):
         if response:
             app.logger.info(f"[END]: Request Successful. Exiting {func.__name__} function at {end_time}. Execution time: {execution_time} miliseconds. Response sent.")
         else:
-            app.logger.error(f"[INTERNAL ERROR]: Error in {func.__name__}. Response: {response}, Status code: {response.status_code}. Exiting at {end_time}. Execution time: {execution_time} miliseconds.")
+            app.logger.error(f"[INTERNAL ERROR]: Error in {func.__name__}. Response: {response!r}. Exiting at {end_time}. Execution time: {execution_time} miliseconds.")
         return response
     return decorated_function
 
