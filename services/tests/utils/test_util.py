@@ -107,22 +107,75 @@ class TestUploadInit(unittest.TestCase):
             upload_init(name, 'frequency')
 
     def test_wrong_column_count_raises_value_error(self):
-        # 2-column file for frequency domain (needs 3).
+        # 2-column file for frequency domain (needs 3, 4, or 5).
         name = self._write('2col.csv', "Frequency,E Storage\n1,100\n2,200\n")
-        with self.assertRaisesRegex(ValueError, 'Expected 3 columns'):
+        with self.assertRaisesRegex(ValueError, 'columns'):
             upload_init(name, 'frequency')
 
     def test_single_column_raises_value_error(self):
         # The np.loadtxt(unpack=True) 1-D promotion path: previously silently
         # truncated; should now surface the column-count mismatch.
         name = self._write('1col.csv', "Frequency\n1\n2\n3\n")
-        with self.assertRaisesRegex(ValueError, 'Expected 3 columns'):
+        with self.assertRaisesRegex(ValueError, 'columns'):
             upload_init(name, 'frequency')
 
-    def test_too_many_columns_raises_value_error(self):
-        name = self._write('4col.csv', "a,b,c,d\n1,2,3,4\n5,6,7,8\n")
-        with self.assertRaisesRegex(ValueError, 'Expected 3 columns'):
+    def test_six_columns_raises_value_error(self):
+        name = self._write('6col.csv', "a,b,c,d,e,f\n1,2,3,4,5,6\n7,8,9,10,11,12\n")
+        with self.assertRaisesRegex(ValueError, 'columns'):
             upload_init(name, 'frequency')
+
+    def test_frequency_accepts_5_columns_with_per_modulus_errors(self):
+        name = self._write(
+            '5col.csv',
+            "Frequency,E Storage,E Loss,E Storage Error,E Loss Error\n"
+            "1,100,10,5,0.5\n"
+            "2,200,20,10,1.0\n"
+            "3,300,30,15,1.5\n",
+        )
+        result = upload_init(name, 'frequency')
+        self.assertEqual(
+            set(result.keys()),
+            {'Frequency', 'E Storage', 'E Loss', 'E Storage Error', 'E Loss Error'},
+        )
+        np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0, 3.0])
+        np.testing.assert_array_equal(result['E Storage Error'], [5.0, 10.0, 15.0])
+        np.testing.assert_array_equal(result['E Loss Error'], [0.5, 1.0, 1.5])
+
+    def test_frequency_accepts_4_columns_with_shared_error(self):
+        name = self._write(
+            '4col.csv',
+            "Frequency,E Storage,E Loss,Error\n1,100,10,5\n2,200,20,10\n",
+        )
+        result = upload_init(name, 'frequency')
+        self.assertEqual(
+            set(result.keys()),
+            {'Frequency', 'E Storage', 'E Loss', 'Error'},
+        )
+        np.testing.assert_array_equal(result['Error'], [5.0, 10.0])
+
+    def test_temperature_accepts_5_columns_with_per_modulus_errors(self):
+        name = self._write(
+            'temp5.csv',
+            "Temperature,E Storage,E Loss,E Storage Error,E Loss Error\n"
+            "0,100,10,5,0.5\n"
+            "25,200,20,10,1.0\n",
+        )
+        result = upload_init(name, 'temperature')
+        self.assertEqual(
+            set(result.keys()),
+            {'Temperature', 'E Storage', 'E Loss', 'E Storage Error', 'E Loss Error'},
+        )
+
+    def test_shift_accepts_3_columns_with_extra(self):
+        # Shift-factor files may carry an extra Error column for symmetry with
+        # the data files; the value is parsed but the fit doesn't consume it.
+        name = self._write(
+            'shift3.csv',
+            "Temperature,a_T,Error\n0,0.5,0.05\n25,1.0,0.1\n",
+        )
+        result = upload_init(name, 'shift')
+        self.assertEqual(set(result.keys()), {'Temperature', 'a_T', 'Error'})
+        np.testing.assert_array_equal(result['Error'], [0.05, 0.1])
 
     def test_missing_file_raises_file_not_found(self):
         # FileNotFoundError propagates as itself; the route is expected to

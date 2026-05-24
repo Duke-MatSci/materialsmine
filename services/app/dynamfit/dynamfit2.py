@@ -258,6 +258,8 @@ def smooth_prony_fit(
         omega: np.ndarray,
         E_stor: np.ndarray,
         E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
         N: int,
         smoothness: float,
         solid: bool = True,
@@ -278,6 +280,10 @@ def smooth_prony_fit(
             length as omega.
         E_loss (numpy.ndarray): 1-D array of loss-modulus values, same length
             as omega.
+        E_stor_std (numpy.ndarray): 1-D array of per-point standard deviations
+            for E_stor, same length as omega. Used to weight residuals.
+        E_loss_std (numpy.ndarray): 1-D array of per-point standard deviations
+            for E_loss, same length as omega. Used to weight residuals.
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the second-difference penalty on the
             log-coefficients. Pass 0 to disable.
@@ -295,6 +301,10 @@ def smooth_prony_fit(
         "E_loss must be a 1-D numpy.ndarray"
     assert len(omega) == len(E_stor) == len(E_loss), \
         "omega, E_stor, E_loss must all have the same length"
+    assert isinstance(E_stor_std, np.ndarray) and E_stor_std.shape == E_stor.shape, \
+        "E_stor_std must be a 1-D numpy.ndarray matching E_stor"
+    assert isinstance(E_loss_std, np.ndarray) and E_loss_std.shape == E_loss.shape, \
+        "E_loss_std must be a 1-D numpy.ndarray matching E_loss"
 
     tau_max = 1 / np.min(omega)
     tau_min = 1 / np.max(omega)
@@ -303,10 +313,7 @@ def smooth_prony_fit(
     basis = prony_basis(omega, tau_i, solid)
 
     y = np.concatenate((E_stor, E_loss))
-
-    y_std = np.absolute(E_stor + 1.0j * E_loss)
-    y_std *= 0.2  # TODO: make this an input to the function
-    y_std = np.concatenate((y_std, y_std))
+    y_std = np.concatenate((E_stor_std, E_loss_std))
 
     # Data-scaled initial guess: spread max(E_stor) evenly across N+solid terms
     # so the initial model prediction matches the data magnitude. A constant
@@ -565,12 +572,10 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
     T_ref = {'WLF': Tg, 'hybrid': TL}.get(shift_model)  # None for 'manual'
 
     source_omega = df['Frequency'].to_numpy() if 'Frequency' in df.columns else 1.0
-    return pd.DataFrame({
-        'Frequency': source_omega * a_T,
-        'Temperature': T_ref,
-        "E'": df["E'"].to_numpy(),
-        "E''": df["E''"].to_numpy(),
-    }).sort_values('Frequency').reset_index(drop=True)
+    out = df.assign(Frequency=source_omega * a_T, Temperature=T_ref)
+    canonical = ['Frequency', 'Temperature', "E'", "E''"]
+    extras = [c for c in df.columns if c not in canonical]
+    return out[canonical + extras].sort_values('Frequency').reset_index(drop=True)
 
 
 def tts_frequency_to_temperature(
@@ -876,7 +881,8 @@ EXPECTED_DOMAIN_COLUMNS = {
 
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
-                      Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None):
+                      Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None,
+                      relative_error=0.2):
     """
     Update the dynamfit figures and Prony coefficient table for an uploaded dataset.
 
@@ -912,8 +918,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     assert domain in EXPECTED_DOMAIN_COLUMNS, \
         f"Unknown domain {domain!r}; expected one of {list(EXPECTED_DOMAIN_COLUMNS)}."
     expected_cols = EXPECTED_DOMAIN_COLUMNS[domain]
-    assert isinstance(uploadData, dict) and tuple(uploadData.keys()) == expected_cols, \
-        f"uploadData keys must be {expected_cols} for domain {domain!r}; got " \
+    assert isinstance(uploadData, dict) and all(k in uploadData for k in expected_cols), \
+        f"uploadData must contain {expected_cols} for domain {domain!r}; got " \
         f"{tuple(uploadData.keys()) if isinstance(uploadData, dict) else type(uploadData).__name__}."
 
     df = pd.DataFrame(uploadData)
@@ -970,18 +976,35 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             temp_sweep_data, shift_model,
             Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
         )
-        df = freq_sweep_data[["Frequency", "E'", "E''"]].rename(
+        df = freq_sweep_data.rename(
             columns={"E'": 'E Storage', "E''": 'E Loss'},
         )
 
+    E_stor_arr = df['E Storage'].to_numpy()
+    E_loss_arr = df['E Loss'].to_numpy()
+    if 'E Storage Error' in df.columns and 'E Loss Error' in df.columns:
+        E_stor_std = df['E Storage Error'].to_numpy()
+        E_loss_std = df['E Loss Error'].to_numpy()
+    elif 'Error' in df.columns:
+        E_stor_std = df['Error'].to_numpy()
+        E_loss_std = E_stor_std
+    else:
+        E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr) * relative_error
+        E_loss_std = E_stor_std
     tau_i, E_i = smooth_prony_fit(
         omega=df['Frequency'].to_numpy(),
-        E_stor=df['E Storage'].to_numpy(),
-        E_loss=df['E Loss'].to_numpy(),
+        E_stor=E_stor_arr,
+        E_loss=E_loss_arr,
+        E_stor_std=E_stor_std,
+        E_loss_std=E_loss_std,
         N=number_of_prony, smoothness=smoothness,
     )
     N_nz = np.count_nonzero(E_i)
 
+    # Downstream figure builders assume df's first three columns are
+    # exactly (Frequency, E Storage, E Loss); drop any extras now that
+    # the std arrays have been pulled out.
+    df = df[['Frequency', 'E Storage', 'E Loss']]
     fig1, fig11 = _build_complex_figures(df, tau_i, E_i, N_nz)
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)

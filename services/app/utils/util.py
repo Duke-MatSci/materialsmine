@@ -58,16 +58,28 @@ def upload_init(file_name, domain):
             found, the file has the wrong number of columns for the chosen
             domain, or the file's numeric contents cannot be parsed as floats.
     """
-    columns_by_domain = {
-        'frequency':   ['Frequency', 'E Storage', 'E Loss'],
-        'temperature': ['Temperature', 'E Storage', 'E Loss'],
-        'shift':       ['Temperature', 'a_T'],
+    allowed_columns_by_domain = {
+        'frequency': [
+            ['Frequency', 'E Storage', 'E Loss'],
+            ['Frequency', 'E Storage', 'E Loss', 'Error'],
+            ['Frequency', 'E Storage', 'E Loss', 'E Storage Error', 'E Loss Error'],
+        ],
+        'temperature': [
+            ['Temperature', 'E Storage', 'E Loss'],
+            ['Temperature', 'E Storage', 'E Loss', 'Error'],
+            ['Temperature', 'E Storage', 'E Loss', 'E Storage Error', 'E Loss Error'],
+        ],
+        'shift': [
+            ['Temperature', 'a_T'],
+            ['Temperature', 'a_T', 'Error'],
+        ],
     }
-    if domain not in columns_by_domain:
+    if domain not in allowed_columns_by_domain:
         raise ValueError(
-            f"Unknown domain {domain!r}. Expected one of {list(columns_by_domain)}."
+            f"Unknown domain {domain!r}. "
+            f"Expected one of {list(allowed_columns_by_domain)}."
         )
-    columns = columns_by_domain[domain]
+    allowed_shapes = allowed_columns_by_domain[domain]
 
     extension = os.path.splitext(file_name)[1].lower()
     if extension == '.csv':
@@ -107,10 +119,12 @@ def upload_init(file_name, domain):
     if data.ndim == 1:
         data = data.reshape(1, -1)
 
-    if data.shape[0] != len(columns):
+    columns = next((s for s in allowed_shapes if len(s) == data.shape[0]), None)
+    if columns is None:
+        allowed_counts = ', '.join(str(len(s)) for s in allowed_shapes)
         raise ValueError(
-            f"Expected {len(columns)} columns for {domain} domain "
-            f"({', '.join(columns)}), but {file_name} has {data.shape[0]}."
+            f"Expected one of [{allowed_counts}] columns for {domain} domain, "
+            f"but {file_name} has {data.shape[0]}."
         )
 
     sortind = np.argsort(data[0])

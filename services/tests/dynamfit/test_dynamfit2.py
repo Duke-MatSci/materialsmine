@@ -260,19 +260,24 @@ class TestSmoothPronyFit(unittest.TestCase):
         self.omega = df['Frequency'].values
         self.E_stor = df['E Storage'].values
         self.E_loss = df['E Loss'].values
+        # Flat uniform weights — same loss landscape as unweighted least-squares.
+        self.E_stor_std = np.ones_like(self.E_stor)
+        self.E_loss_std = np.ones_like(self.E_loss)
 
     def test_shape_viscous(self):
         tau_i, E_i = smooth_prony_fit(
-            self.omega, self.E_stor, self.E_loss, N=5,
-            smoothness=1.0, solid=False,
+            self.omega, self.E_stor, self.E_loss,
+            E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+            N=5, smoothness=1.0, solid=False,
         )
         self.assertEqual(tau_i.shape, (5,))
         self.assertEqual(E_i.shape, (5,))
 
     def test_shape_solid(self):
         tau_i, E_i = smooth_prony_fit(
-            self.omega, self.E_stor, self.E_loss, N=5,
-            smoothness=1.0, solid=True,
+            self.omega, self.E_stor, self.E_loss,
+            E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+            N=5, smoothness=1.0, solid=True,
         )
         self.assertEqual(tau_i.shape, (5,))
         self.assertEqual(E_i.shape, (6,))
@@ -282,6 +287,7 @@ class TestSmoothPronyFit(unittest.TestCase):
         # should recover the input coefficients.
         tau_i, E_i = smooth_prony_fit(
             self.omega, self.E_stor, self.E_loss,
+            E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
             N=len(TAU), smoothness=0.0, solid=False,
         )
         np.testing.assert_allclose(tau_i, TAU)
@@ -289,59 +295,114 @@ class TestSmoothPronyFit(unittest.TestCase):
 
     def test_N_controls_tau_grid_size(self):
         tau_i, E_i = smooth_prony_fit(
-            self.omega, self.E_stor, self.E_loss, N=8,
-            smoothness=1.0, solid=False,
+            self.omega, self.E_stor, self.E_loss,
+            E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+            N=8, smoothness=1.0, solid=False,
         )
         self.assertEqual(tau_i.shape, (8,))
         self.assertEqual(E_i.shape, (8,))
 
+    def test_std_arrays_weight_residuals(self):
+        # Under-parameterized fit (N=1 against a 3-term source) so the model
+        # cannot match both moduli exactly. Tiny std on the storage side,
+        # huge on the loss side → the storage residuals dominate the loss,
+        # so the fit tracks E_stor better than E_loss; reversing the weights
+        # should swap which side tracks well.
+        n = len(self.omega)
+        small = np.full(n, 1e-3)
+        big = np.full(n, 1e3)
+        tau_i, E_i = smooth_prony_fit(
+            self.omega, self.E_stor, self.E_loss,
+            E_stor_std=small, E_loss_std=big,
+            N=1, smoothness=0.0, solid=False,
+        )
+        basis = prony_basis(self.omega, tau_i, solid=False)
+        model = basis @ E_i
+        stor_err = np.linalg.norm(self.E_stor - model[:n])
+        loss_err = np.linalg.norm(self.E_loss - model[n:])
+        self.assertLess(stor_err, loss_err)
+
+        tau_i_r, E_i_r = smooth_prony_fit(
+            self.omega, self.E_stor, self.E_loss,
+            E_stor_std=big, E_loss_std=small,
+            N=1, smoothness=0.0, solid=False,
+        )
+        basis_r = prony_basis(self.omega, tau_i_r, solid=False)
+        model_r = basis_r @ E_i_r
+        stor_err_r = np.linalg.norm(self.E_stor - model_r[:n])
+        loss_err_r = np.linalg.norm(self.E_loss - model_r[n:])
+        self.assertGreater(stor_err_r, loss_err_r)
+
     def test_rejects_non_ndarray_omega(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                list(self.omega), self.E_stor, self.E_loss, N=5,
-                smoothness=1.0, solid=False,
+                list(self.omega), self.E_stor, self.E_loss,
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_non_ndarray_E_stor(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega, list(self.E_stor), self.E_loss, N=5,
-                smoothness=1.0, solid=False,
+                self.omega, list(self.E_stor), self.E_loss,
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_non_ndarray_E_loss(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega, self.E_stor, list(self.E_loss), N=5,
-                smoothness=1.0, solid=False,
+                self.omega, self.E_stor, list(self.E_loss),
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_2d_omega(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega.reshape(1, -1), self.E_stor, self.E_loss, N=5,
-                smoothness=1.0, solid=False,
+                self.omega.reshape(1, -1), self.E_stor, self.E_loss,
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_2d_E_stor(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega, self.E_stor.reshape(1, -1), self.E_loss, N=5,
-                smoothness=1.0, solid=False,
+                self.omega, self.E_stor.reshape(1, -1), self.E_loss,
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_2d_E_loss(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega, self.E_stor, self.E_loss.reshape(1, -1), N=5,
-                smoothness=1.0, solid=False,
+                self.omega, self.E_stor, self.E_loss.reshape(1, -1),
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_rejects_length_mismatch(self):
         with self.assertRaises(AssertionError):
             smooth_prony_fit(
-                self.omega, self.E_stor[:-1], self.E_loss, N=5,
-                smoothness=1.0, solid=False,
+                self.omega, self.E_stor[:-1], self.E_loss,
+                E_stor_std=self.E_stor_std[:-1], E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
+            )
+
+    def test_rejects_E_stor_std_wrong_length(self):
+        with self.assertRaises(AssertionError):
+            smooth_prony_fit(
+                self.omega, self.E_stor, self.E_loss,
+                E_stor_std=self.E_stor_std[:-1], E_loss_std=self.E_loss_std,
+                N=5, smoothness=1.0, solid=False,
+            )
+
+    def test_rejects_E_loss_std_wrong_length(self):
+        with self.assertRaises(AssertionError):
+            smooth_prony_fit(
+                self.omega, self.E_stor, self.E_loss,
+                E_stor_std=self.E_stor_std, E_loss_std=self.E_loss_std[:-1],
+                N=5, smoothness=1.0, solid=False,
             )
 
     def test_handles_data_scale_orders_of_magnitude(self):
@@ -361,11 +422,13 @@ class TestSmoothPronyFit(unittest.TestCase):
             omega = df['Frequency'].to_numpy()
             E_stor = df['E Storage'].to_numpy()
             E_loss = df['E Loss'].to_numpy()
+            mag = np.abs(E_stor + 1.0j * E_loss) * 0.2
             for N in [10, 20, 50]:
                 with self.subTest(scale=scale, N=N):
                     _, E_i = smooth_prony_fit(
-                        omega, E_stor, E_loss, N=N,
-                        smoothness=0.0, solid=True,
+                        omega, E_stor, E_loss,
+                        E_stor_std=mag, E_loss_std=mag,
+                        N=N, smoothness=0.0, solid=True,
                     )
                     self.assertTrue(
                         np.all(np.isfinite(E_i)),
@@ -1086,6 +1149,120 @@ class TestUpdateLineChartValidation(unittest.TestCase):
         bad_shift = {'Temperature': [0.0, 25.0, 50.0], 'wrong_key': [1.0, 1.0, 1.0]}
         with self.assertRaises(AssertionError):
             self._call(temp, domain='temperature', shiftData=bad_shift)
+
+
+class TestUpdateLineChartErrorColumns(unittest.TestCase):
+    """update_line_chart should pass E_stor_std/E_loss_std from the uploadData
+    error columns when present, else fall back to relative_error*|E*|."""
+
+    @staticmethod
+    def _freq_data(extras=None):
+        d = {
+            'Frequency': np.array([1.0, 2.0, 3.0]),
+            'E Storage': np.array([100.0, 200.0, 300.0]),
+            'E Loss':    np.array([10.0, 20.0, 30.0]),
+        }
+        if extras:
+            d.update(extras)
+        return d
+
+    @staticmethod
+    def _temp_data(extras=None):
+        d = {
+            'Temperature': np.array([0.0, 25.0, 50.0]),
+            'E Storage':   np.array([100.0, 200.0, 300.0]),
+            'E Loss':      np.array([10.0, 20.0, 30.0]),
+        }
+        if extras:
+            d.update(extras)
+        return d
+
+    def _spy(self):
+        # Return a minimal valid fit result so downstream figure builders run.
+        from unittest.mock import patch
+        spy_target = patch(
+            'app.dynamfit.dynamfit2.smooth_prony_fit',
+            return_value=(np.array([1.0]), np.array([1.0])),
+        )
+        return spy_target
+
+    def test_per_modulus_error_columns_flow_into_smooth_prony_fit(self):
+        stor_err = np.array([5.0, 10.0, 15.0])
+        loss_err = np.array([0.5, 1.0, 1.5])
+        data = self._freq_data({
+            'E Storage Error': stor_err,
+            'E Loss Error':    loss_err,
+        })
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+            )
+        kwargs = spy.call_args.kwargs
+        np.testing.assert_array_equal(kwargs['E_stor_std'], stor_err)
+        np.testing.assert_array_equal(kwargs['E_loss_std'], loss_err)
+
+    def test_shared_error_column_flows_into_both_std_kwargs(self):
+        err = np.array([1.0, 2.0, 3.0])
+        data = self._freq_data({'Error': err})
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+            )
+        kwargs = spy.call_args.kwargs
+        np.testing.assert_array_equal(kwargs['E_stor_std'], err)
+        np.testing.assert_array_equal(kwargs['E_loss_std'], err)
+
+    def test_no_error_columns_falls_back_to_default_relative_error(self):
+        data = self._freq_data()
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+            )
+        kwargs = spy.call_args.kwargs
+        expected = np.abs(data['E Storage'] + 1.0j * data['E Loss']) * 0.2
+        np.testing.assert_allclose(kwargs['E_stor_std'], expected)
+        np.testing.assert_allclose(kwargs['E_loss_std'], expected)
+
+    def test_relative_error_kwarg_scales_fallback(self):
+        data = self._freq_data()
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+                relative_error=0.5,
+            )
+        kwargs = spy.call_args.kwargs
+        expected = np.abs(data['E Storage'] + 1.0j * data['E Loss']) * 0.5
+        np.testing.assert_allclose(kwargs['E_stor_std'], expected)
+        np.testing.assert_allclose(kwargs['E_loss_std'], expected)
+
+    def test_temperature_per_modulus_error_columns_flow_through_tts(self):
+        # The temperature branch routes data through tts_temperature_to_frequency_V2,
+        # which reorders rows by post-shift Frequency. The per-row error values
+        # must ride along that reorder so smooth_prony_fit sees them aligned.
+        stor_err = np.array([5.0, 10.0, 15.0])
+        loss_err = np.array([0.5, 1.0, 1.5])
+        data = self._temp_data({
+            'E Storage Error': stor_err,
+            'E Loss Error':    loss_err,
+        })
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='temperature',
+                Tg=25.0, C1=17.44, C2=51.6, shift_model='WLF',
+            )
+        kwargs = spy.call_args.kwargs
+        # Each (storage, loss) error pair must still be co-located with its
+        # source row after the frequency-sort reorder. The set of pairs is
+        # therefore invariant under TTS even though the order changes.
+        pairs_out = set(zip(kwargs['E_stor_std'].tolist(),
+                            kwargs['E_loss_std'].tolist()))
+        pairs_in = set(zip(stor_err.tolist(), loss_err.tolist()))
+        self.assertEqual(pairs_out, pairs_in)
 
 
 if __name__ == '__main__':

@@ -51,6 +51,7 @@ def extract_data_from_file(request_id):
         smoothness = data.get('smoothness', 0)
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
+        relative_error = data.get('relative_error', 0.2)
         shift_model = data.get('transform_method', 'hybrid')
         # Read incoming shift factor model metrics
         Tg = data.get('Tg', None)
@@ -122,7 +123,8 @@ def extract_data_from_file(request_id):
 
         # Assuming the update_line_chart function returns values in a specific order
         result = update_line_chart(uploadData, number_of_prony, smoothness,
-                                   fit_settings, domain, **shift_params)
+                                   fit_settings, domain,
+                                   relative_error=relative_error, **shift_params)
 
         # Unpacking values into a dictionary
         chart_data = {
