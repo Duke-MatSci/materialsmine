@@ -2,11 +2,14 @@ import os
 import json
 import datetime
 
+import numpy as np
+
 from flask import request, Blueprint, jsonify,  Response
 
 from app.dynamfit.dynamfit2 import (
     update_line_chart, argmax_peak,
     UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+    fit_wlf_coefficients, fit_hybrid_coefficients,
 )
 from app.utils.util import token_required, upload_init, request_logger, log_errors
 from app.config import Config
@@ -68,7 +71,69 @@ def extract_data_from_file(request_id):
 
         # add manual shift factor upload
         shift_file_name = data.get('shift_file_name', None)
-        
+
+        fit_shift_coefficients = data.get('fit_shift_coefficients', False)
+
+        # TODO: This branch should become its own route (e.g. POST /dynamfit/fit-shift/).
+        # The shift-domain fit is a special case: its only effective inputs are the
+        # shift file plus Tg or TL, and its only output is the fitted coefficients —
+        # no Prony fit, no charts. Grafted into /extract/ for now to avoid a new
+        # endpoint while the feature stabilises.
+        if fit_shift_coefficients:
+            if not shift_file_name:
+                return jsonify({'message': 'No shift file name provided'}), 400
+            if not check_file_exists(shift_file_name):
+                return jsonify({'message': f"File '{shift_file_name}' not found"}), 404
+            if shift_model not in ('WLF', 'hybrid'):
+                return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
+
+            shiftData = upload_init(shift_file_name, 'shift')
+            if not shiftData:
+                return jsonify({'message': f"File '{shift_file_name}' is empty"}), 400
+
+            T = np.asarray(shiftData['Temperature'], dtype=float)
+            a_T = np.asarray(shiftData['a_T'], dtype=float)
+
+            if shift_model == 'WLF':
+                if Tg is None:
+                    return jsonify({'message': 'Tg is required for WLF coefficient fitting'}), 400
+                C1_fit, C2_fit = fit_wlf_coefficients(
+                    T, a_T, T_ref=Tg,
+                    C1=C1, C2=C2,
+                    fix_C1=(C1 is not None),
+                    fix_C2=(C2 is not None),
+                )
+                result_data = {
+                    'transform_method': 'WLF',
+                    'Tg': Tg, 'C1': C1_fit, 'C2': C2_fit,
+                    'Ea': None, 'TL': None,
+                }
+            else:  # hybrid
+                if TL is None:
+                    return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
+                C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+                    T, a_T, TL=TL,
+                    C1=C1, C2=C2, Ea=Ea,
+                    fix_C1=(C1 is not None),
+                    fix_C2=(C2 is not None),
+                    fix_Ea=(Ea is not None),
+                )
+                result_data = {
+                    'transform_method': 'hybrid',
+                    'Tg': None, 'C1': C1_fit, 'C2': C2_fit,
+                    'Ea': Ea_fit, 'TL': TL,
+                }
+
+            end_time = datetime.datetime.now()
+            latency = f"{(end_time - start_time).total_seconds()} seconds"
+            json_data = json.dumps(result_data, indent=4)
+            response = Response(json_data, content_type='application/json; charset=utf-8', status=200)
+            response.headers['startTime'] = start_time
+            response.headers['endTime'] = end_time
+            response.headers['latency'] = str(latency)
+            response.headers['responseId'] = request_id
+            return response
+
         if not file_name:
             return jsonify({'message': 'No file name provided'}), 400
 

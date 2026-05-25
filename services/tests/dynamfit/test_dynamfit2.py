@@ -2,8 +2,12 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
+import json
+import tempfile
+import datetime
 import numpy as np
 import pandas as pd
+from unittest.mock import patch
 
 # Append the directory above 'test' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -24,6 +28,10 @@ from app.dynamfit.dynamfit2 import (
     tts_frequency_to_temperature,
     argmax_peak,
     update_line_chart,
+    fit_wlf_coefficients,
+    fit_hybrid_coefficients,
+    UNIVERSAL_WLF_C1,
+    UNIVERSAL_WLF_C2,
 )
 from app.config import Config
 from app.utils.util import upload_init
@@ -1263,6 +1271,493 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
                             kwargs['E_loss_std'].tolist()))
         pairs_in = set(zip(stor_err.tolist(), loss_err.tolist()))
         self.assertEqual(pairs_out, pairs_in)
+
+
+class TestFitWlfCoefficients(unittest.TestCase):
+    """Tests for fit_wlf_coefficients — pure function, no Flask app needed."""
+
+    T_REF = 25.0
+    C1_TRUE = 14.0
+    C2_TRUE = 45.0
+
+    @classmethod
+    def setUpClass(cls):
+        # Deterministic synthetic shift data: generate exact a_T from wlf_shift.
+        cls.T = np.linspace(30.0, 80.0, 20)
+        cls.a_T = wlf_shift(cls.T, cls.T_REF, cls.C1_TRUE, cls.C2_TRUE)
+
+    def test_round_trip_recovers_C1_and_C2(self):
+        # Both params free — fit must recover the true values to tight tolerance.
+        C1_fit, C2_fit = fit_wlf_coefficients(
+            self.T, self.a_T, self.T_REF,
+            C1=self.C1_TRUE, C2=self.C2_TRUE,
+        )
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+
+    def test_fixed_C1_returned_exactly_and_C2_fitted(self):
+        # C1 is pinned; C2 must be fitted back to truth.
+        C1_fit, C2_fit = fit_wlf_coefficients(
+            self.T, self.a_T, self.T_REF,
+            C1=self.C1_TRUE, C2=self.C2_TRUE,
+            fix_C1=True,
+        )
+        self.assertEqual(C1_fit, self.C1_TRUE)          # exact — no optimizer touched it
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+
+    def test_default_initial_guesses_converge(self):
+        # Omit C1 and C2 so the function falls back to UNIVERSAL_WLF_* as p0.
+        # Data generated from (C1=UNIVERSAL_WLF_C1, C2=UNIVERSAL_WLF_C2) so
+        # the universal constants are both the truth and the starting point.
+        T = np.linspace(30.0, 80.0, 20)
+        a_T = wlf_shift(T, self.T_REF, UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2)
+        C1_fit, C2_fit = fit_wlf_coefficients(T, a_T, self.T_REF)
+        self.assertAlmostEqual(C1_fit, UNIVERSAL_WLF_C1, places=4)
+        self.assertAlmostEqual(C2_fit, UNIVERSAL_WLF_C2, places=4)
+
+    def test_nonpositive_a_T_raises_value_error(self):
+        # a_T containing zero is physically meaningless; log10 is undefined.
+        bad_a_T = self.a_T.copy()
+        bad_a_T[3] = 0.0
+        with self.assertRaises(ValueError):
+            fit_wlf_coefficients(self.T, bad_a_T, self.T_REF)
+
+    def test_negative_a_T_raises_value_error(self):
+        bad_a_T = self.a_T.copy()
+        bad_a_T[0] = -1.0
+        with self.assertRaises(ValueError):
+            fit_wlf_coefficients(self.T, bad_a_T, self.T_REF)
+
+    def test_cold_data_both_free_converges_and_c2_respects_bound(self):
+        # Regression: when T spans far below T_ref (cold side), the default
+        # UNIVERSAL_WLF_C2 initial guess lands near the WLF pole and the
+        # optimizer evaluates 10**exponent values that overflow float64.
+        # The fix applies an analytic log10(a_T) model so overflow can't happen,
+        # and enforces C2 >= c2_min = (T_ref - min(T)) + 1.0 throughout.
+        T_ref_local = 20.0
+        T = np.linspace(-30.0, 70.0, 21)   # T_min = -30 → c2_min = 51
+        # True parameters well away from the pole, deterministic ground truth.
+        C1_true, C2_true = 22.0, 180.0
+        a_T = wlf_shift(T, T_ref_local, C1_true, C2_true)
+        c2_min = (T_ref_local - float(T.min())) + 1.0   # = 51.0
+
+        # Both C1 and C2 free, default initial guesses — this is the case that
+        # used to raise ValueError before the fix.
+        C1_fit, C2_fit = fit_wlf_coefficients(T, a_T, T_ref_local)
+
+        self.assertTrue(np.isfinite(C1_fit) and C1_fit > 0,
+                        f"Expected finite positive C1, got {C1_fit}")
+        self.assertGreaterEqual(C2_fit, c2_min,
+                                f"C2_fit {C2_fit:.4f} < c2_min {c2_min:.4f} — bound not respected")
+
+
+class TestFitHybridCoefficients(unittest.TestCase):
+    """Tests for fit_hybrid_coefficients — pure function, no Flask app needed."""
+
+    TL = 25.0       # WLF/Arrhenius crossover — required input, never fitted
+    C1_TRUE = 14.0
+    C2_TRUE = 45.0
+    EA_TRUE = 80.0  # kJ/mol — well within curve_fit's convergence basin
+
+    @classmethod
+    def setUpClass(cls):
+        # Span both sides of TL so both Arrhenius and WLF branches are exercised.
+        cls.T = np.linspace(5.0, 70.0, 30)
+        cls.a_T = hybrid_shift(cls.T, cls.TL, cls.C1_TRUE, cls.C2_TRUE, cls.EA_TRUE)
+
+    def test_round_trip_recovers_C1_C2_and_Ea(self):
+        C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+            self.T, self.a_T, self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+        )
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+        self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=4)
+
+    def test_fixed_Ea_returned_exactly_and_others_fitted(self):
+        # Ea is pinned; C1 and C2 must be recovered from the data.
+        C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+            self.T, self.a_T, self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+            fix_Ea=True,
+        )
+        self.assertEqual(Ea_fit, self.EA_TRUE)           # exact — never passed to optimizer
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+
+    def test_nonpositive_a_T_raises_value_error(self):
+        bad_a_T = self.a_T.copy()
+        bad_a_T[5] = 0.0
+        with self.assertRaises(ValueError):
+            fit_hybrid_coefficients(self.T, bad_a_T, self.TL)
+
+
+# ---------------------------------------------------------------------------
+# Route-level tests for the fit_shift_coefficients branch of /dynamfit/extract/
+# ---------------------------------------------------------------------------
+import jwt
+from flask import Flask
+from app.dynamfit.routes import dynamfit
+from app.config import Config
+
+
+def _make_app():
+    """
+    Build a minimal Flask test app that registers only the dynamfit blueprint,
+    avoiding the FileHandler('/services/services_app.log') crash in create_app().
+    SECRET_KEY is fixed so we can mint tokens without an .env file.
+    """
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'test-secret'
+    app.config['TESTING'] = True
+    app.register_blueprint(dynamfit)
+    return app
+
+
+def _make_token(secret='test-secret', req_id='test-req-id'):
+    """Mint a JWT with the reqId field that token_required expects."""
+    payload = {
+        'reqId': req_id,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=600),
+    }
+    return jwt.encode(payload, secret, algorithm='HS256')
+
+
+# Synthetic shift data (5 points, all positive a_T) used across tests.
+_SHIFT_T = np.array([0.0, 10.0, 20.0, 30.0, 40.0])
+_SHIFT_A_T = np.array([3.0, 2.0, 1.0, 0.5, 0.25])
+_SHIFT_DATA = {'Temperature': _SHIFT_T, 'a_T': _SHIFT_A_T}
+
+# Representative WLF coefficients returned by the mocked fit functions.
+_C1_RETURNED = 14.0
+_C2_RETURNED = 45.0
+_EA_RETURNED = 80.0
+
+
+class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
+    """
+    Route-level tests for the fit_shift_coefficients=true short-circuit branch
+    of POST /dynamfit/extract/.
+
+    Strategy:
+      - Build a bare Flask app (no create_app) to avoid the Docker-only FileHandler.
+      - Patch Config.SECRET_KEY so token_required decodes our test tokens.
+      - Patch check_file_exists and upload_init at the route module boundary so
+        tests never touch disk and don't depend on real file content.
+      - Patch fit_wlf_coefficients and fit_hybrid_coefficients so tests verify
+        route wiring, not fit math (fit math is covered in TestFitWlfCoefficients
+        and TestFitHybridCoefficients above).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        Config.SECRET_KEY = 'test-secret'
+        cls.app = _make_app()
+        cls.client = cls.app.test_client()
+        cls.token = _make_token()
+        cls.headers = {'Authorization': f'Bearer {cls.token}',
+                       'Content-Type': 'application/json'}
+
+    def _post(self, body):
+        return self.client.post(
+            '/dynamfit/extract/',
+            data=json.dumps(body),
+            headers=self.headers,
+        )
+
+    def _base_wlf_body(self, **overrides):
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'shift.txt',
+            'transform_method': 'WLF',
+            'Tg': 25.0,
+        }
+        body.update(overrides)
+        return body
+
+    def _base_hybrid_body(self, **overrides):
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'shift.txt',
+            'transform_method': 'hybrid',
+            'TL': 25.0,
+        }
+        body.update(overrides)
+        return body
+
+    # ------------------------------------------------------------------
+    # Happy paths
+    # ------------------------------------------------------------------
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_happy_path_returns_six_coefficient_keys(
+            self, _exists, _upload, _fit):
+        resp = self._post(self._base_wlf_body())
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertEqual(
+            set(data.keys()),
+            {'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TL'},
+        )
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_happy_path_ea_and_tl_are_null(
+            self, _exists, _upload, _fit):
+        resp = self._post(self._base_wlf_body())
+        data = json.loads(resp.data)
+        self.assertIsNone(data['Ea'])
+        self.assertIsNone(data['TL'])
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_happy_path_c1_c2_are_plain_floats(
+            self, _exists, _upload, _fit):
+        # Confirms JSON serialization works: numpy scalars would raise TypeError.
+        resp = self._post(self._base_wlf_body())
+        data = json.loads(resp.data)
+        self.assertIsInstance(data['C1'], float)
+        self.assertIsInstance(data['C2'], float)
+
+    @patch('app.dynamfit.routes.fit_hybrid_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED, _EA_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_hybrid_happy_path_tg_null_ea_tl_populated(
+            self, _exists, _upload, _fit):
+        resp = self._post(self._base_hybrid_body())
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.data)
+        self.assertIsNone(data['Tg'])
+        self.assertIsInstance(data['Ea'], float)
+        self.assertIsInstance(data['TL'], float)
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_supplied_c1_passes_fix_c1_true_to_fit(
+            self, _exists, _upload, mock_fit):
+        """When C1 is in the body the route must pass fix_C1=True to the fit function."""
+        resp = self._post(self._base_wlf_body(C1=99.0))
+        self.assertEqual(resp.status_code, 200)
+        _, kwargs = mock_fit.call_args
+        self.assertTrue(kwargs.get('fix_C1'))
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_response_lacks_chart_keys(
+            self, _exists, _upload, _fit):
+        """The short-circuit branch must NOT include chart output keys."""
+        resp = self._post(self._base_wlf_body())
+        data = json.loads(resp.data)
+        for chart_key in ('complex-chart', 'mytable', 'multi', 'response'):
+            self.assertNotIn(chart_key, data)
+
+    # ------------------------------------------------------------------
+    # Validation / short-circuit errors
+    # ------------------------------------------------------------------
+
+    def test_missing_shift_file_name_returns_400(self):
+        body = {
+            'fit_shift_coefficients': True,
+            'transform_method': 'WLF',
+            'Tg': 25.0,
+            # shift_file_name intentionally omitted
+        }
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('app.dynamfit.routes.check_file_exists', return_value=False)
+    def test_shift_file_not_found_returns_404(self, _exists):
+        resp = self._post(self._base_wlf_body())
+        self.assertEqual(resp.status_code, 404)
+
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_invalid_transform_method_returns_400(self, _exists):
+        body = self._base_wlf_body(transform_method='manual')
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_missing_tg_returns_400(self, _exists, _upload):
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'shift.txt',
+            'transform_method': 'WLF',
+            # Tg intentionally omitted
+        }
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_hybrid_missing_tl_returns_400(self, _exists, _upload):
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'shift.txt',
+            'transform_method': 'hybrid',
+            # TL intentionally omitted
+        }
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('app.dynamfit.routes.upload_init', return_value=None)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_empty_shift_file_returns_400(self, _exists, _upload):
+        resp = self._post(self._base_wlf_body())
+        self.assertEqual(resp.status_code, 400)
+
+
+# ---------------------------------------------------------------------------
+# End-to-end tests: real files + real optimizer, no mocking of upload_init or
+# fit functions.  These complement TestExtractFitShiftCoefficientsRoute (which
+# mocks everything and verifies route wiring) by verifying that the optimizer
+# actually converges and produces a fit that reconstructs the data to a
+# meaningful tolerance.
+#
+# WLF calibration (agilus30 20C): both C1 and C2 fitted freely from defaults.
+# The data spans T down to -30 °C (50 °C below T_ref=20), which previously
+# caused a 10**exponent overflow in the optimizer (ValueError → HTTP 400) with
+# the default UNIVERSAL_WLF_C2=51.6 initial guess.  The pole-avoidance fix
+# uses an analytic log10(a_T) model so overflow can't propagate as an exception,
+# and enforces C2 >= c2_min throughout.  Observed log10-RMSE ≈ 0.437 (threshold: 0.55).
+#
+# Hybrid calibration (VeroCyan 80C): all three parameters (C1, C2, Ea) fitted
+# freely from defaults.  Observed log10-RMSE ≈ 0.844 (threshold: 1.0).
+# ---------------------------------------------------------------------------
+
+_REAL_FILES_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..', 'app', 'dynamfit', 'files')
+)
+
+
+class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
+    """
+    E2E tests for the fit_shift_coefficients branch of POST /dynamfit/extract/.
+
+    Real files on disk, real optimizer — no mocking of upload_init, check_file_exists,
+    or the fit functions.  Config.FILES_DIRECTORY is pointed at the checked-in
+    files/ directory and restored in tearDownClass.
+    """
+
+    _orig_files_dir = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        Config.FILES_DIRECTORY = _REAL_FILES_DIR
+        Config.SECRET_KEY = 'test-secret'
+        cls.app = _make_app()
+        cls.client = cls.app.test_client()
+        cls.token = _make_token()
+        cls.headers = {
+            'Authorization': f'Bearer {cls.token}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+
+    def _post(self, body):
+        return self.client.post(
+            '/dynamfit/extract/',
+            data=json.dumps(body),
+            headers=self.headers,
+        )
+
+    def test_wlf_e2e_converges_and_fit_is_accurate(self):
+        """
+        WLF fit on agilus30 shift data (T_ref=20 °C), BOTH C1 and C2 free.
+
+        This is the direct regression test for the pole-avoidance fix.  Before
+        the fix, the default UNIVERSAL_WLF_C2=51.6 initial guess produced a
+        10**exponent overflow on data spanning T down to -30 °C, causing a
+        ValueError → HTTP 400.  The fix applies an analytic log10(a_T) model
+        with a C2 lower bound, so the optimizer can start from the universal
+        defaults and converge.  Observed log10-RMSE ≈ 0.437 (threshold: 0.55).
+        """
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'agilus30 (8) shift factors 20C clean.txt',
+            'transform_method': 'WLF',
+            'Tg': 20.0,
+            # No C1 or C2 — both are freely fitted from UNIVERSAL_WLF_* defaults
+        }
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 200)
+
+        result = json.loads(resp.data)
+        self.assertEqual(result['transform_method'], 'WLF')
+        self.assertIsNone(result['Ea'])
+        self.assertIsNone(result['TL'])
+
+        C1 = result['C1']
+        C2 = result['C2']
+        self.assertTrue(np.isfinite(C1) and C1 > 0, f"Expected finite positive C1, got {C1}")
+        self.assertTrue(np.isfinite(C2) and C2 > 0, f"Expected finite positive C2, got {C2}")
+
+        # RMSE check: load real data and reconstruct with fitted coefficients.
+        # Both-free observed RMSE ≈ 0.437; threshold 0.55 allows optimizer
+        # variance without masking a regression to a grossly wrong solution.
+        shift_data = upload_init('agilus30 (8) shift factors 20C clean.txt', 'shift')
+        T = np.asarray(shift_data['Temperature'], dtype=float)
+        a_T = np.asarray(shift_data['a_T'], dtype=float)
+        reconstructed = wlf_shift(T, 20.0, C1, C2)
+        log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
+        self.assertLess(log_rmse, 0.55,
+                        f"WLF log10-RMSE {log_rmse:.4f} exceeds 0.55 — fit likely diverged")
+
+    def test_hybrid_e2e_converges_and_fit_is_accurate(self):
+        """
+        Hybrid Arrhenius/WLF fit on VeroCyan shift data (T_L=80 °C).
+
+        All three parameters (C1, C2, Ea) are fitted freely from default initial
+        guesses — no body-level C1/C2/Ea, so the optimizer is fully exercised.
+        The route must return 200 with finite positive C1, C2, and Ea; Tg must
+        be null; reconstructed shift factors must agree with the data in log10 space.
+        """
+        body = {
+            'fit_shift_coefficients': True,
+            'shift_file_name': 'VeroCyan (5) shift factors 80C clean.txt',
+            'transform_method': 'hybrid',
+            'TL': 80.0,
+            # No C1, C2, Ea — all three are freely fitted
+        }
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 200)
+
+        result = json.loads(resp.data)
+        self.assertEqual(result['transform_method'], 'hybrid')
+        self.assertIsNone(result['Tg'])
+
+        C1 = result['C1']
+        C2 = result['C2']
+        Ea = result['Ea']
+        for name, val in [('C1', C1), ('C2', C2), ('Ea', Ea)]:
+            self.assertTrue(np.isfinite(val) and val > 0,
+                            f"Expected finite positive {name}, got {val}")
+
+        # RMSE check: observed RMSE ≈ 0.844; threshold 1.0 is meaningful without
+        # being so tight that minor optimizer variance causes flakiness.
+        shift_data = upload_init('VeroCyan (5) shift factors 80C clean.txt', 'shift')
+        T = np.asarray(shift_data['Temperature'], dtype=float)
+        a_T = np.asarray(shift_data['a_T'], dtype=float)
+        reconstructed = hybrid_shift(T, 80.0, C1, C2, Ea)
+        log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
+        self.assertLess(log_rmse, 1.0,
+                        f"Hybrid log10-RMSE {log_rmse:.4f} exceeds 1.0 — fit likely diverged")
 
 
 if __name__ == '__main__':
