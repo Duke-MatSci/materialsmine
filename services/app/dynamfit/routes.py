@@ -111,7 +111,12 @@ def extract_data_from_file(request_id):
             else:  # hybrid
                 if TL is None:
                     return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
-                C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+                # TODO: a_T_ref (the co-fitted vertical reference offset) is
+                # discarded for now. There's a good chance the frontend will need
+                # it to reconstruct/align master curves whose shift factors aren't
+                # referenced to TL — surface it in result_data when the frontend
+                # is refactored to consume it (not part of this change).
+                C1_fit, C2_fit, Ea_fit, _a_T_ref = fit_hybrid_coefficients(
                     T, a_T, TL=TL,
                     C1=C1, C2=C2, Ea=Ea,
                     fix_C1=(C1 is not None),

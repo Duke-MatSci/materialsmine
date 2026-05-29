@@ -585,6 +585,27 @@ class TestHybridShift(unittest.TestCase):
         with self.assertRaises(AssertionError):
             hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
 
+    def test_a_T_ref_scales_output(self):
+        # a_T_ref multiplies every returned shift factor.
+        T = np.array([10.0, 20.0, 30.0, 40.0])
+        base = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        scaled = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA, a_T_ref=5.0)
+        np.testing.assert_allclose(scaled, 5.0 * base)
+
+    def test_explicit_ascending_matches_autodetect(self):
+        # Passing ascending explicitly bypasses direction detection but must
+        # yield the same numbers as letting hybrid_shift detect it.
+        T = np.array([10.0, 20.0, 30.0, 40.0])
+        auto = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        forced = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA, ascending=True)
+        np.testing.assert_allclose(forced, auto)
+
+    def test_explicit_descending_matches_autodetect(self):
+        T = np.array([40.0, 30.0, 20.0, 10.0])
+        auto = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        forced = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA, ascending=False)
+        np.testing.assert_allclose(forced, auto)
+
 
 class TestInverseWlfShift(unittest.TestCase):
     T_REF = 100.0
@@ -1366,7 +1387,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
         cls.a_T = hybrid_shift(cls.T, cls.TL, cls.C1_TRUE, cls.C2_TRUE, cls.EA_TRUE)
 
     def test_round_trip_recovers_C1_C2_and_Ea(self):
-        C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+        C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
             self.T, self.a_T, self.TL,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
         )
@@ -1376,7 +1397,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
 
     def test_fixed_Ea_returned_exactly_and_others_fitted(self):
         # Ea is pinned; C1 and C2 must be recovered from the data.
-        C1_fit, C2_fit, Ea_fit = fit_hybrid_coefficients(
+        C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
             self.T, self.a_T, self.TL,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
             fix_Ea=True,
@@ -1390,6 +1411,83 @@ class TestFitHybridCoefficients(unittest.TestCase):
         bad_a_T[5] = 0.0
         with self.assertRaises(ValueError):
             fit_hybrid_coefficients(self.T, bad_a_T, self.TL)
+
+    def test_returns_a_T_ref_near_one_for_TL_referenced_data(self):
+        # setUpClass data is built referenced to TL (hybrid_shift, a_T_ref=1), so
+        # the co-fitted a_T_ref recovers ~1.0.
+        *_, a_T_ref = fit_hybrid_coefficients(
+            self.T, self.a_T, self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+        )
+        self.assertAlmostEqual(a_T_ref, 1.0, places=4)
+
+    def test_cofits_offset_for_unreferenced_data(self):
+        # Data scaled by a known constant K (reference shifted off TL): the fit
+        # recovers K as a_T_ref and the same C1/C2/Ea.
+        K = 12.0
+        C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
+            self.T, K * self.a_T, self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+        )
+        self.assertAlmostEqual(a_T_ref, K, places=3)
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=3)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=3)
+        self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=3)
+
+    def test_degenerate_Arrhenius_guard_fires_and_suppressed_by_fix_Ea(self):
+        # All data above TL → empty Arrhenius segment → ValueError while Ea is
+        # free; fixing Ea suppresses the guard and the WLF-only fit succeeds.
+        T = np.linspace(30.0, 70.0, 20)
+        a_T = wlf_shift(T, 25.0, self.C1_TRUE, self.C2_TRUE)
+        with self.assertRaises(ValueError):
+            fit_hybrid_coefficients(T, a_T, TL=25.0)
+        C1_fit, C2_fit, Ea_fit, _ = fit_hybrid_coefficients(
+            T, a_T, TL=25.0, Ea=self.EA_TRUE, fix_Ea=True,
+        )
+        self.assertEqual(Ea_fit, self.EA_TRUE)
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=3)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=3)
+
+    def test_degenerate_WLF_guard_fires_and_suppressed_by_fix_C(self):
+        # All data below TL → empty WLF segment → ValueError while C1/C2 are
+        # free; fixing them suppresses the guard and the Arrhenius-only fit
+        # recovers Ea.
+        T = np.linspace(5.0, 20.0, 20)
+        a_T = _arr_shift(T, 25.0, self.EA_TRUE)
+        with self.assertRaises(ValueError):
+            fit_hybrid_coefficients(T, a_T, TL=25.0)
+        C1_fit, C2_fit, Ea_fit, _ = fit_hybrid_coefficients(
+            T, a_T, TL=25.0, C1=self.C1_TRUE, C2=self.C2_TRUE,
+            fix_C1=True, fix_C2=True,
+        )
+        self.assertEqual((C1_fit, C2_fit), (self.C1_TRUE, self.C2_TRUE))
+        self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=3)
+
+    def test_all_fixed_returns_four_tuple_and_cofits_offset(self):
+        # C1/C2/Ea all fixed → echoed exactly; a_T_ref is still co-fitted.
+        K = 7.0
+        C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
+            self.T, K * self.a_T, self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+            fix_C1=True, fix_C2=True, fix_Ea=True,
+        )
+        self.assertEqual(
+            (C1_fit, C2_fit, Ea_fit),
+            (self.C1_TRUE, self.C2_TRUE, self.EA_TRUE),
+        )
+        self.assertAlmostEqual(a_T_ref, K, places=3)
+
+    def test_descending_T_round_trip(self):
+        # Reversed (descending) T/a_T must recover the same coefficients — checks
+        # the direction handling and the ascending-ordered a_T_ref interpolation.
+        C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
+            self.T[::-1], self.a_T[::-1], self.TL,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
+        )
+        self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+        self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+        self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=4)
+        self.assertAlmostEqual(a_T_ref, 1.0, places=4)
 
 
 # ---------------------------------------------------------------------------
@@ -1432,6 +1530,7 @@ _SHIFT_DATA = {'Temperature': _SHIFT_T, 'a_T': _SHIFT_A_T}
 _C1_RETURNED = 14.0
 _C2_RETURNED = 45.0
 _EA_RETURNED = 80.0
+_A_T_REF_RETURNED = 1.0
 
 
 class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
@@ -1527,7 +1626,7 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertIsInstance(data['C2'], float)
 
     @patch('app.dynamfit.routes.fit_hybrid_coefficients',
-           return_value=(_C1_RETURNED, _C2_RETURNED, _EA_RETURNED))
+           return_value=(_C1_RETURNED, _C2_RETURNED, _EA_RETURNED, _A_T_REF_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_hybrid_happy_path_tg_null_ea_tl_populated(
@@ -1634,7 +1733,9 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
 # and enforces C2 >= c2_min throughout.  Observed log10-RMSE ≈ 0.437 (threshold: 0.55).
 #
 # Hybrid calibration (VeroCyan 80C): all three parameters (C1, C2, Ea) fitted
-# freely from defaults.  Observed log10-RMSE ≈ 0.844 (threshold: 1.0).
+# freely from defaults; a_T_ref (the vertical reference offset) is co-fitted and
+# must be applied when reconstructing (the VeroCyan data is not referenced to TL,
+# a_T_ref ≈ 9.07).  Observed log10-RMSE ≈ 0.704 (threshold: 1.0).
 # ---------------------------------------------------------------------------
 
 _REAL_FILES_DIR = os.path.abspath(
@@ -1754,7 +1855,11 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
         shift_data = upload_init('VeroCyan (5) shift factors 80C clean.txt', 'shift')
         T = np.asarray(shift_data['Temperature'], dtype=float)
         a_T = np.asarray(shift_data['a_T'], dtype=float)
-        reconstructed = hybrid_shift(T, 80.0, C1, C2, Ea)
+        # a_T_ref (the co-fitted vertical reference offset) is not surfaced by the
+        # route, so reconstruct it as the log-space offset a consumer would apply.
+        unscaled = hybrid_shift(T, 80.0, C1, C2, Ea)
+        a_T_ref = 10 ** np.mean(np.log10(a_T) - np.log10(unscaled))
+        reconstructed = a_T_ref * unscaled
         log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
         self.assertLess(log_rmse, 1.0,
                         f"Hybrid log10-RMSE {log_rmse:.4f} exceeds 1.0 — fit likely diverged")

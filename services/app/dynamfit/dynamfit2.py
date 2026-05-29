@@ -405,7 +405,7 @@ def _arr_shift(T: np.ndarray, T_ref: float, Ea: float) -> np.ndarray:
     Calculate the Arrhenius shift factor a_T.
 
     Implements the Arrhenius equation:
-        log10(a_T) = (Ea_J_per_mol / (2.303 * R)) * (1/T_K - 1/T_ref_K)
+        ln(a_T) = (Ea_J_per_mol / R) * (1/T_K - 1/T_ref_K)
 
     where T_K and T_ref_K are absolute temperatures in Kelvin (T + 273.15) and
     Ea_J_per_mol = 1000 * Ea.
@@ -424,12 +424,12 @@ def _arr_shift(T: np.ndarray, T_ref: float, Ea: float) -> np.ndarray:
     """
     T_ref_K = T_ref + 273.15
     T_K = T + 273.15
-    m = (Ea * 1000.0) / (2.303 * R)
+    m = (Ea * 1000.0) /  R
     with _fp_safe(
         "absolute-zero singularity detected when calculating Arrhenius shift. "
         "Please adjust parameters or manually provide shift factors."
     ):
-        a_T = np.power(10.0, m * (1.0 / T_K - 1.0 / T_ref_K))
+        a_T = np.exp(m * (1.0 / T_K - 1.0 / T_ref_K))
         if not np.all(np.isfinite(a_T)):
             raise FloatingPointError("Non-finite result in Arrhenius computation")
         return a_T
@@ -441,9 +441,11 @@ def hybrid_shift(
         C1: float,
         C2: float,
         Ea: float,
+        a_T_ref: float=1.0,
+        ascending: bool=None,
 ) -> np.ndarray:
     """
-    Calculate hybrid Arrhenius/WLF shift factors.
+    Calculate hybrid Arrhenius/WLF shift factors at T_ref.
 
     Applies the WLF equation to temperatures above T_ref and the Arrhenius
     equation to temperatures at or below T_ref. With two or more elements, T
@@ -459,28 +461,33 @@ def hybrid_shift(
         C1 (float): WLF parameter C1.
         C2 (float): WLF parameter C2.
         Ea (float): Arrhenius activation energy in kJ/mol.
+        a_T_ref (float): convenience argument to scale returned shift factors.
+        ascending (bool): Flag to skip descending handling if pre-calculated elsewhere
 
     Returns:
-        numpy.ndarray: 1-D array of shift factors a_T, same length as T.
+        numpy.ndarray: 1-D array of shift factors a_T, same length as T, where
+            np.interp(T_ref,T,a_T) ~ a_T_ref
 
     Raises:
         ValueError: If the WLF or Arrhenius sub-calculation hits a singularity.
     """
     T = np.atleast_1d(T)
-    assert T.ndim == 1, "T must be a 1-D numpy.ndarray or scalar"
-    assert np.all(np.isfinite(T)), "T must contain only finite values"
-    diffs = np.diff(T)
-    if len(diffs) > 0:
-        ascending = bool(np.all(diffs > 0))  # base case from loader utility
-        assert ascending or np.all(diffs < 0), "T must be monotonically sorted"
-    else:
-        ascending = True  # single element; direction irrelevant
+    if ascending is None:
+        assert T.ndim == 1, "T must be a 1-D numpy.ndarray or scalar"
+        assert np.all(np.isfinite(T)), "T must contain only finite values"
+        diffs = np.diff(T)
+        if len(diffs) > 0:
+            ascending = bool(np.all(diffs > 0))  # base case from loader utility
+            assert ascending or np.all(diffs < 0), "T must be monotonically sorted"
+        else:
+            ascending = True  # single element; direction irrelevant
 
-    T_work = T if ascending else T[::-1]
-    k = np.searchsorted(T_work, T_ref + float_correction, side='right')
-    a_T_arr = _arr_shift(T_work[:k], T_ref, Ea)
-    a_T_wlf = wlf_shift(T_work[k:], T_ref, C1, C2)
+    T = T if ascending else T[::-1]
+    k = np.searchsorted(T, T_ref + float_correction, side='right')
+    a_T_arr = _arr_shift(T[:k], T_ref, Ea)
+    a_T_wlf = wlf_shift(T[k:], T_ref, C1, C2)
     result = np.concatenate((a_T_arr, a_T_wlf))
+    result *= a_T_ref
     return result if ascending else result[::-1]
 
 
@@ -688,10 +695,13 @@ def fit_hybrid_coefficients(
         fix_Ea (bool): If True, hold Ea constant at its supplied value.
 
     Returns:
-        tuple: (C1_fit, C2_fit, Ea_fit) — fitted (or fixed) hybrid coefficients.
+        tuple: (C1_fit, C2_fit, Ea_fit, a_T_ref) — fitted (or fixed) hybrid
+            coefficients plus the co-fitted reference shift factor a_T_ref (the
+            data's shift factor at TL; 1.0 when the data is referenced to TL).
 
     Raises:
-        ValueError: If any a_T value is non-positive (log10 undefined), or if
+        ValueError: If any a_T value is non-positive (log10 undefined), if TL
+            falls outside the data range so a model segment is degenerate, or if
             curve_fit does not converge.
     """
     T = np.atleast_1d(T)
@@ -705,29 +715,57 @@ def fit_hybrid_coefficients(
             "All shift factors a_T must be positive (log10 is undefined for "
             "non-positive values). Check the input shift-factor data."
         )
+    assert np.all(np.isfinite(T)), "T must contain only finite values"
 
     _EA_DEFAULT = 100.0  # kJ/mol — broad mid-range starting point
     C1_0 = C1 if C1 is not None else UNIVERSAL_WLF_C1
     C2_0 = C2 if C2 is not None else UNIVERSAL_WLF_C2
     Ea_0 = Ea if Ea is not None else _EA_DEFAULT
 
+    diffs = np.diff(T)
+    if len(diffs) > 0:
+        ascending = bool(np.all(diffs > 0))  # base case from loader utility
+        assert ascending or np.all(diffs < 0), "T must be monotonically sorted"
+    else:
+        ascending = True  # single element; direction irrelevant
+
+    if not fix_Ea and TL <= T[-(not ascending)]:
+        raise ValueError("TL is below the range of the shift factor data, leading"
+                         "to a degenerate Arrhenius segment of hybrid fit. Check data "
+                         "or supply a different TL.")
+
+    if not (fix_C1 or fix_C2) and TL >= T[-(ascending)]:
+        raise ValueError("TL is above the range of the shift factor data, leading"
+                         "to a degenerate WLF segment of hybrid fit. Check data or "
+                         "supply a different TL.")
+
+    # The shift factors may not be referenced to TL, but hybrid_shift is always 1
+    # at TL. So a_T_ref (the data's shift factor at TL) is co-fitted as a vertical
+    # offset rather than read off a single interpolated point: interpolating
+    # across the WLF/Arrhenius kink at TL biases the estimate (and hence the whole
+    # fit) even when the data is referenced exactly to TL. The interp value only
+    # seeds the optimizer; np.interp needs ascending samples, so order them.
     log10_a_T = np.log10(a_T)
+    T_asc = T if ascending else T[::-1]
+    log10_asc = log10_a_T if ascending else log10_a_T[::-1]
+    a_T_ref_0 = 10 ** float(np.interp(TL, T_asc, log10_asc))
 
     # Build a model over only the free parameters; fixed ones are closed over.
     # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject.
-    free_names = [n for n, fixed in [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea)]
+    # scipy versions reject. a_T_ref is always free (the co-fitted offset).
+    free_names = [n for n, fixed in
+                  [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea), ('a_T_ref', False)]
                   if not fixed]
-    p0 = [v for v, fixed in [(C1_0, fix_C1), (C2_0, fix_C2), (Ea_0, fix_Ea)]
+    p0 = [v for v, fixed in
+          [(C1_0, fix_C1), (C2_0, fix_C2), (Ea_0, fix_Ea), (a_T_ref_0, False)]
           if not fixed]
 
-    if not free_names:
-        return float(C1_0), float(C2_0), float(Ea_0)
-
-    # Simple non-negativity floor on free C2.  Hybrid's WLF branch only sees
-    # T > TL (not cold data), so the 10**exponent overflow that afflicts
+    # C2 floored at 1.0 to stay off the WLF pole; a_T_ref floored just above 0 so
+    # the log10 wrapper in _curve_fit_shift stays finite. Hybrid's WLF branch only
+    # sees T > TL (not cold data), so the 10**exponent overflow that afflicts
     # fit_wlf_coefficients cannot occur here; log10_space=False is intentional.
-    lb = [-np.inf if n != 'C2' else 1.0 for n in free_names]
+    _floor = {'C2': 1.0, 'a_T_ref': np.finfo(float).tiny}
+    lb = [_floor.get(n, -np.inf) for n in free_names]
     ub = [np.inf] * len(free_names)
 
     def model(T_arg, *free_vals):
@@ -737,6 +775,8 @@ def fit_hybrid_coefficients(
             vals.get('C1', C1_0),
             vals.get('C2', C2_0),
             vals.get('Ea', Ea_0),
+            vals.get('a_T_ref', a_T_ref_0),
+            ascending,
         )
 
     fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub))
@@ -745,6 +785,7 @@ def fit_hybrid_coefficients(
         float(result.get('C1', C1_0)),
         float(result.get('C2', C2_0)),
         float(result.get('Ea', Ea_0)),
+        float(result.get('a_T_ref', a_T_ref_0)),
     )
 
 
