@@ -72,73 +72,6 @@ def extract_data_from_file(request_id):
         # add manual shift factor upload
         shift_file_name = data.get('shift_file_name', None)
 
-        fit_shift_coefficients = data.get('fit_shift_coefficients', False)
-
-        # TODO: This branch should become its own route (e.g. POST /dynamfit/fit-shift/).
-        # The shift-domain fit is a special case: its only effective inputs are the
-        # shift file plus Tg or TL, and its only output is the fitted coefficients —
-        # no Prony fit, no charts. Grafted into /extract/ for now to avoid a new
-        # endpoint while the feature stabilises.
-        if fit_shift_coefficients:
-            if not shift_file_name:
-                return jsonify({'message': 'No shift file name provided'}), 400
-            if not check_file_exists(shift_file_name):
-                return jsonify({'message': f"File '{shift_file_name}' not found"}), 404
-            if shift_model not in ('WLF', 'hybrid'):
-                return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
-
-            shiftData = upload_init(shift_file_name, 'shift')
-            if not shiftData:
-                return jsonify({'message': f"File '{shift_file_name}' is empty"}), 400
-
-            T = np.asarray(shiftData['Temperature'], dtype=float)
-            a_T = np.asarray(shiftData['a_T'], dtype=float)
-
-            if shift_model == 'WLF':
-                if Tg is None:
-                    return jsonify({'message': 'Tg is required for WLF coefficient fitting'}), 400
-                C1_fit, C2_fit = fit_wlf_coefficients(
-                    T, a_T, T_ref=Tg,
-                    C1=C1, C2=C2,
-                    fix_C1=(C1 is not None),
-                    fix_C2=(C2 is not None),
-                )
-                result_data = {
-                    'transform_method': 'WLF',
-                    'Tg': Tg, 'C1': C1_fit, 'C2': C2_fit,
-                    'Ea': None, 'TL': None,
-                }
-            else:  # hybrid
-                if TL is None:
-                    return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
-                # TODO: a_T_ref (the co-fitted vertical reference offset) is
-                # discarded for now. There's a good chance the frontend will need
-                # it to reconstruct/align master curves whose shift factors aren't
-                # referenced to TL — surface it in result_data when the frontend
-                # is refactored to consume it (not part of this change).
-                C1_fit, C2_fit, Ea_fit, _a_T_ref = fit_hybrid_coefficients(
-                    T, a_T, TL=TL,
-                    C1=C1, C2=C2, Ea=Ea,
-                    fix_C1=(C1 is not None),
-                    fix_C2=(C2 is not None),
-                    fix_Ea=(Ea is not None),
-                )
-                result_data = {
-                    'transform_method': 'hybrid',
-                    'Tg': None, 'C1': C1_fit, 'C2': C2_fit,
-                    'Ea': Ea_fit, 'TL': TL,
-                }
-
-            end_time = datetime.datetime.now()
-            latency = f"{(end_time - start_time).total_seconds()} seconds"
-            json_data = json.dumps(result_data, indent=4)
-            response = Response(json_data, content_type='application/json; charset=utf-8', status=200)
-            response.headers['startTime'] = start_time
-            response.headers['endTime'] = end_time
-            response.headers['latency'] = str(latency)
-            response.headers['responseId'] = request_id
-            return response
-
         if not file_name:
             return jsonify({'message': 'No file name provided'}), 400
 
@@ -218,7 +151,17 @@ def extract_data_from_file(request_id):
                 "complex-temp-chart": json.loads(chart_data['complex_temperature_chart_placeholder'].to_json()),
                 "temp-tand-chart": json.loads(chart_data['temperature_tand_chart_placeholder2'].to_json()),
                 "mytable": chart_data['mytable_placeholder'],
-                "upload-data": uploadData,
+                # Emit upload-data as row-objects (one dict per row), matching
+                # mytable's shape and the frontend "Uploaded Data" tab, whose
+                # TableComponent derives columns from Object.keys(rows[0]).
+                # uploadData is a dict of equal-length numpy arrays; transpose
+                # the stacked columns to rows, then tolist() each row to get
+                # JSON-native floats (stdlib json.dumps can't serialize ndarrays).
+                # np.array needs a real sequence, hence tuple(...) over the view.
+                "upload-data": [
+                    dict(zip(uploadData, row))
+                    for row in zip(*(col.tolist() for col in uploadData.values()))
+                ],
                 "C1": C1,
                 "C2": C2,
                 "Tg": Tg,
@@ -248,4 +191,98 @@ def extract_data_from_file(request_id):
         # details) reach the response body. Should log+correlate via request_id
         # and return a generic "Internal server error" message. Needs upstream
         # decision on logging infra before changing.
+        return jsonify({'message': str(e)}), 500
+
+
+@dynamfit.route('/fit-shift/', methods=['POST'])
+@log_errors
+@request_logger
+@token_required
+def fit_shift_coefficients(request_id):
+    """
+    Fit WLF or hybrid shift-factor coefficients from an uploaded shift-factor
+    file (2 columns, no header: Temperature [°C], a_T [linear scale]). Returns
+    the fitted coefficients only — no Prony fit, no charts.
+
+    WLF requires Tg (the a_T == 1 anchor); hybrid requires TL. Both are
+    upstream-supplied inputs — this route does not load the main viscoelastic
+    data file and so cannot estimate them. Supplying any of C1/C2/Ea holds that
+    coefficient fixed instead of fitting it.
+
+    The hybrid fit co-fits a vertical reference offset, surfaced as a_T_ref (the
+    data's shift factor at TL; 1.0 only if the file is truly referenced to TL).
+    For WLF, a_T_ref is 1.0 by construction (the fit is anchored at T_ref=Tg).
+    """
+    try:
+        start_time = datetime.datetime.now()
+        data = request.get_json()
+        shift_file_name = data.get('shift_file_name')
+        shift_model = data.get('transform_method', 'hybrid')
+        Tg = data.get('Tg', None)
+        C1 = data.get('C1', None)
+        C2 = data.get('C2', None)
+        Ea = data.get('Ea', None)
+        TL = data.get('TL', None)
+
+        if not shift_file_name:
+            return jsonify({'message': 'No shift file name provided'}), 400
+        if not check_file_exists(shift_file_name):
+            return jsonify({'message': f"File '{shift_file_name}' not found"}), 404
+        if shift_model not in ('WLF', 'hybrid'):
+            return jsonify({'message': 'The shift factor model must be one of WLF, hybrid'}), 400
+
+        shiftData = upload_init(shift_file_name, 'shift')
+        if not shiftData:
+            return jsonify({'message': f"File '{shift_file_name}' is empty"}), 400
+
+        T = np.asarray(shiftData['Temperature'], dtype=float)
+        a_T = np.asarray(shiftData['a_T'], dtype=float)
+
+        if shift_model == 'WLF':
+            if Tg is None:
+                return jsonify({'message': 'Tg is required for WLF coefficient fitting'}), 400
+            C1_fit, C2_fit = fit_wlf_coefficients(
+                T, a_T, T_ref=Tg,
+                C1=C1, C2=C2,
+                fix_C1=(C1 is not None),
+                fix_C2=(C2 is not None),
+            )
+            result_data = {
+                'transform_method': 'WLF',
+                'Tg': Tg, 'C1': C1_fit, 'C2': C2_fit,
+                'Ea': None, 'TL': None,
+                # WLF is anchored at T_ref=Tg, where a_T == 1 by construction.
+                'a_T_ref': 1.0,
+            }
+        else:  # hybrid
+            if TL is None:
+                return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
+            C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
+                T, a_T, TL=TL,
+                C1=C1, C2=C2, Ea=Ea,
+                fix_C1=(C1 is not None),
+                fix_C2=(C2 is not None),
+                fix_Ea=(Ea is not None),
+            )
+            result_data = {
+                'transform_method': 'hybrid',
+                'Tg': None, 'C1': C1_fit, 'C2': C2_fit,
+                'Ea': Ea_fit, 'TL': TL,
+                'a_T_ref': a_T_ref,
+            }
+
+        end_time = datetime.datetime.now()
+        latency = f"{(end_time - start_time).total_seconds()} seconds"
+        json_data = json.dumps(result_data, indent=4)
+        response = Response(json_data, content_type='application/json; charset=utf-8', status=200)
+        response.headers['startTime'] = start_time
+        response.headers['endTime'] = end_time
+        response.headers['latency'] = str(latency)
+        response.headers['responseId'] = request_id
+        return response
+    except ValueError as ve:
+        return jsonify({'message': str(ve)}), 400
+    except Exception as e:
+        # See the note in extract_data_from_file: raw error text is leaked to
+        # clients pending an upstream decision on logging infra.
         return jsonify({'message': str(e)}), 500

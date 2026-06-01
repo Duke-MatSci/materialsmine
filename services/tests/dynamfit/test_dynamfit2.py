@@ -1491,7 +1491,9 @@ class TestFitHybridCoefficients(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Route-level tests for the fit_shift_coefficients branch of /dynamfit/extract/
+# Route-level tests (Flask test client). The shared _make_app / _make_token
+# helpers and synthetic shift data below are used by both the /dynamfit/extract/
+# and /dynamfit/fit-shift/ route tests.
 # ---------------------------------------------------------------------------
 import jwt
 from flask import Flask
@@ -1533,10 +1535,10 @@ _EA_RETURNED = 80.0
 _A_T_REF_RETURNED = 1.0
 
 
-class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
+class TestFitShiftCoefficientsRoute(unittest.TestCase):
     """
-    Route-level tests for the fit_shift_coefficients=true short-circuit branch
-    of POST /dynamfit/extract/.
+    Route-level tests for POST /dynamfit/fit-shift/, the dedicated shift-domain
+    coefficient-fit endpoint (split out of /extract/).
 
     Strategy:
       - Build a bare Flask app (no create_app) to avoid the Docker-only FileHandler.
@@ -1559,14 +1561,13 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/extract/',
+            '/dynamfit/fit-shift/',
             data=json.dumps(body),
             headers=self.headers,
         )
 
     def _base_wlf_body(self, **overrides):
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'shift.txt',
             'transform_method': 'WLF',
             'Tg': 25.0,
@@ -1576,7 +1577,6 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
 
     def _base_hybrid_body(self, **overrides):
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'shift.txt',
             'transform_method': 'hybrid',
             'TL': 25.0,
@@ -1592,15 +1592,26 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
            return_value=(_C1_RETURNED, _C2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
-    def test_wlf_happy_path_returns_six_coefficient_keys(
+    def test_wlf_happy_path_returns_seven_coefficient_keys(
             self, _exists, _upload, _fit):
         resp = self._post(self._base_wlf_body())
         self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.data)
         self.assertEqual(
             set(data.keys()),
-            {'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TL'},
+            {'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TL', 'a_T_ref'},
         )
+
+    @patch('app.dynamfit.routes.fit_wlf_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_wlf_happy_path_a_T_ref_is_one(
+            self, _exists, _upload, _fit):
+        # WLF is anchored at T_ref=Tg where a_T == 1 by construction.
+        resp = self._post(self._base_wlf_body())
+        data = json.loads(resp.data)
+        self.assertEqual(data['a_T_ref'], 1.0)
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
            return_value=(_C1_RETURNED, _C2_RETURNED))
@@ -1638,6 +1649,18 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertIsInstance(data['Ea'], float)
         self.assertIsInstance(data['TL'], float)
 
+    @patch('app.dynamfit.routes.fit_hybrid_coefficients',
+           return_value=(_C1_RETURNED, _C2_RETURNED, _EA_RETURNED, _A_T_REF_RETURNED))
+    @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
+    @patch('app.dynamfit.routes.check_file_exists', return_value=True)
+    def test_hybrid_happy_path_surfaces_co_fit_a_T_ref(
+            self, _exists, _upload, _fit):
+        # The 4th element of fit_hybrid_coefficients (the co-fit vertical offset)
+        # must reach the response as a_T_ref.
+        resp = self._post(self._base_hybrid_body())
+        data = json.loads(resp.data)
+        self.assertEqual(data['a_T_ref'], _A_T_REF_RETURNED)
+
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
            return_value=(_C1_RETURNED, _C2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=_SHIFT_DATA)
@@ -1668,7 +1691,6 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
 
     def test_missing_shift_file_name_returns_400(self):
         body = {
-            'fit_shift_coefficients': True,
             'transform_method': 'WLF',
             'Tg': 25.0,
             # shift_file_name intentionally omitted
@@ -1691,7 +1713,6 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_missing_tg_returns_400(self, _exists, _upload):
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'shift.txt',
             'transform_method': 'WLF',
             # Tg intentionally omitted
@@ -1703,7 +1724,6 @@ class TestExtractFitShiftCoefficientsRoute(unittest.TestCase):
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_hybrid_missing_tl_returns_400(self, _exists, _upload):
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'shift.txt',
             'transform_method': 'hybrid',
             # TL intentionally omitted
@@ -1743,9 +1763,9 @@ _REAL_FILES_DIR = os.path.abspath(
 )
 
 
-class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
+class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
     """
-    E2E tests for the fit_shift_coefficients branch of POST /dynamfit/extract/.
+    E2E tests for POST /dynamfit/fit-shift/.
 
     Real files on disk, real optimizer — no mocking of upload_init, check_file_exists,
     or the fit functions.  Config.FILES_DIRECTORY is pointed at the checked-in
@@ -1773,7 +1793,7 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/extract/',
+            '/dynamfit/fit-shift/',
             data=json.dumps(body),
             headers=self.headers,
         )
@@ -1790,7 +1810,6 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
         defaults and converge.  Observed log10-RMSE ≈ 0.437 (threshold: 0.55).
         """
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'agilus30 (8) shift factors 20C clean.txt',
             'transform_method': 'WLF',
             'Tg': 20.0,
@@ -1803,6 +1822,7 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
         self.assertEqual(result['transform_method'], 'WLF')
         self.assertIsNone(result['Ea'])
         self.assertIsNone(result['TL'])
+        self.assertEqual(result['a_T_ref'], 1.0)
 
         C1 = result['C1']
         C2 = result['C2']
@@ -1830,7 +1850,6 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
         be null; reconstructed shift factors must agree with the data in log10 space.
         """
         body = {
-            'fit_shift_coefficients': True,
             'shift_file_name': 'VeroCyan (5) shift factors 80C clean.txt',
             'transform_method': 'hybrid',
             'TL': 80.0,
@@ -1850,19 +1869,144 @@ class TestExtractFitShiftCoefficientsEndToEnd(unittest.TestCase):
             self.assertTrue(np.isfinite(val) and val > 0,
                             f"Expected finite positive {name}, got {val}")
 
+        # The route now surfaces the co-fit vertical reference offset; the VeroCyan
+        # data is not referenced to TL, so a_T_ref must be finite, positive, ≠ 1.
+        a_T_ref = result['a_T_ref']
+        self.assertTrue(np.isfinite(a_T_ref) and a_T_ref > 0,
+                        f"Expected finite positive a_T_ref, got {a_T_ref}")
+
         # RMSE check: observed RMSE ≈ 0.844; threshold 1.0 is meaningful without
         # being so tight that minor optimizer variance causes flakiness.
         shift_data = upload_init('VeroCyan (5) shift factors 80C clean.txt', 'shift')
         T = np.asarray(shift_data['Temperature'], dtype=float)
         a_T = np.asarray(shift_data['a_T'], dtype=float)
-        # a_T_ref (the co-fitted vertical reference offset) is not surfaced by the
-        # route, so reconstruct it as the log-space offset a consumer would apply.
+        # Reconstruct using the surfaced a_T_ref a consumer would apply.
         unscaled = hybrid_shift(T, 80.0, C1, C2, Ea)
-        a_T_ref = 10 ** np.mean(np.log10(a_T) - np.log10(unscaled))
         reconstructed = a_T_ref * unscaled
         log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
         self.assertLess(log_rmse, 1.0,
                         f"Hybrid log10-RMSE {log_rmse:.4f} exceeds 1.0 — fit likely diverged")
+
+
+class TestExtractRoute(unittest.TestCase):
+    """
+    Route-level tests for POST /dynamfit/extract/ (the Prony fit + charts route).
+
+    Real files on disk + real fit, no mocking, so the full response envelope is
+    JSON-serialized exactly as a client receives it. This covers what the
+    pure-function TestUpdateLineChart* classes cannot: request parsing,
+    validation short-circuits, and JSON serialization of the response — in
+    particular the regression guard for numpy values reaching stdlib json.dumps.
+    """
+
+    _orig_files_dir = None
+    _FREQ_FILE = 'agilus30 (8) master curve 20C clean.txt'
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        Config.FILES_DIRECTORY = _REAL_FILES_DIR
+        Config.SECRET_KEY = 'test-secret'
+        cls.app = _make_app()
+        cls.client = cls.app.test_client()
+        cls.token = _make_token()
+        cls.headers = {
+            'Authorization': f'Bearer {cls.token}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+
+    def _post(self, body):
+        return self.client.post(
+            '/dynamfit/extract/',
+            data=json.dumps(body),
+            headers=self.headers,
+        )
+
+    def _freq_body(self, **overrides):
+        body = {'file_name': self._FREQ_FILE, 'domain': 'frequency', 'number_of_prony': 5}
+        body.update(overrides)
+        return body
+
+    # ------------------------------------------------------------------
+    # Happy path — full response envelope, fully JSON-serialized
+    # ------------------------------------------------------------------
+
+    def test_frequency_happy_path_returns_200(self):
+        """
+        Regression guard for 'Object of type ndarray is not JSON serializable':
+        a real frequency-domain extract must serialize the whole response
+        (upload-data + mytable contain numpy values) and return 200, not 500.
+        """
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+
+    def test_frequency_response_has_all_chart_and_coef_keys(self):
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        data = json.loads(resp.data)
+        self.assertTrue(data['multi'])
+        response = data['response']
+        for key in ('complex-chart', 'complex-tand-chart', 'relaxation-chart',
+                    'relaxation-spectrum-chart', 'complex-temp-chart',
+                    'temp-tand-chart', 'mytable', 'upload-data',
+                    'C1', 'C2', 'Tg', 'Ea', 'TL'):
+            self.assertIn(key, response)
+
+    def test_upload_data_is_array_of_row_objects(self):
+        """
+        upload-data must be an array of row-objects (one dict per data row),
+        matching mytable's shape, the contract doc, and the frontend
+        TableComponent (which derives columns from Object.keys(rows[0])) — not a
+        dict of columns.
+        """
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        upload = json.loads(resp.data)['response']['upload-data']
+        self.assertIsInstance(upload, list)
+        self.assertTrue(upload, 'expected at least one data row')
+        self.assertEqual(set(upload[0]), {'Frequency', 'E Storage', 'E Loss'})
+        self.assertIsInstance(upload[0]['Frequency'], (int, float))
+
+    def test_mytable_records_have_expected_keys(self):
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        mytable = json.loads(resp.data)['response']['mytable']
+        self.assertIsInstance(mytable, list)
+        self.assertTrue(mytable, 'expected at least one Prony coefficient record')
+        self.assertEqual(set(mytable[0]), {'i', 'tau_i', 'E_i'})
+
+    def test_estimated_shift_params_echo_serializes(self):
+        """
+        When Tg/TL are filled by *_estimate they are numpy scalars read out of
+        the data array; the echoed response must still JSON-serialize and carry
+        them as plain numbers (regression guard against numpy values in the
+        echoed C1/C2/Tg/Ea/TL).
+        """
+        resp = self._post(self._freq_body(Tg_estimate=True, TL_estimate=True))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIsInstance(response['Tg'], (int, float))
+        self.assertIsInstance(response['TL'], (int, float))
+
+    # ------------------------------------------------------------------
+    # Validation short-circuits (do not reach response serialization)
+    # ------------------------------------------------------------------
+
+    def test_missing_file_name_returns_400(self):
+        resp = self._post({'domain': 'frequency'})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_file_not_found_returns_404(self):
+        resp = self._post(self._freq_body(file_name='does-not-exist.txt'))
+        self.assertEqual(resp.status_code, 404)
+
+    def test_number_of_prony_out_of_range_returns_400(self):
+        resp = self._post(self._freq_body(number_of_prony=999))
+        self.assertEqual(resp.status_code, 400)
 
 
 if __name__ == '__main__':
