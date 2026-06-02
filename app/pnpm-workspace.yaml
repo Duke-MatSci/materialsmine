@@ -1,0 +1,12 @@
+onlyBuiltDependencies:
+  - "@fortawesome/fontawesome-common-types"
+  - "@fortawesome/free-solid-svg-icons"
+  - "@parcel/watcher"
+  - canvas
+  - canvas-prebuilt
+  - core-js
+  - datavoyager
+  - es5-ext
+  - spawn-sync
+  - vue-demi
+  - yorkie
