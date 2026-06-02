@@ -9,7 +9,8 @@ const CH = require('../utils/curation-utility'); // Curation Helper
 const Builder = require('../utils/curation-builder');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
-// const { NP_BASE } = require('../../config/constant'); // Now used only in curation-builder
+const { NP_BASE } = require('../../config/constant');
+const { manageServiceRequest } = require('./managedServiceController');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
 const {
@@ -2441,4 +2442,47 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
   }
 
   return curatedBaseObject;
+};
+
+exports.deleteDataset = async (req, res, next) => {
+  const { logger } = req;
+  logger.info('deleteDataset(): Function Entry');
+  const { id } = req.params;
+
+  if (!id) {
+    return next(errorWriter(req, 'Dataset id is required', 'deleteDataset', 400));
+  }
+
+  try {
+    const entityUri = `${NP_BASE}${id}`;
+    const request = {
+      ...req,
+      method: 'DELETE',
+      body: { entity_uri: entityUri },
+      params: { appName: 'delete-nanopub' },
+      isBackendCall: true
+    };
+
+    const result = await manageServiceRequest(request, res, next);
+
+    await Builder.publishToChangeLog(
+      {
+        resp: {},
+        id,
+        failed: [],
+        sampleIdForFailure: null,
+        change: ['Dataset files removed from file store and triples deleted from knowledge graph']
+      },
+      req,
+      res,
+      next,
+      exports.createChangeLog
+    );
+
+    successWriter(req, { message: 'Dataset triples deleted' }, 'deleteDataset');
+    latency.latencyCalculator(res);
+    return res.status(200).json(result?.data ?? { message: 'ok' });
+  } catch (error) {
+    next(errorWriter(req, error?.message ?? 'Failed to delete dataset', 'deleteDataset', 500));
+  }
 };

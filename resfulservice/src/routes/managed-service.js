@@ -12,7 +12,8 @@ router
 router
   .route('/:appName([^/]*)')
   .get(latencyTimer, manageServiceController.manageServiceRequest)
-  .post(isAuth, latencyTimer, manageServiceController.manageServiceRequest);
+  .post(isAuth, latencyTimer, manageServiceController.manageServiceRequest)
+  .delete(isAuth, latencyTimer, manageServiceController.manageServiceRequest);
 
 router
   .route('/db/:collectionName')

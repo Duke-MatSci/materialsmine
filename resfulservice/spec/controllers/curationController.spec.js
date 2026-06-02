@@ -1246,4 +1246,54 @@ describe('Curation Controller', function () {
       expect(result.includes('Control_ID')).to.equal(true);
     });
   });
+
+  context('deleteDataset', () => {
+    it('should return 400 if dataset id is missing', async () => {
+      const deleteReq = { logger, params: {} };
+      const result = await XlsxController.deleteDataset(deleteReq, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Dataset id is required');
+    });
+
+    it('should delete dataset triples and return 200 on success', async () => {
+      const axios = require('axios');
+      const reqId = '00000000-0000-0000-0000-000000000000';
+      const deleteReq = {
+        logger,
+        params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
+        env: { MANAGED_SERVICE_ADDRESS: 'http://localhost:5050' },
+        user
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+      sinon.stub(axios, 'request').resolves({
+        status: 200,
+        headers: { 'content-type': 'application/json', responseid: reqId },
+        data: { message: 'ok', report: { ok: true, graphs_deleted: [] } }
+      });
+      sinon.stub(ChangeLog, 'findOneAndUpdate').resolves({ _id: 'log1' });
+
+      await XlsxController.deleteDataset(deleteReq, res, next);
+      expect(res.status.calledWith(200)).to.equal(true);
+    });
+
+    it('should call next with error when managed service throws', async () => {
+      const axios = require('axios');
+      const nextSpy = sinon.spy();
+      const deleteReq = {
+        logger,
+        params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
+        env: { MANAGED_SERVICE_ADDRESS: 'http://localhost:5050' },
+        user
+      };
+      sinon.stub(axios, 'request').rejects(new Error('Service unavailable'));
+
+      await XlsxController.deleteDataset(deleteReq, res, nextSpy);
+      expect(nextSpy.calledOnce).to.equal(true);
+      const errorArg = nextSpy.firstCall.args[0];
+      expect(errorArg).to.have.property('message');
+      expect(errorArg.message).to.equal('Service unavailable');
+    });
+  });
 });
