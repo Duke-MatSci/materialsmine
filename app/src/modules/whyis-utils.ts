@@ -2,30 +2,11 @@ import { querySparql } from './sparql';
 
 const lodPrefix = window.location.origin;
 
-const deleteNanopub = async (uri: string): Promise<any> => {
-  return await querySparql('', {
-    method: 'DELETE',
-    whyisPath: `about?uri=${encodeURIComponent(uri)}`,
-  });
-};
-
 function makeNanopubId(): string {
   // Math.random should be unique because of its seeding algorithm.
   // Convert it to base 36 (numbers + letters), and grab the first 9 characters
   // after the decimal.
   return Math.random().toString(36).substr(2, 10);
-}
-
-interface Nanopub {
-  np: string;
-  [key: string]: any;
-}
-
-async function listNanopubs(uri: string): Promise<Nanopub[]> {
-  const response = await querySparql('', {
-    whyisPath: `about?view=nanopublications&uri=${encodeURIComponent(uri)}`,
-  });
-  return Object.values(response);
 }
 
 interface NanopubData {
@@ -119,4 +100,4 @@ function getNanopubSkeleton(): NanopubData {
   };
 }
 
-export { deleteNanopub, makeNanopubId, postNewNanopub, listNanopubs, lodPrefix };
+export { makeNanopubId, postNewNanopub, lodPrefix };

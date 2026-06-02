@@ -22,6 +22,14 @@
             <md-tooltip> {{ shareToolTip }} </md-tooltip>
             <md-icon>share</md-icon>
           </md-button>
+          <md-button
+            v-if="isAuth && isAdmin"
+            class="md-icon-button"
+            @click.prevent="toggleDialogBox"
+          >
+            <md-tooltip> Delete Dataset </md-tooltip>
+            <md-icon>delete_outline</md-icon>
+          </md-button>
           <!-- <div v-if="isAuth && isAdmin">
             <md-button class="md-icon-button" @click.prevent="editDataset">
               <md-tooltip> Edit Dataset </md-tooltip>
@@ -287,6 +295,25 @@
     <div v-else class="utility-roverflow u_centralize_text u_margin-top-med">
       <h1 class="visualize_header-h1 u_margin-top-med">Cannot Load Dataset</h1>
     </div>
+    <Dialog :active="dialogBoxActive" :min-width="80">
+      <template v-slot:title>Delete Dataset?</template>
+      <template v-slot:content>
+        <md-content v-if="dataset">
+          <div>
+            This will permanently remove the dataset
+            <b>{{ optionalChaining(() => dataset.label) || 'this dataset' }}</b>
+          </div>
+          and any associated files.
+        </md-content>
+        <div v-if="dialogLoading">
+          <spinner :loading="dialogLoading" text="Deleting Dataset" />
+        </div>
+      </template>
+      <template v-slot:actions>
+        <md-button @click.prevent="toggleDialogBox"> No, cancel </md-button>
+        <md-button @click.prevent="deleteDataset"> Yes, delete. </md-button>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -296,6 +323,7 @@ import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
+import Dialog from '@/components/Dialog.vue';
 import { parseFileName } from '@/modules/whyis-dataset';
 import { useDataDictionary } from '@/composables/useDataDictionary';
 
@@ -342,6 +370,8 @@ const router = useRouter();
 const { copyDataDictionary } = useDataDictionary();
 
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
+const isAdmin = computed(() => store.getters['auth/isAdmin']);
+const dialogBoxActive = computed(() => store.getters.dialogBox);
 
 // Data from reducer mixin
 const hideAssetNavLeft = ref<boolean>(false);
@@ -373,13 +403,10 @@ const datasetFields = reactive<DatasetFields>({
 const distributions = ref<Record<string, Distribution>>({});
 const organizations = ref<RorOrganization[][]>([]);
 const loading = ref<boolean>(true);
+const dialogLoading = ref<boolean>(false);
+const showDeleteConfirm = ref<boolean>(false);
 
 // Computed properties
-// const dialogBoxActive = computed(() => store.getters.dialogBox);
-// const isAuth = computed(() => store.getters['auth/isAuthenticated']);
-// const isAdmin = computed(() => store.getters['auth/isAdmin']);
-// const rorData = computed(() => store.getters['explorer/curation/getRorData']);
-// const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
 const changeLogs = computed(() => store.getters['explorer/curation/getChangeLogs']);
@@ -489,6 +516,40 @@ const handleShare = (): void => {
 // const linkDataset = (): void => {
 //   router.push(`/explorer/curate/sdd/link/${props.id}`);
 // };
+
+const toggleDialogBox = (): void => {
+  store.commit('setDialogBox');
+};
+
+const deleteDataset = async (): Promise<void> => {
+  if (!isAdmin.value || !dataset.value) return;
+  dialogLoading.value = true;
+  try {
+    await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.value.identifier);
+    const dist = dataset.value.distribution
+      ? Array.isArray(dataset.value.distribution) ? dataset.value.distribution : [dataset.value.distribution]
+      : [];
+    if (dist.length) {
+      await store.dispatch('explorer/curation/deleteEntityFiles', {
+        distribution: dist,
+        thumbnail: dataset.value.thumbnail,
+      });
+    }
+    await store.dispatch('explorer/curation/deleteEntityES', {
+      identifier: dataset.value.identifier,
+      type: 'datasets',
+    });
+    store.commit('setSnackbar', { message: 'Dataset deleted successfully' });
+    router.push({ name: 'DatasetGallery' });
+  } catch (error: any) {
+    store.commit('setSnackbar', {
+      message: error?.message ?? 'Failed to delete dataset',
+    });
+  } finally {
+    toggleDialogBox();
+    dialogLoading.value = false;
+  }
+};
 
 // Watchers
 watch(dataset, (newValues, oldValues) => {

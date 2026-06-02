@@ -1,4 +1,4 @@
-import { listNanopubs, postNewNanopub, deleteNanopub, lodPrefix } from './whyis-utils';
+import { postNewNanopub, lodPrefix } from './whyis-utils';
 import store from '@/store';
 import { FileItem } from '@/types/app';
 import { v4 as uuidv4 } from 'uuid';
@@ -209,22 +209,6 @@ function getDefaultDataset(): Dataset {
   return Object.assign({}, defaultDataset);
 }
 
-// TODO: Remove duplicate resource deletions
-// The function below is deprecated for the one below it
-// function deleteDataset (datasetUri) {
-//   return listNanopubs(datasetUri)
-//     .then(nanopubs => {
-//       Promise.all(nanopubs.map(nanopub => deleteNanopub(nanopub.np)))
-//     }
-//     )
-// }
-async function deleteResources(resourceURI: string): Promise<any> {
-  return listNanopubs(resourceURI).then((nanopubs) => {
-    if (!nanopubs || !nanopubs.length) return;
-    return Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
-  });
-}
-
 // Handle all of the uploads as multipart form
 // TODO: (@tee) Remove this function after full SDD gallery migration
 async function saveDataset(
@@ -240,19 +224,17 @@ async function saveDataset(
   let imgDeleteId: string | undefined;
   if (imgToDelete) imgDeleteId = parseFileName(imgToDelete, true);
 
-  let p: Promise<any> = Promise.resolve();
-  if (dataset.uri) {
-    p = await deleteResources(dataset.uri);
-  } else if (arguments.length === 1) {
-    dataset.uri = generateDatasetId();
-  } else {
-    dataset.uri = generateDatasetId(guuid);
+  if (!dataset.uri) {
+    if (arguments.length === 1) {
+      dataset.uri = generateDatasetId();
+    } else {
+      dataset.uri = generateDatasetId(guuid);
+    }
   }
   const [distrRes, imgRes] = await Promise.all([
     saveDatasetFiles(fileList.filter((file) => file.status === 'incomplete')),
     saveDatasetFiles(imageList.filter((file) => file.status === 'incomplete')),
     deleteFile(imgDeleteId),
-    p,
   ]);
   const datasetLd = buildDatasetLd(dataset);
   let allFiles = [...oldFiles];
@@ -434,7 +416,6 @@ export {
   getDefaultDataset,
   saveDataset,
   saveDatasetFiles,
-  deleteResources,
   deleteFile,
   loadDataset,
   isValidOrcid,
