@@ -27,7 +27,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd app
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --ignore-scripts
         env:
           MM_GHT: ${{ secrets.MM_GHT }}
       # - name: App Coverage Test
