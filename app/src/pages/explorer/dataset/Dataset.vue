@@ -30,6 +30,15 @@
             <md-tooltip> Delete Dataset </md-tooltip>
             <md-icon>delete_outline</md-icon>
           </md-button>
+          <md-button
+            v-if="isAuth && isAdmin"
+            class="md-icon-button"
+            :disabled="submittingToKG"
+            @click.prevent="submitToKnowledgeGraph"
+          >
+            <md-tooltip> Click to submit dataset to the Knowledge Graph </md-tooltip>
+            <md-icon>{{ submittingToKG ? 'hourglass_empty' : 'publish' }}</md-icon>
+          </md-button>
           <!-- <div v-if="isAuth && isAdmin">
             <md-button class="md-icon-button" @click.prevent="editDataset">
               <md-tooltip> Edit Dataset </md-tooltip>
@@ -405,6 +414,7 @@ const organizations = ref<RorOrganization[][]>([]);
 const loading = ref<boolean>(true);
 const dialogLoading = ref<boolean>(false);
 const showDeleteConfirm = ref<boolean>(false);
+const submittingToKG = ref<boolean>(false);
 
 // Computed properties
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
@@ -548,6 +558,29 @@ const deleteDataset = async (): Promise<void> => {
   } finally {
     toggleDialogBox();
     dialogLoading.value = false;
+  }
+};
+
+const submitToKnowledgeGraph = async (): Promise<void> => {
+  if (!isAdmin.value || !dataset.value || submittingToKG.value) return;
+  submittingToKG.value = true;
+  try {
+    await store.dispatch('explorer/curation/submitDatasetToKG', {
+      id: props.id,
+      label: dataset.value.label,
+      description: dataset.value.description,
+      doi: dataset.value.doi,
+      organization: dataset.value.organization,
+      distribution: dataset.value.distribution,
+      thumbnail: dataset.value.thumbnail,
+    });
+    store.commit('setSnackbar', { message: 'Dataset submitted to Knowledge Graph successfully' });
+  } catch (error: any) {
+    store.commit('setSnackbar', {
+      message: error?.message ?? 'Failed to submit dataset to Knowledge Graph',
+    });
+  } finally {
+    submittingToKG.value = false;
   }
 };
 

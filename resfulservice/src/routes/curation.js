@@ -91,4 +91,8 @@ router
   .route('/dataset/:id')
   .delete(isAuth, latencyTimer, curationController.deleteDataset);
 
+router
+  .route('/dataset/:id/submit-kg')
+  .post(isAuth, latencyTimer, curationController.submitDatasetToKG);
+
 module.exports = router;

@@ -1296,4 +1296,77 @@ describe('Curation Controller', function () {
       expect(errorArg.message).to.equal('Service unavailable');
     });
   });
+
+  context('submitDatasetToKG', () => {
+    it('should return 400 if dataset id is missing', async () => {
+      const submitReq = { logger, params: {}, body: {} };
+      const result = await XlsxController.submitDatasetToKG(submitReq, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Dataset id is required');
+    });
+
+    it('should return 400 if distribution is missing', async () => {
+      const submitReq = {
+        logger,
+        params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
+        body: { label: 'Test', description: 'Test' }
+      };
+      const result = await XlsxController.submitDatasetToKG(submitReq, res, next);
+      expect(result).to.have.property('message');
+      expect(result.message).to.equal('Dataset must have at least one distribution file');
+    });
+
+    it('should submit dataset to KG and return 200 on success', async () => {
+      const Builder = require('../../src/utils/curation-builder');
+      const submitReq = {
+        logger,
+        params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
+        body: {
+          label: 'Test Dataset',
+          description: 'A test dataset',
+          doi: '10.1234/test',
+          organization: ['Duke University'],
+          distribution: ['http://localhost/api/files/test.xlsx?isStore=true', 'http://localhost/api/files/test.csv?isStore=true'],
+          thumbnail: 'http://localhost/api/files/thumb.png?isStore=true'
+        },
+        user
+      };
+      sinon.stub(res, 'status').returnsThis();
+      sinon.stub(res, 'json').returnsThis();
+      sinon.stub(latency, 'latencyCalculator').returns(true);
+      sinon.stub(Builder, 'transformSddToNanopub').resolves({
+        nanopubId: '5e907660-8942-4cdd-91a0-746734bfa21a',
+        nanopub: { '@graph': [] },
+        assertionId: 'http://materialsmine.org/np/5e907660#assertion'
+      });
+      sinon.stub(Builder, 'serializeAndValidate').resolves({
+        success: true,
+        result: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' }
+      });
+
+      await XlsxController.submitDatasetToKG(submitReq, res, next);
+      expect(res.status.calledWith(200)).to.equal(true);
+    });
+
+    it('should call next with error when transformation fails', async () => {
+      const Builder = require('../../src/utils/curation-builder');
+      const nextSpy = sinon.spy();
+      const submitReq = {
+        logger,
+        params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
+        body: {
+          label: 'Test',
+          distribution: ['http://localhost/api/files/test.xlsx?isStore=true']
+        },
+        user
+      };
+      sinon.stub(Builder, 'transformSddToNanopub').rejects(new Error('SDD file missing'));
+
+      await XlsxController.submitDatasetToKG(submitReq, res, nextSpy);
+      expect(nextSpy.calledOnce).to.equal(true);
+      const errorArg = nextSpy.firstCall.args[0];
+      expect(errorArg).to.have.property('message');
+      expect(errorArg.message).to.equal('SDD file missing');
+    });
+  });
 });

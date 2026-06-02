@@ -9,7 +9,7 @@ const CH = require('../utils/curation-utility'); // Curation Helper
 const Builder = require('../utils/curation-builder');
 const FileManager = require('../utils/fileManager');
 const BaseSchemaObject = require('../../config/xlsx.json');
-const { NP_BASE } = require('../../config/constant');
+const { NP_BASE, MM_BASE } = require('../../config/constant');
 const { manageServiceRequest } = require('./managedServiceController');
 const { errorWriter, successWriter } = require('../utils/logWriter');
 const latency = require('../middlewares/latencyTimer');
@@ -2484,5 +2484,100 @@ exports.deleteDataset = async (req, res, next) => {
     return res.status(200).json(result?.data ?? { message: 'ok' });
   } catch (error) {
     next(errorWriter(req, error?.message ?? 'Failed to delete dataset', 'deleteDataset', 500));
+  }
+};
+
+exports.submitDatasetToKG = async (req, res, next) => {
+  const { logger, body } = req;
+  logger.info('submitDatasetToKG(): Function Entry');
+  const { id } = req.params;
+
+  if (!id) {
+    return next(errorWriter(req, 'Dataset id is required', 'submitDatasetToKG', 400));
+  }
+
+  const { label, description, doi, organization, distribution, thumbnail } = body || {};
+
+  if (!distribution || !distribution.length) {
+    return next(errorWriter(req, 'Dataset must have at least one distribution file', 'submitDatasetToKG', 400));
+  }
+
+  try {
+    const npId = `${NP_BASE}${id}`;
+    const resId = `${MM_BASE}pnc/${id}`;
+
+    const distrLDs = (Array.isArray(distribution) ? distribution : [distribution]).map((url) => {
+      const urlObj = new URL(url, 'http://localhost');
+      const fileName = decodeURIComponent(urlObj.pathname.split('/').pop() || url);
+      return { '@id': url, 'rdfs:label': fileName };
+    });
+
+    const distributionLd = {
+      'mm:hasDistribution': {
+        '@id': `${resId}/attr/distribution`,
+        'dcat:distribution': distrLDs
+      }
+    };
+
+    let depictionLd = null;
+    if (thumbnail) {
+      const thumbName = decodeURIComponent(new URL(thumbnail, 'http://localhost').pathname.split('/').pop() || '');
+      depictionLd = {
+        'mm:hasDepiction': {
+          '@id': `${resId}/attr/depiction`,
+          'foaf:depiction': [{
+            '@id': `${resId}/attr/depiction/file`,
+            '@type': 'purl:File',
+            'rdfs:label': thumbName,
+            'dcat:accessURL': thumbnail
+          }]
+        }
+      };
+    }
+
+    const orgs = (organization || []).map((name) => ({ name }));
+    const contactPoint = req.user
+      ? { firstName: req.user.givenName || '', lastName: req.user.surName || '', cpEmail: req.user.email || '' }
+      : {};
+
+    const nanopubSkeleton = {
+      id: npId,
+      title: label || '',
+      description: description || '',
+      doi: doi || '',
+      datePub: null,
+      organizations: orgs,
+      contactPoint,
+      distribution: distributionLd,
+      depiction: depictionLd
+    };
+
+    const { nanopubId, nanopub, assertionId } =
+      await Builder.transformSddToNanopub(nanopubSkeleton, logger);
+
+    const { success, result, failure } = await Builder.serializeAndValidate({
+      nanopubId,
+      nanopub,
+      assertionId,
+      output: 'jsonld',
+      inference: 'rdfs',
+      resolveUrls: true,
+      id,
+      req,
+      res,
+      next,
+      createChangeLogCb: exports.createChangeLog
+    });
+
+    if (!success) {
+      latency.latencyCalculator(res);
+      return res.status(400).json({ ok: false, failed: [failure] });
+    }
+
+    successWriter(req, { message: 'Dataset submitted to knowledge graph' }, 'submitDatasetToKG');
+    latency.latencyCalculator(res);
+    return res.status(200).json({ ok: true, result });
+  } catch (error) {
+    next(errorWriter(req, error?.message ?? 'Failed to submit dataset to knowledge graph', 'submitDatasetToKG', 500));
   }
 };

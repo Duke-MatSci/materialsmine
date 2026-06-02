@@ -109,6 +109,35 @@ export default {
     return response.json();
   },
 
+  async submitDatasetToKG(
+    { rootGetters }: Context,
+    payload: {
+      id: string;
+      label: string;
+      description: string;
+      doi: string;
+      organization: string[];
+      distribution: string[];
+      thumbnail: string;
+    }
+  ): Promise<any> {
+    const { id, ...body } = payload;
+    const token = rootGetters['auth/token'];
+    const response = await fetch(`/api/curate/dataset/${id}/submit-kg`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.message || 'Failed to submit dataset to Knowledge Graph');
+    }
+    return response.json();
+  },
+
   async deleteEntityES(
     { rootGetters }: Context,
     payload: { identifier: string; type: string }
