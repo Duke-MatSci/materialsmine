@@ -10,7 +10,7 @@ ENV MM_GHT=${MM_GHT}
 RUN corepack enable && corepack prepare pnpm@9 --activate
 COPY package.json pnpm-lock.yaml ./
 COPY .npmrc ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile
 COPY . .
 
 ENV NODE_ENV=production

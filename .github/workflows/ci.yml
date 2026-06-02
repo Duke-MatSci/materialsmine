@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '22'
       - name: Enable pnpm for frontend
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: corepack enable && corepack prepare pnpm@9 --activate
       - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
@@ -27,7 +27,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd app
-          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm install --frozen-lockfile
         env:
           MM_GHT: ${{ secrets.MM_GHT }}
       # - name: App Coverage Test
