@@ -385,4 +385,91 @@
       min-height: 20vh;
     }
   }
+
+  &-separator {
+    border: none;
+    border-top: 1px solid $secondary-grey;
+    margin: 2.4rem 0 1.2rem;
+  }
+
+  &-toggle {
+    display: inline-flex;
+    border: 1px solid $primary;
+    border-radius: 3px;
+    overflow: hidden;
+
+    @include respond(phone) {
+      display: flex;
+      width: 100%;
+    }
+
+    &__option {
+      padding: 0.8rem 2.4rem;
+      font-size: $medium-size;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: $primary;
+      background-color: $primary-white;
+      border: none;
+      outline: none;
+
+      @include respond(phone) {
+        flex: 1;
+        text-align: center;
+      }
+
+      &--active {
+        background-color: $primary;
+        color: $primary-white;
+      }
+
+      &:not(:last-child) {
+        border-right: 1px solid $primary;
+      }
+    }
+  }
+
+  &-readonly {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    background-color: rgba($secondary-light, 0.3);
+    border-left: 3px solid $secondary;
+    border-radius: 0 3px 3px 0;
+    font-size: $small-size;
+
+    &__label {
+      font-weight: 700;
+      color: $primary;
+      margin-right: 0.4rem;
+    }
+
+    &__value {
+      color: $primary-grey;
+    }
+  }
+
+  &-field--half {
+    max-width: 40% !important;
+
+    @include respond(phone) {
+      max-width: 100% !important;
+    }
+  }
+
+  &-shift-upload {
+    border: 2px dashed $secondary-grey;
+    border-radius: 3px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+
+    &__label {
+      font-size: $small-size;
+      font-weight: 500;
+      color: $primary;
+      margin-bottom: 0.6rem;
+    }
+  }
 }
