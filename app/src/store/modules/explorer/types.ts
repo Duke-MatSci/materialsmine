@@ -11,8 +11,16 @@ export interface ExplorerState {
   datasetThumbnail: string;
   dynamfitDomain: string;
   dynamfitData: Record<string, any>;
-  dynamfitTransformMethod: 'none' | 'WLF' | 'Manual';
+  dynamfitTransformMethod: 'none' | 'WLF' | 'hybrid';
   dynamfitManualFile: string;
+  dynamfitShiftCoefficients: {
+    C1: number | null;
+    C2: number | null;
+    Tg: number | null;
+    Ea: number | null;
+    TL: number | null;
+    a_T_ref: number | null;
+  };
   dynamfit: {
     range: number;
     fitSettings: boolean;

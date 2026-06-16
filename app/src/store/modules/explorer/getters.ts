@@ -45,10 +45,13 @@ export default {
   } {
     return state.dynamfit;
   },
-  getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'Manual' {
+  getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'hybrid' {
     return state.dynamfitTransformMethod;
   },
   getDynamfitManualFile(state: ExplorerState): string {
     return state.dynamfitManualFile;
+  },
+  getDynamfitShiftCoefficients(state: ExplorerState): ExplorerState['dynamfitShiftCoefficients'] {
+    return state.dynamfitShiftCoefficients;
   },
 };
