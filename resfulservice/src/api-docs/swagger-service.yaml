@@ -978,6 +978,163 @@ paths:
               schema:
                 $ref: '#/components/schemas/Server-Error'
             
+  /curate/publishsdd:
+    post:
+      security:
+        - BearerAuth: []
+      summary: ETL for SDD Nanopublication
+      description: >
+        Accepts a pre-built nanopub skeleton from the frontend containing dataset metadata
+        (distribution, depiction, DOI, title, description, organizations, contact point)
+        and processes it into a nanopublication for the knowledge graph.
+      tags:
+        - Curation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nanopubSkeleton
+              properties:
+                nanopubSkeleton:
+                  type: object
+                  required: true
+                  description: The nanopub skeleton object containing dataset metadata and file references.
+                  properties:
+                    id:
+                      type: string
+                      description: The nanopub ID (e.g. http://materialsmine.org/np/{uuid})
+                    doi:
+                      type: string
+                      description: The DOI of the associated publication
+                    externalSddLink:
+                      type: string
+                      description: Optional external SDD link URL
+                    title:
+                      type: string
+                      description: Dataset title
+                    description:
+                      type: string
+                      description: Dataset description
+                    datePub:
+                      type: object
+                      description: Publication date object
+                      properties:
+                        "@type":
+                          type: string
+                          example: date
+                        "@value":
+                          type: string
+                          example: "2024-01-01"
+                    organizations:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          "@id":
+                            type: string
+                          "@type":
+                            type: string
+                          name:
+                            type: string
+                      description: Associated organizations
+                    contactPoint:
+                      type: object
+                      description: Contact point information
+                      properties:
+                        "@type":
+                          type: string
+                          example: schemaPerson
+                        "@id":
+                          type: string
+                          nullable: true
+                          description: ORCID URI
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        cpEmail:
+                          type: string
+                    distribution:
+                      type: object
+                      nullable: true
+                      description: Distribution LD containing file references
+                    depiction:
+                      type: object
+                      nullable: true
+                      description: Depiction LD containing image reference
+                output:
+                  type: string
+                  enum: [jsonld, trig, ttl]
+                  default: jsonld
+                  description: Desired output format
+                inference:
+                  type: string
+                  enum: [none, rdfs, both]
+                  default: rdfs
+                  description: Inference mode for SHACL validation
+                resolveUrls:
+                  type: boolean
+                  default: true
+                  description: Whether to resolve URLs during SHACL validation
+                ontologyLink:
+                  type: string
+                  description: Optional explicit ontology link for SHACL validation
+            example:
+              nanopubSkeleton:
+                id: "http://materialsmine.org/np/abc123"
+                doi: "10.1234/example"
+                title: "Example Dataset"
+                description: "A sample dataset description"
+                datePub: { "@type": "date", "@value": "2024-01-01" }
+                organizations: []
+                contactPoint: { "@type": "schemaPerson", "@id": "http://orcid.org/0000-0001-2345-6789", "firstName": "John", "lastName": "Doe", "cpEmail": "john@example.com" }
+                distribution:
+                  mm:hasDistribution:
+                    "@id": "http://materialsmine.org/resource/pnc/abc123/attr/distribution"
+                    dcat:distribution:
+                      - "@id": "http://example.com/files/data.xlsx"
+                        rdfs:label: "data.xlsx"
+                depiction: null
+              output: "jsonld"
+      responses:
+        '200':
+          description: Successfully processed the SDD nanopub skeleton
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  nanopubSkeleton:
+                    type: object
+        '400':
+          description: Invalid Request Payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Provide \"nanopubSkeleton\" in the request body."
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
+
   /curate/schema:
     get:
       summary: Gets XSD  Schema

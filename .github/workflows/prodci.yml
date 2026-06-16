@@ -8,33 +8,57 @@ jobs:
   appTest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Cache Dependencies
-        uses: actions/cache@v3
+      - uses: actions/checkout@v4
+      # - name: Cache Dependencies
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.npm
+      #     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-node-
+      # - name: Use NodeJS
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '17.9.1'
+      - name: Setup Node.js 22 for frontend
+        uses: actions/setup-node@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          node-version: '22'
+      - name: Enable pnpm for frontend
+        run: corepack enable && corepack prepare pnpm@latest --activate
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('app/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-node-
-      - name: Use NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: '17.9.1'
-      - name: Install frontend dependencies & test
+            ${{ runner.os }}-pnpm-
+      - name: Install frontend dependencies
         run: |
           cd app
-          npm ci
-      - name: App Coverage Test
-        run: |
-          cd app
-          npm run test:unit -- --coverage
+          pnpm install --frozen-lockfile
         env:
-          CI: true
+          MM_GHT: ${{ secrets.MM_GHT }}
+      # - name: Install frontend dependencies & test
+      #   run: |
+      #     cd app
+      #     npm ci
+      # - name: App Coverage Test
+      #   run: |
+      #     cd app
+      #     npm run test:unit -- --coverage
+      #   env:
+      #     CI: true
       - name: Zip Frontend App Assets
         if: github.event_name == 'push'
         run: |
-          zip -r app-test-coverage-report.zip app/coverage && rm -rf app/coverage && zip -r app-src_code.zip ./app
-          mkdir app_asset_artifacts && mv app-src_code.zip app_asset_artifacts && mv app-test-coverage-report.zip app_asset_artifacts
+          mkdir app_asset_artifacts
+          if [ -d app/coverage ]; then
+            zip -r app-test-coverage-report.zip app/coverage && rm -rf app/coverage
+            mv app-test-coverage-report.zip app_asset_artifacts
+          fi
+          zip -r app-src_code.zip ./app
+          mv app-src_code.zip app_asset_artifacts
       - name: Upload App Assets
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
@@ -44,16 +68,16 @@ jobs:
   restfulServiceTest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Use NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '17.9.1'
       - name: Install frontend dependencies & test
@@ -82,16 +106,16 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Use NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.4.0'
       - name: Install root
@@ -116,6 +140,8 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      MM_GHT: ${{ secrets.MM_GHT }}
+      FE_PORT: ${{ secrets.FE_PORT }}
   buildBackendApp:
     if: github.event_name == 'push'
     needs: [buildFrontendApp, release]
@@ -175,7 +201,7 @@ jobs:
       CLIENT_PORT: ${{secrets.CLIENT_PORT}}
       KG_PORT: ${{secrets.KG_PORT}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Download and run images
         run: docker-compose -f docker-compose.test.git.yml up -d
       - name: Kill containers

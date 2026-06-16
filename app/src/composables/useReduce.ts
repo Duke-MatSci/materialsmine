@@ -18,9 +18,10 @@ export function useReduce() {
       const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return `...${res}`;
     } else {
-      const arr = args.split(' ').splice(size);
-      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
-      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const words = args.split(' ');
+      if (words.length <= size) return args;
+      const truncated = words.slice(0, size).join(' ');
+      const res = truncated.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return `${res}...`;
     }
   };

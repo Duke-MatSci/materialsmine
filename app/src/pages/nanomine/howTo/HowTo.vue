@@ -94,7 +94,7 @@ const hideVideos = (idx: number) => {
 
 const displayVideo = (idx: number | string, link?: string) => {
   if (link) {
-    console.log('Opening ' + link);
+    // console.log('Opening ' + link);
     return window.open(link, '_blank');
   }
 
@@ -105,7 +105,7 @@ const displayVideo = (idx: number | string, link?: string) => {
     const o = { ...videos.value[index] };
     o.hide = !isHidden;
     videos.value[index] = o;
-    console.log('Hidden(' + index + ') = ' + videos.value[index].hide);
+    // console.log('Hidden(' + index + ') = ' + videos.value[index].hide);
   } else {
     console.warn('Invalid video index:', index);
   }

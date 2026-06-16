@@ -230,7 +230,11 @@
                     </div>
                   </md-step>
 
-                  <md-step id="second" md-label="Provide additional info" :md-error="invalid.second">
+                  <md-step
+                    id="second"
+                    md-label="Provide additional info"
+                    :md-error="invalid.second"
+                  >
                     <div class="md-layout">
                       <!---------- General Info fields ---------->
                       <md-content class="u_width--max" style="margin: 20px">
@@ -261,11 +265,7 @@
                               <label style="font-size: 14px"
                                 >ORCID Identifier (e.g., 0000-0001-2345-6789)</label
                               >
-                              <md-input
-                                v-model="orcidId"
-                                required
-                                @change="lookupOrcid"
-                              ></md-input>
+                              <md-input v-model="orcidId" required @change="lookupOrcid"></md-input>
                               <span class="md-error" v-if="!invalid.orcid">ORCID ID required</span>
                               <span class="md-error" v-if="invalid.orcid">Invalid ORCID ID</span>
                             </md-field>
@@ -276,16 +276,12 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid':
-                                  invalid['second'] && !dataset.contactPoint.cpEmail,
+                                'md-invalid': invalid['second'] && !dataset.contactPoint.cpEmail,
                               }"
                               class="u_width--max"
                             >
                               <label>Email</label>
-                              <md-input
-                                v-model="dataset.contactPoint.cpEmail"
-                                required
-                              ></md-input>
+                              <md-input v-model="dataset.contactPoint.cpEmail" required></md-input>
                               <span class="md-error">Valid email required</span>
                             </md-field>
                           </div>
@@ -295,8 +291,7 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid':
-                                  invalid['second'] && !dataset.contactPoint.firstName,
+                                'md-invalid': invalid['second'] && !dataset.contactPoint.firstName,
                               }"
                             >
                               <label>First name</label>
@@ -313,15 +308,11 @@
                           >
                             <md-field
                               :class="{
-                                'md-invalid':
-                                  invalid['second'] && !dataset.contactPoint.lastName,
+                                'md-invalid': invalid['second'] && !dataset.contactPoint.lastName,
                               }"
                             >
                               <label>Last name</label>
-                              <md-input
-                                v-model="dataset.contactPoint.lastName"
-                                required
-                              ></md-input>
+                              <md-input v-model="dataset.contactPoint.lastName" required></md-input>
                               <span class="md-error">Contact point required</span>
                             </md-field>
                           </div>
@@ -373,7 +364,9 @@
                               >
                                 <span>
                                   {{ item.name }}
-                                  <span v-if="item.addresses?.[0]?.city || item.country?.country_code">
+                                  <span
+                                    v-if="item.addresses?.[0]?.city || item.country?.country_code"
+                                  >
                                     ({{ item.addresses?.[0]?.city }},
                                     {{ item.country?.country_code }})
                                   </span>
@@ -391,7 +384,10 @@
                             <div class="md-layout-item md-size-50">
                               <label>Date Published</label>
                               <md-field>
-                                <md-input v-model="dataset.datePub['@value']" type="date"></md-input>
+                                <md-input
+                                  v-model="dataset.datePub['@value']"
+                                  type="date"
+                                ></md-input>
                               </md-field>
                             </div>
                           </div>
@@ -443,7 +439,10 @@
                         <div class="md-subhead" v-if="depiction">
                           Cover Image: {{ depiction.name }}
                         </div>
-                        <div class="md-subhead" v-else-if="oldDepiction && oldDepiction.status !== 'delete'">
+                        <div
+                          class="md-subhead"
+                          v-else-if="oldDepiction && oldDepiction.status !== 'delete'"
+                        >
                           Cover Image: {{ oldDepiction.originalname }}
                         </div>
                       </md-card-header-text>
@@ -508,8 +507,34 @@
                             </li>
                           </ul>
                         </div>
+                        <div v-if="!hasDataDictionary" class="u_margin-bottom-small">
+                          <div class="md-subhead" style="color: #ff5252; margin-top: 10px">
+                            No data dictionary (.xls/.xlsx) found in uploaded files. You can reuse
+                            an existing one from the dataset gallery or go back and upload your own.
+                          </div>
+                          <div style="margin-top: 10px">
+                            <div>
+                              <md-field>
+                                <label>Paste data dictionary link here</label>
+                                <md-input v-model="externalSddLink"></md-input>
+                              </md-field>
+                            </div>
+                            <div style="text-align: center">
+                              <button
+                                type="button"
+                                class="btn btn--primary btn--noradius search_box_form_btn mid-first-li display-text"
+                                @click.prevent="openDatasetGallery"
+                              >
+                                Click to copy existing SDD from library
+                                <md-icon style="color: white; margin-left: 4px"
+                                  >arrow_outward</md-icon
+                                >
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="u_margin-bottom-small">
+                      <div class="u_margin-top-med u_margin-bottom-small">
                         <h3>Description:</h3>
                         {{ dataset.description }}
                       </div>
@@ -536,7 +561,7 @@
         </div>
       </div>
     </div>
-    <dialogbox
+    <Dialog
       :active="dialogBoxActive"
       :minWidth="dialog.minWidth"
       :disableClose="dialog.disableClose"
@@ -552,8 +577,8 @@
         </div>
         <div v-else-if="dialog.type == 'deleteOld'">
           <div>
-            Selecting "Yes, Delete" will permanently remove the file from the MaterialsMine
-            database for all users.
+            Selecting "Yes, Delete" will permanently remove the file from the MaterialsMine database
+            for all users.
           </div>
           <div>This action cannot be undone.</div>
           <div>
@@ -564,8 +589,8 @@
           </div>
         </div>
         <div v-else-if="dialog.type == 'doiData'">
-          The following data was imported from DOI.org. Use to auto-fill form? This will replace
-          any fields that you may have already filled.
+          The following data was imported from DOI.org. Use to auto-fill form? This will replace any
+          fields that you may have already filled.
           <div v-if="doiData?.title">
             <b>Title: </b>
             {{ doiData?.title?.[0] }}
@@ -589,17 +614,17 @@
           <md-button @click="useDoiData()">Yes, use imported data</md-button>
         </div>
       </template>
-    </dialogbox>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { debounce } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
-import FileDrop from '@/components/curate/FileDrop.vue';
+import FileInput from '@/components/curate/FileDrop.vue';
 import FilePreview from '@/components/curate/FilePreview.vue';
 import Dialog from '@/components/Dialog.vue';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
@@ -612,6 +637,7 @@ import {
   parseFileName,
   deleteFile,
 } from '@/modules/whyis-dataset';
+import { saveSDDDataset } from '@/modules/kg-utils';
 
 // Component name for debugging
 defineOptions({
@@ -717,7 +743,6 @@ const DEFAULT_DATASET: Dataset = {
 };
 
 // Reactive data
-const auth = ref(true);
 const loading = ref(false);
 const navRoutes = ref<NavRoute[]>([
   {
@@ -749,6 +774,7 @@ const dialog = ref<DialogConfig>({
   disableClose: false,
 });
 const uploadInProgress = ref<string | null>(null);
+const externalSddLink = ref('');
 
 // Computed
 const dialogBoxActive = computed(() => store.getters['dialogBox']);
@@ -780,6 +806,15 @@ const generatedUUID = computed(() => {
   return uuidv4();
 });
 
+const hasDataDictionary = computed(() => {
+  const xlsRegex = /\.xlsx?$/i;
+  const newFiles = distrFiles.value.some((f: any) =>
+    xlsRegex.test(f.file?.name?.split('?')[0] || '')
+  );
+  const oldFiles = oldDistributions.value.some((f) => xlsRegex.test(f.name?.split('?')[0] || ''));
+  return newFiles || oldFiles;
+});
+
 // Watch
 watch(orcidData, (newValue) => {
   if (newValue === 'invalid') {
@@ -787,12 +822,9 @@ watch(orcidData, (newValue) => {
   } else {
     invalid.value.orcid = false;
     dataset.value.contactPoint['@id'] = orcidData.value?.['@id'];
-    dataset.value.contactPoint.firstName =
-      orcidData.value?.['http://schema.org/givenName']?.[0]?.['@value'];
-    dataset.value.contactPoint.lastName =
-      orcidData.value?.['http://schema.org/familyName']?.[0]?.['@value'];
-    dataset.value.contactPoint.cpEmail =
-      orcidData.value?.['http://www.w3.org/2006/vcard/ns#email']?.[0]?.['@value'];
+    dataset.value.contactPoint.firstName = orcidData.value?.firstName;
+    dataset.value.contactPoint.lastName = orcidData.value?.lastName;
+    dataset.value.contactPoint.cpEmail = orcidData.value?.email;
   }
 });
 
@@ -821,9 +853,9 @@ const removeDistr = (file: any) => distrFn.removeFile(file);
 const modStatDistr = distrFn.modifyStatus;
 const clearFileList = distrFn.clearAllFiles;
 
-const navBack = () => {
-  router.back();
-};
+// const navBack = () => {
+//   router.back();
+// };
 
 const loadDatasetData = async () => {
   try {
@@ -888,6 +920,13 @@ const goToStep = (id: string, index?: string) => {
     if (id === 'second') invalid.value.second = null;
     if (index) {
       active.value = index;
+      if (index === 'third' && !hasDataDictionary.value) {
+        store.commit('setSnackbar', {
+          message:
+            'No data dictionary (.xls/.xlsx) found. You can reuse an existing one from the dataset gallery or go back and upload your own.',
+          duration: 10000,
+        });
+      }
     }
   }
 };
@@ -902,9 +941,15 @@ const lookupOrcid = async (e: any) => {
   }
 };
 
+const openDatasetGallery = (): void => {
+  const routeData = router.resolve({ name: 'DatasetGallery' });
+  window.open(routeData.href, '_blank');
+};
+
 const lookupDoi = async (e: Event) => {
   const target = e.target as HTMLInputElement;
   await store.dispatch('explorer/curation/lookupDoi', target.value);
+  await nextTick();
   if (doiData.value) {
     dataset.value.refby = doiData.value?.URL;
     renderDialog('Use imported DOI data?', 'doiData', 40);
@@ -1004,12 +1049,7 @@ const removeImage = () => {
   depiction.value = null;
 };
 
-const renderDialog = (
-  title: string,
-  type: string,
-  minWidth: number,
-  disableClose = false
-) => {
+const renderDialog = (title: string, type: string, minWidth: number, disableClose = false) => {
   dialog.value = {
     title,
     type,
@@ -1059,32 +1099,34 @@ const submitForm = async () => {
   uploadInProgress.value = 'Uploading files';
   renderDialog('Submitting dataset', 'loading', 40, true);
   clearSnackbar();
-  if (
-    (!distrFiles.value.length && !oldDistributions.value?.length) ||
-    !secondPageFilled.value
-  ) {
+  if ((!distrFiles.value.length && !oldDistributions.value?.length) || !secondPageFilled.value) {
     setSnackbar({
       message: 'Unable to submit, check for required fields',
     });
     toggleDialogBox();
     invalid.value.first =
-      !distrFiles.value.length && !oldDistributions.value?.length
-        ? 'Missing required field'
-        : null;
+      !distrFiles.value.length && !oldDistributions.value?.length ? 'Missing required field' : null;
     invalid.value.second = !secondPageFilled.value ? 'Missing required field' : null;
   } else {
-    dataset.value.creator = userInfo.value;
+    const metadata = {
+      did: props.datasetId ?? generatedUUID.value,
+      user: userInfo.value,
+      doi: doi.value,
+      externalSddLink: externalSddLink.value,
+      title: dataset.value.title,
+      datePub: dataset.value.datePub,
+      organizations: dataset.value.organization,
+      contactPoint: dataset.value.contactPoint,
+      description: dataset.value.description,
+    };
+
     const processedFiles = processFiles();
     const processedImg = processDepictions();
+
     try {
-      const datasetNanopub = await saveDataset(
-        dataset.value,
-        processedFiles,
-        processedImg,
-        generatedUUID.value
-      );
+      const datasetNanopub = await saveSDDDataset(processedFiles, processedImg, metadata);
       await store.dispatch('explorer/curation/cacheNewEntityResponse', {
-        identifier: dataset.value.uri,
+        identifier: datasetNanopub.identifier,
         resourceNanopub: datasetNanopub,
         type: 'datasets',
       });
@@ -1093,9 +1135,56 @@ const submitForm = async () => {
     } catch (err: any) {
       toggleDialogBox();
       setSnackbar({ message: err.response ?? err });
+      clearFileList();
+      doi.value = '';
+      dataset.value = { ...DEFAULT_DATASET };
+      active.value = 'first';
     }
   }
 };
+
+// TODO: (@Tee): Remove after complete SDD gallery migration
+// const submitForm = async () => {
+//   uploadInProgress.value = 'Uploading files';
+//   renderDialog('Submitting dataset', 'loading', 40, true);
+//   clearSnackbar();
+//   if ((!distrFiles.value.length && !oldDistributions.value?.length) || !secondPageFilled.value) {
+//     setSnackbar({
+//       message: 'Unable to submit, check for required fields',
+//     });
+//     toggleDialogBox();
+//     invalid.value.first =
+//       !distrFiles.value.length && !oldDistributions.value?.length ? 'Missing required field' : null;
+//     invalid.value.second = !secondPageFilled.value ? 'Missing required field' : null;
+//   } else {
+//     dataset.value.creator = userInfo.value;
+//     const processedFiles = processFiles();
+//     const processedImg = processDepictions();
+//     try {
+//       const datasetNanopub = await saveDataset(
+//         dataset.value,
+//         processedFiles,
+//         processedImg,
+//         generatedUUID.value,
+//         externalSddLink.value
+//       );
+//       await store.dispatch('explorer/curation/cacheNewEntityResponse', {
+//         identifier: dataset.value.uri,
+//         resourceNanopub: datasetNanopub,
+//         type: 'datasets',
+//       });
+//       dialog.value.title = 'Upload successful';
+//       dialog.value.type = 'success';
+//     } catch (err: any) {
+//       toggleDialogBox();
+//       setSnackbar({ message: err.response ?? err });
+//       clearFileList();
+//       doi.value = '';
+//       dataset.value = { ...DEFAULT_DATASET };
+//       active.value = 'first';
+//     }
+//   }
+// };
 
 const goToDataset = () => {
   toggleDialogBox();
@@ -1107,7 +1196,6 @@ const goToDataset = () => {
 
 // Lifecycle
 onMounted(async () => {
-  console.log('created SDDForm', props.datasetId);
   loading.value = true;
   if (props.datasetId) await loadDatasetData();
   loading.value = false;

@@ -76,6 +76,10 @@ router
   .post(isAuth, latencyTimer, curationController.curationETL);
 
 router
+  .route('/publishsdd')
+  .post(isAuth, latencyTimer, curationController.sddCurationETL);
+
+router
   .route('/newsampleid')
   .post(isAuth, latencyTimer, curationController.getControlSampleId);
 

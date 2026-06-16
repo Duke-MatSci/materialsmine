@@ -64,36 +64,36 @@ export default {
     };
   },
 
-  async createDatasetInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
-    const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
+  // async createDatasetInstanceObject(_context: Context, nanopubPayload: any): Promise<any | Error> {
+  //   const datasetObject = nanopubPayload?.['@graph']?.['np:hasAssertion']?.['@graph'][0];
 
-    // Return if not able to retrieve chart object
-    if (!datasetObject) {
-      return new Error('Caching error. Dataset object is missing');
-    }
+  //   // Return if not able to retrieve chart object
+  //   if (!datasetObject) {
+  //     return new Error('Caching error. Dataset object is missing');
+  //   }
 
-    // Build chart instance object
-    return {
-      description:
-        datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/description']?.['@value'],
-      identifier: datasetObject['@id'],
-      label:
-        datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
-        datasetObject['http://purl.org/dc/terms/title']?.['@value'],
-      thumbnail:
-        datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
-          'http://www.w3.org/ns/dcat#accessURL'
-        ],
-      doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
-      organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
-        return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
-      }),
-      distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
-        return dist?.['@id'];
-      }),
-    };
-  },
+  //   // Build chart instance object
+  //   return {
+  //     description:
+  //       datasetObject['http://purl.org/dc/terms/description']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/description']?.['@value'],
+  //     identifier: datasetObject['@id'],
+  //     label:
+  //       datasetObject['http://purl.org/dc/terms/title']?.[0]?.['@value'] ??
+  //       datasetObject['http://purl.org/dc/terms/title']?.['@value'],
+  //     thumbnail:
+  //       datasetObject['http://xmlns.com/foaf/0.1/depiction']?.[
+  //         'http://www.w3.org/ns/dcat#accessURL'
+  //       ],
+  //     doi: datasetObject['http://purl.org/dc/terms/isReferencedBy']?.['@value'],
+  //     organization: datasetObject['http://xmlns.com/foaf/0.1/Organization']?.map((org: any) => {
+  //       return org?.['http://xmlns.com/foaf/0.1/name']?.['@value'];
+  //     }),
+  //     distribution: datasetObject['http://www.w3.org/ns/dcat#distribution']?.map((dist: any) => {
+  //       return dist?.['@id'];
+  //     }),
+  //   };
+  // },
 
   async deleteEntityNanopub(_context: Context, entityUri: string): Promise<any> {
     // TODO: refactor delete function to generalize to other entity types
@@ -130,7 +130,7 @@ export default {
     if (type === 'charts') {
       resourceInstanceObject = await dispatch('createChartInstanceObject', resourceNanopub);
     } else if (type === 'datasets') {
-      resourceInstanceObject = await dispatch('createDatasetInstanceObject', resourceNanopub);
+      resourceInstanceObject = resourceNanopub;
     } else {
       return new Error('Caching error. Type parameter is missing or invalid');
     }
@@ -166,32 +166,37 @@ export default {
       (orcidId = orcidId.replace(/^\(?(\d{4})\)?(\d{4})?(\d{4})?(\d{3}(\d|X))$/, '$1-$2-$3-$4'));
 
     if (isValidOrcid(orcidId)) {
-      // TODO: update the endpoint route name
-      // const url = `/api/knowledge/images?uri=http://orcid.org/${orcidId}&view=describe`;
-      const url = `/api/knowledge/instance?uri=http://orcid.org/${orcidId}`;
-      const response = await fetch(url, {
-        method: 'GET',
-      });
-      if (response?.statusText !== 'OK') {
+      try {
+        const url = `https://pub.orcid.org/v3.0/${orcidId}/person`;
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) {
+          return commit('setOrcidData', 'invalid');
+        }
+
+        const data = await response.json();
+        const result = {
+          '@id': `http://orcid.org/${orcidId}`,
+          firstName: data.name?.['given-names']?.value || '',
+          lastName: data.name?.['family-name']?.value || '',
+          email: data.emails?.email?.[0]?.email || '',
+        };
+
+        if (result.firstName || result.lastName) {
+          return commit('setOrcidData', result);
+        } else {
+          return commit('setOrcidData', 'invalid');
+        }
+      } catch {
         const snackbar = {
-          message: response.statusText || 'Something went wrong while fetching orcid data',
+          message: 'Something went wrong while fetching ORCID data',
           duration: 5000,
         };
         return commit('setSnackbar', snackbar, { root: true });
       }
-
-      const responseData = await response.json();
-      const cpResult = responseData.filter(
-        (entry: any) => entry['@id'] === `http://orcid.org/${orcidId}`
-      );
-      if (cpResult.length) {
-        return commit('setOrcidData', cpResult[0]);
-      } else {
-        // No results were returned
-        return commit('setOrcidData', 'invalid');
-      }
     } else {
-      // Incorrect format
       return commit('setOrcidData', 'invalid');
     }
   },
@@ -201,7 +206,7 @@ export default {
     const response = await fetch(url, {
       method: 'GET',
     });
-    if (response?.statusText !== 'OK') {
+    if (!response.ok) {
       const snackbar = {
         message: response.statusText || 'Something went wrong while fetching DOI data',
         duration: 5000,
@@ -459,7 +464,7 @@ export default {
     const response = await fetch(url, {
       method: 'GET',
     });
-    if (response?.statusText !== 'OK') {
+    if (!response.ok) {
       const snackbar = {
         message: response.statusText || 'Something went wrong while fetching ROR data',
         duration: 5000,
@@ -467,8 +472,19 @@ export default {
       return commit('setSnackbar', snackbar, { root: true });
     }
     const responseData = await response.json();
-    commit('setRorData', responseData);
-    return responseData;
+    const normalized = responseData.map((item: any) => ({
+      ...item,
+      name:
+        item.names?.find((n: any) => n.types?.includes('ror_display'))?.value ||
+        item.names?.[0]?.value ||
+        '',
+      country: {
+        country_code: item.locations?.[0]?.geonames_details?.country_code || '',
+      },
+      addresses: [{ city: item.locations?.[0]?.geonames_details?.name || '' }],
+    }));
+    commit('setRorData', normalized);
+    return normalized;
   },
 
   async approveCuration(

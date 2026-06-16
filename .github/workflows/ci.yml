@@ -8,17 +8,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # Frontend App Tests (Node 22 + pnpm)
       - name: Setup Node.js 22 for frontend
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Enable pnpm for frontend
         run: corepack enable && corepack prepare pnpm@latest --activate
       - name: Cache pnpm dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.pnpm-store
           key: ${{ runner.os }}-pnpm-${{ hashFiles('app/pnpm-lock.yaml') }}
@@ -44,11 +44,11 @@ jobs:
 
       # Restful Service Tests (Node 17.9.1 + npm)
       - name: Setup Node.js 17.9.1 for restful service
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '17.9.1'
       - name: Cache npm dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key:
@@ -145,7 +145,7 @@ jobs:
       CLIENT_PORT: ${{secrets.CLIENT_PORT}}
       KG_PORT: ${{secrets.KG_PORT}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Download and run images
         run: docker-compose -f docker-compose.git.yml up -d
       - name: Kill containers

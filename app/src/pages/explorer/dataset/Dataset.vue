@@ -10,6 +10,14 @@
             <md-tooltip> Go Back </md-tooltip>
             <md-icon>arrow_back</md-icon>
           </md-button>
+          <md-button
+            v-if="isAuth"
+            class="md-icon-button"
+            @click.prevent="copyDataDictionary(distributions)"
+          >
+            <md-tooltip> Grab Data Dictionary Link </md-tooltip>
+            <md-icon>recycling</md-icon>
+          </md-button>
           <md-button id="shareChartBtn" class="md-icon-button" @click.prevent="handleShare">
             <md-tooltip> {{ shareToolTip }} </md-tooltip>
             <md-icon>share</md-icon>
@@ -83,6 +91,18 @@
           }"
         >
           Metadata
+        </div>
+        <div
+          @click="nav_to_tab"
+          name="hs_active"
+          :class="{
+            'u--margin-rightmd': true,
+            'section_tabb-controller': !tabbed_content.hs_active,
+            u_pointer: true,
+            'u--padding-rl-xs': true,
+          }"
+        >
+          History
         </div>
         <!-- <div
           @click="nav_to_tab"
@@ -200,6 +220,25 @@
           </div>
         </div>
 
+        <div
+          v-if="dataset"
+          id="history"
+          :class="{
+            search_box_form: true,
+            'u--layout-flex-justify-se': true,
+            explorer_page_header: true,
+            'u--layout-flex-switch': tabbed_content.hs_active,
+          }"
+        >
+          <div class="wrapper u_margin-top-med" style="min-width: 90%">
+            <TableComponent
+              emptyState="No revision history found for this dataset"
+              :tableData="changeLogs"
+              sortBy="timestamp"
+            />
+          </div>
+        </div>
+
         <!-- <div
           v-if="dataset"
           id="authors"
@@ -256,7 +295,9 @@ import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
+import TableComponent from '@/components/explorer/TableComponent.vue';
 import { parseFileName } from '@/modules/whyis-dataset';
+import { useDataDictionary } from '@/composables/useDataDictionary';
 
 defineOptions({
   name: 'DatasetDetailView',
@@ -270,6 +311,7 @@ interface TabbedContent {
   ds_active: boolean;
   md_active: boolean;
   au_active: boolean;
+  hs_active: boolean;
 }
 
 interface DatasetFields {
@@ -297,6 +339,9 @@ const props = defineProps<Props>();
 
 const store = useStore();
 const router = useRouter();
+const { copyDataDictionary } = useDataDictionary();
+
+const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 
 // Data from reducer mixin
 const hideAssetNavLeft = ref<boolean>(false);
@@ -311,6 +356,7 @@ const tabbed_content = reactive<TabbedContent>({
   ds_active: false,
   md_active: true,
   au_active: true,
+  hs_active: true,
 });
 
 const datasetFields = reactive<DatasetFields>({
@@ -336,6 +382,7 @@ const loading = ref<boolean>(true);
 // const orcidData = computed(() => store.getters['explorer/curation/getOrcidData']);
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
+const changeLogs = computed(() => store.getters['explorer/curation/getChangeLogs']);
 const routeInfo = computed(() => store.getters.getRouteInfo);
 
 const doi = computed(() => {
@@ -355,7 +402,6 @@ const optionalChaining = <T,>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
-    console.log(e);
     return undefined;
   }
 };
@@ -408,14 +454,9 @@ const loadDataset = async (): Promise<void> => {
 };
 
 const navBack = (): void => {
-  // Note: A check to go back to gallery after curating a dataset
-  const { from } = routeInfo.value;
-  if (from) router.back();
-  // if (from.name === 'CurateSDD') {
-  //   router.push('/explorer/curate');
-  // } else {
-  //   router.back();
-  // }
+  const page = store.getters['explorer/sddDatasets/getPage'] || 1;
+  const size = store.getters['explorer/sddDatasets/getPageSize'] || 20;
+  router.push({ name: 'DatasetGallery', query: { page, size } });
 };
 
 const nav_to_tab = (e: Event): void => {
@@ -455,10 +496,12 @@ watch(dataset, (newValues, oldValues) => {
   if (!newValues) return;
 
   if (newValues?.organization) {
-    organizations.value = newValues?.organization?.map((name: string, index: number) => ({
-      name,
-      id: index,
-    }));
+    organizations.value = newValues?.organization?.map((name: string, index: number) => [
+      {
+        name,
+        id: index,
+      },
+    ]);
   }
 
   if (newValues?.thumbnail) {
@@ -480,5 +523,13 @@ watch(dataset, (newValues, oldValues) => {
 onMounted(() => {
   loading.value = true;
   loadDataset();
+  store.dispatch('explorer/curation/fetchChangeLogs', props.id);
+
+  if (isAuth.value) {
+    store.commit('setSnackbar', {
+      message: 'ℹ️ Click the recycle icon to copy and reuse this dataset\'s SDD link',
+      duration: 15000,
+    });
+  }
 });
 </script>

@@ -1,5 +1,6 @@
 import { listNanopubs, postNewNanopub, deleteNanopub, lodPrefix } from './whyis-utils';
 import store from '@/store';
+import { FileItem } from '@/types/app';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ContactPoint {
@@ -34,18 +35,6 @@ interface Dataset {
   depiction: Depiction;
   uri?: string;
   '@type'?: string;
-  [key: string]: any;
-}
-
-interface FileItem {
-  status?: string;
-  file?: File;
-  uri?: string;
-  filename?: string;
-  swaggerFilename?: string;
-  name?: string;
-  originalname?: string;
-  accessUrl?: string;
   [key: string]: any;
 }
 
@@ -237,11 +226,13 @@ async function deleteResources(resourceURI: string): Promise<any> {
 }
 
 // Handle all of the uploads as multipart form
+// TODO: (@tee) Remove this function after full SDD gallery migration
 async function saveDataset(
   dataset: Dataset,
   fileList: FileItem[],
   imageList: FileItem[],
-  guuid?: string
+  guuid?: string,
+  externalSddLink?: string
 ): Promise<any> {
   const oldFiles = fileList.filter((file) => file.status === 'complete');
   const oldDepiction = imageList.filter((file) => file.status === 'complete');
@@ -266,6 +257,13 @@ async function saveDataset(
   const datasetLd = buildDatasetLd(dataset);
   let allFiles = [...oldFiles];
   if (distrRes?.files) allFiles = [...allFiles, ...distrRes.files];
+  if (externalSddLink) {
+    allFiles.push({
+      uri: externalSddLink,
+      name: parseFileName(externalSddLink),
+      status: 'complete',
+    });
+  }
   if (allFiles?.length) {
     datasetLd[datasetFieldUris.distribution] = buildDistrLd(allFiles);
   }
@@ -276,8 +274,22 @@ async function saveDataset(
     datasetLd[datasetFieldUris.depiction] = buildDepictionLd(oldDepiction[0], dataset.uri!);
   }
 
-  return postNewNanopub(datasetLd);
-  // TODO: Error handling
+  try {
+    return await postNewNanopub(datasetLd);
+  } catch (err) {
+    const uploadedFiles: FileItem[] = [];
+    if (distrRes?.files) uploadedFiles.push(...distrRes.files);
+    if (imgRes?.files) uploadedFiles.push(...imgRes.files);
+
+    await Promise.allSettled(
+      uploadedFiles.map((file) => {
+        const fileId = parseFileName(file.filename || '', true);
+        return deleteFile(fileId);
+      })
+    );
+
+    throw err;
+  }
 }
 
 async function saveDatasetFiles(fileList: FileItem[]): Promise<any> {
@@ -316,6 +328,7 @@ async function deleteFile(fileId?: string): Promise<Response | undefined> {
   }
 }
 
+// TODO: (@Tee): Remove after SDD Gallery Migration as a replacement exist
 function buildDistrLd(fileList: FileItem[]): any[] {
   const distrLDs: any[] = Array(fileList.length);
   Array.from(Array(fileList.length).keys()).map((x) => {
@@ -343,6 +356,7 @@ function buildDistrLd(fileList: FileItem[]): any[] {
   return distrLDs;
 }
 
+// TODO: (@Tee): Remove after SDD gallery complete migration
 function buildDepictionLd(file: FileItem, uri: string): Record<string, any> {
   const depictionLd: Record<string, any> = {
     '@id': `${uri}/depiction`,
@@ -419,6 +433,7 @@ const isValidOrcid = (identifier: string): boolean => {
 export {
   getDefaultDataset,
   saveDataset,
+  saveDatasetFiles,
   deleteResources,
   deleteFile,
   loadDataset,

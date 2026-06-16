@@ -20,7 +20,7 @@
         <ul>
           <li class="u_margin-right-small">
             <div class="nav_menu--container">
-              <a class="u--default-size nav_menu--handler" href="#">About</a>
+              <a class="u--default-size nav_menu--handler" style="height: 100%" href="#">About</a>
               <div class="nav_menu--siblings">
                 <router-link to="/nm/about" class="nav_menu--siblings-lists"
                   ><a>About Us</a></router-link

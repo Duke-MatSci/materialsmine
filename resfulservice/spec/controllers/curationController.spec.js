@@ -688,12 +688,16 @@ describe('Curation Controller', function () {
   });
 
   context('getChangeLogs', () => {
+    const populatable = (value) => ({
+      populate: sinon.stub().returns(value)
+    });
+
     it('should return 200 and empty object change logs does not exist', async () => {
       req.params = { resourceId: '5d8f6a9a1b7f7c0b0b0b0b0b' };
       req.query = { published: true };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns({});
-      sinon.stub(ChangeLog, 'findOne').returns(null);
+      sinon.stub(ChangeLog, 'findOne').returns(populatable(null));
       sinon.stub(latency, 'latencyCalculator').returns(true);
       const result = await XlsxController.getChangeLogs(req, res, next);
       expect(result).to.be.an('Object');
@@ -705,7 +709,7 @@ describe('Curation Controller', function () {
       req.query = { published: true };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(mockChangeLogs.changes[0]);
-      sinon.stub(ChangeLog, 'findOne').returns(mockChangeLogs);
+      sinon.stub(ChangeLog, 'findOne').returns(populatable(mockChangeLogs));
       sinon.stub(latency, 'latencyCalculator').returns(true);
       const result = await XlsxController.getChangeLogs(req, res, next);
       expect(result).to.be.an('Object');
@@ -724,7 +728,7 @@ describe('Curation Controller', function () {
       req.query = { published: false };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returns(mockChangeLogs.changes);
-      sinon.stub(ChangeLog, 'findOne').returns(mockChangeLogs);
+      sinon.stub(ChangeLog, 'findOne').returns(populatable(mockChangeLogs));
       sinon.stub(latency, 'latencyCalculator').returns(true);
       const result = await XlsxController.getChangeLogs(req, res, next);
       expect(result).to.be.an('Array');

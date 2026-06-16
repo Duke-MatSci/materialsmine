@@ -67,11 +67,16 @@
         <div class="gallery-grid grid grid_col-5">
           <md-card v-for="(result, index) in items" :key="index" class="btn--animated gallery-item">
             <div class="u_gridicon u_gridbg">
-              <a download :href="optionalChaining(() => result.distribution)">
+              <div v-if="isAuth" @click.prevent="copyDataDictionary(result.distribution || '')">
+                <md-icon class="u_color_white" style="font-size: 14px !important">
+                  recycling</md-icon
+                >
+              </div>
+              <div @click.prevent="downloadFiles(result.distribution)">
                 <md-icon class="u_color_white" style="font-size: 14px !important">
                   download</md-icon
                 >
-              </a>
+              </div>
               <div v-if="isAuth && isAdmin" @click.prevent="editDataset(result)">
                 <md-icon class="u_color_white">edit</md-icon>
               </div>
@@ -125,7 +130,7 @@
         <h1 class="visualize_header-h1 u_margin-top-med">No Datasets Found</h1>
       </div>
     </div>
-    <dialogbox :active="dialogBoxActive" :minWidth="dialog.minWidth">
+    <Dialog :active="dialogBoxActive" :min-width="dialog.minWidth">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
         <div v-if="dialog.type == 'delete'">
@@ -148,7 +153,7 @@
         </span>
         <md-button v-else @click.prevent="toggleDialogBox">Close</md-button>
       </template>
-    </dialogbox>
+    </Dialog>
   </div>
 </template>
 
@@ -157,9 +162,10 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
+import { useDataDictionary } from '@/composables/useDataDictionary';
 import spinner from '@/components/Spinner.vue';
 import pagination from '@/components/explorer/Pagination.vue';
-// import Dialog from '@/components/Dialog.vue';
+import Dialog from '@/components/Dialog.vue';
 
 defineOptions({
   name: 'viz-grid',
@@ -183,6 +189,7 @@ interface DialogState {
 const store = useStore();
 const router = useRouter();
 const route = useRoute();
+const { copyDataDictionary } = useDataDictionary();
 
 // Data
 // const baseUrl = ref<string>(`${window.location.origin}/api/files/`);
@@ -206,16 +213,6 @@ const items = computed(() => store.getters['explorer/sddDatasets/getAllDatasets'
 const page = computed(() => store.getters['explorer/sddDatasets/getPage']);
 const total = computed(() => store.getters['explorer/sddDatasets/getTotal']);
 const totalPages = computed(() => store.getters['explorer/sddDatasets/getTotalPages']);
-
-// Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
-  try {
-    return fn();
-  } catch (e) {
-    console.log(e);
-    return undefined;
-  }
-};
 
 // Methods from reducer mixin
 const reduceDescription = (args: string, size = 50): string => {
@@ -360,6 +357,18 @@ const loadItems = async (pageCurrent = 1): Promise<void> => {
   }
 };
 
+const downloadFiles = (distribution: string | string[]): void => {
+  const links = Array.isArray(distribution) ? distribution : [distribution];
+  links.filter(Boolean).forEach((link) => {
+    const a = document.createElement('a');
+    a.href = link;
+    a.download = '';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+};
+
 const getDatasetId = (dataset: DatasetItem): string => {
   return dataset.identifier.split('dataset/')[1];
 };
@@ -385,9 +394,16 @@ watch(pageSize, (newValue, oldValue) => {
 onMounted(async () => {
   const query = route.query;
   if (query && Object.keys(query).length > 0) {
-    await loadParams(query as Record<string, any>, false);
+    await loadParams(query as Record<string, any>);
   } else {
     await loadItems();
+  }
+
+  if (isAuth.value) {
+    store.commit('setSnackbar', {
+      message: 'ℹ️ Click the recycle icon on a dataset card to copy and reuse its SDD link',
+      duration: 20000,
+    });
   }
 });
 </script>

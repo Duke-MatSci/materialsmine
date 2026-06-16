@@ -20,8 +20,8 @@ module.exports = {
     'URL',
     'container-title'
   ],
-  rorApi: 'https://api.ror.org/organizations',
-  rorFields: ['id', 'name', 'aliases', 'links', 'country', 'addresses'],
+  rorApi: 'https://api.ror.org/v2/organizations',
+  rorFields: ['id', 'names', 'links', 'locations'],
   supportedBrowser: [
     'Firefox',
     'Chrome',

@@ -7,6 +7,7 @@ const {
   manageServiceRequest
 } = require('../controllers/managedServiceController');
 const { Writer, namedNode, literal, quad } = require('n3');
+const { buildSddAttributes } = require('./sdd-serializer');
 
 const {
   mapUnit,
@@ -38,7 +39,10 @@ const OUTPUT_CONTEXT = {
   unit: 'http://qudt.org/vocab/unit/',
   pav: 'http://purl.org/pav/',
   rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-  xsd: 'http://www.w3.org/2001/XMLSchema#'
+  xsd: 'http://www.w3.org/2001/XMLSchema#',
+  purl: 'http://purl.org/net/provenance/ns#',
+  foaf: 'http://xmlns.com/foaf/0.1/',
+  skos: 'http://www.w3.org/2004/02/skos/core#'
 };
 
 /* ------------------------ Article/meta extraction (for prov/pubinfo) ------------------------ */
@@ -3065,6 +3069,7 @@ async function transformXmlToNanopub(xmlObj, logger) {
   // Meta for prov/pubinfo
   const common =
     pick(pnc, 'PolymerNanocomposite.DATA_SOURCE.Citation.CommonFields') || {};
+  const xmlTitle = pick(common, 'Title');
   const meta = await buildArticle(common, logger);
   const { doiIri, datePublished, keywords, relatedWorks, authors } = meta;
 
@@ -3124,6 +3129,7 @@ async function transformXmlToNanopub(xmlObj, logger) {
   const pubinfoNp = {
     '@id': npId,
     'pav:createdBy': { '@id': `${MM_BASE}agent/curator` },
+    ...(hasText(xmlTitle) ? { 'dct:title': xmlTitle } : {}),
     ...(keywords && keywords.length ? { 'dcat:keyword': keywords } : {}),
     'pav:createdOn': now
   };
@@ -3352,8 +3358,303 @@ async function publishToChangeLog(
   }
 }
 
+/* ------------------------ Transform: SDD Skeleton → Nanopub JSON-LD ------------------------ */
+
+/**
+ * Transform a frontend-built SDD nanopub skeleton into a full nanopub document.
+ * Returns the same shape as transformXmlToNanopub: { nanopubId, nanopub, assertionId }
+ *
+ * @param {Object} skeleton - The nanopubSkeleton from the frontend
+ * @param {Object} logger - Request logger
+ * @returns {{ nanopubId: string, nanopub: Object, assertionId: string }}
+ */
+async function transformSddToNanopub(skeleton, logger) {
+  const {
+    id: npId,
+    doi,
+    title,
+    description,
+    datePub,
+    organizations,
+    contactPoint,
+    distribution,
+    depiction
+  } = skeleton;
+
+  if (!npId) throw new Error('Missing required "id" in nanopubSkeleton.');
+
+  // Derive baseId from npId (e.g. http://materialsmine.org/np/xxx → http://materialsmine.org/resource/pnc/xxx)
+  const npSlug = npId.split('/np/').pop();
+  const baseId = `${MM_BASE}pnc/${npSlug}`;
+
+  // DOI enrichment via OpenAlex (same as XML ETL)
+  const doiBare = extractBareDOI(doi);
+  const doiIri = toDoiIri(doi);
+  const oa = doiBare ? await fetchPaperDetails(doiBare, logger) : null;
+
+  // Keywords from OpenAlex or empty
+  let keywords = [];
+  if (Array.isArray(oa?.keywords) && oa.keywords.length) {
+    keywords = oa.keywords.map((k) => k.display_name || k.id || String(k));
+  } else if (Array.isArray(oa?.concepts) && oa.concepts.length) {
+    keywords = oa.concepts.map((c) => c.display_name || c.id).filter(Boolean);
+  }
+
+  const relatedWorks = Array.isArray(oa?.related_works) ? oa.related_works : [];
+
+  // Date published
+  const datePublished = datePub?.['@value'] || undefined;
+
+  // Authors from contactPoint + OpenAlex
+  let authors = [];
+  if (oa && Array.isArray(oa.authorships) && oa.authorships.length) {
+    authors = oa.authorships.map((a, idx) => {
+      const name =
+        a?.author?.display_name || a?.raw_author_name || `author-${idx + 1}`;
+      return { id: `${MM_BASE}agent/${slug(name)}`, name, email: '' };
+    });
+  }
+
+  // Ensure contactPoint author is included (always add email)
+  const cpEmail = contactPoint?.cpEmail || '';
+  if (contactPoint?.firstName || contactPoint?.lastName) {
+    const cpName =
+      `${contactPoint.firstName || ''} ${contactPoint.lastName || ''}`.trim();
+    const cpId =
+      contactPoint['@id'] || `${MM_BASE}agent/${slug(cpName)}`;
+    const existing = authors.find((a) => a.id === cpId);
+    if (existing) {
+      existing.email = cpEmail;
+    } else {
+      authors.unshift({ id: cpId, name: cpName, email: cpEmail });
+    }
+  }
+
+  // Build sio:hasAttribute from SDD + CSV distribution files
+  const sddAttributes = distribution
+    ? await buildSddAttributes(distribution, npId, logger)
+    : [];
+
+  // Build assertion sample node
+  const sample = {
+    '@id': baseId,
+    '@type': 'dcat:Dataset',
+    ...(distribution || {}),
+    ...(depiction || {}),
+    'sio:hasAttribute': sddAttributes
+  };
+
+  const now = new Date().toISOString();
+  const assertionId = `${npId}#assertion`;
+  const provId = `${npId}#provenance`;
+  const pubinfoId = `${npId}#pubinfo`;
+
+  // Provenance graph
+  const authorTriples = (authors || []).map((a) => ({
+    '@id': a.id,
+    '@type': 'schema:Person',
+    'schema:name': a.name,
+    ...(hasText(a.email) ? { 'schema:email': a.email } : {})
+  }));
+
+  const provAssertion = {
+    '@id': assertionId,
+    ...(datePublished && {
+      'pav:authoredOn': {
+        '@value': String(datePublished),
+        '@type': 'xsd:gYear'
+      }
+    }),
+    ...(doiIri && { 'prov:wasDerivedFrom': { '@id': doiIri } }),
+    ...(authors && authors.length
+      ? {
+          'prov:wasAttributedTo': authors.map((a) => ({ '@id': a.id })),
+          'pav:authoredBy': authors.map((a) => ({ '@id': a.id }))
+        }
+      : {}),
+    ...(relatedWorks && relatedWorks.length
+      ? { 'dct:relation': relatedWorks.map((r) => ({ '@id': r })) }
+      : {})
+  };
+
+  // Publication-info graph
+  const curatorName =
+    contactPoint?.firstName || contactPoint?.lastName
+      ? `${contactPoint.firstName || ''} ${contactPoint.lastName || ''}`.trim()
+      : 'sdd-etl';
+  const curatorEmail = contactPoint?.cpEmail || '';
+  const curatorId =
+    contactPoint?.['@id'] || `${MM_BASE}agent/${slug(curatorName)}`;
+  const orgNodes = (organizations || []).map((org) => ({
+    '@id': org['@id'] || `${MM_BASE}org/${slug(org.name)}`,
+    '@type': 'schema:Organization',
+    'schema:name': org.name
+  }));
+
+  const pubinfoNp = {
+    '@id': npId,
+    'pav:createdBy': { '@id': curatorId },
+    ...(hasText(title) ? { 'dct:title': title } : {}),
+    ...(hasText(description) ? { 'dct:description': description } : {}),
+    ...(keywords && keywords.length ? { 'dcat:keyword': keywords } : {}),
+    'pav:createdOn': now
+  };
+  const curatorNode = {
+    '@id': curatorId,
+    '@type': 'schema:Person',
+    'schema:name': curatorName,
+    ...(hasText(curatorEmail) ? { 'schema:email': curatorEmail } : {}),
+    ...(orgNodes.length
+      ? { 'schema:affiliation': orgNodes.map((o) => ({ '@id': o['@id'] })) }
+      : {})
+  };
+
+  // Final document
+  const doc = {
+    '@context': OUTPUT_CONTEXT,
+    '@graph': [
+      {
+        '@id': `${npId}#head`,
+        '@graph': [
+          {
+            '@id': npId,
+            '@type': 'np:Nanopublication',
+            'np:hasAssertion': { '@id': assertionId },
+            'np:hasProvenance': { '@id': provId },
+            'np:hasPublicationInfo': { '@id': pubinfoId }
+          }
+        ]
+      },
+      {
+        '@id': assertionId,
+        '@type': 'np:Assertion',
+        '@graph': [sample]
+      },
+      {
+        '@id': provId,
+        '@type': 'np:Provenance',
+        '@graph': [provAssertion, ...authorTriples]
+      },
+      {
+        '@id': pubinfoId,
+        '@type': 'np:PublicationInfo',
+        '@graph': [pubinfoNp, curatorNode, ...orgNodes]
+      }
+    ]
+  };
+
+  return { nanopubId: npSlug, nanopub: doc, assertionId };
+}
+
+/* ------------------------ Shared: Serialize + Validate + Publish ------------------------ */
+
+/**
+ * Shared post-transform pipeline: serialize → SHACL validate → publish to changelog.
+ * Used by both curationETL and sddCurationETL.
+ *
+ * @param {Object} params
+ * @param {string} params.nanopubId - The sample/nanopub ID
+ * @param {Object} params.nanopub - The full nanopub JSON-LD document
+ * @param {string} params.assertionId - The assertion graph ID
+ * @param {string} params.output - Desired output format: 'jsonld' | 'trig' | 'ttl'
+ * @param {string} params.inference - Inference mode for SHACL
+ * @param {boolean} params.resolveUrls - Whether to resolve URLs in SHACL
+ * @param {string} [params.ontologyLink] - Optional ontology link
+ * @param {string} params.id - Source identifier (for logging/changelog)
+ * @param {Object} req
+ * @param {Object} res
+ * @param {Function} next
+ * @param {Function} createChangeLogCb - The createChangeLog controller bound method
+ * @returns {{ success: boolean, result?: Object, failure?: Object }}
+ */
+async function serializeAndValidate({
+  nanopubId,
+  nanopub,
+  assertionId,
+  output = 'jsonld',
+  inference = 'rdfs',
+  resolveUrls = true,
+  ontologyLink,
+  id,
+  req,
+  res,
+  next,
+  createChangeLogCb
+}) {
+  // Serialize per desired output
+  let content, format, extension, mime;
+  if (output === 'trig') {
+    content = await toTriG(nanopub);
+    format = 'trig';
+    extension = '.trig';
+    mime = 'application/trig';
+  } else if (output === 'ttl') {
+    content = await toTurtleAssertionOnly(nanopub, assertionId);
+    format = 'turtle';
+    extension = '.ttl';
+    mime = 'text/turtle';
+  } else {
+    content = await toJsonLd(nanopub);
+    format = 'json-ld';
+    extension = '.jsonld';
+    mime = 'application/ld+json';
+  }
+
+  // SHACL validation
+  const shacl = await validateWithSHACL({
+    data: content,
+    format,
+    inference,
+    resolveUrls,
+    ontologyLink,
+    req,
+    res,
+    next
+  });
+  const sh = shacl?.response?.shacl;
+  if (!sh || sh.conforms !== true) {
+    return {
+      success: false,
+      failure: {
+        id,
+        sampleID: nanopubId,
+        stage: 'shacl',
+        errors: sh
+          ? sh.violations || [{ message: 'Unknown SHACL failure' }]
+          : [{ message: 'No SHACL report' }]
+      }
+    };
+  }
+
+  // Publish to change log
+  if (createChangeLogCb) {
+    const failed = [];
+    await publishToChangeLog(
+      { resp: shacl?.response, id, failed, sampleIdForFailure: nanopubId },
+      req,
+      res,
+      next,
+      createChangeLogCb
+    );
+  }
+
+  return {
+    success: true,
+    result: {
+      id,
+      sampleID: nanopubId,
+      nanopub: `${NP_BASE}${encodeURIComponent(nanopubId)}`,
+      format: mime,
+      extension,
+      shacl: { conforms: true, violation_count: sh.violation_count || 0 }
+    }
+  };
+}
+
 module.exports = {
   transformXmlToNanopub,
+  transformSddToNanopub,
+  serializeAndValidate,
   toJsonLd,
   toTurtleAssertionOnly,
   toTriG,
