@@ -1948,6 +1948,91 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Server-Error'
+
+  /jobs/xml/adjust-status:
+    post:
+      security:
+        - BearerAuth: []
+      summary: Bulk-update curation status for XML data and curated samples
+      description: Updates the curateState field in xmldata and curationState field in curatedsamples collections for the provided MongoDB IDs. IDs not found in xmldata are tried against curatedsamples. Provide IDs via comma-separated text or a file.
+      tags:
+        - Jobs
+      requestBody:
+        description: A payload containing the target status and IDs to update (via text or filename).
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: The target curation status to apply
+                  example: Curated
+                text:
+                  type: string
+                  description: Comma-separated list of MongoDB ObjectIds. Required if filename is not provided.
+                  example: "507f1f77bcf86cd799439011,507f1f77bcf86cd799439012"
+                filename:
+                  type: string
+                  description: Name of a file in FILES_DIRECTORY containing one ObjectId per line. Required if text is not provided.
+                  example: ids.txt
+      responses:
+        '200':
+          description: Returns update counts and any failed or invalid IDs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      xmlDataUpdated:
+                        type: integer
+                        description: Number of xmldata records updated
+                        example: 5
+                      curatedSamplesUpdated:
+                        type: integer
+                        description: Number of curatedsamples records updated
+                        example: 2
+                      failed:
+                        type: array
+                        description: IDs not found in either collection
+                        items:
+                          type: string
+                        example: ["507f1f77bcf86cd799439013"]
+                      invalidIds:
+                        type: array
+                        description: IDs that are not valid MongoDB ObjectIds
+                        items:
+                          type: string
+                        example: ["not-a-valid-id"]
+        '400':
+          description: Invalid Request Payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    enum: ['Status is required', 'Either text or filename is required', 'Provide either text or filename, not both']
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Server-Error'
+
 components:
   securitySchemes:
     BearerAuth:

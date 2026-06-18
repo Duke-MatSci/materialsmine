@@ -8,7 +8,7 @@ from app.ontology.github_flow import get_commit_dates, download_file
 from app.ontology.helpers.extract import details_from_turtle
 from app.ontology.cache_service import check_cache, save_to_cache
 from app.ontology.helpers.validation import DEFAULT_ONTOLOGY_LINK, FREQ_UNITS, _build_shapes_graph, _load_graph_from_text_or_link, _detect_mm_base_iri, _serialize_shacl_results, _collect_resolvable_urls, _head_check
-from app.ontology.helpers.crud import push_to_fuseki, list_named_graphs, upsert_np_graphs_strict_transaction
+from app.ontology.helpers.crud import push_to_fuseki, list_named_graphs, upsert_np_graphs_strict_transaction, delete_np_graphs
 
 ontology = Blueprint("ontology", __name__, url_prefix="/ontology")
 
@@ -315,3 +315,37 @@ def validate_ontology(request_id):
     except Exception as e:
         # rdflib parsing errors, pyshacl errors, etc.
         return jsonify({"message": str(e)}), 400
+
+
+@ontology.route("/nanopub/", methods=["DELETE"])
+@log_errors
+@request_logger
+@token_required
+def delete_nanopub(request_id):
+    """
+    DELETE /ontology/nanopub/
+
+    Body (JSON):
+    {
+      "entity_uri": "http://materialsmine.org/np/..."
+    }
+
+    Discovers all named graphs whose URI starts with entity_uri
+    and clears them from Fuseki in a single transaction.
+    """
+    try:
+        payload = request.get_json(silent=True) or {}
+        entity_uri = payload.get("entity_uri")
+
+        if not entity_uri:
+            return jsonify({"message": "Missing required field: entity_uri"}), 400
+
+        ok, report = delete_np_graphs(entity_uri)
+
+        if not ok and report.get("stage"):
+            return jsonify({"message": "Failed to delete nanopub graphs", "report": report}), 502
+
+        return jsonify({"message": "ok" if ok else "No graphs found", "report": report}), 200
+
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500

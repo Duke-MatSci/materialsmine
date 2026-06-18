@@ -145,3 +145,88 @@ def upsert_np_graphs_strict_transaction(
             "endpoint": endpoint,
             "error": str(e),
         }
+
+
+def delete_np_graphs(
+    entity_uri: str,
+    timeout: int = 120,
+) -> Tuple[bool, Dict[str, Any]]:
+    """
+    Discover and delete all named graphs whose URI starts with entity_uri.
+    Runs a SPARQL query to find matching graphs, then issues CLEAR SILENT GRAPH
+    for each in a single transactional update.
+    Returns (ok, report).
+    """
+    base = Config.FUSEKI_BASE_URL or "http://host.docker.internal:3032"
+    dataset = Config.FUSEKI_DATASET
+    user = Config.FUSEKI_USER
+    pwd = Config.FUSEKI_PWD
+    auth = (user, pwd) if user and pwd else None
+
+    query_endpoint = f"{base}/{dataset}/sparql"
+    update_endpoint = f"{base}/{dataset}/update"
+
+    discovery_query = (
+        f'SELECT DISTINCT ?g WHERE {{ GRAPH ?g {{ ?s ?p ?o }} '
+        f'FILTER(STRSTARTS(STR(?g), "{entity_uri}")) }}'
+    )
+
+    try:
+        r = requests.post(
+            query_endpoint,
+            data={"query": discovery_query},
+            headers={"Accept": "application/sparql-results+json"},
+            auth=auth,
+            timeout=timeout,
+        )
+        if not (200 <= r.status_code < 300):
+            return False, {
+                "ok": False,
+                "stage": "discovery",
+                "status": r.status_code,
+                "error": r.text,
+            }
+
+        bindings = r.json().get("results", {}).get("bindings", [])
+        graph_uris = [b["g"]["value"] for b in bindings if "g" in b]
+    except Exception as e:
+        return False, {
+            "ok": False,
+            "stage": "discovery",
+            "status": 0,
+            "error": str(e),
+        }
+
+    if not graph_uris:
+        return True, {
+            "ok": True,
+            "graphs_deleted": [],
+            "message": "No named graphs found for this entity.",
+        }
+
+    clears = [f"CLEAR SILENT GRAPH <{g}>" for g in graph_uris]
+    update_body = ";\n".join(clears) + "\n"
+
+    try:
+        r = requests.post(
+            update_endpoint,
+            data=update_body.encode("utf-8"),
+            headers={"Content-Type": "application/sparql-update; charset=utf-8"},
+            auth=auth,
+            timeout=timeout,
+        )
+        ok = 200 <= r.status_code < 300
+        return ok, {
+            "ok": ok,
+            "status": r.status_code,
+            "graphs_deleted": graph_uris if ok else [],
+            "error": None if ok else r.text,
+        }
+    except Exception as e:
+        return False, {
+            "ok": False,
+            "stage": "update",
+            "status": 0,
+            "graphs_deleted": [],
+            "error": str(e),
+        }
