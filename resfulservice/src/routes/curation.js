@@ -87,4 +87,12 @@ router.route('/xml').post(isAuth, latencyTimer, curationController.curateXml);
 
 router.route('rehydrate').patch(isAuth, curationController.curationRehydration);
 
+router
+  .route('/dataset/:id')
+  .delete(isAuth, latencyTimer, curationController.deleteDataset);
+
+router
+  .route('/dataset/:id/submit-kg')
+  .post(isAuth, latencyTimer, curationController.submitDatasetToKG);
+
 module.exports = router;

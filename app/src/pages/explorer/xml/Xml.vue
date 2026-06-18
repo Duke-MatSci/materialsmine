@@ -179,9 +179,9 @@
     <!-- @ts-ignore -->
     <template v-slot:pagination>
       <Pagination
-        v-if="xmlFinder && xmlFinder.xmlData"
+        v-if="xmlFinder && xmlFinder.xmlData && xmlFinder.totalPages > 0"
         :cpage="pageNumber"
-        :tpages="xmlFinder.totalPages || 1"
+        :tpages="xmlFinder.totalPages"
         @go-to-page="loadPrevNextImage($event)"
       />
     </template>
@@ -194,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onActivated, watch, watchEffect } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import { useQuery } from '@vue/apollo-composable';
@@ -503,14 +503,6 @@ const initializeGallery = () => {
 
 // Lifecycle
 onMounted(() => {
-  initializeGallery().finally(() => {
-    paramsReady.value = true;
-  });
-});
-
-// Refetch data when component is activated (e.g., when navigating back from detail view)
-onActivated(() => {
-  paramsReady.value = false;
   initializeGallery().finally(() => {
     paramsReady.value = true;
   });

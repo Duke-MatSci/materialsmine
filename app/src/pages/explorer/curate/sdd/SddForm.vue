@@ -1013,29 +1013,29 @@ const useDoiData = () => {
 };
 
 const previewFile = () => {
-  const preview = document.querySelector('#depictImg') as HTMLImageElement;
-  const wrapper = document.querySelector('#depictWrapper') as HTMLElement;
-  const previewMini = document.querySelector('#depictImgMini') as HTMLImageElement;
-  const wrapperMini = document.querySelector('#depictWrapperMini') as HTMLElement;
   const fileInput = document.querySelector('#file-depict-input') as HTMLInputElement;
   const file = fileInput?.files?.[0];
   if (!file) return;
 
-  const reader = new FileReader();
   depiction.value = file;
 
+  const reader = new FileReader();
   reader.addEventListener(
     'load',
     function () {
-      wrapper.style.visibility = wrapperMini.style.visibility = 'visible';
-      preview.src = previewMini.src = reader.result as string;
+      const preview = document.querySelector('#depictImg') as HTMLImageElement;
+      const wrapper = document.querySelector('#depictWrapper') as HTMLElement;
+      const previewMini = document.querySelector('#depictImgMini') as HTMLImageElement;
+      const wrapperMini = document.querySelector('#depictWrapperMini') as HTMLElement;
+      if (wrapper) wrapper.style.visibility = 'visible';
+      if (preview) preview.src = reader.result as string;
+      if (wrapperMini) wrapperMini.style.visibility = 'visible';
+      if (previewMini) previewMini.src = reader.result as string;
     },
     false
   );
 
-  if (file) {
-    reader.readAsDataURL(file);
-  }
+  reader.readAsDataURL(file);
 };
 
 const removeImage = () => {

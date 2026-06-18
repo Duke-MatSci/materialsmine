@@ -25,11 +25,10 @@ const path = require('path');
  * @returns {*} response
  */
 exports.manageServiceRequest = async (req, res, next) => {
-  const { logger, params, body } = req;
+  const { logger, params } = req;
   const [appName, controlId] = params.appName?.split('/');
   logger.info(':::manageServiceRequest Function Entry');
   const reqId = uuidv4();
-  logger.info(`${appName}::${JSON.stringify({ ...body, reqId })}`);
   try {
     if (!ManagedServiceRegister[appName]) {
       return next(
