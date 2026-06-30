@@ -55,10 +55,26 @@ export default {
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
   },
-  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'Manual'): void {
+  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'hybrid'): void {
     state.dynamfitTransformMethod = payload;
   },
   setDynamfitManualFile(state: ExplorerState, payload: string): void {
     state.dynamfitManualFile = payload;
+  },
+  setDynamfitShiftCoefficients(
+    state: ExplorerState,
+    payload: ExplorerState['dynamfitShiftCoefficients']
+  ): void {
+    state.dynamfitShiftCoefficients = payload;
+  },
+  resetDynamfitShiftCoefficients(state: ExplorerState): void {
+    state.dynamfitShiftCoefficients = {
+      C1: null,
+      C2: null,
+      Tg: null,
+      Ea: null,
+      TL: null,
+      a_T_ref: null,
+    };
   },
 };

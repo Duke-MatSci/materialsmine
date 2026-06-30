@@ -198,6 +198,47 @@ export default {
     }
   },
 
+  async fetchFitShiftData(
+    { commit, rootGetters }: Context,
+    payload: {
+      shift_file_name: string;
+      transform_method: 'WLF' | 'hybrid';
+      Tg?: number | null;
+      C1?: number | null;
+      C2?: number | null;
+      Ea?: number | null;
+      TL?: number | null;
+    }
+  ): Promise<Record<string, any>> {
+    const url = '/api/mn/fit-shift';
+    const token = rootGetters['auth/token'];
+    const req = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(payload),
+      method: 'POST',
+    });
+
+    const response = await req.json();
+    if (!req.ok) {
+      throw new Error(response?.message ?? 'Failed to fit shift coefficients');
+    }
+
+    commit('setDynamfitShiftCoefficients', {
+      C1: response.C1 ?? null,
+      C2: response.C2 ?? null,
+      Tg: response.Tg ?? null,
+      Ea: response.Ea ?? null,
+      TL: response.TL ?? null,
+      a_T_ref: response.a_T_ref ?? null,
+    });
+
+    return response;
+  },
+
   async duplicateXml(
     { commit, rootGetters }: Context,
     payload: { id: string; isNew: boolean }

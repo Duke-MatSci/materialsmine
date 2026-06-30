@@ -1,0 +1,7 @@
+# Default: let git normalize text, store LF in the repo
+* text=auto
+
+# Files executed in Linux containers / WSL — must be LF or the shebang breaks
+*.sh        text eol=lf
+.husky/**   text eol=lf
+install     text eol=lf

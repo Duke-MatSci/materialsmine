@@ -32,6 +32,14 @@ export default {
       dynamfitData: {},
       dynamfitTransformMethod: 'none',
       dynamfitManualFile: '',
+      dynamfitShiftCoefficients: {
+        C1: null,
+        C2: null,
+        Tg: null,
+        Ea: null,
+        TL: null,
+        a_T_ref: null,
+      },
       dynamfit: {
         range: 100,
         fitSettings: false,
