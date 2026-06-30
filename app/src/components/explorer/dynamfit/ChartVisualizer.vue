@@ -1,6 +1,30 @@
 <template>
   <div class="">
-    <div class="u_width--max utility-bg_border-dark u--b-rad">
+    <!-- Variant A: Manual shift file upload -->
+    <div v-if="variant === 'a' && isManualMode && !hasManualFile" class="dynamfit-file-uploader">
+      <p class="u_margin-bottom-small">
+        Upload a CSV file containing 2 columns of T and a_T, measured at 1Hz.
+      </p>
+      <div class="form__file-input">
+        <div class="md-theme-default">
+          <label class="btn btn--primary u--b-rad" for="Transform_Method_Data_File">
+            <p class="md-body-1">Upload Manual file</p>
+          </label>
+          <div class="md-file">
+            <input
+              @change="onManualFileChange"
+              accept=".csv, .tsv, .txt"
+              type="file"
+              name="Transform_Method_Data_File"
+              id="Transform_Method_Data_File"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div v-else class="u_width--max utility-bg_border-dark u--b-rad">
       <md-tabs
         :md-active-tab="dynamfitDomain === 'frequency' ? 'tab-home' : 'tab-temp-new'"
         class="form__stepper form__stepper-curate dialog-box_content u-reset-transform"
@@ -50,10 +74,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
+import { useDynamfitVariant } from '@/composables/useDynamfitVariant';
 
 defineOptions({
   name: 'ChartVisualizer',
@@ -70,7 +95,9 @@ interface DynamfitData {
   'upload-data'?: Record<string, unknown>[];
 }
 
+const isTemp = ref(true);
 const store = useStore();
+const { variant } = useDynamfitVariant();
 
 const dynamfitData = computed<DynamfitData>(() => store.getters['explorer/getDynamfitData']);
 
@@ -91,4 +118,51 @@ const isFrequencyData = computed(() => {
 const isTempData = computed(() => {
   return dynamfitDomain.value === 'temperature' && dynamfitData.value['complex-temp-chart'];
 });
+
+// Variant A: manual mode detection
+const isManualMode = computed<boolean>(() => {
+  return store.getters['explorer/getDynamfitTransformMethod'] === 'manual';
+});
+
+const hasManualFile = computed<boolean>(() => {
+  return store.getters['explorer/getDynamfitManualFile'] !== '';
+});
+
+const displayInfo = (msg: string, duration?: number): void => {
+  if (msg) {
+    store.commit('setSnackbar', {
+      message: msg,
+      duration: duration ?? 3000,
+    });
+  }
+};
+
+const onManualFileChange = async (e: Event): Promise<void> => {
+  displayInfo('Uploading File...');
+  store.commit('explorer/setDynamfitManualFile', '');
+  const target = e.target as HTMLInputElement;
+  const file = [...(target?.files || [])];
+  const allowedTypes = ['csv', 'tsv', 'tab-separated-values', 'plain'];
+  try {
+    const extension = file[0]?.type?.replace(/(.*)\//, '') || file[0]?.name.split('.').pop();
+    if (!extension || !allowedTypes.includes(extension)) {
+      return displayInfo('Unsupported file format');
+    }
+    const { fileName } = await store.dispatch('uploadFile', {
+      file,
+      isTemp: isTemp.value,
+    });
+
+    if (fileName) {
+      store.commit('explorer/setDynamfitManualFile', fileName);
+      displayInfo('Upload Successful', 1500);
+    }
+  } catch (err) {
+    const error = err as Error;
+    store.commit('setSnackbar', {
+      message: error?.message || 'Something went wrong',
+      action: () => onManualFileChange(e),
+    });
+  }
+};
 </script>

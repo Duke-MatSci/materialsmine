@@ -8,8 +8,8 @@
         Click reset below to clear all your selections and begin again.
       </div>
     </label>
-    <!-- Control Panel -->
-    <div class="search_box_form u_centralize_items">
+    <!-- Control Panel (A/B: sidebar workflow) -->
+    <div v-if="variant !== 'c'" class="search_box_form u_centralize_items">
       <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
         <div class="new-item-button-container" v-if="!updateControls">
           <button @click="openSidebar" class="btn btn--primary u--b-rad">
@@ -34,8 +34,8 @@
             <md-icon class="utility-navfonticon u--font-emph-xl">close</md-icon>
           </button>
 
-          <!-- Step 1: Fitting Configuration -->
-          <template v-if="stepper === 1">
+          <!-- ==================== VARIANT B: Step 1 — Fitting Configuration ==================== -->
+          <template v-if="variant === 'b' && stepper === 1">
             <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
               Fitting Configuration
             </h2>
@@ -206,8 +206,38 @@
             </div>
           </template>
 
-          <!-- Step 2: Data Source -->
-          <template v-if="stepper === 2">
+          <!-- ==================== VARIANT A: Step 1 — Domain Only ==================== -->
+          <template v-if="variant === 'a' && stepper === 1">
+            <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
+              Next: Select Domain
+            </h2>
+            <hr />
+
+            <div class="u_display-flex metamine_footer-ref-header u_centralize_content">
+              <div class="u_display-flex u--layout-flex-column grid_gap-smaller utility-half-width">
+                <select
+                  class="form__input form__input--adjust utility-padding-sm"
+                  v-model="selectedProperty"
+                >
+                  <option value="select">Select Domain</option>
+                  <option value="temperature">Temperature</option>
+                  <option value="frequency">Frequency</option>
+                </select>
+              </div>
+            </div>
+            <div class="metamine_footer-ref-header u_display-flex u_centralize_content">
+              <button
+                @click="increaseStepper"
+                class="btn btn--primary u--b-rad"
+                :disabled="selectedProperty === 'select'"
+              >
+                Next
+              </button>
+            </div>
+          </template>
+
+          <!-- ==================== VARIANT B: Step 2 — Shift File + Data Source ==================== -->
+          <template v-if="variant === 'b' && stepper === 2">
             <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
               Next: Choose how you'd like to provide viscoelastic data
             </h2>
@@ -299,8 +329,57 @@
             </div>
           </template>
 
-          <!-- Step 3: Upload or Explore XML -->
-          <template v-if="stepper === 3">
+          <!-- ==================== VARIANT A: Step 2 — Data Source (no shift file) ==================== -->
+          <template v-if="variant === 'a' && stepper === 2">
+            <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
+              Next: Choose how you'd like to provide viscoelastic data
+            </h2>
+            <hr />
+
+            <div class="md-layout u--margin-toplg">
+              <div class="md-layout-item">
+                <div
+                  id="dynamfit-card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-short"
+                  @click="selectType('upload')"
+                >
+                  <md-icon class="icons" id="mm">cloud_upload</md-icon>
+                  <span class="u--font-emph-l">Upload File</span>
+                  <p class="u--font-emph-smm utility-padding-sm u_centralize_text">
+                    Upload a compatible viscoelastic file
+                    <em>(accepted formats: '.csv', '.tsv')</em>
+                  </p>
+                </div>
+              </div>
+              <div class="md-layout-item">
+                <div
+                  id="dynamfit-card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-short"
+                  @click="selectType('explore')"
+                >
+                  <md-icon class="icons" id="mm">manage_search</md-icon>
+                  <span class="u--font-emph-l">Explore Xml</span>
+                  <p class="u--font-emph-smm utility-padding-sm u_centralize_text">
+                    Browse existing entries from the XML repository
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div
+              class="metamine_footer-ref-header u_display-flex u_centralize_content md-layout-item_card-btn"
+            >
+              <button
+                @click="decreaseStepper"
+                class="btn btn--primary u--b-rad"
+                :disabled="selectedProperty === 'select'"
+              >
+                Change Domain
+              </button>
+            </div>
+          </template>
+
+          <!-- ==================== SHARED A/B: Step 3 — Upload or Explore XML ==================== -->
+          <template v-if="(variant === 'a' || variant === 'b') && stepper === 3">
             <template v-if="dataType === 'upload'">
               <h2 class="md-title metamine_footer-ref-header u_margin-bottom-small">
                 Next: Upload
@@ -435,6 +514,221 @@
       </div>
     </div>
 
+    <!-- ==================== VARIANT C: Inline left-panel configuration ==================== -->
+    <template v-if="variant === 'c'">
+      <!-- Reset button when data loaded -->
+      <div v-if="updateControls" class="u_margin-bottom-small">
+        <button @click="resetAll" class="btn btn--tertiary">Reset</button>
+      </div>
+
+      <!-- Domain -->
+      <div>
+        <label for="cDomainSelect" class="md-body-2">Domain</label>
+        <div class="md-field viz-u-mgbottom-big">
+          <select id="cDomainSelect" class="form__select u--b-rad" v-model="selectedProperty">
+            <option value="frequency">Frequency</option>
+            <option value="temperature">Temperature</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Data Source (collapsible, hidden until domain selected) -->
+      <div v-if="selectedProperty !== 'select'" class="viz-u-mgbottom-sm">
+        <div
+          class="u_pointer"
+          style="display: flex; align-items: center; width: 100%"
+          @click="cDataSourceOpen = !cDataSourceOpen"
+        >
+          <label class="md-body-2 u_pointer">Data Source</label>
+          <md-icon style="margin-left: auto; margin-right: 0">{{
+            cDataSourceOpen ? 'expand_less' : 'expand_more'
+          }}</md-icon>
+        </div>
+        <template v-if="cDataSourceOpen">
+          <!-- Compact source buttons when no dataType selected -->
+          <template v-if="!dataType">
+            <div style="display: flex; gap: 1rem" class="u_margin-bottom-small">
+              <button
+                style="
+                  flex: 1;
+                  background: transparent;
+                  border: 1px solid currentColor;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 0.5rem;
+                "
+                class="u--b-rad"
+                @click="cSelectSource('upload')"
+              >
+                <md-icon class="u_margin-right-small" style="margin-left: 0; margin-right: 0.25rem"
+                  >cloud_upload</md-icon
+                >
+                Upload File
+              </button>
+              <button
+                style="
+                  flex: 1;
+                  background: transparent;
+                  border: 1px solid currentColor;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 0.5rem;
+                "
+                class="u--b-rad"
+                @click="cSelectSource('explore')"
+              >
+                <md-icon class="u_margin-right-small" style="margin-left: 0; margin-right: 0.25rem"
+                  >manage_search</md-icon
+                >
+                Explore XML
+              </button>
+            </div>
+          </template>
+
+          <!-- Upload sub-panel -->
+          <template v-if="dataType === 'upload'">
+            <div class="search_box_form u_centralize_items">
+              <div class="utility-margin-right viz-u-mgup-md viz-u-mgbottom-big">
+                <template v-if="!dynamfit.fileUpload">
+                  <label for="C_Viscoelastic_Data" class="u--inline">
+                    <div class="form__file-input">
+                      <div class="md-theme-default">
+                        <label class="btn btn--primary u--b-rad" for="C_Viscoelastic_Data">
+                          <p class="md-body-1">Upload file</p>
+                        </label>
+                        <div class="md-file">
+                          <input
+                            @change="onInputChange"
+                            accept=".csv, .tsv, .txt"
+                            type="file"
+                            name="C_Viscoelastic_Data"
+                            id="C_Viscoelastic_Data"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                </template>
+                <template v-else>
+                  <button
+                    class="md-button btn btn--tertiary btn--noradius"
+                    @click.prevent="resetChart"
+                  >
+                    Reset
+                  </button>
+                  <span class="md-caption md-success viz-u-display__show">{{
+                    dynamfit.fileUpload
+                  }}</span>
+                </template>
+              </div>
+            </div>
+            <div class="u_display-flex u_centralize_content">
+              <button @click="cGoBackToMain" class="btn btn--primary u--b-rad">Back</button>
+            </div>
+          </template>
+
+          <!-- Explore sub-panel -->
+          <template v-if="dataType === 'explore'">
+            <div class="u_display-flex u_centralize_content u_margin-bottom-small">
+              <div class="u_display-flex u--layout-flex-column grid_gap-smaller utility-half-width">
+                <label>Response Limit</label>
+                <input
+                  class="form__input form__input--adjust utility-padding-sm"
+                  type="number"
+                  v-model.number="limit"
+                  min="1"
+                />
+              </div>
+            </div>
+            <div
+              class="u_display-flex u_centralize_content u_margin-bottom-small"
+              style="gap: 0.5rem"
+            >
+              <button
+                @click="cGoBackToMain"
+                v-if="!optionalChaining(() => results?.xmls?.length)"
+                class="btn btn--tertiary u--b-rad"
+              >
+                Back
+              </button>
+              <button @click="search" class="btn btn--primary u--b-rad">Search</button>
+            </div>
+
+            <div v-if="optionalChaining(() => results?.xmls?.length) && !currentItem">
+              <h3 v-if="(results.counts ?? 0) > limit">
+                Results ({{ currentPage * limit }} of {{ results.counts ?? 0 }})
+              </h3>
+              <h3 v-else>Results ({{ currentPage }} of {{ results.counts ?? 0 }})</h3>
+              <hr />
+              <div class="list-container">
+                <div
+                  v-for="item in results.xmls"
+                  :key="item.id"
+                  class="u_display-flex grid_gap-small u_margin-bottom-small"
+                >
+                  <input type="radio" :id="'c_' + item.id" :value="item" v-model="currentItem" />
+                  <label :for="'c_' + item.id">{{ item.title }}</label>
+                </div>
+              </div>
+              <Pagination
+                v-if="totalPages > 1 && !currentItem"
+                :cpage="currentPage"
+                :tpages="totalPages"
+                @go-to-page="goToPage"
+              />
+            </div>
+
+            <div v-if="currentItem">
+              <h3>
+                {{ currentItem.title }}
+                <span class="u--color-grey-sec u--margin-neg md-body-1"
+                  >({{ currentItem.contains.length }} viscoelastic data)</span
+                >
+              </h3>
+              <hr />
+              <div class="list-container">
+                <div
+                  v-for="(item, index) in currentItem.contains"
+                  :key="'c_' + index"
+                  class="u_display-flex grid_gap-small u_margin-bottom-small"
+                >
+                  <input
+                    type="radio"
+                    :id="'c_prop_' + index"
+                    :value="{ ...item, index: index }"
+                    v-model="selectedItemProperty"
+                  />
+                  <label :for="'c_prop_' + index">
+                    <span class="u_display-flex u--layout-flex-column">
+                      <strong>Description:</strong> {{ item.property }}
+                    </span>
+                    <span class="u--color-grey-sec u--margin-neg md-body-1">
+                      <strong>Table:</strong> {{ item.table }}
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <button @click="goBack" class="select-btn btn btn--primary u--margin-rightlg">
+                Go Back
+              </button>
+              <button @click="handleSelect" class="select-btn btn btn--primary">Select</button>
+            </div>
+
+            <div
+              v-if="optionalChaining(() => results?.xmls?.length)"
+              class="u_display-flex u_centralize_content"
+            >
+              <button @click="cGoBackToMain" class="btn btn--primary u--b-rad">Back</button>
+            </div>
+          </template>
+        </template>
+      </div>
+    </template>
+
     <!-- Fitting Method -->
     <div>
       <label for="model" class="md-body-2">Select Fitting Method</label>
@@ -486,76 +780,497 @@
       </div>
     </div>
 
-    <!-- Additional Settings (outside sidebar) -->
-    <div class="viz-u-mgbottom-sm">
-      <div
-        class="u--layout-flex u--layout-flex-justify-fs u_centralize_items u_pointer"
-        @click="additionalSettingsOpen = !additionalSettingsOpen"
-      >
-        <label class="md-body-2 u_pointer">Additional Settings</label>
-        <md-icon>{{ additionalSettingsOpen ? 'expand_less' : 'expand_more' }}</md-icon>
-      </div>
-      <template v-if="additionalSettingsOpen">
-      <md-checkbox
-        :disabled="disableInput"
-        v-model="dynamfit.fitSettings"
-        :class="[
-          disableInput ? 'nuplot-masked' : '',
-          'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
-        ]"
-      >
-        Show Basis Functions
-      </md-checkbox>
-      <div class="u--layout-flex u--layout-flex-justify-sb grid_gap-small">
-        <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
-          <label for="smoothness" class="md-body-2">Smoothness</label>
-          <input
-            :disabled="disableInput"
-            v-model.number="smoothness"
-            :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
-            type="number"
-            name="smoothness"
-            id="smoothness"
-            min="0"
-            max="10"
-            step="0.1"
-            placeholder="0"
-          />
-        </div>
-        <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
-          <label for="relativeError" class="md-body-2">Relative Error</label>
-          <input
-            :disabled="disableInput"
-            v-model.number="relativeError"
-            :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
-            type="number"
-            name="relativeError"
-            id="relativeError"
-            min="0"
-            max="2"
-            step="0.1"
-            placeholder="0.2"
-          />
+    <!-- ==================== VARIANT A: Smoothness/RelError + Additional Settings ==================== -->
+    <template v-if="variant === 'a'">
+      <!-- Smoothness + Relative Error (above Additional Settings) -->
+      <div class="viz-u-mgbottom-sm">
+        <div class="u--layout-flex u--layout-flex-justify-sb grid_gap-small">
+          <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+            <label for="smoothness" class="md-body-2">Smoothness</label>
+            <input
+              :disabled="disableInput"
+              v-model.number="smoothness"
+              :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+              type="number"
+              name="smoothness"
+              id="smoothness"
+              min="0"
+              max="10"
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+          <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+            <label for="relativeError" class="md-body-2">Relative Error</label>
+            <input
+              :disabled="disableInput"
+              v-model.number="relativeError"
+              :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+              type="number"
+              name="relativeError"
+              id="relativeError"
+              min="0"
+              max="2"
+              step="0.1"
+              placeholder="0.2"
+            />
+          </div>
         </div>
       </div>
-      </template>
-    </div>
 
-    <!-- a_T_ref read-only display -->
-    <div v-if="shiftCoefficients.a_T_ref !== null" class="u_margin-bottom-small">
-      <div class="dynamfit-readonly">
-        <span class="dynamfit-readonly__label">a_T_ref:</span>
-        <span class="dynamfit-readonly__value">{{ shiftCoefficients.a_T_ref }}</span>
+      <!-- Additional Settings -->
+      <div style="margin-bottom: 0.5rem">
+        <label for="fitSettings" class="md-body-2">Additional Settings</label>
+        <div class="u--layout-flex u--layout-flex-justify-sb">
+          <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
+            ω-T Transformation
+          </md-checkbox>
+          <md-checkbox
+            :disabled="disableInput"
+            v-model="dynamfit.fitSettings"
+            :class="[
+              disableInput ? 'nuplot-masked' : '',
+              'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
+            ]"
+          >
+            Show Basis Functions
+          </md-checkbox>
+        </div>
       </div>
-    </div>
 
-    <!-- Shift file name display -->
-    <div v-if="mFile" class="md-alert md-alert--info utility-margin-top">
-      <md-icon class="md-alert-icon u--color-primary u_margin-right-small">info</md-icon>
-      <span class="md-alert-content">
-        <strong>Shift File:</strong> {{ reduceDescription(mFile, 15, true) }}
-      </span>
-    </div>
+      <!-- Transform Method (when ω-T enabled) -->
+      <div v-if="ttsp" class="utility-margin-top u_margin-bottom-small">
+        <label for="transformMethods" class="md-body-2">Transform Method:</label>
+        <div class="u--margin-neg" id="transformMethods">
+          <md-radio id="transformMethodWLF" v-model="transformMethod" value="WLF">
+            WLF <small>(Default)</small>
+          </md-radio>
+          <md-radio id="transformMethodHybrid" v-model="transformMethod" value="hybrid">
+            Hybrid
+          </md-radio>
+          <md-radio id="transformMethodManual" v-model="transformMethod" value="manual">
+            Manual
+          </md-radio>
+        </div>
+
+        <!-- Manual file info -->
+        <div v-if="isManual" class="md-alert md-alert--info utility-margin-top">
+          <md-icon class="md-alert-icon u--color-primary u_margin-right-small">info</md-icon>
+          <span class="md-alert-content" v-if="mFile">
+            <strong>Filename:</strong> {{ reduceDescription(mFile, 15, true) }}
+          </span>
+          <span class="md-alert-content" v-else>
+            <strong>Filename:</strong> No file uploaded yet.
+          </span>
+        </div>
+
+        <!-- Coefficient fields (WLF / Hybrid) -->
+        <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+          <md-field style="max-width: 40% !important">
+            <md-input
+              v-model="ttspTgValue"
+              name="ttspTgValue"
+              id="ttspTgValueA"
+              placeholder="Tg"
+              :disabled="!ttsp || tgEstimated"
+            ></md-input>
+          </md-field>
+          <md-checkbox
+            :disabled="ttspDisabled"
+            v-model="tgEstimated"
+            class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+            style="align-items: center"
+          >
+            Use Estimated Tg
+          </md-checkbox>
+        </div>
+        <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+          <md-field style="max-width: 40% !important">
+            <md-input
+              v-model="ttspC1Value"
+              name="ttspC1Value"
+              id="ttspC1ValueA"
+              placeholder="C1"
+              :disabled="!ttsp || c1Estimated"
+            ></md-input>
+          </md-field>
+          <md-checkbox
+            :disabled="ttspDisabled"
+            v-model="c1Estimated"
+            class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+            style="align-items: center"
+          >
+            Use Estimated C1
+          </md-checkbox>
+        </div>
+        <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+          <md-field style="max-width: 40% !important">
+            <md-input
+              v-model="ttspC2Value"
+              name="ttspC2Value"
+              id="ttspC2ValueA"
+              placeholder="C2"
+              :disabled="!ttsp || c2Estimated"
+            ></md-input>
+          </md-field>
+          <md-checkbox
+            :disabled="ttspDisabled"
+            v-model="c2Estimated"
+            class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+            style="align-items: center"
+          >
+            Use Estimated C2
+          </md-checkbox>
+        </div>
+        <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+          <md-field style="max-width: 40% !important">
+            <md-input
+              v-model="ttspTLValue"
+              name="ttspTLValue"
+              id="ttspTLValueA"
+              placeholder="TL"
+              :disabled="!ttsp || tLEstimated"
+            ></md-input>
+          </md-field>
+          <md-checkbox
+            :disabled="ttspDisabled"
+            v-model="tLEstimated"
+            class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+            style="align-items: center"
+          >
+            Use Estimated TL
+          </md-checkbox>
+        </div>
+        <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+          <md-field style="max-width: 40% !important">
+            <md-input
+              v-model="ttspEAValue"
+              name="ttspEAValue"
+              id="ttspEAValueA"
+              placeholder="EA"
+              :disabled="!ttsp || eAEstimated"
+            ></md-input>
+          </md-field>
+          <md-checkbox
+            :disabled="ttspDisabled"
+            v-model="eAEstimated"
+            class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm"
+            style="align-items: center"
+          >
+            Use Estimated EA
+          </md-checkbox>
+        </div>
+      </div>
+    </template>
+
+    <!-- ==================== VARIANT B: Collapsible Additional Settings ==================== -->
+    <template v-if="variant === 'b'">
+      <div class="viz-u-mgbottom-sm">
+        <div
+          class="u--layout-flex u--layout-flex-justify-fs u_centralize_items u_pointer"
+          @click="additionalSettingsOpen = !additionalSettingsOpen"
+        >
+          <label class="md-body-2 u_pointer">Additional Settings</label>
+          <md-icon>{{ additionalSettingsOpen ? 'expand_less' : 'expand_more' }}</md-icon>
+        </div>
+        <template v-if="additionalSettingsOpen">
+          <md-checkbox
+            :disabled="disableInput"
+            v-model="dynamfit.fitSettings"
+            :class="[
+              disableInput ? 'nuplot-masked' : '',
+              'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
+            ]"
+          >
+            Show Basis Functions
+          </md-checkbox>
+          <div class="u--layout-flex u--layout-flex-justify-sb grid_gap-small">
+            <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+              <label for="smoothness" class="md-body-2">Smoothness</label>
+              <input
+                :disabled="disableInput"
+                v-model.number="smoothness"
+                :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+                type="number"
+                name="smoothness"
+                id="smoothnessB"
+                min="0"
+                max="10"
+                step="0.1"
+                placeholder="0"
+              />
+            </div>
+            <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+              <label for="relativeError" class="md-body-2">Relative Error</label>
+              <input
+                :disabled="disableInput"
+                v-model.number="relativeError"
+                :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+                type="number"
+                name="relativeError"
+                id="relativeErrorB"
+                min="0"
+                max="2"
+                step="0.1"
+                placeholder="0.2"
+              />
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- a_T_ref read-only display -->
+      <div v-if="shiftCoefficients.a_T_ref !== null" class="u_margin-bottom-small">
+        <div class="dynamfit-readonly">
+          <span class="dynamfit-readonly__label">a_T_ref:</span>
+          <span class="dynamfit-readonly__value">{{ shiftCoefficients.a_T_ref }}</span>
+        </div>
+      </div>
+
+      <!-- Shift file name display -->
+      <div v-if="mFile" class="md-alert md-alert--info utility-margin-top">
+        <md-icon class="md-alert-icon u--color-primary u_margin-right-small">info</md-icon>
+        <span class="md-alert-content">
+          <strong>Shift File:</strong> {{ reduceDescription(mFile, 15, true) }}
+        </span>
+      </div>
+    </template>
+
+    <!-- ==================== VARIANT C: Smoothness/RelError + Show Basis Functions ==================== -->
+    <template v-if="variant === 'c'">
+      <div class="viz-u-mgbottom-sm">
+        <div class="u--layout-flex u--layout-flex-justify-sb grid_gap-small u_margin-bottom-small">
+          <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+            <label for="smoothnessC" class="md-body-2">Smoothness</label>
+            <input
+              :disabled="disableInput"
+              v-model.number="smoothness"
+              :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+              type="number"
+              name="smoothness"
+              id="smoothnessC"
+              min="0"
+              max="10"
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+          <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
+            <label for="relativeErrorC" class="md-body-2">Relative Error</label>
+            <input
+              :disabled="disableInput"
+              v-model.number="relativeError"
+              :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+              type="number"
+              name="relativeError"
+              id="relativeErrorC"
+              min="0"
+              max="2"
+              step="0.1"
+              placeholder="0.2"
+            />
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
+            ω-T Transformation
+          </md-checkbox>
+          <md-checkbox
+            :disabled="disableInput"
+            v-model="dynamfit.fitSettings"
+            :class="[
+              disableInput ? 'nuplot-masked' : '',
+              'u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm',
+            ]"
+          >
+            Show Basis Functions
+          </md-checkbox>
+        </div>
+
+        <!-- ω-T config (expands when checkbox is checked) -->
+        <template v-if="ttsp">
+          <label class="md-body-2">Shift-Factor Model</label>
+          <div class="u--margin-neg">
+            <md-radio id="cTransformMethodWLF" v-model="transformMethod" value="WLF">
+              WLF <small>(Default)</small>
+            </md-radio>
+            <md-radio id="cTransformMethodHybrid" v-model="transformMethod" value="hybrid">
+              Hybrid
+            </md-radio>
+          </div>
+
+          <!-- Input method toggle -->
+          <div v-if="transformMethod" class="u_margin-bottom-small">
+            <div class="dynamfit-toggle">
+              <button
+                :class="[
+                  'dynamfit-toggle__option',
+                  inputMethod === 'enter' ? 'dynamfit-toggle__option--active' : '',
+                ]"
+                @click="inputMethod = 'enter'"
+              >
+                Enter values
+              </button>
+              <button
+                :class="[
+                  'dynamfit-toggle__option',
+                  inputMethod === 'upload' ? 'dynamfit-toggle__option--active' : '',
+                ]"
+                @click="inputMethod = 'upload'"
+              >
+                Upload shift file
+              </button>
+            </div>
+          </div>
+
+          <!-- Coefficient fields (enter mode) -->
+          <template v-if="transformMethod && inputMethod === 'enter'">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspTgValue"
+                  placeholder="Tg"
+                  :disabled="!ttsp || tgEstimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="tgEstimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated Tg
+              </md-checkbox>
+            </div>
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspC1Value"
+                  placeholder="C1"
+                  :disabled="!ttsp || c1Estimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="c1Estimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated C1
+              </md-checkbox>
+            </div>
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspC2Value"
+                  placeholder="C2"
+                  :disabled="!ttsp || c2Estimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="c2Estimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated C2
+              </md-checkbox>
+            </div>
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspTLValue"
+                  placeholder="TL"
+                  :disabled="!ttsp || tLEstimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="tLEstimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated TL
+              </md-checkbox>
+            </div>
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspEAValue"
+                  placeholder="EA"
+                  :disabled="!ttsp || eAEstimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="eAEstimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated EA
+              </md-checkbox>
+            </div>
+          </template>
+
+          <!-- Shift file upload (upload mode) -->
+          <template v-if="transformMethod && inputMethod === 'upload'">
+            <div class="dynamfit-shift-upload">
+              <p class="dynamfit-shift-upload__label">
+                Upload a shift-factor file (2 columns: Temperature, a_T)
+              </p>
+              <template v-if="!mFile">
+                <div class="form__file-input">
+                  <div class="md-theme-default">
+                    <label class="btn btn--primary u--b-rad" for="C_Shift_Factor_File">
+                      <p class="md-body-1">Upload Shift File</p>
+                    </label>
+                    <div class="md-file">
+                      <input
+                        @change="onShiftFileChange"
+                        accept=".csv, .tsv, .txt"
+                        type="file"
+                        name="C_Shift_Factor_File"
+                        id="C_Shift_Factor_File"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <span class="md-caption md-success viz-u-display__show">{{ mFile }}</span>
+              </template>
+            </div>
+
+            <!-- Reference temperature -->
+            <div class="u_margin-bottom-small">
+              <md-field v-if="isWLF">
+                <md-input
+                  v-model="ttspTgValue"
+                  placeholder="Tg (required for WLF fitting)"
+                ></md-input>
+              </md-field>
+              <md-field v-if="isHybrid">
+                <md-input
+                  v-model="ttspTLValue"
+                  placeholder="TL (required for Hybrid fitting)"
+                ></md-input>
+              </md-field>
+            </div>
+          </template>
+        </template>
+      </div>
+
+      <!-- a_T_ref read-only display -->
+      <div v-if="shiftCoefficients.a_T_ref !== null" class="u_margin-bottom-small">
+        <div class="dynamfit-readonly">
+          <span class="dynamfit-readonly__label">a_T_ref:</span>
+          <span class="dynamfit-readonly__value">{{ shiftCoefficients.a_T_ref }}</span>
+        </div>
+      </div>
+
+      <!-- Shift file name display -->
+      <div v-if="mFile" class="md-alert md-alert--info utility-margin-top">
+        <md-icon class="md-alert-icon u--color-primary u_margin-right-small">info</md-icon>
+        <span class="md-alert-content">
+          <strong>Shift File:</strong> {{ reduceDescription(mFile, 15, true) }}
+        </span>
+      </div>
+    </template>
 
     <!-- Use Sample / Download Template -->
     <div class="grid grid_col-2">
@@ -602,6 +1317,7 @@ import { ref, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
+import { useDynamfitVariant } from '@/composables/useDynamfitVariant';
 import Pagination from '@/components/explorer/Pagination.vue';
 
 defineOptions({
@@ -631,13 +1347,14 @@ interface SelectedItemProperty {
 const { optionalChaining } = useOptionalChaining();
 const { reduceDescription } = useReduce();
 const store = useStore();
+const { variant } = useDynamfitVariant();
 
 // Reactive state
 const showToolTip = ref(false);
 const isTemp = ref(true);
 const useSample = ref(false);
 const isSidebarOpen = ref(false);
-const selectedProperty = ref('select');
+const selectedProperty = ref(variant.value === 'c' ? 'frequency' : 'select');
 const limit = ref(2);
 const results = ref<SearchResults>({});
 const currentItem = ref<XmlItem | null>(null);
@@ -660,6 +1377,7 @@ const ttspEAValue = ref(null);
 const tLEstimated = ref(false);
 const eAEstimated = ref(false);
 const additionalSettingsOpen = ref(false);
+const cDataSourceOpen = ref(false);
 const smoothness = ref<number>(0);
 const relativeError = ref<number>(0.2);
 const sentRequest = ref(false);
@@ -693,6 +1411,10 @@ const isWLF = computed(() => {
 
 const isHybrid = computed(() => {
   return ttsp.value && transformMethod.value === 'hybrid';
+});
+
+const isManual = computed(() => {
+  return ttsp.value && transformMethod.value === 'manual';
 });
 
 const needsShiftFile = computed(() => {
@@ -742,14 +1464,12 @@ const decreaseStepper = (): void => {
 };
 
 const sampleTitle = (): string => {
-  // eslint-disable-next-line
   return dynamfit.value.fileUpload.length
     ? `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`
     : `Click to resubmit your changes`;
 };
 
 const downloadTitle = (): string => {
-  // eslint-disable-next-line
   return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
 };
 
@@ -866,7 +1586,6 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
 
   const fitted = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
 
-  // Populate local state with fitted values
   if (fitted.C1 != null) ttspC1Value.value = fitted.C1;
   if (fitted.C2 != null) ttspC2Value.value = fitted.C2;
   if (fitted.Tg != null) ttspTgValue.value = fitted.Tg;
@@ -900,35 +1619,59 @@ const updateChart = async (): Promise<void> => {
     relative_error: relativeError.value,
   };
 
-  if (needsShiftFile.value && mFile.value) {
-    try {
-      isSidebarOpen.value = false;
-      store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-      await fitShiftAndExtract(payload);
-    } catch (err: unknown) {
-      const error = err as Error;
-      store.commit('setSnackbar', {
-        message: error.message || 'Failed to fit shift coefficients',
-        duration: 3000,
-      });
+  if (variant.value === 'a') {
+    // Variant A: Manual sends shift_file_name, WLF/Hybrid send coefficients directly
+    if (transformMethod.value && isManual.value) {
+      payload.transform_method = transformMethod.value;
+      payload.shift_file_name = mFile.value;
+    } else if (transformMethod.value && (isWLF.value || isHybrid.value)) {
+      payload.transform_method = transformMethod.value;
+      if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+      if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+      if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+      if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
+      if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
+      if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
+
+      if (isHybrid.value) {
+        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+        if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
+        if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      }
     }
-    return;
-  }
+  } else {
+    // Variant B/C: fitShiftAndExtract for upload mode, enter-values for enter mode
+    if (needsShiftFile.value && mFile.value) {
+      try {
+        isSidebarOpen.value = false;
+        store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+        await fitShiftAndExtract(payload);
+      } catch (err: unknown) {
+        const error = err as Error;
+        store.commit('setSnackbar', {
+          message: error.message || 'Failed to fit shift coefficients',
+          duration: 3000,
+        });
+      }
+      return;
+    }
 
-  if (transformMethod.value && (isWLF.value || isHybrid.value) && inputMethod.value === 'enter') {
-    payload.transform_method = transformMethod.value;
-    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
+    if (transformMethod.value && (isWLF.value || isHybrid.value) && inputMethod.value === 'enter') {
+      payload.transform_method = transformMethod.value;
+      if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+      if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+      if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+      if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
+      if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
+      if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
 
-    if (isHybrid.value) {
-      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTLValue.value) payload.TL = ttspTLValue.value;
-      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      if (isHybrid.value) {
+        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+        if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
+        if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      }
     }
   }
 
@@ -948,6 +1691,14 @@ const closeSidebar = (): void => {
 const goBack = (): void => {
   currentItem.value = null;
   selectedItemProperty.value = null;
+};
+
+const cSelectSource = (type: string): void => {
+  dataType.value = type;
+};
+
+const cGoBackToMain = (): void => {
+  dataType.value = undefined;
 };
 
 const handleSelect = async (): Promise<void> => {
@@ -1046,7 +1797,7 @@ const goToPage = async (page: number): Promise<void> => {
 watch(transformMethod, (newValue) => {
   store.commit(
     'explorer/setDynamfitTransformMethod',
-    newValue as 'none' | 'WLF' | 'hybrid'
+    newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
   );
 });
 
@@ -1065,6 +1816,18 @@ watch([smoothness, relativeError], () => {
 
 watch(limit, () => {
   return search();
+});
+
+watch(variant, (v) => {
+  if (v === 'c' && selectedProperty.value === 'select') {
+    selectedProperty.value = 'frequency';
+  }
+});
+
+watch(selectedProperty, (v) => {
+  if (variant.value === 'c' && v !== 'select') {
+    cDataSourceOpen.value = true;
+  }
 });
 
 watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov) => {
