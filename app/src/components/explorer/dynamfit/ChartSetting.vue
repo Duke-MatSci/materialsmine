@@ -1382,6 +1382,8 @@ const smoothness = ref<number>(0);
 const relativeError = ref<number>(0.2);
 const sentRequest = ref(false);
 const updateBtn = ref(false);
+const skipCoeffWatcher = ref(false);
+let coeffDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Computed
 const token = computed(() => store.getters['auth/token']);
@@ -1837,5 +1839,153 @@ watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov
   if (cv[3] && cv[3] === true) ttspTLValue.value = null;
   if (cv[4] && cv[4] === true) ttspEAValue.value = null;
   if (cv !== ov) updateBtn.value = true;
+});
+
+// Debounced watcher: when ttsp coefficient inputs change, call /extract if fileUpload exists
+watch(
+  [ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue],
+  () => {
+    if (skipCoeffWatcher.value) return;
+    if (!ttsp.value) return;
+    if (!transformMethod.value || !(isWLF.value || isHybrid.value)) return;
+    if (inputMethod.value !== 'enter') return;
+
+    if (coeffDebounceTimer) clearTimeout(coeffDebounceTimer);
+    coeffDebounceTimer = setTimeout(async () => {
+      if (!dynamfit.value?.fileUpload) {
+        store.commit('setSnackbar', {
+          message: 'Please upload or select a data file in Data Source first.',
+          duration: 4000,
+        });
+        return;
+      }
+
+      const payload: Record<string, unknown> = {
+        useSample: useSample.value,
+        file_name: dynamfit.value.fileUpload,
+        number_of_prony: dynamfit.value.range,
+        model: dynamfit.value.model,
+        fit_settings: dynamfit.value.fitSettings,
+        domain: selectedProperty.value,
+        smoothness: smoothness.value,
+        relative_error: relativeError.value,
+        transform_method: transformMethod.value,
+      };
+
+      if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+      if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+      if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+      if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
+      if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
+      if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
+
+      if (isHybrid.value) {
+        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+        if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
+        if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      }
+
+      store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+      await store.dispatch('explorer/fetchDynamfitData', payload);
+    }, 500);
+  }
+);
+
+// Watcher: when shift file (mFile) is uploaded, immediately call /fit-shift
+watch(mFile, async (newFile) => {
+  if (!newFile) return;
+  if (!ttsp.value) return;
+  if (inputMethod.value !== 'upload') return;
+
+  const method = transformMethod.value || 'WLF';
+  const fitPayload: Record<string, unknown> = {
+    shift_file_name: newFile,
+    transform_method: method,
+  };
+
+  if (method === 'WLF' || method === 'hybrid') {
+    if (ttspTgValue.value) fitPayload.Tg = ttspTgValue.value;
+  }
+  if (method === 'hybrid') {
+    if (ttspTLValue.value) fitPayload.TL = ttspTLValue.value;
+  }
+
+  try {
+    const response = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
+
+    const responseMethod = response.transform_method || 'WLF';
+    transformMethod.value = responseMethod;
+
+    // Populate coefficient fields from response — skip the debounced watcher
+    // so we can batch-set values then trigger extract once at the end
+    skipCoeffWatcher.value = true;
+
+    if (response.Tg != null) {
+      ttspTgValue.value = response.Tg;
+      tgEstimated.value = false;
+    }
+    if (response.C1 != null) {
+      ttspC1Value.value = response.C1;
+      c1Estimated.value = false;
+    }
+    if (response.C2 != null) {
+      ttspC2Value.value = response.C2;
+      c2Estimated.value = false;
+    }
+    if (response.Ea != null) {
+      ttspEAValue.value = response.Ea;
+      eAEstimated.value = false;
+    }
+    if (response.TL != null) {
+      ttspTLValue.value = response.TL;
+      tLEstimated.value = false;
+    }
+
+    // Nudge user to enter Tg/TL to trigger backend call
+    const nudgeField = responseMethod === 'hybrid' ? 'Tg or TL' : 'Tg';
+    store.commit('setSnackbar', {
+      message: `Shift file loaded. Enter a value for ${nudgeField} to trigger fitting.`,
+      duration: 0,
+    });
+
+    // Switch to enter mode so the coefficient watcher can chain into /extract
+    inputMethod.value = 'enter';
+
+    // Re-enable the watcher after a tick so it can fire from the populated values
+    setTimeout(() => {
+      skipCoeffWatcher.value = false;
+      // Manually trigger extract if fileUpload is present
+      if (dynamfit.value?.fileUpload) {
+        const payload: Record<string, unknown> = {
+          useSample: useSample.value,
+          file_name: dynamfit.value.fileUpload,
+          number_of_prony: dynamfit.value.range,
+          model: dynamfit.value.model,
+          fit_settings: dynamfit.value.fitSettings,
+          domain: selectedProperty.value,
+          smoothness: smoothness.value,
+          relative_error: relativeError.value,
+          transform_method: transformMethod.value,
+          shift_file_name: newFile,
+        };
+
+        if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+        if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+        if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+
+        store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+        store.dispatch('explorer/fetchDynamfitData', payload);
+      }
+    }, 0);
+  } catch (err: unknown) {
+    const error = err as Error;
+    store.commit('setSnackbar', {
+      message: error.message || 'Failed to fit shift coefficients',
+      duration: 3000,
+    });
+  }
 });
 </script>
