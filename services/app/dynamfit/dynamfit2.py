@@ -6,6 +6,7 @@ import pandas as pd
 from contextlib import contextmanager
 from scipy.optimize import curve_fit, minimize
 from scipy.signal import find_peaks
+from scipy.interpolate import interp1d
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -21,6 +22,10 @@ R = 8.31446261815324  # J/(mol*K)
 # C1/C2 "estimate" toggles are on.
 UNIVERSAL_WLF_C1 = 17.44
 UNIVERSAL_WLF_C2 = 51.6
+
+# Drop master-curve rows whose |log10(a_T)| exceeds this; near the WLF
+# singularity (T → T_ref − C2) shift factors blow up and overflow the Prony fit.
+MAX_ABS_LOG10_SHIFT = 15.0
 
 # Reference frequency / temperature for the frequency-domain visualization's
 # inverse-WLF scatter; arbitrary but stable so the temperature axis stays
@@ -73,10 +78,18 @@ def prony_basis(freq: np.ndarray, relaxations: np.ndarray, solid: bool) -> np.nd
     # dimensionless time ωτ
     dt = np.outer(freq, relaxations)
 
-    dt2 = dt * dt
-    dt2p1 = dt2 + 1
-    ep_basis = dt2 / dt2p1
-    epp_basis = dt / dt2p1
+    # Bases are dt²/(1+dt²) and dt/(1+dt²). Forming dt² directly overflows to
+    # inf → NaN for large ωτ, so for |ωτ|≥1 use inv=1/(ωτ) (1/(1+inv²),
+    # inv/(1+inv²)); for |ωτ|<1 the direct dt² form is safe. errstate discards
+    # the inf/NaN from the unused np.where branch.
+    # TODO: profile — np.where evaluates both branches over the full grid; use
+    # masked/in-place computation if this dominates the hot fitting path.
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        inv = np.where(dt != 0, 1.0 / dt, np.inf)
+        big = np.abs(dt) >= 1.0
+        dt2 = dt * dt
+        ep_basis = np.where(big, 1.0 / (1.0 + inv * inv), dt2 / (1.0 + dt2))
+        epp_basis = np.where(big, inv / (1.0 + inv * inv), dt / (1.0 + dt2))
 
     if solid:
         ep_basis = np.concatenate(
@@ -858,17 +871,24 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         shiftData: Optional precomputed shift factors. When falsy (None,
             empty, etc.), shift factors are computed from shift_model with
             the supplied parameters. When truthy, must be convertible to a
-            DataFrame with an 'a_T' column whose values are used directly;
-            the provided values must align with temp_sweep_data sorted by
-            Temperature ascending.
+            DataFrame with an 'a_T' column. If it also has a 'Temperature'
+            column (as upload_init(..., 'shift') produces), a_T is interpolated
+            in log10 space onto the data temperatures, so the shift file need
+            not match the data file's row count or grid (values outside the
+            file's temperature range are extrapolated). Without a 'Temperature'
+            column, a_T is used positionally and must match the row count of
+            temp_sweep_data sorted by Temperature ascending.
 
     Returns:
         pd.DataFrame: Frequency-sweep data at T_ref with columns
         ['Frequency', 'Temperature', "E'", "E''"], sorted by Frequency with a
-        fresh 0..N-1 index. Input temp_sweep_data is not mutated.
+        fresh 0..N-1 index. Input temp_sweep_data is not mutated. Rows whose
+        |log10(a_T)| exceeds MAX_ABS_LOG10_SHIFT are dropped (WLF-singularity
+        guard), so the result may be shorter than the input.
 
     Raises:
-        ValueError: If shift_model is 'manual' without shiftData.
+        ValueError: If shift_model is 'manual' without shiftData, or if no rows
+            fall within the valid shift-factor window (|log10 a_T| bound).
     """
     df = temp_sweep_data.sort_values('Temperature')
     T = df['Temperature'].to_numpy()
@@ -878,12 +898,26 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         assert 'a_T' in a_T_df.columns, \
             f"shiftData must have an 'a_T' column; got {list(a_T_df.columns)}. " \
             "shiftData should come from upload_init(..., 'shift') which guarantees this."
-        a_T = a_T_df['a_T'].to_numpy()
-        if len(a_T) != len(T):
-            raise ValueError(
-                f"Shift file has {len(a_T)} rows but data file has {len(T)} rows. "
-                "Make sure both files have the same number of rows."
-            )
+        if 'Temperature' in a_T_df.columns:
+            # Interpolate a_T onto the data temperatures (in log10 space, since
+            # shift factors span many decades) so the shift and data files need
+            # not share a row count or grid; extrapolate beyond the file's range.
+            shift_T = a_T_df['Temperature'].to_numpy()
+            order = np.argsort(shift_T)
+            log_a_T = interp1d(
+                shift_T[order], np.log10(a_T_df['a_T'].to_numpy()[order]),
+                kind='linear', bounds_error=False, fill_value='extrapolate',
+            )(T)
+            a_T = np.power(10.0, log_a_T)
+        else:
+            # Legacy positional form: a_T aligns row-for-row with the sorted data.
+            a_T = a_T_df['a_T'].to_numpy()
+            if len(a_T) != len(T):
+                raise ValueError(
+                    f"Shift file has {len(a_T)} rows but data file has {len(T)} rows. "
+                    "Include a Temperature column in the shift file to interpolate, "
+                    "or match the row counts."
+                )
     elif shift_model == 'WLF':
         a_T = wlf_shift(T, Tg, C1, C2)
     elif shift_model == 'hybrid':
@@ -900,6 +934,20 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         )
 
     T_ref = {'WLF': Tg, 'hybrid': TL}.get(shift_model)  # None for 'manual'
+
+    # Drop rows outside the valid shift window (see MAX_ABS_LOG10_SHIFT).
+    with np.errstate(divide='ignore', invalid='ignore'):
+        keep = np.abs(np.log10(a_T)) <= MAX_ABS_LOG10_SHIFT
+    if not np.any(keep):
+        raise ValueError(
+            "No data rows fall within the valid shift-factor window "
+            f"(|log10 a_T| ≤ {MAX_ABS_LOG10_SHIFT:g}). The temperature range likely "
+            "sits too close to the WLF T_ref − C2 singularity; narrow the range, "
+            "adjust Tg/C2, use the hybrid model, or provide manual shift factors."
+        )
+    if not np.all(keep):
+        df = df.iloc[keep]
+        a_T = a_T[keep]
 
     source_omega = df['Frequency'].to_numpy() if 'Frequency' in df.columns else 1.0
     out = df.assign(Frequency=source_omega * a_T, Temperature=T_ref)

@@ -283,10 +283,13 @@ class TestUpdateLineChartValidation(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self._call(ok, domain='bogus')
 
-    def test_shiftdata_length_mismatch_raises_value_error(self):
+    def test_shiftdata_positional_length_mismatch_raises_value_error(self):
+        # Legacy positional shiftData (no Temperature column) still requires the
+        # row count to match. With a Temperature column it would instead
+        # interpolate onto the data temperatures (see test_shift_factors).
         temp = self._temp([0.0, 25.0, 50.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
-        bad_shift = {'Temperature': [0.0, 25.0], 'a_T': [1.0, 1.0]}
-        with self.assertRaisesRegex(ValueError, 'same number of rows'):
+        bad_shift = {'a_T': [1.0, 1.0]}
+        with self.assertRaisesRegex(ValueError, 'row'):
             self._call(temp, domain='temperature', shiftData=bad_shift)
 
     def test_shiftdata_missing_a_T_raises_assertion(self):
@@ -315,8 +318,12 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
 
     @staticmethod
     def _temp_data(extras=None):
+        # Temperatures stay within the WLF valid window for Tg=25, C2=51.6
+        # (|log10 a_T| < MAX_ABS_LOG10_SHIFT) so tts_temperature_to_frequency_V2
+        # keeps all three rows; the post-shift Frequency sort still reverses
+        # their order, which is what the flow-through test exercises.
         d = {
-            'Temperature': np.array([0.0, 25.0, 50.0]),
+            'Temperature': np.array([10.0, 25.0, 40.0]),
             'E Storage':   np.array([100.0, 200.0, 300.0]),
             'E Loss':      np.array([10.0, 20.0, 30.0]),
         }
