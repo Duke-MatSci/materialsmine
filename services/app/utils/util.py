@@ -84,15 +84,17 @@ def upload_init(file_name, domain):
     extension = os.path.splitext(file_name)[1].lower()
     if extension == '.csv':
         delimiter = ','
-    elif extension in ('.tsv', '.txt'):
+    elif extension == '.tsv':
         delimiter = '\t'
+    elif extension == '.txt':
+        delimiter = None
     else:
         raise ValueError(
             f"Unsupported file extension {extension!r}. Use .csv, .tsv, or .txt."
         )
 
     file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
         csvlines = f.readlines()
 
     if not csvlines:
@@ -270,6 +272,8 @@ def decode_jwt(token: str):
     
 def is_numeric_row(row):
     """Check if all values in the row can be converted to float."""
+    if not row:
+        return False
     try:
         [float(val) for val in row]
         return True

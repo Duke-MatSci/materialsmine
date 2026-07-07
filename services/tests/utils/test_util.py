@@ -66,6 +66,21 @@ class TestUploadInit(unittest.TestCase):
         result = upload_init(name, 'frequency')
         self.assertEqual(set(result.keys()), {'Frequency', 'E Storage', 'E Loss'})
 
+    def test_parses_space_delimited_txt(self):
+        # numpy savetxt and instrument shift-factor exports are space-delimited;
+        # .txt must accept any whitespace (space or tab), not only tabs.
+        name = self._write('shift.txt', "-10 5.0e12\n0 1.2e12\n25 1.7e9\n")
+        result = upload_init(name, 'shift')
+        self.assertEqual(set(result.keys()), {'Temperature', 'a_T'})
+        np.testing.assert_array_equal(result['Temperature'], [-10.0, 0.0, 25.0])
+
+    def test_skips_leading_blank_line_in_whitespace_txt(self):
+        # A blank line splits to [] on whitespace; the is_numeric_row empty-row
+        # guard must not mistake it for the start of the numeric data.
+        name = self._write('blank.txt', "\n1 100 10\n2 200 20\n")
+        result = upload_init(name, 'frequency')
+        np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
+
     def test_sorts_rows_by_first_column(self):
         name = self._write(
             'unsorted.csv',
@@ -80,6 +95,19 @@ class TestUploadInit(unittest.TestCase):
             "# comment\nFrequency,E Storage,E Loss\n1,100,10\n2,200,20\n",
         )
         result = upload_init(name, 'frequency')
+        np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
+
+    def test_parses_file_with_non_utf8_bytes_in_header(self):
+        # Instrument exports are often Windows-1252/Latin-1, e.g. a degree
+        # sign (0xB0) in a "Temperature (°C)" header. Strict UTF-8 decoding
+        # used to crash readlines() here; the header is non-numeric and gets
+        # skipped, so the numeric rows must still parse.
+        path = os.path.join(Config.FILES_DIRECTORY, 'latin1.csv')
+        with open(path, 'wb') as f:
+            f.write('Frequency,E Storage (°C),E Loss\n'.encode('latin-1'))
+            f.write(b'1,100,10\n2,200,20\n')
+        result = upload_init('latin1.csv', 'frequency')
+        self.assertEqual(set(result.keys()), {'Frequency', 'E Storage', 'E Loss'})
         np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
 
     def test_shift_domain_returns_2col_dict(self):
