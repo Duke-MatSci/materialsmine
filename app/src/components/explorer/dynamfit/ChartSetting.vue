@@ -1286,9 +1286,9 @@
         <a
           v-else
           class="btn-text btn--noradius"
-          :class="{ disabled: updateBtn }"
+          :class="{ disabled: !updateBtn }"
           href="#"
-          @click="useSampleFile"
+          @click="handleUpdate"
         >
           <span class="md-body-1">Update</span>
         </a>
@@ -1682,6 +1682,15 @@ const updateChart = async (): Promise<void> => {
   await store.dispatch('explorer/fetchDynamfitData', payload);
 };
 
+// Manual re-run for ω-T changes that don't auto-dispatch on their own —
+// toggling "use estimated" or switching transform method. Those changes arm
+// updateBtn; running the fit clears it so the Update button disables again
+// until the next pending change.
+const handleUpdate = async (): Promise<void> => {
+  updateBtn.value = false;
+  await updateChart();
+};
+
 const openSidebar = (): void => {
   isSidebarOpen.value = true;
 };
@@ -1801,6 +1810,8 @@ watch(transformMethod, (newValue) => {
     'explorer/setDynamfitTransformMethod',
     newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
   );
+  // Arm the manual Update button: a method switch needs an explicit re-run.
+  if (newValue) updateBtn.value = true;
 });
 
 watch(
