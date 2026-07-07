@@ -998,6 +998,145 @@ def tts_frequency_to_temperature(
     }).sort_values('Temperature').reset_index(drop=True)
 
 
+def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
+                                  omega_ref: float) -> pd.DataFrame:
+    """
+    Map master-curve frequencies to temperatures using an uploaded shift table.
+
+    This is the "manual" frequency→temperature inversion: for each master-curve
+    point a_T = Frequency / omega_ref, and the temperature is read off the shift
+    table by interpolating Temperature against log10(a_T) (shift factors span
+    many decades, so interpolate in log space) — the inverse of the shiftData
+    branch of tts_temperature_to_frequency_V2. np.interp does not extrapolate, so
+    frequencies outside the table's a_T range clamp to its temperature limits.
+
+    The shift table is used as data, not fit to a model. Physically a_T(T) is
+    monotonic, but measurement noise in a_T can create local non-monotonicity
+    (Temperature is the reliable axis). The monotonic trend direction is read
+    from the two ENDS of the table (a flat table has no invertible trend), and
+    the (log10 a_T, Temperature) pairs are then ordered by log10 a_T so np.interp
+    gets the increasing x it requires; residual a_T noise cannot break the
+    lookup and no rows are dropped.
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Master curve with columns
+            ['Frequency', "E'", "E''"].
+        shiftData: Shift factors convertible to a DataFrame with 'a_T' and
+            'Temperature' columns (as upload_init(..., 'shift') produces).
+        omega_ref (float): Reference (physical) frequency; a_T == 1 there.
+
+    Returns:
+        pd.DataFrame: Temperature-sweep data at omega_ref with columns
+        ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
+
+    Raises:
+        ValueError, KeyError, AssertionError: If the shift table lacks the
+            required columns, has fewer than 2 usable rows, or has no a_T trend.
+            Callers treat any of these as "not usable" and fall back to a
+            default view.
+    """
+    tbl = pd.DataFrame(shiftData)
+    assert 'a_T' in tbl.columns and 'Temperature' in tbl.columns, (
+        "manual frequency→temperature needs a shift table with 'a_T' and "
+        "'Temperature' columns (from upload_init(..., 'shift'))."
+    )
+    aT = tbl['a_T'].to_numpy(dtype=float)
+    T = tbl['Temperature'].to_numpy(dtype=float)
+    usable = np.isfinite(aT) & (aT > 0) & np.isfinite(T)
+    log_a = np.log10(aT[usable])
+    T = T[usable]
+    if len(T) < 2:
+        raise ValueError("shift table has fewer than 2 usable rows.")
+
+    # Temperature is the reliable axis; a_T carries the measurement noise. Order
+    # by T and read the monotonic trend from the two ENDS of the table (cheap,
+    # rather than scanning every row). A flat table has no invertible trend.
+    # No model is fit and no rows are dropped.
+    # TODO: the robust long-term fix for noisy shift tables is to FIT a monotone
+    # shift-factor model (reuse fit_wlf_coefficients / fit_hybrid_coefficients,
+    # or a monotone spline) and invert that, and to expose that fit as a GUI
+    # option — the frequency→temperature analog of the /fit-shift flow. That
+    # would replace both this direct inversion and the universal-WLF fallback.
+    order = np.argsort(T)
+    T, log_a = T[order], log_a[order]
+    if log_a[0] == log_a[-1]:
+        raise ValueError("shift-table a_T does not vary across its temperature range.")
+
+    # np.interp needs strictly-increasing xp: order the (log10 a_T, T) pairs by
+    # log10 a_T. The a_T→T direction follows automatically from the sort.
+    order = np.argsort(log_a)
+    log_a, T = log_a[order], T[order]
+    omega = freq_sweep_data['Frequency'].to_numpy()
+    shifted_T = np.interp(np.log10(omega / omega_ref), log_a, T)
+
+    return pd.DataFrame({
+        'Frequency': np.full(len(omega), omega_ref),
+        'Temperature': shifted_T,
+        "E'": freq_sweep_data["E'"].to_numpy(),
+        "E''": freq_sweep_data["E''"].to_numpy(),
+    }).sort_values('Temperature').reset_index(drop=True)
+
+
+def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, *,
+                                    Tg=None, TL=None, C1=None, C2=None, Ea=None,
+                                    shiftData=None,
+                                    omega_ref: float = VIS_REF_FREQUENCY_HZ) -> pd.DataFrame:
+    """
+    Convert a frequency master curve to a temperature sweep via inverse TTS.
+
+    Mirror image of tts_temperature_to_frequency_V2, used to build the
+    temperature-axis visualization for a frequency-domain upload. Selection of
+    the inverse-shift model, in priority order (shiftData wins, matching the
+    forward V2):
+
+        1. manual  — shiftData present and usable → invert the shift table
+           (_freq_to_temp_via_shift_table).
+        2. WLF     — shift_model == 'WLF' with Tg, C1, C2 all supplied →
+           analytic inverse WLF (tts_frequency_to_temperature / inverse_wlf_shift).
+        3. fallback — anything else (hybrid, missing params, or a failed attempt
+           above) → the universal-WLF view (fixed UNIVERSAL_WLF_* constants and
+           VIS_REF_TEMPERATURE_C), i.e. the historical behavior.
+
+    Unlike the forward tts_temperature_to_frequency_V2 (whose transform is
+    essential and *raises* on manual-without-file), this conversion is
+    visualization-only — the Prony fit runs on the frequency data directly — so
+    it must never raise/block: an unusable model silently degrades to (3).
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Master curve with columns
+            ['Frequency', "E'", "E''"].
+        shift_model (str): 'WLF', 'hybrid', or 'manual'.
+        Tg (float): WLF reference temperature (used when shift_model == 'WLF').
+        TL, Ea: Accepted for signature symmetry with the forward V2; unused
+            because no inverse-hybrid exists yet (hybrid → fallback).
+        C1 (float): WLF parameter C1 (used when shift_model == 'WLF').
+        C2 (float): WLF parameter C2 (used when shift_model == 'WLF').
+        shiftData: Optional shift-factor table {'Temperature': ..., 'a_T': ...};
+            when usable it takes priority (manual path).
+        omega_ref (float): Reference (physical) frequency; a_T == 1 there.
+
+    Returns:
+        pd.DataFrame: Temperature-sweep data at omega_ref with columns
+        ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
+    """
+    if shiftData:
+        try:
+            return _freq_to_temp_via_shift_table(freq_sweep_data, shiftData, omega_ref)
+        except (ValueError, KeyError, AssertionError):
+            pass  # unusable shift table → universal-WLF visualization
+    elif shift_model == 'WLF' and Tg is not None and C1 is not None and C2 is not None:
+        try:
+            return tts_frequency_to_temperature(freq_sweep_data, omega_ref, Tg, C1, C2)
+        except ValueError:
+            pass  # WLF singularity → universal-WLF visualization
+
+    # Universal-WLF fallback (hybrid, insufficient params, or a failed attempt).
+    return tts_frequency_to_temperature(
+        freq_sweep_data, omega_ref, VIS_REF_TEMPERATURE_C,
+        UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+    )
+
+
 def argmax_peak(signal: np.ndarray) -> int:
     """
     Return the index of the most prominent peak in a 1-D signal.
@@ -1274,8 +1413,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation modulus and spectrum figures.
         domain (str): 'frequency' or 'temperature'.
-        Tg, C1, C2, Ea, TL: Shift-model parameters (temperature domain only).
-        shift_model (str): 'WLF' or 'hybrid' (temperature domain only).
+        Tg, C1, C2, Ea, TL: Shift-model parameters. In the temperature domain
+            they drive the temperature→frequency transform that feeds the Prony
+            fit; in the frequency domain they (and shiftData) drive the
+            frequency→temperature visualization only (manual/WLF; hybrid falls
+            back to a universal-WLF view).
+        shift_model (str): 'WLF', 'hybrid', or 'manual'.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
 
     Returns:
@@ -1317,11 +1460,14 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
                 "Remove rows with zero or negative frequencies."
             )
         freq_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
-        # TODO: update this when reverse hybrid TTSP becomes available
-        temp_sweep_data = tts_frequency_to_temperature(
-            freq_sweep_data,
-            omega_ref=VIS_REF_FREQUENCY_HZ, T_ref=VIS_REF_TEMPERATURE_C,
-            C1=UNIVERSAL_WLF_C1, C2=UNIVERSAL_WLF_C2,
+        # The temperature-axis figures are a visualization only (the Prony fit
+        # below runs on the frequency data directly), so this never blocks: an
+        # unusable shift model degrades to a universal-WLF view inside V2.
+        # TODO: hybrid still has no analytic inverse and falls back to universal
+        # WLF; add a reverse-hybrid model when one becomes available.
+        temp_sweep_data = tts_frequency_to_temperature_V2(
+            freq_sweep_data, shift_model,
+            Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
         )
         fig4, fig41 = _build_temperature_figures(temp_sweep_data)
 

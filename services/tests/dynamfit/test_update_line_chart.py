@@ -20,7 +20,7 @@ from unittest.mock import patch
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import wlf_shift, update_line_chart
+from app.dynamfit.dynamfit2 import wlf_shift, update_line_chart, inverse_wlf_shift
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -111,6 +111,77 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         self.assertEqual(len(fig3.data), 1)
         self.assertNotIn('Basis', {t.name for t in fig2.data})
         self.assertNotIn('Basis', {t.name for t in fig3.data})
+
+
+class TestUpdateLineChartFrequencyShift(unittest.TestCase):
+    """
+    Frequency-domain shift-model paths (manual / WLF / fallback) that drive the
+    temperature-axis visualization (fig4/fig41). The Prony fit still runs on the
+    frequency data directly, so these paths must never block it.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        cls.uploadData = upload_init(
+            'agilus30 (8) master curve 20C clean.txt', 'frequency',
+        )
+        # Monotonic synthetic shift table; a_T decreasing through 1.0 at T = 30.
+        T = np.linspace(-20.0, 80.0, 21)
+        cls.shiftData = {'Temperature': T, 'a_T': 10.0 ** np.linspace(6.0, -6.0, len(T))}
+
+    def _run(self, **kw):
+        return update_line_chart(
+            self.uploadData, number_of_prony=8, smoothness=0.1,
+            fit_settings=True, domain='frequency', **kw,
+        )
+
+    @staticmethod
+    def _fig4_temps(result):
+        # fig4 is px.line(x="Temperature", facet_col='Modulus'); both facets carry
+        # the same temperature axis, so dedupe to the underlying sorted set.
+        fig4 = result[4]
+        return np.unique(np.concatenate([np.asarray(t.x, float) for t in fig4.data]))
+
+    def test_frequency_manual_uses_shiftData(self):
+        manual = self._run(shift_model='manual', shiftData=self.shiftData)
+        default = self._run()  # no shift params → universal-WLF view
+        self.assertEqual(len(manual), 7)
+        # The manual mapping reached fig4: its temperature axis differs (a
+        # different shape alone already proves it, since np.interp clamps).
+        mt, dt = self._fig4_temps(manual), self._fig4_temps(default)
+        self.assertFalse(mt.shape == dt.shape and np.allclose(mt, dt))
+
+    def test_frequency_WLF_populates_temp_figs(self):
+        Tg, C1, C2 = 20.0, 17.44, 51.6
+        result = self._run(shift_model='WLF', Tg=Tg, C1=C1, C2=C2)
+        omega = self.uploadData['Frequency']
+        expected = np.unique(inverse_wlf_shift(omega / 1.0, Tg, C1, C2))
+        np.testing.assert_allclose(self._fig4_temps(result), expected, rtol=1e-6)
+
+    def test_frequency_hybrid_returns_full_tuple_no_error(self):
+        result = self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
+        self.assertEqual(len(result), 7)
+        self.assertGreater(len(result[4].data), 0)
+
+    def test_frequency_manual_without_shiftData_still_fits(self):
+        # Contrast the temperature branch, which early-exits with empty figures
+        # when shift params are absent; here the fit is independent of them.
+        result = self._run(shift_model='manual', shiftData=None)
+        self.assertEqual(len(result), 7)
+        self.assertGreater(len(result[6]), 0)  # coef_df non-empty → fit ran
+
+    def test_prony_fit_unaffected_by_shift_params(self):
+        def exp_y(result):
+            fig1 = result[0]
+            return sorted(
+                (tuple(t.y) for t in fig1.data if t.name == 'Experiment'),
+                key=lambda ys: ys[0],
+            )
+        with_shift = self._run(shift_model='manual', shiftData=self.shiftData)
+        without = self._run()
+        for got, want in zip(exp_y(with_shift), exp_y(without)):
+            np.testing.assert_array_equal(got, want)
 
 
 class TestUpdateLineChartTemperature(unittest.TestCase):
