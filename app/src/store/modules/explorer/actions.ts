@@ -188,7 +188,7 @@ export default {
       }
       commit('setDynamfitData', data);
     } catch (err: any) {
-      const snackbar: any = { message: err.message };
+      const snackbar: any = { message: err.message, type: 'error' };
       if (err?.cause === 400) {
         snackbar.duration = 3000;
       } else {

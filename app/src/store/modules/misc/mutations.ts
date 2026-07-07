@@ -10,6 +10,7 @@ export interface Snackbar {
   action: (() => void) | null;
   duration: boolean | number;
   callToActionText: string;
+  type?: string;
 }
 
 export interface RouteInfo {
@@ -32,6 +33,7 @@ interface SnackbarPayload {
   action?: (() => void) | null;
   duration?: boolean | number;
   callToActionText?: string;
+  type?: string;
 }
 
 export default {
@@ -43,13 +45,20 @@ export default {
   },
   setSnackbar(
     state: MiscState,
-    { message, action = null, duration = false, callToActionText = 'Retry' }: SnackbarPayload
+    {
+      message,
+      action = null,
+      duration = false,
+      callToActionText = 'Retry',
+      type = undefined
+    }: SnackbarPayload
   ) {
     state.snackbar = {
       message,
       action,
       duration,
-      callToActionText
+      callToActionText,
+      type
     };
   },
   resetSnackbar(state: MiscState) {
@@ -57,7 +66,8 @@ export default {
       message: '',
       action: null,
       duration: 0, // Indicate reset
-      callToActionText: 'Retry'
+      callToActionText: 'Retry',
+      type: undefined
     };
   },
   setUploadedFile(state: MiscState, str: string) {

@@ -1654,6 +1654,7 @@ const updateChart = async (): Promise<void> => {
         store.commit('setSnackbar', {
           message: error.message || 'Failed to fit shift coefficients',
           duration: 3000,
+          type: 'error',
         });
       }
       return;
@@ -1996,6 +1997,7 @@ watch(mFile, async (newFile) => {
     store.commit('setSnackbar', {
       message: error.message || 'Failed to fit shift coefficients',
       duration: 3000,
+      type: 'error',
     });
   }
 });
