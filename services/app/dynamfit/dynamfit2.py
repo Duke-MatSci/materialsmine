@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from contextlib import contextmanager
-from scipy.optimize import curve_fit, minimize
+from scipy.optimize import curve_fit, minimize, nnls
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 import plotly.express as px
@@ -32,6 +32,12 @@ MAX_ABS_LOG10_SHIFT = 15.0
 # comparable across uploads.
 VIS_REF_FREQUENCY_HZ = 1.0
 VIS_REF_TEMPERATURE_C = 30.0
+
+# Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
+# block materializes a (2 * chunk, N + 2) basis slab (plus prony_basis's
+# np.where temporaries), so peak memory is O(chunk * N) no matter how many
+# rows the upload has.
+_QR_CHUNK_ROWS = 8192
 
 
 @contextmanager
@@ -281,11 +287,28 @@ def smooth_prony_fit(
     Fit a Prony series to complex-modulus data with coefficient smoothing.
 
     Builds a log-spaced relaxation-time grid spanning 1/max(omega) to
-    1/min(omega), constructs the Prony basis at those (omega, tau) pairs, and
-    solves for positive Prony coefficients by minimizing weighted squared
-    residuals plus an optional second-difference smoothness penalty on the
-    log-coefficients (see _prony_objective). Coefficients are parameterized in
-    log-space so the optimizer sees an unconstrained problem.
+    1/min(omega) and solves for non-negative Prony coefficients that minimize
+    the weighted squared residuals, plus an optional second-difference
+    smoothness penalty on the log-coefficients (see _prony_objective).
+
+    Numerics: the weighted data term is first compressed EXACTLY by a chunked
+    QR factorization of the weighted basis —
+        ||(y - B c) / std||^2 = ||R c - z||^2 + const
+    — so the reduced system has at most N + solid rows regardless of how many
+    data rows the upload carries. Householder QR accumulates the residual
+    information backward-stably (no explicit sums of squares), memory stays
+    O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
+    independent of the input row count.
+
+    With smoothness == 0 the reduced problem is exactly non-negative least
+    squares and is solved directly by scipy.optimize.nnls: finite,
+    deterministic, no line search, no initial guess. Coefficients may then be
+    EXACTLY zero (downstream consumers already filter E_i != 0). With
+    smoothness > 0 the log-space penalty is nonlinear in the coefficients, so
+    _prony_objective is minimized on the reduced system (basis=R, data=z,
+    std=1) with L-BFGS-B, seeded from the NNLS solution and bounded above in
+    log-space — without that bound the line search was measured to run
+    exp(logcoefs) into overflow on broadband (many-decade) master curves.
 
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
@@ -304,7 +327,8 @@ def smooth_prony_fit(
 
     Returns:
         tuple: (tau_i, E_i) where tau_i is the 1-D relaxation-time grid of
-        length N and E_i is the 1-D coefficient array of length N + bool(solid).
+        length N and E_i is the 1-D non-negative coefficient array of length
+        N + bool(solid). Entries can be exactly zero (NNLS active set).
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -323,22 +347,56 @@ def smooth_prony_fit(
     tau_min = 1 / np.max(omega)
     tau_i = prony_relaxation_space(tau_min, tau_max, N)
 
-    basis = prony_basis(omega, tau_i, solid)
+    m = N + solid
 
-    y = np.concatenate((E_stor, E_loss))
-    y_std = np.concatenate((E_stor_std, E_loss_std))
+    # Chunked QR reduction: maintain the triangular augmented system [R | z]
+    # and fold each weighted basis block into it. Keeping m + 1 rows retains
+    # the full least-squares information; row m of the final triangle is the
+    # orthogonal-residual norm and is excluded from (R, z). For uploads with
+    # fewer than m rows the triangle is simply shorter (wide R) — nnls and
+    # _prony_objective both accept that shape.
+    Rz = np.empty((0, m + 1))
+    for start in range(0, len(omega), _QR_CHUNK_ROWS):
+        chunk = slice(start, start + _QR_CHUNK_ROWS)
+        basis = prony_basis(omega[chunk], tau_i, solid)
+        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
+        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
+        block = np.concatenate(
+            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
+        )
+        Rz = np.linalg.qr(
+            np.concatenate((Rz, block), axis=0), mode='r'
+        )[:m + 1]
+    R = Rz[:m, :m]
+    z = Rz[:m, m]
 
-    # Data-scaled initial guess: spread max(E_stor) evenly across N+solid terms
-    # so the initial model prediction matches the data magnitude. A constant
-    # like x0=7.0 (E_i ≈ 1097) is many orders of magnitude off when E_stor is
-    # large, and then returned coefficients become inf.
-    x0 = np.full(N + solid, np.log(E_stor.max() / (N + solid)))
+    # Reduced problem with smoothness == 0 is exactly non-negative least
+    # squares — solve it directly (finite algorithm, no iteration budget).
+    E_nnls, _ = nnls(R, z)
+    if smoothness == 0:
+        return tau_i, E_nnls
+
+    # smoothness > 0: the second-difference penalty acts on log-coefficients,
+    # so run _prony_objective on the reduced system. Seed from the NNLS
+    # solution (clipping exact zeros so log stays finite); if NNLS zeroed
+    # everything, fall back to the data-scaled flat guess.
+    pos = E_nnls[E_nnls > 0]
+    if pos.size:
+        x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
+    else:
+        x0 = np.full(m, np.log(E_stor.max() / m))
+    # Upper bound on log-coefficients: no single Prony term should exceed
+    # ~1000x the data maximum. Without this, the line search was measured to
+    # push exp(logcoefs) into overflow on broadband master curves.
+    ub = np.log(E_stor.max()) + np.log(1e3)
     with np.errstate(over='ignore', invalid='ignore'):
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(y, y_std, basis, smoothness, solid),
+            args=(z, np.ones_like(z), R, smoothness, solid),
             jac=True,
+            method='L-BFGS-B',
+            bounds=[(None, ub)] * m,
         )
     E_i = np.exp(result.x)
 

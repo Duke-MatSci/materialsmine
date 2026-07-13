@@ -18,6 +18,7 @@ import pandas as pd
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+import app.dynamfit.dynamfit2 as dynamfit2
 from app.dynamfit.dynamfit2 import (
     prony_basis,
     prony_relaxation_space,
@@ -25,6 +26,7 @@ from app.dynamfit.dynamfit2 import (
     compute_relaxation_modulus,
     compute_relaxation_spectrum,
     _prony_objective,
+    _build_coef_records,
     smooth_prony_fit,
     argmax_peak,
 )
@@ -455,6 +457,119 @@ class TestSmoothPronyFit(unittest.TestCase):
                         np.all(np.isfinite(E_i)),
                         msg=f'non-finite E_i at scale={scale:g}, N={N}: {E_i}',
                     )
+
+
+def _broadband_master_curve(num_pts):
+    """Synthetic peaked Prony source over ~16 decades of tau — the shape (and
+    scale, ~1e9 Pa) of a real chirp/broadband master curve like the DI-ST
+    dataset that motivated the QR-reduced solver."""
+    tau = np.logspace(-8.0, 8.0, 17)
+    E_input = np.concatenate(([1e8], np.exp(-(np.log10(tau)) ** 2 / 4.0) * 1e9))
+    df = compute_complex(tau, E_input, num_pts=num_pts)
+    omega = df['Frequency'].to_numpy()
+    E_stor = df['E Storage'].to_numpy()
+    E_loss = df['E Loss'].to_numpy()
+    std = np.abs(E_stor + 1.0j * E_loss) * 0.2
+    return omega, E_stor, E_loss, std
+
+
+def _chi2_per_point(omega, E_stor, E_loss, std, tau_i, E_i):
+    basis = prony_basis(omega, tau_i, solid=len(E_i) != len(tau_i))
+    resid = (np.concatenate((E_stor, E_loss)) - basis @ E_i) / np.concatenate((std, std))
+    return (resid @ resid) / (2 * len(omega))
+
+
+class TestSmoothPronyFitReducedSolver(unittest.TestCase):
+    """The chunked-QR + NNLS solver: row-count independence, chunking
+    equivalence, and the reduced smoothness path."""
+
+    def test_large_broadband_input_fits_fast_and_finite(self):
+        # 40k points over ~16 decades at N=100 — the configuration that made
+        # the previous full-basis BFGS solver exceed any request timeout. The
+        # wall-time bound is deliberately generous (CI machines vary); the
+        # old solver needed minutes, the reduced solver needs seconds.
+        import time
+        omega, E_stor, E_loss, std = _broadband_master_curve(40000)
+        start = time.monotonic()
+        tau_i, E_i = smooth_prony_fit(
+            omega, E_stor, E_loss,
+            E_stor_std=std, E_loss_std=std,
+            N=100, smoothness=0.0, solid=True,
+        )
+        elapsed = time.monotonic() - start
+        self.assertLess(elapsed, 30.0)
+        self.assertTrue(np.all(np.isfinite(E_i)))
+        self.assertTrue(np.all(E_i >= 0))
+        # Data synthesized from a Prony series with 20% relative std → the
+        # fit should sit far below chi2/pt = 1.
+        chi2 = _chi2_per_point(omega, E_stor, E_loss, std, tau_i, E_i)
+        self.assertLess(chi2, 0.1)
+
+    def test_chunked_reduction_matches_single_chunk(self):
+        # Force many chunks vs one chunk; the accumulated triangle carries the
+        # same least-squares information, so the fits must agree.
+        omega, E_stor, E_loss, std = _broadband_master_curve(2000)
+        kwargs = dict(E_stor_std=std, E_loss_std=std,
+                      N=20, smoothness=0.0, solid=True)
+        original = dynamfit2._QR_CHUNK_ROWS
+        try:
+            dynamfit2._QR_CHUNK_ROWS = 64
+            _, E_many = smooth_prony_fit(omega, E_stor, E_loss, **kwargs)
+            dynamfit2._QR_CHUNK_ROWS = 10 ** 9
+            _, E_one = smooth_prony_fit(omega, E_stor, E_loss, **kwargs)
+        finally:
+            dynamfit2._QR_CHUNK_ROWS = original
+        np.testing.assert_allclose(
+            E_many, E_one, rtol=1e-6, atol=1e-6 * E_one.max(),
+        )
+
+    def test_negative_loss_values_tolerated(self):
+        # Real broadband data carries negative E'' noise on the plateaus (877
+        # such points in the motivating DI-ST file). The non-negative model
+        # can't reach them, but the fit must stay finite and sane.
+        omega, E_stor, E_loss, std = _broadband_master_curve(3000)
+        rng = np.random.default_rng(42)
+        noisy = np.where(
+            rng.random(len(E_loss)) < 0.05, -np.abs(E_loss), E_loss,
+        )
+        tau_i, E_i = smooth_prony_fit(
+            omega, E_stor, noisy,
+            E_stor_std=std, E_loss_std=std,
+            N=50, smoothness=0.0, solid=True,
+        )
+        self.assertTrue(np.all(np.isfinite(E_i)))
+        self.assertTrue(np.all(E_i >= 0))
+
+    def test_smoothness_path_converges_near_unsmoothed_optimum(self):
+        # A mild penalty must not degrade the data term much relative to the
+        # exact NNLS optimum — this exercises the seeded, bounded L-BFGS-B on
+        # the reduced system.
+        omega, E_stor, E_loss, std = _broadband_master_curve(1000)
+        kwargs = dict(E_stor_std=std, E_loss_std=std, N=50, solid=True)
+        tau_i, E_exact = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=0.0, **kwargs)
+        _, E_smooth = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=0.1, **kwargs)
+        self.assertTrue(np.all(np.isfinite(E_smooth)))
+        chi2_exact = _chi2_per_point(omega, E_stor, E_loss, std, tau_i, E_exact)
+        chi2_smooth = _chi2_per_point(omega, E_stor, E_loss, std, tau_i, E_smooth)
+        self.assertLess(chi2_smooth, chi2_exact + 0.1)
+
+    def test_zero_coefficients_flow_through_coef_records(self):
+        # NNLS returns exact zeros (active set); the coefficient table filters
+        # them and keeps the original grid index in 'i'.
+        omega, E_stor, E_loss, std = _broadband_master_curve(500)
+        tau_i, E_i = smooth_prony_fit(
+            omega, E_stor, E_loss,
+            E_stor_std=std, E_loss_std=std,
+            N=50, smoothness=0.0, solid=True,
+        )
+        self.assertGreater(np.sum(E_i == 0), 0)  # sparsity actually occurs
+        records = _build_coef_records(tau_i, E_i)
+        self.assertEqual(len(records), np.count_nonzero(E_i[1:]))
+        for rec in records:
+            self.assertNotEqual(rec['E_i'], 0)
+            np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
 
 
 class TestArgmaxPeak(unittest.TestCase):
