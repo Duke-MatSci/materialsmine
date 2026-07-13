@@ -39,6 +39,13 @@ VIS_REF_TEMPERATURE_C = 30.0
 # rows the upload has.
 _QR_CHUNK_ROWS = 8192
 
+# Experiment traces with more rows than this are thinned before plotting —
+# broadband uploads (e.g. 41k-row chirp master curves) otherwise bloat the
+# response JSON and bog down browser-side plotly rendering. This affects the
+# FIGURES ONLY: the Prony fit and the coefficient table always use every row.
+# ~2000 points per trace is far denser than any screen resolves.
+_PLOT_MAX_POINTS = 2000
+
 
 @contextmanager
 def _fp_safe(user_message: str):
@@ -1221,6 +1228,60 @@ def argmax_peak(signal: np.ndarray) -> int:
     return int(peaks[np.argmax(signal[peaks])])
 
 
+def _decimate_for_plot(df: pd.DataFrame) -> tuple:
+    """
+    Thin a sorted experiment DataFrame for plotting when it exceeds
+    _PLOT_MAX_POINTS.
+
+    Rows are subsampled at evenly spaced positional indices (first and last
+    rows always kept), which preserves the curve shape for data that is
+    already sorted along its x axis regardless of grid spacing. The fit never
+    sees this — callers decimate only the frames handed to figure builders.
+
+    Parameters:
+        df (pd.DataFrame): Experiment data sorted by its x column.
+
+    Returns:
+        tuple: (plot_df, percent) where plot_df is df itself when no thinning
+        was needed, or a positional subsample otherwise; percent is None when
+        no thinning happened, else the integer percentage of rows dropped
+        (for the user-facing figure annotation).
+    """
+    n = len(df)
+    if n <= _PLOT_MAX_POINTS:
+        return df, None
+    idx = np.unique(np.linspace(0, n - 1, _PLOT_MAX_POINTS).astype(int))
+    percent = int(round(100.0 * (1 - len(idx) / n)))
+    return df.iloc[idx], percent
+
+
+def _annotate_decimation(figs, percent) -> None:
+    """
+    Stamp a decimation notice onto each figure when plot thinning occurred.
+
+    The notice rides inside the plotly figures themselves (paper-coordinate
+    annotation above the plot area), so the frontend needs no changes to
+    display it. No-op when percent is None.
+
+    Parameters:
+        figs: Iterable of plotly Figures to annotate.
+        percent: Integer percentage of experiment rows dropped, or None.
+    """
+    if percent is None:
+        return
+    text = (
+        f"too many data points, plot traces decimated by {percent}% for speed"
+        " (the fit uses all points)"
+    )
+    for fig in figs:
+        fig.add_annotation(
+            text=text,
+            xref='paper', yref='paper', x=0.0, y=1.06,
+            xanchor='left', yanchor='bottom', showarrow=False,
+            font=dict(size=11, color='gray'),
+        )
+
+
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
     Build E vs Temperature and tan-delta vs Temperature figures.
@@ -1493,6 +1554,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             or has non-positive frequency values where positives are required.
         AssertionError: If domain or uploadData keys do not match the contract;
             this signals a server bug, not user-fixable input.
+
+    Note:
+        Uploads larger than _PLOT_MAX_POINTS rows have their experiment plot
+        traces thinned (the Prony fit and coefficient table always use every
+        row); affected figures carry an annotation stating the percentage
+        dropped.
     """
     assert domain in EXPECTED_DOMAIN_COLUMNS, \
         f"Unknown domain {domain!r}; expected one of {list(EXPECTED_DOMAIN_COLUMNS)}."
@@ -1527,11 +1594,15 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             freq_sweep_data, shift_model,
             Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
         )
-        fig4, fig41 = _build_temperature_figures(temp_sweep_data)
+        plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
+        fig4, fig41 = _build_temperature_figures(plot_temp)
+        _annotate_decimation((fig4, fig41), temp_decimation)
 
     elif domain == "temperature":
         temp_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
-        fig4, fig41 = _build_temperature_figures(temp_sweep_data)
+        plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
+        fig4, fig41 = _build_temperature_figures(plot_temp)
+        _annotate_decimation((fig4, fig41), temp_decimation)
 
         # `is not None` rather than truthy checks: Tg = 0 °C is a valid
         # reference, and the route default-fills numeric estimates that may
@@ -1585,9 +1656,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     # Downstream figure builders assume df's first three columns are
     # exactly (Frequency, E Storage, E Loss); drop any extras now that
-    # the std arrays have been pulled out.
+    # the std arrays have been pulled out. The plot frame may be thinned
+    # (figures only — the fit above already consumed every row).
     df = df[['Frequency', 'E Storage', 'E Loss']]
-    fig1, fig11 = _build_complex_figures(df, tau_i, E_i, N_nz)
+    plot_df, freq_decimation = _decimate_for_plot(df)
+    fig1, fig11 = _build_complex_figures(plot_df, tau_i, E_i, N_nz)
+    _annotate_decimation((fig1, fig11), freq_decimation)
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)
 
