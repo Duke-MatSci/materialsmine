@@ -46,6 +46,13 @@ _QR_CHUNK_ROWS = 8192
 # ~2000 points per trace is far denser than any screen resolves.
 _PLOT_MAX_POINTS = 2000
 
+# Reference residual count for smoothness normalization in smooth_prony_fit:
+# a nominal 400-row upload contributes 800 residuals (storage + loss), the
+# scale on which the smoothness knob was historically calibrated. The penalty
+# weight is normalized to this so a given smoothness value produces comparable
+# smoothing regardless of upload size (see smooth_prony_fit).
+_SMOOTHNESS_REF_RESIDUALS = 800
+
 
 @contextmanager
 def _fp_safe(user_message: str):
@@ -329,7 +336,10 @@ def smooth_prony_fit(
             for E_loss, same length as omega. Used to weight residuals.
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the second-difference penalty on the
-            log-coefficients. Pass 0 to disable.
+            log-coefficients. Pass 0 to disable. Normalized internally to the
+            upload's residual count (referenced to a nominal 400-row upload,
+            _SMOOTHNESS_REF_RESIDUALS), so a given value produces comparable
+            smoothing whether the file has 400 rows or 40,000.
         solid (bool): Whether to include an equilibrium-modulus term.
 
     Returns:
@@ -392,6 +402,18 @@ def smooth_prony_fit(
         x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
     else:
         x0 = np.full(m, np.log(E_stor.max() / m))
+    # Normalize the smoothness trade-off to the upload size: the data term
+    # sums over all 2n residuals while the penalty sums over N-2 second
+    # differences, so an unscaled weight weakens as ~1/n_res with growing
+    # uploads (a 41k-row broadband file needed ~100x the smoothness a 400-row
+    # file needs for the same effect). Scaling the weight by
+    # sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS) makes the penalty TERM (the
+    # weight is squared inside _prony_objective) grow linearly with the
+    # residual count, so a given `smoothness` value produces comparable
+    # smoothing regardless of row count. The reference (800 residuals ~ a
+    # 400-row upload) preserves historical calibrations at fixture scale.
+    n_res = 2 * len(omega)
+    smoothness_scaled = smoothness * np.sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS)
     # Upper bound on log-coefficients: no single Prony term should exceed
     # ~1000x the data maximum. Without this, the line search was measured to
     # push exp(logcoefs) into overflow on broadband master curves.
@@ -400,7 +422,7 @@ def smooth_prony_fit(
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(z, np.ones_like(z), R, smoothness, solid),
+            args=(z, np.ones_like(z), R, smoothness_scaled, solid),
             jac=True,
             method='L-BFGS-B',
             bounds=[(None, ub)] * m,

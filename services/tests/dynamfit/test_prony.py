@@ -540,6 +540,33 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(E_i)))
         self.assertTrue(np.all(E_i >= 0))
 
+    def test_smoothness_effect_is_row_count_invariant(self):
+        # The data term sums over all residuals while the penalty does not, so
+        # without normalization a given smoothness weakens ~1/n_res as uploads
+        # grow (a 41k-row file needed ~100x the value a 400-row file needs).
+        # The weight is scaled by sqrt(n_res/_SMOOTHNESS_REF_RESIDUALS), so the
+        # SAME curve sampled at very different densities must smooth to a
+        # comparable log-space roughness at the same smoothness value.
+        def log_roughness(E, solid=True):
+            lE = np.log(np.maximum(E[solid:], E[E > 0].min() * 1e-3))
+            d2 = np.diff(lE, n=2)
+            return d2 @ d2
+
+        rough = []
+        for n in (500, 20000):
+            omega, E_stor, E_loss, std = _broadband_master_curve(n)
+            _, E_i = smooth_prony_fit(
+                omega, E_stor, E_loss,
+                E_stor_std=std, E_loss_std=std,
+                N=50, smoothness=1.0, solid=True,
+            )
+            rough.append(log_roughness(E_i))
+        lo, hi = sorted(rough)
+        # Unnormalized, the 40x density gap gives a ~40x penalty-weight gap and
+        # wildly different roughness; normalized they agree closely. Factor 2
+        # is a loose bound for discretization differences.
+        self.assertLess(hi, 2.0 * lo)
+
     def test_smoothness_path_converges_near_unsmoothed_optimum(self):
         # A mild penalty must not degrade the data term much relative to the
         # exact NNLS optimum — this exercises the seeded, bounded L-BFGS-B on
