@@ -730,7 +730,7 @@
     </template>
 
     <!-- Fitting Method -->
-    <div>
+    <!-- <div>
       <label for="model" class="md-body-2">Select Fitting Method</label>
       <div class="md-field viz-u-mgbottom-big">
         <select
@@ -745,10 +745,10 @@
           <option value="Ridge">Ridge</option>
         </select>
       </div>
-    </div>
+    </div> -->
 
     <!-- Prony Terms Slider -->
-    <div class="viz-u-mgbottom-sm">
+    <div v-if="!disableInput" class="viz-u-mgbottom-sm">
       <label for="prony" class="md-body-2">
         Select Number of Prony Terms <span>[{{ dynamfit.range }}]</span>
       </label>
@@ -825,7 +825,7 @@
           <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
             ω-T Transformation
           </md-checkbox>
-          <md-checkbox
+          <!-- <md-checkbox
             :disabled="disableInput"
             v-model="dynamfit.fitSettings"
             :class="[
@@ -834,7 +834,7 @@
             ]"
           >
             Show Basis Functions
-          </md-checkbox>
+          </md-checkbox> -->
         </div>
       </div>
 
@@ -974,7 +974,7 @@
           <md-icon>{{ additionalSettingsOpen ? 'expand_less' : 'expand_more' }}</md-icon>
         </div>
         <template v-if="additionalSettingsOpen">
-          <md-checkbox
+          <!-- <md-checkbox
             :disabled="disableInput"
             v-model="dynamfit.fitSettings"
             :class="[
@@ -983,7 +983,7 @@
             ]"
           >
             Show Basis Functions
-          </md-checkbox>
+          </md-checkbox> -->
           <div class="u--layout-flex u--layout-flex-justify-sb grid_gap-small">
             <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
               <label for="smoothness" class="md-body-2">Smoothness</label>
@@ -1075,7 +1075,7 @@
           <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
             ω-T Transformation
           </md-checkbox>
-          <md-checkbox
+          <!-- <md-checkbox
             :disabled="disableInput"
             v-model="dynamfit.fitSettings"
             :class="[
@@ -1084,7 +1084,7 @@
             ]"
           >
             Show Basis Functions
-          </md-checkbox>
+          </md-checkbox> -->
         </div>
 
         <!-- ω-T config (expands when checkbox is checked) -->
@@ -1097,35 +1097,25 @@
             <md-radio id="cTransformMethodHybrid" v-model="transformMethod" value="hybrid">
               Hybrid
             </md-radio>
+            <md-radio id="cTransformMethodManual" v-model="transformMethod" value="manual">
+              Manual
+            </md-radio>
           </div>
 
-          <!-- Input method toggle -->
-          <div v-if="transformMethod" class="u_margin-bottom-small">
-            <div class="dynamfit-toggle">
-              <button
-                :class="[
-                  'dynamfit-toggle__option',
-                  inputMethod === 'enter' ? 'dynamfit-toggle__option--active' : '',
-                ]"
-                @click="inputMethod = 'enter'"
-              >
-                Enter values
-              </button>
-              <button
-                :class="[
-                  'dynamfit-toggle__option',
-                  inputMethod === 'upload' ? 'dynamfit-toggle__option--active' : '',
-                ]"
-                @click="inputMethod = 'upload'"
-              >
-                Upload shift file
-              </button>
-            </div>
+          <!-- Manual file info -->
+          <div v-if="isManual" class="md-alert md-alert--info utility-margin-top">
+            <md-icon class="md-alert-icon u--color-primary u_margin-right-small">info</md-icon>
+            <span class="md-alert-content" v-if="mFile">
+              <strong>Filename:</strong> {{ reduceDescription(mFile, 15, true) }}
+            </span>
+            <span class="md-alert-content" v-else>
+              <strong>Filename:</strong> No file uploaded yet.
+            </span>
           </div>
 
-          <!-- Coefficient fields (enter mode) -->
-          <template v-if="transformMethod && inputMethod === 'enter'">
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+          <!-- Coefficient fields (WLF / Hybrid) -->
+          <template v-if="isWLF || isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTgValue"
@@ -1141,7 +1131,7 @@
                 Use Estimated Tg
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspC1Value"
@@ -1157,7 +1147,7 @@
                 Use Estimated C1
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isWLF || isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspC2Value"
@@ -1207,8 +1197,8 @@
             </div>
           </template>
 
-          <!-- Shift file upload (upload mode) -->
-          <template v-if="transformMethod && inputMethod === 'upload'">
+          <!-- Shift file upload (Manual only) -->
+          <template v-if="isManual">
             <div class="dynamfit-shift-upload">
               <p class="dynamfit-shift-upload__label">
                 Upload a shift-factor file (2 columns: Temperature, a_T)
@@ -1234,22 +1224,6 @@
               <template v-else>
                 <span class="md-caption md-success viz-u-display__show">{{ mFile }}</span>
               </template>
-            </div>
-
-            <!-- Reference temperature -->
-            <div class="u_margin-bottom-small">
-              <md-field v-if="isWLF">
-                <md-input
-                  v-model="ttspTgValue"
-                  placeholder="Tg (required for WLF fitting)"
-                ></md-input>
-              </md-field>
-              <md-field v-if="isHybrid">
-                <md-input
-                  v-model="ttspTLValue"
-                  placeholder="TL (required for Hybrid fitting)"
-                ></md-input>
-              </md-field>
             </div>
           </template>
         </template>
@@ -1286,9 +1260,9 @@
         <a
           v-else
           class="btn-text btn--noradius"
-          :class="{ disabled: updateBtn }"
+          :class="{ disabled: !updateBtn }"
           href="#"
-          @click="useSampleFile"
+          @click="updateBtn ? updateChart() : null"
         >
           <span class="md-body-1">Update</span>
         </a>
@@ -1521,6 +1495,7 @@ const onShiftFileChange = async (e: Event): Promise<void> => {
     if (fileName) {
       store.commit('explorer/setDynamfitManualFile', fileName);
       displayInfo('Shift file uploaded', 1500);
+      if (variant.value === 'c') updateBtn.value = true;
     }
   } catch (err) {
     const error = err as Error;
@@ -1615,7 +1590,7 @@ const updateChart = async (): Promise<void> => {
     file_name: dynamfit.value.fileUpload,
     number_of_prony: dynamfit.value.range,
     model: dynamfit.value.model,
-    fit_settings: dynamfit.value.fitSettings,
+    // fit_settings: dynamfit.value.fitSettings,
     domain: selectedProperty.value,
     smoothness: smoothness.value,
     relative_error: relativeError.value,
@@ -1642,8 +1617,41 @@ const updateChart = async (): Promise<void> => {
         if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
       }
     }
+  } else if (variant.value === 'c') {
+    // Variant C: Manual uses fitShiftAndExtract, WLF/Hybrid send coefficients directly
+    if (isManual.value && mFile.value) {
+      try {
+        store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+        await fitShiftAndExtract(payload);
+        updateBtn.value = false;
+      } catch (err: unknown) {
+        const error = err as Error;
+        store.commit('setSnackbar', {
+          message: error.message || 'Failed to fit shift coefficients',
+          duration: 3000,
+        });
+      }
+      return;
+    }
+
+    if (transformMethod.value && (isWLF.value || isHybrid.value)) {
+      payload.transform_method = transformMethod.value;
+      if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+      if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+      if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+      if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
+      if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
+      if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
+
+      if (isHybrid.value) {
+        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+        if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
+        if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      }
+    }
   } else {
-    // Variant B/C: fitShiftAndExtract for upload mode, enter-values for enter mode
+    // Variant B: fitShiftAndExtract for upload mode, enter-values for enter mode
     if (needsShiftFile.value && mFile.value) {
       try {
         isSidebarOpen.value = false;
@@ -1680,6 +1688,7 @@ const updateChart = async (): Promise<void> => {
   isSidebarOpen.value = false;
   store.commit('explorer/setDynamfitDomain', selectedProperty.value);
   await store.dispatch('explorer/fetchDynamfitData', payload);
+  updateBtn.value = false;
 };
 
 const openSidebar = (): void => {
@@ -1725,7 +1734,7 @@ const handleSelect = async (): Promise<void> => {
       index: selectedItemProperty.value.index,
       numberOfProny: dynamfit.value.range,
       model: dynamfit.value.model,
-      fitSettings: dynamfit.value.fitSettings,
+      // fitSettings: dynamfit.value.fitSettings,
     };
 
     const response = await fetch('/api/mn/loadxml', {
@@ -1801,6 +1810,19 @@ watch(transformMethod, (newValue) => {
     'explorer/setDynamfitTransformMethod',
     newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
   );
+  if (variant.value === 'c' && (newValue === 'WLF' || newValue === 'hybrid')) {
+    tgEstimated.value = true;
+    c1Estimated.value = true;
+    c2Estimated.value = true;
+    if (newValue === 'hybrid') {
+      tLEstimated.value = true;
+      eAEstimated.value = true;
+    }
+    updateBtn.value = true;
+  }
+  if (variant.value === 'c' && newValue === 'manual') {
+    updateBtn.value = true;
+  }
 });
 
 watch(
@@ -1832,6 +1854,12 @@ watch(selectedProperty, (v) => {
   }
 });
 
+watch(disableInput, (disabled) => {
+  if (!disabled && variant.value === 'c') {
+    cDataSourceOpen.value = false;
+  }
+});
+
 watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov) => {
   if (cv[0] && cv[0] === true) ttspTgValue.value = null;
   if (cv[1] && cv[1] === true) ttspC1Value.value = null;
@@ -1841,56 +1869,69 @@ watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov
   if (cv !== ov) updateBtn.value = true;
 });
 
+watch(ttspTgValue, (v) => {
+  if (variant.value === 'c' && v) tgEstimated.value = false;
+});
+watch(ttspC1Value, (v) => {
+  if (variant.value === 'c' && v) c1Estimated.value = false;
+});
+watch(ttspC2Value, (v) => {
+  if (variant.value === 'c' && v) c2Estimated.value = false;
+});
+watch(ttspTLValue, (v) => {
+  if (variant.value === 'c' && v) tLEstimated.value = false;
+});
+watch(ttspEAValue, (v) => {
+  if (variant.value === 'c' && v) eAEstimated.value = false;
+});
+
 // Debounced watcher: when ttsp coefficient inputs change, call /extract if fileUpload exists
-watch(
-  [ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue],
-  () => {
-    if (skipCoeffWatcher.value) return;
-    if (!ttsp.value) return;
-    if (!transformMethod.value || !(isWLF.value || isHybrid.value)) return;
-    if (inputMethod.value !== 'enter') return;
+watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
+  if (skipCoeffWatcher.value) return;
+  if (!ttsp.value) return;
+  if (!transformMethod.value || !(isWLF.value || isHybrid.value)) return;
+  if (inputMethod.value !== 'enter') return;
 
-    if (coeffDebounceTimer) clearTimeout(coeffDebounceTimer);
-    coeffDebounceTimer = setTimeout(async () => {
-      if (!dynamfit.value?.fileUpload) {
-        store.commit('setSnackbar', {
-          message: 'Please upload or select a data file in Data Source first.',
-          duration: 4000,
-        });
-        return;
-      }
+  if (coeffDebounceTimer) clearTimeout(coeffDebounceTimer);
+  coeffDebounceTimer = setTimeout(async () => {
+    if (!dynamfit.value?.fileUpload) {
+      store.commit('setSnackbar', {
+        message: 'Please upload or select a data file in Data Source first.',
+        duration: 4000,
+      });
+      return;
+    }
 
-      const payload: Record<string, unknown> = {
-        useSample: useSample.value,
-        file_name: dynamfit.value.fileUpload,
-        number_of_prony: dynamfit.value.range,
-        model: dynamfit.value.model,
-        fit_settings: dynamfit.value.fitSettings,
-        domain: selectedProperty.value,
-        smoothness: smoothness.value,
-        relative_error: relativeError.value,
-        transform_method: transformMethod.value,
-      };
+    const payload: Record<string, unknown> = {
+      useSample: useSample.value,
+      file_name: dynamfit.value.fileUpload,
+      number_of_prony: dynamfit.value.range,
+      model: dynamfit.value.model,
+      // fit_settings: dynamfit.value.fitSettings,
+      domain: selectedProperty.value,
+      smoothness: smoothness.value,
+      relative_error: relativeError.value,
+      transform_method: transformMethod.value,
+    };
 
-      if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-      if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-      if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-      if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-      if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-      if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
+    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
+    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
+    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
+    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
+    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
+    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
 
-      if (isHybrid.value) {
-        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
-        if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-        if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
-      }
+    if (isHybrid.value) {
+      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
+      if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
+      if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+    }
 
-      store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-      await store.dispatch('explorer/fetchDynamfitData', payload);
-    }, 500);
-  }
-);
+    store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+    await store.dispatch('explorer/fetchDynamfitData', payload);
+  }, 500);
+});
 
 // Watcher: when shift file (mFile) is uploaded, immediately call /fit-shift
 watch(mFile, async (newFile) => {
@@ -1962,7 +2003,7 @@ watch(mFile, async (newFile) => {
           file_name: dynamfit.value.fileUpload,
           number_of_prony: dynamfit.value.range,
           model: dynamfit.value.model,
-          fit_settings: dynamfit.value.fitSettings,
+          // fit_settings: dynamfit.value.fitSettings,
           domain: selectedProperty.value,
           smoothness: smoothness.value,
           relative_error: relativeError.value,

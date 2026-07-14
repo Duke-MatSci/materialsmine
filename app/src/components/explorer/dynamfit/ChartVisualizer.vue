@@ -53,9 +53,9 @@
         <md-tab id="tab-relax" md-label="Relaxation, E(t)">
           <PlotlyView :chart="dynamfitData['relaxation-chart']" key="5" />
         </md-tab>
-        <md-tab id="tab-spec" md-label="R Spectrum, H(𝜏)">
+        <!-- <md-tab id="tab-spec" md-label="R Spectrum, H(𝜏)">
           <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
-        </md-tab>
+        </md-tab> -->
         <md-tab id="tab-upload" md-label="Uploaded Data">
           <TableComponent :tableData="upload" sortBy="i" />
         </md-tab>
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
@@ -126,6 +126,19 @@ const isManualMode = computed<boolean>(() => {
 
 const hasManualFile = computed<boolean>(() => {
   return store.getters['explorer/getDynamfitManualFile'] !== '';
+});
+
+watch(dynamfitData, (newVal, oldVal) => {
+  const wasEmpty = !oldVal || !Object.keys(oldVal).length;
+  const hasData = newVal && Object.keys(newVal).length > 0;
+  if (wasEmpty && hasData) {
+    const tabIndex = dynamfitDomain.value === 'temperature' ? 2 : 0;
+    nextTick(() => {
+      const container = document.getElementById('tab-home')?.closest('.md-tabs');
+      const navBtns = container?.querySelectorAll('.md-tabs-navigation button');
+      (navBtns?.[tabIndex] as HTMLElement)?.click();
+    });
+  }
 });
 
 const displayInfo = (msg: string, duration?: number): void => {
