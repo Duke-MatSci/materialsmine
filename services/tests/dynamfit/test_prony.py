@@ -89,6 +89,26 @@ class TestPronyBasis(unittest.TestCase):
         with self.assertRaises(AssertionError):
             prony_basis(np.array([1.0]), np.array([[1.0]]), solid=False)
 
+    def test_extreme_omega_tau_stays_finite(self):
+        # A wide TTSP shift can push ωτ past the float64 range. The old
+        # dt²/(1+dt²) form overflowed to inf, then inf/inf → NaN; the stable
+        # form must stay finite everywhere, with storage → 1 and loss → 0 as
+        # ωτ → ∞ and both → 0 as ωτ → 0.
+        # ωτ up to 1e300 keeps the np.outer product finite while dt² (1e600)
+        # overflows inside prony_basis — exactly the path the stable form guards.
+        freq = np.array([1e-150, 1.0, 1e150])
+        tau = np.array([1.0, 1e150])
+        result = prony_basis(freq, tau, solid=False)
+        self.assertTrue(np.all(np.isfinite(result)),
+                        "prony_basis produced non-finite values for extreme ωτ")
+        n = len(freq)  # rows 0..n-1 = storage, n..2n-1 = loss; [i, j] uses freq[i]*tau[j]
+        # huge ωτ (1e150 · 1e150): storage → 1, loss → 0
+        self.assertAlmostEqual(result[2, 1], 1.0, places=6)
+        self.assertAlmostEqual(result[n + 2, 1], 0.0, places=6)
+        # tiny ωτ (1e-200 · 1.0): storage → 0, loss → 0
+        self.assertAlmostEqual(result[0, 0], 0.0, places=6)
+        self.assertAlmostEqual(result[n + 0, 0], 0.0, places=6)
+
 
 class TestPronyRelaxationSpace(unittest.TestCase):
     def test_length(self):

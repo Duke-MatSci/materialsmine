@@ -2,7 +2,7 @@
   <div>
     <md-snackbar
       :md-position="position"
-      :md-duration="!snackbar?.duration ? Infinity : snackbar.duration"
+      :md-duration="snackbarDuration"
       class="md-snackbar-adjust"
       v-model:mdActive="show"
     >
@@ -56,6 +56,19 @@ const snackbar = computed(
       callToActionText: 'Retry',
     }
 );
+
+// Error snackbars linger long enough to read the (often multi-word) backend
+// error text; success/info toasts keep their own short duration. A falsy
+// duration still means "persistent" (Infinity; dismissed via the Retry action
+// or a route change), so retryable errors with an action stay until acted on.
+const ERROR_MIN_MS = 8000;
+const snackbarDuration = computed(() => {
+  const s = snackbar.value;
+  if (!s?.duration) return Infinity;
+  return s.type === 'error'
+    ? Math.max(s.duration as number, ERROR_MIN_MS)
+    : (s.duration as number);
+});
 
 // Methods
 const resetSnackbar = () => {

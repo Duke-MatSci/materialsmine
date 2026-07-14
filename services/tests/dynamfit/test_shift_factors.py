@@ -252,6 +252,33 @@ class TestTtsTemperatureToFrequencyV2(unittest.TestCase):
         kwargs.update(overrides)
         return kwargs
 
+    def _plain_df(self, T_values):
+        # A minimal df with unit source frequency, so post-shift Frequency == a_T
+        # and clamping is driven purely by the WLF shift magnitude.
+        T = np.array(T_values, dtype=float)
+        n = len(T)
+        return pd.DataFrame({
+            'Temperature': T,
+            'Frequency': np.ones(n),
+            "E'": np.full(n, 100.0),
+            "E''": np.full(n, 10.0),
+        })
+
+    def test_clamps_rows_beyond_valid_shift_window(self):
+        # Tg=25, C2=51.6 → WLF singularity at -26.6°C. T=-20°C sits near it and
+        # yields |log10 a_T| ≈ 119 ≫ MAX_ABS_LOG10_SHIFT, so that row must be
+        # dropped rather than blow the frequency axis out to ~1e120.
+        df = self._plain_df([-20.0, 25.0, 40.0])
+        result = tts_temperature_to_frequency_V2(df, 'WLF', **self._params())
+        self.assertEqual(len(result), 2)  # the T=-20 row is clamped away
+        self.assertTrue(np.all(np.isfinite(result['Frequency'].to_numpy())))
+
+    def test_raises_when_all_rows_outside_shift_window(self):
+        # Every row near the singularity → nothing survives the window → error.
+        df = self._plain_df([-20.0, -22.0])
+        with self.assertRaisesRegex(ValueError, 'valid shift-factor window'):
+            tts_temperature_to_frequency_V2(df, 'WLF', **self._params())
+
     def test_output_columns(self):
         df = self._input_df([25.0, 30.0, 35.0])
         result = tts_temperature_to_frequency_V2(df, 'WLF', **self._params())
@@ -292,9 +319,11 @@ class TestTtsTemperatureToFrequencyV2(unittest.TestCase):
 
     def test_shiftData_override_uses_supplied_a_T(self):
         # When shiftData is provided, it multiplies Frequency directly;
-        # shift_model parameters are ignored.
+        # shift_model parameters are ignored. With a Temperature column the
+        # factors are interpolated onto the data temperatures — an identity here
+        # since the grids coincide.
         df = self._input_df([25.0, 30.0, 35.0])
-        shiftData = {'a_T': [0.5, 1.5, 2.0]}
+        shiftData = {'Temperature': [25.0, 30.0, 35.0], 'a_T': [0.5, 1.5, 2.0]}
         result = tts_temperature_to_frequency_V2(
             df, 'WLF', **self._params(shiftData=shiftData),
         )
@@ -328,13 +357,29 @@ class TestTtsTemperatureToFrequencyV2(unittest.TestCase):
     def test_manual_with_shiftData_succeeds(self):
         # 'manual' selects the shiftData path; WLF/hybrid params are ignored.
         df = self._input_df([25.0, 30.0, 35.0])
-        shiftData = {'a_T': [0.5, 1.5, 2.0]}
+        shiftData = {'Temperature': [25.0, 30.0, 35.0], 'a_T': [0.5, 1.5, 2.0]}
         result = tts_temperature_to_frequency_V2(
             df, 'manual', shiftData=shiftData,
         )
         expected = df['Frequency'].values * np.array([0.5, 1.5, 2.0])
         np.testing.assert_allclose(
             np.sort(result['Frequency'].values), np.sort(expected),
+        )
+
+    def test_shiftData_interpolates_mismatched_row_count(self):
+        # Shift file (5 rows) and data file (3 rows) need not match: a_T is
+        # interpolated in log10 space onto the data temperatures.
+        df = self._input_df([25.0, 30.0, 35.0])
+        shiftData = {
+            'Temperature': [20.0, 25.0, 30.0, 35.0, 40.0],
+            'a_T': [10.0, 1.0, 0.1, 0.01, 0.001],  # log-linear: -0.2 decades/°C
+        }
+        result = tts_temperature_to_frequency_V2(df, 'manual', shiftData=shiftData)
+        self.assertEqual(len(result), 3)  # one row per data temperature
+        # log10(a_T) is linear in T, so interpolation at 25/30/35 → 1.0/0.1/0.01.
+        expected = df['Frequency'].values * np.array([1.0, 0.1, 0.01])
+        np.testing.assert_allclose(
+            np.sort(result['Frequency'].values), np.sort(expected), rtol=1e-6,
         )
 
     def test_manual_without_shiftData_raises_value_error(self):

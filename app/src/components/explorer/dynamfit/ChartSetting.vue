@@ -1262,7 +1262,7 @@
           class="btn-text btn--noradius"
           :class="{ disabled: !updateBtn }"
           href="#"
-          @click="updateBtn ? updateChart() : null"
+          @click="handleUpdate"
         >
           <span class="md-body-1">Update</span>
         </a>
@@ -1662,6 +1662,7 @@ const updateChart = async (): Promise<void> => {
         store.commit('setSnackbar', {
           message: error.message || 'Failed to fit shift coefficients',
           duration: 3000,
+          type: 'error',
         });
       }
       return;
@@ -1689,6 +1690,15 @@ const updateChart = async (): Promise<void> => {
   store.commit('explorer/setDynamfitDomain', selectedProperty.value);
   await store.dispatch('explorer/fetchDynamfitData', payload);
   updateBtn.value = false;
+};
+
+// Manual re-run for ω-T changes that don't auto-dispatch on their own —
+// toggling "use estimated" or switching transform method. Those changes arm
+// updateBtn; running the fit clears it so the Update button disables again
+// until the next pending change.
+const handleUpdate = async (): Promise<void> => {
+  updateBtn.value = false;
+  await updateChart();
 };
 
 const openSidebar = (): void => {
@@ -1818,11 +1828,8 @@ watch(transformMethod, (newValue) => {
       tLEstimated.value = true;
       eAEstimated.value = true;
     }
-    updateBtn.value = true;
   }
-  if (variant.value === 'c' && newValue === 'manual') {
-    updateBtn.value = true;
-  }
+  if (newValue) updateBtn.value = true;
 });
 
 watch(
@@ -2026,6 +2033,7 @@ watch(mFile, async (newFile) => {
     store.commit('setSnackbar', {
       message: error.message || 'Failed to fit shift coefficients',
       duration: 3000,
+      type: 'error',
     });
   }
 });
