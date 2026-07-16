@@ -29,13 +29,13 @@
         aria-label="dynamfit-data"
         class="md-layout-item md-size-70 md-medium-size-60 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
-        <ChartVisualizer />
+        <ChartVisualizer @change-file="onChangeFileRequest" @surprise-me="onSurpriseMe" />
       </section>
     </main>
     <dialogbox :active="dialogBoxActive" :minWidth="40">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
-        <div>
+        <div v-if="dialog.type === 'select'">
           <select
             class="form__input form__input--adjust utility-padding-sm"
             v-model="selectedProp"
@@ -45,19 +45,21 @@
             <option value="c2">C2</option>
           </select>
         </div>
+        <div v-else-if="dialog.type === 'changeFile'">
+          Are you sure you want to remove the current file? This will clear the
+          chart data and allow you to upload a new file.
+        </div>
       </template>
       <template v-slot:actions>
-        <md-button @click.prevent="toggleDialogBox"> Submit </md-button>
-        <md-button @click.prevent="toggleDialogBox">Close</md-button>
+        <template v-if="dialog.type === 'select'">
+          <md-button @click.prevent="toggleDialogBox">Submit</md-button>
+          <md-button @click.prevent="toggleDialogBox">Close</md-button>
+        </template>
+        <template v-else-if="dialog.type === 'changeFile'">
+          <md-button @click.prevent="confirmChangeFile">Yes, Change</md-button>
+          <md-button @click.prevent="toggleDialogBox">Cancel</md-button>
+        </template>
       </template>
-      <!-- <template v-slot:actions>
-        <button
-          class="md-button btn btn--primary u--b-rad"
-          @click="dialogBoxActive = false"
-        >
-          Close
-        </button>
-      </template> -->
     </dialogbox>
   </article>
 </template>
@@ -82,8 +84,10 @@ const store = useStore();
 
 // Reactive state
 const selectedProp = ref('select');
+const isTemp = ref(true);
 const dialog = ref({
   title: 'Select',
+  type: 'select',
 });
 
 // Computed properties
@@ -92,5 +96,37 @@ const dialogBoxActive = computed(() => store.getters.dialogBox);
 // Methods
 const toggleDialogBox = (): void => {
   store.commit('setDialogBox');
+};
+
+const onChangeFileRequest = (): void => {
+  dialog.value = { title: 'Change Data File', type: 'changeFile' };
+  toggleDialogBox();
+};
+
+const onSurpriseMe = (): void => {
+  store.commit('explorer/triggerDynamfitSurprise');
+};
+
+const confirmChangeFile = async (): Promise<void> => {
+  toggleDialogBox();
+  const dynamfit = store.getters['explorer/dynamfit'];
+  const name = dynamfit?.fileUpload;
+  if (!name) return;
+
+  store.commit('resetSnackbar');
+
+  if (name !== 'test.tsv') {
+    const { deleted, error } = await store.dispatch('deleteFile', {
+      name,
+      isTemp: isTemp.value,
+    });
+    if (error || !deleted) return;
+  }
+
+  store.commit('explorer/resetDynamfit');
+  store.commit('explorer/resetDynamfitData');
+  store.commit('explorer/setDynamfitManualFile', '');
+  store.commit('explorer/resetDynamfitShiftCoefficients');
+  store.commit('explorer/setDynamfitSourceType', '');
 };
 </script>

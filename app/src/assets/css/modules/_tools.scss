@@ -358,6 +358,16 @@
     @include respond(tab-port) {
       max-width: calc(100% - 2rem);
     }
+
+    &--below {
+      position: static !important;
+      margin-top: 0.8rem;
+      max-width: 100%;
+    }
+
+    b {
+      font-weight: 900;
+    }
   }
 
   &-file-uploader {
@@ -455,6 +465,66 @@
 
     @include respond(phone) {
       max-width: 100% !important;
+    }
+  }
+
+  &-file-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.2rem;
+    margin-top: 1.2rem;
+    background-color: rgba($secondary-light, 0.3);
+    border-left: 3px solid $primary;
+    border-radius: 0 3px 3px 0;
+    font-size: $small-size;
+
+    &__name {
+      color: $primary-grey;
+      font-size: $default-size;
+    }
+
+    &__change {
+      font-size: $small-size;
+      margin-left: 1rem;
+      white-space: nowrap;
+    }
+  }
+
+  &-source-grid {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &-source-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid currentColor;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 3px;
+  }
+
+  &-polymer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0.4rem 0 0.8rem;
+
+    &__item {
+      flex: 0 0 50%;
+      display: flex;
+      align-items: center;
+
+      .md-radio {
+        margin: 1rem 0;
+      }
+
+      @include respond(phone) {
+        flex: 0 0 100%;
+      }
     }
   }
 

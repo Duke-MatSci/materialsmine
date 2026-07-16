@@ -40,6 +40,9 @@ export default {
         TL: null,
         a_T_ref: null,
       },
+      dynamfitTabRequest: '',
+      dynamfitSourceType: '',
+      dynamfitSurpriseRequest: 0,
       dynamfit: {
         range: 100,
         fitSettings: false,

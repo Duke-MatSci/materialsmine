@@ -21,6 +21,9 @@ export interface ExplorerState {
     TL: number | null;
     a_T_ref: number | null;
   };
+  dynamfitTabRequest: string;
+  dynamfitSourceType: string;
+  dynamfitSurpriseRequest: number;
   dynamfit: {
     range: number;
     fitSettings: boolean;

@@ -55,6 +55,15 @@ export default {
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
   },
+  setDynamfitTabRequest(state: ExplorerState, payload: string): void {
+    state.dynamfitTabRequest = payload;
+  },
+  setDynamfitSourceType(state: ExplorerState, payload: string): void {
+    state.dynamfitSourceType = payload;
+  },
+  triggerDynamfitSurprise(state: ExplorerState): void {
+    state.dynamfitSurpriseRequest++;
+  },
   setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'hybrid'): void {
     state.dynamfitTransformMethod = payload;
   },
