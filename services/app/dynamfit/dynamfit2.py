@@ -200,37 +200,6 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     return pd.DataFrame(data={"Time": t, "E": E})
 
 
-def compute_relaxation_spectrum(tau_i: np.ndarray, E_i: np.ndarray,
-                                num_pts: int = 1000) -> pd.DataFrame:
-    """
-    Compute the relaxation spectrum on a log-spaced time grid.
-
-    Builds a time grid spanning min(tau_i) to max(tau_i) and evaluates the
-    relaxation spectrum H from the Prony coefficients in E_i. When E_i has
-    one more element than tau_i, the leading equilibrium-modulus coefficient
-    is excluded from the output.
-
-    Parameters:
-        tau_i (numpy.ndarray): 1-D array of relaxation times.
-        E_i (numpy.ndarray): 1-D array of Prony coefficients (same length as
-            tau_i, or one longer to include an equilibrium-modulus term).
-        num_pts (int): Number of points in the output time grid.
-
-    Returns:
-        pandas.DataFrame: Frame with num_pts rows and columns "Time", "H".
-    """
-    assert isinstance(tau_i, np.ndarray) and tau_i.ndim == 1, \
-        "tau_i must be a 1-D numpy.ndarray"
-    assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
-        "E_i must be a 1-D numpy.ndarray"
-    t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), num_pts)
-    # dimensionless time t/τ
-    dt = np.outer(t, 1 / tau_i)
-    solid = not (len(E_i) == len(tau_i))
-    H = (dt * np.exp(-dt)) @ E_i[solid:]
-    return pd.DataFrame(data={"Time": t, "H": H})
-
-
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
@@ -1321,12 +1290,12 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
         id_vars=["Temperature"],
         value_vars=["E'", "E''"],
         var_name='Modulus',
-        value_name="Young's Modulus (MPa)",
+        value_name="Young's Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     fig4 = px.line(
-        df_melt, x="Temperature", y="Young's Modulus (MPa)",
+        df_melt, x="Temperature", y="Young's Modulus (Pa)",
         log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1337,16 +1306,16 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     df41_tand = pd.DataFrame()
     df41_tand["Temperature"] = df41_concat[df41_concat["Modulus"] == "E''"]["Temperature"]
     df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
-    df41_tand["Young's Modulus (MPa)"] = (
-        df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() /
-        df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
+    df41_tand["Young's Modulus (Pa)"] = (
+        df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (Pa)"].to_numpy() /
+        df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (Pa)"].to_numpy()
     )
     df41_tand['Modulus'] = 'tan delta'
     df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
     fig41 = px.line(
         df41_concat[df41_concat['Modulus'] != "E''"],
-        x="Temperature", y="Young's Modulus (MPa)",
+        x="Temperature", y="Young's Modulus (Pa)",
         facet_col='Modulus',
         color="Type", line_dash="Type",
         labels={"Temperature": "Temperature (C)"},
@@ -1378,21 +1347,21 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
-        var_name='Modulus', value_name="Young's Modulus (MPa)",
+        var_name='Modulus', value_name="Young's Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     cx_x, cx_y, cx_z = complex_df.columns[0], complex_df.columns[1], complex_df.columns[2]
     complex_melt = pd.melt(
         complex_df, id_vars=[cx_x], value_vars=[cx_y, cx_z],
-        var_name='Modulus', value_name="Young's Modulus (MPa)",
+        var_name='Modulus', value_name="Young's Modulus (Pa)",
     )
     complex_melt["Type"] = f"{N_nz}-Term Prony"
 
     df_concat = pd.concat([df_melt, complex_melt], ignore_index=True)
 
     fig1 = px.line(
-        df_concat, x=cx_x, y="Young's Modulus (MPa)",
+        df_concat, x=cx_x, y="Young's Modulus (Pa)",
         log_x=True, log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1404,16 +1373,16 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     df11_tand = pd.DataFrame()
     df11_tand["Frequency"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Frequency"]
     df11_tand["Type"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Type"]
-    df11_tand["Young's Modulus (MPa)"] = (
-        df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (MPa)"].to_numpy() /
-        df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (MPa)"].to_numpy()
+    df11_tand["Young's Modulus (Pa)"] = (
+        df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (Pa)"].to_numpy() /
+        df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (Pa)"].to_numpy()
     )
     df11_tand['Modulus'] = 'tan delta'
     df11_concat = pd.concat([df11_concat, df11_tand], ignore_index=True)
 
     fig11 = px.line(
         df11_concat[df11_concat['Modulus'] != "E Loss"],
-        x="Frequency", y="Young's Modulus (MPa)",
+        x="Frequency", y="Young's Modulus (Pa)",
         log_x=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1431,18 +1400,20 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
 def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
                               fit_settings: bool) -> tuple:
     """
-    Build relaxation-modulus and relaxation-spectrum figures with optional basis overlay.
+    Build relaxation-modulus and discrete-spectrum figures.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
         N_nz (int): Number of nonzero Prony coefficients; used in trace names.
-        fit_settings (bool): If True, overlay the basis scatter on each figure;
-            if False, return only the line traces.
+        fit_settings (bool): If True, overlay the basis scatter on the
+            relaxation-modulus figure; if False, return only its line trace.
 
     Returns:
-        tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus E(t)
-        and fig3 is the relaxation spectrum H(t).
+        tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus
+        E(t) and fig3 is the discrete relaxation spectrum — the Prony
+        coefficients as dots at (tau_i, E_i) with a horizontal reference line
+        at the long-term (equilibrium) modulus when one is present.
     """
     relax = compute_relaxation_modulus(tau_i, E_i)
     relax["Type"] = f"{N_nz}-Term Prony"
@@ -1451,7 +1422,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         log_x=True, log_y=True,
         color="Type", line_dash="Type",
         line_dash_map={"Basis": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Time": "Time (s)", "E": "Relaxation Modulus (MPa)"},
+        labels={"Time": "Time (s)", "E": "Relaxation Modulus (Pa)"},
     )
     fig2a.update_layout(
         autosize=False, width=800, height=450,
@@ -1467,7 +1438,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         basis_df, x="Time", y="E",
         log_x=True, log_y=True,
         symbol="Type",
-        labels={"Time": "Time (s)", "E": "Relaxation Modulus (MPa)"},
+        labels={"Time": "Time (s)", "E": "Relaxation Modulus (Pa)"},
     )
 
     fig2 = go.Figure(data=fig2a.data + fig2b.data)
@@ -1476,36 +1447,45 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     fig2.update_layout(
         autosize=False, margin=dict(l=80, r=60, t=60, b=80),
         xaxis_title="Time (s)",
-        yaxis_title="Relaxation Modulus (MPa)",
+        yaxis_title="Relaxation Modulus (Pa)",
         legend_title="Type",
     )
 
-    rspectrum = compute_relaxation_spectrum(tau_i, E_i)
-    rspectrum["Type"] = f"{N_nz}-Term Prony"
-    fig3a = px.line(
-        rspectrum, x="Time", y="H",
+    # fig3: the discrete relaxation spectrum — the fitted Prony coefficients
+    # as dots at (tau_i, E_i) — with the equilibrium term, when present and
+    # nonzero, drawn as a horizontal long-term-modulus reference line. Unlike
+    # fig2's basis overlay this is the figure's primary content, so
+    # fit_settings does not alter it.
+    solid = len(E_i) != len(tau_i)
+    # Count only the decaying terms: the equilibrium coefficient is split out
+    # into its own long-term-modulus trace, so it must not inflate this label.
+    N_decay = np.count_nonzero(E_i[solid:])
+    spectrum_df = pd.DataFrame({
+        "Time": tau_i,
+        "E": E_i[solid:],
+        "Type": f"{N_decay}-Term Prony",
+    })
+    fig3 = px.scatter(
+        spectrum_df, x="Time", y="E",
         log_x=True, log_y=True,
-        color="Type", line_dash="Type",
-        line_dash_map={"Basis": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Time": "Time (s)", "H": "Relaxation Spectrum (MPa)"},
+        color="Type", symbol="Type",
+        labels={"Time": "Relaxation Time, 𝜏 (s)", "E": "Prony Coefficient, Eᵢ (Pa)"},
     )
-    fig3a.update_layout(
-        autosize=False, width=800, height=450,
-        margin=dict(l=80, r=60, t=60, b=80),
-    )
-
-    fig3 = go.Figure(data=fig3a.data + fig2b.data)
-    fig3.update_xaxes(type="log")
-    fig3.update_yaxes(type="log")
+    if solid and E_i[0] > 0:
+        fig3.add_trace(go.Scatter(
+            x=[tau_i.min(), tau_i.max()],
+            y=[E_i[0], E_i[0]],
+            mode="lines",
+            line=dict(dash="dash"),
+            name="Long-Term Modulus",
+        ))
     fig3.update_layout(
         autosize=False, margin=dict(l=80, r=60, t=60, b=80),
-        xaxis_title="Time (s)",
-        yaxis_title="Relaxation Spectrum (MPa)",
         legend_title="Type",
     )
 
     if not fit_settings:
-        fig2, fig3 = fig2a, fig3a
+        fig2 = fig2a
 
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')

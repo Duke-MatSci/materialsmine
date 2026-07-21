@@ -46,7 +46,7 @@
         <md-tab id="tab-relax" md-label="Relaxation, E(t)">
           <PlotlyView :chart="dynamfitData['relaxation-chart']" key="5" />
         </md-tab>
-        <md-tab id="tab-spec" md-label="Prony Chart, H(𝜏)">
+        <md-tab id="tab-spec" md-label="Discrete Spectrum, Eᵢ">
           <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
         </md-tab>
         <md-tab id="tab-upload" md-label="Uploaded Data">

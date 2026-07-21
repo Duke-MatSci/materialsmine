@@ -86,15 +86,34 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         for got, want in zip(experiment_y, expected):
             np.testing.assert_array_equal(got, want)
 
-    def test_fig2_fig3_trace_counts_with_fit_settings_true(self):
-        # fit_settings=True → fig2/fig3 are overlay figs (line + basis scatter).
-        fig2, fig3 = self.result[2], self.result[3]
+    def test_fig2_trace_counts_with_fit_settings_true(self):
+        # fit_settings=True → fig2 is an overlay fig (line + basis scatter).
+        fig2 = self.result[2]
         self.assertEqual(len(fig2.data), 2)
-        self.assertEqual(len(fig3.data), 2)
         names2 = {t.name for t in fig2.data}
-        names3 = {t.name for t in fig3.data}
         self.assertTrue(any('Basis' in n for n in names2))
-        self.assertTrue(any('Basis' in n for n in names3))
+
+    def test_fig3_is_discrete_spectrum_dot_plot(self):
+        # fig3 is the discrete relaxation spectrum: the Prony coefficients as
+        # a marker trace at (tau_i, E_i), plus a horizontal dashed line at the
+        # long-term (equilibrium) modulus. No Alfrey-style continuous spectrum.
+        fig3 = self.result[3]
+        self.assertEqual(len(fig3.data), 2)
+        names3 = [t.name for t in fig3.data]
+        self.assertFalse(any('Basis' in n for n in names3))
+        dots = next(t for t in fig3.data if 'Term Prony' in t.name)
+        self.assertEqual(dots.mode, 'markers')
+        self.assertEqual(len(dots.x), self.N)
+        # The equilibrium coefficient is split out into its own trace, so the
+        # dot label counts decaying terms only — one fewer than the fit's total
+        # nonzero count reported on the E(t) figure.
+        total_nz = int(self.result[2].data[0].name.split('-')[0])
+        self.assertEqual(dots.name, f'{total_nz - 1}-Term Prony')
+        hline = next(t for t in fig3.data if t.name == 'Long-Term Modulus')
+        self.assertEqual(hline.mode, 'lines')
+        self.assertEqual(len(hline.y), 2)
+        self.assertEqual(hline.y[0], hline.y[1])
+        self.assertGreater(hline.y[0], 0)
 
     def test_fig4_fig41_have_only_experiment_traces(self):
         # In frequency domain, fig4/fig41 visualize the inverse-WLF temperature
@@ -104,16 +123,19 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
             names = {t.name for t in fig.data}
             self.assertEqual(names, {'Experiment'})
 
-    def test_fit_settings_false_drops_basis_overlay(self):
+    def test_fit_settings_false_drops_fig2_basis_overlay_only(self):
         result = update_line_chart(
             self.uploadData, number_of_prony=self.N, smoothness=0.1,
             fit_settings=False, domain='frequency',
         )
         fig2, fig3 = result[2], result[3]
         self.assertEqual(len(fig2.data), 1)
-        self.assertEqual(len(fig3.data), 1)
         self.assertNotIn('Basis', {t.name for t in fig2.data})
-        self.assertNotIn('Basis', {t.name for t in fig3.data})
+        # fig3 is the discrete-spectrum dot plot regardless of fit_settings.
+        self.assertEqual(
+            [t.name for t in fig3.data],
+            [t.name for t in self.result[3].data],
+        )
 
 
 class TestUpdateLineChartFrequencyShift(unittest.TestCase):

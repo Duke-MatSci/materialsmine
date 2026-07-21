@@ -1529,12 +1529,12 @@ const decreaseStepper = (): void => {
 
 const sampleTitle = (): string => {
   return dynamfit.value.fileUpload.length
-    ? `An example set of E', E" data for PMMA which can be used to explore the Prony Series fitting and conversion tool.`
+    ? `An example set of E', E" data which can be used to explore the Prony Series fitting and conversion tool.`
     : `Click to resubmit your changes`;
 };
 
 const downloadTitle = (): string => {
-  return `An example tsv file of 3 columns containing: frequency, E', E"; no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
+  return `An example tsv file of 3 columns containing: frequency (Hz), E' (Pa), E" (Pa); no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
 };
 
 const onInputChange = async (e: Event): Promise<void> => {

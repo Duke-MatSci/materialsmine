@@ -24,7 +24,6 @@ from app.dynamfit.dynamfit2 import (
     prony_relaxation_space,
     compute_complex,
     compute_relaxation_modulus,
-    compute_relaxation_spectrum,
     _prony_objective,
     _build_coef_records,
     smooth_prony_fit,
@@ -198,39 +197,6 @@ class TestComputeRelaxationModulus(unittest.TestCase):
     def test_rejects_2d_E(self):
         with self.assertRaises(AssertionError):
             compute_relaxation_modulus(TAU, VISCOUS_E.reshape(1, -1))
-
-
-class TestComputeRelaxationSpectrum(unittest.TestCase):
-    def test_shape_and_columns_viscous(self):
-        result = compute_relaxation_spectrum(TAU, VISCOUS_E)
-        self.assertIsInstance(result, pd.DataFrame)
-        self.assertEqual(len(result), 1000)
-        self.assertListEqual(list(result.columns), ['Time', 'H'])
-
-    def test_shape_and_columns_solid(self):
-        result = compute_relaxation_spectrum(TAU, SOLID_E)
-        self.assertEqual(len(result), 1000)
-        self.assertListEqual(list(result.columns), ['Time', 'H'])
-
-    def test_num_pts_kwarg(self):
-        result = compute_relaxation_spectrum(TAU, VISCOUS_E, num_pts=50)
-        self.assertEqual(len(result), 50)
-
-    def test_rejects_non_ndarray_tau(self):
-        with self.assertRaises(AssertionError):
-            compute_relaxation_spectrum([0.1, 1.0, 10.0], VISCOUS_E)
-
-    def test_rejects_non_ndarray_E(self):
-        with self.assertRaises(AssertionError):
-            compute_relaxation_spectrum(TAU, [1.0, 2.0, 3.0])
-
-    def test_rejects_2d_tau(self):
-        with self.assertRaises(AssertionError):
-            compute_relaxation_spectrum(TAU.reshape(1, -1), VISCOUS_E)
-
-    def test_rejects_2d_E(self):
-        with self.assertRaises(AssertionError):
-            compute_relaxation_spectrum(TAU, VISCOUS_E.reshape(1, -1))
 
 
 class TestPronyObjective(unittest.TestCase):
