@@ -1410,6 +1410,11 @@ const allPolymerFiles = [
     domain: 'frequency',
   },
   {
+    path: '/docs/dynamfit/PMMA-R10_mastercurve.tsv',
+    label: 'PMMA (R10)',
+    domain: 'frequency',
+  },
+  {
     path: '/docs/dynamfit/agilus30-1Hz_temp.tsv',
     label: 'Agilus30 (1Hz)',
     domain: 'temperature',
