@@ -1385,43 +1385,48 @@ const selectedPolymerFile = ref('');
 
 const allPolymerFiles = [
   {
-    path: '/docs/dynamfit/agilus30-20C_mastercurve.txt',
+    path: '/docs/dynamfit/agilus30-20C_mastercurve.tsv',
     label: 'Agilus30 (20°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/dgeba-ipd-wide-bar-170C_mastercurve.txt',
+    path: '/docs/dynamfit/dgeba-ipd-wide-bar-170C_mastercurve.tsv',
     label: 'DGEBA-IPD Wide Bar (170°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-55C_mastercurve.txt',
+    path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
     label: 'PETMP-TATATO Wide Bar (55°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/VeroCyan-80C_mastercurve.txt',
+    path: '/docs/dynamfit/VeroCyan-80C_mastercurve.tsv',
     label: 'VeroCyan (80°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/agilus30-fixed_temp.txt',
-    label: 'Agilus30 (Fixed Temp)',
+    path: '/docs/dynamfit/polystyrene-260kDa-100C_mastercurve.tsv',
+    label: 'Polystyrene 260kDa (100°C)',
+    domain: 'frequency',
+  },
+  {
+    path: '/docs/dynamfit/agilus30-1Hz_temp.tsv',
+    label: 'Agilus30 (1Hz)',
     domain: 'temperature',
   },
   {
-    path: '/docs/dynamfit/dgeba-ipd-wide-bar-1Hz_temp.txt',
+    path: '/docs/dynamfit/dgeba-ipd-wide-bar-1Hz_temp.tsv',
     label: 'DGEBA-IPD Wide Bar (1Hz)',
     domain: 'temperature',
   },
   {
-    path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-1Hz_temp.txt',
+    path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-1Hz_temp.tsv',
     label: 'PETMP-TATATO Wide Bar (1Hz)',
     domain: 'temperature',
   },
   {
-    path: '/docs/dynamfit/VeroCyan-fixed_temp.csv',
-    label: 'VeroCyan (Fixed Temp)',
+    path: '/docs/dynamfit/VeroCyan-1Hz_temp.tsv',
+    label: 'VeroCyan (1Hz)',
     domain: 'temperature',
   },
 ];
