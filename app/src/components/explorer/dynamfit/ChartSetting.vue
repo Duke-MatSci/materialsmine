@@ -609,7 +609,7 @@
             <label class="md-body-2">Select a polymer data file</label>
             <div class="dynamfit-polymer-grid">
               <div
-                v-for="(file, i) in popularPolymerFiles"
+                v-for="file in popularPolymerFiles"
                 :key="file.path"
                 class="dynamfit-polymer-grid__item"
               >
