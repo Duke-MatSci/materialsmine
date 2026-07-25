@@ -25,6 +25,10 @@ from app.dynamfit.dynamfit2 import (
     inverse_wlf_shift,
     tts_temperature_to_frequency_V2,
     tts_frequency_to_temperature,
+    tts_frequency_to_temperature_V2,
+    VIS_REF_TEMPERATURE_C,
+    UNIVERSAL_WLF_C1,
+    UNIVERSAL_WLF_C2,
 )
 
 
@@ -502,6 +506,182 @@ class TestTtsFrequencyToTemperature(unittest.TestCase):
         np.testing.assert_allclose(
             np.sort(recovered['Frequency'].values), np.sort(master_freqs),
         )
+
+
+class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
+    """The manual + WLF + fallback frequency→temperature visualization inverse."""
+
+    OMEGA_REF = 1.0
+    # Monotonic shift table: log10(a_T) = [2, 1, 0, -1, -2]; a_T == 1 at T = 30.
+    SHIFT_T = [10.0, 20.0, 30.0, 40.0, 50.0]
+    SHIFT_A_T = [1e2, 1e1, 1e0, 1e-1, 1e-2]
+
+    def _shift(self, **over):
+        d = {'Temperature': list(self.SHIFT_T), 'a_T': list(self.SHIFT_A_T)}
+        d.update(over)
+        return d
+
+    def _master_df(self, freqs, ep=100.0, epp=10.0):
+        freqs = np.asarray(freqs, dtype=float)
+        n = len(freqs)
+        return pd.DataFrame(
+            {'Frequency': freqs, "E'": np.full(n, ep), "E''": np.full(n, epp)}
+        )
+
+    def _universal(self, df):
+        return tts_frequency_to_temperature(
+            df, self.OMEGA_REF, VIS_REF_TEMPERATURE_C,
+            UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+        )
+
+    # --- manual path ---
+    def test_manual_round_trip_against_temp_V2(self):
+        # Scatter a temp sweep to a master curve with the forward V2 manual path,
+        # then invert with V2 manual → recover the original temperatures.
+        temps = [15.0, 25.0, 35.0]
+        temp_df = pd.DataFrame(
+            {'Temperature': temps, "E'": [1.0, 2.0, 3.0], "E''": [0.1, 0.2, 0.3]}
+        )
+        scattered = tts_temperature_to_frequency_V2(
+            temp_df, 'manual', shiftData=self._shift(),
+        )
+        recovered = tts_frequency_to_temperature_V2(
+            scattered, 'manual', shiftData=self._shift(),
+        )
+        np.testing.assert_allclose(
+            np.sort(recovered['Temperature'].values), sorted(temps), atol=1e-6,
+        )
+
+    def test_manual_a_T_unity_maps_to_reference_T(self):
+        # Frequency == omega_ref → a_T == 1 → the table's a_T=1 temperature (30).
+        df = self._master_df([self.OMEGA_REF])
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        np.testing.assert_allclose(result['Temperature'].values, [30.0])
+
+    def test_manual_differs_from_universal_wlf(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        manual = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        universal = tts_frequency_to_temperature_V2(df, 'hybrid')
+        self.assertFalse(np.allclose(
+            np.sort(manual['Temperature'].values),
+            np.sort(universal['Temperature'].values),
+        ))
+
+    def test_mismatched_grid_interpolates(self):
+        # 5-row shift table, 3-row master curve → 3 temperatures.
+        df = self._master_df([0.1, 1.0, 10.0])
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        self.assertEqual(len(result), 3)
+
+    # --- WLF path ---
+    def test_WLF_path_matches_old_function(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        Tg, C1, C2 = 30.0, 17.44, 51.6
+        got = tts_frequency_to_temperature_V2(df, 'WLF', Tg=Tg, C1=C1, C2=C2)
+        exp = tts_frequency_to_temperature(df, self.OMEGA_REF, Tg, C1, C2)
+        np.testing.assert_allclose(got['Temperature'].values, exp['Temperature'].values)
+
+    def test_insufficient_WLF_params_falls_back(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        got = tts_frequency_to_temperature_V2(df, 'WLF', Tg=30.0, C1=None, C2=51.6)
+        np.testing.assert_allclose(
+            got['Temperature'].values, self._universal(df)['Temperature'].values,
+        )
+
+    # --- fallback path (never raises) ---
+    def test_hybrid_falls_back_to_universal(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        got = tts_frequency_to_temperature_V2(df, 'hybrid')
+        np.testing.assert_allclose(
+            got['Temperature'].values, self._universal(df)['Temperature'].values,
+        )
+
+    def test_manual_without_shiftData_falls_back_no_raise(self):
+        # Contrast tts_temperature_to_frequency_V2, where manual-without-file
+        # RAISES; here the conversion is viz-only, so it degrades silently.
+        df = self._master_df([0.1, 1.0, 10.0])
+        got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=None)
+        np.testing.assert_allclose(
+            got['Temperature'].values, self._universal(df)['Temperature'].values,
+        )
+
+    def test_shift_table_without_Temperature_falls_back(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        got = tts_frequency_to_temperature_V2(
+            df, 'manual', shiftData={'a_T': [0.5, 1.0, 2.0]},
+        )
+        np.testing.assert_allclose(
+            got['Temperature'].values, self._universal(df)['Temperature'].values,
+        )
+
+    def test_degrades_on_unusable_table(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        # single row, and all-nonpositive a_T: both leave < 2 usable points.
+        for bad in ({'Temperature': [30.0], 'a_T': [1.0]},
+                    {'Temperature': [10.0, 20.0], 'a_T': [-1.0, -2.0]}):
+            got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=bad)
+            np.testing.assert_allclose(
+                got['Temperature'].values, self._universal(df)['Temperature'].values,
+            )
+
+    # --- noisy / non-monotonic shift tables ---
+    def test_manual_noisy_nonmonotonic_table(self):
+        # a_T noise flips the local ordering at one row; ordering the pairs by
+        # log10(a_T) keeps np.interp valid, does NOT raise, and stays close to
+        # the clean-table result.
+        clean = self._shift()
+        noisy = self._shift()
+        a = np.array(noisy['a_T'], dtype=float)
+        a[2] = 10 ** 1.1  # was 10**0, now exceeds its neighbour at T=20 (10**1)
+        noisy['a_T'] = a.tolist()
+        df = self._master_df([0.05, 0.5, 5.0, 50.0])
+        r_clean = tts_frequency_to_temperature_V2(df, 'manual', shiftData=clean)
+        r_noisy = tts_frequency_to_temperature_V2(df, 'manual', shiftData=noisy)
+        np.testing.assert_allclose(
+            np.sort(r_noisy['Temperature'].values),
+            np.sort(r_clean['Temperature'].values), atol=5.0,
+        )
+
+    def test_manual_flat_table_degrades(self):
+        # A shift table with no a_T trend (equal ends) is not invertible →
+        # universal fallback, no raise.
+        df = self._master_df([0.1, 1.0, 10.0])
+        flat = {'Temperature': [10.0, 20.0, 30.0], 'a_T': [5.0, 5.0, 5.0]}
+        got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=flat)
+        np.testing.assert_allclose(
+            got['Temperature'].values, self._universal(df)['Temperature'].values,
+        )
+
+    # --- output contract ---
+    def test_output_columns(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        self.assertListEqual(list(result.columns), ['Frequency', 'Temperature', "E'", "E''"])
+
+    def test_frequency_column_is_omega_ref(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        np.testing.assert_array_equal(
+            result['Frequency'].values, np.full(len(df), self.OMEGA_REF),
+        )
+
+    def test_output_sorted_by_temperature(self):
+        df = self._master_df([10.0, 0.1, 1.0])  # unsorted frequencies
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        self.assertTrue(np.all(np.diff(result['Temperature'].values) >= 0))
+
+    def test_output_has_reset_index(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        self.assertListEqual(list(result.index), list(range(len(result))))
+
+    def test_does_not_mutate_input(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        original_columns = list(df.columns)
+        original_freq = df['Frequency'].to_numpy().copy()
+        tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
+        self.assertListEqual(list(df.columns), original_columns)
+        np.testing.assert_array_equal(df['Frequency'].values, original_freq)
 
 
 if __name__ == '__main__':

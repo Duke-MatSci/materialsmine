@@ -20,7 +20,10 @@ from unittest.mock import patch
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import wlf_shift, update_line_chart
+from app.dynamfit.dynamfit2 import (
+    wlf_shift, update_line_chart, inverse_wlf_shift,
+    compute_complex, smooth_prony_fit, _PLOT_MAX_POINTS,
+)
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -83,15 +86,34 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         for got, want in zip(experiment_y, expected):
             np.testing.assert_array_equal(got, want)
 
-    def test_fig2_fig3_trace_counts_with_fit_settings_true(self):
-        # fit_settings=True → fig2/fig3 are overlay figs (line + basis scatter).
-        fig2, fig3 = self.result[2], self.result[3]
+    def test_fig2_trace_counts_with_fit_settings_true(self):
+        # fit_settings=True → fig2 is an overlay fig (line + basis scatter).
+        fig2 = self.result[2]
         self.assertEqual(len(fig2.data), 2)
-        self.assertEqual(len(fig3.data), 2)
         names2 = {t.name for t in fig2.data}
-        names3 = {t.name for t in fig3.data}
         self.assertTrue(any('Basis' in n for n in names2))
-        self.assertTrue(any('Basis' in n for n in names3))
+
+    def test_fig3_is_discrete_spectrum_dot_plot(self):
+        # fig3 is the discrete relaxation spectrum: the Prony coefficients as
+        # a marker trace at (tau_i, E_i), plus a horizontal dashed line at the
+        # long-term (equilibrium) modulus. No Alfrey-style continuous spectrum.
+        fig3 = self.result[3]
+        self.assertEqual(len(fig3.data), 2)
+        names3 = [t.name for t in fig3.data]
+        self.assertFalse(any('Basis' in n for n in names3))
+        dots = next(t for t in fig3.data if 'Term Prony' in t.name)
+        self.assertEqual(dots.mode, 'markers')
+        self.assertEqual(len(dots.x), self.N)
+        # The equilibrium coefficient is split out into its own trace, so the
+        # dot label counts decaying terms only — one fewer than the fit's total
+        # nonzero count reported on the E(t) figure.
+        total_nz = int(self.result[2].data[0].name.split('-')[0])
+        self.assertEqual(dots.name, f'{total_nz - 1}-Term Prony')
+        hline = next(t for t in fig3.data if t.name == 'Long-Term Modulus')
+        self.assertEqual(hline.mode, 'lines')
+        self.assertEqual(len(hline.y), 2)
+        self.assertEqual(hline.y[0], hline.y[1])
+        self.assertGreater(hline.y[0], 0)
 
     def test_fig4_fig41_have_only_experiment_traces(self):
         # In frequency domain, fig4/fig41 visualize the inverse-WLF temperature
@@ -101,16 +123,90 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
             names = {t.name for t in fig.data}
             self.assertEqual(names, {'Experiment'})
 
-    def test_fit_settings_false_drops_basis_overlay(self):
+    def test_fit_settings_false_drops_fig2_basis_overlay_only(self):
         result = update_line_chart(
             self.uploadData, number_of_prony=self.N, smoothness=0.1,
             fit_settings=False, domain='frequency',
         )
         fig2, fig3 = result[2], result[3]
         self.assertEqual(len(fig2.data), 1)
-        self.assertEqual(len(fig3.data), 1)
         self.assertNotIn('Basis', {t.name for t in fig2.data})
-        self.assertNotIn('Basis', {t.name for t in fig3.data})
+        # fig3 is the discrete-spectrum dot plot regardless of fit_settings.
+        self.assertEqual(
+            [t.name for t in fig3.data],
+            [t.name for t in self.result[3].data],
+        )
+
+
+class TestUpdateLineChartFrequencyShift(unittest.TestCase):
+    """
+    Frequency-domain shift-model paths (manual / WLF / fallback) that drive the
+    temperature-axis visualization (fig4/fig41). The Prony fit still runs on the
+    frequency data directly, so these paths must never block it.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        cls.uploadData = upload_init(
+            'agilus30 (8) master curve 20C clean.txt', 'frequency',
+        )
+        # Monotonic synthetic shift table; a_T decreasing through 1.0 at T = 30.
+        T = np.linspace(-20.0, 80.0, 21)
+        cls.shiftData = {'Temperature': T, 'a_T': 10.0 ** np.linspace(6.0, -6.0, len(T))}
+
+    def _run(self, **kw):
+        return update_line_chart(
+            self.uploadData, number_of_prony=8, smoothness=0.1,
+            fit_settings=True, domain='frequency', **kw,
+        )
+
+    @staticmethod
+    def _fig4_temps(result):
+        # fig4 is px.line(x="Temperature", facet_col='Modulus'); both facets carry
+        # the same temperature axis, so dedupe to the underlying sorted set.
+        fig4 = result[4]
+        return np.unique(np.concatenate([np.asarray(t.x, float) for t in fig4.data]))
+
+    def test_frequency_manual_uses_shiftData(self):
+        manual = self._run(shift_model='manual', shiftData=self.shiftData)
+        default = self._run()  # no shift params → universal-WLF view
+        self.assertEqual(len(manual), 7)
+        # The manual mapping reached fig4: its temperature axis differs (a
+        # different shape alone already proves it, since np.interp clamps).
+        mt, dt = self._fig4_temps(manual), self._fig4_temps(default)
+        self.assertFalse(mt.shape == dt.shape and np.allclose(mt, dt))
+
+    def test_frequency_WLF_populates_temp_figs(self):
+        Tg, C1, C2 = 20.0, 17.44, 51.6
+        result = self._run(shift_model='WLF', Tg=Tg, C1=C1, C2=C2)
+        omega = self.uploadData['Frequency']
+        expected = np.unique(inverse_wlf_shift(omega / 1.0, Tg, C1, C2))
+        np.testing.assert_allclose(self._fig4_temps(result), expected, rtol=1e-6)
+
+    def test_frequency_hybrid_returns_full_tuple_no_error(self):
+        result = self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
+        self.assertEqual(len(result), 7)
+        self.assertGreater(len(result[4].data), 0)
+
+    def test_frequency_manual_without_shiftData_still_fits(self):
+        # Contrast the temperature branch, which early-exits with empty figures
+        # when shift params are absent; here the fit is independent of them.
+        result = self._run(shift_model='manual', shiftData=None)
+        self.assertEqual(len(result), 7)
+        self.assertGreater(len(result[6]), 0)  # coef_df non-empty → fit ran
+
+    def test_prony_fit_unaffected_by_shift_params(self):
+        def exp_y(result):
+            fig1 = result[0]
+            return sorted(
+                (tuple(t.y) for t in fig1.data if t.name == 'Experiment'),
+                key=lambda ys: ys[0],
+            )
+        with_shift = self._run(shift_model='manual', shiftData=self.shiftData)
+        without = self._run()
+        for got, want in zip(exp_y(with_shift), exp_y(without)):
+            np.testing.assert_array_equal(got, want)
 
 
 class TestUpdateLineChartTemperature(unittest.TestCase):
@@ -416,6 +512,115 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
                             kwargs['E_loss_std'].tolist()))
         pairs_in = set(zip(stor_err.tolist(), loss_err.tolist()))
         self.assertEqual(pairs_out, pairs_in)
+
+
+class TestUpdateLineChartPlotDecimation(unittest.TestCase):
+    """Plot-trace thinning for oversized uploads: figures shrink and carry a
+    notice; the fit and coefficient table still use every row."""
+
+    N_LARGE = 5001  # > _PLOT_MAX_POINTS, indivisible spacing
+
+    @staticmethod
+    def _frequency_upload(n_rows):
+        # Peaked Prony source sampled densely — a miniature of the broadband
+        # chirp master curves that motivated the thinning.
+        tau = np.logspace(-4.0, 4.0, 9)
+        E_input = np.concatenate(
+            ([1e6], np.exp(-(np.log10(tau)) ** 2 / 4.0) * 1e9))
+        df = compute_complex(tau, E_input, num_pts=n_rows)
+        return {
+            'Frequency': df['Frequency'].to_numpy(),
+            'E Storage': df['E Storage'].to_numpy(),
+            'E Loss': df['E Loss'].to_numpy(),
+        }
+
+    @staticmethod
+    def _experiment_lengths(fig):
+        return [len(t.x) for t in fig.data if t.name == 'Experiment']
+
+    @staticmethod
+    def _decimation_notices(fig):
+        return [a.text for a in fig.layout.annotations
+                if a.text and 'decimated by' in a.text]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.uploadData = cls._frequency_upload(cls.N_LARGE)
+        cls.result = update_line_chart(
+            cls.uploadData, number_of_prony=10, smoothness=0.0,
+            fit_settings=False, domain='frequency',
+        )
+
+    def test_large_upload_experiment_traces_are_thinned(self):
+        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        for fig in (fig1, fig11, fig4, fig41):
+            lengths = self._experiment_lengths(fig)
+            self.assertTrue(lengths)  # experiment traces exist
+            self.assertTrue(all(n <= _PLOT_MAX_POINTS for n in lengths))
+            # thinned, not truncated: still a substantial trace
+            self.assertTrue(all(n > _PLOT_MAX_POINTS // 2 for n in lengths))
+
+    def test_prony_model_traces_untouched(self):
+        # The model overlay comes from compute_complex(num_pts=1000), not from
+        # the experiment rows, so thinning must not alter it.
+        fig1 = self.result[0]
+        model_lengths = [len(t.x) for t in fig1.data if 'Term Prony' in t.name]
+        self.assertEqual(model_lengths, [1000, 1000])
+
+    def test_figures_carry_decimation_notice_with_percentage(self):
+        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        expected_pct = int(round(100.0 * (1 - _PLOT_MAX_POINTS / self.N_LARGE)))
+        for fig in (fig1, fig11, fig4, fig41):
+            notices = self._decimation_notices(fig)
+            self.assertEqual(len(notices), 1)
+            self.assertIn('too many data points', notices[0])
+            self.assertIn(f'{expected_pct}%', notices[0])
+
+    def test_fit_uses_all_rows_not_the_thinned_frame(self):
+        # Fitting the full arrays directly must reproduce the coefficients
+        # update_line_chart returned; a fit on thinned data would differ.
+        freq = self.uploadData['Frequency']
+        es = self.uploadData['E Storage']
+        el = self.uploadData['E Loss']
+        std = np.abs(es + 1.0j * el) * 0.2  # default relative_error path
+        tau_i, E_i = smooth_prony_fit(
+            freq, es, el, E_stor_std=std, E_loss_std=std,
+            N=10, smoothness=0.0, solid=True,
+        )
+        coef = {row['i']: row['E_i'] for row in self.result[6]}
+        expected = {i: e for i, e in enumerate(E_i[1:]) if e != 0}
+        self.assertEqual(set(coef), set(expected))
+        for i in coef:
+            np.testing.assert_allclose(coef[i], expected[i], rtol=1e-10)
+
+    def test_small_upload_untouched_and_unannotated(self):
+        result = update_line_chart(
+            self._frequency_upload(200), number_of_prony=5, smoothness=0.0,
+            fit_settings=False, domain='frequency',
+        )
+        fig1, _, _, _, fig4, _, _ = result
+        self.assertTrue(all(n == 200 for n in self._experiment_lengths(fig1)))
+        for fig in (fig1, fig4):
+            self.assertEqual(self._decimation_notices(fig), [])
+
+    def test_temperature_domain_figures_also_thinned(self):
+        # Temperature branch without shift params: early return, only the
+        # temperature figures are built — they must still thin and annotate.
+        n = self.N_LARGE
+        data = {
+            'Temperature': np.linspace(-50.0, 150.0, n),
+            'E Storage': np.linspace(1e9, 1e6, n),
+            'E Loss': np.full(n, 1e5),
+        }
+        _, _, _, _, fig4, fig41, _ = update_line_chart(
+            data, number_of_prony=5, smoothness=0.0,
+            fit_settings=False, domain='temperature',
+        )
+        for fig in (fig4, fig41):
+            lengths = self._experiment_lengths(fig)
+            self.assertTrue(lengths)
+            self.assertTrue(all(n_ <= _PLOT_MAX_POINTS for n_ in lengths))
+            self.assertEqual(len(self._decimation_notices(fig)), 1)
 
 
 if __name__ == '__main__':

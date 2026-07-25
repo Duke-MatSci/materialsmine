@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from contextlib import contextmanager
-from scipy.optimize import curve_fit, minimize
+from scipy.optimize import curve_fit, minimize, nnls
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 import plotly.express as px
@@ -32,6 +32,26 @@ MAX_ABS_LOG10_SHIFT = 15.0
 # comparable across uploads.
 VIS_REF_FREQUENCY_HZ = 1.0
 VIS_REF_TEMPERATURE_C = 30.0
+
+# Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
+# block materializes a (2 * chunk, N + 2) basis slab (plus prony_basis's
+# np.where temporaries), so peak memory is O(chunk * N) no matter how many
+# rows the upload has.
+_QR_CHUNK_ROWS = 8192
+
+# Experiment traces with more rows than this are thinned before plotting —
+# broadband uploads (e.g. 41k-row chirp master curves) otherwise bloat the
+# response JSON and bog down browser-side plotly rendering. This affects the
+# FIGURES ONLY: the Prony fit and the coefficient table always use every row.
+# ~2000 points per trace is far denser than any screen resolves.
+_PLOT_MAX_POINTS = 2000
+
+# Reference residual count for smoothness normalization in smooth_prony_fit:
+# a nominal 400-row upload contributes 800 residuals (storage + loss), the
+# scale on which the smoothness knob was historically calibrated. The penalty
+# weight is normalized to this so a given smoothness value produces comparable
+# smoothing regardless of upload size (see smooth_prony_fit).
+_SMOOTHNESS_REF_RESIDUALS = 800
 
 
 @contextmanager
@@ -180,37 +200,6 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     return pd.DataFrame(data={"Time": t, "E": E})
 
 
-def compute_relaxation_spectrum(tau_i: np.ndarray, E_i: np.ndarray,
-                                num_pts: int = 1000) -> pd.DataFrame:
-    """
-    Compute the relaxation spectrum on a log-spaced time grid.
-
-    Builds a time grid spanning min(tau_i) to max(tau_i) and evaluates the
-    relaxation spectrum H from the Prony coefficients in E_i. When E_i has
-    one more element than tau_i, the leading equilibrium-modulus coefficient
-    is excluded from the output.
-
-    Parameters:
-        tau_i (numpy.ndarray): 1-D array of relaxation times.
-        E_i (numpy.ndarray): 1-D array of Prony coefficients (same length as
-            tau_i, or one longer to include an equilibrium-modulus term).
-        num_pts (int): Number of points in the output time grid.
-
-    Returns:
-        pandas.DataFrame: Frame with num_pts rows and columns "Time", "H".
-    """
-    assert isinstance(tau_i, np.ndarray) and tau_i.ndim == 1, \
-        "tau_i must be a 1-D numpy.ndarray"
-    assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
-        "E_i must be a 1-D numpy.ndarray"
-    t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), num_pts)
-    # dimensionless time t/τ
-    dt = np.outer(t, 1 / tau_i)
-    solid = not (len(E_i) == len(tau_i))
-    H = (dt * np.exp(-dt)) @ E_i[solid:]
-    return pd.DataFrame(data={"Time": t, "H": H})
-
-
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
@@ -281,11 +270,28 @@ def smooth_prony_fit(
     Fit a Prony series to complex-modulus data with coefficient smoothing.
 
     Builds a log-spaced relaxation-time grid spanning 1/max(omega) to
-    1/min(omega), constructs the Prony basis at those (omega, tau) pairs, and
-    solves for positive Prony coefficients by minimizing weighted squared
-    residuals plus an optional second-difference smoothness penalty on the
-    log-coefficients (see _prony_objective). Coefficients are parameterized in
-    log-space so the optimizer sees an unconstrained problem.
+    1/min(omega) and solves for non-negative Prony coefficients that minimize
+    the weighted squared residuals, plus an optional second-difference
+    smoothness penalty on the log-coefficients (see _prony_objective).
+
+    Numerics: the weighted data term is first compressed EXACTLY by a chunked
+    QR factorization of the weighted basis —
+        ||(y - B c) / std||^2 = ||R c - z||^2 + const
+    — so the reduced system has at most N + solid rows regardless of how many
+    data rows the upload carries. Householder QR accumulates the residual
+    information backward-stably (no explicit sums of squares), memory stays
+    O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
+    independent of the input row count.
+
+    With smoothness == 0 the reduced problem is exactly non-negative least
+    squares and is solved directly by scipy.optimize.nnls: finite,
+    deterministic, no line search, no initial guess. Coefficients may then be
+    EXACTLY zero (downstream consumers already filter E_i != 0). With
+    smoothness > 0 the log-space penalty is nonlinear in the coefficients, so
+    _prony_objective is minimized on the reduced system (basis=R, data=z,
+    std=1) with L-BFGS-B, seeded from the NNLS solution and bounded above in
+    log-space — without that bound the line search was measured to run
+    exp(logcoefs) into overflow on broadband (many-decade) master curves.
 
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
@@ -299,12 +305,16 @@ def smooth_prony_fit(
             for E_loss, same length as omega. Used to weight residuals.
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the second-difference penalty on the
-            log-coefficients. Pass 0 to disable.
+            log-coefficients. Pass 0 to disable. Normalized internally to the
+            upload's residual count (referenced to a nominal 400-row upload,
+            _SMOOTHNESS_REF_RESIDUALS), so a given value produces comparable
+            smoothing whether the file has 400 rows or 40,000.
         solid (bool): Whether to include an equilibrium-modulus term.
 
     Returns:
         tuple: (tau_i, E_i) where tau_i is the 1-D relaxation-time grid of
-        length N and E_i is the 1-D coefficient array of length N + bool(solid).
+        length N and E_i is the 1-D non-negative coefficient array of length
+        N + bool(solid). Entries can be exactly zero (NNLS active set).
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -323,22 +333,68 @@ def smooth_prony_fit(
     tau_min = 1 / np.max(omega)
     tau_i = prony_relaxation_space(tau_min, tau_max, N)
 
-    basis = prony_basis(omega, tau_i, solid)
+    m = N + solid
 
-    y = np.concatenate((E_stor, E_loss))
-    y_std = np.concatenate((E_stor_std, E_loss_std))
+    # Chunked QR reduction: maintain the triangular augmented system [R | z]
+    # and fold each weighted basis block into it. Keeping m + 1 rows retains
+    # the full least-squares information; row m of the final triangle is the
+    # orthogonal-residual norm and is excluded from (R, z). For uploads with
+    # fewer than m rows the triangle is simply shorter (wide R) — nnls and
+    # _prony_objective both accept that shape.
+    Rz = np.empty((0, m + 1))
+    for start in range(0, len(omega), _QR_CHUNK_ROWS):
+        chunk = slice(start, start + _QR_CHUNK_ROWS)
+        basis = prony_basis(omega[chunk], tau_i, solid)
+        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
+        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
+        block = np.concatenate(
+            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
+        )
+        Rz = np.linalg.qr(
+            np.concatenate((Rz, block), axis=0), mode='r'
+        )[:m + 1]
+    R = Rz[:m, :m]
+    z = Rz[:m, m]
 
-    # Data-scaled initial guess: spread max(E_stor) evenly across N+solid terms
-    # so the initial model prediction matches the data magnitude. A constant
-    # like x0=7.0 (E_i ≈ 1097) is many orders of magnitude off when E_stor is
-    # large, and then returned coefficients become inf.
-    x0 = np.full(N + solid, np.log(E_stor.max() / (N + solid)))
+    # Reduced problem with smoothness == 0 is exactly non-negative least
+    # squares — solve it directly (finite algorithm, no iteration budget).
+    E_nnls, _ = nnls(R, z)
+    if smoothness == 0:
+        return tau_i, E_nnls
+
+    # smoothness > 0: the second-difference penalty acts on log-coefficients,
+    # so run _prony_objective on the reduced system. Seed from the NNLS
+    # solution (clipping exact zeros so log stays finite); if NNLS zeroed
+    # everything, fall back to the data-scaled flat guess.
+    pos = E_nnls[E_nnls > 0]
+    if pos.size:
+        x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
+    else:
+        x0 = np.full(m, np.log(E_stor.max() / m))
+    # Normalize the smoothness trade-off to the upload size: the data term
+    # sums over all 2n residuals while the penalty sums over N-2 second
+    # differences, so an unscaled weight weakens as ~1/n_res with growing
+    # uploads (a 41k-row broadband file needed ~100x the smoothness a 400-row
+    # file needs for the same effect). Scaling the weight by
+    # sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS) makes the penalty TERM (the
+    # weight is squared inside _prony_objective) grow linearly with the
+    # residual count, so a given `smoothness` value produces comparable
+    # smoothing regardless of row count. The reference (800 residuals ~ a
+    # 400-row upload) preserves historical calibrations at fixture scale.
+    n_res = 2 * len(omega)
+    smoothness_scaled = smoothness * np.sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS)
+    # Upper bound on log-coefficients: no single Prony term should exceed
+    # ~1000x the data maximum. Without this, the line search was measured to
+    # push exp(logcoefs) into overflow on broadband master curves.
+    ub = np.log(E_stor.max()) + np.log(1e3)
     with np.errstate(over='ignore', invalid='ignore'):
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(y, y_std, basis, smoothness, solid),
+            args=(z, np.ones_like(z), R, smoothness_scaled, solid),
             jac=True,
+            method='L-BFGS-B',
+            bounds=[(None, ub)] * m,
         )
     E_i = np.exp(result.x)
 
@@ -998,6 +1054,145 @@ def tts_frequency_to_temperature(
     }).sort_values('Temperature').reset_index(drop=True)
 
 
+def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
+                                  omega_ref: float) -> pd.DataFrame:
+    """
+    Map master-curve frequencies to temperatures using an uploaded shift table.
+
+    This is the "manual" frequency→temperature inversion: for each master-curve
+    point a_T = Frequency / omega_ref, and the temperature is read off the shift
+    table by interpolating Temperature against log10(a_T) (shift factors span
+    many decades, so interpolate in log space) — the inverse of the shiftData
+    branch of tts_temperature_to_frequency_V2. np.interp does not extrapolate, so
+    frequencies outside the table's a_T range clamp to its temperature limits.
+
+    The shift table is used as data, not fit to a model. Physically a_T(T) is
+    monotonic, but measurement noise in a_T can create local non-monotonicity
+    (Temperature is the reliable axis). The monotonic trend direction is read
+    from the two ENDS of the table (a flat table has no invertible trend), and
+    the (log10 a_T, Temperature) pairs are then ordered by log10 a_T so np.interp
+    gets the increasing x it requires; residual a_T noise cannot break the
+    lookup and no rows are dropped.
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Master curve with columns
+            ['Frequency', "E'", "E''"].
+        shiftData: Shift factors convertible to a DataFrame with 'a_T' and
+            'Temperature' columns (as upload_init(..., 'shift') produces).
+        omega_ref (float): Reference (physical) frequency; a_T == 1 there.
+
+    Returns:
+        pd.DataFrame: Temperature-sweep data at omega_ref with columns
+        ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
+
+    Raises:
+        ValueError, KeyError, AssertionError: If the shift table lacks the
+            required columns, has fewer than 2 usable rows, or has no a_T trend.
+            Callers treat any of these as "not usable" and fall back to a
+            default view.
+    """
+    tbl = pd.DataFrame(shiftData)
+    assert 'a_T' in tbl.columns and 'Temperature' in tbl.columns, (
+        "manual frequency→temperature needs a shift table with 'a_T' and "
+        "'Temperature' columns (from upload_init(..., 'shift'))."
+    )
+    aT = tbl['a_T'].to_numpy(dtype=float)
+    T = tbl['Temperature'].to_numpy(dtype=float)
+    usable = np.isfinite(aT) & (aT > 0) & np.isfinite(T)
+    log_a = np.log10(aT[usable])
+    T = T[usable]
+    if len(T) < 2:
+        raise ValueError("shift table has fewer than 2 usable rows.")
+
+    # Temperature is the reliable axis; a_T carries the measurement noise. Order
+    # by T and read the monotonic trend from the two ENDS of the table (cheap,
+    # rather than scanning every row). A flat table has no invertible trend.
+    # No model is fit and no rows are dropped.
+    # TODO: the robust long-term fix for noisy shift tables is to FIT a monotone
+    # shift-factor model (reuse fit_wlf_coefficients / fit_hybrid_coefficients,
+    # or a monotone spline) and invert that, and to expose that fit as a GUI
+    # option — the frequency→temperature analog of the /fit-shift flow. That
+    # would replace both this direct inversion and the universal-WLF fallback.
+    order = np.argsort(T)
+    T, log_a = T[order], log_a[order]
+    if log_a[0] == log_a[-1]:
+        raise ValueError("shift-table a_T does not vary across its temperature range.")
+
+    # np.interp needs strictly-increasing xp: order the (log10 a_T, T) pairs by
+    # log10 a_T. The a_T→T direction follows automatically from the sort.
+    order = np.argsort(log_a)
+    log_a, T = log_a[order], T[order]
+    omega = freq_sweep_data['Frequency'].to_numpy()
+    shifted_T = np.interp(np.log10(omega / omega_ref), log_a, T)
+
+    return pd.DataFrame({
+        'Frequency': np.full(len(omega), omega_ref),
+        'Temperature': shifted_T,
+        "E'": freq_sweep_data["E'"].to_numpy(),
+        "E''": freq_sweep_data["E''"].to_numpy(),
+    }).sort_values('Temperature').reset_index(drop=True)
+
+
+def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, *,
+                                    Tg=None, TL=None, C1=None, C2=None, Ea=None,
+                                    shiftData=None,
+                                    omega_ref: float = VIS_REF_FREQUENCY_HZ) -> pd.DataFrame:
+    """
+    Convert a frequency master curve to a temperature sweep via inverse TTS.
+
+    Mirror image of tts_temperature_to_frequency_V2, used to build the
+    temperature-axis visualization for a frequency-domain upload. Selection of
+    the inverse-shift model, in priority order (shiftData wins, matching the
+    forward V2):
+
+        1. manual  — shiftData present and usable → invert the shift table
+           (_freq_to_temp_via_shift_table).
+        2. WLF     — shift_model == 'WLF' with Tg, C1, C2 all supplied →
+           analytic inverse WLF (tts_frequency_to_temperature / inverse_wlf_shift).
+        3. fallback — anything else (hybrid, missing params, or a failed attempt
+           above) → the universal-WLF view (fixed UNIVERSAL_WLF_* constants and
+           VIS_REF_TEMPERATURE_C), i.e. the historical behavior.
+
+    Unlike the forward tts_temperature_to_frequency_V2 (whose transform is
+    essential and *raises* on manual-without-file), this conversion is
+    visualization-only — the Prony fit runs on the frequency data directly — so
+    it must never raise/block: an unusable model silently degrades to (3).
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Master curve with columns
+            ['Frequency', "E'", "E''"].
+        shift_model (str): 'WLF', 'hybrid', or 'manual'.
+        Tg (float): WLF reference temperature (used when shift_model == 'WLF').
+        TL, Ea: Accepted for signature symmetry with the forward V2; unused
+            because no inverse-hybrid exists yet (hybrid → fallback).
+        C1 (float): WLF parameter C1 (used when shift_model == 'WLF').
+        C2 (float): WLF parameter C2 (used when shift_model == 'WLF').
+        shiftData: Optional shift-factor table {'Temperature': ..., 'a_T': ...};
+            when usable it takes priority (manual path).
+        omega_ref (float): Reference (physical) frequency; a_T == 1 there.
+
+    Returns:
+        pd.DataFrame: Temperature-sweep data at omega_ref with columns
+        ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
+    """
+    if shiftData:
+        try:
+            return _freq_to_temp_via_shift_table(freq_sweep_data, shiftData, omega_ref)
+        except (ValueError, KeyError, AssertionError):
+            pass  # unusable shift table → universal-WLF visualization
+    elif shift_model == 'WLF' and Tg is not None and C1 is not None and C2 is not None:
+        try:
+            return tts_frequency_to_temperature(freq_sweep_data, omega_ref, Tg, C1, C2)
+        except ValueError:
+            pass  # WLF singularity → universal-WLF visualization
+
+    # Universal-WLF fallback (hybrid, insufficient params, or a failed attempt).
+    return tts_frequency_to_temperature(
+        freq_sweep_data, omega_ref, VIS_REF_TEMPERATURE_C,
+        UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+    )
+
+
 def argmax_peak(signal: np.ndarray) -> int:
     """
     Return the index of the most prominent peak in a 1-D signal.
@@ -1024,6 +1219,60 @@ def argmax_peak(signal: np.ndarray) -> int:
     return int(peaks[np.argmax(signal[peaks])])
 
 
+def _decimate_for_plot(df: pd.DataFrame) -> tuple:
+    """
+    Thin a sorted experiment DataFrame for plotting when it exceeds
+    _PLOT_MAX_POINTS.
+
+    Rows are subsampled at evenly spaced positional indices (first and last
+    rows always kept), which preserves the curve shape for data that is
+    already sorted along its x axis regardless of grid spacing. The fit never
+    sees this — callers decimate only the frames handed to figure builders.
+
+    Parameters:
+        df (pd.DataFrame): Experiment data sorted by its x column.
+
+    Returns:
+        tuple: (plot_df, percent) where plot_df is df itself when no thinning
+        was needed, or a positional subsample otherwise; percent is None when
+        no thinning happened, else the integer percentage of rows dropped
+        (for the user-facing figure annotation).
+    """
+    n = len(df)
+    if n <= _PLOT_MAX_POINTS:
+        return df, None
+    idx = np.unique(np.linspace(0, n - 1, _PLOT_MAX_POINTS).astype(int))
+    percent = int(round(100.0 * (1 - len(idx) / n)))
+    return df.iloc[idx], percent
+
+
+def _annotate_decimation(figs, percent) -> None:
+    """
+    Stamp a decimation notice onto each figure when plot thinning occurred.
+
+    The notice rides inside the plotly figures themselves (paper-coordinate
+    annotation above the plot area), so the frontend needs no changes to
+    display it. No-op when percent is None.
+
+    Parameters:
+        figs: Iterable of plotly Figures to annotate.
+        percent: Integer percentage of experiment rows dropped, or None.
+    """
+    if percent is None:
+        return
+    text = (
+        f"too many data points, plot traces decimated by {percent}% for speed"
+        " (the fit uses all points)"
+    )
+    for fig in figs:
+        fig.add_annotation(
+            text=text,
+            xref='paper', yref='paper', x=0.0, y=1.06,
+            xanchor='left', yanchor='bottom', showarrow=False,
+            font=dict(size=11, color='gray'),
+        )
+
+
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
     Build E vs Temperature and tan-delta vs Temperature figures.
@@ -1041,12 +1290,12 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
         id_vars=["Temperature"],
         value_vars=["E'", "E''"],
         var_name='Modulus',
-        value_name="Young's Modulus (MPa)",
+        value_name="Young's Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     fig4 = px.line(
-        df_melt, x="Temperature", y="Young's Modulus (MPa)",
+        df_melt, x="Temperature", y="Young's Modulus (Pa)",
         log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1057,16 +1306,16 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     df41_tand = pd.DataFrame()
     df41_tand["Temperature"] = df41_concat[df41_concat["Modulus"] == "E''"]["Temperature"]
     df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
-    df41_tand["Young's Modulus (MPa)"] = (
-        df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (MPa)"].to_numpy() /
-        df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (MPa)"].to_numpy()
+    df41_tand["Young's Modulus (Pa)"] = (
+        df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (Pa)"].to_numpy() /
+        df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (Pa)"].to_numpy()
     )
     df41_tand['Modulus'] = 'tan delta'
     df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
     fig41 = px.line(
         df41_concat[df41_concat['Modulus'] != "E''"],
-        x="Temperature", y="Young's Modulus (MPa)",
+        x="Temperature", y="Young's Modulus (Pa)",
         facet_col='Modulus',
         color="Type", line_dash="Type",
         labels={"Temperature": "Temperature (C)"},
@@ -1098,21 +1347,21 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
-        var_name='Modulus', value_name="Young's Modulus (MPa)",
+        var_name='Modulus', value_name="Young's Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     cx_x, cx_y, cx_z = complex_df.columns[0], complex_df.columns[1], complex_df.columns[2]
     complex_melt = pd.melt(
         complex_df, id_vars=[cx_x], value_vars=[cx_y, cx_z],
-        var_name='Modulus', value_name="Young's Modulus (MPa)",
+        var_name='Modulus', value_name="Young's Modulus (Pa)",
     )
     complex_melt["Type"] = f"{N_nz}-Term Prony"
 
     df_concat = pd.concat([df_melt, complex_melt], ignore_index=True)
 
     fig1 = px.line(
-        df_concat, x=cx_x, y="Young's Modulus (MPa)",
+        df_concat, x=cx_x, y="Young's Modulus (Pa)",
         log_x=True, log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1124,16 +1373,16 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     df11_tand = pd.DataFrame()
     df11_tand["Frequency"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Frequency"]
     df11_tand["Type"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Type"]
-    df11_tand["Young's Modulus (MPa)"] = (
-        df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (MPa)"].to_numpy() /
-        df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (MPa)"].to_numpy()
+    df11_tand["Young's Modulus (Pa)"] = (
+        df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (Pa)"].to_numpy() /
+        df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (Pa)"].to_numpy()
     )
     df11_tand['Modulus'] = 'tan delta'
     df11_concat = pd.concat([df11_concat, df11_tand], ignore_index=True)
 
     fig11 = px.line(
         df11_concat[df11_concat['Modulus'] != "E Loss"],
-        x="Frequency", y="Young's Modulus (MPa)",
+        x="Frequency", y="Young's Modulus (Pa)",
         log_x=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -1151,18 +1400,20 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
 def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
                               fit_settings: bool) -> tuple:
     """
-    Build relaxation-modulus and relaxation-spectrum figures with optional basis overlay.
+    Build relaxation-modulus and discrete-spectrum figures.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
         N_nz (int): Number of nonzero Prony coefficients; used in trace names.
-        fit_settings (bool): If True, overlay the basis scatter on each figure;
-            if False, return only the line traces.
+        fit_settings (bool): If True, overlay the basis scatter on the
+            relaxation-modulus figure; if False, return only its line trace.
 
     Returns:
-        tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus E(t)
-        and fig3 is the relaxation spectrum H(t).
+        tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus
+        E(t) and fig3 is the discrete relaxation spectrum — the Prony
+        coefficients as dots at (tau_i, E_i) with a horizontal reference line
+        at the long-term (equilibrium) modulus when one is present.
     """
     relax = compute_relaxation_modulus(tau_i, E_i)
     relax["Type"] = f"{N_nz}-Term Prony"
@@ -1171,7 +1422,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         log_x=True, log_y=True,
         color="Type", line_dash="Type",
         line_dash_map={"Basis": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Time": "Time (s)", "E": "Relaxation Modulus (MPa)"},
+        labels={"Time": "Time (s)", "E": "Relaxation Modulus (Pa)"},
     )
     fig2a.update_layout(
         autosize=False, width=800, height=450,
@@ -1187,7 +1438,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         basis_df, x="Time", y="E",
         log_x=True, log_y=True,
         symbol="Type",
-        labels={"Time": "Time (s)", "E": "Relaxation Modulus (MPa)"},
+        labels={"Time": "Time (s)", "E": "Relaxation Modulus (Pa)"},
     )
 
     fig2 = go.Figure(data=fig2a.data + fig2b.data)
@@ -1196,36 +1447,45 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     fig2.update_layout(
         autosize=False, margin=dict(l=80, r=60, t=60, b=80),
         xaxis_title="Time (s)",
-        yaxis_title="Relaxation Modulus (MPa)",
+        yaxis_title="Relaxation Modulus (Pa)",
         legend_title="Type",
     )
 
-    rspectrum = compute_relaxation_spectrum(tau_i, E_i)
-    rspectrum["Type"] = f"{N_nz}-Term Prony"
-    fig3a = px.line(
-        rspectrum, x="Time", y="H",
+    # fig3: the discrete relaxation spectrum — the fitted Prony coefficients
+    # as dots at (tau_i, E_i) — with the equilibrium term, when present and
+    # nonzero, drawn as a horizontal long-term-modulus reference line. Unlike
+    # fig2's basis overlay this is the figure's primary content, so
+    # fit_settings does not alter it.
+    solid = len(E_i) != len(tau_i)
+    # Count only the decaying terms: the equilibrium coefficient is split out
+    # into its own long-term-modulus trace, so it must not inflate this label.
+    N_decay = np.count_nonzero(E_i[solid:])
+    spectrum_df = pd.DataFrame({
+        "Time": tau_i,
+        "E": E_i[solid:],
+        "Type": f"{N_decay}-Term Prony",
+    })
+    fig3 = px.scatter(
+        spectrum_df, x="Time", y="E",
         log_x=True, log_y=True,
-        color="Type", line_dash="Type",
-        line_dash_map={"Basis": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Time": "Time (s)", "H": "Relaxation Spectrum (MPa)"},
+        color="Type", symbol="Type",
+        labels={"Time": "Relaxation Time, 𝜏 (s)", "E": "Prony Coefficient, Eᵢ (Pa)"},
     )
-    fig3a.update_layout(
-        autosize=False, width=800, height=450,
-        margin=dict(l=80, r=60, t=60, b=80),
-    )
-
-    fig3 = go.Figure(data=fig3a.data + fig2b.data)
-    fig3.update_xaxes(type="log")
-    fig3.update_yaxes(type="log")
+    if solid and E_i[0] > 0:
+        fig3.add_trace(go.Scatter(
+            x=[tau_i.min(), tau_i.max()],
+            y=[E_i[0], E_i[0]],
+            mode="lines",
+            line=dict(dash="dash"),
+            name="Long-Term Modulus",
+        ))
     fig3.update_layout(
         autosize=False, margin=dict(l=80, r=60, t=60, b=80),
-        xaxis_title="Time (s)",
-        yaxis_title="Relaxation Spectrum (MPa)",
         legend_title="Type",
     )
 
     if not fit_settings:
-        fig2, fig3 = fig2a, fig3a
+        fig2 = fig2a
 
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')
@@ -1274,8 +1534,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation modulus and spectrum figures.
         domain (str): 'frequency' or 'temperature'.
-        Tg, C1, C2, Ea, TL: Shift-model parameters (temperature domain only).
-        shift_model (str): 'WLF' or 'hybrid' (temperature domain only).
+        Tg, C1, C2, Ea, TL: Shift-model parameters. In the temperature domain
+            they drive the temperature→frequency transform that feeds the Prony
+            fit; in the frequency domain they (and shiftData) drive the
+            frequency→temperature visualization only (manual/WLF; hybrid falls
+            back to a universal-WLF view).
+        shift_model (str): 'WLF', 'hybrid', or 'manual'.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
 
     Returns:
@@ -1292,6 +1556,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             or has non-positive frequency values where positives are required.
         AssertionError: If domain or uploadData keys do not match the contract;
             this signals a server bug, not user-fixable input.
+
+    Note:
+        Uploads larger than _PLOT_MAX_POINTS rows have their experiment plot
+        traces thinned (the Prony fit and coefficient table always use every
+        row); affected figures carry an annotation stating the percentage
+        dropped.
     """
     assert domain in EXPECTED_DOMAIN_COLUMNS, \
         f"Unknown domain {domain!r}; expected one of {list(EXPECTED_DOMAIN_COLUMNS)}."
@@ -1317,17 +1587,24 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
                 "Remove rows with zero or negative frequencies."
             )
         freq_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
-        # TODO: update this when reverse hybrid TTSP becomes available
-        temp_sweep_data = tts_frequency_to_temperature(
-            freq_sweep_data,
-            omega_ref=VIS_REF_FREQUENCY_HZ, T_ref=VIS_REF_TEMPERATURE_C,
-            C1=UNIVERSAL_WLF_C1, C2=UNIVERSAL_WLF_C2,
+        # The temperature-axis figures are a visualization only (the Prony fit
+        # below runs on the frequency data directly), so this never blocks: an
+        # unusable shift model degrades to a universal-WLF view inside V2.
+        # TODO: hybrid still has no analytic inverse and falls back to universal
+        # WLF; add a reverse-hybrid model when one becomes available.
+        temp_sweep_data = tts_frequency_to_temperature_V2(
+            freq_sweep_data, shift_model,
+            Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
         )
-        fig4, fig41 = _build_temperature_figures(temp_sweep_data)
+        plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
+        fig4, fig41 = _build_temperature_figures(plot_temp)
+        _annotate_decimation((fig4, fig41), temp_decimation)
 
     elif domain == "temperature":
         temp_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
-        fig4, fig41 = _build_temperature_figures(temp_sweep_data)
+        plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
+        fig4, fig41 = _build_temperature_figures(plot_temp)
+        _annotate_decimation((fig4, fig41), temp_decimation)
 
         # `is not None` rather than truthy checks: Tg = 0 °C is a valid
         # reference, and the route default-fills numeric estimates that may
@@ -1381,9 +1658,12 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     # Downstream figure builders assume df's first three columns are
     # exactly (Frequency, E Storage, E Loss); drop any extras now that
-    # the std arrays have been pulled out.
+    # the std arrays have been pulled out. The plot frame may be thinned
+    # (figures only — the fit above already consumed every row).
     df = df[['Frequency', 'E Storage', 'E Loss']]
-    fig1, fig11 = _build_complex_figures(df, tau_i, E_i, N_nz)
+    plot_df, freq_decimation = _decimate_for_plot(df)
+    fig1, fig11 = _build_complex_figures(plot_df, tau_i, E_i, N_nz)
+    _annotate_decimation((fig1, fig11), freq_decimation)
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)
 

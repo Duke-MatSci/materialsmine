@@ -158,6 +158,13 @@ def extract_data_from_file(request_id):
                 # the stacked columns to rows, then tolist() each row to get
                 # JSON-native floats (stdlib json.dumps can't serialize ndarrays).
                 # np.array needs a real sequence, hence tuple(...) over the view.
+                # TODO: this echoes the ENTIRE upload back to the client (~3 MB
+                # for a 41k-row broadband file), and the UI's watcher fan-out can
+                # fire several such responses per user action. The table only
+                # paginates client-side, so the client could instead render the
+                # tab from the file it already uploaded (or a request flag could
+                # gate this field off). Plot traces are already thinned in
+                # update_line_chart; fix if broadband data becomes more common.
                 "upload-data": [
                     dict(zip(uploadData, row))
                     for row in zip(*(col.tolist() for col in uploadData.values()))

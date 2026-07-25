@@ -288,6 +288,39 @@ class TestExtractRoute(unittest.TestCase):
         resp = self._post(self._freq_body(number_of_prony=999))
         self.assertEqual(resp.status_code, 400)
 
+    # ------------------------------------------------------------------
+    # Frequency→temperature manual / WLF shift conversion (viz-only path)
+    # ------------------------------------------------------------------
+
+    _SHIFT_FILE = 'agilus30 (8) shift factors 20C clean.txt'
+
+    def test_frequency_manual_with_shift_file_returns_200(self):
+        resp = self._post(self._freq_body(
+            transform_method='manual', shift_file_name=self._SHIFT_FILE,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertTrue(response['complex-temp-chart'])  # temp view built
+        self.assertTrue(response['upload-data'])         # Prony fit still ran
+
+    def test_frequency_WLF_with_shift_params_returns_200(self):
+        resp = self._post(self._freq_body(
+            transform_method='WLF', Tg=20, C1=17.44, C2=51.6,
+            shift_file_name=self._SHIFT_FILE,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+
+    def test_frequency_manual_temp_view_differs_from_default(self):
+        manual = json.loads(self._post(self._freq_body(
+            transform_method='manual', shift_file_name=self._SHIFT_FILE,
+        )).data)['response']['complex-temp-chart']
+        default = json.loads(self._post(self._freq_body()).data)['response']['complex-temp-chart']
+        # A real shift file must move the temperature axis off the universal-WLF
+        # default (i.e. the manual mapping actually reached the figure).
+        self.assertNotEqual(
+            json.dumps(manual, sort_keys=True), json.dumps(default, sort_keys=True),
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
