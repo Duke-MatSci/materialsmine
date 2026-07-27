@@ -31,6 +31,7 @@ import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
 import json
+import tempfile
 import numpy as np
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
@@ -320,6 +321,108 @@ class TestExtractRoute(unittest.TestCase):
         self.assertNotEqual(
             json.dumps(manual, sort_keys=True), json.dumps(default, sort_keys=True),
         )
+
+
+class TestExtractRouteErrorColumns(unittest.TestCase):
+    """
+    Route-level coverage for the optional error columns.
+
+    Every fixture in REAL_FILES_DIR is 3-column, so this class writes its own
+    4- and 5-column files into a temporary FILES_DIRECTORY.
+    """
+
+    _orig_files_dir = None
+    _tmpdir = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        cls._tmpdir = tempfile.TemporaryDirectory()
+        Config.FILES_DIRECTORY = cls._tmpdir.name
+        Config.SECRET_KEY = 'test-secret'
+        cls.app = make_app()
+        cls.client = cls.app.test_client()
+        cls.headers = {
+            'Authorization': f'Bearer {make_token()}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+        cls._tmpdir.cleanup()
+
+    def _write(self, name, text):
+        with open(os.path.join(self._tmpdir.name, name), 'w') as f:
+            f.write(text)
+        return name
+
+    def _post(self, body):
+        return self.client.post(
+            '/dynamfit/extract/', data=json.dumps(body), headers=self.headers,
+        )
+
+    def _body(self, file_name, **overrides):
+        body = {'file_name': file_name, 'domain': 'frequency', 'number_of_prony': 5}
+        body.update(overrides)
+        return body
+
+    @staticmethod
+    def _rows(n_cols):
+        """Decade-spaced frequencies with well-conditioned moduli and errors."""
+        lines = []
+        for i in range(12):
+            f = 10.0 ** (i - 6)
+            stor, loss = 1.0e9 - i * 1.0e7, 1.0e8 - i * 1.0e6
+            cols = [f, stor, loss]
+            if n_cols == 4:
+                cols.append(0.05 * stor)
+            elif n_cols == 5:
+                cols += [0.05 * stor, 0.15 * loss]
+            lines.append('\t'.join(f'{c:.6e}' for c in cols))
+        return '\n'.join(lines) + '\n'
+
+    def test_zero_error_column_returns_400_with_message(self):
+        # A zero divides by zero in the weighted design matrix. It must surface
+        # as a ValueError -> 400, not fall through to the bare-Exception 500.
+        bad = self._rows(4).split('\n')
+        parts = bad[3].split('\t')
+        parts[3] = '0.000000e+00'
+        bad[3] = '\t'.join(parts)
+        name = self._write('zero_err.tsv', '\n'.join(bad))
+        resp = self._post(self._body(name))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('must be positive', json.loads(resp.data)['message'])
+
+    def test_shared_error_column_returns_200_and_is_echoed(self):
+        # Guards the contract the frontend's error-column detection relies on:
+        # upload-data must echo the error keys, or the Relative Error ghosting
+        # silently stops working with no other signal.
+        name = self._write('shared_err.tsv', self._rows(4))
+        resp = self._post(self._body(name))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        upload = json.loads(resp.data)['response']['upload-data']
+        self.assertEqual(
+            set(upload[0]), {'Frequency', 'E Storage', 'E Loss', 'Error'},
+        )
+
+    def test_per_modulus_error_columns_returns_200_and_are_echoed(self):
+        name = self._write('per_modulus_err.tsv', self._rows(5))
+        resp = self._post(self._body(name))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        upload = json.loads(resp.data)['response']['upload-data']
+        self.assertEqual(
+            set(upload[0]),
+            {'Frequency', 'E Storage', 'E Loss', 'E Storage Error', 'E Loss Error'},
+        )
+
+    def test_relative_error_zero_returns_400(self):
+        # The other route to the same division by zero: with no error columns
+        # the synthesized sigma is |E*| * relative_error.
+        name = self._write('plain.tsv', self._rows(3))
+        resp = self._post(self._body(name, relative_error=0))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('relative error must be positive', json.loads(resp.data)['message'])
 
 
 if __name__ == '__main__':

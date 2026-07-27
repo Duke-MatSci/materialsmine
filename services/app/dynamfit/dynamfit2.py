@@ -1553,7 +1553,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     Raises:
         ValueError: If the uploaded data is empty, contains non-finite values,
-            or has non-positive frequency values where positives are required.
+            has non-positive frequency values where positives are required, or
+            has non-positive values in an optional error column.
         AssertionError: If domain or uploadData keys do not match the contract;
             this signals a server bug, not user-fixable input.
 
@@ -1579,6 +1580,16 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             "Uploaded file contains non-finite values (NaN or Inf). "
             "Check for blank entries or text in numeric columns."
         )
+    # Checked before the domain branch so it also fires on the temperature
+    # preview path, which returns early below without ever reaching the fit.
+    for col in ('Error', 'E Storage Error', 'E Loss Error'):
+        if col in df.columns and np.any(df[col].to_numpy() <= 0):
+            raise ValueError(
+                f"All '{col}' values in the uploaded file must be positive. "
+                "Error columns are absolute standard deviations in the same "
+                "units as the moduli and are used as 1/sigma fit weights, so "
+                "zero or negative entries are undefined."
+            )
 
     if domain == "frequency":
         if np.any(df['Frequency'].to_numpy() <= 0):

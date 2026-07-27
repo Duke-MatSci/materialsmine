@@ -367,6 +367,65 @@ class TestUpdateLineChartValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Frequency.*positive'):
             self._call(bad, domain='frequency')
 
+    # --- optional error columns must be strictly positive -------------------
+    # They divide the residuals as 1/sigma weights, so a zero blows up the
+    # weighted design matrix and a negative is silently meaningless.
+
+    def test_zero_shared_error_column_raises_value_error(self):
+        bad = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['Error'] = np.asarray([1.0, 0.0, 3.0], float)
+        with self.assertRaisesRegex(ValueError, "'Error'.*positive"):
+            self._call(bad, domain='frequency')
+
+    def test_negative_shared_error_column_raises_value_error(self):
+        # Accepted silently before this check: the squared residual is
+        # sign-invariant, so a negative sigma fits without complaint.
+        bad = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['Error'] = np.asarray([1.0, -2.0, 3.0], float)
+        with self.assertRaisesRegex(ValueError, "'Error'.*positive"):
+            self._call(bad, domain='frequency')
+
+    def test_zero_storage_error_column_names_that_column(self):
+        bad = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['E Storage Error'] = np.asarray([5.0, 0.0, 15.0], float)
+        bad['E Loss Error'] = np.asarray([0.5, 1.0, 1.5], float)
+        with self.assertRaisesRegex(ValueError, "'E Storage Error'.*positive"):
+            self._call(bad, domain='frequency')
+
+    def test_zero_loss_error_column_names_that_column(self):
+        # Mirrors the above so the loop can't be shown to short-circuit on the
+        # first error column it inspects.
+        bad = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['E Storage Error'] = np.asarray([5.0, 10.0, 15.0], float)
+        bad['E Loss Error'] = np.asarray([0.5, 0.0, 1.5], float)
+        with self.assertRaisesRegex(ValueError, "'E Loss Error'.*positive"):
+            self._call(bad, domain='frequency')
+
+    def test_positive_error_columns_pass_validation(self):
+        # Negative control: the new check must not over-reject valid files.
+        ok = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        ok['E Storage Error'] = np.asarray([5.0, 10.0, 15.0], float)
+        ok['E Loss Error'] = np.asarray([0.5, 1.0, 1.5], float)
+        self.assertEqual(len(self._call(ok, domain='frequency')), 7)
+
+    def test_temperature_domain_zero_error_raises_value_error(self):
+        # WLF params chosen as in TestUpdateLineChartErrorColumns so every row
+        # stays inside the valid shift window.
+        bad = self._temp([10.0, 25.0, 40.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['Error'] = np.asarray([1.0, 0.0, 3.0], float)
+        with self.assertRaisesRegex(ValueError, "'Error'.*positive"):
+            self._call(bad, domain='temperature',
+                       Tg=25.0, C1=17.44, C2=51.6, shift_model='WLF')
+
+    def test_temperature_domain_zero_error_raises_before_shift_param_shortcut(self):
+        # With no shift params the temperature branch returns placeholder
+        # figures early, never reaching the fit. The check must still fire, which
+        # pins it ahead of that shortcut rather than beside the sigma lookup.
+        bad = self._temp([10.0, 25.0, 40.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
+        bad['Error'] = np.asarray([1.0, 0.0, 3.0], float)
+        with self.assertRaisesRegex(ValueError, "'Error'.*positive"):
+            self._call(bad, domain='temperature')
+
     def test_wrong_uploadData_keys_raises_assertion(self):
         # Server-bug class: uploadData doesn't match upload_init's contract.
         bad = {'Frequency': np.array([1.0, 2.0, 3.0])}

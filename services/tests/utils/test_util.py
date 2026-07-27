@@ -205,6 +205,29 @@ class TestUploadInit(unittest.TestCase):
         self.assertEqual(set(result.keys()), {'Temperature', 'a_T', 'Error'})
         np.testing.assert_array_equal(result['Error'], [0.05, 0.1])
 
+    def test_shift_error_column_with_zero_is_accepted(self):
+        # update_line_chart rejects non-positive error columns on DATA files,
+        # but that check must not migrate into upload_init: the shift domain's
+        # Error column is never consumed (tts_temperature_to_frequency_V2 and
+        # fit_wlf_coefficients read only Temperature and a_T), so validating it
+        # here would reject shift files that work today.
+        name = self._write(
+            'shift3zero.csv',
+            "Temperature,a_T,Error\n0,0.5,0\n25,1.0,0.1\n",
+        )
+        result = upload_init(name, 'shift')
+        self.assertEqual(result['Error'][0], 0.0)
+
+    def test_frequency_zero_error_column_parses_without_validation(self):
+        # upload_init is a shape-and-parse reader; semantic validation of the
+        # error columns belongs to update_line_chart. Pins that layering.
+        name = self._write(
+            '4colzero.csv',
+            "Frequency,E Storage,E Loss,Error\n1,100,10,0\n2,200,20,10\n",
+        )
+        result = upload_init(name, 'frequency')
+        np.testing.assert_array_equal(result['Error'], [0.0, 10.0])
+
     def test_missing_file_raises_file_not_found(self):
         # FileNotFoundError propagates as itself; the route is expected to
         # call check_file_exists() before invoking upload_init.

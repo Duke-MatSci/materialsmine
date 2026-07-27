@@ -84,6 +84,11 @@ def extract_data_from_file(request_id):
         if smoothness < 0:
             return jsonify({'message': 'The smoothness must be non-negative'}), 400
 
+        # Zero would make the synthesized sigma |E*| * relative_error zero for
+        # every row, dividing by zero in smooth_prony_fit's weighted design matrix.
+        if relative_error <= 0:
+            return jsonify({'message': 'The relative error must be positive'}), 400
+
         if fit_settings not in [True, False]:
             return jsonify({'message': 'The fit settings must be either True or False'}), 400
 

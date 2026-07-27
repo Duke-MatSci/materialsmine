@@ -42,15 +42,27 @@ def upload_init(file_name, domain):
 
     Parameters:
         file_name (str): Filename to load, relative to Config.FILES_DIRECTORY.
-        domain (str): Domain tag controlling expected column count and the
-            keys of the returned dict. One of:
+        domain (str): Domain tag controlling accepted column counts and the
+            keys of the returned dict. Column names are assigned purely by
+            position and count — a leading header row, if present, is skipped
+            and never matched by name. One of:
                 'frequency'   → 3 cols: ['Frequency', 'E Storage', 'E Loss']
-                'temperature' → 3 cols: ['Temperature', 'E Storage', 'E Loss']
+                                4 cols: [..., 'Error']
+                                5 cols: [..., 'E Storage Error', 'E Loss Error']
+                'temperature' → the same three shapes, 'Temperature' first
                 'shift'       → 2 cols: ['Temperature', 'a_T']
+                                3 cols: [..., 'Error']
 
     Returns:
         dict[str, np.ndarray]: Column-name → 1-D float ndarray (all of equal
         length), in the column order listed above for the chosen domain.
+
+    Note:
+        The optional error columns are absolute per-point standard deviations
+        in the same units as the moduli (Pa) — not fractions. update_line_chart
+        consumes them as 1/sigma fit weights, overriding its relative_error
+        fallback. The 'shift' domain's Error column is parsed for symmetry but
+        no caller reads it.
 
     Raises:
         ValueError: If domain is unrecognized, the file extension is not
