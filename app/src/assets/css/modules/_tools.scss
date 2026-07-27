@@ -608,6 +608,55 @@
     }
   }
 
+  &-format {
+    margin-bottom: 1.2rem;
+
+    &__summary {
+      font-size: $medium-size;
+      color: $primary-grey;
+      margin: 0.4rem 0 0;
+    }
+
+    &__body {
+      border-left: 3px solid $secondary;
+      background-color: rgba($secondary-light, 0.18);
+      border-radius: 0 3px 3px 0;
+      padding: 0.8rem 1rem;
+      margin-top: 0.6rem;
+      font-size: $medium-size;
+      line-height: 1.4;
+      color: $primary-grey;
+
+      p {
+        margin: 0 0 0.6rem;
+      }
+
+      b {
+        font-weight: 900;
+      }
+    }
+
+    &__shapes {
+      list-style: none;
+      margin: 0 0 0.6rem;
+      padding: 0;
+
+      li {
+        font-family: monospace;
+        color: $primary;
+        padding: 0.15rem 0;
+      }
+    }
+  }
+
+  &-hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: $medium-size;
+    line-height: 1.35;
+    color: $secondary-grey;
+  }
+
   &-domain-switcher {
     display: flex;
     margin-top: 0.6rem;

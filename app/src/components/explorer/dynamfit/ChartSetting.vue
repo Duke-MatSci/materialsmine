@@ -91,6 +91,10 @@
             <p class="dynamfit-shift-upload__label">
               Upload a viscoelastic data file (CSV, TSV, or TXT)
             </p>
+            <p class="dynamfit-format__summary">
+              3 columns, no header required: {{ cAxisLabel }}, E' (Pa), E" (Pa). Error
+              columns optional.
+            </p>
             <template v-if="!dynamfit.fileUpload">
               <div class="form__file-input">
                 <div class="md-theme-default">
@@ -113,6 +117,48 @@
               <span class="md-caption md-success viz-u-display__show">{{
                 dynamfit.fileUpload
               }}</span>
+            </template>
+          </div>
+          <div class="dynamfit-format">
+            <div
+              class="u_pointer"
+              style="display: flex; align-items: center; width: 100%"
+              @click="cFormatOpen = !cFormatOpen"
+            >
+              <label class="md-body-2 u_pointer">Expected data file format</label>
+              <md-icon style="margin-left: auto; margin-right: 0">{{
+                cFormatOpen ? 'expand_less' : 'expand_more'
+              }}</md-icon>
+            </div>
+            <template v-if="cFormatOpen">
+              <div class="dynamfit-format__body">
+                <p>
+                  Columns are read by position and count. A header row is optional and is
+                  ignored entirely.
+                </p>
+                <ul class="dynamfit-format__shapes">
+                  <li>{{ cAxisLabel }} · E' · E"</li>
+                  <li>{{ cAxisLabel }} · E' · E" · Error</li>
+                  <li>{{ cAxisLabel }} · E' · E" · E' Error · E" Error</li>
+                </ul>
+                <p>
+                  Error is an <b>absolute standard deviation in Pa</b> — the same units as
+                  the moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5%
+                  uncertainty is <b>5e7</b>, not 0.05.
+                </p>
+                <p>
+                  Every error value must be greater than 0. Error columns set the fit
+                  weights (1/σ) and replace the Relative Error setting below. They are not
+                  drawn as error bars.
+                </p>
+                <a
+                  class="btn-text btn--noradius"
+                  href="/dynamfit-template-error.tsv"
+                  download
+                >
+                  <span class="md-body-1">Download template with error columns</span>
+                </a>
+              </div>
             </template>
           </div>
           <div class="u_display-flex u_centralize_content">
@@ -322,9 +368,12 @@
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
           <label for="relativeErrorC" class="md-body-2">Relative Error</label>
           <input
-            :disabled="disableInput"
+            :disabled="cRelativeErrorDisabled"
             v-model.number="relativeError"
-            :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
+            :class="[
+              cRelativeErrorDisabled ? 'nuplot-masked' : '',
+              'form__input form__input--flat',
+            ]"
             type="number"
             name="relativeError"
             id="relativeErrorC"
@@ -333,6 +382,9 @@
             step="0.1"
             placeholder="0.2"
           />
+          <span v-if="cHasErrorColumns" class="dynamfit-hint">
+            Using error columns of data source.
+          </span>
         </div>
       </div>
       <div
@@ -610,6 +662,7 @@ const ttspEAValue = ref(null);
 const tLEstimated = ref(false);
 const eAEstimated = ref(false);
 const cDataSourceOpen = ref(false);
+const cFormatOpen = ref(false);
 const smoothness = ref<number>(0.1);
 const relativeError = ref<number>(0.2);
 const sentRequest = ref(false);
@@ -692,6 +745,30 @@ const dynamfitData = computed(() => {
   return store.getters['explorer/getDynamfitData'];
 });
 
+const cAxisLabel = computed(() =>
+  selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (Hz)'
+);
+
+// Error columns are only known WITH the fit response: upload-data echoes every
+// column upload_init produced, keyed by name. Before the first response
+// dynamfitData is {}, so disableInput already ghosts the Relative Error input;
+// both flags flip on the same commit. Known stale window: loadPolymerFile()
+// swaps the file without clearing dynamfitData, so this can read true for one
+// request after replacing a 5-column file with a 3-column one. Clearing first
+// would flip disableInput mid-request and collapse the whole panel, which is
+// worse than a briefly stale hint.
+const cHasErrorColumns = computed<boolean>(() => {
+  const rows = dynamfitData.value?.['upload-data'];
+  if (!Array.isArray(rows) || !rows.length) return false;
+  const cols = Object.keys(rows[0] ?? {});
+  return (
+    cols.includes('Error') ||
+    (cols.includes('E Storage Error') && cols.includes('E Loss Error'))
+  );
+});
+
+const cRelativeErrorDisabled = computed(() => disableInput.value || cHasErrorColumns.value);
+
 const updateControls = computed(() => {
   return !!dynamfit.value?.fileUpload || !!results.value?.xmls?.length;
 });
@@ -736,7 +813,16 @@ const resetAll = (): void => {
 };
 
 const downloadTitle = (): string => {
-  return `An example tsv file of 3 columns containing: frequency (Hz), E' (Pa), E" (Pa); no header row. Format your data as this template then 'upload file' to use the Prony Series fitting and conversion tool.`;
+  const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (Hz)';
+  return (
+    `An example tsv file of 3 columns containing: ${axis}, E' (Pa), E" (Pa); ` +
+    `a header row is optional and ignored. Two optional error layouts are also ` +
+    `accepted: a single Error column, or E' Error and E" Error. Error is an ` +
+    `absolute standard deviation in Pa (the same units as the moduli), ` +
+    `and every value must be greater than zero. Format your data as ` +
+    `this template then 'upload file' to use the Prony Series fitting and ` +
+    `conversion tool.`
+  );
 };
 
 const onInputChange = async (e: Event): Promise<void> => {
