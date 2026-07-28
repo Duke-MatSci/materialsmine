@@ -54,13 +54,38 @@
       </button>
     </div>
 
-    <div class="dynamfit-note dynamfit-note--below" v-if="isTempData && activeTab === 'tab-home'">
+    <!-- Both tabs on a cross-domain axis are derived, not measured, so the
+         provenance note belongs on each of them, not just the first. -->
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isTempData && onFreqTab && freqChartsBuilt"
+    >
       <b>Note:</b> The frequency response is computed from uploaded temperature data, using your
       selected shift factor model
     </div>
-    <div class="dynamfit-note dynamfit-note--below" v-if="isFrequencyData && activeTab === 'tab-temp-new'">
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isFrequencyData && onTempTab && tempChartsBuilt"
+    >
       <b>Note:</b> The temperature response is computed from uploaded frequency data, using your
       selected shift factor model
+    </div>
+
+    <!-- The cross-domain charts are only built when a transform was requested.
+         Say why the tab is blank rather than leaving the user staring at it. -->
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isFrequencyData && onTempTab && !tempChartsBuilt"
+    >
+      <b>Note:</b> Check <b>ω-T Transformation</b> in the settings panel to compute the
+      temperature response from this frequency data.
+    </div>
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isTempData && onFreqTab && !freqChartsBuilt"
+    >
+      <b>Note:</b> Check <b>ω-T Transformation</b> in the settings panel to compute the
+      frequency response from this temperature data.
     </div>
   </div>
 </template>
@@ -125,6 +150,20 @@ const isFrequencyData = computed(() => {
 const isTempData = computed(() => {
   return dynamfitDomain.value === 'temperature' && dynamfitData.value['complex-temp-chart'];
 });
+
+// A chart key is always present in the response; what varies is whether it
+// carries any traces. The server returns an empty figure for the cross-domain
+// charts when no ω-T transform was requested.
+const chartHasTraces = (key: keyof DynamfitData): boolean => {
+  const chart = dynamfitData.value[key] as { data?: unknown[] } | undefined;
+  return !!chart?.data?.length;
+};
+
+const freqChartsBuilt = computed(() => chartHasTraces('complex-chart'));
+const tempChartsBuilt = computed(() => chartHasTraces('complex-temp-chart'));
+
+const onFreqTab = computed(() => ['tab-home', 'tab-exp'].includes(activeTab.value));
+const onTempTab = computed(() => ['tab-temp-new', 'tab-temp'].includes(activeTab.value));
 
 const dynamfit = computed(() => store.getters['explorer/dynamfit']);
 const fileUpload = computed(() => dynamfit.value?.fileUpload || '');
