@@ -55,7 +55,12 @@ def extract_data_from_file(request_id):
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
         relative_error = data.get('relative_error', 0.2)
-        shift_model = data.get('transform_method', 'hybrid')
+        # Default to 'none', not a real model: an absent transform_method means
+        # the caller did not ask for a ω-T transformation. Defaulting to 'hybrid'
+        # made "no transform requested" indistinguishable from "hybrid
+        # requested", so a plain frequency upload came back with temperature
+        # figures synthesized from universal-WLF constants.
+        shift_model = data.get('transform_method') or 'none'
         # Read incoming shift factor model metrics
         Tg = data.get('Tg', None)
         C1 = data.get('C1', None)
@@ -92,8 +97,8 @@ def extract_data_from_file(request_id):
         if fit_settings not in [True, False]:
             return jsonify({'message': 'The fit settings must be either True or False'}), 400
 
-        if shift_model not in ['WLF', 'hybrid', 'manual']:
-            return jsonify({'message': 'The shift factor model must be one of WLF, hybrid, manual'}), 400
+        if shift_model not in ['WLF', 'hybrid', 'manual', 'none']:
+            return jsonify({'message': 'The shift factor model must be one of WLF, hybrid, manual, none'}), 400
         
         uploadData = upload_init(file_name, domain)
         if not uploadData:

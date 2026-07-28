@@ -963,6 +963,11 @@ const updateChart = async (): Promise<void> => {
     domain: selectedProperty.value,
     smoothness: smoothness.value,
     relative_error: relativeError.value,
+    // Say "no transform" out loud rather than leaving the key off. Both
+    // branches below overwrite this when ω-T is checked; unchecked, it keeps
+    // the server from inferring a shift model and returning a temperature
+    // curve the user never asked for.
+    transform_method: 'none',
   };
 
   if (isManual.value && mFile.value) {

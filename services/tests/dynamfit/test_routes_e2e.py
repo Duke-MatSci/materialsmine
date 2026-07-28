@@ -315,12 +315,60 @@ class TestExtractRoute(unittest.TestCase):
         manual = json.loads(self._post(self._freq_body(
             transform_method='manual', shift_file_name=self._SHIFT_FILE,
         )).data)['response']['complex-temp-chart']
-        default = json.loads(self._post(self._freq_body()).data)['response']['complex-temp-chart']
+        # hybrid has no analytic inverse, so it is the universal-WLF view.
+        default = json.loads(self._post(
+            self._freq_body(transform_method='hybrid')
+        ).data)['response']['complex-temp-chart']
         # A real shift file must move the temperature axis off the universal-WLF
         # default (i.e. the manual mapping actually reached the figure).
         self.assertNotEqual(
             json.dumps(manual, sort_keys=True), json.dumps(default, sort_keys=True),
         )
+
+    # ------------------------------------------------------------------
+    # Transform is opt-in: no request → no temperature figures
+    # ------------------------------------------------------------------
+
+    def _temp_chart_traces(self, body):
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        return response['complex-temp-chart']['data'], response['temp-tand-chart']['data']
+
+    def test_frequency_without_transform_method_returns_empty_temp_charts(self):
+        # The bug this guards: an omitted transform_method used to default to
+        # 'hybrid' server-side, so a plain frequency upload came back with
+        # temperature figures built from UNIVERSAL_WLF_* at VIS_REF_TEMPERATURE_C.
+        temp, tand = self._temp_chart_traces(self._freq_body())
+        self.assertEqual(temp, [])
+        self.assertEqual(tand, [])
+
+    def test_frequency_transform_method_none_returns_empty_temp_charts(self):
+        # 'none' is what the UI sends when the ω-T box is unchecked; it must be
+        # accepted (not a 400) and must suppress the temperature figures.
+        temp, tand = self._temp_chart_traces(self._freq_body(transform_method='none'))
+        self.assertEqual(temp, [])
+        self.assertEqual(tand, [])
+
+    def test_frequency_without_transform_still_fits(self):
+        # Suppressing the temperature view must not touch the Prony fit, which
+        # runs on the frequency data directly.
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertTrue(response['mytable'])
+        self.assertTrue(response['complex-chart']['data'])
+
+    def test_frequency_hybrid_still_returns_temp_charts(self):
+        # Asking for a transform still produces one — the gate is on intent,
+        # not on whether the model has an analytic inverse.
+        temp, tand = self._temp_chart_traces(self._freq_body(transform_method='hybrid'))
+        self.assertTrue(temp)
+        self.assertTrue(tand)
+
+    def test_invalid_transform_method_still_returns_400(self):
+        resp = self._post(self._freq_body(transform_method='nope'))
+        self.assertEqual(resp.status_code, 400)
 
 
 class TestExtractRouteErrorColumns(unittest.TestCase):

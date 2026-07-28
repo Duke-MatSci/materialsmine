@@ -115,10 +115,22 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         self.assertEqual(hline.y[0], hline.y[1])
         self.assertGreater(hline.y[0], 0)
 
+    def test_fig4_fig41_empty_without_a_transform_request(self):
+        # The class fixture asks for no shift model, so the temperature axis —
+        # a transform of the upload rather than the upload itself — is not
+        # drawn. Previously it was synthesized from universal-WLF constants.
+        fig4, fig41 = self.result[4], self.result[5]
+        for fig in (fig4, fig41):
+            self.assertEqual(len(fig.data), 0)
+
     def test_fig4_fig41_have_only_experiment_traces(self):
         # In frequency domain, fig4/fig41 visualize the inverse-WLF temperature
         # conversion of the input — no Prony fit is overlaid there.
-        fig4, fig41 = self.result[4], self.result[5]
+        result = update_line_chart(
+            self.uploadData, number_of_prony=self.N, smoothness=0.1,
+            fit_settings=True, domain='frequency', shift_model='hybrid',
+        )
+        fig4, fig41 = result[4], result[5]
         for fig in (fig4, fig41):
             names = {t.name for t in fig.data}
             self.assertEqual(names, {'Experiment'})
@@ -170,7 +182,8 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
 
     def test_frequency_manual_uses_shiftData(self):
         manual = self._run(shift_model='manual', shiftData=self.shiftData)
-        default = self._run()  # no shift params → universal-WLF view
+        # hybrid has no analytic inverse, so it is the universal-WLF view.
+        default = self._run(shift_model='hybrid')
         self.assertEqual(len(manual), 7)
         # The manual mapping reached fig4: its temperature axis differs (a
         # different shape alone already proves it, since np.interp clamps).
@@ -195,6 +208,31 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
         result = self._run(shift_model='manual', shiftData=None)
         self.assertEqual(len(result), 7)
         self.assertGreater(len(result[6]), 0)  # coef_df non-empty → fit ran
+
+    def test_frequency_none_suppresses_temp_figs_but_not_the_fit(self):
+        # 'none' means the caller did not ask for a transform, so the
+        # temperature axis is not drawn — but the Prony fit runs on the
+        # frequency data directly and is unaffected.
+        result = self._run(shift_model='none')
+        self.assertEqual(len(result[4].data), 0)
+        self.assertEqual(len(result[5].data), 0)
+        self.assertGreater(len(result[0].data), 0)  # fig1 still built
+        self.assertGreater(len(result[6]), 0)       # coef_df non-empty
+
+    def test_frequency_unspecified_shift_model_matches_none(self):
+        # The Python default (None) and the wire value ('none') mean the same
+        # thing: nothing was requested.
+        omitted, explicit = self._run(), self._run(shift_model='none')
+        for fig_idx in (4, 5):
+            self.assertEqual(len(omitted[fig_idx].data), 0)
+            self.assertEqual(len(explicit[fig_idx].data), 0)
+
+    def test_frequency_none_with_shiftData_still_builds_temp_figs(self):
+        # A shift table is itself a request for a transform, so it wins over
+        # a 'none' model rather than being silently discarded.
+        result = self._run(shift_model='none', shiftData=self.shiftData)
+        self.assertGreater(len(result[4].data), 0)
+        self.assertGreater(len(result[5].data), 0)
 
     def test_prony_fit_unaffected_by_shift_params(self):
         def exp_y(result):
@@ -605,9 +643,11 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.uploadData = cls._frequency_upload(cls.N_LARGE)
+        # shift_model is required for fig4/fig41 to be built at all; the
+        # decimation assertions below cover them, so ask for the transform.
         cls.result = update_line_chart(
             cls.uploadData, number_of_prony=10, smoothness=0.0,
-            fit_settings=False, domain='frequency',
+            fit_settings=False, domain='frequency', shift_model='hybrid',
         )
 
     def test_large_upload_experiment_traces_are_thinned(self):
@@ -655,7 +695,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     def test_small_upload_untouched_and_unannotated(self):
         result = update_line_chart(
             self._frequency_upload(200), number_of_prony=5, smoothness=0.0,
-            fit_settings=False, domain='frequency',
+            fit_settings=False, domain='frequency', shift_model='hybrid',
         )
         fig1, _, _, _, fig4, _, _ = result
         self.assertTrue(all(n == 200 for n in self._experiment_lengths(fig1)))

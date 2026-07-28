@@ -1539,16 +1539,23 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             fit; in the frequency domain they (and shiftData) drive the
             frequency→temperature visualization only (manual/WLF; hybrid falls
             back to a universal-WLF view).
-        shift_model (str): 'WLF', 'hybrid', or 'manual'.
+        shift_model (str): 'WLF', 'hybrid', 'manual', or 'none'/None for no
+            transform at all. 'none' is not merely "no usable parameters" — it
+            means the caller did not ask for a transform, and in the frequency
+            domain it suppresses the temperature figures rather than falling
+            back to the universal-WLF view.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
+            Supplying one counts as requesting a transform even under 'none'.
 
     Returns:
         fig1 (plotly.graph_objects.Figure): The line chart.
         fig11 (plotly.graph_objects.Figure): The updated line chart.
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
-        fig4 (plotly.graph_objects.Figure): The temperature line chart.
+        fig4 (plotly.graph_objects.Figure): The temperature line chart. Empty in
+            the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
+            Empty under the same condition as fig4.
         coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
 
     Raises:
@@ -1598,18 +1605,32 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
                 "Remove rows with zero or negative frequencies."
             )
         freq_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
-        # The temperature-axis figures are a visualization only (the Prony fit
-        # below runs on the frequency data directly), so this never blocks: an
-        # unusable shift model degrades to a universal-WLF view inside V2.
-        # TODO: hybrid still has no analytic inverse and falls back to universal
-        # WLF; add a reverse-hybrid model when one becomes available.
-        temp_sweep_data = tts_frequency_to_temperature_V2(
-            freq_sweep_data, shift_model,
-            Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
-        )
-        plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
-        fig4, fig41 = _build_temperature_figures(plot_temp)
-        _annotate_decimation((fig4, fig41), temp_decimation)
+        # Counterpart of the temperature branch's has_shift_params guard below,
+        # but an *intent* test rather than a capability one. The forward
+        # transform can genuinely fail, whereas tts_frequency_to_temperature_V2
+        # never does — it degrades to a universal-WLF view — so without this gate
+        # every frequency upload silently grew a temperature curve computed from
+        # UNIVERSAL_WLF_* at VIS_REF_TEMPERATURE_C, constants that have nothing
+        # to do with the uploaded material and that the user never chose.
+        # The temperature axis is a transform of the upload, not the upload
+        # itself, so it is only drawn when a transform was actually requested.
+        if shift_model in (None, 'none') and shiftData is None:
+            fig4 = go.Figure()
+            fig41 = go.Figure()
+        else:
+            # A visualization only (the Prony fit below runs on the frequency
+            # data directly), so this never blocks: an unusable shift model
+            # degrades to a universal-WLF view inside V2.
+            # TODO: hybrid still has no analytic inverse and falls back to
+            # universal WLF; add a reverse-hybrid model when one becomes
+            # available.
+            temp_sweep_data = tts_frequency_to_temperature_V2(
+                freq_sweep_data, shift_model,
+                Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
+            )
+            plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
+            fig4, fig41 = _build_temperature_figures(plot_temp)
+            _annotate_decimation((fig4, fig41), temp_decimation)
 
     elif domain == "temperature":
         temp_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
