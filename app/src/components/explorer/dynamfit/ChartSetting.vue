@@ -336,7 +336,7 @@
           class="nuplot-range-slider u--layout-width u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
         />
         <div
-          :style="{ left: `${dynamfit.range - 5}` }"
+          :style="{ left: `${dynamfit.range}%` }"
           v-if="showToolTip"
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
@@ -345,7 +345,7 @@
         </div>
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
-        <div>0</div>
+        <div>1</div>
         <div>100</div>
       </div>
     </div>
@@ -613,6 +613,7 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
+import { computeDefaultPronyTerms } from '@/composables/useDynamfitDefaults';
 import Pagination from '@/components/explorer/Pagination.vue';
 
 defineOptions({
@@ -874,6 +875,18 @@ const downloadTitle = (): string => {
   );
 };
 
+// Must be called in the SAME synchronous block as the `fileUpload` write: the
+// deep watcher on `dynamfit` triggers the fit, and Vue batches watcher
+// callbacks per flush, so two writes in one tick cost exactly one request.
+const applyDefaultPronyTerms = (fileText: string): void => {
+  // Only the frequency domain has a span worth measuring — a temperature file
+  // has no frequency axis until the ω-T transform has run, so the store
+  // default (100) stands there.
+  if (selectedProperty.value !== 'frequency') return;
+  const terms = computeDefaultPronyTerms(fileText);
+  if (terms !== null) dynamfit.value.range = terms;
+};
+
 const onInputChange = async (e: Event): Promise<void> => {
   useSample.value = false;
   displayInfo('Uploading File...');
@@ -888,11 +901,13 @@ const onInputChange = async (e: Event): Promise<void> => {
     // The upload response only carries the mangled server name, so remember
     // what the user actually picked before dispatching.
     const originalName = file[0]?.name ?? '';
+    const fileText = await file[0].text();
     const { fileName } = await store.dispatch('uploadFile', {
       file,
       isTemp: isTemp.value,
     });
     if (fileName) {
+      applyDefaultPronyTerms(fileText);
       dynamfit.value.fileUpload = fileName;
       store.commit('explorer/setDynamfitSourceType', 'upload');
       store.commit('explorer/setDynamfitFileMeta', { label: '', originalName });
@@ -1102,6 +1117,7 @@ const loadPolymerFile = async (filePath: string, sourceType: string): Promise<vo
     const response = await fetch(filePath);
     if (!response.ok) throw new Error('Failed to fetch file');
     const blob = await response.blob();
+    const fileText = await blob.text();
     const fileName = filePath.split('/').pop() || 'polymer_data.txt';
     const file = new File([blob], fileName, { type: blob.type || 'text/plain' });
     const { fileName: uploadedName } = await store.dispatch('uploadFile', {
@@ -1109,6 +1125,7 @@ const loadPolymerFile = async (filePath: string, sourceType: string): Promise<vo
       isTemp: isTemp.value,
     });
     if (uploadedName) {
+      applyDefaultPronyTerms(fileText);
       dynamfit.value.fileUpload = uploadedName;
       store.commit('explorer/setDynamfitSourceType', sourceType);
       store.commit('explorer/setDynamfitFileMeta', {
