@@ -16,6 +16,14 @@
         @click="snackBarAction"
         >{{ snackbar?.callToActionText || 'Retry' }}</MdButton
       >
+      <MdButton
+        id="snackbarDismiss"
+        class="md-icon-button"
+        aria-label="Dismiss notification"
+        @click="dismiss"
+      >
+        <md-icon>close</md-icon>
+      </MdButton>
     </md-snackbar>
   </div>
 </template>
@@ -73,6 +81,15 @@ const snackbarDuration = computed(() => {
 // Methods
 const resetSnackbar = () => {
   show.value = false;
+};
+
+// Persistent toasts (falsy duration) previously had no exit except the Retry
+// action, a route change, or a resetSnackbar commit from elsewhere. Clearing
+// the store state too keeps a re-raised identical message from being swallowed
+// by the watcher below.
+const dismiss = (): void => {
+  show.value = false;
+  store.commit('resetSnackbar');
 };
 
 const snackBarAction = async () => {
