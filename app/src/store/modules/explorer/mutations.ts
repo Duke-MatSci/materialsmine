@@ -43,6 +43,9 @@ export default {
   },
   resetDynamfitData(state: ExplorerState): void {
     state.dynamfitData = {};
+    // Generation counter: a fit dispatched before this reset must not commit
+    // its response (or its error toast) afterwards.
+    state.dynamfitResetCount++;
   },
   resetDynamfit(state: ExplorerState): void {
     state.dynamfit = {
@@ -54,9 +57,6 @@ export default {
   },
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
-  },
-  setDynamfitTabRequest(state: ExplorerState, payload: string): void {
-    state.dynamfitTabRequest = payload;
   },
   setDynamfitSourceType(state: ExplorerState, payload: string): void {
     state.dynamfitSourceType = payload;

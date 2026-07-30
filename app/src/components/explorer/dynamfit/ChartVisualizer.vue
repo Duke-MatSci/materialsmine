@@ -180,7 +180,13 @@ const transformMethod = computed(() => store.getters['explorer/getDynamfitTransf
 watch(dynamfitData, (newVal, oldVal) => {
   const wasEmpty = !oldVal || !Object.keys(oldVal).length;
   const hasData = newVal && Object.keys(newVal).length > 0;
-  if (!hasData) return;
+  // Cleared data means the session was reset (or the file changed): go back to
+  // the first tab instead of leaving the last-viewed one selected.
+  if (!hasData) {
+    controlledTab.value = 'tab-home';
+    activeTab.value = '';
+    return;
+  }
 
   if (wasEmpty) {
     controlledTab.value = dynamfitDomain.value === 'temperature' ? 'tab-temp-new' : 'tab-home';

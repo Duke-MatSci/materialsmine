@@ -729,6 +729,10 @@ const popularPolymerFiles = computed(() =>
   allPolymerFiles.filter((f) => f.domain === selectedProperty.value)
 );
 const skipCoeffWatcher = ref(false);
+// Held for the whole of resetAll() and released only after Vue has flushed the
+// watcher queue. Every watcher that can start a fit checks it, so tearing the
+// session down never fires a request against the file we just deleted.
+const resetting = ref(false);
 let coeffDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Computed
@@ -790,14 +794,28 @@ const isManual = computed(() => {
 });
 
 // Methods
-const resetAll = (): void => {
-  resetChart();
+const resetAll = async (): Promise<void> => {
+  resetting.value = true;
+
+  // A debounced coefficient fit armed just before Reset would otherwise fire
+  // 500 ms later against the deleted file.
+  if (coeffDebounceTimer) {
+    clearTimeout(coeffDebounceTimer);
+    coeffDebounceTimer = null;
+  }
+  // Unconditionally, not just when a file exists: the toast we most need to
+  // clear is the one raised by a failed fit that never produced a file.
+  store.commit('resetSnackbar');
+
+  await resetChart();
+
   selectedProperty.value = 'frequency';
   currentItem.value = null;
   selectedItemProperty.value = null;
   currentPage.value = 1;
   totalPages.value = 0;
   results.value = {};
+  limit.value = 2;
   dataType.value = undefined;
   transformMethod.value = '';
   ttsp.value = false;
@@ -808,8 +826,31 @@ const resetAll = (): void => {
   cTtspApplied.value = false;
   cTtspVisible.value = true;
   cShiftModelOpen.value = true;
+  cFormatOpen.value = false;
   selectedPolymerFile.value = '';
+  useSample.value = false;
+  updateBtn.value = false;
+  sentRequest.value = false;
+  showToolTip.value = false;
+  skipCoeffWatcher.value = false;
+  ttspTgValue.value = null;
+  ttspC1Value.value = null;
+  ttspC2Value.value = null;
+  ttspTLValue.value = null;
+  ttspEAValue.value = null;
+  tgEstimated.value = false;
+  c1Estimated.value = false;
+  c2Estimated.value = false;
+  tLEstimated.value = false;
+  eAEstimated.value = false;
   store.commit('explorer/setDynamfitSourceType', '');
+  // Start state: the four source buttons, per the panel's default.
+  cDataSourceOpen.value = true;
+
+  // Load-bearing: Vue flushes watcher callbacks asynchronously, so releasing
+  // the flag synchronously would let every guarded watcher run anyway.
+  await nextTick();
+  resetting.value = false;
 };
 
 const downloadTitle = (): string => {
@@ -889,17 +930,16 @@ const resetChart = async (): Promise<void> => {
 
   store.commit('resetSnackbar');
 
+  // Clear the client state whether or not the delete succeeded. Leaving the
+  // store half-populated after a failed DELETE strands the user in a session
+  // they cannot reset; orphaning a server-side temp file is the cheaper cost.
   if (!useSample.value) {
-    const { deleted, error } = await store.dispatch('deleteFile', {
+    await store.dispatch('deleteFile', {
       name,
       isTemp: isTemp.value,
     });
-    if (!error && deleted) {
-      return clearDynamfitData();
-    }
-  } else {
-    return clearDynamfitData();
   }
+  clearDynamfitData();
 };
 
 const displayInfo = (msg: string, duration?: number): void => {
@@ -951,6 +991,10 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
 };
 
 const updateChart = async (): Promise<void> => {
+  // Belt and braces: the watchers below already guard, but this also covers the
+  // handleSelect() shortcut just underneath.
+  if (resetting.value) return;
+
   if ((selectedItemProperty.value?.index ?? -1) >= 0) {
     return await handleSelect();
   }
@@ -1192,6 +1236,7 @@ watch(transformMethod, (newValue) => {
 watch(
   dynamfit,
   (newVal) => {
+    if (resetting.value) return;
     if (!newVal) return;
     updateChart();
   },
@@ -1199,10 +1244,12 @@ watch(
 );
 
 watch([smoothness, relativeError], () => {
+  if (resetting.value) return;
   updateChart();
 });
 
 watch(limit, () => {
+  if (resetting.value) return;
   return search();
 });
 
@@ -1224,6 +1271,10 @@ watch(disableInput, (disabled) => {
 watch(
   () => dynamfit.value?.fileUpload,
   (newVal, oldVal) => {
+    // Reset must land on the source grid, not the upload sub-panel. The guard
+    // leaves the intended "Change file" behaviour alone — confirmChangeFile in
+    // DynamFit.vue never sets this flag.
+    if (resetting.value) return;
     if (oldVal && !newVal) {
       dataType.value = 'upload';
       cDataSourceOpen.value = true;
@@ -1264,12 +1315,15 @@ watch(ttspEAValue, (v) => {
 
 // Debounced watcher: when ttsp coefficient inputs change, call /extract if fileUpload exists
 watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
+  if (resetting.value) return;
   if (skipCoeffWatcher.value) return;
   if (!ttsp.value) return;
   if (!transformMethod.value || !(isWLF.value || isHybrid.value)) return;
 
   if (coeffDebounceTimer) clearTimeout(coeffDebounceTimer);
   coeffDebounceTimer = setTimeout(async () => {
+    // A reset may have started during the 500 ms debounce window.
+    if (resetting.value) return;
     if (!dynamfit.value?.fileUpload) {
       store.commit('setSnackbar', {
         message: 'Please upload or select a data file in Data Source first.',

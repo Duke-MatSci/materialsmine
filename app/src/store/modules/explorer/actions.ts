@@ -149,9 +149,16 @@ export default {
       );
     }
   },
-  async fetchDynamfitData({ commit, dispatch, rootGetters }: Context, payload: any): Promise<void> {
+  async fetchDynamfitData(
+    { commit, dispatch, rootGetters, state }: Context,
+    payload: any
+  ): Promise<void> {
     if (!payload.file_name) return;
 
+    // Reset bumps this counter. A fit that was already in flight when the user
+    // hit Reset must not repopulate the charts, nor raise a "file not found"
+    // toast for the file it just deleted.
+    const gen = state.dynamfitResetCount;
     const url = '/api/mn/dynamfit';
     const token = rootGetters['auth/token'];
     try {
@@ -186,8 +193,10 @@ export default {
         };
         dispatch('contact/contactUs', data, { root: true });
       }
+      if (gen !== state.dynamfitResetCount) return;
       commit('setDynamfitData', data);
     } catch (err: any) {
+      if (gen !== state.dynamfitResetCount) return;
       const snackbar: any = { message: err.message, type: 'error' };
       if (err?.cause === 400) {
         snackbar.duration = 3000;

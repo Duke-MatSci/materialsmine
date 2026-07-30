@@ -21,9 +21,10 @@ export interface ExplorerState {
     TL: number | null;
     a_T_ref: number | null;
   };
-  dynamfitTabRequest: string;
   dynamfitSourceType: string;
   dynamfitSurpriseRequest: number;
+  // Bumped on every dynamfit reset so in-flight fits can tell they are stale.
+  dynamfitResetCount: number;
   dynamfit: {
     range: number;
     fitSettings: boolean;
