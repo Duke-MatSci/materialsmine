@@ -1,8 +1,10 @@
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
+import hashlib
 import numpy as np
 import pandas as pd
 
+from collections import OrderedDict, namedtuple
 from contextlib import contextmanager
 from scipy.optimize import curve_fit, minimize, nnls
 from scipy.signal import find_peaks
@@ -46,12 +48,17 @@ _QR_CHUNK_ROWS = 8192
 # ~2000 points per trace is far denser than any screen resolves.
 _PLOT_MAX_POINTS = 2000
 
-# Reference residual count for smoothness normalization in smooth_prony_fit:
-# a nominal 400-row upload contributes 800 residuals (storage + loss), the
-# scale on which the smoothness knob was historically calibrated. The penalty
-# weight is normalized to this so a given smoothness value produces comparable
-# smoothing regardless of upload size (see smooth_prony_fit).
-_SMOOTHNESS_REF_RESIDUALS = 800
+# Second-difference stencil behind the smoothness penalty: the np.diff(..., n=2)
+# weights in _prony_objective, and the outer product that builds lam * L.T @ L
+# in _prony_fit_quality.
+_D2_STENCIL = (1.0, -2.0, 1.0)
+
+# Reduced systems retained by _prony_reduce's LRU cache. Each entry holds only
+# the (m + 1) x (m + 1) triangle — at most ~102 x 102, since the route caps N at
+# 100 — so the cache stays tiny no matter how large the uploads that produced it.
+# Sized for a smoothness sweep, which varies only `smoothness` and can reuse one
+# reduction throughout.
+_REDUCE_CACHE_SIZE = 4
 
 
 @contextmanager
@@ -200,10 +207,59 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     return pd.DataFrame(data={"Time": t, "E": E})
 
 
+def _log_curvature(logcoefs: np.ndarray, solid: bool) -> np.ndarray:
+    """
+    Second differences of the penalized log-coefficients.
+
+    The vector behind both the smoothness penalty and the reported curvature —
+    one definition so the two cannot drift apart. np.diff degrades to an empty
+    array rather than raising when there are fewer than three penalized terms,
+    so len() of the result doubles as the "is a second difference even defined
+    here" test.
+
+    Parameters:
+        logcoefs (numpy.ndarray): 1-D array of log-coefficients.
+        solid (bool): Whether the leading coefficient is an unpenalized
+            equilibrium term to exclude.
+
+    Returns:
+        numpy.ndarray: 1-D array of length max(0, len(logcoefs) - solid - 2).
+    """
+    return np.diff(logcoefs[solid:], n=2)
+
+
+def _mean_sq_curvature(curve: np.ndarray, npen: int, log_range: float):
+    """
+    Mean squared curvature of the log spectrum, d2(lnE)/d(ln tau)**2.
+
+    Converts the raw second differences into the mesh-independent quantity they
+    approximate. A second difference is h**2 * H'' + O(h**4) for grid spacing
+    h = log_range / (npen - 1), and averaging over the span costs another h, so
+
+        mean(H''**2) = sum(d2H)**2 / (h**3 * log_range)
+
+    Reporting that rather than sum(d2H)**2 / (npen - 2) is what makes the number
+    comparable across N and across crops of the same data: sampling one fixed
+    spectrum more finely shrinks every second difference, so the per-term mean
+    falls ~90x over a 10x change in N where this moves ~1.2x.
+
+    Parameters:
+        curve (numpy.ndarray): Second differences from _log_curvature.
+        npen (int): Number of penalized terms, i.e. len(logcoefs) - solid.
+        log_range (float): ln(tau_max / tau_min) of the fit grid.
+
+    Returns:
+        float or None: None when fewer than 3 penalized terms leave no second
+        difference to take, or when the span is degenerate.
+    """
+    if not len(curve) or log_range <= 0:
+        return None
+    return curve @ curve * (npen - 1) ** 3 / log_range ** 4
+
+
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
-        std: np.ndarray,
         basis: np.ndarray,
         smoothness: float,
         solid: bool,
@@ -214,15 +270,20 @@ def _prony_objective(
     Designed to be passed to scipy.optimize.minimize with jac=True. Coefficients
     are parameterized in log-space (E_i = exp(logcoefs)) so that the optimizer
     sees an unconstrained problem while the physical coefficients remain
-    positive. The loss is the weighted sum of squared residuals between
+    positive. The loss is the sum of squared residuals between
     basis @ exp(logcoefs) and data, plus an optional second-difference penalty
     on logcoefs[solid:] scaled by smoothness.
 
+    Residuals are UNWEIGHTED here: the caller passes an already-weighted system.
+    smooth_prony_fit's _prony_reduce folds 1/std into R and z before this is
+    ever called, so carrying a std array through would only buy a per-iteration
+    division by ones on the optimizer's hot path.
+
     Parameters:
         logcoefs (numpy.ndarray): 1-D array of log-coefficients to fit.
-        data (numpy.ndarray): 1-D array of target values.
-        std (numpy.ndarray): 1-D array of per-point standard deviations for weighting.
-        basis (numpy.ndarray): 2-D basis matrix; basis @ exp(logcoefs) is the model.
+        data (numpy.ndarray): 1-D array of target values, pre-weighted.
+        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
+            basis @ exp(logcoefs) is the model.
         smoothness (float): Strength of the second-difference penalty on
             logcoefs[solid:]. Pass 0 to disable.
         solid (bool): Whether the leading coefficient is an equilibrium term to
@@ -234,26 +295,352 @@ def _prony_objective(
     """
     coefs = np.exp(logcoefs)
     estimate = basis @ coefs
-    resid = (data - estimate) / std
+    resid = data - estimate
     loss = resid @ resid
     if smoothness:
-        curve = smoothness * np.diff(logcoefs[solid:], n=2)
+        curve = smoothness * _log_curvature(logcoefs, solid)
         loss += curve @ curve
 
-    grad = -(basis.T @ (resid / std))
+    grad = -(basis.T @ resid)
 
     # apply chain rule because these are functions of
     # coefs rather than logcoefs
     grad *= coefs
 
     if smoothness:
-        diffs = smoothness * curve  # smoothness*np.diff(logcoefs[solid:], n=2)
+        diffs = smoothness * curve  # smoothness**2 * _log_curvature(...)
         grad_slice = grad[solid:]
         grad_slice[:-2] += diffs
         grad_slice[1:-1] -= 2 * diffs
         grad_slice[2:] += diffs
 
     return loss, 2 * grad  # more chain rule (squared errors)
+
+
+# Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the data
+# misfit alone; neg_log_posterior is the Laplace-approximated negative log
+# posterior of lam = smoothness**2; curvature is the roughness of the fitted log
+# spectrum. All three are "lower is better", and any may be None — see
+# _prony_fit_quality for the conditions.
+#
+# chi2_reduced and curvature are the two coordinates of the classical L-curve:
+# sweep smoothness, plot one against the other, and the corner nearest the
+# lower left is the regularization trade-off worth taking. Both are means, not
+# sums — chi2_reduced per degree of freedom, curvature per unit ln(tau) — so
+# the pair stays comparable across upload size, across N, and across crops of
+# the same data. curvature is deliberately the UNWEIGHTED roughness rather than
+# the lam-weighted penalty term, so that it does not move with the knob being
+# swept.
+#
+# curvature is mean (d2 lnE / d(ln tau)**2)**2, NOT the mean squared second
+# DIFFERENCE: see _mean_sq_curvature for why the distinction decides whether
+# the number survives a change of N. Its square root is an RMS bend in nepers
+# per (ln tau)**2.
+_FitQuality = namedtuple(
+    '_FitQuality', 'chi2_reduced neg_log_posterior curvature'
+)
+
+
+def _cholesky_or_none(C: np.ndarray):
+    """
+    Cholesky factor of C, or None if C is not a positive-definite finite matrix.
+
+    Cholesky succeeding IS the positive-definiteness test, i.e. the test that a
+    candidate optimum is a local minimum at all — slogdet's sign is +1 for an
+    indefinite C with two negative eigenvalues, and eigvalsh costs 10-30x. It
+    does NOT raise on NaN/Inf, it returns a NaN factor, and smooth_prony_fit
+    runs minimize under errstate(invalid='ignore'), so an overflowed coefficient
+    would otherwise escape as a NaN score.
+
+    Parameters:
+        C (numpy.ndarray): 2-D symmetric matrix.
+
+    Returns:
+        numpy.ndarray or None: the lower-triangular factor, or None.
+    """
+    try:
+        chol = np.linalg.cholesky(C)
+    except np.linalg.LinAlgError:
+        return None
+    return chol if np.all(np.isfinite(chol)) else None
+
+
+def _prony_fit_quality(
+        logcoefs: np.ndarray,
+        data: np.ndarray,
+        basis: np.ndarray,
+        smoothness: float,
+        solid: bool,
+        n_resid: int,
+        log_range: float,
+        prior_lam: float = None,
+) -> _FitQuality:
+    """
+    Score a converged Prony fit: reduced chi-squared and the log posterior of lam.
+
+    The second number is a Laplace (saddle-point) approximation of
+
+        log pi_lam = -V(H) + 0.5 * (log|A| + n_tau * log(lam) - log|C|) - lam
+
+    with H = logcoefs, lam = smoothness**2, V = rho^2 + lam * eta^2 (the
+    _prony_objective loss), A = L.T @ L for the second-difference operator L
+    behind the penalty, and C = lam * A + J.T @ J + diag(r.T @ J) — which is
+    exactly 0.5 * Hess(V), the second-derivative term being diagonal because
+    the coefficients are parameterized as exp(logcoefs). The trailing -lam is a
+    unit-rate exponential prior on lam.
+
+    Two details that are easy to get wrong:
+
+    * A is singular. L is the (npen - 2) x m second-difference stencil, so A has
+      a null space of dimension 2 + solid (a constant, a linear ramp, and the
+      unpenalized equilibrium term). The determinant the formula needs is the
+      PSEUDO-determinant, and the exponent of lam is rank(A) = npen - 2, not
+      n_tau. Inflating that exponent to the full dimension adds a spurious
+      0.5 * (m - rank) * log(lam) drift that biases the result toward
+      oversmoothing. Conveniently pdet(L.T @ L) == det(L @ L.T) ==
+      npen**2 * (npen**2 - 1) / 12 exactly, so no decomposition of A is needed.
+    * The null directions carry a flat prior whose normalizer, together with the
+      Laplace prefactor, contributes a constant 0.5 * (2 + solid) * log(pi).
+      It is included, so the result is comparable across smoothness, N, row
+      count, AND solid.
+
+    This is an approximation, not an identity — expect ~0.1 nat of Laplace error
+    — and it assumes logcoefs is a CONVERGED, INTERIOR minimum of V. At a
+    non-stationary point the expansion has an unaccounted linear term.
+
+    Expects the QR-REDUCED system from smooth_prony_fit (basis=R, data=z), which
+    the route's N <= 100 cap bounds at ~102 rows; peak allocation is then two
+    m x m arrays. That system is already weighted by 1/std, so residuals here are
+    unweighted — see _prony_objective — and it carries the orthogonal residual
+    the fit cannot reach as its own row, so both numbers come out on the
+    full-problem scale and stay comparable across N with nothing to add back.
+
+    Parameters:
+        logcoefs (numpy.ndarray): 1-D array of log-coefficients at the optimum.
+        data (numpy.ndarray): 1-D array of target values, pre-weighted.
+        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
+            basis @ exp(logcoefs) is the model.
+        smoothness (float): Penalty strength actually used in the fit, i.e. the
+            internally normalized value, since lam * A must match the fitted V.
+        solid (bool): Whether the leading coefficient is an equilibrium term
+            excluded from the smoothness penalty.
+        n_resid (int): Residual count of the FULL problem (2 * len(omega)), used
+            for the chi-squared degrees of freedom. It cannot be read off `data`,
+            whose length is the reduced m + 1 for any upload size.
+        log_range (float): ln(tau_max / tau_min) of the fit grid, for the
+            curvature normalization. Also unavailable from the reduced system.
+        prior_lam (float): lam to charge the exponential prior for. Defaults to
+            smoothness**2; pass the UNSCALED smoothness**2 so the prior tracks
+            the user-facing knob rather than the internally normalized one.
+
+    Returns:
+        _FitQuality: (chi2_reduced, neg_log_posterior, curvature), all floats and
+        all "lower is better". chi2_reduced is None when the fit has no degrees
+        of freedom left; neg_log_posterior is None when the posterior is
+        undefined (no penalty, or fewer than 3 penalized terms) or when the
+        Laplace expansion does not apply (C not positive definite, or
+        non-finite); curvature is None when fewer than 3 penalized terms leave
+        no second difference to take. The two reported quantities are means —
+        chi-squared per degree of freedom, squared log-spectrum curvature per
+        unit ln(tau) — while the algebra below works in raw sums, so every
+        normalization happens once, at the single return.
+    """
+    m = len(logcoefs)
+    npen = m - solid
+
+    coefs = np.exp(logcoefs)
+    resid = data - basis @ coefs
+    # Data misfit only — the smoothness penalty is not part of chi-squared.
+    # Regularization means the effective parameter count is below m, so this
+    # dof understates nu and chi2_reduced reads as an upper bound.
+    dof = n_resid - m
+    chi2 = resid @ resid
+
+    # Roughness of the fitted log spectrum, independent of the penalty weight:
+    # the other L-curve coordinate. Available whenever a second difference
+    # exists, including at smoothness == 0 where there is no posterior.
+    curve = _log_curvature(logcoefs, solid)
+
+    # No penalty (lam = 0 -> log(lam) = -inf) or too few penalized terms for a
+    # second difference to exist means there is no prior on lam to be posterior
+    # about. npen < 3 would also reach log(npen - 1) = log(0) below.
+    neg_log_posterior = None
+    if len(curve) and smoothness:
+        lam = smoothness * smoothness
+        # Take V from the objective itself so the two cannot drift apart on the
+        # penalty convention. Note V is NOT a marginal likelihood: it is the
+        # unnormalized negative log JOINT density at the mode (misfit+penalty).
+        V, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
+
+        # r.T @ J, the exact second-derivative term. Same expression as the
+        # objective's gradient before the chain rule is doubled and before the
+        # penalty is folded in.
+        rj = -(basis.T @ resid) * coefs
+
+        # C = lam * A + J.T @ J + diag(r.T @ J), assembled in ONE m x m array:
+        # neither J (n x m) nor L nor A is ever materialized. The matmul
+        # allocates, so the in-place scalings below cannot touch the read-only
+        # cached R.
+        C = basis.T @ basis
+        C *= coefs           # -> J.T @ J; J = -basis @ diag(coefs), so its two
+        C *= coefs[:, None]  # sign flips cancel in the Gram.
+        # np.einsum('ii->i', C) is a writable stride view even when C is not
+        # contiguous; C.ravel()[::m + 1] would silently write to a copy instead.
+        np.einsum('ii->i', C)[...] += rj
+        # lam * L.T @ L is pentadiagonal; accumulate the nine stencil
+        # outer-product terms straight onto its bands. Index pairs are strictly
+        # increasing within each (t, u) pass, so there is no fancy-index +=
+        # aliasing. The loop also stays correct at npen == 3, where the two
+        # boundary corrections collide and the generic band pattern
+        # [1, 5, 6, ..., 6, 5, 1] does not apply.
+        band = solid + np.arange(npen - 2)
+        for t, stencil_t in enumerate(_D2_STENCIL):
+            for u, stencil_u in enumerate(_D2_STENCIL):
+                C[band + t, band + u] += lam * stencil_t * stencil_u
+
+        chol = _cholesky_or_none(C)
+        if chol is not None:
+            logdetC = 2 * np.log(np.diag(chol)).sum()
+            logpdetA = (
+                2 * np.log(npen) + np.log(npen - 1) + np.log(npen + 1)
+                - np.log(12.0)
+            )
+            # abs(): the penalty is sign-agnostic in smoothness (it enters
+            # squared) and nothing upstream rejects a negative value.
+            loglam = 2 * np.log(abs(smoothness))
+            if prior_lam is None:
+                prior_lam = lam
+            # Negated so that lower is better. This is a log DENSITY, so
+            # positivity is not guaranteed — it holds in practice because V
+            # dominates for any real upload. Deliberately not clamped.
+            neg_log_posterior = (
+                V
+                - 0.5 * (logpdetA + (npen - 2) * loglam - logdetC)
+                - 0.5 * (2 + solid) * np.log(np.pi)
+                + prior_lam
+            )
+
+    return _FitQuality(
+        chi2 / dof if dof > 0 else None,
+        neg_log_posterior,
+        _mean_sq_curvature(curve, npen, log_range),
+    )
+
+
+# digest -> (R, z), least-recently-used first. See _prony_reduce.
+_REDUCE_CACHE = OrderedDict()
+
+
+def _reduce_cache_key(arrays: tuple, solid: bool) -> tuple:
+    """
+    Content-address the reduction inputs without retaining them.
+
+    Returns a hashable key holding only a digest, never the arrays themselves,
+    so a cache entry cannot pin a 40,000-row upload in memory. Hashing ~1 MB
+    costs on the order of a millisecond against seconds for the QR it saves.
+
+    Parameters:
+        arrays (tuple): numpy arrays the reduction depends on.
+        solid (bool): Whether an equilibrium term is included.
+
+    Returns:
+        tuple: (digest bytes, solid) — hashable and content-addressed.
+    """
+    digest = hashlib.blake2b(digest_size=16)
+    for arr in arrays:
+        arr = np.ascontiguousarray(arr)
+        digest.update(str(arr.shape).encode())
+        digest.update(arr.dtype.str.encode())
+        digest.update(memoryview(arr).cast('B'))  # no copy for contiguous input
+    return digest.digest(), bool(solid)
+
+
+def _prony_reduce(
+        omega: np.ndarray,
+        E_stor: np.ndarray,
+        E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
+        tau_i: np.ndarray,
+        solid: bool,
+) -> tuple:
+    """
+    Compress the weighted least-squares problem by a chunked QR factorization.
+
+    Maintains the triangular augmented system [R | z] and folds each weighted
+    basis block into it, so that EXACTLY
+        ||(y - B c) / std||^2 = ||R c - z||^2
+    and the reduced system has at most len(tau_i) + solid + 1 rows regardless of
+    how many data rows the upload carries. Householder QR accumulates the residual
+    information backward-stably (no explicit sums of squares), memory stays
+    O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
+    independent of the input row count.
+
+    Memoized on input CONTENT in a size-_REDUCE_CACHE_SIZE LRU, because a
+    smoothness sweep varies only `smoothness` — which this reduction does not
+    depend on — and would otherwise redo the expensive pass over every row for
+    each trial value. Cached R and z are returned READ-ONLY: scipy 1.10's nnls
+    and minimize do not write to them, but a future scipy that did would
+    otherwise silently poison every later cache hit. The cache is not
+    synchronized; under gunicorn's sync workers only one request runs per
+    process, and a threaded worker could at worst duplicate work or perturb LRU
+    order, never corrupt an entry.
+
+    Parameters:
+        omega (numpy.ndarray): 1-D array of angular frequencies.
+        E_stor (numpy.ndarray): 1-D array of storage-modulus values.
+        E_loss (numpy.ndarray): 1-D array of loss-modulus values.
+        E_stor_std (numpy.ndarray): 1-D array of per-point standard deviations
+            for E_stor.
+        E_loss_std (numpy.ndarray): 1-D array of per-point standard deviations
+            for E_loss.
+        tau_i (numpy.ndarray): 1-D relaxation-time grid.
+        solid (bool): Whether to include an equilibrium-modulus term.
+
+    Returns:
+        tuple: (R, z), the read-only reduced design matrix and target. The
+        equality above is exact with no correction term to carry: see the
+        comment on the residual row below.
+    """
+    key = _reduce_cache_key(
+        (omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i), solid
+    )
+    hit = _REDUCE_CACHE.get(key)
+    if hit is not None:
+        _REDUCE_CACHE.move_to_end(key)
+        return hit
+
+    m = len(tau_i) + solid
+    # Keeping m + 1 rows retains the full least-squares information. Row m of
+    # the final triangle carries the orthogonal residual the fit can never
+    # reach, and it is KEPT in (R, z) rather than returned as a separate
+    # constant: R is upper triangular, so that row is exactly zero across the
+    # basis columns, making it an ordinary residual row that contributes
+    # z[m]**2 to any loss and nothing at all to any gradient. Every consumer
+    # therefore sees full-problem values with no offset to thread through, and
+    # the reduction stays exact rather than exact-up-to-a-correction. For
+    # uploads with fewer than m rows the triangle is simply shorter (wide R) —
+    # nnls and _prony_objective both accept that shape, and there is then no
+    # unreachable residual to carry.
+    Rz = np.empty((0, m + 1))
+    for start in range(0, len(omega), _QR_CHUNK_ROWS):
+        chunk = slice(start, start + _QR_CHUNK_ROWS)
+        basis = prony_basis(omega[chunk], tau_i, solid)
+        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
+        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
+        block = np.concatenate(
+            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
+        )
+        Rz = np.linalg.qr(
+            np.concatenate((Rz, block), axis=0), mode='r'
+        )[:m + 1]
+    Rz.flags.writeable = False
+    reduced = (Rz[:, :m], Rz[:, m])
+
+    _REDUCE_CACHE[key] = reduced
+    if len(_REDUCE_CACHE) > _REDUCE_CACHE_SIZE:
+        _REDUCE_CACHE.popitem(last=False)
+    return reduced
 
 
 def smooth_prony_fit(
@@ -265,6 +652,7 @@ def smooth_prony_fit(
         N: int,
         smoothness: float,
         solid: bool = True,
+        return_fit_quality: bool = False,
 ) -> tuple:
     """
     Fit a Prony series to complex-modulus data with coefficient smoothing.
@@ -275,9 +663,9 @@ def smooth_prony_fit(
     smoothness penalty on the log-coefficients (see _prony_objective).
 
     Numerics: the weighted data term is first compressed EXACTLY by a chunked
-    QR factorization of the weighted basis —
-        ||(y - B c) / std||^2 = ||R c - z||^2 + const
-    — so the reduced system has at most N + solid rows regardless of how many
+    QR factorization of the weighted basis (see _prony_reduce) —
+        ||(y - B c) / std||^2 = ||R c - z||^2
+    — so the reduced system has at most N + solid + 1 rows regardless of how many
     data rows the upload carries. Householder QR accumulates the residual
     information backward-stably (no explicit sums of squares), memory stays
     O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
@@ -288,10 +676,11 @@ def smooth_prony_fit(
     deterministic, no line search, no initial guess. Coefficients may then be
     EXACTLY zero (downstream consumers already filter E_i != 0). With
     smoothness > 0 the log-space penalty is nonlinear in the coefficients, so
-    _prony_objective is minimized on the reduced system (basis=R, data=z,
-    std=1) with L-BFGS-B, seeded from the NNLS solution and bounded above in
-    log-space — without that bound the line search was measured to run
-    exp(logcoefs) into overflow on broadband (many-decade) master curves.
+    _prony_objective is minimized on the reduced system (basis=R, data=z, which
+    the reduction has already weighted by 1/std) with L-BFGS-B, seeded from the
+    NNLS solution and bounded above in log-space — without that bound the line
+    search was measured to run exp(logcoefs) into overflow on broadband
+    (many-decade) master curves.
 
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
@@ -304,17 +693,27 @@ def smooth_prony_fit(
         E_loss_std (numpy.ndarray): 1-D array of per-point standard deviations
             for E_loss, same length as omega. Used to weight residuals.
         N (int): Number of relaxation times in the fit grid.
-        smoothness (float): Strength of the second-difference penalty on the
-            log-coefficients. Pass 0 to disable. Normalized internally to the
-            upload's residual count (referenced to a nominal 400-row upload,
-            _SMOOTHNESS_REF_RESIDUALS), so a given value produces comparable
-            smoothing whether the file has 400 rows or 40,000.
+        smoothness (float): Strength of the smoothing prior on the
+            log-coefficients. Pass 0 to disable. Normalized internally by
+            sqrt(dof / h**3), h being the log-tau grid spacing, which makes it
+            the exchange rate between the two numbers the fit-quality readout
+            reports: V/dof = chi2_reduced + smoothness**2 * (log_range *
+            curvature). A given value therefore produces comparable smoothing
+            whether the file has 400 rows or 40,000, whether it is fit with 20
+            terms or 100, and whether it covers 4 decades or 20.
         solid (bool): Whether to include an equilibrium-modulus term.
+        return_fit_quality (bool): Append a _FitQuality to the return tuple.
+            Off by default so existing two-value unpacking keeps working.
 
     Returns:
         tuple: (tau_i, E_i) where tau_i is the 1-D relaxation-time grid of
         length N and E_i is the 1-D non-negative coefficient array of length
-        N + bool(solid). Entries can be exactly zero (NNLS active set).
+        N + bool(solid). Entries can be exactly zero (NNLS active set). With
+        return_fit_quality, (tau_i, E_i, quality); quality.neg_log_posterior is
+        None unless the fit converged to an INTERIOR minimum with smoothing on,
+        since the Laplace approximation behind it assumes a stationary point,
+        and quality.curvature is None on the unsmoothed path, where the NNLS
+        active set makes log-coefficients (and so their roughness) undefined.
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -334,33 +733,35 @@ def smooth_prony_fit(
     tau_i = prony_relaxation_space(tau_min, tau_max, N)
 
     m = N + solid
+    n_res = 2 * len(omega)
+    dof = n_res - m
 
-    # Chunked QR reduction: maintain the triangular augmented system [R | z]
-    # and fold each weighted basis block into it. Keeping m + 1 rows retains
-    # the full least-squares information; row m of the final triangle is the
-    # orthogonal-residual norm and is excluded from (R, z). For uploads with
-    # fewer than m rows the triangle is simply shorter (wide R) — nnls and
-    # _prony_objective both accept that shape.
-    Rz = np.empty((0, m + 1))
-    for start in range(0, len(omega), _QR_CHUNK_ROWS):
-        chunk = slice(start, start + _QR_CHUNK_ROWS)
-        basis = prony_basis(omega[chunk], tau_i, solid)
-        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
-        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
-        block = np.concatenate(
-            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
-        )
-        Rz = np.linalg.qr(
-            np.concatenate((Rz, block), axis=0), mode='r'
-        )[:m + 1]
-    R = Rz[:m, :m]
-    z = Rz[:m, m]
+    R, z = _prony_reduce(
+        omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i, solid
+    )
+    # (R, z) carries the unreachable orthogonal residual as its last row, which
+    # is what puts every score on the full-problem scale. L-BFGS-B must NOT see
+    # it: its ftol is RELATIVE to f, so a constant the fit cannot reduce makes
+    # the stopping test lazier by exactly the factor it inflates f — measured at
+    # 13x the reducible residual on a 200-row upload, costing ~1e-5 in the
+    # converged coefficients. nnls is immune (finite active set, no tolerance)
+    # and wants the full norm, so only the minimize call takes the slice.
+    R_fit, z_fit = R[:m], z[:m]
 
     # Reduced problem with smoothness == 0 is exactly non-negative least
     # squares — solve it directly (finite algorithm, no iteration budget).
-    E_nnls, _ = nnls(R, z)
+    E_nnls, rnorm = nnls(R, z)
     if smoothness == 0:
-        return tau_i, E_nnls
+        if not return_fit_quality:
+            return tau_i, E_nnls
+        # No penalty means no posterior over lam to report, but the misfit is
+        # still meaningful — and nnls already handed us ||R c - z||, which the
+        # reduction's residual row makes a full-problem quantity. Curvature is
+        # genuinely undefined here, not merely unavailable: NNLS's active set
+        # leaves coefficients EXACTLY zero, whose logs are -inf.
+        return tau_i, E_nnls, _FitQuality(
+            rnorm ** 2 / dof if dof > 0 else None, None, None,
+        )
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
     # so run _prony_objective on the reduced system. Seed from the NNLS
@@ -371,18 +772,37 @@ def smooth_prony_fit(
         x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
     else:
         x0 = np.full(m, np.log(E_stor.max() / m))
-    # Normalize the smoothness trade-off to the upload size: the data term
-    # sums over all 2n residuals while the penalty sums over N-2 second
-    # differences, so an unscaled weight weakens as ~1/n_res with growing
-    # uploads (a 41k-row broadband file needed ~100x the smoothness a 400-row
-    # file needs for the same effect). Scaling the weight by
-    # sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS) makes the penalty TERM (the
-    # weight is squared inside _prony_objective) grow linearly with the
-    # residual count, so a given `smoothness` value produces comparable
-    # smoothing regardless of row count. The reference (800 residuals ~ a
-    # 400-row upload) preserves historical calibrations at fixture scale.
-    n_res = 2 * len(omega)
-    smoothness_scaled = smoothness * np.sqrt(n_res / _SMOOTHNESS_REF_RESIDUALS)
+    # Make the knob mean the same thing on any upload. The data term sums over
+    # n_res residuals while the penalty sums over N-2 second differences, so
+    # both need normalizing, and the penalty needs more care than it looks:
+    #
+    #   * dof, because the data term grows with the row count. Without this a
+    #     41k-row broadband file needed ~100x the smoothness a 400-row file
+    #     needs for the same effect.
+    #   * 1/h**3, because a second difference is NOT a second derivative.
+    #     On a log-tau grid of spacing h, d2H = h**2 * H'' + O(h**4), and
+    #     turning the sum into an integral costs another h, so
+    #     sum(d2H)**2 ~ h**3 * integral(H''**2). That hidden h**3 ~ N**-3 is
+    #     why an uncorrected weight silently weakens as terms are added: the
+    #     recovered spectrum was measured to get 18x rougher going from N=23 to
+    #     N=100 at a fixed knob setting, i.e. N was a second, undocumented
+    #     smoothness control. With the correction it moves 1.2x.
+    #
+    # The pair gives V/dof = chi2_reduced + smoothness**2 * integral(H''**2),
+    # so smoothness**2 is exactly the exchange rate between the two numbers the
+    # fit-quality readout puts on the plot. Note that when N is chosen per
+    # decade of span, h is constant and this reduces to a pure rescaling of the
+    # older dof-only normalization; the 1/h**3 only does work when N is
+    # overridden independently of the span.
+    log_range = np.log(tau_i[-1] / tau_i[0])
+    if N >= 3 and log_range > 0:
+        h = log_range / (N - 1)
+        smoothness_scaled = smoothness * np.sqrt(max(dof, 1) / h ** 3)
+    else:
+        # Fewer than 3 terms leaves np.diff(..., n=2) empty and a degenerate
+        # span leaves h undefined; the penalty term is identically zero either
+        # way, so any finite weight does, and this one avoids a zero division.
+        smoothness_scaled = smoothness
     # Upper bound on log-coefficients: no single Prony term should exceed
     # ~1000x the data maximum. Without this, the line search was measured to
     # push exp(logcoefs) into overflow on broadband master curves.
@@ -391,14 +811,39 @@ def smooth_prony_fit(
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(z, np.ones_like(z), R, smoothness_scaled, solid),
+            args=(z_fit, R_fit, smoothness_scaled, solid),
             jac=True,
             method='L-BFGS-B',
             bounds=[(None, ub)] * m,
         )
     E_i = np.exp(result.x)
+    if not return_fit_quality:
+        return tau_i, E_i
 
-    return tau_i, E_i
+    if np.any(result.x >= ub):
+        # The optimum sits on the log-space bound, so grad(V) != 0 there and the
+        # Laplace expansion behind neg_log_posterior does not apply. The misfit
+        # and the roughness need no stationarity, so both are still reported;
+        # the reduced residual is already a full-problem quantity.
+        resid = (z - R @ E_i)
+        return tau_i, E_i, _FitQuality(
+            resid @ resid / dof if dof > 0 else None,
+            None,
+            _mean_sq_curvature(_log_curvature(result.x, solid), N, log_range),
+        )
+
+    quality = _prony_fit_quality(
+        result.x, z, R, smoothness_scaled, solid,
+        n_resid=n_res,
+        log_range=log_range,
+        # UNSCALED: the exp(-lam) prior belongs on the user-facing knob, not on
+        # the internally normalized weight. Charged against the scaled lam it
+        # would penalize a large or finely-gridded upload far harder than a
+        # small one for identical physical smoothing, undoing the normalization
+        # above.
+        prior_lam=smoothness * smoothness,
+    )
+    return tau_i, E_i, quality
 
 
 # OLD Method
@@ -1273,6 +1718,52 @@ def _annotate_decimation(figs, percent) -> None:
         )
 
 
+def _annotate_fit_quality(figs, quality) -> None:
+    """
+    Stamp the fit-quality readout onto each figure that overlays fit on data.
+
+    Rides inside the figures as a paper-coordinate annotation, the same trick
+    _annotate_decimation uses, so the frontend needs no changes — plotly's
+    to_json carries layout.annotations. Right-aligned on the same row as the
+    decimation notice so the two never overlap.
+
+    All three numbers are "lower is better". Fields that are None are omitted,
+    so an unsmoothed fit shows the misfit alone (with no smoothing there is
+    neither a posterior over the smoothing weight nor a defined roughness).
+    Curvature sits in the middle, next to chi-squared: those two are the L-curve
+    coordinates a user trades off when sweeping the smoothness slider.
+
+    Uses add_annotation rather than update_layout(annotations=...): these are
+    plotly-express faceted figures whose layout.annotations already holds the
+    facet titles, which update_layout would replace.
+
+    Parameters:
+        figs: Iterable of plotly Figures to annotate.
+        quality (_FitQuality): Scores from smooth_prony_fit, or None to no-op.
+    """
+    if quality is None:
+        return
+    parts = []
+    if quality.chi2_reduced is not None:
+        parts.append(f"χ²/ν = {quality.chi2_reduced:.3g}")
+    if quality.curvature is not None:
+        parts.append(f"curvature = {quality.curvature:.3g}")
+    if quality.neg_log_posterior is not None:
+        parts.append(
+            f"−log posterior(λ) = {quality.neg_log_posterior:.4g}"
+        )
+    if not parts:
+        return
+    text = " · ".join(parts + ["lower is better"])
+    for fig in figs:
+        fig.add_annotation(
+            text=text,
+            xref='paper', yref='paper', x=1.0, y=1.06,
+            xanchor='right', yanchor='bottom', showarrow=False,
+            font=dict(size=11, color='gray'),
+        )
+
+
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
     Build E vs Temperature and tan-delta vs Temperature figures.
@@ -1678,13 +2169,14 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     else:
         E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr) * relative_error
         E_loss_std = E_stor_std
-    tau_i, E_i = smooth_prony_fit(
+    tau_i, E_i, fit_quality = smooth_prony_fit(
         omega=df['Frequency'].to_numpy(),
         E_stor=E_stor_arr,
         E_loss=E_loss_arr,
         E_stor_std=E_stor_std,
         E_loss_std=E_loss_std,
         N=number_of_prony, smoothness=smoothness,
+        return_fit_quality=True,
     )
     N_nz = np.count_nonzero(E_i)
 
@@ -1696,6 +2188,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     plot_df, freq_decimation = _decimate_for_plot(df)
     fig1, fig11 = _build_complex_figures(plot_df, tau_i, E_i, N_nz)
     _annotate_decimation((fig1, fig11), freq_decimation)
+    _annotate_fit_quality((fig1, fig11), fit_quality)
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)
 
