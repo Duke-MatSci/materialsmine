@@ -28,11 +28,17 @@
         </md-tab>
         <md-tab id="tab-upload" md-label="Uploaded Data">
           <TableComponent :tableData="upload" sortBy="i" />
+
+          <!-- vue-json-csv downloads on wrapper click, so an empty table would
+               hand the user a blank file rather than a disabled button. -->
+          <download-csv v-if="upload.length" :data="upload" :name="uploadCsvName">
+            <button class="md-button btn btn--primary u--b-rad">Download Data</button>
+          </download-csv>
         </md-tab>
         <md-tab id="tab-Prony" md-label="Prony Coeff">
           <TableComponent :tableData="prony" sortBy="i" />
 
-          <download-csv :data="prony" name="fit_coef.csv">
+          <download-csv :data="prony" :name="pronyCsvName">
             <button :disabled="!prony.length" class="md-button btn btn--primary u--b-rad">
               Download Coefficients
             </button>
@@ -101,6 +107,10 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
+// Registers <download-csv>: script-setup bindings resolve kebab-case tags. It
+// was used in the template but never registered, so the Prony download button
+// silently did nothing.
+import DownloadCsv from 'vue-json-csv';
 
 defineOptions({
   name: 'ChartVisualizer',
@@ -175,6 +185,22 @@ const onTempTab = computed(() => ['tab-temp-new', 'tab-temp'].includes(activeTab
 
 const dynamfit = computed(() => store.getters['explorer/dynamfit']);
 const fileUpload = computed(() => dynamfit.value?.fileUpload || '');
+
+// Name exports after whatever the user recognises the dataset as, not after
+// the mangled server-side upload name.
+const csvBaseName = computed<string>(() => {
+  const source =
+    fileMeta.value.label || fileMeta.value.originalName || fileUpload.value || 'dynamfit';
+  return (
+    source
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^\w.-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'dynamfit'
+  );
+});
+
+const uploadCsvName = computed(() => `${csvBaseName.value}_data.csv`);
+const pronyCsvName = computed(() => `${csvBaseName.value}_prony.csv`);
 
 const controlledTab = ref(dynamfitDomain.value === 'frequency' ? 'tab-home' : 'tab-temp-new');
 
