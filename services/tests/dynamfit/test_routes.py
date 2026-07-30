@@ -35,7 +35,7 @@ from ._route_helpers import (
 
 class TestFitShiftCoefficientsRoute(unittest.TestCase):
     """
-    Route-level tests for POST /dynamfit/fit-shift/, the dedicated shift-domain
+    Route-level tests for POST /tri-ve/fit-shift/, the dedicated shift-domain
     coefficient-fit endpoint (split out of /extract/).
 
     Strategy:
@@ -59,7 +59,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/fit-shift/',
+            '/tri-ve/fit-shift/',
             data=json.dumps(body),
             headers=self.headers,
         )

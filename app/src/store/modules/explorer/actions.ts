@@ -159,7 +159,7 @@ export default {
     // hit Reset must not repopulate the charts, nor raise a "file not found"
     // toast for the file it just deleted.
     const gen = state.dynamfitResetCount;
-    const url = '/api/mn/dynamfit';
+    const url = '/api/mn/tri-ve';
     const token = rootGetters['auth/token'];
     try {
       const req = await fetch(url, {

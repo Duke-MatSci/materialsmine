@@ -1662,16 +1662,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/Server-Error'
                     
-  /mn/dynamfit:
+  /mn/tri-ve:
     post:
       security:
         - BearerAuth: [] 
-      summary: A route to call Dynamfit Managed Service Application
+      summary: A route to call the Tri-VE Managed Service Application
       description: A route to upload csv and tsv file and returns plotly chart data.
       tags:
         - Managed Services
       requestBody:
-        description: A payload that contains the information required by the dynamfit application
+        description: A payload that contains the information required by the Tri-VE application
         required: true
         content:
           application/json:
@@ -1687,7 +1687,7 @@ paths:
                 
       responses:
         '200':
-          description: Returns processed dynamfit chart data.
+          description: Returns processed Tri-VE chart data.
           content:
             application/json:
               schema:
@@ -1727,7 +1727,7 @@ paths:
               schema:
                 type: object
                 example:
-                  message: Dynamfit service not available
+                  message: Tri-ve service not available
        
         '500':
           description: Internal Server Error
@@ -2584,7 +2584,7 @@ components:
     Succesful-Dynamfit-Data: 
       type: object
       example: 
-        appName: dynamfit
+        appName: tri-ve
         data:
           multi: true
           response:

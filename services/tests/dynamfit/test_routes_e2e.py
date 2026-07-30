@@ -46,7 +46,7 @@ from ._route_helpers import make_app, make_token, REAL_FILES_DIR
 
 class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
     """
-    E2E tests for POST /dynamfit/fit-shift/.
+    E2E tests for POST /tri-ve/fit-shift/.
 
     Real files on disk, real optimizer — no mocking of upload_init, check_file_exists,
     or the fit functions.  Config.FILES_DIRECTORY is pointed at the checked-in
@@ -74,7 +74,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/fit-shift/',
+            '/tri-ve/fit-shift/',
             data=json.dumps(body),
             headers=self.headers,
         )
@@ -171,7 +171,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
 
 class TestExtractRoute(unittest.TestCase):
     """
-    Route-level tests for POST /dynamfit/extract/ (the Prony fit + charts route).
+    Route-level tests for POST /tri-ve/extract/ (the Prony fit + charts route).
 
     Real files on disk + real fit, no mocking, so the full response envelope is
     JSON-serialized exactly as a client receives it. This covers what the
@@ -202,7 +202,7 @@ class TestExtractRoute(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/extract/',
+            '/tri-ve/extract/',
             data=json.dumps(body),
             headers=self.headers,
         )
@@ -407,7 +407,7 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
 
     def _post(self, body):
         return self.client.post(
-            '/dynamfit/extract/', data=json.dumps(body), headers=self.headers,
+            '/tri-ve/extract/', data=json.dumps(body), headers=self.headers,
         )
 
     def _body(self, file_name, **overrides):

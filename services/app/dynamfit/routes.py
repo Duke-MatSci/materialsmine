@@ -14,7 +14,7 @@ from app.dynamfit.dynamfit2 import (
 from app.utils.util import token_required, upload_init, request_logger, log_errors
 from app.config import Config
 
-dynamfit = Blueprint("dynamfit", __name__, url_prefix="/dynamfit")
+dynamfit = Blueprint("dynamfit", __name__, url_prefix="/tri-ve")
 
 
 def check_file_exists(file_name):
