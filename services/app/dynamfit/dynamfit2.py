@@ -1745,16 +1745,16 @@ def _annotate_fit_quality(figs, quality) -> None:
         return
     parts = []
     if quality.chi2_reduced is not None:
-        parts.append(f"χ²/ν = {quality.chi2_reduced:.3g}")
+        parts.append(f"misfit (χ²/ν) = {quality.chi2_reduced:.3g}")
     if quality.curvature is not None:
-        parts.append(f"curvature = {quality.curvature:.3g}")
+        parts.append(f"curvature (⟨H″²⟩) = {quality.curvature:.3g}")
     if quality.neg_log_posterior is not None:
         parts.append(
-            f"−log posterior(λ) = {quality.neg_log_posterior:.4g}"
+            f"surprisal (−log π(λ)) = {quality.neg_log_posterior:.4g}"
         )
     if not parts:
         return
-    text = " · ".join(parts + ["lower is better"])
+    text = " | ".join(parts + ["lower is better"])
     for fig in figs:
         fig.add_annotation(
             text=text,

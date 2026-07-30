@@ -699,7 +699,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         # smoothing weight and only the misfit should be shown. The NNLS active
         # set also leaves exact zeros, so log-spectrum roughness is undefined.
         readout = self._quality_readouts(self.result[0])[0]
-        self.assertNotIn('posterior', readout)
+        self.assertNotIn('surprisal', readout)
         self.assertNotIn('curvature', readout)
 
     def test_quality_readout_shows_posterior_when_smoothed(self):
@@ -709,7 +709,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         )
         readout = self._quality_readouts(smoothed[0])[0]
         self.assertIn('χ²/ν', readout)
-        self.assertIn('posterior', readout)
+        self.assertIn('surprisal', readout)
         self.assertIn('curvature', readout)
 
     def test_quality_readout_puts_curvature_between_the_other_two(self):
@@ -721,7 +721,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         )
         readout = self._quality_readouts(smoothed[0])[0]
         self.assertLess(readout.index('χ²/ν'), readout.index('curvature'))
-        self.assertLess(readout.index('curvature'), readout.index('posterior'))
+        self.assertLess(readout.index('curvature'), readout.index('surprisal'))
 
     def test_annotations_preserve_plotly_express_facet_titles(self):
         # add_annotation is additive; update_layout(annotations=...) would have

@@ -8,7 +8,7 @@
         Fit a Prony series to viscoelastic master-curve data and interconvert between the
         frequency, temperature, and time domains.
         <router-link :to="{ name: 'TriVEAbout' }" target="_blank" rel="noopener">
-          Learn more
+          About Tri-VE
         </router-link>
       </p>
     </header>

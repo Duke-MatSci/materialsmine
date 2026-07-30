@@ -95,11 +95,7 @@
         <template v-if="dataType === 'upload'">
           <div class="dynamfit-shift-upload">
             <p class="dynamfit-shift-upload__label">
-              Upload a viscoelastic data file (CSV, TSV, or TXT)
-            </p>
-            <p class="dynamfit-format__summary">
-              3 columns, no header required: {{ cAxisLabel }}, E' (Pa), E" (Pa). Error
-              columns optional.
+              Upload a viscoelastic data file (CSV, TSV, or TXT) with {{ cAxisLabel }}, E' (Pa), E" (Pa).
             </p>
             <template v-if="!dynamfit.fileUpload">
               <div class="form__file-input">
@@ -131,7 +127,7 @@
               style="display: flex; align-items: center; width: 100%"
               @click="cFormatOpen = !cFormatOpen"
             >
-              <label class="md-body-2 u_pointer">Expected data file format</label>
+              <label class="md-body-2 u_pointer">Expected data source file format</label>
               <md-icon style="margin-left: auto; margin-right: 0">{{
                 cFormatOpen ? 'expand_less' : 'expand_more'
               }}</md-icon>
@@ -365,11 +361,8 @@
           <label for="smoothnessC" class="md-body-2">
             Smoothness (%)
             <HelpPopover label="Smoothness">
-              Penalty on curvature of the relaxation spectrum, as a percentage. It is the
-              exchange rate between the two numbers in the fit-quality readout: the fit
-              minimises χ²/ν + (this fraction)² × log range × curvature. Larger values give
-              a smoother spectrum; 0 disables smoothing (plain non-negative least squares).
-              A few percent suits most master curves.
+              Penalty on curvature of the relaxation spectrum, as a percentage.  Larger values give
+              a smoother spectrum; 0 disables smoothing; over 100% is possible but not recommended.
             </HelpPopover>
           </label>
           <input
@@ -390,9 +383,8 @@
             Relative Error (%)
             <HelpPopover label="Relative Error">
               Assumed measurement uncertainty as a percentage: the fit weights each point by
-              σ = (this percentage) × |E*|. It sets the scale of χ²/ν in the fit-quality
-              readout, so a value near your real scatter makes that number readable. Ignored
-              when your file supplies its own error column(s) — those are used directly.
+              ΔE = (Relative Error ÷ 100) × |E*|. Ignored when your file supplies its own
+              error column(s).
             </HelpPopover>
           </label>
           <input
@@ -906,13 +898,7 @@ const resetAll = async (): Promise<void> => {
 const downloadTitle = (): string => {
   const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (Hz)';
   return (
-    `An example tsv file of 3 columns containing: ${axis}, E' (Pa), E" (Pa); ` +
-    `a header row is optional and ignored. Two optional error layouts are also ` +
-    `accepted: a single Error column, or E' Error and E" Error. Error is an ` +
-    `absolute standard deviation in Pa (the same units as the moduli), ` +
-    `and every value must be greater than zero. Format your data as ` +
-    `this template then 'upload file' to use the Prony Series fitting and ` +
-    `conversion tool.`
+    `An example tsv file of 3 columns: ${axis}, E' (Pa), E" (Pa).`
   );
 };
 
