@@ -667,7 +667,9 @@ const ttspTLValue = ref(null);
 const ttspEAValue = ref(null);
 const tLEstimated = ref(false);
 const eAEstimated = ref(false);
-const cDataSourceOpen = ref(false);
+// Open on arrival: the source buttons are the first thing the user needs, and
+// nothing collapses them again except an explicit click on the header caret.
+const cDataSourceOpen = ref(true);
 const cFormatOpen = ref(false);
 const smoothness = ref<number>(0.1);
 const relativeError = ref<number>(0.2);
@@ -1279,12 +1281,6 @@ watch(selectedProperty, (v) => {
     cTtspApplied.value = false;
     cTtspVisible.value = true;
     cShiftModelOpen.value = true;
-  }
-});
-
-watch(disableInput, (disabled) => {
-  if (!disabled) {
-    cDataSourceOpen.value = false;
   }
 });
 
