@@ -4,6 +4,13 @@
       <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">
         Tri-VE
       </h1>
+      <p class="md-body-1 u_centralize_text u_margin-bottom-small">
+        Fit a Prony series to viscoelastic master-curve data and interconvert between the
+        frequency, temperature, and time domains.
+        <router-link :to="{ name: 'TriVEAbout' }" target="_blank" rel="noopener">
+          Learn more
+        </router-link>
+      </p>
     </header>
     <main
       aria-label="tri-ve-main"

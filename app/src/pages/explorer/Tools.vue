@@ -18,6 +18,14 @@
                     Fit a Prony series to viscoelastic master-curve data and interconvert between
                     the frequency, temperature, and time domains.
                   </p>
+                  <!-- @click.stop so the About link doesn't also fire the card's navigate -->
+                  <router-link
+                    class="btn-text btn--noradius"
+                    :to="{ name: 'TriVEAbout' }"
+                    @click.stop
+                  >
+                    About Tri-VE
+                  </router-link>
                 </div>
               </router-link>
             </div>
