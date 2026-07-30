@@ -13,10 +13,10 @@
                   @click="navigate"
                 >
                   <md-icon class="explorer_page-nav-card_icon">stacked_line_chart</md-icon>
-                  <span class="explorer_page-nav-card_text">DynamFit</span>
+                  <span class="explorer_page-nav-card_text">Tri-VE</span>
                   <p class="md-layout-item_para md-layout-item_para_fl">
-                    A sign control algorithm that fits a viscoelastic mastercurve from DMA
-                    experiments with a Prony Series.
+                    Fit a Prony series to viscoelastic master-curve data and interconvert between
+                    the frequency, temperature, and time domains.
                   </p>
                 </div>
               </router-link>

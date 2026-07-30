@@ -18,19 +18,19 @@
       </p>
     </header>
     <main
-      aria-label="dynamfit-main"
+      aria-label="classes-main"
       class="u--margin-posmd md-layout md-alignment-top-space-between md-layout-item md-size-90 md-medium-size-95 md-small-size-100 u_height--auto"
     >
       <!-- aside  -->
       <aside
-        aria-label="dynamfit-setting"
+        aria-label="classes-list"
         class="md-layout-item md-size-25 md-medium-size-35 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
         <ClassesList />
       </aside>
       <!-- main  -->
       <section
-        aria-label="dynamfit-data"
+        aria-label="classes-detail"
         class="md-layout-item md-size-70 md-medium-size-60 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
         <div

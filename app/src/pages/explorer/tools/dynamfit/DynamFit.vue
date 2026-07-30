@@ -1,12 +1,12 @@
 <template>
   <article class="u_width--max">
-    <header aria-label="dynamfit-header" class="explorer_page_header">
+    <header aria-label="tri-ve-header" class="explorer_page_header">
       <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">
-        DynamFit
+        Tri-VE
       </h1>
     </header>
     <main
-      aria-label="dynamfit-main"
+      aria-label="tri-ve-main"
       class="u--margin-posmd md-layout md-alignment-top-space-around u_relative"
     >
       <!-- <div
@@ -19,14 +19,14 @@
       </div> -->
       <!-- aside  -->
       <aside
-        aria-label="dynamfit-setting"
+        aria-label="tri-ve-setting"
         class="md-layout-item md-size-25 md-medium-size-35 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
         <ChartSetting />
       </aside>
       <!-- main  -->
       <section
-        aria-label="dynamfit-data"
+        aria-label="tri-ve-data"
         class="md-layout-item md-size-70 md-medium-size-60 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
         <ChartVisualizer @change-file="onChangeFileRequest" @surprise-me="onSurpriseMe" />
@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import ChartSetting from '@/components/explorer/dynamfit/ChartSetting.vue';
 import ChartVisualizer from '@/components/explorer/dynamfit/ChartVisualizer.vue';
@@ -73,7 +73,17 @@ import Dialog from '@/components/Dialog.vue';
 
 // Component name for debugging
 defineOptions({
-  name: 'DynamFit',
+  name: 'TriVE',
+});
+
+// This app has no route-title machinery, so the page sets (and restores) its own.
+let previousTitle = '';
+onMounted(() => {
+  previousTitle = document.title;
+  document.title = 'Tri-VE — MaterialsMine';
+});
+onBeforeUnmount(() => {
+  if (previousTitle) document.title = previousTitle;
 });
 
 // Components
