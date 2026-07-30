@@ -29,20 +29,24 @@
         <md-tab id="tab-upload" md-label="Uploaded Data">
           <TableComponent :tableData="upload" sortBy="i" />
 
-          <!-- vue-json-csv downloads on wrapper click, so an empty table would
-               hand the user a blank file rather than a disabled button. -->
-          <download-csv v-if="upload.length" :data="upload" :name="uploadCsvName">
-            <button class="md-button btn btn--primary u--b-rad">Download Data</button>
-          </download-csv>
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!upload.length"
+            @click="downloadCsv(upload, uploadCsvName)"
+          >
+            Download Data
+          </button>
         </md-tab>
         <md-tab id="tab-Prony" md-label="Prony Coeff">
           <TableComponent :tableData="prony" sortBy="i" />
 
-          <download-csv :data="prony" :name="pronyCsvName">
-            <button :disabled="!prony.length" class="md-button btn btn--primary u--b-rad">
-              Download Coefficients
-            </button>
-          </download-csv>
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!prony.length"
+            @click="downloadCsv(prony, pronyCsvName)"
+          >
+            Download Coefficients
+          </button>
         </md-tab>
       </md-tabs>
     </div>
@@ -107,10 +111,7 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
-// Registers <download-csv>: script-setup bindings resolve kebab-case tags. It
-// was used in the template but never registered, so the Prony download button
-// silently did nothing.
-import DownloadCsv from 'vue-json-csv';
+import { downloadCsv } from '@/composables/useCsvDownload';
 
 defineOptions({
   name: 'ChartVisualizer',
