@@ -6,7 +6,7 @@
           <h2 class="visualize_header-h1">Tools</h2>
           <div class="md-layout u_display-flex">
             <div class="md-layout-item md-layout-item_card">
-              <router-link to="/explorer/tools/dynamfit" v-slot="{ navigate, href }" custom>
+              <router-link to="/explorer/tools/tri-ve" v-slot="{ navigate, href }" custom>
                 <div
                   class="teams_container explorer_page-nav-card md-layout-item_card"
                   :href="href"
