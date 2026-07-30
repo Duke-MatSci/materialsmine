@@ -214,6 +214,27 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     return pd.DataFrame(data={"Time": t, "E": E})
 
 
+def _log_curvature(logcoefs: np.ndarray, solid: bool) -> np.ndarray:
+    """
+    Second differences of the penalized log-coefficients.
+
+    The vector behind both the smoothness penalty and the reported curvature —
+    one definition so the two cannot drift apart. np.diff degrades to an empty
+    array rather than raising when there are fewer than three penalized terms,
+    so len() of the result doubles as the "is a second difference even defined
+    here" test.
+
+    Parameters:
+        logcoefs (numpy.ndarray): 1-D array of log-coefficients.
+        solid (bool): Whether the leading coefficient is an unpenalized
+            equilibrium term to exclude.
+
+    Returns:
+        numpy.ndarray: 1-D array of length max(0, len(logcoefs) - solid - 2).
+    """
+    return np.diff(logcoefs[solid:], n=2)
+
+
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
@@ -255,7 +276,7 @@ def _prony_objective(
     resid = data - estimate
     loss = resid @ resid
     if smoothness:
-        curve = smoothness * np.diff(logcoefs[solid:], n=2)
+        curve = smoothness * _log_curvature(logcoefs, solid)
         loss += curve @ curve
 
     grad = -(basis.T @ resid)
@@ -265,7 +286,7 @@ def _prony_objective(
     grad *= coefs
 
     if smoothness:
-        diffs = smoothness * curve  # smoothness*np.diff(logcoefs[solid:], n=2)
+        diffs = smoothness * curve  # smoothness**2 * _log_curvature(...)
         grad_slice = grad[solid:]
         grad_slice[:-2] += diffs
         grad_slice[1:-1] -= 2 * diffs
@@ -274,11 +295,46 @@ def _prony_objective(
     return loss, 2 * grad  # more chain rule (squared errors)
 
 
-# Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the
-# data misfit alone; neg_log_posterior is the Laplace-approximated negative log
-# posterior of lam = smoothness**2. Both are "positive, lower is better". Either
-# may be None — see _prony_fit_quality for the conditions.
-_FitQuality = namedtuple('_FitQuality', 'chi2_reduced neg_log_posterior')
+# Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the data
+# misfit alone; neg_log_posterior is the Laplace-approximated negative log
+# posterior of lam = smoothness**2; curvature is the roughness of the fitted log
+# spectrum. All three are "lower is better", and any may be None — see
+# _prony_fit_quality for the conditions.
+#
+# chi2_reduced and curvature are the two coordinates of the classical L-curve:
+# sweep smoothness, plot one against the other, and the corner nearest the
+# lower left is the regularization trade-off worth taking. Both are means, not
+# sums (per residual and per second difference), so the pair stays comparable
+# across upload size and N. curvature is deliberately the UNWEIGHTED roughness
+# rather than the lam-weighted penalty term, so that it does not move with the
+# knob being swept.
+_FitQuality = namedtuple(
+    '_FitQuality', 'chi2_reduced neg_log_posterior curvature'
+)
+
+
+def _cholesky_or_none(C: np.ndarray):
+    """
+    Cholesky factor of C, or None if C is not a positive-definite finite matrix.
+
+    Cholesky succeeding IS the positive-definiteness test, i.e. the test that a
+    candidate optimum is a local minimum at all — slogdet's sign is +1 for an
+    indefinite C with two negative eigenvalues, and eigvalsh costs 10-30x. It
+    does NOT raise on NaN/Inf, it returns a NaN factor, and smooth_prony_fit
+    runs minimize under errstate(invalid='ignore'), so an overflowed coefficient
+    would otherwise escape as a NaN score.
+
+    Parameters:
+        C (numpy.ndarray): 2-D symmetric matrix.
+
+    Returns:
+        numpy.ndarray or None: the lower-triangular factor, or None.
+    """
+    try:
+        chol = np.linalg.cholesky(C)
+    except np.linalg.LinAlgError:
+        return None
+    return chol if np.all(np.isfinite(chol)) else None
 
 
 def _prony_fit_quality(
@@ -347,11 +403,16 @@ def _prony_fit_quality(
             the user-facing knob rather than the row-count-scaled one.
 
     Returns:
-        _FitQuality: (chi2_reduced, neg_log_posterior), both floats and both
-        "lower is better". chi2_reduced is None when the fit has no degrees of
-        freedom left; neg_log_posterior is None when the posterior is undefined
-        (no penalty, or fewer than 3 penalized terms) or when the Laplace
-        expansion does not apply (C not positive definite, or non-finite).
+        _FitQuality: (chi2_reduced, neg_log_posterior, curvature), all floats and
+        all "lower is better". chi2_reduced is None when the fit has no degrees
+        of freedom left; neg_log_posterior is None when the posterior is
+        undefined (no penalty, or fewer than 3 penalized terms) or when the
+        Laplace expansion does not apply (C not positive definite, or
+        non-finite); curvature is None when fewer than 3 penalized terms leave
+        no second difference to take. The two reported quantities are means —
+        chi-squared per degree of freedom, squared second difference per second
+        difference — while the algebra below works in raw sums, so every
+        normalization happens once, at the single return.
     """
     m = len(logcoefs)
     npen = m - solid
@@ -362,76 +423,78 @@ def _prony_fit_quality(
     # Regularization means the effective parameter count is below m, so this
     # dof understates nu and chi2_reduced reads as an upper bound.
     dof = n_resid - m
-    chi2 = (resid @ resid) / dof if dof > 0 else None
+    chi2 = resid @ resid
+
+    # Roughness of the fitted log spectrum, independent of the penalty weight:
+    # the other L-curve coordinate. Available whenever a second difference
+    # exists, including at smoothness == 0 where there is no posterior.
+    curve = _log_curvature(logcoefs, solid)
+    curvature = curve @ curve
 
     # No penalty (lam = 0 -> log(lam) = -inf) or too few penalized terms for a
     # second difference to exist means there is no prior on lam to be posterior
     # about. npen < 3 would also reach log(npen - 1) = log(0) below.
-    if npen < 3 or not smoothness:
-        return _FitQuality(chi2, None)
+    neg_log_posterior = None
+    if len(curve) and smoothness:
+        lam = smoothness * smoothness
+        # Take V from the objective itself so the two cannot drift apart on the
+        # penalty convention. Note V is NOT a marginal likelihood: it is the
+        # unnormalized negative log JOINT density at the mode (misfit+penalty).
+        V, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
 
-    lam = smoothness * smoothness
-    # Take V from the objective itself so the two cannot drift apart on the
-    # penalty convention. Note V is NOT a marginal likelihood: it is the
-    # unnormalized negative log JOINT density at the mode (misfit + penalty).
-    V, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
+        # r.T @ J, the exact second-derivative term. Same expression as the
+        # objective's gradient before the chain rule is doubled and before the
+        # penalty is folded in.
+        rj = -(basis.T @ resid) * coefs
 
-    # r.T @ J, the exact second-derivative term. Same expression as the
-    # objective's gradient before the chain rule is doubled and before the
-    # penalty is folded in.
-    rj = -(basis.T @ resid) * coefs
+        # C = lam * A + J.T @ J + diag(r.T @ J), assembled in ONE m x m array:
+        # neither J (n x m) nor L nor A is ever materialized. The matmul
+        # allocates, so the in-place scalings below cannot touch the read-only
+        # cached R.
+        C = basis.T @ basis
+        C *= coefs           # -> J.T @ J; J = -basis @ diag(coefs), so its two
+        C *= coefs[:, None]  # sign flips cancel in the Gram.
+        # np.einsum('ii->i', C) is a writable stride view even when C is not
+        # contiguous; C.ravel()[::m + 1] would silently write to a copy instead.
+        np.einsum('ii->i', C)[...] += rj
+        # lam * L.T @ L is pentadiagonal; accumulate the nine stencil
+        # outer-product terms straight onto its bands. Index pairs are strictly
+        # increasing within each (t, u) pass, so there is no fancy-index +=
+        # aliasing. The loop also stays correct at npen == 3, where the two
+        # boundary corrections collide and the generic band pattern
+        # [1, 5, 6, ..., 6, 5, 1] does not apply.
+        band = solid + np.arange(npen - 2)
+        for t, stencil_t in enumerate(_D2_STENCIL):
+            for u, stencil_u in enumerate(_D2_STENCIL):
+                C[band + t, band + u] += lam * stencil_t * stencil_u
 
-    # C = lam * A + J.T @ J + diag(r.T @ J), assembled in ONE m x m array:
-    # neither J (n x m) nor L nor A is ever materialized. The matmul allocates,
-    # so the in-place scalings below cannot touch the read-only cached R.
-    C = basis.T @ basis
-    C *= coefs           # -> J.T @ J; J = -basis @ diag(coefs), so its two
-    C *= coefs[:, None]  # sign flips cancel in the Gram.
-    # np.einsum('ii->i', C) is a writable stride view even when C is not
-    # contiguous; C.ravel()[::m + 1] would silently write to a copy instead.
-    np.einsum('ii->i', C)[...] += rj
-    # lam * L.T @ L is pentadiagonal; accumulate the nine stencil outer-product
-    # terms straight onto its bands. Index pairs are strictly increasing within
-    # each (t, u) pass, so there is no fancy-index += aliasing. The loop also
-    # stays correct at npen == 3, where the two boundary corrections collide and
-    # the generic band pattern [1, 5, 6, ..., 6, 5, 1] does not apply.
-    band = solid + np.arange(npen - 2)
-    for t, stencil_t in enumerate(_D2_STENCIL):
-        for u, stencil_u in enumerate(_D2_STENCIL):
-            C[band + t, band + u] += lam * stencil_t * stencil_u
+        chol = _cholesky_or_none(C)
+        if chol is not None:
+            logdetC = 2 * np.log(np.diag(chol)).sum()
+            logpdetA = (
+                2 * np.log(npen) + np.log(npen - 1) + np.log(npen + 1)
+                - np.log(12.0)
+            )
+            # abs(): the penalty is sign-agnostic in smoothness (it enters
+            # squared) and nothing upstream rejects a negative value.
+            loglam = 2 * np.log(abs(smoothness))
+            if prior_lam is None:
+                prior_lam = lam
+            # Negated so that lower is better. This is a log DENSITY, so
+            # positivity is not guaranteed — it holds in practice because V
+            # dominates for any real upload. Deliberately not clamped.
+            neg_log_posterior = (
+                V
+                - 0.5 * (logpdetA + (npen - 2) * loglam - logdetC)
+                - 0.5 * (2 + solid) * np.log(np.pi)
+                + prior_lam
+            )
 
-    try:
-        # Cholesky succeeding IS the positive-definiteness test, i.e. the test
-        # that this is a local minimum at all — slogdet's sign is +1 for an
-        # indefinite C with two negative eigenvalues, and eigvalsh costs 10-30x.
-        chol = np.linalg.cholesky(C)
-    except np.linalg.LinAlgError:
-        return _FitQuality(chi2, None)
-    if not np.all(np.isfinite(chol)):
-        # cholesky does NOT raise on NaN/Inf, it returns a NaN factor, and
-        # smooth_prony_fit runs minimize under errstate(invalid='ignore') — so
-        # an overflowed coefficient would otherwise escape as a NaN score.
-        return _FitQuality(chi2, None)
-    logdetC = 2 * np.log(np.diag(chol)).sum()
-
-    logpdetA = (
-        2 * np.log(npen) + np.log(npen - 1) + np.log(npen + 1) - np.log(12.0)
+    return _FitQuality(
+        chi2 / dof if dof > 0 else None,
+        neg_log_posterior,
+        curvature / len(curve) if len(curve) else None,
     )
-    # abs(): the penalty is sign-agnostic in smoothness (it enters squared) and
-    # nothing upstream rejects a negative value.
-    loglam = 2 * np.log(abs(smoothness))
-    if prior_lam is None:
-        prior_lam = lam
-    # Negated so that lower is better. This is a log DENSITY, so positivity is
-    # not guaranteed — it holds in practice because V dominates for any real
-    # upload. Deliberately not clamped.
-    neg_log_posterior = (
-        V
-        - 0.5 * (logpdetA + (npen - 2) * loglam - logdetC)
-        - 0.5 * (2 + solid) * np.log(np.pi)
-        + prior_lam
-    )
-    return _FitQuality(chi2, neg_log_posterior)
 
 
 # digest -> (R, z), least-recently-used first. See _prony_reduce.
@@ -615,7 +678,9 @@ def smooth_prony_fit(
         N + bool(solid). Entries can be exactly zero (NNLS active set). With
         return_fit_quality, (tau_i, E_i, quality); quality.neg_log_posterior is
         None unless the fit converged to an INTERIOR minimum with smoothing on,
-        since the Laplace approximation behind it assumes a stationary point.
+        since the Laplace approximation behind it assumes a stationary point,
+        and quality.curvature is None on the unsmoothed path, where the NNLS
+        active set makes log-coefficients (and so their roughness) undefined.
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -657,10 +722,12 @@ def smooth_prony_fit(
             return tau_i, E_nnls
         # No penalty means no posterior over lam to report, but the misfit is
         # still meaningful — and nnls already handed us ||R c - z||, which the
-        # reduction's residual row makes a full-problem quantity.
+        # reduction's residual row makes a full-problem quantity. Curvature is
+        # genuinely undefined here, not merely unavailable: NNLS's active set
+        # leaves coefficients EXACTLY zero, whose logs are -inf.
         dof = n_res - len(E_nnls)
         chi2 = rnorm ** 2 / dof if dof > 0 else None
-        return tau_i, E_nnls, _FitQuality(chi2, None)
+        return tau_i, E_nnls, _FitQuality(chi2, None, None)
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
     # so run _prony_objective on the reduced system. Seed from the NNLS
@@ -701,12 +768,17 @@ def smooth_prony_fit(
 
     if np.any(result.x >= ub):
         # The optimum sits on the log-space bound, so grad(V) != 0 there and the
-        # Laplace expansion behind neg_log_posterior does not apply. Report the
-        # misfit only; the reduced residual is already a full-problem quantity.
+        # Laplace expansion behind neg_log_posterior does not apply. The misfit
+        # and the roughness need no stationarity, so both are still reported;
+        # the reduced residual is already a full-problem quantity.
         resid = (z - R @ E_i)
         dof = n_res - len(E_i)
-        chi2 = resid @ resid / dof if dof > 0 else None
-        return tau_i, E_i, _FitQuality(chi2, None)
+        curve = _log_curvature(result.x, solid)
+        return tau_i, E_i, _FitQuality(
+            resid @ resid / dof if dof > 0 else None,
+            None,
+            curve @ curve / len(curve) if len(curve) else None,
+        )
 
     quality = _prony_fit_quality(
         result.x, z, R, smoothness_scaled, solid,
@@ -1601,9 +1673,11 @@ def _annotate_fit_quality(figs, quality) -> None:
     to_json carries layout.annotations. Right-aligned on the same row as the
     decimation notice so the two never overlap.
 
-    Both numbers are "lower is better". Fields that are None are omitted, so an
-    unsmoothed fit shows the misfit alone (there is no posterior over the
-    smoothing weight when there is no smoothing).
+    All three numbers are "lower is better". Fields that are None are omitted,
+    so an unsmoothed fit shows the misfit alone (with no smoothing there is
+    neither a posterior over the smoothing weight nor a defined roughness).
+    Curvature sits in the middle, next to chi-squared: those two are the L-curve
+    coordinates a user trades off when sweeping the smoothness slider.
 
     Uses add_annotation rather than update_layout(annotations=...): these are
     plotly-express faceted figures whose layout.annotations already holds the
@@ -1618,6 +1692,8 @@ def _annotate_fit_quality(figs, quality) -> None:
     parts = []
     if quality.chi2_reduced is not None:
         parts.append(f"χ²/ν = {quality.chi2_reduced:.3g}")
+    if quality.curvature is not None:
+        parts.append(f"curvature = {quality.curvature:.3g}")
     if quality.neg_log_posterior is not None:
         parts.append(
             f"−log posterior(λ) = {quality.neg_log_posterior:.4g}"

@@ -362,7 +362,70 @@ class TestPronyFitQuality(unittest.TestCase):
                     x, data, basis, 1.5, True, n_resid=2 * len(data),
                 )
                 self.assertIsNone(quality.neg_log_posterior)
+                self.assertIsNone(quality.curvature)
                 self.assertIsNotNone(quality.chi2_reduced)
+
+    def test_curvature_is_the_mean_squared_second_difference(self):
+        # Against an explicit dense L: ||L x||^2 / (npen - 2), the roughness of
+        # the fitted log spectrum with the leading equilibrium term excluded.
+        for N, solid in [(8, 1), (8, 0), (3, 1), (12, 0)]:
+            with self.subTest(N=N, solid=solid):
+                basis, data, x = _random_fit_problem(self.rng, N, solid)
+                m = N + solid
+                npen = m - solid
+                L = np.zeros((npen - 2, m))
+                rows = np.arange(npen - 2)
+                L[rows, solid + rows] = 1.0
+                L[rows, solid + rows + 1] = -2.0
+                L[rows, solid + rows + 2] = 1.0
+                Lx = L @ x
+                quality = _prony_fit_quality(
+                    x, data, basis, 1.0, solid, n_resid=2 * len(data),
+                )
+                self.assertAlmostEqual(
+                    quality.curvature, Lx @ Lx / (npen - 2), places=12,
+                )
+
+    def test_curvature_is_reported_without_smoothing(self):
+        # Unlike the posterior, roughness needs no penalty to be defined — it is
+        # a property of the coefficients alone. _prony_fit_quality must report
+        # it at smoothness == 0 (smooth_prony_fit's nnls shortcut is the one
+        # place it cannot, and that is about exact zeros, not about lam).
+        basis, data, x = _random_fit_problem(self.rng, 8, True)
+        quality = _prony_fit_quality(
+            x, data, basis, 0.0, True, n_resid=2 * len(data),
+        )
+        self.assertIsNone(quality.neg_log_posterior)
+        self.assertIsNotNone(quality.curvature)
+
+    def test_curvature_normalization_is_independent_of_N(self):
+        # Dividing by the number of second differences is what makes the two
+        # L-curve coordinates comparable across N. Build spectra whose second
+        # differences have the SAME scale at every N (integrate fixed-scale
+        # noise twice): a raw sum would then grow with N while the reported
+        # mean must not.
+        scale = 0.02
+        raw, normalized = [], []
+        for N in (10, 20, 40):
+            d = self.rng.normal(size=N - 2) * scale
+            x = np.zeros(N)
+            for i in range(2, N):
+                x[i] = 2 * x[i - 1] - x[i - 2] + d[i - 2]
+            basis, data, _ = _random_fit_problem(self.rng, N, 0)
+            quality = _prony_fit_quality(
+                x, data, basis, 1.0, 0, n_resid=2 * len(data),
+            )
+            curve = np.diff(x, n=2)
+            raw.append(curve @ curve)
+            normalized.append(quality.curvature)
+            self.assertAlmostEqual(
+                quality.curvature, (curve @ curve) / (N - 2), places=12,
+            )
+        # The raw sum grows roughly linearly in N; the reported mean sits at
+        # scale**2 regardless.
+        self.assertGreater(raw[-1], 2 * raw[0])
+        for value in normalized:
+            self.assertAlmostEqual(value, scale ** 2, delta=0.7 * scale ** 2)
 
     def test_closed_form_pseudo_determinant_matches_eigendecomposition(self):
         # The production code never builds A; it uses

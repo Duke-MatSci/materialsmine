@@ -530,7 +530,7 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
         spy_target = patch(
             'app.dynamfit.dynamfit2.smooth_prony_fit',
             return_value=(np.array([1.0]), np.array([1.0]),
-                          _FitQuality(1.0, 2.0)),
+                          _FitQuality(1.0, 2.0, 3.0)),
         )
         return spy_target
 
@@ -696,9 +696,11 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
 
     def test_quality_readout_omits_posterior_when_unsmoothed(self):
         # setUpClass fits with smoothness=0, so there is no posterior over the
-        # smoothing weight and only the misfit should be shown.
+        # smoothing weight and only the misfit should be shown. The NNLS active
+        # set also leaves exact zeros, so log-spectrum roughness is undefined.
         readout = self._quality_readouts(self.result[0])[0]
         self.assertNotIn('posterior', readout)
+        self.assertNotIn('curvature', readout)
 
     def test_quality_readout_shows_posterior_when_smoothed(self):
         smoothed = update_line_chart(
@@ -708,6 +710,18 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         readout = self._quality_readouts(smoothed[0])[0]
         self.assertIn('χ²/ν', readout)
         self.assertIn('posterior', readout)
+        self.assertIn('curvature', readout)
+
+    def test_quality_readout_puts_curvature_between_the_other_two(self):
+        # chi-squared and curvature are the two L-curve coordinates, so they
+        # read as a pair; the posterior is a separate criterion and goes last.
+        smoothed = update_line_chart(
+            self.uploadData, number_of_prony=10, smoothness=1.0,
+            fit_settings=False, domain='frequency',
+        )
+        readout = self._quality_readouts(smoothed[0])[0]
+        self.assertLess(readout.index('χ²/ν'), readout.index('curvature'))
+        self.assertLess(readout.index('curvature'), readout.index('posterior'))
 
     def test_annotations_preserve_plotly_express_facet_titles(self):
         # add_annotation is additive; update_layout(annotations=...) would have
