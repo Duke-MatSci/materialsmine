@@ -22,7 +22,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from app.dynamfit.dynamfit2 import (
     wlf_shift, update_line_chart, inverse_wlf_shift,
-    compute_complex, smooth_prony_fit, _PLOT_MAX_POINTS,
+    compute_complex, smooth_prony_fit, _PLOT_MAX_POINTS, _FitQuality,
 )
 from app.config import Config
 from app.utils.util import upload_init
@@ -526,9 +526,11 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
 
     def _spy(self):
         # Return a minimal valid fit result so downstream figure builders run.
+        # update_line_chart asks for return_fit_quality, hence the third element.
         spy_target = patch(
             'app.dynamfit.dynamfit2.smooth_prony_fit',
-            return_value=(np.array([1.0]), np.array([1.0])),
+            return_value=(np.array([1.0]), np.array([1.0]),
+                          _FitQuality(1.0, 2.0)),
         )
         return spy_target
 
@@ -640,6 +642,11 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         return [a.text for a in fig.layout.annotations
                 if a.text and 'decimated by' in a.text]
 
+    @staticmethod
+    def _quality_readouts(fig):
+        return [a.text for a in fig.layout.annotations
+                if a.text and 'lower is better' in a.text]
+
     @classmethod
     def setUpClass(cls):
         cls.uploadData = cls._frequency_upload(cls.N_LARGE)
@@ -674,6 +681,41 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             self.assertEqual(len(notices), 1)
             self.assertIn('too many data points', notices[0])
             self.assertIn(f'{expected_pct}%', notices[0])
+
+    def test_complex_figures_carry_fit_quality_readout(self):
+        # The two figures that overlay the fit on the data get the scores; the
+        # temperature-domain visualizations, which show no fit, do not.
+        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        for fig in (fig1, fig11):
+            readouts = self._quality_readouts(fig)
+            self.assertEqual(len(readouts), 1)
+            self.assertIn('χ²/ν', readouts[0])
+            self.assertIn('lower is better', readouts[0])
+        for fig in (fig4, fig41):
+            self.assertEqual(self._quality_readouts(fig), [])
+
+    def test_quality_readout_omits_posterior_when_unsmoothed(self):
+        # setUpClass fits with smoothness=0, so there is no posterior over the
+        # smoothing weight and only the misfit should be shown.
+        readout = self._quality_readouts(self.result[0])[0]
+        self.assertNotIn('posterior', readout)
+
+    def test_quality_readout_shows_posterior_when_smoothed(self):
+        smoothed = update_line_chart(
+            self.uploadData, number_of_prony=10, smoothness=1.0,
+            fit_settings=False, domain='frequency',
+        )
+        readout = self._quality_readouts(smoothed[0])[0]
+        self.assertIn('χ²/ν', readout)
+        self.assertIn('posterior', readout)
+
+    def test_annotations_preserve_plotly_express_facet_titles(self):
+        # add_annotation is additive; update_layout(annotations=...) would have
+        # replaced the facet labels these faceted figures depend on.
+        for fig in (self.result[0], self.result[1]):
+            facet_titles = [a.text for a in fig.layout.annotations
+                            if a.text and a.text.startswith('Modulus=')]
+            self.assertTrue(facet_titles)
 
     def test_fit_uses_all_rows_not_the_thinned_frame(self):
         # Fitting the full arrays directly must reproduce the coefficients

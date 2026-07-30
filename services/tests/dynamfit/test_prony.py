@@ -14,6 +14,7 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -25,6 +26,8 @@ from app.dynamfit.dynamfit2 import (
     compute_complex,
     compute_relaxation_modulus,
     _prony_objective,
+    _prony_fit_quality,
+    _prony_reduce,
     _build_coef_records,
     smooth_prony_fit,
     argmax_peak,
@@ -240,6 +243,458 @@ class TestPronyObjective(unittest.TestCase):
             logcoefs, data, std, basis, smoothness=1.0, solid=False,
         )
         self.assertGreater(loss_smoothed, loss_unsmoothed)
+
+    def test_returns_exactly_loss_and_gradient(self):
+        # scipy's jac=True contract is a 2-tuple. An earlier revision appended a
+        # third element, which only worked because MemoizeJac happens to index
+        # rather than unpack; pin the documented shape.
+        result = _prony_objective(
+            self.logcoefs, self.data, self.std, self.basis,
+            smoothness=1.0, solid=False,
+        )
+        self.assertEqual(len(result), 2)
+
+
+def _dense_fit_quality(logcoefs, data, std, basis, smoothness, solid,
+                       n_resid, loss_offset=0.0, prior_lam=None):
+    """Straightforward dense reference for _prony_fit_quality.
+
+    Materializes L, A, J and C and uses eigvalsh/slogdet — everything the
+    production code avoids via a closed-form pseudo-determinant and banded
+    in-place accumulation. Returns (chi2, neg_log_posterior) with the posterior
+    None exactly when C is not positive definite, matching the contract.
+    """
+    m = len(logcoefs)
+    npen = m - solid
+    lam = smoothness * smoothness
+    coefs = np.exp(logcoefs)
+    resid = (data - basis @ coefs) / std
+    L = np.zeros((npen - 2, m))
+    rows = np.arange(npen - 2)
+    L[rows, solid + rows] = 1.0
+    L[rows, solid + rows + 1] = -2.0
+    L[rows, solid + rows + 2] = 1.0
+    A = L.T @ L
+    V = resid @ resid + lam * (logcoefs @ A @ logcoefs) + loss_offset
+    J = -(basis * coefs) / std[:, None]
+    C = lam * A + J.T @ J + np.diag(resid @ J)
+    dof = n_resid - m
+    chi2 = (resid @ resid + loss_offset) / dof if dof > 0 else None
+    if np.linalg.eigvalsh(C).min() <= 0:
+        return chi2, None
+    eigs = np.linalg.eigvalsh(A)
+    nonzero = eigs > eigs.max() * 1e-10
+    neg_log_posterior = (
+        V
+        - 0.5 * (np.log(eigs[nonzero]).sum()
+                 + nonzero.sum() * np.log(lam)
+                 - np.linalg.slogdet(C)[1])
+        - 0.5 * (2 + solid) * np.log(np.pi)
+        + (lam if prior_lam is None else prior_lam)
+    )
+    return chi2, neg_log_posterior
+
+
+def _random_fit_problem(rng, N, solid, n_rows=None):
+    """Random (basis, data, std, logcoefs) of the right shapes for N terms.
+
+    The point returned is NOT a minimum, so C is often indefinite there and
+    neg_log_posterior legitimately comes back None — fine for shape and
+    reference-agreement checks, not for tests that need an actual value.
+    """
+    m = N + solid
+    n = 3 * m + 5 if n_rows is None else n_rows
+    basis = np.abs(rng.normal(size=(n, m))) + 0.3
+    data = basis @ np.exp(rng.normal(size=m)) + 0.01 * rng.normal(size=n)
+    std = np.full(n, 0.04)
+    return basis, data, std, rng.normal(size=m) * 0.25
+
+
+def _converged_fit_problem(rng, N=10, smoothness=1.0):
+    """A well-posed problem minimized to convergence.
+
+    The Laplace approximation assumes a stationary point, so tests that need a
+    real neg_log_posterior must evaluate at a genuine minimum rather than at an
+    arbitrary point. Errors are set to the noise actually injected, which puts
+    reduced chi-squared near 1.
+    """
+    omega = np.logspace(-2, 2, 60)
+    tau_i = prony_relaxation_space(1 / omega.max(), 1 / omega.min(), N)
+    basis = prony_basis(omega, tau_i, True)
+    truth = np.exp(np.linspace(2.0, 0.5, N + 1))
+    clean = basis @ truth
+    std = np.abs(clean) * 0.02
+    data = clean + std * rng.normal(size=len(clean))
+    result = minimize(
+        _prony_objective, np.log(truth),
+        args=(data, std, basis, smoothness, True),
+        jac=True, method='L-BFGS-B',
+    )
+    return basis, data, std, result.x
+
+
+class TestPronyFitQuality(unittest.TestCase):
+    def setUp(self):
+        self.rng = np.random.default_rng(4)
+
+    def test_none_posterior_when_smoothness_zero(self):
+        # lam = 0 gives log(lam) = -inf: there is no prior on lam to be
+        # posterior about. The misfit is still well defined.
+        basis, data, std, x = _random_fit_problem(self.rng, 8, True)
+        quality = _prony_fit_quality(
+            x, data, std, basis, 0.0, True, n_resid=2 * len(data),
+        )
+        self.assertIsNone(quality.neg_log_posterior)
+        self.assertIsNotNone(quality.chi2_reduced)
+
+    def test_none_posterior_when_fewer_than_three_taus(self):
+        # A second difference needs 3 penalized terms; npen == 1 would also
+        # reach log(npen - 1) = log(0).
+        for N in (1, 2):
+            with self.subTest(N=N):
+                basis, data, std, x = _random_fit_problem(self.rng, N, True)
+                quality = _prony_fit_quality(
+                    x, data, std, basis, 1.5, True, n_resid=2 * len(data),
+                )
+                self.assertIsNone(quality.neg_log_posterior)
+                self.assertIsNotNone(quality.chi2_reduced)
+
+    def test_closed_form_pseudo_determinant_matches_eigendecomposition(self):
+        # The production code never builds A; it uses
+        # pdet(L.T @ L) == npen**2 * (npen**2 - 1) / 12 and rank == npen - 2.
+        # Nothing at runtime cross-checks that, so check it here.
+        for npen in range(3, 16):
+            for solid in (0, 1):
+                with self.subTest(npen=npen, solid=solid):
+                    m = npen + solid
+                    L = np.zeros((npen - 2, m))
+                    rows = np.arange(npen - 2)
+                    L[rows, solid + rows] = 1.0
+                    L[rows, solid + rows + 1] = -2.0
+                    L[rows, solid + rows + 2] = 1.0
+                    eigs = np.linalg.eigvalsh(L.T @ L)
+                    nonzero = eigs > eigs.max() * 1e-10
+                    self.assertEqual(nonzero.sum(), npen - 2)
+                    closed_form = (
+                        2 * np.log(npen) + np.log(npen - 1)
+                        + np.log(npen + 1) - np.log(12.0)
+                    )
+                    self.assertAlmostEqual(
+                        np.log(eigs[nonzero]).sum(), closed_form, places=9,
+                    )
+
+    def test_matches_dense_reference(self):
+        # Guards the banded L.T @ L accumulation and the in-place coefs
+        # scalings against a dense build. N=3 is included deliberately: there
+        # the two boundary corrections of L.T @ L collide.
+        for N in (3, 4, 8, 20, 40):
+            for solid in (0, 1):
+                for smoothness in (0.2, 1.7, 11.0):
+                    with self.subTest(N=N, solid=solid, smoothness=smoothness):
+                        basis, data, std, x = _random_fit_problem(
+                            self.rng, N, solid,
+                        )
+                        kwargs = dict(n_resid=2 * len(data),
+                                      loss_offset=12.5, prior_lam=0.37)
+                        got = _prony_fit_quality(
+                            x, data, std, basis, smoothness, solid, **kwargs,
+                        )
+                        chi2, nlp = _dense_fit_quality(
+                            x, data, std, basis, smoothness, solid, **kwargs,
+                        )
+                        self.assertAlmostEqual(got.chi2_reduced, chi2, places=9)
+                        if nlp is None:
+                            self.assertIsNone(got.neg_log_posterior)
+                        else:
+                            self.assertAlmostEqual(
+                                got.neg_log_posterior, nlp,
+                                delta=1e-9 * abs(nlp),
+                            )
+
+    def test_reference_hessian_matches_finite_differences(self):
+        # Validates the reference that test_matches_dense_reference trusts:
+        # C must be 0.5 * Hess(V). The second-derivative term diag(r.T @ J) is
+        # exact (not Gauss-Newton) because the coefficients are exp(logcoefs).
+        for N, solid, smoothness in [(7, 1, 0.9), (12, 0, 2.5), (3, 1, 0.4)]:
+            with self.subTest(N=N, solid=solid):
+                m = N + solid
+                basis, data, std, x = _random_fit_problem(
+                    self.rng, N, solid, n_rows=30,
+                )
+
+                def loss_at(point):
+                    return _prony_objective(
+                        point, data, std, basis, smoothness, solid,
+                    )[0]
+
+                h = 1e-5
+                hessian = np.zeros((m, m))
+                for i in range(m):
+                    for j in range(m):
+                        e_i, e_j = np.zeros(m), np.zeros(m)
+                        e_i[i] = h
+                        e_j[j] = h
+                        hessian[i, j] = (
+                            loss_at(x + e_i + e_j) - loss_at(x + e_i - e_j)
+                            - loss_at(x - e_i + e_j) + loss_at(x - e_i - e_j)
+                        ) / (4 * h * h)
+                lam = smoothness * smoothness
+                coefs = np.exp(x)
+                resid = (data - basis @ coefs) / std
+                L = np.zeros((N - 2, m))
+                rows = np.arange(N - 2)
+                L[rows, solid + rows] = 1.0
+                L[rows, solid + rows + 1] = -2.0
+                L[rows, solid + rows + 2] = 1.0
+                J = -(basis * coefs) / std[:, None]
+                C = lam * (L.T @ L) + J.T @ J + np.diag(resid @ J)
+                np.testing.assert_allclose(
+                    C, 0.5 * hessian, rtol=1e-3, atol=1e-4 * np.abs(C).max(),
+                )
+
+    def test_loss_offset_shifts_result_by_its_value(self):
+        # The QR reduction drops an orthogonal residual that depends on N;
+        # loss_offset restores it, and must land in V and chi2 additively.
+        basis, data, std, x = _converged_fit_problem(self.rng)
+        n_resid = 2 * len(data)
+        base = _prony_fit_quality(x, data, std, basis, 1.0, True,
+                                  n_resid=n_resid)
+        offset = 37.5
+        shifted = _prony_fit_quality(x, data, std, basis, 1.0, True,
+                                     n_resid=n_resid, loss_offset=offset)
+        self.assertAlmostEqual(
+            shifted.neg_log_posterior - base.neg_log_posterior, offset,
+            places=6,
+        )
+        self.assertAlmostEqual(
+            shifted.chi2_reduced - base.chi2_reduced,
+            offset / (n_resid - len(x)), places=9,
+        )
+
+    def test_prior_lam_overrides_scaled_lambda(self):
+        # smooth_prony_fit charges the exponential prior against the UNSCALED
+        # smoothness so the prior doesn't punish large uploads; that override
+        # must replace lam exactly, not add to it.
+        basis, data, std, x = _converged_fit_problem(self.rng, smoothness=2.0)
+        kwargs = dict(n_resid=2 * len(data))
+        default = _prony_fit_quality(x, data, std, basis, 2.0, True, **kwargs)
+        override = _prony_fit_quality(x, data, std, basis, 2.0, True,
+                                      prior_lam=0.25, **kwargs)
+        self.assertAlmostEqual(
+            default.neg_log_posterior - override.neg_log_posterior,
+            2.0 ** 2 - 0.25, places=6,
+        )
+
+    def test_none_posterior_when_not_positive_definite(self):
+        # C not positive definite means this is not a local minimum, so the
+        # Laplace expansion does not apply. Coefficients driven far below the
+        # data make diag(r.T @ J), which is O(coefs) and negative, dominate
+        # J.T @ J, which is O(coefs**2) — so C picks up negative eigenvalues.
+        basis, data, std, _ = _converged_fit_problem(self.rng)
+        x = np.full(basis.shape[1], -10.0)
+        quality = _prony_fit_quality(
+            x, data, std, basis, 0.5, True, n_resid=2 * len(data),
+        )
+        self.assertIsNone(quality.neg_log_posterior)
+
+    def test_none_posterior_when_coefficients_non_finite(self):
+        # np.linalg.cholesky does NOT raise on NaN, it returns a NaN factor, so
+        # without the isfinite guard an overflowed coefficient would escape as a
+        # NaN score. smooth_prony_fit runs minimize under invalid='ignore'.
+        basis, data, std, x = _random_fit_problem(self.rng, 8, True)
+        x[0] = np.inf
+        with np.errstate(over='ignore', invalid='ignore'):
+            quality = _prony_fit_quality(
+                x, data, std, basis, 0.5, True, n_resid=2 * len(data),
+            )
+        self.assertIsNone(quality.neg_log_posterior)
+
+    def test_chi2_none_when_no_degrees_of_freedom(self):
+        # A 3-frequency upload gives 6 residuals against m = 21 parameters.
+        basis, data, std, x = _random_fit_problem(self.rng, 20, True, n_rows=6)
+        quality = _prony_fit_quality(x, data, std, basis, 1.0, True, n_resid=6)
+        self.assertIsNone(quality.chi2_reduced)
+
+    def test_scan_has_interior_minimum(self):
+        # The payoff: -log posterior should trade misfit against roughness and
+        # land on an interior smoothness, not run to either end of the scan.
+        # Data is a peaked master curve with 3% noise and matching error bars.
+        rng = np.random.default_rng(1)
+        tau = np.logspace(-3.0, 3.0, 7)
+        E_input = np.concatenate(([500.0], np.exp(
+            -(np.log10(tau)) ** 2 / 4.0) * 3000.0))
+        df = compute_complex(tau, E_input, num_pts=200)
+        omega = df['Frequency'].to_numpy()
+        E_stor = df['E Storage'].to_numpy()
+        E_loss = df['E Loss'].to_numpy()
+        std = np.abs(E_stor + 1.0j * E_loss) * 0.03
+        noise = rng.normal(size=len(omega))
+        E_stor = E_stor + std * noise
+        E_loss = E_loss + std * rng.normal(size=len(omega))
+
+        grid = [0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0]
+        scores = []
+        for smoothness in grid:
+            _, _, quality = smooth_prony_fit(
+                omega, E_stor, E_loss,
+                E_stor_std=std, E_loss_std=std,
+                N=24, smoothness=smoothness, solid=True,
+                return_fit_quality=True,
+            )
+            self.assertIsNotNone(
+                quality.neg_log_posterior,
+                msg=f'no posterior at smoothness={smoothness}',
+            )
+            scores.append(quality.neg_log_posterior)
+        best = int(np.argmin(scores))
+        self.assertGreater(best, 0, msg=f'argmin at grid floor: {scores}')
+        self.assertLess(best, len(grid) - 1,
+                        msg=f'argmin at grid ceiling: {scores}')
+
+    def test_return_fit_quality_leaves_default_shape_alone(self):
+        # 26 call sites unpack two values; the flag must be strictly additive.
+        omega = np.logspace(-1, 1, 40)
+        df = compute_complex(TAU, VISCOUS_E, num_pts=40)
+        omega = df['Frequency'].values
+        E_stor, E_loss = df['E Storage'].values, df['E Loss'].values
+        std = np.ones_like(E_stor)
+        kwargs = dict(E_stor_std=std, E_loss_std=std, N=5, solid=True)
+        self.assertEqual(
+            len(smooth_prony_fit(omega, E_stor, E_loss,
+                                 smoothness=1.0, **kwargs)), 2,
+        )
+        smoothed = smooth_prony_fit(omega, E_stor, E_loss, smoothness=1.0,
+                                    return_fit_quality=True, **kwargs)
+        self.assertEqual(len(smoothed), 3)
+        self.assertIsNotNone(smoothed[2].chi2_reduced)
+        # smoothness == 0 takes the NNLS path: misfit yes, posterior no.
+        unsmoothed = smooth_prony_fit(omega, E_stor, E_loss, smoothness=0.0,
+                                      return_fit_quality=True, **kwargs)
+        self.assertEqual(len(unsmoothed), 3)
+        self.assertIsNotNone(unsmoothed[2].chi2_reduced)
+        self.assertIsNone(unsmoothed[2].neg_log_posterior)
+
+    def test_nnls_path_chi2_matches_explicit_residual(self):
+        # The smoothness == 0 branch takes chi2 from nnls's returned residual
+        # norm plus the dropped orthogonal term, never touching the full basis.
+        # Check that shortcut against the residual computed the long way.
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        tau_i, E_i, quality = smooth_prony_fit(
+            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+            N=12, smoothness=0.0, solid=True, return_fit_quality=True,
+        )
+        expected = _chi2_per_point(
+            omega, E_stor, E_loss, std, tau_i, E_i,
+        ) * (2 * len(omega)) / (2 * len(omega) - len(E_i))
+        self.assertAlmostEqual(
+            quality.chi2_reduced, expected, delta=1e-6 * expected,
+        )
+
+
+class TestPronyReduce(unittest.TestCase):
+    """The extracted QR reduction and its content-addressed LRU cache."""
+
+    def setUp(self):
+        dynamfit2._REDUCE_CACHE.clear()
+        self.omega = np.logspace(-2, 2, 200)
+        tau = np.logspace(-2, 2, 5)
+        df = compute_complex(tau, np.array([100.0, 1e3, 2e3, 1e3, 500.0, 200.0]),
+                             num_pts=200)
+        self.omega = df['Frequency'].to_numpy()
+        self.E_stor = df['E Storage'].to_numpy()
+        self.E_loss = df['E Loss'].to_numpy()
+        self.std = np.abs(self.E_stor + 1.0j * self.E_loss) * 0.05
+        self.tau_i = prony_relaxation_space(
+            1 / self.omega.max(), 1 / self.omega.min(), 8,
+        )
+
+    def _reduce(self, **overrides):
+        args = dict(
+            omega=self.omega, E_stor=self.E_stor, E_loss=self.E_loss,
+            E_stor_std=self.std, E_loss_std=self.std, tau_i=self.tau_i,
+            solid=True,
+        )
+        args.update(overrides)
+        return _prony_reduce(**args)
+
+    def test_identical_inputs_hit_the_cache(self):
+        # A smoothness sweep re-calls with the same arrays; the QR must run once.
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        np.linalg.qr = counting_qr
+        try:
+            first = self._reduce()
+            after_first = len(calls)
+            second = self._reduce()
+        finally:
+            np.linalg.qr = original
+        self.assertGreater(after_first, 0)
+        self.assertEqual(len(calls), after_first, msg='cache miss on repeat')
+        self.assertIs(first[0], second[0])
+
+    def test_modified_content_misses_the_cache(self):
+        # The key is a content digest, not id() — a mutated copy at the same
+        # address (or a distinct array with the same values) must not collide.
+        first = self._reduce()
+        bumped = self.E_stor.copy()
+        bumped[3] *= 1.01
+        second = self._reduce(E_stor=bumped)
+        self.assertIsNot(first[1], second[1])
+        # R is the triangle of the weighted basis, which does not depend on the
+        # moduli at all — only z carries the data, so that is what must change.
+        np.testing.assert_allclose(first[0], second[0])
+        self.assertFalse(np.array_equal(first[1], second[1]))
+        # ...while an equal-valued copy still hits.
+        third = self._reduce(E_stor=self.E_stor.copy())
+        self.assertIs(first[1], third[1])
+
+    def test_cached_arrays_are_read_only(self):
+        # Callers share the cached arrays, so a stray write would poison every
+        # later hit. scipy doesn't write to them today; make it raise if it ever
+        # does rather than silently corrupting results.
+        R, z, _ = self._reduce()
+        with self.assertRaises(ValueError):
+            R[0, 0] = 1.0
+        with self.assertRaises(ValueError):
+            z[0] = 1.0
+
+    def test_evicts_least_recently_used(self):
+        for extra in range(dynamfit2._REDUCE_CACHE_SIZE + 2):
+            bumped = self.E_stor.copy()
+            bumped[0] += extra + 1
+            self._reduce(E_stor=bumped)
+        self.assertEqual(
+            len(dynamfit2._REDUCE_CACHE), dynamfit2._REDUCE_CACHE_SIZE,
+        )
+
+    def test_dropped_residual_completes_the_reduced_loss(self):
+        # ||(y - Bc)/std||^2 == ||Rc - z||^2 + dropped, exactly. This identity
+        # is what loss_offset restores, and it depends on len(tau_i).
+        R, z, dropped = self._reduce()
+        basis = prony_basis(self.omega, self.tau_i, True)
+        coefs = np.exp(np.linspace(3.0, 1.0, len(self.tau_i) + 1))
+        y = np.concatenate((self.E_stor, self.E_loss))
+        y_std = np.concatenate((self.std, self.std))
+        full = ((y - basis @ coefs) / y_std)
+        reduced = R @ coefs - z
+        self.assertAlmostEqual(
+            full @ full, reduced @ reduced + dropped,
+            delta=1e-8 * (full @ full),
+        )
+
+    def test_dropped_is_zero_for_short_uploads(self):
+        # Fewer data rows than m leaves a shorter triangle with no row m.
+        short = self._reduce(
+            omega=self.omega[:3], E_stor=self.E_stor[:3],
+            E_loss=self.E_loss[:3], E_stor_std=self.std[:3],
+            E_loss_std=self.std[:3],
+        )
+        self.assertEqual(short[2], 0.0)
 
 
 class TestSmoothPronyFit(unittest.TestCase):
