@@ -68,7 +68,12 @@
               <md-icon style="margin-left: 0; margin-right: 0.25rem">cloud_upload</md-icon>
               Upload File
             </button>
-            <button class="dynamfit-source-btn" @click="cSelectSource('explore')">
+            <button
+              class="dynamfit-source-btn disabled"
+              disabled
+              aria-disabled="true"
+              title="Temporarily unavailable"
+            >
               <md-icon style="margin-left: 0; margin-right: 0.25rem">manage_search</md-icon>
               Explore XML
             </button>
@@ -83,6 +88,7 @@
               Surprise Me
             </button>
           </div>
+          <span class="dynamfit-hint">Explore XML is temporarily unavailable.</span>
         </template>
 
         <!-- Upload sub-panel -->
@@ -1126,8 +1132,10 @@ const loadSurpriseFile = async (): Promise<void> => {
 };
 
 const handleSelect = async (): Promise<void> => {
-  if (sentRequest.value)
+  if (sentRequest.value) {
     store.commit('setSnackbar', { message: 'Please wait & try after a few sec' });
+    return;
+  }
 
   if (!selectedItemProperty.value) {
     store.commit('setSnackbar', {
