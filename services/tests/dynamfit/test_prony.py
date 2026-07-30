@@ -254,7 +254,7 @@ class TestPronyObjective(unittest.TestCase):
 
 
 def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
-                       n_resid, loss_offset=0.0, prior_lam=None):
+                       n_resid, prior_lam=None):
     """Straightforward dense reference for _prony_fit_quality.
 
     Materializes L, A, J and C and uses eigvalsh/slogdet — everything the
@@ -274,11 +274,11 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     L[rows, solid + rows + 1] = -2.0
     L[rows, solid + rows + 2] = 1.0
     A = L.T @ L
-    V = resid @ resid + lam * (logcoefs @ A @ logcoefs) + loss_offset
+    V = resid @ resid + lam * (logcoefs @ A @ logcoefs)
     J = -(basis * coefs)
     C = lam * A + J.T @ J + np.diag(resid @ J)
     dof = n_resid - m
-    chi2 = (resid @ resid + loss_offset) / dof if dof > 0 else None
+    chi2 = (resid @ resid) / dof if dof > 0 else None
     if np.linalg.eigvalsh(C).min() <= 0:
         return chi2, None
     eigs = np.linalg.eigvalsh(A)
@@ -400,7 +400,7 @@ class TestPronyFitQuality(unittest.TestCase):
                             self.rng, N, solid,
                         )
                         kwargs = dict(n_resid=2 * len(data),
-                                      loss_offset=12.5, prior_lam=0.37)
+                                      prior_lam=0.37)
                         got = _prony_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
@@ -457,23 +457,29 @@ class TestPronyFitQuality(unittest.TestCase):
                     C, 0.5 * hessian, rtol=1e-3, atol=1e-4 * np.abs(C).max(),
                 )
 
-    def test_loss_offset_shifts_result_by_its_value(self):
-        # The QR reduction drops an orthogonal residual that depends on N;
-        # loss_offset restores it, and must land in V and chi2 additively.
-        basis, data, x = _converged_fit_problem(self.rng)
-        n_resid = 2 * len(data)
-        base = _prony_fit_quality(x, data, basis, 1.0, True,
-                                  n_resid=n_resid)
-        offset = 37.5
-        shifted = _prony_fit_quality(x, data, basis, 1.0, True,
-                                     n_resid=n_resid, loss_offset=offset)
-        self.assertAlmostEqual(
-            shifted.neg_log_posterior - base.neg_log_posterior, offset,
-            places=6,
+    def test_reduced_system_scores_on_the_full_problem_scale(self):
+        # The reduction keeps its orthogonal-residual row, so chi2 taken from
+        # (R, z) is ALREADY the full problem's misfit — nothing to add back.
+        # Score a reduced system and compare against the long-hand weighted
+        # residual over every data row.
+        omega = np.logspace(-2, 2, 120)
+        tau_i = prony_relaxation_space(1 / omega.max(), 1 / omega.min(), 8)
+        basis = prony_basis(omega, tau_i, True)
+        truth = np.exp(np.linspace(3.0, 1.0, len(tau_i) + 1))
+        clean = basis @ truth
+        std = np.abs(clean) * 0.05
+        y = clean + std * self.rng.normal(size=len(clean))
+        n = len(omega)
+        R, z = _prony_reduce(omega, y[:n], y[n:], std[:n], std[n:], tau_i, True)
+
+        n_resid = 2 * n
+        quality = _prony_fit_quality(
+            np.log(truth), z, R, 1.0, True, n_resid=n_resid,
         )
+        resid = (y - clean) / std
+        expected = resid @ resid / (n_resid - len(truth))
         self.assertAlmostEqual(
-            shifted.chi2_reduced - base.chi2_reduced,
-            offset / (n_resid - len(x)), places=9,
+            quality.chi2_reduced, expected, delta=1e-9 * expected,
         )
 
     def test_prior_lam_overrides_scaled_lambda(self):
@@ -580,9 +586,9 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertIsNone(unsmoothed[2].neg_log_posterior)
 
     def test_nnls_path_chi2_matches_explicit_residual(self):
-        # The smoothness == 0 branch takes chi2 from nnls's returned residual
-        # norm plus the dropped orthogonal term, never touching the full basis.
-        # Check that shortcut against the residual computed the long way.
+        # The smoothness == 0 branch takes chi2 straight from nnls's returned
+        # residual norm, never touching the full basis. Check that shortcut
+        # against the residual computed the long way.
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         tau_i, E_i, quality = smooth_prony_fit(
             omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
@@ -662,7 +668,7 @@ class TestPronyReduce(unittest.TestCase):
         # Callers share the cached arrays, so a stray write would poison every
         # later hit. scipy doesn't write to them today; make it raise if it ever
         # does rather than silently corrupting results.
-        R, z, _ = self._reduce()
+        R, z = self._reduce()
         with self.assertRaises(ValueError):
             R[0, 0] = 1.0
         with self.assertRaises(ValueError):
@@ -677,29 +683,54 @@ class TestPronyReduce(unittest.TestCase):
             len(dynamfit2._REDUCE_CACHE), dynamfit2._REDUCE_CACHE_SIZE,
         )
 
-    def test_dropped_residual_completes_the_reduced_loss(self):
-        # ||(y - Bc)/std||^2 == ||Rc - z||^2 + dropped, exactly. This identity
-        # is what loss_offset restores, and it depends on len(tau_i).
-        R, z, dropped = self._reduce()
+    def test_reduced_loss_equals_the_full_loss_with_no_offset(self):
+        # ||(y - Bc)/std||^2 == ||Rc - z||^2 exactly, for ANY c. The reduction
+        # keeps the orthogonal-residual row instead of returning it separately,
+        # so there is no constant left for callers to add back.
+        R, z = self._reduce()
         basis = prony_basis(self.omega, self.tau_i, True)
-        coefs = np.exp(np.linspace(3.0, 1.0, len(self.tau_i) + 1))
         y = np.concatenate((self.E_stor, self.E_loss))
         y_std = np.concatenate((self.std, self.std))
-        full = ((y - basis @ coefs) / y_std)
-        reduced = R @ coefs - z
-        self.assertAlmostEqual(
-            full @ full, reduced @ reduced + dropped,
-            delta=1e-8 * (full @ full),
-        )
+        for scale in (1.0, 0.4, 2.5):
+            with self.subTest(scale=scale):
+                coefs = scale * np.exp(
+                    np.linspace(3.0, 1.0, len(self.tau_i) + 1)
+                )
+                full = (y - basis @ coefs) / y_std
+                reduced = R @ coefs - z
+                self.assertAlmostEqual(
+                    full @ full, reduced @ reduced,
+                    delta=1e-8 * (full @ full),
+                )
 
-    def test_dropped_is_zero_for_short_uploads(self):
-        # Fewer data rows than m leaves a shorter triangle with no row m.
-        short = self._reduce(
+    def test_residual_row_is_exactly_zero_across_the_basis(self):
+        # What makes keeping the row safe: R is upper triangular, so its last
+        # row contributes z[-1]**2 to every loss and nothing to any gradient.
+        R, z = self._reduce()
+        m = len(self.tau_i) + 1
+        self.assertEqual(R.shape, (m + 1, m))
+        np.testing.assert_array_equal(R[m], np.zeros(m))
+        self.assertNotEqual(z[m], 0.0)
+
+    def test_short_uploads_have_no_residual_row_at_all(self):
+        # Fewer data rows than m leaves a shorter triangle: nothing is
+        # unreachable, so the identity above holds with a wide R too.
+        R, z = self._reduce(
             omega=self.omega[:3], E_stor=self.E_stor[:3],
             E_loss=self.E_loss[:3], E_stor_std=self.std[:3],
             E_loss_std=self.std[:3],
         )
-        self.assertEqual(short[2], 0.0)
+        m = len(self.tau_i) + 1
+        self.assertEqual(R.shape, (6, m))  # 3 frequencies -> 6 residuals < m
+        basis = prony_basis(self.omega[:3], self.tau_i, True)
+        coefs = np.exp(np.linspace(3.0, 1.0, m))
+        y = np.concatenate((self.E_stor[:3], self.E_loss[:3]))
+        y_std = np.concatenate((self.std[:3], self.std[:3]))
+        full = (y - basis @ coefs) / y_std
+        reduced = R @ coefs - z
+        self.assertAlmostEqual(
+            full @ full, reduced @ reduced, delta=1e-8 * (full @ full),
+        )
 
 
 class TestSmoothPronyFit(unittest.TestCase):

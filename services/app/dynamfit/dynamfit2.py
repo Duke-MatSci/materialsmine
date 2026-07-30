@@ -288,7 +288,6 @@ def _prony_fit_quality(
         smoothness: float,
         solid: bool,
         n_resid: int,
-        loss_offset: float = 0.0,
         prior_lam: float = None,
 ) -> _FitQuality:
     """
@@ -327,9 +326,9 @@ def _prony_fit_quality(
     Expects the QR-REDUCED system from smooth_prony_fit (basis=R, data=z), which
     the route's N <= 100 cap bounds at ~102 rows; peak allocation is then two
     m x m arrays. That system is already weighted by 1/std, so residuals here are
-    unweighted — see _prony_objective. Pass loss_offset to restore the orthogonal
-    residual that the QR reduction drops, without which neither number is
-    comparable across N.
+    unweighted — see _prony_objective — and it carries the orthogonal residual
+    the fit cannot reach as its own row, so both numbers come out on the
+    full-problem scale and stay comparable across N with nothing to add back.
 
     Parameters:
         logcoefs (numpy.ndarray): 1-D array of log-coefficients at the optimum.
@@ -341,9 +340,8 @@ def _prony_fit_quality(
         solid (bool): Whether the leading coefficient is an equilibrium term
             excluded from the smoothness penalty.
         n_resid (int): Residual count of the FULL problem (2 * len(omega)), used
-            for the chi-squared degrees of freedom.
-        loss_offset (float): Squared orthogonal residual dropped by the QR
-            reduction, added back to both the chi-squared and V.
+            for the chi-squared degrees of freedom. It cannot be read off `data`,
+            whose length is the reduced m + 1 for any upload size.
         prior_lam (float): lam to charge the exponential prior for. Defaults to
             smoothness**2; pass the UNSCALED smoothness**2 so the prior tracks
             the user-facing knob rather than the row-count-scaled one.
@@ -364,7 +362,7 @@ def _prony_fit_quality(
     # Regularization means the effective parameter count is below m, so this
     # dof understates nu and chi2_reduced reads as an upper bound.
     dof = n_resid - m
-    chi2 = (resid @ resid + loss_offset) / dof if dof > 0 else None
+    chi2 = (resid @ resid) / dof if dof > 0 else None
 
     # No penalty (lam = 0 -> log(lam) = -inf) or too few penalized terms for a
     # second difference to exist means there is no prior on lam to be posterior
@@ -374,10 +372,9 @@ def _prony_fit_quality(
 
     lam = smoothness * smoothness
     # Take V from the objective itself so the two cannot drift apart on the
-    # penalty convention. Note `loss` is NOT a marginal likelihood: it is the
+    # penalty convention. Note V is NOT a marginal likelihood: it is the
     # unnormalized negative log JOINT density at the mode (misfit + penalty).
-    loss, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
-    V = loss + loss_offset
+    V, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
 
     # r.T @ J, the exact second-derivative term. Same expression as the
     # objective's gradient before the chain rule is doubled and before the
@@ -437,7 +434,7 @@ def _prony_fit_quality(
     return _FitQuality(chi2, neg_log_posterior)
 
 
-# digest -> (R, z, dropped), least-recently-used first. See _prony_reduce.
+# digest -> (R, z), least-recently-used first. See _prony_reduce.
 _REDUCE_CACHE = OrderedDict()
 
 
@@ -479,9 +476,9 @@ def _prony_reduce(
 
     Maintains the triangular augmented system [R | z] and folds each weighted
     basis block into it, so that EXACTLY
-        ||(y - B c) / std||^2 = ||R c - z||^2 + dropped
-    and the reduced system has at most len(tau_i) + solid rows regardless of how
-    many data rows the upload carries. Householder QR accumulates the residual
+        ||(y - B c) / std||^2 = ||R c - z||^2
+    and the reduced system has at most len(tau_i) + solid + 1 rows regardless of
+    how many data rows the upload carries. Householder QR accumulates the residual
     information backward-stably (no explicit sums of squares), memory stays
     O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
     independent of the input row count.
@@ -508,10 +505,9 @@ def _prony_reduce(
         solid (bool): Whether to include an equilibrium-modulus term.
 
     Returns:
-        tuple: (R, z, dropped) where R is the read-only reduced design matrix,
-        z the read-only reduced target, and dropped the squared orthogonal
-        residual the reduction discards — a constant that must be added back to
-        any absolute chi-squared or loss, since it depends on len(tau_i).
+        tuple: (R, z), the read-only reduced design matrix and target. The
+        equality above is exact with no correction term to carry: see the
+        comment on the residual row below.
     """
     key = _reduce_cache_key(
         (omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i), solid
@@ -522,11 +518,17 @@ def _prony_reduce(
         return hit
 
     m = len(tau_i) + solid
-    # Keeping m + 1 rows retains the full least-squares information; row m of
-    # the final triangle is the orthogonal-residual norm and is excluded from
-    # (R, z). For uploads with fewer than m rows the triangle is simply shorter
-    # (wide R) — nnls and _prony_objective both accept that shape, and there is
-    # then no row m to drop.
+    # Keeping m + 1 rows retains the full least-squares information. Row m of
+    # the final triangle carries the orthogonal residual the fit can never
+    # reach, and it is KEPT in (R, z) rather than returned as a separate
+    # constant: R is upper triangular, so that row is exactly zero across the
+    # basis columns, making it an ordinary residual row that contributes
+    # z[m]**2 to any loss and nothing at all to any gradient. Every consumer
+    # therefore sees full-problem values with no offset to thread through, and
+    # the reduction stays exact rather than exact-up-to-a-correction. For
+    # uploads with fewer than m rows the triangle is simply shorter (wide R) —
+    # nnls and _prony_objective both accept that shape, and there is then no
+    # unreachable residual to carry.
     Rz = np.empty((0, m + 1))
     for start in range(0, len(omega), _QR_CHUNK_ROWS):
         chunk = slice(start, start + _QR_CHUNK_ROWS)
@@ -539,9 +541,8 @@ def _prony_reduce(
         Rz = np.linalg.qr(
             np.concatenate((Rz, block), axis=0), mode='r'
         )[:m + 1]
-    dropped = Rz[m, m] ** 2 if Rz.shape[0] > m else 0.0
     Rz.flags.writeable = False
-    reduced = (Rz[:m, :m], Rz[:m, m], dropped)
+    reduced = (Rz[:, :m], Rz[:, m])
 
     _REDUCE_CACHE[key] = reduced
     if len(_REDUCE_CACHE) > _REDUCE_CACHE_SIZE:
@@ -570,8 +571,8 @@ def smooth_prony_fit(
 
     Numerics: the weighted data term is first compressed EXACTLY by a chunked
     QR factorization of the weighted basis (see _prony_reduce) —
-        ||(y - B c) / std||^2 = ||R c - z||^2 + const
-    — so the reduced system has at most N + solid rows regardless of how many
+        ||(y - B c) / std||^2 = ||R c - z||^2
+    — so the reduced system has at most N + solid + 1 rows regardless of how many
     data rows the upload carries. Householder QR accumulates the residual
     information backward-stably (no explicit sums of squares), memory stays
     O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
@@ -636,9 +637,17 @@ def smooth_prony_fit(
     m = N + solid
     n_res = 2 * len(omega)
 
-    R, z, dropped = _prony_reduce(
+    R, z = _prony_reduce(
         omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i, solid
     )
+    # (R, z) carries the unreachable orthogonal residual as its last row, which
+    # is what puts every score on the full-problem scale. L-BFGS-B must NOT see
+    # it: its ftol is RELATIVE to f, so a constant the fit cannot reduce makes
+    # the stopping test lazier by exactly the factor it inflates f — measured at
+    # 13x the reducible residual on a 200-row upload, costing ~1e-5 in the
+    # converged coefficients. nnls is immune (finite active set, no tolerance)
+    # and wants the full norm, so only the minimize call takes the slice.
+    R_fit, z_fit = R[:m], z[:m]
 
     # Reduced problem with smoothness == 0 is exactly non-negative least
     # squares — solve it directly (finite algorithm, no iteration budget).
@@ -647,9 +656,10 @@ def smooth_prony_fit(
         if not return_fit_quality:
             return tau_i, E_nnls
         # No penalty means no posterior over lam to report, but the misfit is
-        # still meaningful — and nnls already handed us ||R c - z||.
-        dof = n_res - m
-        chi2 = (rnorm ** 2 + dropped) / dof if dof > 0 else None
+        # still meaningful — and nnls already handed us ||R c - z||, which the
+        # reduction's residual row makes a full-problem quantity.
+        dof = n_res - len(E_nnls)
+        chi2 = rnorm ** 2 / dof if dof > 0 else None
         return tau_i, E_nnls, _FitQuality(chi2, None)
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
@@ -680,7 +690,7 @@ def smooth_prony_fit(
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(z, R, smoothness_scaled, solid),
+            args=(z_fit, R_fit, smoothness_scaled, solid),
             jac=True,
             method='L-BFGS-B',
             bounds=[(None, ub)] * m,
@@ -692,18 +702,15 @@ def smooth_prony_fit(
     if np.any(result.x >= ub):
         # The optimum sits on the log-space bound, so grad(V) != 0 there and the
         # Laplace expansion behind neg_log_posterior does not apply. Report the
-        # misfit only, on the full (un-reduced) residual.
+        # misfit only; the reduced residual is already a full-problem quantity.
         resid = (z - R @ E_i)
-        dof = n_res - m
-        chi2 = (resid @ resid + dropped) / dof if dof > 0 else None
+        dof = n_res - len(E_i)
+        chi2 = resid @ resid / dof if dof > 0 else None
         return tau_i, E_i, _FitQuality(chi2, None)
 
     quality = _prony_fit_quality(
         result.x, z, R, smoothness_scaled, solid,
         n_resid=n_res,
-        # The QR-reduced loss is short by this, and it depends on N, so without
-        # it neither number can be compared across different N.
-        loss_offset=dropped,
         # UNSCALED: the exp(-lam) prior belongs on the user-facing smoothness.
         # Charged against the row-count-scaled lam it would penalize a 41k-row
         # upload ~50x harder than a 400-row one for identical physical
