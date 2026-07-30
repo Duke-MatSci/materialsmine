@@ -321,6 +321,11 @@
     >
       <label for="prony" class="md-body-2">
         Select Number of Prony Terms <span>[{{ dynamfit.range }}]</span>
+        <HelpPopover label="Number of Prony terms">
+          Number of exponential terms in the Prony series. The default is chosen from your
+          data's span (about 3 terms per decade of frequency); more terms fit finer detail
+          but can overfit noisy data.
+        </HelpPopover>
       </label>
       <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
         <input
@@ -357,7 +362,14 @@
         class="u--layout-flex u--layout-flex-justify-sb grid_gap-small u_margin-bottom-small"
       >
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
-          <label for="smoothnessC" class="md-body-2">Smoothness</label>
+          <label for="smoothnessC" class="md-body-2">
+            Smoothness
+            <HelpPopover label="Smoothness">
+              Penalty on curvature of the relaxation spectrum (second differences of the log
+              Prony coefficients, normalized to the data size). Larger values give a smoother
+              spectrum; 0 disables smoothing (plain non-negative least squares).
+            </HelpPopover>
+          </label>
           <input
             :disabled="disableInput"
             v-model.number="smoothness"
@@ -372,7 +384,14 @@
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
-          <label for="relativeErrorC" class="md-body-2">Relative Error</label>
+          <label for="relativeErrorC" class="md-body-2">
+            Relative Error
+            <HelpPopover label="Relative Error">
+              Assumed fractional measurement uncertainty: the fit weights each point by
+              σ = value × |E*|. Ignored when your file supplies its own error column(s) —
+              those are used directly.
+            </HelpPopover>
+          </label>
           <input
             :disabled="cRelativeErrorDisabled"
             v-model.number="relativeError"
@@ -598,11 +617,7 @@
         <a class="btn-text btn--noradius" href="/dynamfit-template.tsv" download>
           <span class="md-body-1">Download Template</span>
         </a>
-        <span>
-          <md-icon class="u_superscript-icon utility-color" :title="downloadTitle()">
-            help_outline
-          </md-icon>
-        </span>
+        <HelpPopover label="Template format">{{ downloadTitle() }}</HelpPopover>
       </div>
     </div>
   </div>
@@ -615,6 +630,7 @@ import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
 import { computeDefaultPronyTerms } from '@/composables/useDynamfitDefaults';
 import Pagination from '@/components/explorer/Pagination.vue';
+import HelpPopover from '@/components/HelpPopover.vue';
 
 defineOptions({
   name: 'ChartSetting',
