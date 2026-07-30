@@ -6,7 +6,12 @@
  */
 import {
   computeDefaultPronyTerms,
+  fractionToPercent,
+  percentToFraction,
+  PERCENT_INPUT_STEP,
   PRONY_TERMS_PER_DECADE,
+  RELATIVE_ERROR_DEFAULT_PERCENT,
+  SMOOTHNESS_DEFAULT_PERCENT,
 } from '@/composables/useDynamfitDefaults';
 
 // Rows spanning `decades` decades of frequency, three columns, tab separated.
@@ -63,5 +68,34 @@ describe('computeDefaultPronyTerms', () => {
 
   it('skips non-positive values that log10 cannot use', () => {
     expect(computeDefaultPronyTerms('0\t1e9\n-1\t1e9\n1\t1e9')).toBeNull();
+  });
+});
+
+describe('percent conversion for the fit settings', () => {
+  it('sends the defaults the fit was calibrated for', () => {
+    expect(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT)).toBe(0.04);
+    expect(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT)).toBe(0.01);
+  });
+
+  it('keeps a step off the default free of binary noise', () => {
+    // 4.1 / 100 is 0.041000000000000004 unrounded, which then shows up in the
+    // request payload and in anything that stringifies it.
+    expect(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT + PERCENT_INPUT_STEP)).toBe(0.041);
+    expect(percentToFraction(0.3)).toBe(0.003);
+  });
+
+  it('round-trips every value the steppers can reach', () => {
+    for (let percent = 0; percent <= 200; percent += PERCENT_INPUT_STEP) {
+      const p = Math.round(percent * 10) / 10;
+      expect(fractionToPercent(percentToFraction(p))).toBe(p);
+    }
+  });
+
+  it('passes a cleared input straight through instead of reading it as zero', () => {
+    // v-model.number hands back '' for an empty field; turning that into 0
+    // would silently claim the data is exact.
+    expect(percentToFraction(NaN)).toBeNaN();
+    expect(percentToFraction('' as unknown as number)).toBe('');
+    expect(fractionToPercent('' as unknown as number)).toBe('');
   });
 });

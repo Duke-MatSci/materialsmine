@@ -363,38 +363,41 @@
       >
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
           <label for="smoothnessC" class="md-body-2">
-            Smoothness
+            Smoothness (%)
             <HelpPopover label="Smoothness">
-              Penalty on curvature of the relaxation spectrum (second differences of the log
-              Prony coefficients, normalized to the data size). Larger values give a smoother
-              spectrum; 0 disables smoothing (plain non-negative least squares).
+              Penalty on curvature of the relaxation spectrum, as a percentage. It is the
+              exchange rate between the two numbers in the fit-quality readout: the fit
+              minimises χ²/ν + (this fraction)² × log range × curvature. Larger values give
+              a smoother spectrum; 0 disables smoothing (plain non-negative least squares).
+              A few percent suits most master curves.
             </HelpPopover>
           </label>
           <input
             :disabled="disableInput"
-            v-model.number="smoothness"
+            v-model.number="smoothnessPercent"
             :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
             type="number"
             name="smoothness"
             id="smoothnessC"
             min="0"
-            max="10"
-            step="0.1"
-            placeholder="0"
+            max="100"
+            :step="PERCENT_INPUT_STEP"
+            :placeholder="SMOOTHNESS_DEFAULT_PERCENT"
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
           <label for="relativeErrorC" class="md-body-2">
-            Relative Error
+            Relative Error (%)
             <HelpPopover label="Relative Error">
-              Assumed fractional measurement uncertainty: the fit weights each point by
-              σ = value × |E*|. Ignored when your file supplies its own error column(s) —
-              those are used directly.
+              Assumed measurement uncertainty as a percentage: the fit weights each point by
+              σ = (this percentage) × |E*|. It sets the scale of χ²/ν in the fit-quality
+              readout, so a value near your real scatter makes that number readable. Ignored
+              when your file supplies its own error column(s) — those are used directly.
             </HelpPopover>
           </label>
           <input
             :disabled="cRelativeErrorDisabled"
-            v-model.number="relativeError"
+            v-model.number="relativeErrorPercent"
             :class="[
               cRelativeErrorDisabled ? 'nuplot-masked' : '',
               'form__input form__input--flat',
@@ -403,9 +406,9 @@
             name="relativeError"
             id="relativeErrorC"
             min="0"
-            max="2"
-            step="0.1"
-            placeholder="0.2"
+            max="200"
+            :step="PERCENT_INPUT_STEP"
+            :placeholder="RELATIVE_ERROR_DEFAULT_PERCENT"
           />
           <span v-if="cHasErrorColumns" class="dynamfit-hint">
             Using error columns of data source.
@@ -628,7 +631,14 @@ import { ref, computed, watch, nextTick } from 'vue';
 import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
-import { computeDefaultPronyTerms } from '@/composables/useDynamfitDefaults';
+import {
+  computeDefaultPronyTerms,
+  fractionToPercent,
+  percentToFraction,
+  PERCENT_INPUT_STEP,
+  RELATIVE_ERROR_DEFAULT_PERCENT,
+  SMOOTHNESS_DEFAULT_PERCENT,
+} from '@/composables/useDynamfitDefaults';
 import Pagination from '@/components/explorer/Pagination.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 
@@ -688,8 +698,23 @@ const eAEstimated = ref(false);
 // nothing collapses them again except an explicit click on the header caret.
 const cDataSourceOpen = ref(true);
 const cFormatOpen = ref(false);
-const smoothness = ref<number>(0.1);
-const relativeError = ref<number>(0.2);
+// Held as the fractions the API takes; the inputs bind to the percent proxies
+// below so the units on screen match the labels.
+const smoothness = ref<number>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
+const relativeError = ref<number>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
+
+const smoothnessPercent = computed<number>({
+  get: () => fractionToPercent(smoothness.value),
+  set: (v) => {
+    smoothness.value = percentToFraction(v);
+  },
+});
+const relativeErrorPercent = computed<number>({
+  get: () => fractionToPercent(relativeError.value),
+  set: (v) => {
+    relativeError.value = percentToFraction(v);
+  },
+});
 const sentRequest = ref(false);
 const updateBtn = ref(false);
 const cTtspApplied = ref(false);
@@ -844,8 +869,8 @@ const resetAll = async (): Promise<void> => {
   dataType.value = undefined;
   transformMethod.value = '';
   ttsp.value = false;
-  smoothness.value = 0.1;
-  relativeError.value = 0.2;
+  smoothness.value = percentToFraction(SMOOTHNESS_DEFAULT_PERCENT);
+  relativeError.value = percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT);
   store.commit('explorer/setDynamfitManualFile', '');
   store.commit('explorer/resetDynamfitShiftCoefficients');
   cTtspApplied.value = false;
