@@ -547,6 +547,17 @@
     &__name {
       color: $primary-grey;
       font-size: $default-size;
+      // Truncate in CSS so the title attribute keeps the whole name.
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__file {
+      margin-left: 0.6rem;
+      color: $secondary-grey;
+      font-size: $small-size;
     }
 
     &__change {

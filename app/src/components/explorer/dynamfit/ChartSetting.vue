@@ -883,6 +883,9 @@ const onInputChange = async (e: Event): Promise<void> => {
     if (!extension || !allowedTypes.includes(extension)) {
       return displayInfo('Unsupported file format');
     }
+    // The upload response only carries the mangled server name, so remember
+    // what the user actually picked before dispatching.
+    const originalName = file[0]?.name ?? '';
     const { fileName } = await store.dispatch('uploadFile', {
       file,
       isTemp: isTemp.value,
@@ -890,6 +893,7 @@ const onInputChange = async (e: Event): Promise<void> => {
     if (fileName) {
       dynamfit.value.fileUpload = fileName;
       store.commit('explorer/setDynamfitSourceType', 'upload');
+      store.commit('explorer/setDynamfitFileMeta', { label: '', originalName });
       displayInfo('Upload Successful', 1500);
     }
   } catch (err) {
@@ -1105,6 +1109,10 @@ const loadPolymerFile = async (filePath: string, sourceType: string): Promise<vo
     if (uploadedName) {
       dynamfit.value.fileUpload = uploadedName;
       store.commit('explorer/setDynamfitSourceType', sourceType);
+      store.commit('explorer/setDynamfitFileMeta', {
+        label: allPolymerFiles.find((f) => f.path === filePath)?.label ?? '',
+        originalName: fileName,
+      });
       displayInfo('File loaded successfully', 1500);
     }
   } catch (err) {
@@ -1172,6 +1180,10 @@ const handleSelect = async (): Promise<void> => {
 
     const data = resp?.response ?? {};
     store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+    store.commit('explorer/setDynamfitFileMeta', {
+      label: currentItem.value?.title ?? '',
+      originalName: '',
+    });
     store.commit('explorer/setDynamfitData', data);
     sentRequest.value = false;
   } catch (err) {

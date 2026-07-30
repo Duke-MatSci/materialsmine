@@ -54,12 +54,21 @@ export default {
       model: 'Linear',
       fileUpload: '',
     };
+    // Every reset path funnels through here, so clearing the display metadata
+    // alongside the file name keeps the two from drifting apart.
+    state.dynamfitFileMeta = { label: '', originalName: '' };
   },
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
   },
   setDynamfitSourceType(state: ExplorerState, payload: string): void {
     state.dynamfitSourceType = payload;
+  },
+  setDynamfitFileMeta(state: ExplorerState, payload: ExplorerState['dynamfitFileMeta']): void {
+    state.dynamfitFileMeta = {
+      label: payload?.label ?? '',
+      originalName: payload?.originalName ?? '',
+    };
   },
   triggerDynamfitSurprise(state: ExplorerState): void {
     state.dynamfitSurpriseRequest++;

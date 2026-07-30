@@ -41,6 +41,10 @@ export default {
         a_T_ref: null,
       },
       dynamfitSourceType: '',
+      dynamfitFileMeta: {
+        label: '',
+        originalName: '',
+      },
       dynamfitSurpriseRequest: 0,
       dynamfitResetCount: 0,
       dynamfit: {

@@ -22,6 +22,12 @@ export interface ExplorerState {
     a_T_ref: number | null;
   };
   dynamfitSourceType: string;
+  // The API only ever echoes the mangled upload name, so the catalog label and
+  // the user's own filename are captured client-side at load time.
+  dynamfitFileMeta: {
+    label: string;
+    originalName: string;
+  };
   dynamfitSurpriseRequest: number;
   // Bumped on every dynamfit reset so in-flight fits can tell they are stale.
   dynamfitResetCount: number;

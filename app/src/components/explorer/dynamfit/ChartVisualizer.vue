@@ -43,8 +43,14 @@
 
     <!-- File name bar -->
     <div v-if="fileUpload" class="dynamfit-file-bar">
-      <span class="dynamfit-file-bar__name">
-        <strong>File Name:</strong> {{ reduceDescription(fileUpload, 25, true) }}
+      <!-- The server name is a mangled `<adjective_animal>-<ISO>-<original>`,
+           so lead with what the user recognises and keep the real name in the
+           tooltip. Truncation is CSS, not JS, so the tooltip stays complete. -->
+      <span class="dynamfit-file-bar__name" :title="fileUpload">
+        <strong>{{ fileMeta.label || fileMeta.originalName || fileUpload }}</strong>
+        <span v-if="fileMeta.label && fileMeta.originalName" class="dynamfit-file-bar__file">
+          {{ fileMeta.originalName }}
+        </span>
       </span>
       <button
         class="btn btn--primary dynamfit-file-bar__change"
@@ -95,7 +101,6 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
-import { useReduce } from '@/composables/useReduce';
 
 defineOptions({
   name: 'ChartVisualizer',
@@ -122,6 +127,10 @@ const emit = defineEmits<{
 
 const sourceType = computed(() => store.state.explorer.dynamfitSourceType);
 
+const fileMeta = computed<{ label: string; originalName: string }>(
+  () => store.state.explorer.dynamfitFileMeta ?? { label: '', originalName: '' }
+);
+
 const handleFileBarAction = (): void => {
   if (sourceType.value === 'surprise') {
     emit('surprise-me');
@@ -129,7 +138,6 @@ const handleFileBarAction = (): void => {
     emit('change-file');
   }
 };
-const { reduceDescription } = useReduce();
 
 const dynamfitData = computed<DynamfitData>(() => store.getters['explorer/getDynamfitData']);
 
