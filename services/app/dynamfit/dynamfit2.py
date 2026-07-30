@@ -217,7 +217,6 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
-        std: np.ndarray,
         basis: np.ndarray,
         smoothness: float,
         solid: bool,
@@ -228,15 +227,20 @@ def _prony_objective(
     Designed to be passed to scipy.optimize.minimize with jac=True. Coefficients
     are parameterized in log-space (E_i = exp(logcoefs)) so that the optimizer
     sees an unconstrained problem while the physical coefficients remain
-    positive. The loss is the weighted sum of squared residuals between
+    positive. The loss is the sum of squared residuals between
     basis @ exp(logcoefs) and data, plus an optional second-difference penalty
     on logcoefs[solid:] scaled by smoothness.
 
+    Residuals are UNWEIGHTED here: the caller passes an already-weighted system.
+    smooth_prony_fit's _prony_reduce folds 1/std into R and z before this is
+    ever called, so carrying a std array through would only buy a per-iteration
+    division by ones on the optimizer's hot path.
+
     Parameters:
         logcoefs (numpy.ndarray): 1-D array of log-coefficients to fit.
-        data (numpy.ndarray): 1-D array of target values.
-        std (numpy.ndarray): 1-D array of per-point standard deviations for weighting.
-        basis (numpy.ndarray): 2-D basis matrix; basis @ exp(logcoefs) is the model.
+        data (numpy.ndarray): 1-D array of target values, pre-weighted.
+        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
+            basis @ exp(logcoefs) is the model.
         smoothness (float): Strength of the second-difference penalty on
             logcoefs[solid:]. Pass 0 to disable.
         solid (bool): Whether the leading coefficient is an equilibrium term to
@@ -248,13 +252,13 @@ def _prony_objective(
     """
     coefs = np.exp(logcoefs)
     estimate = basis @ coefs
-    resid = (data - estimate) / std
+    resid = data - estimate
     loss = resid @ resid
     if smoothness:
         curve = smoothness * np.diff(logcoefs[solid:], n=2)
         loss += curve @ curve
 
-    grad = -(basis.T @ (resid / std))
+    grad = -(basis.T @ resid)
 
     # apply chain rule because these are functions of
     # coefs rather than logcoefs
@@ -280,7 +284,6 @@ _FitQuality = namedtuple('_FitQuality', 'chi2_reduced neg_log_posterior')
 def _prony_fit_quality(
         logcoefs: np.ndarray,
         data: np.ndarray,
-        std: np.ndarray,
         basis: np.ndarray,
         smoothness: float,
         solid: bool,
@@ -323,14 +326,16 @@ def _prony_fit_quality(
 
     Expects the QR-REDUCED system from smooth_prony_fit (basis=R, data=z), which
     the route's N <= 100 cap bounds at ~102 rows; peak allocation is then two
-    m x m arrays. Pass loss_offset to restore the orthogonal residual that the
-    QR reduction drops, without which neither number is comparable across N.
+    m x m arrays. That system is already weighted by 1/std, so residuals here are
+    unweighted — see _prony_objective. Pass loss_offset to restore the orthogonal
+    residual that the QR reduction drops, without which neither number is
+    comparable across N.
 
     Parameters:
         logcoefs (numpy.ndarray): 1-D array of log-coefficients at the optimum.
-        data (numpy.ndarray): 1-D array of target values.
-        std (numpy.ndarray): 1-D array of per-point standard deviations.
-        basis (numpy.ndarray): 2-D basis matrix; basis @ exp(logcoefs) is the model.
+        data (numpy.ndarray): 1-D array of target values, pre-weighted.
+        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
+            basis @ exp(logcoefs) is the model.
         smoothness (float): Penalty strength actually used in the fit, i.e. the
             row-count-scaled value, since lam * A must match the fitted V.
         solid (bool): Whether the leading coefficient is an equilibrium term
@@ -354,7 +359,7 @@ def _prony_fit_quality(
     npen = m - solid
 
     coefs = np.exp(logcoefs)
-    resid = (data - basis @ coefs) / std
+    resid = data - basis @ coefs
     # Data misfit only — the smoothness penalty is not part of chi-squared.
     # Regularization means the effective parameter count is below m, so this
     # dof understates nu and chi2_reduced reads as an upper bound.
@@ -371,20 +376,20 @@ def _prony_fit_quality(
     # Take V from the objective itself so the two cannot drift apart on the
     # penalty convention. Note `loss` is NOT a marginal likelihood: it is the
     # unnormalized negative log JOINT density at the mode (misfit + penalty).
-    loss, _ = _prony_objective(logcoefs, data, std, basis, smoothness, solid)
+    loss, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
     V = loss + loss_offset
 
     # r.T @ J, the exact second-derivative term. Same expression as the
     # objective's gradient before the chain rule is doubled and before the
     # penalty is folded in.
-    rj = -(basis.T @ (resid / std)) * coefs
+    rj = -(basis.T @ resid) * coefs
 
     # C = lam * A + J.T @ J + diag(r.T @ J), assembled in ONE m x m array:
-    # neither J (n x m) nor L nor A is ever materialized.
-    bw = basis / std[:, None]
-    C = bw.T @ bw
-    C *= coefs           # -> J.T @ J; J = -diag(1/std) @ basis @ diag(coefs),
-    C *= coefs[:, None]  # so its two sign flips cancel in the Gram.
+    # neither J (n x m) nor L nor A is ever materialized. The matmul allocates,
+    # so the in-place scalings below cannot touch the read-only cached R.
+    C = basis.T @ basis
+    C *= coefs           # -> J.T @ J; J = -basis @ diag(coefs), so its two
+    C *= coefs[:, None]  # sign flips cancel in the Gram.
     # np.einsum('ii->i', C) is a writable stride view even when C is not
     # contiguous; C.ravel()[::m + 1] would silently write to a copy instead.
     np.einsum('ii->i', C)[...] += rj
@@ -577,10 +582,11 @@ def smooth_prony_fit(
     deterministic, no line search, no initial guess. Coefficients may then be
     EXACTLY zero (downstream consumers already filter E_i != 0). With
     smoothness > 0 the log-space penalty is nonlinear in the coefficients, so
-    _prony_objective is minimized on the reduced system (basis=R, data=z,
-    std=1) with L-BFGS-B, seeded from the NNLS solution and bounded above in
-    log-space — without that bound the line search was measured to run
-    exp(logcoefs) into overflow on broadband (many-decade) master curves.
+    _prony_objective is minimized on the reduced system (basis=R, data=z, which
+    the reduction has already weighted by 1/std) with L-BFGS-B, seeded from the
+    NNLS solution and bounded above in log-space — without that bound the line
+    search was measured to run exp(logcoefs) into overflow on broadband
+    (many-decade) master curves.
 
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
@@ -674,7 +680,7 @@ def smooth_prony_fit(
         result = minimize(
             fun=_prony_objective,
             x0=x0,
-            args=(z, np.ones_like(z), R, smoothness_scaled, solid),
+            args=(z, R, smoothness_scaled, solid),
             jac=True,
             method='L-BFGS-B',
             bounds=[(None, ub)] * m,
@@ -693,7 +699,7 @@ def smooth_prony_fit(
         return tau_i, E_i, _FitQuality(chi2, None)
 
     quality = _prony_fit_quality(
-        result.x, z, np.ones_like(z), R, smoothness_scaled, solid,
+        result.x, z, R, smoothness_scaled, solid,
         n_resid=n_res,
         # The QR-reduced loss is short by this, and it depends on N, so without
         # it neither number can be compared across different N.
