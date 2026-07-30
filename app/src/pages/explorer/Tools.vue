@@ -6,9 +6,10 @@
           <h2 class="visualize_header-h1">Tools</h2>
           <div class="md-layout u_display-flex">
             <div class="md-layout-item md-layout-item_card">
+              <!-- -card-tall: this card carries an extra row for the About link -->
               <router-link to="/explorer/tools/tri-ve" v-slot="{ navigate, href }" custom>
                 <div
-                  class="teams_container explorer_page-nav-card md-layout-item_card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-tall"
                   :href="href"
                   @click="navigate"
                 >
@@ -30,9 +31,10 @@
               </router-link>
             </div>
             <div class="md-layout-item md-layout-item_card">
+              <!-- matched to Tri-VE so the two cards in this row are the same height -->
               <router-link to="/nm/tools/chemprops" v-slot="{ navigate, href }" custom>
                 <div
-                  class="teams_container explorer_page-nav-card md-layout-item_card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-tall"
                   :href="href"
                   @click="navigate"
                 >
@@ -41,6 +43,9 @@
                   <p class="md-layout-item_para md-layout-item_para_fl">
                     A growing polymer name and filler name standardization database.
                   </p>
+                  <!-- Empty fourth row holding the slot an About ChemProps link will
+                       take, so this card's grid matches Tri-VE's in the meantime -->
+                  <span class="btn-text btn--noradius" aria-hidden="true">&nbsp;</span>
                 </div>
               </router-link>
             </div>

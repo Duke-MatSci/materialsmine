@@ -135,7 +135,17 @@
       }
 
       &_icon {
-        margin-top: 9rem;
+        // vue-material pins .md-icon to a 24px box, so a 12rem glyph paints
+        // ~4.8rem outside its own grid row. The card only looked right when it
+        // happened to have enough slack to absorb that, and the 9rem top margin
+        // this replaces was tuned against the overflow rather than the box.
+        // Adding one row to a card (the About link on Tri-VE) shrank the slack
+        // and dropped the label onto the icon.
+        margin-top: 1rem;
+        width: 12rem !important;
+        min-width: 12rem !important;
+        height: 12rem !important;
+        line-height: 12rem !important;
         font-size: 12rem !important;
         color: $primary !important;
       }
