@@ -717,6 +717,57 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         for fig in (fig4, fig41):
             self.assertEqual(self._quality_readouts(fig), [])
 
+    @staticmethod
+    def _notices(fig):
+        return [a for a in fig.layout.annotations
+                if a.text and ('decimated by' in a.text or 'lower is better' in a.text)]
+
+    def test_decimation_and_quality_notices_do_not_share_a_row(self):
+        # Both strings are long — the decimation notice runs 86 characters and
+        # the readout over 100 — so each crosses the middle of the plot on its
+        # own. Anchoring one left and the other right on a single row is not
+        # enough to keep them apart; they have to stack.
+        fig1, fig11 = self.result[0], self.result[1]
+        for fig in (fig1, fig11):
+            notices = self._notices(fig)
+            self.assertEqual(len(notices), 2, msg='expected both notices')
+            self.assertEqual(
+                len({a.y for a in notices}), 2,
+                msg='decimation notice and fit-quality readout share a row',
+            )
+
+    def test_fit_quality_sits_below_the_decimation_notice(self):
+        # The readout is the number a user watches while dragging the sliders,
+        # so it takes the row nearest the plot and the decimation notice — which
+        # says the same thing on every move — stacks above it.
+        fig1 = self.result[0]
+        quality = [a for a in self._notices(fig1) if 'lower is better' in a.text][0]
+        decimation = [a for a in self._notices(fig1) if 'decimated by' in a.text][0]
+        self.assertLess(quality.y, decimation.y)
+
+    def test_notices_are_right_aligned(self):
+        # Ragged left, flush right: the readout's numbers change width from fit
+        # to fit, and anchoring right keeps that from shifting the block.
+        for fig in (self.result[0], self.result[1], self.result[4]):
+            for a in self._notices(fig):
+                self.assertEqual(a.xanchor, 'right')
+                self.assertEqual(a.x, 1.0)
+
+    def test_lone_notice_stays_on_the_bottom_row(self):
+        # The temperature figures carry the decimation notice with no readout
+        # beside it. Stacking must not push a solitary note up into the margin
+        # and leave an empty row under it.
+        fig1, fig4 = self.result[0], self.result[4]
+        lone = self._notices(fig4)
+        self.assertEqual(len(lone), 1)
+        self.assertEqual(lone[0].y, min(a.y for a in self._notices(fig1)))
+
+    def test_stacking_makes_headroom_for_the_upper_row(self):
+        # A second row sits higher above the plot than plotly express's default
+        # 60px top margin leaves room for, so it would be clipped without more.
+        fig1, fig4 = self.result[0], self.result[4]
+        self.assertGreater(fig1.layout.margin.t, fig4.layout.margin.t)
+
     def test_quality_readout_omits_posterior_when_unsmoothed(self):
         # setUpClass fits with smoothness=0, so there is no posterior over the
         # smoothing weight and only the misfit should be shown. The NNLS active

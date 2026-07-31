@@ -48,6 +48,19 @@ _QR_CHUNK_ROWS = 8192
 # ~2000 points per trace is far denser than any screen resolves.
 _PLOT_MAX_POINTS = 2000
 
+# Figure notices — the decimation warning and the fit-quality readout — are gray
+# right-aligned captions in paper coordinates above the plot, one per row. They
+# cannot share a row: each runs 85-100 characters, so even anchored to opposite
+# edges they collided in the middle at every width the frontend renders at. Row
+# 0 sits at _NOTICE_BASE_Y nearest the plot; every row above it needs
+# _NOTICE_ROW_MARGIN more headroom than the _NOTICE_TOP_MARGIN plotly express
+# leaves on these faceted figures.
+_NOTICE_BASE_Y = 1.06
+_NOTICE_ROW_STEP = 0.065
+_NOTICE_TOP_MARGIN = 60
+_NOTICE_ROW_MARGIN = 22
+_NOTICE_NAME = 'figure-notice'
+
 # Second-difference stencil behind the smoothness penalty: the np.diff(..., n=2)
 # weights in _prony_objective, and the outer product that builds lam * L.T @ L
 # in _prony_fit_quality.
@@ -1721,13 +1734,54 @@ def _decimate_for_plot(df: pd.DataFrame) -> tuple:
     return df.iloc[idx], percent
 
 
+def _stamp_notice(figs, text: str) -> None:
+    """
+    Caption each figure above the plot area, on the next free row.
+
+    Notices stack upward in call order: each counts the notices already on the
+    figure and takes the row above them, so two long captions never share a
+    line while a solitary caption still sits on the bottom row. The top margin
+    grows to match, since a stacked row would otherwise be clipped.
+
+    All captions are right-aligned — ragged left, flush right. The fit-quality
+    readout's numbers change width from one fit to the next, and anchoring the
+    right edge keeps that from shifting the whole block sideways as a user drags
+    the sliders.
+
+    The captions ride inside the figures, so to_json carries them to the browser
+    with no frontend work. The MARGIN does need help getting there: PlotlyView
+    imposes its own layout on every chart, so it merges the server's margin over
+    its defaults specifically to let the headroom below survive the trip.
+
+    Each caption is tagged with a name so the row count sees only these: plotly
+    express has already put the facet titles in layout.annotations.
+
+    Parameters:
+        figs: Iterable of plotly Figures to caption.
+        text (str): Caption text.
+    """
+    for fig in figs:
+        row = sum(1 for a in fig.layout.annotations if a.name == _NOTICE_NAME)
+        fig.add_annotation(
+            name=_NOTICE_NAME, text=text,
+            xref='paper', yref='paper',
+            x=1.0, y=_NOTICE_BASE_Y + row * _NOTICE_ROW_STEP,
+            xanchor='right', yanchor='bottom', showarrow=False,
+            font=dict(size=11, color='gray'),
+        )
+        fig.update_layout(margin_t=max(
+            fig.layout.margin.t or _NOTICE_TOP_MARGIN,
+            _NOTICE_TOP_MARGIN + row * _NOTICE_ROW_MARGIN,
+        ))
+
+
 def _annotate_decimation(figs, percent) -> None:
     """
     Stamp a decimation notice onto each figure when plot thinning occurred.
 
-    The notice rides inside the plotly figures themselves (paper-coordinate
-    annotation above the plot area), so the frontend needs no changes to
-    display it. No-op when percent is None.
+    No-op when percent is None. Stamped after the fit-quality readout, so on
+    the figures that carry both this one takes the upper row: it says the same
+    thing on every slider move, where the readout is the number being watched.
 
     Parameters:
         figs: Iterable of plotly Figures to annotate.
@@ -1735,37 +1789,25 @@ def _annotate_decimation(figs, percent) -> None:
     """
     if percent is None:
         return
-    text = (
+    _stamp_notice(figs, (
         f"too many data points, plot traces decimated by {percent}% for speed"
         " (the fit uses all points)"
-    )
-    for fig in figs:
-        fig.add_annotation(
-            text=text,
-            xref='paper', yref='paper', x=0.0, y=1.06,
-            xanchor='left', yanchor='bottom', showarrow=False,
-            font=dict(size=11, color='gray'),
-        )
+    ))
 
 
 def _annotate_fit_quality(figs, quality) -> None:
     """
     Stamp the fit-quality readout onto each figure that overlays fit on data.
 
-    Rides inside the figures as a paper-coordinate annotation, the same trick
-    _annotate_decimation uses, so the frontend needs no changes — plotly's
-    to_json carries layout.annotations. Right-aligned on the same row as the
-    decimation notice so the two never overlap.
+    Stamped before the decimation notice so it takes the bottom row, nearest
+    the plot — see _stamp_notice. Sharing one row with that notice was not
+    enough: both strings are long enough to cross the middle of the plot.
 
     All three numbers are "lower is better". Fields that are None are omitted,
     so an unsmoothed fit shows the misfit alone (with no smoothing there is
     neither a posterior over the smoothing weight nor a defined roughness).
     Curvature sits in the middle, next to chi-squared: those two are the L-curve
     coordinates a user trades off when sweeping the smoothness slider.
-
-    Uses add_annotation rather than update_layout(annotations=...): these are
-    plotly-express faceted figures whose layout.annotations already holds the
-    facet titles, which update_layout would replace.
 
     Parameters:
         figs: Iterable of plotly Figures to annotate.
@@ -1784,14 +1826,7 @@ def _annotate_fit_quality(figs, quality) -> None:
         )
     if not parts:
         return
-    text = " | ".join(parts + ["lower is better"])
-    for fig in figs:
-        fig.add_annotation(
-            text=text,
-            xref='paper', yref='paper', x=1.0, y=1.06,
-            xanchor='right', yanchor='bottom', showarrow=False,
-            font=dict(size=11, color='gray'),
-        )
+    _stamp_notice(figs, " | ".join(parts + ["lower is better"]))
 
 
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
@@ -2224,8 +2259,10 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     df = df[['Frequency', 'E Storage', 'E Loss']]
     plot_df, freq_decimation = _decimate_for_plot(df)
     fig1, fig11 = _build_complex_figures(plot_df, tau_i, E_i, N_nz)
-    _annotate_decimation((fig1, fig11), freq_decimation)
+    # Order sets the rows: the readout takes the one nearest the plot and the
+    # decimation notice stacks above it. See _stamp_notice.
     _annotate_fit_quality((fig1, fig11), fit_quality)
+    _annotate_decimation((fig1, fig11), freq_decimation)
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)
 
