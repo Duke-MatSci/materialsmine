@@ -571,8 +571,13 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
             )
         kwargs = spy.call_args.kwargs
         expected = np.abs(data['E Storage'] + 1.0j * data['E Loss']) * 0.2
-        np.testing.assert_allclose(kwargs['E_stor_std'], expected)
-        np.testing.assert_allclose(kwargs['E_loss_std'], expected)
+        # The factor rides in std_scale rather than the array, so the sigma the
+        # fit actually sees is the product. Asserting the product keeps this
+        # test about the weighting rather than about where the factor is held.
+        np.testing.assert_allclose(
+            kwargs['E_stor_std'] * kwargs['std_scale'], expected)
+        np.testing.assert_allclose(
+            kwargs['E_loss_std'] * kwargs['std_scale'], expected)
 
     def test_relative_error_kwarg_scales_fallback(self):
         data = self._freq_data()
@@ -584,8 +589,26 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
             )
         kwargs = spy.call_args.kwargs
         expected = np.abs(data['E Storage'] + 1.0j * data['E Loss']) * 0.5
-        np.testing.assert_allclose(kwargs['E_stor_std'], expected)
-        np.testing.assert_allclose(kwargs['E_loss_std'], expected)
+        np.testing.assert_allclose(
+            kwargs['E_stor_std'] * kwargs['std_scale'], expected)
+        np.testing.assert_allclose(
+            kwargs['E_loss_std'] * kwargs['std_scale'], expected)
+        # The array itself must stay free of the factor — that is what lets two
+        # relative-error moves share a reduction.
+        np.testing.assert_allclose(
+            kwargs['E_stor_std'],
+            np.abs(data['E Storage'] + 1.0j * data['E Loss']))
+
+    def test_error_columns_leave_std_scale_at_one(self):
+        # relative_error is meaningless when the file supplies sigma, so the
+        # factor must not leak into std_scale and rescale the user's own errors.
+        data = self._freq_data({'Error': np.array([1.0, 2.0, 3.0])})
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency', relative_error=0.5,
+            )
+        self.assertEqual(spy.call_args.kwargs['std_scale'], 1.0)
 
     def test_temperature_per_modulus_error_columns_flow_through_tts(self):
         # The temperature branch routes data through tts_temperature_to_frequency_V2,

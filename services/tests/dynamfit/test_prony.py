@@ -82,6 +82,19 @@ class TestPronyBasis(unittest.TestCase):
         # Bottom half (loss): first column is zeros.
         np.testing.assert_array_equal(result[2:, 0], np.zeros(2))
 
+    def test_matches_direct_formula_over_a_grid(self):
+        # The blocks are built in place in one preallocated array, each ufunc
+        # overwriting an operand of the last. Check every cell against the
+        # textbook dt²/(1+dt²), dt/(1+dt²) over a range where that form is safe,
+        # so any aliasing between the storage and loss halves shows up.
+        freq = np.logspace(-4, 4, 37)
+        tau = np.logspace(-3, 3, 11)
+        result = prony_basis(freq, tau, solid=True)
+        dt = np.outer(freq, tau)
+        n = len(freq)
+        np.testing.assert_allclose(result[:n, 1:], dt ** 2 / (1 + dt ** 2), rtol=1e-14)
+        np.testing.assert_allclose(result[n:, 1:], dt / (1 + dt ** 2), rtol=1e-14)
+
     def test_rejects_non_ndarray_freq(self):
         with self.assertRaises(AssertionError):
             prony_basis([1.0, 2.0], np.array([1.0]), solid=False)
@@ -727,7 +740,10 @@ class TestPronyReduce(unittest.TestCase):
             np.linalg.qr = original
         self.assertGreater(after_first, 0)
         self.assertEqual(len(calls), after_first, msg='cache miss on repeat')
-        self.assertIs(first[0], second[0])
+        # Equal values, not the same object: every call divides by std_scale and
+        # so hands back a fresh array (see test_returned_arrays_are_private).
+        np.testing.assert_array_equal(first[0], second[0])
+        np.testing.assert_array_equal(first[1], second[1])
 
     def test_modified_content_misses_the_cache(self):
         # The key is a content digest, not id() — a mutated copy at the same
@@ -736,24 +752,35 @@ class TestPronyReduce(unittest.TestCase):
         bumped = self.E_stor.copy()
         bumped[3] *= 1.01
         second = self._reduce(E_stor=bumped)
-        self.assertIsNot(first[1], second[1])
         # R is the triangle of the weighted basis, which does not depend on the
         # moduli at all — only z carries the data, so that is what must change.
         np.testing.assert_allclose(first[0], second[0])
         self.assertFalse(np.array_equal(first[1], second[1]))
-        # ...while an equal-valued copy still hits.
+        # ...while an equal-valued copy still hits, and hits mean equal values.
         third = self._reduce(E_stor=self.E_stor.copy())
-        self.assertIs(first[1], third[1])
+        np.testing.assert_array_equal(first[1], third[1])
 
-    def test_cached_arrays_are_read_only(self):
-        # Callers share the cached arrays, so a stray write would poison every
-        # later hit. scipy doesn't write to them today; make it raise if it ever
-        # does rather than silently corrupting results.
-        R, z = self._reduce()
+    def test_cache_entries_are_read_only(self):
+        # Entries are shared across every later hit, so a stray write would
+        # poison all of them. scipy doesn't write to what it is handed today;
+        # make it raise if it ever does rather than corrupting results silently.
+        self._reduce()
+        R, z = next(iter(dynamfit2._REDUCE_CACHE.values()))
         with self.assertRaises(ValueError):
             R[0, 0] = 1.0
         with self.assertRaises(ValueError):
             z[0] = 1.0
+
+    def test_returned_arrays_are_private(self):
+        # What the caller gets is scaled off the entry, so writing to it must not
+        # be visible to the next call — this is what makes the read-only entry a
+        # backstop rather than the only line of defence.
+        R, z = self._reduce()
+        R[0, 0] = 12345.0
+        z[0] = 12345.0
+        again = self._reduce()
+        self.assertNotEqual(again[0][0, 0], 12345.0)
+        self.assertNotEqual(again[1][0], 12345.0)
 
     def test_evicts_least_recently_used(self):
         for extra in range(dynamfit2._REDUCE_CACHE_SIZE + 2):
@@ -763,6 +790,44 @@ class TestPronyReduce(unittest.TestCase):
         self.assertEqual(
             len(dynamfit2._REDUCE_CACHE), dynamfit2._REDUCE_CACHE_SIZE,
         )
+
+    def test_std_scale_matches_folding_the_factor_into_std(self):
+        # The whole point: passing the factor separately must fit the same
+        # problem as multiplying it in, so the relative-error widget can reuse
+        # one reduction. Exact to QR rounding, not bitwise — the two orderings
+        # round differently.
+        for scale in (0.05, 0.5, 4.0):
+            with self.subTest(scale=scale):
+                dynamfit2._REDUCE_CACHE.clear()
+                folded = self._reduce(E_stor_std=self.std * scale,
+                                      E_loss_std=self.std * scale)
+                dynamfit2._REDUCE_CACHE.clear()
+                held_out = self._reduce(std_scale=scale)
+                np.testing.assert_allclose(held_out[0], folded[0], rtol=1e-9)
+                np.testing.assert_allclose(held_out[1], folded[1], rtol=1e-9)
+
+    def test_std_scale_is_not_part_of_the_cache_key(self):
+        # Sweeping the relative-error widget must not re-run the O(rows) QR.
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        np.linalg.qr = counting_qr
+        try:
+            base = self._reduce(std_scale=1.0)
+            after_first = len(calls)
+            scaled = self._reduce(std_scale=8.0)
+        finally:
+            np.linalg.qr = original
+        self.assertGreater(after_first, 0)
+        self.assertEqual(len(calls), after_first, msg='std_scale forced a re-reduce')
+        # Cached, but still actually scaled — a hit that ignored std_scale would
+        # silently fit the wrong weighting.
+        np.testing.assert_allclose(scaled[0], base[0] / 8.0, rtol=1e-12)
+        np.testing.assert_allclose(scaled[1], base[1] / 8.0, rtol=1e-12)
 
     def test_reduced_loss_equals_the_full_loss_with_no_offset(self):
         # ||(y - Bc)/std||^2 == ||Rc - z||^2 exactly, for ANY c. The reduction
