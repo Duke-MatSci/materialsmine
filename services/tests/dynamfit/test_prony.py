@@ -23,6 +23,9 @@ import app.dynamfit.dynamfit2 as dynamfit2
 from app.dynamfit.dynamfit2 import (
     prony_basis,
     prony_relaxation_space,
+    prony_terms_for_span,
+    PRONY_TERMS_MIN,
+    PRONY_TERMS_MAX,
     compute_complex,
     compute_relaxation_modulus,
     _prony_objective,
@@ -141,6 +144,62 @@ class TestPronyRelaxationSpace(unittest.TestCase):
         result = prony_relaxation_space(1e-3, 1e3, 5)
         np.testing.assert_allclose(result[0], 1e-3)
         np.testing.assert_allclose(result[-1], 1e3)
+
+
+class TestPronyTermsForSpan(unittest.TestCase):
+    """
+    prony_terms_for_span sizes the series from the span it will be fitted over.
+    Row counts below are chosen to leave the point-count ceiling slack unless a
+    test is specifically exercising it.
+    """
+
+    def test_terms_per_decade(self):
+        # 10 decades, 200 points: well clear of both ceilings.
+        omega = np.logspace(-4, 6, 200)
+        self.assertEqual(prony_terms_for_span(omega), 30)
+
+    def test_rounds_to_nearest_term(self):
+        # 3.5 decades * 3 = 10.5 terms.
+        omega = np.logspace(0, 3.5, 200)
+        self.assertEqual(prony_terms_for_span(omega), 10)
+
+    def test_narrow_span_holds_at_the_floor(self):
+        omega = np.logspace(0, 0.2, 200)  # 0.6 terms
+        self.assertEqual(prony_terms_for_span(omega), PRONY_TERMS_MIN)
+
+    def test_broad_span_holds_at_the_route_limit(self):
+        omega = np.logspace(-20, 20, 500)  # 120 terms
+        self.assertEqual(prony_terms_for_span(omega), PRONY_TERMS_MAX)
+
+    def test_point_count_ceiling_beats_the_span(self):
+        # 12 decades wants 36 terms, but 13 complex points cannot carry more
+        # than 12 (the 13th parameter is the equilibrium term).
+        omega = np.logspace(0, 12, 13)
+        self.assertEqual(prony_terms_for_span(omega), 12)
+
+    def test_point_count_ceiling_beats_the_floor(self):
+        # Fewer points than PRONY_TERMS_MIN: the ceiling is a hard limit, the
+        # floor only a preference, so the ceiling wins.
+        omega = np.logspace(0, 6, 4)
+        self.assertEqual(prony_terms_for_span(omega), 3)
+
+    def test_leaves_positive_degrees_of_freedom(self):
+        # The point of the ceiling: nu = 2 * len(omega) - (N + 1) must stay
+        # positive or _prony_fit_quality has no chi-squared to report.
+        for n in (2, 3, 5, 13, 40, 200):
+            omega = np.logspace(-6, 6, n)
+            N = prony_terms_for_span(omega)
+            self.assertGreater(2 * n - (N + 1), 0, f"no dof left at {n} points")
+
+    def test_degenerate_span_falls_back_to_the_floor(self):
+        # A single distinct frequency has no decades to count, but the caller
+        # still needs a usable grid.
+        omega = np.full(50, 3.0)
+        self.assertEqual(prony_terms_for_span(omega), PRONY_TERMS_MIN)
+
+    def test_single_row_stays_positive(self):
+        # len(omega) - 1 == 0 would leave an empty relaxation grid.
+        self.assertEqual(prony_terms_for_span(np.array([1.0])), 1)
 
 
 class TestComputeComplex(unittest.TestCase):

@@ -310,17 +310,20 @@
       </div>
     </div> -->
 
-    <!-- Prony Terms Slider -->
+    <!-- Relaxation Grid Size Slider (sent as number_of_prony) -->
     <div
       v-if="!disableInput && (selectedProperty !== 'temperature' || cTtspApplied)"
       class="viz-u-mgbottom-sm"
     >
       <label for="prony" class="md-body-2">
-        Select Number of Prony Terms <span>[{{ dynamfit.range }}]</span>
-        <HelpPopover label="Number of Prony terms">
-          Number of exponential terms in the Prony series. The default is chosen from your
-          data's span (about 3 terms per decade of frequency); more terms fit finer detail
-          but can overfit noisy data.
+        Relaxation Grid Size <span>[{{ dynamfit.range }}]</span>
+        <HelpPopover label="Relaxation grid size">
+          How many relaxation times the fit may choose from, log-spaced across your data's
+          span. The default is about 3 per decade of frequency; a finer grid fits finer
+          detail but can overfit noisy data. This is an upper bound rather than the answer:
+          the fit discards terms it does not need, and temperature-domain data is capped
+          against the frequency span the ω-T transform produces. The figure legends and the
+          coefficient table report how many terms the fit actually kept.
         </HelpPopover>
       </label>
       <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
@@ -907,8 +910,11 @@ const downloadTitle = (): string => {
 // callbacks per flush, so two writes in one tick cost exactly one request.
 const applyDefaultPronyTerms = (fileText: string): void => {
   // Only the frequency domain has a span worth measuring — a temperature file
-  // has no frequency axis until the ω-T transform has run, so the store
-  // default (100) stands there.
+  // has no frequency axis until the ω-T transform has run. The store default
+  // (100) is sent there and the server applies the same per-decade rule to the
+  // master curve the transform produces, treating what we send as a ceiling
+  // (see prony_terms_for_span in dynamfit2.py). Turning the input down still
+  // reaches the fit; turning it up past what the span supports does not.
   if (selectedProperty.value !== 'frequency') return;
   const terms = computeDefaultPronyTerms(fileText);
   if (terms !== null) dynamfit.value.range = terms;

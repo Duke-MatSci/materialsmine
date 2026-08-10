@@ -22,7 +22,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from app.dynamfit.dynamfit2 import (
     wlf_shift, update_line_chart, inverse_wlf_shift,
-    compute_complex, smooth_prony_fit, _PLOT_MAX_POINTS, _FitQuality,
+    compute_complex, smooth_prony_fit, prony_terms_for_span,
+    _PLOT_MAX_POINTS, _FitQuality,
 )
 from app.config import Config
 from app.utils.util import upload_init
@@ -104,11 +105,11 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         dots = next(t for t in fig3.data if 'Term Prony' in t.name)
         self.assertEqual(dots.mode, 'markers')
         self.assertEqual(len(dots.x), self.N)
-        # The equilibrium coefficient is split out into its own trace, so the
-        # dot label counts decaying terms only — one fewer than the fit's total
-        # nonzero count reported on the E(t) figure.
-        total_nz = int(self.result[2].data[0].name.split('-')[0])
-        self.assertEqual(dots.name, f'{total_nz - 1}-Term Prony')
+        # Every figure labels the decaying terms only — the equilibrium
+        # coefficient is a separate parameter, drawn here as its own trace — so
+        # this label matches the one on the E(t) figure exactly.
+        decaying = int(self.result[2].data[0].name.split('-')[0])
+        self.assertEqual(dots.name, f'{decaying}-Term Prony')
         hline = next(t for t in fig3.data if t.name == 'Long-Term Modulus')
         self.assertEqual(hline.mode, 'lines')
         self.assertEqual(len(hline.y), 2)
@@ -351,6 +352,148 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
+
+
+class TestUpdateLineChartTermLabels(unittest.TestCase):
+    """
+    Every "N-Term Prony" label counts decaying terms only. The equilibrium
+    coefficient is a separate parameter — no tau_i, exempt from the smoothness
+    penalty, split into its own trace on fig3, dropped from the coefficient
+    table — so it must not appear in any term count.
+    """
+
+    @staticmethod
+    def _upload():
+        # Nine-mode source, densely sampled: NNLS has real structure to select
+        # from, so the unsmoothed path lands well short of the grid size.
+        tau = np.logspace(-4.0, 4.0, 9)
+        E_input = np.concatenate(
+            ([1e6], np.exp(-(np.log10(tau)) ** 2 / 4.0) * 1e9))
+        df = compute_complex(tau, E_input, num_pts=200)
+        return {
+            'Frequency': df['Frequency'].to_numpy(),
+            'E Storage': df['E Storage'].to_numpy(),
+            'E Loss': df['E Loss'].to_numpy(),
+        }
+
+    @staticmethod
+    def _label_counts(figs):
+        return {int(t.name.split('-')[0])
+                for fig in figs for t in fig.data if 'Term Prony' in t.name}
+
+    def _run(self, N, smoothness):
+        return update_line_chart(
+            self._upload(), number_of_prony=N, smoothness=smoothness,
+            fit_settings=True, domain='frequency',
+        )
+
+    def test_smoothed_labels_match_the_coefficient_table(self):
+        # Regression: on this path every coefficient is exp(...) and so never
+        # exactly zero, which made the old count_nonzero over the whole vector
+        # report the grid size plus the equilibrium term — 24 terms for a
+        # 23-point grid whose table listed 23 rows.
+        fig1, fig11, fig2, fig3, _, _, coef_df = self._run(23, 0.04)
+        self.assertEqual(len(coef_df), 23)
+        self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)), {23})
+
+    def test_unsmoothed_labels_match_the_coefficient_table(self):
+        # NNLS zeroes coefficients outright, so here the count is genuinely
+        # below the grid size — and still must not pick up the equilibrium term.
+        fig1, fig11, fig2, fig3, _, _, coef_df = self._run(23, 0.0)
+        self.assertLess(len(coef_df), 23)
+        self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)),
+                         {len(coef_df)})
+
+    def test_basis_overlay_label_matches_too(self):
+        # fig2's basis scatter is drawn over tau_i, which has no equilibrium
+        # entry either.
+        fig2 = self._run(23, 0.04)[2]
+        basis = [t.name for t in fig2.data if 'Term Basis' in t.name]
+        self.assertEqual(basis, ['23-Term Basis'])
+
+
+class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
+    """
+    A temperature upload has no frequency axis for the client to measure, so it
+    sends the store default of PRONY_TERMS_MAX terms however short the ramp.
+    update_line_chart sizes the series against the master curve the ω-T
+    transform produces and treats the request as a ceiling.
+    """
+
+    T_REF = 25.0
+    C1 = 17.44
+    C2 = 51.6
+
+    # Short ramp, in the spirit of the bundled 1 Hz temperature files (13 and 19
+    # rows): far too few points to carry 100 Prony terms.
+    SHORT_RAMP = {
+        'Temperature': np.linspace(0.0, 80.0, 13),
+        'E Storage': np.linspace(1000.0, 10.0, 13),
+        'E Loss': np.full(13, 50.0),
+    }
+
+    def _run(self, number_of_prony, data=None, **kwargs):
+        return update_line_chart(
+            data if data is not None else self.SHORT_RAMP,
+            number_of_prony=number_of_prony, smoothness=0.1,
+            fit_settings=False, domain='temperature',
+            Tg=self.T_REF, C1=self.C1, C2=self.C2, shift_model='WLF',
+            **kwargs,
+        )
+
+    @staticmethod
+    def _spy():
+        return patch(
+            'app.dynamfit.dynamfit2.smooth_prony_fit',
+            return_value=(np.array([1.0]), np.array([1.0]),
+                          _FitQuality(1.0, 2.0, 3.0)),
+        )
+
+    @staticmethod
+    def _quality_readouts(fig):
+        return [a.text for a in fig.layout.annotations
+                if a.text and 'lower is better' in a.text]
+
+    def test_request_is_capped_by_the_transformed_span(self):
+        with self._spy() as spy:
+            self._run(100)
+        N = spy.call_args.kwargs['N']
+        omega = spy.call_args.kwargs['omega']
+        self.assertLess(N, 100)
+        self.assertEqual(N, prony_terms_for_span(omega))
+
+    def test_lower_request_is_honored_unchanged(self):
+        # The ceiling must not become a replacement: turning the term count
+        # down is still the user's call in this domain.
+        with self._spy() as spy:
+            self._run(4)
+        self.assertEqual(spy.call_args.kwargs['N'], 4)
+
+    def test_short_ramp_at_the_default_still_reports_a_misfit(self):
+        # Regression: at N = 100 the series carried more parameters than a
+        # 13-row ramp has residuals, so chi-squared had no degrees of freedom,
+        # _prony_fit_quality returned None for it, and _annotate_fit_quality
+        # dropped it — the readout showed curvature and surprisal only.
+        fig1, fig11 = self._run(100)[:2]
+        for fig in (fig1, fig11):
+            readouts = self._quality_readouts(fig)
+            self.assertEqual(len(readouts), 1)
+            self.assertIn('χ²/ν', readouts[0])
+
+    def test_frequency_domain_request_is_untouched(self):
+        # The client already sizes the series from the file itself there, so an
+        # explicit term count is passed through as given.
+        freq_data = {
+            'Frequency': np.logspace(-2, 2, 13),
+            'E Storage': np.linspace(1000.0, 10.0, 13),
+            'E Loss': np.full(13, 50.0),
+        }
+        with self._spy() as spy:
+            update_line_chart(
+                freq_data, number_of_prony=100, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+            )
+        self.assertEqual(spy.call_args.kwargs['N'], 100)
 
 
 class TestUpdateLineChartValidation(unittest.TestCase):

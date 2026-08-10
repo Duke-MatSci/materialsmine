@@ -35,6 +35,15 @@ MAX_ABS_LOG10_SHIFT = 15.0
 VIS_REF_FREQUENCY_HZ = 1.0
 VIS_REF_TEMPERATURE_C = 30.0
 
+# Sizing rule for an auto-chosen Prony series, mirroring the frontend's
+# useDynamfitDefaults (PRONY_TERMS_PER_DECADE / PRONY_TERMS_MIN / _MAX), which
+# applies it to the first column of a frequency-domain upload. The two copies
+# run on different inputs — the raw column there, the transformed master curve
+# here — and neither can import the other, so they are kept in step by eye.
+PRONY_TERMS_PER_DECADE = 3
+PRONY_TERMS_MIN = 5
+PRONY_TERMS_MAX = 100
+
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
 # block materializes a (2 * chunk, N + 2) basis slab (plus prony_basis's single
 # reciprocal temporary), so peak memory is O(chunk * N) no matter how many
@@ -166,6 +175,41 @@ def prony_relaxation_space(tau_min: float, tau_max: float, N: int) -> np.ndarray
         numpy.ndarray: 1-D array of N log-spaced values from tau_min to tau_max (inclusive).
     """
     return np.logspace(np.log10(tau_min), np.log10(tau_max), N, endpoint=True)
+
+
+def prony_terms_for_span(omega: np.ndarray) -> int:
+    """
+    Size a Prony series to the frequency span and row count it will be fitted to.
+
+    A fixed number of terms per decade, then two ceilings. PRONY_TERMS_MAX is
+    the route's own limit; the other is that the series must never carry more
+    parameters than the data has complex points — m = N + 1 (the equilibrium
+    term) may not exceed len(omega). That second cap is what keeps the fit-
+    quality readout alive: chi-squared is reported per degree of freedom
+    nu = 2 * len(omega) - m, so an N chosen without reference to the row count
+    can drive nu to zero and _prony_fit_quality then has no misfit to return
+    (see its Returns section). At the cap, nu = len(omega) - 1.
+
+    Parameters:
+        omega (numpy.ndarray): 1-D array of frequencies the fit will see, i.e.
+            the master curve AFTER any temperature -> frequency transform.
+
+    Returns:
+        int: Number of Prony terms, at least 1. A degenerate span (a single
+        distinct frequency) yields PRONY_TERMS_MIN before the caps, since there
+        are no decades to count but the caller still needs a usable grid.
+    """
+    decades = np.log10(np.max(omega) / np.min(omega))
+    if np.isfinite(decades) and decades > 0:
+        terms = round(PRONY_TERMS_PER_DECADE * decades)
+    else:
+        terms = PRONY_TERMS_MIN
+    ceiling = min(PRONY_TERMS_MAX, len(omega) - 1)
+    # np.clip applies the lower bound first, so the ceiling wins outright when a
+    # very short upload puts it below PRONY_TERMS_MIN — which is the point: the
+    # row count is a hard limit, the floor only a preference. max(1, ...) keeps
+    # prony_relaxation_space from being handed an empty grid on a 1-row file.
+    return max(1, int(np.clip(terms, PRONY_TERMS_MIN, ceiling)))
 
 
 def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
@@ -1893,7 +1937,9 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
             ['Frequency', 'E Storage', 'E Loss'].
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
-        N_nz (int): Number of nonzero Prony coefficients; used in trace names.
+        N_nz (int): Number of nonzero DECAYING Prony coefficients, i.e. the
+            equilibrium term excluded; used in trace names. Matches the row
+            count of the coefficient table _build_coef_records returns.
 
     Returns:
         tuple: (fig1, fig11) where fig1 is E' / E'' vs Frequency and fig11 is
@@ -1961,7 +2007,10 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
-        N_nz (int): Number of nonzero Prony coefficients; used in trace names.
+        N_nz (int): Number of nonzero DECAYING Prony coefficients, i.e. the
+            equilibrium term excluded; used in trace names. fig3 splits that
+            term into its own long-term-modulus trace, so the same count labels
+            both figures.
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation-modulus figure; if False, return only its line trace.
 
@@ -2013,13 +2062,10 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     # fig2's basis overlay this is the figure's primary content, so
     # fit_settings does not alter it.
     solid = len(E_i) != len(tau_i)
-    # Count only the decaying terms: the equilibrium coefficient is split out
-    # into its own long-term-modulus trace, so it must not inflate this label.
-    N_decay = np.count_nonzero(E_i[solid:])
     spectrum_df = pd.DataFrame({
         "Time": tau_i,
         "E": E_i[solid:],
-        "Type": f"{N_decay}-Term Prony",
+        "Type": f"{N_nz}-Term Prony",
     })
     fig3 = px.scatter(
         spectrum_df, x="Time", y="E",
@@ -2085,7 +2131,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             chosen domain. Keys must be ('Frequency', 'E Storage', 'E Loss')
             for frequency domain or ('Temperature', 'E Storage', 'E Loss') for
             temperature domain.
-        number_of_prony (int): Number of terms in the Prony series.
+        number_of_prony (int): Number of terms in the Prony series. In the
+            temperature domain this is an upper bound: the master curve does
+            not exist until the transform has run, so the term count is sized
+            against the resulting span by prony_terms_for_span and this value
+            only caps it. The frequency domain uses it as given.
         smoothness (float): Smoothing regularization for the fit.
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation modulus and spectrum figures.
@@ -2222,6 +2272,18 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         df = freq_sweep_data.rename(
             columns={"E'": 'E Storage', "E''": 'E Loss'},
         )
+        # The client cannot size the Prony series for a temperature upload: the
+        # frequency span does not exist until the transform above has run, so
+        # its per-decade rule has nothing to measure and it sends the store
+        # default of PRONY_TERMS_MAX however short the ramp. Size it here, where
+        # the master curve finally exists. Taken as a ceiling rather than a
+        # replacement so the term-count input still works in this domain —
+        # lowering it is honored, raising it past what the span and the row
+        # count support is not.
+        number_of_prony = min(
+            number_of_prony,
+            prony_terms_for_span(df['Frequency'].to_numpy()),
+        )
 
     E_stor_arr = df['E Storage'].to_numpy()
     E_loss_arr = df['E Loss'].to_numpy()
@@ -2250,7 +2312,13 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         N=number_of_prony, smoothness=smoothness,
         return_fit_quality=True, std_scale=std_scale,
     )
-    N_nz = np.count_nonzero(E_i)
+    # Decaying terms only. The equilibrium coefficient is a separate parameter,
+    # not a relaxation mode: it has no tau_i, it is excluded from the smoothness
+    # penalty, the coefficient table drops it, and fig3 draws it as its own
+    # long-term-modulus trace. Counting it inflated every "N-Term Prony" label by
+    # one on the smoothed path, where exp(logcoefs) is never exactly zero — so a
+    # 23-point grid was labelled 24 terms while the table below listed 23.
+    N_nz = np.count_nonzero(E_i[len(E_i) - len(tau_i):])
 
     # Downstream figure builders assume df's first three columns are
     # exactly (Frequency, E Storage, E Loss); drop any extras now that

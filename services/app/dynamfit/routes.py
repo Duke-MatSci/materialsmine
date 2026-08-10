@@ -84,7 +84,9 @@ def extract_data_from_file(request_id):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
 
         if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
-            return jsonify({'message': 'The number of prony must be between 1 and 100'}), 400
+            # Named for the widget the value comes from, not for the wire field:
+            # this string is shown to the user in a snackbar.
+            return jsonify({'message': 'The relaxation grid size must be between 1 and 100'}), 400
 
         if smoothness < 0:
             return jsonify({'message': 'The smoothness must be non-negative'}), 400
