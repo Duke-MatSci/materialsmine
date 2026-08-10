@@ -11,7 +11,7 @@ export interface ExplorerState {
   datasetThumbnail: string;
   dynamfitDomain: string;
   dynamfitData: Record<string, any>;
-  dynamfitTransformMethod: 'none' | 'WLF' | 'hybrid';
+  dynamfitTransformMethod: 'none' | 'WLF' | 'hybrid' | 'manual';
   dynamfitManualFile: string;
   dynamfitShiftCoefficients: {
     C1: number | null;
@@ -20,6 +20,8 @@ export interface ExplorerState {
     Ea: number | null;
     TL: number | null;
     a_T_ref: number | null;
+    // Reduced chi-squared of the /fit-shift coefficient fit (log10 space).
+    chi2_reduced: number | null;
   };
   dynamfitSourceType: string;
   // The API only ever echoes the mangled upload name, so the catalog label and

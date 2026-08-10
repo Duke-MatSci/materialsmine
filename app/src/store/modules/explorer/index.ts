@@ -39,6 +39,7 @@ export default {
         Ea: null,
         TL: null,
         a_T_ref: null,
+        chi2_reduced: null,
       },
       dynamfitSourceType: '',
       dynamfitFileMeta: {

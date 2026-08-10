@@ -505,26 +505,6 @@
     }
   }
 
-  &-readonly {
-    display: flex;
-    align-items: center;
-    padding: 0.4rem 0.8rem;
-    background-color: rgba($secondary-light, 0.3);
-    border-left: 3px solid $secondary;
-    border-radius: 0 3px 3px 0;
-    font-size: $small-size;
-
-    &__label {
-      font-weight: 700;
-      color: $primary;
-      margin-right: 0.4rem;
-    }
-
-    &__value {
-      color: $primary-grey;
-    }
-  }
-
   &-field--half {
     max-width: 40% !important;
 

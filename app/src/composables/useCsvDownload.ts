@@ -31,6 +31,21 @@ export function toCsv(rows: Row[]): string {
 }
 
 /**
+ * Derive a filesystem-safe CSV base name from a dataset label or filename:
+ * strip the extension, collapse unsafe characters to underscores, and fall
+ * back to 'dynamfit' when nothing usable remains. Shared by every dynamfit
+ * export so all of a dataset's CSVs sort together.
+ */
+export function toCsvBaseName(source: string): string {
+  return (
+    (source || 'dynamfit')
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^\w.-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'dynamfit'
+  );
+}
+
+/**
  * Offer `rows` to the user as a CSV download. Returns false without touching
  * the DOM when there is nothing to write, so callers never hand over a blank
  * file.

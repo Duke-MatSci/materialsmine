@@ -59,3 +59,35 @@ describe('explorer mutations — dynamfit file metadata', () => {
     expect(state.dynamfit.fileUpload).toBe('');
   });
 });
+
+describe('explorer mutations — dynamfit shift coefficients', () => {
+  const fitted: ExplorerState['dynamfitShiftCoefficients'] = {
+    C1: 22.7,
+    C2: 190.2,
+    Tg: 20,
+    Ea: null,
+    TL: null,
+    a_T_ref: 1.0,
+    chi2_reduced: 0.211,
+  };
+
+  it('setDynamfitShiftCoefficients stores every field, including chi2_reduced', () => {
+    const state = makeState();
+    mutations.setDynamfitShiftCoefficients(state, fitted);
+    expect(state.dynamfitShiftCoefficients).toEqual(fitted);
+  });
+
+  it('resetDynamfitShiftCoefficients nulls every field, including chi2_reduced', () => {
+    const state = makeState({ dynamfitShiftCoefficients: fitted });
+    mutations.resetDynamfitShiftCoefficients(state);
+    expect(state.dynamfitShiftCoefficients).toEqual({
+      C1: null,
+      C2: null,
+      Tg: null,
+      Ea: null,
+      TL: null,
+      a_T_ref: null,
+      chi2_reduced: null,
+    });
+  });
+});

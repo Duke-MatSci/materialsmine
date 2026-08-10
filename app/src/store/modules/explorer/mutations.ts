@@ -73,7 +73,10 @@ export default {
   triggerDynamfitSurprise(state: ExplorerState): void {
     state.dynamfitSurpriseRequest++;
   },
-  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'hybrid'): void {
+  setDynamfitTransformMethod(
+    state: ExplorerState,
+    payload: 'none' | 'WLF' | 'hybrid' | 'manual'
+  ): void {
     state.dynamfitTransformMethod = payload;
   },
   setDynamfitManualFile(state: ExplorerState, payload: string): void {
@@ -93,6 +96,7 @@ export default {
       Ea: null,
       TL: null,
       a_T_ref: null,
+      chi2_reduced: null,
     };
   },
 };

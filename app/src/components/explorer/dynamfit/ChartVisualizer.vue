@@ -26,6 +26,20 @@
         <md-tab id="tab-spec" md-label="Discrete Spectrum, Eᵢ">
           <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
         </md-tab>
+        <!-- Unicode has no subscript capital T, so the tab settles for ₜ —
+             the same plain-text-subscript approach as the Eᵢ tab. The figure
+             axis itself gets a true <sub>T</sub> (plotly renders HTML). -->
+        <md-tab id="tab-shift" md-label="Shift Factor, aₜ(T)">
+          <PlotlyView :chart="dynamfitData['shift-chart']" key="7" />
+
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!shiftTable.length"
+            @click="downloadCsv(shiftTable, shiftCsvName)"
+          >
+            Download Shift Factors
+          </button>
+        </md-tab>
         <md-tab id="tab-upload" md-label="Uploaded Data">
           <TableComponent :tableData="upload" sortBy="i" />
 
@@ -46,6 +60,22 @@
             @click="downloadCsv(prony, pronyCsvName)"
           >
             Download Coefficients
+          </button>
+        </md-tab>
+        <md-tab id="tab-shift-coeff" md-label="Shift Coeff">
+          <!-- Insertion order is the meaningful order here (method, anchors,
+               coefficients, offset, misfit) — no sortBy on purpose. -->
+          <TableComponent
+            :tableData="shiftCoefficientRows"
+            emptyState="No Shift Coefficients Fitted"
+          />
+
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!shiftCoefficientRows.length"
+            @click="downloadCsv(shiftCoefficientRows, shiftCoeffCsvName)"
+          >
+            Download Shift Coefficients
           </button>
         </md-tab>
       </md-tabs>
@@ -103,6 +133,10 @@
       <b>Note:</b> Check <b>ω-T Transformation</b> in the settings panel to compute the
       frequency response from this temperature data.
     </div>
+    <div class="dynamfit-note dynamfit-note--below" v-if="onShiftTab && !shiftChartBuilt">
+      <b>Note:</b> Check <b>ω-T Transformation</b> and pick a shift model — or upload a
+      shift-factor file — to see the shift factors applied to this data.
+    </div>
   </div>
 </template>
 
@@ -111,7 +145,8 @@ import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
-import { downloadCsv } from '@/composables/useCsvDownload';
+import { downloadCsv, toCsvBaseName } from '@/composables/useCsvDownload';
+import { buildShiftCoefficientRows } from '@/composables/useDynamfitShift';
 
 defineOptions({
   name: 'ChartVisualizer',
@@ -122,9 +157,11 @@ interface DynamfitData {
   'complex-tand-chart'?: unknown;
   'complex-temp-chart'?: unknown;
   'temp-tand-chart'?: unknown;
+  'shift-chart'?: unknown;
   'relaxation-chart'?: unknown;
   'relaxation-spectrum-chart'?: unknown;
   mytable?: Record<string, unknown>[];
+  'shift-table'?: Record<string, unknown>[];
   'upload-data'?: Record<string, unknown>[];
 }
 
@@ -162,6 +199,21 @@ const upload = computed<Record<string, unknown>[]>(
   () => store.state.explorer.dynamfitData?.['upload-data'] ?? []
 );
 
+const shiftTable = computed<Record<string, unknown>[]>(
+  () => store.state.explorer.dynamfitData?.['shift-table'] ?? []
+);
+
+// Fitted shift coefficients as parameter/value rows. A lone transform_method
+// row means nothing has been fitted — collapse that to empty so the tab shows
+// its empty state and the download button disables.
+const shiftCoefficientRows = computed<{ parameter: string; value: string | number }[]>(() => {
+  const rows = buildShiftCoefficientRows(
+    transformMethod.value || 'none',
+    store.getters['explorer/getDynamfitShiftCoefficients']
+  );
+  return rows.length > 1 ? rows : [];
+});
+
 const isFrequencyData = computed(() => {
   return dynamfitDomain.value === 'frequency' && dynamfitData.value['complex-chart'];
 });
@@ -180,28 +232,25 @@ const chartHasTraces = (key: keyof DynamfitData): boolean => {
 
 const freqChartsBuilt = computed(() => chartHasTraces('complex-chart'));
 const tempChartsBuilt = computed(() => chartHasTraces('complex-temp-chart'));
+const shiftChartBuilt = computed(() => chartHasTraces('shift-chart'));
 
 const onFreqTab = computed(() => ['tab-home', 'tab-exp'].includes(activeTab.value));
 const onTempTab = computed(() => ['tab-temp-new', 'tab-temp'].includes(activeTab.value));
+const onShiftTab = computed(() => activeTab.value === 'tab-shift');
 
 const dynamfit = computed(() => store.getters['explorer/dynamfit']);
 const fileUpload = computed(() => dynamfit.value?.fileUpload || '');
 
 // Name exports after whatever the user recognises the dataset as, not after
 // the mangled server-side upload name.
-const csvBaseName = computed<string>(() => {
-  const source =
-    fileMeta.value.label || fileMeta.value.originalName || fileUpload.value || 'dynamfit';
-  return (
-    source
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^\w.-]+/g, '_')
-      .replace(/^_+|_+$/g, '') || 'dynamfit'
-  );
-});
+const csvBaseName = computed<string>(() =>
+  toCsvBaseName(fileMeta.value.label || fileMeta.value.originalName || fileUpload.value)
+);
 
 const uploadCsvName = computed(() => `${csvBaseName.value}_data.csv`);
 const pronyCsvName = computed(() => `${csvBaseName.value}_prony.csv`);
+const shiftCsvName = computed(() => `${csvBaseName.value}_shift_factors.csv`);
+const shiftCoeffCsvName = computed(() => `${csvBaseName.value}_shift_coefficients.csv`);
 
 const controlledTab = ref(dynamfitDomain.value === 'frequency' ? 'tab-home' : 'tab-temp-new');
 

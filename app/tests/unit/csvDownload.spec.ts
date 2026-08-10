@@ -4,7 +4,7 @@
  *
  * @jest-environment node
  */
-import { toCsv } from '@/composables/useCsvDownload';
+import { toCsv, toCsvBaseName } from '@/composables/useCsvDownload';
 
 describe('toCsv', () => {
   it('writes a header row and one row per record', () => {
@@ -27,5 +27,22 @@ describe('toCsv', () => {
   it('returns empty for no rows, which is the caller’s signal not to download', () => {
     expect(toCsv([])).toBe('');
     expect(toCsv([{}])).toBe('');
+  });
+});
+
+describe('toCsvBaseName', () => {
+  it('strips the extension and collapses unsafe characters to underscores', () => {
+    expect(toCsvBaseName('agilus30 (8) master curve 20C clean.txt')).toBe(
+      'agilus30_8_master_curve_20C_clean'
+    );
+  });
+
+  it('keeps word characters, dots and dashes intact', () => {
+    expect(toCsvBaseName('PMMA-R10_mastercurve.v2.tsv')).toBe('PMMA-R10_mastercurve.v2');
+  });
+
+  it('falls back to dynamfit when nothing usable remains', () => {
+    expect(toCsvBaseName('')).toBe('dynamfit');
+    expect(toCsvBaseName('!!!.csv')).toBe('dynamfit');
   });
 });

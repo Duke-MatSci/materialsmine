@@ -45,7 +45,7 @@ export default {
   } {
     return state.dynamfit;
   },
-  getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'hybrid' {
+  getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'hybrid' | 'manual' {
     return state.dynamfitTransformMethod;
   },
   getDynamfitManualFile(state: ExplorerState): string {
