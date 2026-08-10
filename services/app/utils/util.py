@@ -61,8 +61,9 @@ def upload_init(file_name, domain):
         The optional error columns are absolute per-point standard deviations
         in the same units as the moduli (Pa) — not fractions. update_line_chart
         consumes them as 1/sigma fit weights, overriding its relative_error
-        fallback. The 'shift' domain's Error column is parsed for symmetry but
-        no caller reads it.
+        fallback. The 'shift' domain's Error column is the absolute per-point
+        standard deviation of a_T (linear scale); the shift-coefficient fits
+        consume it as 1/sigma weights and in the reported chi-squared.
 
     Raises:
         ValueError: If domain is unrecognized, the file extension is not

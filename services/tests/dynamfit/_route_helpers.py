@@ -52,9 +52,13 @@ def make_token(secret='test-secret', req_id='test-req-id'):
 SHIFT_T = np.array([0.0, 10.0, 20.0, 30.0, 40.0])
 SHIFT_A_T = np.array([3.0, 2.0, 1.0, 0.5, 0.25])
 SHIFT_DATA = {'Temperature': SHIFT_T, 'a_T': SHIFT_A_T}
+# Same points with the optional third column (absolute std dev on a_T).
+SHIFT_ERROR = np.array([0.3, 0.2, 0.1, 0.05, 0.025])
+SHIFT_DATA_WITH_ERROR = {**SHIFT_DATA, 'Error': SHIFT_ERROR}
 
 # Representative WLF coefficients returned by the mocked fit functions.
 C1_RETURNED = 14.0
 C2_RETURNED = 45.0
 EA_RETURNED = 80.0
 A_T_REF_RETURNED = 1.0
+CHI2_RETURNED = 0.42

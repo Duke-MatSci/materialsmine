@@ -23,7 +23,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from app.dynamfit.dynamfit2 import (
     wlf_shift, update_line_chart, inverse_wlf_shift,
     compute_complex, smooth_prony_fit, prony_terms_for_span,
-    _PLOT_MAX_POINTS, _FitQuality,
+    _PLOT_MAX_POINTS, _FitQuality, MAX_ABS_LOG10_SHIFT,
 )
 from app.config import Config
 from app.utils.util import upload_init
@@ -52,8 +52,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
             domain='frequency',
         )
 
-    def test_returns_7_tuple(self):
-        self.assertEqual(len(self.result), 7)
+    def test_returns_9_tuple(self):
+        self.assertEqual(len(self.result), 9)
 
     def test_coef_df_schema(self):
         coef_df = self.result[6]
@@ -185,7 +185,7 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
         manual = self._run(shift_model='manual', shiftData=self.shiftData)
         # hybrid has no analytic inverse, so it is the universal-WLF view.
         default = self._run(shift_model='hybrid')
-        self.assertEqual(len(manual), 7)
+        self.assertEqual(len(manual), 9)
         # The manual mapping reached fig4: its temperature axis differs (a
         # different shape alone already proves it, since np.interp clamps).
         mt, dt = self._fig4_temps(manual), self._fig4_temps(default)
@@ -200,14 +200,14 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
 
     def test_frequency_hybrid_returns_full_tuple_no_error(self):
         result = self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
-        self.assertEqual(len(result), 7)
+        self.assertEqual(len(result), 9)
         self.assertGreater(len(result[4].data), 0)
 
     def test_frequency_manual_without_shiftData_still_fits(self):
         # Contrast the temperature branch, which early-exits with empty figures
         # when shift params are absent; here the fit is independent of them.
         result = self._run(shift_model='manual', shiftData=None)
-        self.assertEqual(len(result), 7)
+        self.assertEqual(len(result), 9)
         self.assertGreater(len(result[6]), 0)  # coef_df non-empty → fit ran
 
     def test_frequency_none_suppresses_temp_figs_but_not_the_fit(self):
@@ -248,6 +248,186 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
             np.testing.assert_array_equal(got, want)
 
 
+class TestUpdateLineChartShiftFigure(unittest.TestCase):
+    """
+    The shift-factor figure and table (elements 7 and 8 of the return):
+    measured markers, model curve, pole masking, the chi2 stamp, and the
+    empty-figure conventions.
+    """
+
+    T_REF = 25.0
+    C1 = 17.44
+    C2 = 51.6
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        T = np.linspace(0.0, 80.0, 30)
+        cls.temp_data = {
+            'Temperature': T,
+            'E Storage': np.linspace(1000.0, 10.0, len(T)),
+            'E Loss': np.full(len(T), 50.0),
+        }
+        Ts = np.linspace(0.0, 80.0, 9)
+        cls.shiftData = {
+            'Temperature': Ts,
+            'a_T': 10.0 ** np.linspace(3.0, -3.0, len(Ts)),
+        }
+
+    def _run(self, **kw):
+        return update_line_chart(
+            self.temp_data, number_of_prony=8, smoothness=0.1,
+            fit_settings=True, domain='temperature', **kw,
+        )
+
+    @staticmethod
+    def _trace(fig, name):
+        matches = [t for t in fig.data if t.name == name]
+        assert len(matches) == 1, [t.name for t in fig.data]
+        return matches[0]
+
+    def test_no_transform_yields_empty_figure_and_table(self):
+        # Temperature early-exit (no shift params) — nothing to draw.
+        *_, shift_fig, shift_records = self._run()
+        self.assertEqual(len(shift_fig.data), 0)
+        self.assertEqual(shift_records, [])
+
+    def test_frequency_none_yields_empty_figure_and_table(self):
+        freq_data = upload_init(
+            'agilus30 (8) master curve 20C clean.txt', 'frequency')
+        *_, shift_fig, shift_records = update_line_chart(
+            freq_data, number_of_prony=8, smoothness=0.1,
+            fit_settings=True, domain='frequency', shift_model='none',
+        )
+        self.assertEqual(len(shift_fig.data), 0)
+        self.assertEqual(shift_records, [])
+
+    def test_manual_draws_markers_only(self):
+        # 'manual' has no model curve of its own — Experiment markers only.
+        *_, shift_fig, shift_records = self._run(
+            shift_model='manual', shiftData=self.shiftData)
+        self.assertEqual([t.name for t in shift_fig.data], ['Experiment'])
+        self.assertEqual(self._trace(shift_fig, 'Experiment').mode, 'markers')
+        # Table rows carry the measured values; no model column values.
+        self.assertEqual(len(shift_records), len(self.shiftData['a_T']))
+        self.assertTrue(all(r['a_T (model)'] is None for r in shift_records))
+        self.assertEqual(shift_records[0]['a_T (measured)'],
+                         float(self.shiftData['a_T'][0]))
+
+    def test_wlf_with_shift_file_draws_markers_and_dashed_curve(self):
+        *_, shift_fig, shift_records = self._run(
+            shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2,
+            shiftData=self.shiftData)
+        self.assertEqual({t.name for t in shift_fig.data},
+                         {'Experiment', 'WLF fit'})
+        curve = self._trace(shift_fig, 'WLF fit')
+        self.assertEqual(curve.line.dash, 'dash')
+        self.assertEqual(self._trace(shift_fig, 'Experiment').mode, 'markers')
+        # Model column now populated at the measured temperatures, and it
+        # matches the WLF equation there — except where the model leaves the
+        # |log10 a_T| <= MAX_ABS_LOG10_SHIFT window (the coldest points here),
+        # which are masked to None exactly as the transform drops those rows.
+        expected = wlf_shift(np.asarray(self.shiftData['Temperature']),
+                             self.T_REF, self.C1, self.C2)
+        in_window = np.abs(np.log10(expected)) <= MAX_ABS_LOG10_SHIFT
+        self.assertTrue(in_window.any() and not in_window.all())
+        got = [r['a_T (model)'] for r in shift_records]
+        for g, e, ok in zip(got, expected, in_window):
+            if ok:
+                self.assertAlmostEqual(g / e, 1.0, places=6)
+            else:
+                self.assertIsNone(g)
+
+    def test_model_only_wlf_draws_curve_over_data_range(self):
+        *_, shift_fig, shift_records = self._run(
+            shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2)
+        self.assertEqual([t.name for t in shift_fig.data], ['WLF fit'])
+        curve = self._trace(shift_fig, 'WLF fit')
+        # The grid spans the data's temperature range, minus the cold points
+        # the |log10 a_T| window masks off; the warm end is inside the window.
+        self.assertGreaterEqual(min(curve.x), 0.0)
+        self.assertLess(min(curve.x), 5.0)
+        self.assertAlmostEqual(max(curve.x), 80.0)
+        y = np.asarray(curve.y, dtype=float)
+        self.assertTrue(np.all(np.abs(np.log10(y)) <= MAX_ABS_LOG10_SHIFT))
+        # Model-only table is the thinned grid.
+        self.assertLessEqual(len(shift_records), 50)
+        self.assertTrue(all(set(r) == {'Temperature', 'a_T (model)'}
+                            for r in shift_records))
+
+    def test_hybrid_curve_honors_a_T_ref_offset(self):
+        kwargs = dict(shift_model='hybrid', TL=40.0, C1=self.C1, C2=self.C2,
+                      Ea=150.0)
+        *_, fig_unit, _ = self._run(**kwargs)
+        *_, fig_shifted, _ = self._run(a_T_ref=100.0, **kwargs)
+        y_unit = np.array(self._trace(fig_unit, 'hybrid fit').y)
+        y_shifted = np.array(self._trace(fig_shifted, 'hybrid fit').y)
+        # Same grid, curve multiplied by the offset (where both are drawn).
+        n = min(len(y_unit), len(y_shifted))
+        np.testing.assert_allclose(y_shifted[:n] / y_unit[:n], 100.0,
+                                   rtol=1e-9)
+
+    def test_shift_reference_draws_markers_without_driving_transform(self):
+        # A display-only reference file: Experiment markers appear alongside
+        # the model curve, but the transform must still come from the model —
+        # unlike shiftData, whose table would override it.
+        kwargs = dict(shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2)
+        with_ref = self._run(shift_reference=self.shiftData, **kwargs)
+        without = self._run(**kwargs)
+        fig_ref = with_ref[7]
+        self.assertEqual({t.name for t in fig_ref.data},
+                         {'Experiment', 'WLF fit'})
+        # Identical master curves prove the reference never reached the
+        # transform (the interpolated table would shift the frequencies).
+        np.testing.assert_array_equal(
+            with_ref[0].data[0].x, without[0].data[0].x)
+
+    def test_shiftdata_wins_over_shift_reference_for_markers(self):
+        # When both are present the applied table is the honest marker source.
+        ref = {'Temperature': np.array([10.0, 20.0]),
+               'a_T': np.array([123.0, 1.0])}
+        *_, shift_fig, shift_records = self._run(
+            shift_model='manual', shiftData=self.shiftData,
+            shift_reference=ref)
+        self.assertEqual(len(shift_records), len(self.shiftData['a_T']))
+
+    def test_wlf_pole_in_range_is_masked_not_raised(self):
+        # Fixed C2 puts the pole at Tg - C2 = 15, inside the 0-80 data range.
+        # The transform itself would raise; the figure must instead draw the
+        # valid window and skip the rest — so use a shift file to carry the
+        # transform and hand the curve bad parameters.
+        *_, shift_fig, _ = self._run(
+            shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=10.0,
+            shiftData=self.shiftData)
+        curve = self._trace(shift_fig, 'WLF fit')
+        y = np.asarray(curve.y, dtype=float)
+        self.assertTrue(np.all(np.isfinite(y)))
+        self.assertTrue(np.all(np.abs(np.log10(y)) <= MAX_ABS_LOG10_SHIFT))
+
+    def test_chi2_stamp_present_iff_passed(self):
+        kwargs = dict(shift_model='WLF', Tg=self.T_REF, C1=self.C1,
+                      C2=self.C2, shiftData=self.shiftData)
+
+        def notices(fig):
+            return [a.text for a in (fig.layout.annotations or ())
+                    if getattr(a, 'name', '') == 'figure-notice']
+
+        *_, without, _ = self._run(**kwargs)
+        self.assertEqual(notices(without), [])
+        *_, with_stamp, _ = self._run(shift_chi2_reduced=0.123, **kwargs)
+        self.assertEqual(notices(with_stamp),
+                         ['misfit (χ²/ν) = 0.123 | lower is better'])
+
+    def test_figure_and_table_survive_json_round_trip(self):
+        import json as _json
+        *_, shift_fig, shift_records = self._run(
+            shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2,
+            shiftData=self.shiftData, shift_chi2_reduced=0.5)
+        blob = _json.dumps({'shift-chart': _json.loads(shift_fig.to_json()),
+                            'shift-table': shift_records})
+        self.assertIn('"shift-table"', blob)
+
+
 class TestUpdateLineChartTemperature(unittest.TestCase):
     """Characterization tests for the temperature-domain branches."""
 
@@ -274,7 +454,8 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         }
 
     def test_early_exit_with_no_shift_params(self):
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = update_line_chart(
+        (fig1, fig11, fig2, fig3, fig4, fig41, coef_df,
+         shift_fig, shift_records) = update_line_chart(
             self.real_temp_data, number_of_prony=10, smoothness=0.1,
             fit_settings=True, domain='temperature',
         )
@@ -290,7 +471,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             Tg=self.T_REF, C1=self.C1, C2=self.C2, shift_model='WLF',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertIsInstance(coef_df, list)
@@ -303,7 +484,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             Tg=self.T_REF, TL=self.T_REF, C1=self.C1, C2=self.C2,
             Ea=self.EA, shift_model='hybrid',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -318,7 +499,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             TL=self.T_REF, C1=self.C1, C2=self.C2, Ea=self.EA,
             shift_model='hybrid',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -331,7 +512,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             Tg=0.0, C1=self.C1, C2=self.C2, shift_model='WLF',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -348,7 +529,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             shiftData=shiftData,
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -392,14 +573,14 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
         # exactly zero, which made the old count_nonzero over the whole vector
         # report the grid size plus the equilibrium term — 24 terms for a
         # 23-point grid whose table listed 23 rows.
-        fig1, fig11, fig2, fig3, _, _, coef_df = self._run(23, 0.04)
+        fig1, fig11, fig2, fig3, _, _, coef_df, _, _ = self._run(23, 0.04)
         self.assertEqual(len(coef_df), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)), {23})
 
     def test_unsmoothed_labels_match_the_coefficient_table(self):
         # NNLS zeroes coefficients outright, so here the count is genuinely
         # below the grid size — and still must not pick up the equilibrium term.
-        fig1, fig11, fig2, fig3, _, _, coef_df = self._run(23, 0.0)
+        fig1, fig11, fig2, fig3, _, _, coef_df, _, _ = self._run(23, 0.0)
         self.assertLess(len(coef_df), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)),
                          {len(coef_df)})
@@ -587,7 +768,7 @@ class TestUpdateLineChartValidation(unittest.TestCase):
         ok = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
         ok['E Storage Error'] = np.asarray([5.0, 10.0, 15.0], float)
         ok['E Loss Error'] = np.asarray([0.5, 1.0, 1.5], float)
-        self.assertEqual(len(self._call(ok, domain='frequency')), 7)
+        self.assertEqual(len(self._call(ok, domain='frequency')), 9)
 
     def test_temperature_domain_zero_error_raises_value_error(self):
         # WLF params chosen as in TestUpdateLineChartErrorColumns so every row
@@ -824,7 +1005,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         )
 
     def test_large_upload_experiment_traces_are_thinned(self):
-        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
         for fig in (fig1, fig11, fig4, fig41):
             lengths = self._experiment_lengths(fig)
             self.assertTrue(lengths)  # experiment traces exist
@@ -840,7 +1021,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         self.assertEqual(model_lengths, [1000, 1000])
 
     def test_figures_carry_decimation_notice_with_percentage(self):
-        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
         expected_pct = int(round(100.0 * (1 - _PLOT_MAX_POINTS / self.N_LARGE)))
         for fig in (fig1, fig11, fig4, fig41):
             notices = self._decimation_notices(fig)
@@ -851,7 +1032,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     def test_complex_figures_carry_fit_quality_readout(self):
         # The two figures that overlay the fit on the data get the scores; the
         # temperature-domain visualizations, which show no fit, do not.
-        fig1, fig11, _, _, fig4, fig41, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
         for fig in (fig1, fig11):
             readouts = self._quality_readouts(fig)
             self.assertEqual(len(readouts), 1)
@@ -970,7 +1151,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             self._frequency_upload(200), number_of_prony=5, smoothness=0.0,
             fit_settings=False, domain='frequency', shift_model='hybrid',
         )
-        fig1, _, _, _, fig4, _, _ = result
+        fig1, _, _, _, fig4, _, _, _, _ = result
         self.assertTrue(all(n == 200 for n in self._experiment_lengths(fig1)))
         for fig in (fig1, fig4):
             self.assertEqual(self._decimation_notices(fig), [])
@@ -984,7 +1165,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             'E Storage': np.linspace(1e9, 1e6, n),
             'E Loss': np.full(n, 1e5),
         }
-        _, _, _, _, fig4, fig41, _ = update_line_chart(
+        _, _, _, _, fig4, fig41, _, _, _ = update_line_chart(
             data, number_of_prony=5, smoothness=0.0,
             fit_settings=False, domain='temperature',
         )

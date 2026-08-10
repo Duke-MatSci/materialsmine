@@ -225,5 +225,105 @@ class TestFitHybridCoefficients(unittest.TestCase):
         self.assertAlmostEqual(a_T_ref, 1.0, places=4)
 
 
+class TestShiftFitQuality(unittest.TestCase):
+    """
+    return_quality / sigma_a_T behavior of both shift-coefficient fits.
+
+    The chi-squared is computed in log10(a_T) space with sigma converted by
+    first-order propagation (sigma / (a_T ln 10)); with no Error column every
+    point gets unit sigma in decades, which reproduces curve_fit's implicit
+    unweighted fit exactly.
+    """
+
+    T_REF = 25.0
+    C1_TRUE = 14.0
+    C2_TRUE = 45.0
+
+    @classmethod
+    def setUpClass(cls):
+        cls.T = np.linspace(30.0, 80.0, 20)
+        cls.a_T = wlf_shift(cls.T, cls.T_REF, cls.C1_TRUE, cls.C2_TRUE)
+        # Deterministic multiplicative noise, ~0.1 decades.
+        rng = np.random.RandomState(0)
+        cls.a_T_noisy = cls.a_T * 10.0 ** (0.1 * rng.randn(len(cls.T)))
+
+    def test_default_arity_is_unchanged(self):
+        self.assertEqual(
+            len(fit_wlf_coefficients(self.T, self.a_T, self.T_REF)), 2)
+
+    def test_wlf_quality_arity_and_exact_data_chi2_is_zero(self):
+        result = fit_wlf_coefficients(
+            self.T, self.a_T, self.T_REF, return_quality=True)
+        self.assertEqual(len(result), 3)
+        self.assertLess(result[2], 1e-10)
+
+    def test_hybrid_quality_arity_and_exact_data_chi2_is_zero(self):
+        T = np.linspace(-10.0, 90.0, 25)
+        a_T = hybrid_shift(T, 40.0, self.C1_TRUE, self.C2_TRUE, 120.0, 3.0, True)
+        result = fit_hybrid_coefficients(T, a_T, TL=40.0, return_quality=True)
+        self.assertEqual(len(result), 5)
+        self.assertLess(result[4], 1e-8)
+
+    def test_noisy_data_chi2_is_order_of_noise(self):
+        # Unit sigma is one decade; 0.1-decade noise gives chi2/nu ~ 0.01.
+        *_, chi2 = fit_wlf_coefficients(
+            self.T, self.a_T_noisy, self.T_REF, return_quality=True)
+        self.assertGreater(chi2, 1e-4)
+        self.assertLess(chi2, 1.0)
+
+    def test_dof_not_positive_gives_none(self):
+        # 2 points, 2 free params → nu = 0 → chi2_reduced undefined.
+        *_, chi2 = fit_wlf_coefficients(
+            self.T[:2], self.a_T[:2], self.T_REF, return_quality=True)
+        self.assertIsNone(chi2)
+
+    def test_both_fixed_scores_supplied_model_with_full_dof(self):
+        # No optimization, but the supplied model is still scored (n_free=0).
+        C1_fit, C2_fit, chi2 = fit_wlf_coefficients(
+            self.T, self.a_T_noisy, self.T_REF,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, fix_C1=True, fix_C2=True,
+            return_quality=True,
+        )
+        self.assertEqual((C1_fit, C2_fit), (self.C1_TRUE, self.C2_TRUE))
+        self.assertIsNotNone(chi2)
+
+    def test_uniform_sigma_scaling_leaves_fit_but_scales_chi2(self):
+        # Doubling a uniform sigma cannot move the optimum (it rescales the
+        # objective), but must quarter the reported chi2.
+        sigma = np.abs(self.a_T_noisy) * 0.1 * np.log(10.0)
+        r1 = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF,
+                                  sigma_a_T=sigma, return_quality=True)
+        r2 = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF,
+                                  sigma_a_T=2.0 * sigma, return_quality=True)
+        np.testing.assert_allclose(r1[:2], r2[:2], rtol=1e-6)
+        self.assertAlmostEqual(r1[2] / r2[2], 4.0, places=6)
+
+    def test_ones_sigma_reproduces_unweighted_fit(self):
+        # sigma_log10 == 1 for every point is curve_fit's implicit default.
+        unweighted = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF)
+        ones = fit_wlf_coefficients(
+            self.T, self.a_T_noisy, self.T_REF,
+            sigma_a_T=np.abs(self.a_T_noisy) * np.log(10.0))
+        np.testing.assert_allclose(unweighted, ones[:2], rtol=0, atol=0)
+
+    def test_nonuniform_sigma_moves_the_fit(self):
+        # Point weights must actually reach the optimizer, not just the score.
+        sigma = np.abs(self.a_T_noisy) * np.log(10.0)
+        lopsided = sigma.copy()
+        lopsided[: len(lopsided) // 2] *= 100.0  # nearly ignore the cold half
+        even = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF,
+                                    sigma_a_T=sigma)
+        skewed = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF,
+                                      sigma_a_T=lopsided)
+        self.assertFalse(np.allclose(even, skewed, rtol=1e-6))
+
+    def test_nonpositive_sigma_raises_value_error(self):
+        sigma = np.ones_like(self.a_T)
+        sigma[3] = 0.0
+        with self.assertRaises(ValueError):
+            fit_wlf_coefficients(self.T, self.a_T, self.T_REF,
+                                 sigma_a_T=sigma)
+
+
 if __name__ == '__main__':
     unittest.main()

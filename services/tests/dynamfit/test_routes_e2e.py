@@ -121,6 +121,13 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         self.assertLess(log_rmse, 0.55,
                         f"WLF log10-RMSE {log_rmse:.4f} exceeds 0.55 — fit likely diverged")
 
+        # chi2_reduced must agree with the reconstruction above: with no Error
+        # column sigma is one decade, so chi2/nu == RMSE² · n/(n − 2). Observed
+        # ≈ 0.211.
+        chi2 = result['chi2_reduced']
+        n = len(T)
+        self.assertAlmostEqual(chi2, log_rmse ** 2 * n / (n - 2), places=10)
+
     def test_hybrid_e2e_converges_and_fit_is_accurate(self):
         """
         Hybrid Arrhenius/WLF fit on VeroCyan shift data (T_L=80 °C).
@@ -167,6 +174,43 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
         self.assertLess(log_rmse, 1.0,
                         f"Hybrid log10-RMSE {log_rmse:.4f} exceeds 1.0 — fit likely diverged")
+
+        # chi2_reduced consistency, as in the WLF test but with 4 free
+        # parameters (C1, C2, Ea, and the always-free a_T_ref). Observed ≈ 0.59.
+        chi2 = result['chi2_reduced']
+        n = len(T)
+        self.assertAlmostEqual(chi2, log_rmse ** 2 * n / (n - 4), places=10)
+
+    def test_wlf_e2e_error_column_weights_fit_and_chi2(self):
+        """
+        A 3-column shift file (Temperature, a_T, Error) must reach the fit as
+        sigma weights: scaling every Error by 2 leaves the coefficients
+        untouched (uniform weights can't move the optimum) but divides
+        chi2_reduced by 4. No 3-column fixture is checked in, so write
+        tempfiles beside the real ones (pattern: TestExtractRouteErrorColumns).
+        """
+        shift_data = upload_init('agilus30 (8) shift factors 20C clean.txt', 'shift')
+        T = np.asarray(shift_data['Temperature'], dtype=float)
+        a_T = np.asarray(shift_data['a_T'], dtype=float)
+        results = {}
+        for scale in (1.0, 2.0):
+            err = 0.1 * a_T * scale  # 10% (then 20%) relative error on a_T
+            name = f'_tmp_shift_with_error_x{scale:g}.txt'
+            path = os.path.join(REAL_FILES_DIR, name)
+            np.savetxt(path, np.column_stack([T, a_T, err]), delimiter='\t')
+            self.addCleanup(os.remove, path)
+            resp = self._post({
+                'shift_file_name': name,
+                'transform_method': 'WLF',
+                'Tg': 20.0,
+            })
+            self.assertEqual(resp.status_code, 200)
+            results[scale] = json.loads(resp.data)
+        self.assertAlmostEqual(results[1.0]['C1'], results[2.0]['C1'], places=6)
+        self.assertAlmostEqual(results[1.0]['C2'], results[2.0]['C2'], places=6)
+        self.assertAlmostEqual(
+            results[1.0]['chi2_reduced'] / results[2.0]['chi2_reduced'],
+            4.0, places=6)
 
 
 class TestExtractRoute(unittest.TestCase):
@@ -233,7 +277,8 @@ class TestExtractRoute(unittest.TestCase):
         response = data['response']
         for key in ('complex-chart', 'complex-tand-chart', 'relaxation-chart',
                     'relaxation-spectrum-chart', 'complex-temp-chart',
-                    'temp-tand-chart', 'mytable', 'upload-data',
+                    'temp-tand-chart', 'shift-chart', 'shift-table',
+                    'mytable', 'upload-data',
                     'C1', 'C2', 'Tg', 'Ea', 'TL'):
             self.assertIn(key, response)
 
@@ -303,6 +348,69 @@ class TestExtractRoute(unittest.TestCase):
         response = json.loads(resp.data)['response']
         self.assertTrue(response['complex-temp-chart'])  # temp view built
         self.assertTrue(response['upload-data'])         # Prony fit still ran
+
+    def test_frequency_manual_shift_chart_has_markers_and_table(self):
+        """
+        The shift figure and table must serialize through the real route:
+        manual + shift file draws the Experiment markers (no model curve —
+        'manual' has none) and emits one table row per shift-file point.
+        """
+        resp = self._post(self._freq_body(
+            transform_method='manual', shift_file_name=self._SHIFT_FILE,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        names = [t.get('name') for t in response['shift-chart']['data']]
+        self.assertEqual(names, ['Experiment'])
+        table = response['shift-table']
+        shift_rows = upload_init(self._SHIFT_FILE, 'shift')
+        self.assertEqual(len(table), len(shift_rows['a_T']))
+        self.assertEqual(set(table[0]),
+                         {'Temperature', 'a_T (measured)', 'a_T (model)'})
+
+    def test_frequency_wlf_with_shift_file_draws_fit_curve_and_stamp(self):
+        """
+        WLF + shift file + a passed-through chi2 must yield both traces and
+        the misfit stamp — the full display path a client exercises after
+        /fit-shift/.
+        """
+        resp = self._post(self._freq_body(
+            transform_method='WLF', Tg=20, C1=17.44, C2=51.6,
+            shift_file_name=self._SHIFT_FILE, chi2_reduced=0.25,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        names = {t.get('name') for t in response['shift-chart']['data']}
+        self.assertEqual(names, {'Experiment', 'WLF fit'})
+        notices = [a['text'] for a
+                   in response['shift-chart']['layout'].get('annotations', [])
+                   if a.get('name') == 'figure-notice']
+        self.assertEqual(notices, ['misfit (χ²/ν) = 0.25 | lower is better'])
+
+    def test_wlf_estimated_with_shift_reference_draws_markers(self):
+        """
+        The WLF/hybrid comparison case: shift_reference_file puts the measured
+        points on the shift figure while the transform still runs from the
+        model (the temp view must match the same request without the
+        reference, byte for byte).
+        """
+        base = self._freq_body(transform_method='WLF', Tg=20, C1=17.44, C2=51.6)
+        with_ref = self._post({**base, 'shift_reference_file': self._SHIFT_FILE})
+        without = self._post(base)
+        self.assertEqual(with_ref.status_code, 200, with_ref.data[:400])
+        response = json.loads(with_ref.data)['response']
+        names = {t.get('name') for t in response['shift-chart']['data']}
+        self.assertEqual(names, {'Experiment', 'WLF fit'})
+        self.assertEqual(
+            response['complex-temp-chart'],
+            json.loads(without.data)['response']['complex-temp-chart'])
+
+    def test_frequency_no_transform_shift_chart_is_empty(self):
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertEqual(response['shift-chart'].get('data', []), [])
+        self.assertEqual(response['shift-table'], [])
 
     def test_frequency_WLF_with_shift_params_returns_200(self):
         resp = self._post(self._freq_body(

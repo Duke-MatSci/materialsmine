@@ -1094,7 +1094,8 @@ def hybrid_shift(
 
 def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
                      p0: list, bounds=(-np.inf, np.inf),
-                     log10_space: bool = False) -> np.ndarray:
+                     log10_space: bool = False,
+                     sigma: np.ndarray = None) -> np.ndarray:
     """
     Fit shift-model parameters to log10(a_T) data via curve_fit.
 
@@ -1118,6 +1119,10 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
             (same format as scipy's bounds argument). Defaults to no bounds.
         log10_space (bool): If True, model already returns log10(a_T) and no
             np.log10 wrapping is applied. Defaults to False.
+        sigma (numpy.ndarray): Per-point standard deviations of log10(a_T),
+            forwarded to curve_fit with absolute_sigma=True. None (the
+            default) is curve_fit's own implicit unit sigma, so passing an
+            all-ones array reproduces the unweighted fit exactly.
 
     Returns:
         numpy.ndarray: Fitted values for the free parameters, same length as p0.
@@ -1140,13 +1145,72 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
             return np.log10(model(T_arg, *params))
 
     try:
-        popt, _ = curve_fit(fit_model, T, log10_a_T, p0=p0, bounds=bounds)
+        popt, _ = curve_fit(fit_model, T, log10_a_T, p0=p0, bounds=bounds,
+                            sigma=sigma, absolute_sigma=sigma is not None)
     except RuntimeError as exc:
         raise ValueError(
             f"Shift-factor curve fit did not converge: {exc}. "
             "Try supplying better initial guesses or checking the input data."
         ) from exc
     return popt
+
+
+def _sigma_log10(a_T: np.ndarray, sigma_a_T) -> np.ndarray:
+    """
+    Convert absolute standard deviations on a_T to log10 space.
+
+    First-order error propagation: sigma_log10 = sigma_a_T / (a_T * ln 10).
+    When sigma_a_T is None there is no uncertainty information, so every
+    point gets unit sigma in log10 space — one decade — which weights the
+    fit uniformly (curve_fit's own implicit default) and makes the reported
+    chi-squared a mean squared residual in decades².
+
+    Parameters:
+        a_T (numpy.ndarray): 1-D array of positive shift factors.
+        sigma_a_T: 1-D array of absolute standard deviations on a_T, same
+            length, or None.
+
+    Returns:
+        numpy.ndarray: 1-D array of log10-space standard deviations.
+    """
+    if sigma_a_T is None:
+        return np.ones_like(a_T)
+    sigma_a_T = np.asarray(sigma_a_T, dtype=float)
+    assert sigma_a_T.shape == a_T.shape, \
+        f"sigma_a_T must match a_T in shape; got {sigma_a_T.shape} and {a_T.shape}"
+    if not np.all(sigma_a_T > 0):
+        raise ValueError(
+            "All shift-factor Error values must be positive. Error columns "
+            "are absolute standard deviations of a_T and are used as 1/sigma "
+            "fit weights, so zero or negative entries are undefined."
+        )
+    return sigma_a_T / (a_T * np.log(10.0))
+
+
+def _shift_chi2_reduced(log10_resid: np.ndarray, sigma_log10: np.ndarray,
+                        n_free: int):
+    """
+    Reduced chi-squared of a shift-model fit, in log10(a_T) space.
+
+    chi² = Σ (resid/σ)² over the fitted points, divided by ν = n − n_free.
+    Follows _prony_fit_quality's convention: None when ν ≤ 0, since χ²/ν is
+    undefined there. With unit sigma (no Error column) this is the mean
+    squared log10 residual per degree of freedom — residuals in decades².
+
+    Parameters:
+        log10_resid (numpy.ndarray): model − data residuals in log10(a_T).
+        sigma_log10 (numpy.ndarray): per-point σ in log10 space, same length.
+        n_free (int): number of parameters the optimizer actually varied.
+
+    Returns:
+        float or None: χ²/ν, or None when the degrees of freedom are not
+        positive.
+    """
+    dof = len(log10_resid) - n_free
+    if dof <= 0:
+        return None
+    scaled = log10_resid / sigma_log10
+    return float(scaled @ scaled / dof)
 
 
 def fit_wlf_coefficients(
@@ -1157,6 +1221,9 @@ def fit_wlf_coefficients(
         C2: float = None,
         fix_C1: bool = False,
         fix_C2: bool = False,
+        *,
+        sigma_a_T: np.ndarray = None,
+        return_quality: bool = False,
 ) -> tuple:
     """
     Fit WLF shift-model coefficients (C1, C2) to shift-domain data.
@@ -1188,13 +1255,22 @@ def fit_wlf_coefficients(
             None.
         fix_C1 (bool): If True, hold C1 constant at its supplied value.
         fix_C2 (bool): If True, hold C2 constant at its supplied value.
+        sigma_a_T (numpy.ndarray): Optional absolute standard deviations on
+            a_T (the shift file's Error column), same length as a_T. Converted
+            to log10 space and used as 1/sigma weights in the fit and in the
+            chi-squared. None weights every point equally (see _sigma_log10).
+        return_quality (bool): If True, append the reduced chi-squared of the
+            fit to the return tuple (see _shift_chi2_reduced; None when the
+            degrees of freedom are not positive).
 
     Returns:
-        tuple: (C1_fit, C2_fit) — fitted (or fixed) WLF coefficients.
+        tuple: (C1_fit, C2_fit) — fitted (or fixed) WLF coefficients — with
+        chi2_reduced appended when return_quality is True.
 
     Raises:
-        ValueError: If any a_T value is non-positive (log10 undefined), or if
-            curve_fit does not converge.
+        ValueError: If any a_T value is non-positive (log10 undefined), if any
+            sigma_a_T value is non-positive, if curve_fit does not converge, or
+            if fixed parameters put a data point at the WLF pole.
     """
     T = np.atleast_1d(T)
     a_T = np.atleast_1d(a_T)
@@ -1207,6 +1283,7 @@ def fit_wlf_coefficients(
             "All shift factors a_T must be positive (log10 is undefined for "
             "non-positive values). Check the input shift-factor data."
         )
+    sigma = _sigma_log10(a_T, sigma_a_T)
 
     C1_0 = C1 if C1 is not None else UNIVERSAL_WLF_C1
     C2_0 = C2 if C2 is not None else UNIVERSAL_WLF_C2
@@ -1220,7 +1297,9 @@ def fit_wlf_coefficients(
     # This avoids passing degenerate lb==ub bounds to curve_fit, which some
     # scipy versions reject.
     if fix_C1 and fix_C2:
-        return float(C1_0), float(C2_0)
+        # Nothing to optimize; the quality tail below still scores the
+        # supplied model against the data (n_free = 0, dof = n).
+        C1_fit, C2_fit = C1_0, C2_0
     elif fix_C1:
         # C2 free: use analytic log10 form and enforce c2_min bound.
         def model(T_arg, C2_p):
@@ -1228,16 +1307,17 @@ def fit_wlf_coefficients(
         C2_start = max(C2_0, c2_min)
         (C2_fit,) = _curve_fit_shift(
             model, T, np.log10(a_T), p0=[C2_start],
-            bounds=([c2_min], [np.inf]), log10_space=True,
+            bounds=([c2_min], [np.inf]), log10_space=True, sigma=sigma,
         )
-        return float(C1_0), float(C2_fit)
+        C1_fit = C1_0
     elif fix_C2:
         # C1 free, C2 fixed: no overflow risk (denominator is fixed and positive
         # as long as the fixed C2 was chosen appropriately by the caller).
         def model(T_arg, C1_p):
             return wlf_shift(T_arg, T_ref, C1_p, C2_0)
-        (C1_fit,) = _curve_fit_shift(model, T, np.log10(a_T), p0=[C1_0])
-        return float(C1_fit), float(C2_0)
+        (C1_fit,) = _curve_fit_shift(model, T, np.log10(a_T), p0=[C1_0],
+                                     sigma=sigma)
+        C2_fit = C2_0
     else:
         # Both free: use analytic log10 form directly (avoids 10**exponent
         # overflow for cold data) and enforce c2_min on C2.
@@ -1247,8 +1327,23 @@ def fit_wlf_coefficients(
         C1_fit, C2_fit = _curve_fit_shift(
             model, T, np.log10(a_T), p0=[C1_0, C2_start],
             bounds=([-np.inf, c2_min], [np.inf, np.inf]), log10_space=True,
+            sigma=sigma,
         )
+
+    if not return_quality:
         return float(C1_fit), float(C2_fit)
+
+    log10_model = wlf_log10_shift(T, T_ref, C1_fit, C2_fit)
+    if not np.all(np.isfinite(log10_model)):
+        # Only reachable with fixed parameters: every fitted path bounds C2
+        # away from the pole. Same message wlf_shift raises for this case.
+        raise ValueError(
+            "divide by zero detected when calculating WLF. "
+            "Please adjust parameters or manually provide shift factors."
+        )
+    n_free = 2 - int(fix_C1) - int(fix_C2)
+    chi2 = _shift_chi2_reduced(log10_model - np.log10(a_T), sigma, n_free)
+    return float(C1_fit), float(C2_fit), chi2
 
 
 def fit_hybrid_coefficients(
@@ -1261,6 +1356,9 @@ def fit_hybrid_coefficients(
         fix_C1: bool = False,
         fix_C2: bool = False,
         fix_Ea: bool = False,
+        *,
+        sigma_a_T: np.ndarray = None,
+        return_quality: bool = False,
 ) -> tuple:
     """
     Fit hybrid Arrhenius/WLF shift-model coefficients (C1, C2, Ea) to
@@ -1294,16 +1392,24 @@ def fit_hybrid_coefficients(
         fix_C1 (bool): If True, hold C1 constant at its supplied value.
         fix_C2 (bool): If True, hold C2 constant at its supplied value.
         fix_Ea (bool): If True, hold Ea constant at its supplied value.
+        sigma_a_T (numpy.ndarray): Optional absolute standard deviations on
+            a_T (the shift file's Error column), same length as a_T. Converted
+            to log10 space and used as 1/sigma weights in the fit and in the
+            chi-squared. None weights every point equally (see _sigma_log10).
+        return_quality (bool): If True, append the reduced chi-squared of the
+            fit to the return tuple (see _shift_chi2_reduced; None when the
+            degrees of freedom are not positive).
 
     Returns:
         tuple: (C1_fit, C2_fit, Ea_fit, a_T_ref) — fitted (or fixed) hybrid
             coefficients plus the co-fitted reference shift factor a_T_ref (the
-            data's shift factor at TL; 1.0 when the data is referenced to TL).
+            data's shift factor at TL; 1.0 when the data is referenced to TL) —
+            with chi2_reduced appended when return_quality is True.
 
     Raises:
-        ValueError: If any a_T value is non-positive (log10 undefined), if TL
-            falls outside the data range so a model segment is degenerate, or if
-            curve_fit does not converge.
+        ValueError: If any a_T value is non-positive (log10 undefined), if any
+            sigma_a_T value is non-positive, if TL falls outside the data range
+            so a model segment is degenerate, or if curve_fit does not converge.
     """
     T = np.atleast_1d(T)
     a_T = np.atleast_1d(a_T)
@@ -1317,6 +1423,7 @@ def fit_hybrid_coefficients(
             "non-positive values). Check the input shift-factor data."
         )
     assert np.all(np.isfinite(T)), "T must contain only finite values"
+    sigma = _sigma_log10(a_T, sigma_a_T)
 
     _EA_DEFAULT = 100.0  # kJ/mol — broad mid-range starting point
     C1_0 = C1 if C1 is not None else UNIVERSAL_WLF_C1
@@ -1380,14 +1487,24 @@ def fit_hybrid_coefficients(
             ascending,
         )
 
-    fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub))
+    fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub),
+                              sigma=sigma)
     result = dict(zip(free_names, fitted))
-    return (
-        float(result.get('C1', C1_0)),
-        float(result.get('C2', C2_0)),
-        float(result.get('Ea', Ea_0)),
-        float(result.get('a_T_ref', a_T_ref_0)),
-    )
+    C1_fit = float(result.get('C1', C1_0))
+    C2_fit = float(result.get('C2', C2_0))
+    Ea_fit = float(result.get('Ea', Ea_0))
+    a_T_ref_fit = float(result.get('a_T_ref', a_T_ref_0))
+    if not return_quality:
+        return C1_fit, C2_fit, Ea_fit, a_T_ref_fit
+
+    # Same failure modes as the fit itself: hybrid_shift raises ValueError at a
+    # pole or on overflow, which the route already maps to HTTP 400.
+    log10_model = np.log10(hybrid_shift(
+        T, TL, C1_fit, C2_fit, Ea_fit, a_T_ref_fit, ascending,
+    ))
+    n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
+    chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
+    return C1_fit, C2_fit, Ea_fit, a_T_ref_fit, chi2
 
 
 def inverse_wlf_shift(a_T, T_ref: float, C1: float, C2: float) -> np.ndarray:
@@ -2113,6 +2230,161 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray) -> list:
     return coef_df.to_dict("records")
 
 
+# Rows in the model-only shift table (no measured temperatures to anchor to,
+# so the dense evaluation grid is thinned to a CSV-friendly size).
+_SHIFT_TABLE_MAX_ROWS = 50
+
+
+def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+                        data_T_range, chi2_reduced) -> tuple:
+    """
+    Build the shift-factor figure (a_T vs Temperature, log-y) and its table.
+
+    Draws the uploaded shift factors as markers ("Experiment") when a shift
+    file is present, and the WLF or hybrid model as a dashed curve when its
+    parameters are complete — either alone is enough for a figure. The curve
+    is evaluated on a dense grid spanning the union of the shift file's and
+    the viscoelastic data's temperature ranges, and masked to the same
+    |log10 a_T| <= MAX_ABS_LOG10_SHIFT window the transform applies, so a
+    nearby WLF pole shows as a gap instead of distorting the axis (or, for
+    hybrid, raising — see below).
+
+    Parameters:
+        shiftData: Optional {'Temperature': ..., 'a_T': ...} mapping from
+            upload_init(..., 'shift'); falsy for none.
+        shift_model (str): 'WLF', 'hybrid', 'manual', or 'none'/None. Only
+            'WLF' and 'hybrid' can draw a model curve.
+        Tg, TL, C1, C2, Ea: Shift-model parameters; the curve is skipped
+            unless its model's full set is present (Tg/C1/C2 for WLF,
+            TL/C1/C2/Ea for hybrid).
+        a_T_ref (float): Vertical offset for the hybrid curve (the data's
+            shift factor at TL, co-fitted by fit_hybrid_coefficients). None
+            falls back to 1.0 — correct only for data referenced to TL.
+        data_T_range (tuple): (min, max) temperature of the viscoelastic
+            data, or None when no temperature axis exists.
+        chi2_reduced (float): Fit-time reduced chi-squared to stamp on the
+            figure, or None for no stamp. Passed through from the client
+            because only the fit (in /fit-shift/) knows how many parameters
+            were free; recomputing here would use a different dof convention.
+
+    Returns:
+        tuple: (fig, records) — the figure (empty go.Figure() when neither
+        markers nor curve are drawable, matching the other conditional
+        figures) and the table rows behind it: at the measured temperatures
+        ({'Temperature', 'a_T (measured)', 'a_T (model)'}) when a shift file
+        is present, else the masked model grid thinned to
+        _SHIFT_TABLE_MAX_ROWS rows of {'Temperature', 'a_T (model)'}. All
+        values are Python floats (the route serializes with stdlib json,
+        which rejects numpy scalars); 'a_T (model)' is None where the model
+        is absent or outside the valid window.
+    """
+    T_meas = a_meas = None
+    if shiftData:
+        shift_df = pd.DataFrame(shiftData)
+        # The legacy positional shift form has no Temperature column; without
+        # one there is nowhere on the T axis to put the markers, so only the
+        # model curve (if any) is drawn. The temperature branch synthesizes
+        # the pairing before calling, so its positional markers still appear.
+        if 'Temperature' in shift_df.columns:
+            T_meas = shift_df['Temperature'].to_numpy(dtype=float)
+            a_meas = shift_df['a_T'].to_numpy(dtype=float)
+
+    curve_ready = (
+        (shift_model == 'WLF'
+         and Tg is not None and C1 is not None and C2 is not None)
+        or (shift_model == 'hybrid'
+            and TL is not None and C1 is not None and C2 is not None
+            and Ea is not None)
+    )
+
+    def eval_log10(T_arr):
+        """log10(a_T) of the model at T_arr; non-finite/out-of-window -> nan."""
+        if shift_model == 'WLF':
+            with np.errstate(divide='ignore', invalid='ignore'):
+                log10_a = wlf_log10_shift(T_arr, Tg, C1, C2)
+        else:
+            # hybrid_shift raises ValueError at a hand-entered pole (fitted
+            # parameters cannot reach one: C2 is floored at 1 and its WLF
+            # branch only sees T > TL). No curve is better than a 500.
+            try:
+                log10_a = np.log10(hybrid_shift(
+                    T_arr, TL, C1, C2, Ea,
+                    a_T_ref if a_T_ref is not None else 1.0, True,
+                ))
+            except ValueError:
+                return np.full_like(T_arr, np.nan)
+        return np.where(
+            np.isfinite(log10_a) & (np.abs(log10_a) <= MAX_ABS_LOG10_SHIFT),
+            log10_a, np.nan,
+        )
+
+    frames = []
+    if T_meas is not None:
+        frames.append(pd.DataFrame({
+            'Temperature': T_meas, 'a_T': a_meas, 'Type': 'Experiment',
+        }))
+    model_label = f"{shift_model} fit"
+    grid_log10 = None
+    if curve_ready:
+        spans = [(float(np.min(T_meas)), float(np.max(T_meas)))] \
+            if T_meas is not None else []
+        if data_T_range is not None:
+            spans.append((float(data_T_range[0]), float(data_T_range[1])))
+        if spans:
+            grid = np.linspace(min(lo for lo, _ in spans),
+                               max(hi for _, hi in spans), 200)
+            grid_log10 = eval_log10(grid)
+            keep = np.isfinite(grid_log10)
+            if np.any(keep):
+                frames.append(pd.DataFrame({
+                    'Temperature': grid[keep],
+                    'a_T': 10.0 ** grid_log10[keep],
+                    'Type': model_label,
+                }))
+            else:
+                grid_log10 = None
+
+    if not frames:
+        return go.Figure(), []
+
+    fig = px.line(
+        pd.concat(frames, ignore_index=True),
+        x='Temperature', y='a_T',
+        log_y=True,
+        color='Type', line_dash='Type',
+        line_dash_map={'Experiment': 'solid', model_label: 'dash'},
+        labels={'Temperature': 'Temperature (C)',
+                # Plotly renders HTML in axis titles, so the subscript can be
+                # a real capital T (the tab label makes do with Unicode ₜ).
+                'a_T': 'Shift Factor, a<sub>T</sub>'},
+    )
+    fig.update_traces(mode='markers', selector=dict(name='Experiment'))
+    fig.update_layout(
+        autosize=False, margin=dict(l=80, r=60, t=60, b=80),
+        legend_title='Type',
+    )
+    fig.update_yaxes(exponentformat='power')
+    if chi2_reduced is not None:
+        _stamp_notice((fig,), f"misfit (χ²/ν) = {chi2_reduced:.3g} | lower is better")
+
+    if T_meas is not None:
+        model_at_meas = eval_log10(T_meas) if curve_ready \
+            else np.full_like(T_meas, np.nan)
+        records = [
+            {'Temperature': float(t), 'a_T (measured)': float(m),
+             'a_T (model)': None if np.isnan(v) else float(10.0 ** v)}
+            for t, m, v in zip(T_meas, a_meas, model_at_meas)
+        ]
+    else:
+        keep = np.isfinite(grid_log10)
+        step = max(1, int(np.ceil(np.count_nonzero(keep) / _SHIFT_TABLE_MAX_ROWS)))
+        records = [
+            {'Temperature': float(t), 'a_T (model)': float(10.0 ** v)}
+            for t, v in zip(grid[keep][::step], grid_log10[keep][::step])
+        ]
+    return fig, records
+
+
 EXPECTED_DOMAIN_COLUMNS = {
     'frequency':   ('Frequency', 'E Storage', 'E Loss'),
     'temperature': ('Temperature', 'E Storage', 'E Loss'),
@@ -2122,7 +2394,8 @@ EXPECTED_DOMAIN_COLUMNS = {
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
                       Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None,
-                      relative_error=0.2):
+                      relative_error=0.2, a_T_ref=None, shift_chi2_reduced=None,
+                      shift_reference=None):
     """
     Update the dynamfit figures and Prony coefficient table for an uploaded dataset.
 
@@ -2152,6 +2425,18 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             back to the universal-WLF view.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
             Supplying one counts as requesting a transform even under 'none'.
+        a_T_ref (float): Vertical offset for the hybrid curve on the shift
+            figure (from fit_hybrid_coefficients via /fit-shift/). Display
+            only — the transform itself never reads it.
+        shift_chi2_reduced (float): Fit-time reduced chi-squared of the shift
+            fit, stamped on the shift figure when present. Display only; see
+            _build_shift_figure for why it is not recomputed here.
+        shift_reference: Optional measured shift factors
+            {'Temperature': ..., 'a_T': ...} drawn as the shift figure's
+            Experiment markers WITHOUT driving the transform — the comparison
+            case for a WLF/hybrid model, where supplying shiftData instead
+            would make the transform apply the table. Ignored when shiftData
+            is present (shiftData already supplies the markers).
 
     Returns:
         fig1 (plotly.graph_objects.Figure): The line chart.
@@ -2163,6 +2448,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
             Empty under the same condition as fig4.
         coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
+        fig5 (plotly.graph_objects.Figure): The shift-factor figure (a_T vs
+            Temperature): uploaded shift factors as markers and/or the
+            WLF/hybrid model curve. Empty when no transform was requested or
+            nothing is drawable (see _build_shift_figure).
+        shift_records (list): The table behind fig5; [] when fig5 is empty.
 
     Raises:
         ValueError: If the uploaded data is empty, contains non-finite values,
@@ -2204,6 +2494,10 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
                 "zero or negative entries are undefined."
             )
 
+    # The shift figure only exists when a transform is in play; both branches
+    # overwrite this pair on their transform paths.
+    shift_fig, shift_records = go.Figure(), []
+
     if domain == "frequency":
         if np.any(df['Frequency'].to_numpy() <= 0):
             raise ValueError(
@@ -2237,6 +2531,13 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
             fig4, fig41 = _build_temperature_figures(plot_temp)
             _annotate_decimation((fig4, fig41), temp_decimation)
+            T_derived = temp_sweep_data['Temperature'].to_numpy()
+            shift_fig, shift_records = _build_shift_figure(
+                shiftData or shift_reference,
+                shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+                (float(T_derived.min()), float(T_derived.max())),
+                shift_chi2_reduced,
+            )
 
     elif domain == "temperature":
         temp_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
@@ -2258,16 +2559,35 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         )
         if not has_shift_params:
             # No way to bring temperature data onto a master curve, so the
-            # frequency-domain figures and coefficient table are not produced.
+            # frequency-domain figures and coefficient table are not produced
+            # (and there is no shift model to draw).
             empty = go.Figure()
             return (
                 empty, empty, empty, empty, fig4, fig41,
                 pd.DataFrame(columns=["tau_i", "E_i"]).to_dict("records"),
+                shift_fig, shift_records,
             )
 
         freq_sweep_data = tts_temperature_to_frequency_V2(
             temp_sweep_data, shift_model,
             Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
+        )
+
+        # Built after the transform so tts_temperature_to_frequency_V2 keeps
+        # sole ownership of shiftData validation (missing 'a_T', positional
+        # row-count mismatches). The legacy positional shift form has no
+        # temperature column of its own; its a_T align row-for-row with the
+        # upload sorted by Temperature ascending — the same reading the
+        # transform just applied — so synthesize that pairing for the markers.
+        T_upload = temp_sweep_data['Temperature'].to_numpy()
+        marker_data = shiftData or shift_reference
+        if marker_data and 'Temperature' not in pd.DataFrame(marker_data).columns:
+            marker_data = {'Temperature': np.sort(T_upload),
+                           'a_T': pd.DataFrame(marker_data)['a_T'].to_numpy()}
+        shift_fig, shift_records = _build_shift_figure(
+            marker_data, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+            (float(T_upload.min()), float(T_upload.max())),
+            shift_chi2_reduced,
         )
         df = freq_sweep_data.rename(
             columns={"E'": 'E Storage', "E''": 'E Loss'},
@@ -2334,4 +2654,5 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
     coef_records = _build_coef_records(tau_i, E_i)
 
-    return fig1, fig11, fig2, fig3, fig4, fig41, coef_records
+    return (fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
+            shift_fig, shift_records)

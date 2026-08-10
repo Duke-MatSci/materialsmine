@@ -31,6 +31,24 @@ def check_file_exists(file_name):
     return os.path.exists(file_path)
 
 
+def as_float_or_none(value, name):
+    """
+    Coerce an optional request field to float, keeping None as None.
+
+    The coefficient inputs reach the client as text fields, so a hand-typed
+    Tg arrives in the JSON body as the string "20"; without coercion it flows
+    into numpy arithmetic and dies with "unsupported operand type(s) for -:
+    'str' and 'float'" as a 500. Raises ValueError (the routes' 400 path)
+    naming the field when the value is not a number.
+    """
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{name} must be a number; got {value!r}")
+
+
 @dynamfit.route('/extract/', methods=['POST'])
 @log_errors
 @request_logger
@@ -62,11 +80,11 @@ def extract_data_from_file(request_id):
         # figures synthesized from universal-WLF constants.
         shift_model = data.get('transform_method') or 'none'
         # Read incoming shift factor model metrics
-        Tg = data.get('Tg', None)
-        C1 = data.get('C1', None)
-        C2 = data.get('C2', None)
-        Ea = data.get('Ea', None)
-        TL = data.get('TL', None)
+        Tg = as_float_or_none(data.get('Tg'), 'Tg')
+        C1 = as_float_or_none(data.get('C1'), 'C1')
+        C2 = as_float_or_none(data.get('C2'), 'C2')
+        Ea = as_float_or_none(data.get('Ea'), 'Ea')
+        TL = as_float_or_none(data.get('TL'), 'TL')
 
         Tg_estimate = data.get('Tg_estimate', False)
         C1_estimate = data.get('C1_estimate', False)
@@ -74,8 +92,22 @@ def extract_data_from_file(request_id):
         Ea_estimate = data.get('Ea_estimate', False)
         TL_estimate = data.get('TL_estimate', False)
 
+        # Display-only passthroughs for the shift figure, echoed by the client
+        # from its last /fit-shift/ response: the hybrid curve's vertical
+        # offset and the fit-time reduced chi-squared (only the fit knows how
+        # many parameters were free, so it is not recomputed here).
+        a_T_ref = as_float_or_none(data.get('a_T_ref'), 'a_T_ref')
+        shift_chi2_reduced = as_float_or_none(data.get('chi2_reduced'), 'chi2_reduced')
+
         # add manual shift factor upload
         shift_file_name = data.get('shift_file_name', None)
+        # Display-only counterpart: a shift-factor file drawn as the
+        # Experiment markers on the shift figure WITHOUT driving the ω-T
+        # transform. shift_file_name cannot serve both purposes — supplying it
+        # makes the transform apply the table instead of the WLF/hybrid model
+        # — so a WLF/hybrid extract passes the uploaded file here instead, to
+        # compare the model curve against the measured points.
+        shift_reference_file = data.get('shift_reference_file', None)
 
         if not file_name:
             return jsonify({'message': 'No file name provided'}), 400
@@ -114,6 +146,16 @@ def extract_data_from_file(request_id):
         # inside tts_temperature_to_frequency_V2, which raises ValueError → 400
         # if they differ.
 
+        # When shiftData is present it already supplies the figure markers, so
+        # the reference is redundant and skipped.
+        if shift_reference_file and not shiftData:
+            if not check_file_exists(shift_reference_file):
+                return jsonify(
+                    {'message': f"File '{shift_reference_file}' not found"}), 404
+            shift_reference = upload_init(shift_reference_file, 'shift')
+        else:
+            shift_reference = None
+
         # Perform shift variable estimation
 
         # "Universal" Estimations for C1, C2
@@ -139,7 +181,11 @@ def extract_data_from_file(request_id):
         # Assuming the update_line_chart function returns values in a specific order
         result = update_line_chart(uploadData, number_of_prony, smoothness,
                                    fit_settings, domain,
-                                   relative_error=relative_error, **shift_params)
+                                   relative_error=relative_error,
+                                   a_T_ref=a_T_ref,
+                                   shift_chi2_reduced=shift_chi2_reduced,
+                                   shift_reference=shift_reference,
+                                   **shift_params)
 
         # Unpacking values into a dictionary
         chart_data = {
@@ -150,6 +196,8 @@ def extract_data_from_file(request_id):
             'complex_temperature_chart_placeholder': result[4],
             'temperature_tand_chart_placeholder2': result[5],
             'mytable_placeholder': result[6],
+            'shift_chart_placeholder': result[7],
+            'shift_table_placeholder': result[8],
         }
         
         # Constructing the data dictionary
@@ -162,6 +210,8 @@ def extract_data_from_file(request_id):
                 "relaxation-spectrum-chart": json.loads(chart_data['relaxation_spectrum_placeholder'].to_json()),
                 "complex-temp-chart": json.loads(chart_data['complex_temperature_chart_placeholder'].to_json()),
                 "temp-tand-chart": json.loads(chart_data['temperature_tand_chart_placeholder2'].to_json()),
+                "shift-chart": json.loads(chart_data['shift_chart_placeholder'].to_json()),
+                "shift-table": chart_data['shift_table_placeholder'],
                 "mytable": chart_data['mytable_placeholder'],
                 # Emit upload-data as row-objects (one dict per row), matching
                 # mytable's shape and the frontend "Uploaded Data" tab, whose
@@ -220,8 +270,11 @@ def extract_data_from_file(request_id):
 def fit_shift_coefficients(request_id):
     """
     Fit WLF or hybrid shift-factor coefficients from an uploaded shift-factor
-    file (2 columns, no header: Temperature [°C], a_T [linear scale]). Returns
-    the fitted coefficients only — no Prony fit, no charts.
+    file (2-3 columns, no header: Temperature [°C], a_T [linear scale], and
+    optionally Error [absolute std dev on a_T, used as 1/sigma fit weights]).
+    Returns the fitted coefficients plus the fit's reduced chi-squared
+    (chi2_reduced; None when there are no surplus degrees of freedom) — no
+    Prony fit, no charts.
 
     WLF requires Tg (the a_T == 1 anchor); hybrid requires TL. Both are
     upstream-supplied inputs — this route does not load the main viscoelastic
@@ -237,11 +290,11 @@ def fit_shift_coefficients(request_id):
         data = request.get_json()
         shift_file_name = data.get('shift_file_name')
         shift_model = data.get('transform_method', 'hybrid')
-        Tg = data.get('Tg', None)
-        C1 = data.get('C1', None)
-        C2 = data.get('C2', None)
-        Ea = data.get('Ea', None)
-        TL = data.get('TL', None)
+        Tg = as_float_or_none(data.get('Tg'), 'Tg')
+        C1 = as_float_or_none(data.get('C1'), 'C1')
+        C2 = as_float_or_none(data.get('C2'), 'C2')
+        Ea = as_float_or_none(data.get('Ea'), 'Ea')
+        TL = as_float_or_none(data.get('TL'), 'TL')
 
         if not shift_file_name:
             return jsonify({'message': 'No shift file name provided'}), 400
@@ -256,15 +309,21 @@ def fit_shift_coefficients(request_id):
 
         T = np.asarray(shiftData['Temperature'], dtype=float)
         a_T = np.asarray(shiftData['a_T'], dtype=float)
+        # Optional third column: absolute standard deviations on a_T, used as
+        # 1/sigma weights in the fit and in the reported chi-squared.
+        sigma_a_T = (np.asarray(shiftData['Error'], dtype=float)
+                     if 'Error' in shiftData else None)
 
         if shift_model == 'WLF':
             if Tg is None:
                 return jsonify({'message': 'Tg is required for WLF coefficient fitting'}), 400
-            C1_fit, C2_fit = fit_wlf_coefficients(
+            C1_fit, C2_fit, chi2_reduced = fit_wlf_coefficients(
                 T, a_T, T_ref=Tg,
                 C1=C1, C2=C2,
                 fix_C1=(C1 is not None),
                 fix_C2=(C2 is not None),
+                sigma_a_T=sigma_a_T,
+                return_quality=True,
             )
             result_data = {
                 'transform_method': 'WLF',
@@ -272,22 +331,26 @@ def fit_shift_coefficients(request_id):
                 'Ea': None, 'TL': None,
                 # WLF is anchored at T_ref=Tg, where a_T == 1 by construction.
                 'a_T_ref': 1.0,
+                'chi2_reduced': chi2_reduced,
             }
         else:  # hybrid
             if TL is None:
                 return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
-            C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
+            C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced = fit_hybrid_coefficients(
                 T, a_T, TL=TL,
                 C1=C1, C2=C2, Ea=Ea,
                 fix_C1=(C1 is not None),
                 fix_C2=(C2 is not None),
                 fix_Ea=(Ea is not None),
+                sigma_a_T=sigma_a_T,
+                return_quality=True,
             )
             result_data = {
                 'transform_method': 'hybrid',
                 'Tg': None, 'C1': C1_fit, 'C2': C2_fit,
                 'Ea': Ea_fit, 'TL': TL,
                 'a_T_ref': a_T_ref,
+                'chi2_reduced': chi2_reduced,
             }
 
         end_time = datetime.datetime.now()
