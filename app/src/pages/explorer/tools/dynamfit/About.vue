@@ -50,7 +50,7 @@
         </p>
         <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
-          three shift-factor models: <strong>WLF</strong> (the default, with T<sub>g</sub>,
+          three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub>,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
           a <strong>hybrid</strong> WLF/Arrhenius model that adds a low-temperature crossover
           T<sub>L</sub> and an activation energy E<sub>A</sub>, and a <strong>manual</strong>

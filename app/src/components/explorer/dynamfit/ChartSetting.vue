@@ -444,7 +444,7 @@
         <template v-if="cShiftModelOpen">
           <div class="u--margin-neg">
             <md-radio id="cTransformMethodWLF" v-model="transformMethod" value="WLF">
-              WLF <small>(Default)</small>
+              WLF
             </md-radio>
             <md-radio id="cTransformMethodHybrid" v-model="transformMethod" value="hybrid">
               Hybrid
@@ -577,18 +577,31 @@
                 <span class="md-caption md-success viz-u-display__show">{{ mFile }}</span>
               </template>
             </div>
+            <!-- Anchor inputs for fitting the uploaded shift factors: WLF and
+                 hybrid each need their reference temperature before /fit-shift
+                 can run, and neither field exists elsewhere in manual mode —
+                 without these the "enter Tg or TL" nudge would be a dead end.
+                 No estimate checkboxes: estimation is an extract-side feature,
+                 the coefficient fit needs an explicit anchor. -->
+            <p class="dynamfit-shift-upload__label">
+              To also fit WLF or hybrid coefficients to the shift factors, enter the model's
+              anchor: Tg for WLF, TL for hybrid.
+            </p>
+            <div class="u--layout-flex u--layout-flex-justify-sb">
+              <md-field class="dynamfit-field--half">
+                <md-input v-model="ttspTgValue" placeholder="Tg (fits WLF)"></md-input>
+              </md-field>
+              <md-field class="dynamfit-field--half">
+                <md-input v-model="ttspTLValue" placeholder="TL (fits hybrid)"></md-input>
+              </md-field>
+            </div>
           </template>
         </template>
       </template>
     </div>
 
-    <!-- a_T_ref read-only display -->
-    <div v-if="shiftCoefficients.a_T_ref !== null" class="u_margin-bottom-small">
-      <div class="dynamfit-readonly">
-        <span class="dynamfit-readonly__label">a_T_ref:</span>
-        <span class="dynamfit-readonly__value">{{ shiftCoefficients.a_T_ref }}</span>
-      </div>
-    </div>
+    <!-- Fitted shift coefficients (a_T_ref, misfit, ...) are shown in the
+         visualizer's Shift Coeff tab, not here. -->
 
     <!-- Shift file name display -->
     <div v-if="mFile" class="md-alert md-alert--info utility-margin-top">
@@ -634,6 +647,7 @@ import {
   RELATIVE_ERROR_DEFAULT_PERCENT,
   SMOOTHNESS_DEFAULT_PERCENT,
 } from '@/composables/useDynamfitDefaults';
+import { resolveShiftFitModel } from '@/composables/useDynamfitShift';
 import Pagination from '@/components/explorer/Pagination.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 
@@ -784,7 +798,6 @@ let coeffDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 const token = computed(() => store.getters['auth/token']);
 const dynamfit = computed(() => store.getters['explorer/dynamfit']);
 const mFile = computed(() => store.getters['explorer/getDynamfitManualFile']);
-const shiftCoefficients = computed(() => store.getters['explorer/getDynamfitShiftCoefficients']);
 
 const disableInput = computed(() => {
   return !dynamfitData.value || !Object.keys(dynamfitData.value).length;
@@ -1019,34 +1032,76 @@ const clearDynamfitData = (): void => {
   store.commit('explorer/resetDynamfitShiftCoefficients');
 };
 
+/**
+ * Manual-mode chart update: best-effort /fit-shift, then the extract —
+ * unconditionally. The previous version sent transform_method 'manual' to
+ * /fit-shift (a guaranteed 400) and awaited it ahead of the extract in one
+ * try, so uploading a shift file killed the charts along with the fit.
+ */
 const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Promise<void> => {
-  const fitPayload: Record<string, unknown> = {
-    shift_file_name: mFile.value,
-    transform_method: transformMethod.value,
-  };
+  const fitModel = resolveShiftFitModel(
+    transformMethod.value,
+    ttspTgValue.value,
+    ttspTLValue.value
+  );
 
-  if (ttspTgValue.value) fitPayload.Tg = ttspTgValue.value;
-  if (ttspC1Value.value) fitPayload.C1 = ttspC1Value.value;
-  if (ttspC2Value.value) fitPayload.C2 = ttspC2Value.value;
-  if (ttspTLValue.value) fitPayload.TL = ttspTLValue.value;
-  if (ttspEAValue.value) fitPayload.Ea = ttspEAValue.value;
+  if (fitModel) {
+    const fitPayload: Record<string, unknown> = {
+      shift_file_name: mFile.value,
+      transform_method: fitModel,
+    };
+    if (ttspTgValue.value) fitPayload.Tg = ttspTgValue.value;
+    if (ttspC1Value.value) fitPayload.C1 = ttspC1Value.value;
+    if (ttspC2Value.value) fitPayload.C2 = ttspC2Value.value;
+    if (ttspTLValue.value) fitPayload.TL = ttspTLValue.value;
+    if (ttspEAValue.value) fitPayload.Ea = ttspEAValue.value;
 
-  const fitted = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
+    try {
+      const fitted = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
 
-  if (fitted.C1 != null) ttspC1Value.value = fitted.C1;
-  if (fitted.C2 != null) ttspC2Value.value = fitted.C2;
-  if (fitted.Tg != null) ttspTgValue.value = fitted.Tg;
-  if (fitted.Ea != null) ttspEAValue.value = fitted.Ea;
-  if (fitted.TL != null) ttspTLValue.value = fitted.TL;
+      // Programmatic write-back: raise the guard before touching the refs or
+      // the model, so neither the debounced coefficient watcher (duplicate
+      // extract) nor the transformMethod watcher (estimate-box cascade that
+      // nulls the inputs) reacts. Released after the watcher flush.
+      skipCoeffWatcher.value = true;
+      if (fitted.transform_method) transformMethod.value = fitted.transform_method;
+      if (fitted.C1 != null) ttspC1Value.value = fitted.C1;
+      if (fitted.C2 != null) ttspC2Value.value = fitted.C2;
+      if (fitted.Tg != null) ttspTgValue.value = fitted.Tg;
+      if (fitted.Ea != null) ttspEAValue.value = fitted.Ea;
+      if (fitted.TL != null) ttspTLValue.value = fitted.TL;
+      setTimeout(() => {
+        skipCoeffWatcher.value = false;
+      }, 0);
+
+      if (fitted.C1 != null) extractPayload.C1 = fitted.C1;
+      if (fitted.C2 != null) extractPayload.C2 = fitted.C2;
+      if (fitted.Tg != null) extractPayload.Tg = fitted.Tg;
+      if (fitted.Ea != null) extractPayload.Ea = fitted.Ea;
+      if (fitted.TL != null) extractPayload.TL = fitted.TL;
+      // Display-only passthroughs for the shift figure: the hybrid curve's
+      // vertical offset and the fit-time χ²/ν stamp. Deliberately absent from
+      // the debounced coefficient watcher's payload, so hand-editing a
+      // coefficient drops the then-stale readout.
+      if (fitted.a_T_ref != null) extractPayload.a_T_ref = fitted.a_T_ref;
+      if (fitted.chi2_reduced != null) extractPayload.chi2_reduced = fitted.chi2_reduced;
+    } catch (err: unknown) {
+      const error = err as Error;
+      store.commit('setSnackbar', {
+        message: `Shift fit failed: ${error.message || 'unknown error'} — charts use the uploaded shift factors directly.`,
+        duration: 5000,
+        type: 'error',
+      });
+    }
+  } else {
+    displayInfo(
+      'Enter Tg (WLF) or TL (hybrid) to fit shift coefficients. Charts use the uploaded shift factors directly.',
+      5000
+    );
+  }
 
   extractPayload.transform_method = transformMethod.value;
   extractPayload.shift_file_name = mFile.value;
-  if (fitted.C1 != null) extractPayload.C1 = fitted.C1;
-  if (fitted.C2 != null) extractPayload.C2 = fitted.C2;
-  if (fitted.Tg != null) extractPayload.Tg = fitted.Tg;
-  if (fitted.Ea != null) extractPayload.Ea = fitted.Ea;
-  if (fitted.TL != null) extractPayload.TL = fitted.TL;
-
   await store.dispatch('explorer/fetchDynamfitData', extractPayload);
 };
 
@@ -1108,6 +1163,12 @@ const updateChart = async (): Promise<void> => {
       if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
       if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
     }
+
+    // A previously uploaded shift file stays on the shift figure as the
+    // Experiment markers for comparison against the model curve — display
+    // only. shift_file_name would instead make the transform apply the
+    // table, overriding the WLF/hybrid model the user just picked.
+    if (mFile.value) payload.shift_reference_file = mFile.value;
   }
 
   store.commit('explorer/setDynamfitDomain', selectedProperty.value);
@@ -1293,7 +1354,11 @@ watch(transformMethod, (newValue) => {
     'explorer/setDynamfitTransformMethod',
     newValue as 'none' | 'WLF' | 'hybrid' | 'manual'
   );
-  if (newValue === 'WLF' || newValue === 'hybrid') {
+  // Auto-check the estimate boxes only for a USER model change. A programmatic
+  // flip (fitShiftAndExtract adopting the fitted model) raises skipCoeffWatcher
+  // first; checking the boxes here would cascade into the estimate watcher
+  // below, which nulls the inputs — wiping the freshly fitted coefficients.
+  if (!skipCoeffWatcher.value && (newValue === 'WLF' || newValue === 'hybrid')) {
     tgEstimated.value = true;
     c1Estimated.value = true;
     c2Estimated.value = true;
@@ -1301,6 +1366,13 @@ watch(transformMethod, (newValue) => {
       tLEstimated.value = true;
       eAEstimated.value = true;
     }
+  }
+  // A user-picked model also orphans any fitted shift coefficients: leaving
+  // them standing shows a stale a_T_ref/misfit readout (and a Shift Coeff
+  // table mixing the new model's name with the old model's values) next to a
+  // figure whose curve no longer comes from that fit.
+  if (!skipCoeffWatcher.value) {
+    store.commit('explorer/resetDynamfitShiftCoefficients');
   }
   if (newValue) updateBtn.value = true;
 });
@@ -1379,6 +1451,16 @@ watch(ttspEAValue, (v) => {
   if (v) eAEstimated.value = false;
 });
 
+// In manual mode the debounced coefficient watcher below deliberately bails,
+// so a hand-entered Tg/TL anchor would otherwise leave the Update link
+// disabled with no path to the fit. Programmatic write-backs are excluded —
+// they arrive under skipCoeffWatcher and already came from an update.
+watch([ttspTgValue, ttspTLValue], () => {
+  if (isManual.value && !skipCoeffWatcher.value && !resetting.value) {
+    updateBtn.value = true;
+  }
+});
+
 // Debounced watcher: when ttsp coefficient inputs change, call /extract if fileUpload exists
 watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
   if (resetting.value) return;
@@ -1423,97 +1505,39 @@ watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
       if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
     }
 
+    // Same display-only passthrough as updateChart's WLF/hybrid branch.
+    if (mFile.value) payload.shift_reference_file = mFile.value;
+
     store.commit('explorer/setDynamfitDomain', selectedProperty.value);
     await store.dispatch('explorer/fetchDynamfitData', payload);
   }, 500);
 });
 
-// Watcher: when shift file (mFile) is uploaded, immediately call /fit-shift
+// Watcher: a freshly uploaded shift file (mFile) goes straight through the
+// same best-effort-fit-then-extract path as the Update button, so the charts
+// always load — with fitted coefficients when a Tg/TL anchor is available,
+// with the raw shift table applied when not.
 watch(mFile, async (newFile) => {
   if (!newFile) return;
   if (!ttsp.value) return;
+  if (resetting.value) return;
 
-  const method = transformMethod.value || 'WLF';
-  const fitPayload: Record<string, unknown> = {
-    shift_file_name: newFile,
-    transform_method: method,
+  if (!dynamfit.value?.fileUpload) {
+    displayInfo('Shift file loaded. Select or upload a data file to fit and see charts.', 5000);
+    return;
+  }
+
+  const payload: Record<string, unknown> = {
+    useSample: useSample.value,
+    file_name: dynamfit.value.fileUpload,
+    number_of_prony: dynamfit.value.range,
+    model: dynamfit.value.model,
+    domain: selectedProperty.value,
+    smoothness: smoothness.value,
+    relative_error: relativeError.value,
   };
-
-  if (method === 'WLF' || method === 'hybrid') {
-    if (ttspTgValue.value) fitPayload.Tg = ttspTgValue.value;
-  }
-  if (method === 'hybrid') {
-    if (ttspTLValue.value) fitPayload.TL = ttspTLValue.value;
-  }
-
-  try {
-    const response = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
-
-    const responseMethod = response.transform_method || 'WLF';
-    transformMethod.value = responseMethod;
-
-    skipCoeffWatcher.value = true;
-
-    if (response.Tg != null) {
-      ttspTgValue.value = response.Tg;
-      tgEstimated.value = false;
-    }
-    if (response.C1 != null) {
-      ttspC1Value.value = response.C1;
-      c1Estimated.value = false;
-    }
-    if (response.C2 != null) {
-      ttspC2Value.value = response.C2;
-      c2Estimated.value = false;
-    }
-    if (response.Ea != null) {
-      ttspEAValue.value = response.Ea;
-      eAEstimated.value = false;
-    }
-    if (response.TL != null) {
-      ttspTLValue.value = response.TL;
-      tLEstimated.value = false;
-    }
-
-    const nudgeField = responseMethod === 'hybrid' ? 'Tg or TL' : 'Tg';
-    store.commit('setSnackbar', {
-      message: `Shift file loaded. Enter a value for ${nudgeField} to trigger fitting.`,
-      duration: 0,
-    });
-
-    setTimeout(() => {
-      skipCoeffWatcher.value = false;
-      if (dynamfit.value?.fileUpload) {
-        const payload: Record<string, unknown> = {
-          useSample: useSample.value,
-          file_name: dynamfit.value.fileUpload,
-          number_of_prony: dynamfit.value.range,
-          model: dynamfit.value.model,
-          domain: selectedProperty.value,
-          smoothness: smoothness.value,
-          relative_error: relativeError.value,
-          transform_method: transformMethod.value,
-          shift_file_name: newFile,
-        };
-
-        if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-        if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-        if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-        if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-        if (ttspTLValue.value) payload.TL = ttspTLValue.value;
-
-        store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-        store.dispatch('explorer/fetchDynamfitData', payload);
-      }
-    }, 0);
-  } catch (err: unknown) {
-    const error = err as Error;
-    store.commit('setSnackbar', {
-      message: error.message || 'Failed to fit shift coefficients',
-      duration: 3000,
-      type: 'error',
-    });
-  }
+  store.commit('explorer/setDynamfitDomain', selectedProperty.value);
+  await fitShiftAndExtract(payload);
 });
 
 watch(
