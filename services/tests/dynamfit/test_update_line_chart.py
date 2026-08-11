@@ -489,6 +489,26 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
 
+    def test_hybrid_tolerates_duplicate_temperature_rows(self):
+        # upload_init keeps duplicate-temperature rows (the bundled VeroCyan
+        # ramp contains one), and hybrid_shift used to reject the tie with an
+        # AssertionError that escaped the route as a 500 instead of the usual
+        # 400-with-message.
+        data = {
+            k: np.append(np.asarray(v), np.asarray(v)[-1])
+            for k, v in self.synthetic_temp_data.items()
+        }
+        result = update_line_chart(
+            data, number_of_prony=8, smoothness=0.1,
+            fit_settings=True, domain='temperature',
+            TL=self.T_REF, C1=self.C1, C2=self.C2,
+            Ea=self.EA, shift_model='hybrid',
+        )
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
+            self.assertGreater(len(fig.data), 0)
+        self.assertGreater(len(coef_df), 0)
+
     def test_hybrid_works_without_Tg(self):
         # hybrid_shift uses TL (not Tg) as the WLF/Arrhenius crossover, so
         # update_line_chart should drive the master-curve path even when Tg is

@@ -173,6 +173,34 @@ class TestHybridShift(unittest.TestCase):
         with self.assertRaises(AssertionError):
             hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
 
+    def test_accepts_duplicate_temperatures(self):
+        # Real ramps carry repeated temperature rows (the bundled VeroCyan
+        # sample has one), so ties must not trip the monotonicity check:
+        # duplicates get identical shift factors that agree with the tie-free
+        # evaluation.
+        T_ties = np.array([10.0, 20.0, 20.0, 30.0, 40.0])
+        T_uniq = np.array([10.0, 20.0, 30.0, 40.0])
+        a_ties = hybrid_shift(T_ties, self.T_REF, self.C1, self.C2, self.EA)
+        a_uniq = hybrid_shift(T_uniq, self.T_REF, self.C1, self.C2, self.EA)
+        self.assertEqual(a_ties[1], a_ties[2])
+        np.testing.assert_allclose(a_ties[[0, 1, 3, 4]], a_uniq)
+
+    def test_accepts_duplicate_temperatures_descending(self):
+        T = np.array([40.0, 30.0, 20.0, 20.0, 10.0])
+        result = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        reversed_eval = hybrid_shift(
+            T[::-1], self.T_REF, self.C1, self.C2, self.EA,
+        )
+        np.testing.assert_allclose(result, reversed_eval[::-1])
+
+    def test_accepts_all_constant_temperatures(self):
+        # An all-tie array satisfies both direction tests; it lands in the
+        # ascending branch, where the direction is irrelevant anyway.
+        T = np.full(3, self.T_REF + 10.0)
+        result = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        self.assertEqual(result.shape, T.shape)
+        self.assertTrue(np.all(result == result[0]))
+
     def test_a_T_ref_scales_output(self):
         # a_T_ref multiplies every returned shift factor.
         T = np.array([10.0, 20.0, 30.0, 40.0])

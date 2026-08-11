@@ -1052,12 +1052,16 @@ def hybrid_shift(
     equation to temperatures at or below T_ref. With two or more elements, T
     must be monotonically sorted (ascending or descending); the direction is
     detected from the signs of consecutive differences so the assembled output
-    preserves the input order.
+    preserves the input order. Ties are tolerated — real ramps carry repeated
+    temperature rows and the piecewise split (a searchsorted) is untroubled by
+    duplicates, which simply get identical shift factors. An all-constant T is
+    treated as ascending; the direction is irrelevant since reversal is a
+    no-op there.
 
     Parameters:
         T: Temperatures in °C. Scalars and 0-D arrays are promoted to a
             length-1 1-D array; 1-D arrays of length >= 2 must be monotonically
-            sorted.
+            sorted (ties allowed).
         T_ref (float): Reference temperature in °C; WLF/Arrhenius boundary.
         C1 (float): WLF parameter C1.
         C2 (float): WLF parameter C2.
@@ -1078,8 +1082,11 @@ def hybrid_shift(
         assert np.all(np.isfinite(T)), "T must contain only finite values"
         diffs = np.diff(T)
         if len(diffs) > 0:
-            ascending = bool(np.all(diffs > 0))  # base case from loader utility
-            assert ascending or np.all(diffs < 0), "T must be monotonically sorted"
+            # Non-strict: upload_init keeps duplicate-temperature rows, so a
+            # sorted ramp can legally contain ties (an all-constant T lands in
+            # the ascending branch, where the direction doesn't matter).
+            ascending = bool(np.all(diffs >= 0))  # base case from loader utility
+            assert ascending or np.all(diffs <= 0), "T must be monotonically sorted"
         else:
             ascending = True  # single element; direction irrelevant
 
