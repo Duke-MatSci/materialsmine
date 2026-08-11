@@ -26,9 +26,6 @@ from app.dynamfit.dynamfit2 import (
     tts_temperature_to_frequency_V2,
     tts_frequency_to_temperature,
     tts_frequency_to_temperature_V2,
-    VIS_REF_TEMPERATURE_C,
-    UNIVERSAL_WLF_C1,
-    UNIVERSAL_WLF_C2,
 )
 
 
@@ -537,7 +534,12 @@ class TestTtsFrequencyToTemperature(unittest.TestCase):
 
 
 class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
-    """The manual + WLF + fallback frequency→temperature visualization inverse."""
+    """
+    The manual + WLF frequency→temperature visualization inverse. Anything
+    else — hybrid, incomplete WLF, an uninvertible table — RAISES so the
+    route's 400 snackbar tells the user their inputs were unusable (the old
+    silent universal-WLF fallback is gone).
+    """
 
     OMEGA_REF = 1.0
     # Monotonic shift table: log10(a_T) = [2, 1, 0, -1, -2]; a_T == 1 at T = 30.
@@ -554,12 +556,6 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
         n = len(freqs)
         return pd.DataFrame(
             {'Frequency': freqs, "E'": np.full(n, ep), "E''": np.full(n, epp)}
-        )
-
-    def _universal(self, df):
-        return tts_frequency_to_temperature(
-            df, self.OMEGA_REF, VIS_REF_TEMPERATURE_C,
-            UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
         )
 
     # --- manual path ---
@@ -586,13 +582,17 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
         result = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
         np.testing.assert_allclose(result['Temperature'].values, [30.0])
 
-    def test_manual_differs_from_universal_wlf(self):
+    def test_manual_differs_from_typed_wlf(self):
+        # The shift table actually reaches the mapping — its temperatures are
+        # not just a WLF evaluation at the same reference.
         df = self._master_df([0.1, 1.0, 10.0])
         manual = tts_frequency_to_temperature_V2(df, 'manual', shiftData=self._shift())
-        universal = tts_frequency_to_temperature_V2(df, 'hybrid')
+        wlf = tts_frequency_to_temperature_V2(
+            df, 'WLF', Tg=30.0, C1=17.44, C2=51.6,
+        )
         self.assertFalse(np.allclose(
             np.sort(manual['Temperature'].values),
-            np.sort(universal['Temperature'].values),
+            np.sort(wlf['Temperature'].values),
         ))
 
     def test_mismatched_grid_interpolates(self):
@@ -609,48 +609,52 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
         exp = tts_frequency_to_temperature(df, self.OMEGA_REF, Tg, C1, C2)
         np.testing.assert_allclose(got['Temperature'].values, exp['Temperature'].values)
 
-    def test_insufficient_WLF_params_falls_back(self):
+    def test_insufficient_WLF_params_raises_naming_the_gap(self):
         df = self._master_df([0.1, 1.0, 10.0])
-        got = tts_frequency_to_temperature_V2(df, 'WLF', Tg=30.0, C1=None, C2=51.6)
-        np.testing.assert_allclose(
-            got['Temperature'].values, self._universal(df)['Temperature'].values,
-        )
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(df, 'WLF', Tg=30.0, C1=None, C2=51.6)
+        self.assertIn('C1', str(ctx.exception))
 
-    # --- fallback path (never raises) ---
-    def test_hybrid_falls_back_to_universal(self):
+    def test_WLF_without_Tg_raises_and_says_enter_it(self):
+        # Tg cannot be estimated from a master curve, so the message must
+        # steer the user to type it.
         df = self._master_df([0.1, 1.0, 10.0])
-        got = tts_frequency_to_temperature_V2(df, 'hybrid')
-        np.testing.assert_allclose(
-            got['Temperature'].values, self._universal(df)['Temperature'].values,
-        )
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(df, 'WLF', C1=17.44, C2=51.6)
+        self.assertIn('Tg', str(ctx.exception))
+        self.assertIn('enter it directly', str(ctx.exception))
 
-    def test_manual_without_shiftData_falls_back_no_raise(self):
-        # Contrast tts_temperature_to_frequency_V2, where manual-without-file
-        # RAISES; here the conversion is viz-only, so it degrades silently.
+    # --- error paths (the old silent universal-WLF fallback is gone) ---
+    def test_hybrid_raises_no_inverse(self):
         df = self._master_df([0.1, 1.0, 10.0])
-        got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=None)
-        np.testing.assert_allclose(
-            got['Temperature'].values, self._universal(df)['Temperature'].values,
-        )
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(
+                df, 'hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0,
+            )
+        self.assertIn('no inverse transform', str(ctx.exception))
 
-    def test_shift_table_without_Temperature_falls_back(self):
+    def test_manual_without_shiftData_raises(self):
+        # Now mirrors tts_temperature_to_frequency_V2's manual contract.
         df = self._master_df([0.1, 1.0, 10.0])
-        got = tts_frequency_to_temperature_V2(
-            df, 'manual', shiftData={'a_T': [0.5, 1.0, 2.0]},
-        )
-        np.testing.assert_allclose(
-            got['Temperature'].values, self._universal(df)['Temperature'].values,
-        )
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(df, 'manual', shiftData=None)
+        self.assertIn('no shift-factor file', str(ctx.exception))
 
-    def test_degrades_on_unusable_table(self):
+    def test_shift_table_without_Temperature_raises(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(
+                df, 'manual', shiftData={'a_T': [0.5, 1.0, 2.0]},
+            )
+        self.assertIn('could not be inverted', str(ctx.exception))
+
+    def test_unusable_table_raises(self):
         df = self._master_df([0.1, 1.0, 10.0])
         # single row, and all-nonpositive a_T: both leave < 2 usable points.
         for bad in ({'Temperature': [30.0], 'a_T': [1.0]},
                     {'Temperature': [10.0, 20.0], 'a_T': [-1.0, -2.0]}):
-            got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=bad)
-            np.testing.assert_allclose(
-                got['Temperature'].values, self._universal(df)['Temperature'].values,
-            )
+            with self.assertRaises(ValueError):
+                tts_frequency_to_temperature_V2(df, 'manual', shiftData=bad)
 
     # --- noisy / non-monotonic shift tables ---
     def test_manual_noisy_nonmonotonic_table(self):
@@ -670,15 +674,12 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
             np.sort(r_clean['Temperature'].values), atol=5.0,
         )
 
-    def test_manual_flat_table_degrades(self):
-        # A shift table with no a_T trend (equal ends) is not invertible →
-        # universal fallback, no raise.
+    def test_manual_flat_table_raises(self):
+        # A shift table with no a_T trend (equal ends) is not invertible.
         df = self._master_df([0.1, 1.0, 10.0])
         flat = {'Temperature': [10.0, 20.0, 30.0], 'a_T': [5.0, 5.0, 5.0]}
-        got = tts_frequency_to_temperature_V2(df, 'manual', shiftData=flat)
-        np.testing.assert_allclose(
-            got['Temperature'].values, self._universal(df)['Temperature'].values,
-        )
+        with self.assertRaises(ValueError):
+            tts_frequency_to_temperature_V2(df, 'manual', shiftData=flat)
 
     # --- output contract ---
     def test_output_columns(self):

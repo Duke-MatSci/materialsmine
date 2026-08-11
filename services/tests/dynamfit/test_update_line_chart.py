@@ -129,7 +129,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         # conversion of the input — no Prony fit is overlaid there.
         result = update_line_chart(
             self.uploadData, number_of_prony=self.N, smoothness=0.1,
-            fit_settings=True, domain='frequency', shift_model='hybrid',
+            fit_settings=True, domain='frequency',
+            shift_model='WLF', Tg=20.0, C1=17.44, C2=51.6,
         )
         fig4, fig41 = result[4], result[5]
         for fig in (fig4, fig41):
@@ -153,9 +154,11 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
 
 class TestUpdateLineChartFrequencyShift(unittest.TestCase):
     """
-    Frequency-domain shift-model paths (manual / WLF / fallback) that drive the
-    temperature-axis visualization (fig4/fig41). The Prony fit still runs on the
-    frequency data directly, so these paths must never block it.
+    Frequency-domain shift-model paths (manual / WLF) that drive the
+    temperature-axis visualization (fig4/fig41). Unusable inputs RAISE out of
+    tts_frequency_to_temperature_V2 (no silent universal-WLF fallback), so a
+    requested-but-broken transform blocks the response like any other input
+    error; only an unrequested transform leaves the fit standing alone.
     """
 
     @classmethod
@@ -183,12 +186,12 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
 
     def test_frequency_manual_uses_shiftData(self):
         manual = self._run(shift_model='manual', shiftData=self.shiftData)
-        # hybrid has no analytic inverse, so it is the universal-WLF view.
-        default = self._run(shift_model='hybrid')
+        wlf = self._run(shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6)
         self.assertEqual(len(manual), 9)
-        # The manual mapping reached fig4: its temperature axis differs (a
-        # different shape alone already proves it, since np.interp clamps).
-        mt, dt = self._fig4_temps(manual), self._fig4_temps(default)
+        # The manual mapping reached fig4: its temperature axis differs from a
+        # WLF evaluation (a different shape alone already proves it, since
+        # np.interp clamps).
+        mt, dt = self._fig4_temps(manual), self._fig4_temps(wlf)
         self.assertFalse(mt.shape == dt.shape and np.allclose(mt, dt))
 
     def test_frequency_WLF_populates_temp_figs(self):
@@ -198,17 +201,35 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
         expected = np.unique(inverse_wlf_shift(omega / 1.0, Tg, C1, C2))
         np.testing.assert_allclose(self._fig4_temps(result), expected, rtol=1e-6)
 
-    def test_frequency_hybrid_returns_full_tuple_no_error(self):
-        result = self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
-        self.assertEqual(len(result), 9)
-        self.assertGreater(len(result[4].data), 0)
+    def test_frequency_hybrid_raises_no_inverse(self):
+        # Backs up the client-side ghosting of hybrid for frequency data.
+        with self.assertRaises(ValueError) as ctx:
+            self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
+        self.assertIn('no inverse transform', str(ctx.exception))
 
-    def test_frequency_manual_without_shiftData_still_fits(self):
-        # Contrast the temperature branch, which early-exits with empty figures
-        # when shift params are absent; here the fit is independent of them.
-        result = self._run(shift_model='manual', shiftData=None)
-        self.assertEqual(len(result), 9)
-        self.assertGreater(len(result[6]), 0)  # coef_df non-empty → fit ran
+    def test_frequency_manual_without_shiftData_raises(self):
+        # Same contract as the temperature branch's forward transform: manual
+        # without a file is a user error, not a silent degradation.
+        with self.assertRaises(ValueError) as ctx:
+            self._run(shift_model='manual', shiftData=None)
+        self.assertIn('no shift-factor file', str(ctx.exception))
+
+    def test_frequency_WLF_missing_Tg_raises(self):
+        with self.assertRaises(ValueError) as ctx:
+            self._run(shift_model='WLF', C1=17.44, C2=51.6)
+        self.assertIn('Tg', str(ctx.exception))
+
+    def test_frequency_temp_view_carries_provenance_caption(self):
+        # The "labeled" half of the contract: the synthesized temperature axis
+        # names the inverse that produced it.
+        wlf = self._run(shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6)
+        manual = self._run(shift_model='manual', shiftData=self.shiftData)
+        for result, needle in ((wlf, 'inverse WLF at Tg = 30'),
+                               (manual, 'uploaded shift factors')):
+            for fig in (result[4], result[5]):
+                texts = [a.text for a in fig.layout.annotations if a.text]
+                self.assertTrue(any(needle in t for t in texts),
+                                f'missing "{needle}" in {texts}')
 
     def test_frequency_none_suppresses_temp_figs_but_not_the_fit(self):
         # 'none' means the caller did not ask for a transform, so the
@@ -1021,7 +1042,8 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         # decimation assertions below cover them, so ask for the transform.
         cls.result = update_line_chart(
             cls.uploadData, number_of_prony=10, smoothness=0.0,
-            fit_settings=False, domain='frequency', shift_model='hybrid',
+            fit_settings=False, domain='frequency',
+            shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6,
         )
 
     def test_large_upload_experiment_traces_are_thinned(self):
@@ -1109,8 +1131,14 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     def test_stacking_makes_headroom_for_the_upper_row(self):
         # A second row sits higher above the plot than plotly express's default
         # 60px top margin leaves room for, so it would be clipped without more.
-        fig1, fig4 = self.result[0], self.result[4]
-        self.assertGreater(fig1.layout.margin.t, fig4.layout.margin.t)
+        # The class fixture's fig1 stacks two rows (decimation + quality
+        # readout); a small upload's fig1 carries the quality readout alone.
+        one_row = update_line_chart(
+            self._frequency_upload(200), number_of_prony=5, smoothness=0.0,
+            fit_settings=False, domain='frequency',
+        )[0]
+        self.assertGreater(self.result[0].layout.margin.t,
+                           one_row.layout.margin.t)
 
     def test_quality_readout_omits_posterior_when_unsmoothed(self):
         # setUpClass fits with smoothness=0, so there is no posterior over the
@@ -1169,7 +1197,8 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     def test_small_upload_untouched_and_unannotated(self):
         result = update_line_chart(
             self._frequency_upload(200), number_of_prony=5, smoothness=0.0,
-            fit_settings=False, domain='frequency', shift_model='hybrid',
+            fit_settings=False, domain='frequency',
+            shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6,
         )
         fig1, _, _, _, fig4, _, _, _, _ = result
         self.assertTrue(all(n == 200 for n in self._experiment_lengths(fig1)))

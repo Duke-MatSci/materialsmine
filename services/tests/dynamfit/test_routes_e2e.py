@@ -37,7 +37,7 @@ import numpy as np
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import wlf_shift, hybrid_shift
+from app.dynamfit.dynamfit2 import wlf_shift, hybrid_shift, peak_edge_warning
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -279,7 +279,7 @@ class TestExtractRoute(unittest.TestCase):
                     'relaxation-spectrum-chart', 'complex-temp-chart',
                     'temp-tand-chart', 'shift-chart', 'shift-table',
                     'mytable', 'upload-data',
-                    'C1', 'C2', 'Tg', 'Ea', 'TL'):
+                    'C1', 'C2', 'Tg', 'Ea', 'TL', 'warnings'):
             self.assertIn(key, response)
 
     def test_upload_data_is_array_of_row_objects(self):
@@ -305,18 +305,16 @@ class TestExtractRoute(unittest.TestCase):
         self.assertTrue(mytable, 'expected at least one Prony coefficient record')
         self.assertEqual(set(mytable[0]), {'i', 'tau_i', 'E_i'})
 
-    def test_estimated_shift_params_echo_serializes(self):
+    def test_frequency_peak_estimation_returns_400(self):
         """
-        When Tg/TL are filled by *_estimate they are numpy scalars read out of
-        the data array; the echoed response must still JSON-serialize and carry
-        them as plain numbers (regression guard against numpy values in the
-        echoed C1/C2/Tg/Ea/TL).
+        Tg/TL estimation is temperature-domain only: a master curve's tan-δ
+        and E-loss peaks are frequencies, and reading one off as a °C value
+        was a unit error. The client no longer offers the checkboxes for
+        frequency data; the route refuses them with a units message.
         """
         resp = self._post(self._freq_body(Tg_estimate=True, TL_estimate=True))
-        self.assertEqual(resp.status_code, 200, resp.data[:400])
-        response = json.loads(resp.data)['response']
-        self.assertIsInstance(response['Tg'], (int, float))
-        self.assertIsInstance(response['TL'], (int, float))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('frequencies, not', json.loads(resp.data)['message'])
 
     # ------------------------------------------------------------------
     # Validation short-circuits (do not reach response serialization)
@@ -419,18 +417,17 @@ class TestExtractRoute(unittest.TestCase):
         ))
         self.assertEqual(resp.status_code, 200, resp.data[:400])
 
-    def test_frequency_manual_temp_view_differs_from_default(self):
+    def test_frequency_manual_temp_view_differs_from_typed_wlf(self):
         manual = json.loads(self._post(self._freq_body(
             transform_method='manual', shift_file_name=self._SHIFT_FILE,
         )).data)['response']['complex-temp-chart']
-        # hybrid has no analytic inverse, so it is the universal-WLF view.
-        default = json.loads(self._post(
-            self._freq_body(transform_method='hybrid')
-        ).data)['response']['complex-temp-chart']
-        # A real shift file must move the temperature axis off the universal-WLF
-        # default (i.e. the manual mapping actually reached the figure).
+        wlf = json.loads(self._post(self._freq_body(
+            transform_method='WLF', Tg=20.0, C1=17.44, C2=51.6,
+        )).data)['response']['complex-temp-chart']
+        # A real shift file must move the temperature axis off a plain WLF
+        # evaluation (i.e. the manual mapping actually reached the figure).
         self.assertNotEqual(
-            json.dumps(manual, sort_keys=True), json.dumps(default, sort_keys=True),
+            json.dumps(manual, sort_keys=True), json.dumps(wlf, sort_keys=True),
         )
 
     # ------------------------------------------------------------------
@@ -467,12 +464,20 @@ class TestExtractRoute(unittest.TestCase):
         self.assertTrue(response['mytable'])
         self.assertTrue(response['complex-chart']['data'])
 
-    def test_frequency_hybrid_still_returns_temp_charts(self):
-        # Asking for a transform still produces one — the gate is on intent,
-        # not on whether the model has an analytic inverse.
-        temp, tand = self._temp_chart_traces(self._freq_body(transform_method='hybrid'))
-        self.assertTrue(temp)
-        self.assertTrue(tand)
+    def test_frequency_hybrid_returns_400_no_inverse(self):
+        # Hybrid has no inverse transform; the client ghosts the option for
+        # frequency data and the route refuses it with a clear message instead
+        # of silently substituting a universal-WLF view.
+        resp = self._post(self._freq_body(transform_method='hybrid'))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('no inverse transform', json.loads(resp.data)['message'])
+
+    def test_frequency_wlf_without_Tg_returns_400(self):
+        resp = self._post(self._freq_body(
+            transform_method='WLF', C1_estimate=True, C2_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('Tg', json.loads(resp.data)['message'])
 
     def test_invalid_transform_method_still_returns_400(self):
         resp = self._post(self._freq_body(transform_method='nope'))
@@ -579,6 +584,152 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
         resp = self._post(self._body(name, relative_error=0))
         self.assertEqual(resp.status_code, 400, resp.data[:400])
         self.assertIn('relative error must be positive', json.loads(resp.data)['message'])
+
+
+class TestPeakEdgeWarning(unittest.TestCase):
+    """
+    Unit tests for peak_edge_warning: the edge-proximity caution attached to
+    estimated Tg/TL peaks. The threshold is strict — a peak exactly margin
+    degrees from the edge is trusted.
+    """
+
+    T = np.arange(0.0, 81.0, 2.0)  # 0..80 °C
+
+    def test_interior_peak_returns_none(self):
+        self.assertIsNone(peak_edge_warning(40.0, self.T, 'Tg'))
+
+    def test_peak_near_cold_edge_warns(self):
+        msg = peak_edge_warning(2.0, self.T, 'Tg')
+        self.assertIsNotNone(msg)
+        self.assertIn('Tg', msg)
+        self.assertIn('manually', msg)
+
+    def test_peak_near_hot_edge_warns(self):
+        msg = peak_edge_warning(79.0, self.T, 'TL')
+        self.assertIsNotNone(msg)
+        self.assertIn('TL', msg)
+
+    def test_peak_exactly_at_margin_is_trusted(self):
+        self.assertIsNone(peak_edge_warning(5.0, self.T, 'Tg'))
+        self.assertIsNone(peak_edge_warning(75.0, self.T, 'Tg'))
+
+    def test_margin_is_configurable(self):
+        self.assertIsNone(peak_edge_warning(2.0, self.T, 'Tg', margin=1.0))
+        self.assertIsNotNone(peak_edge_warning(40.0, self.T, 'Tg', margin=45.0))
+
+
+class TestExtractRouteEstimateWarnings(unittest.TestCase):
+    """
+    E2E: estimated Tg/TL peaks near the temperature edge must ride back in
+    the response's warnings array (and interior peaks must not), through the
+    real route with real files.
+    """
+
+    _orig_files_dir = None
+    _tmpdir = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        cls._tmpdir = tempfile.TemporaryDirectory()
+        Config.FILES_DIRECTORY = cls._tmpdir.name
+        Config.SECRET_KEY = 'test-secret'
+        cls.app = make_app()
+        cls.client = cls.app.test_client()
+        cls.headers = {
+            'Authorization': f'Bearer {make_token()}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+        cls._tmpdir.cleanup()
+
+    def _post(self, body):
+        return self.client.post(
+            '/tri-ve/extract/', data=json.dumps(body), headers=self.headers,
+        )
+
+    def _write_ramp(self, name, bump_T):
+        """
+        Temperature ramp 0..80 °C in 2° steps with flat-ish moduli and a
+        single loss bump at bump_T, so both the tan-δ and E-loss peaks land
+        exactly there.
+        """
+        lines = []
+        for T in range(0, 81, 2):
+            stor = 1.0e9 - T * 1.0e6
+            loss = 1.0e8 if T == bump_T else 1.0e7
+            lines.append(f'{T:.1f}\t{stor:.6e}\t{loss:.6e}')
+        with open(os.path.join(self._tmpdir.name, name), 'w') as f:
+            f.write('\n'.join(lines) + '\n')
+        return name
+
+    def _temp_body(self, file_name, **overrides):
+        body = {
+            'file_name': file_name, 'domain': 'temperature',
+            'number_of_prony': 5,
+        }
+        body.update(overrides)
+        return body
+
+    def test_edge_peak_estimates_warn(self):
+        # Peak at 2 °C — within 5° of the cold edge. WLF with estimated Tg
+        # still transforms fine (the pole Tg - C2 sits below the data), so the
+        # request succeeds AND warns.
+        name = self._write_ramp('edge_bump.tsv', 2)
+        resp = self._post(self._temp_body(
+            name, transform_method='WLF',
+            Tg_estimate=True, C1_estimate=True, C2_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        warnings = json.loads(resp.data)['response']['warnings']
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('Tg', warnings[0])
+
+    def test_both_estimates_near_edge_warn_twice(self):
+        # Peak at 78 °C — within 5° of the hot edge; Tg and TL both estimate
+        # to it. Hybrid keeps the transform well-defined at that TL.
+        name = self._write_ramp('hot_edge_bump.tsv', 78)
+        resp = self._post(self._temp_body(
+            name, transform_method='hybrid', Ea=200.0,
+            Tg_estimate=True, TL_estimate=True,
+            C1_estimate=True, C2_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        warnings = json.loads(resp.data)['response']['warnings']
+        self.assertEqual(len(warnings), 2)
+        self.assertIn('Tg', warnings[0])
+        self.assertIn('TL', warnings[1])
+
+    def test_estimated_shift_params_echo_serializes(self):
+        # Tg/TL filled by *_estimate are numpy scalars read out of the data
+        # array; the echoed response must still JSON-serialize and carry them
+        # as plain numbers (regression guard against numpy values in the
+        # echoed C1/C2/Tg/Ea/TL).
+        name = self._write_ramp('echo_bump.tsv', 40)
+        resp = self._post(self._temp_body(
+            name, transform_method='hybrid', Ea=200.0,
+            Tg_estimate=True, TL_estimate=True,
+            C1_estimate=True, C2_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIsInstance(response['Tg'], (int, float))
+        self.assertIsInstance(response['TL'], (int, float))
+
+    def test_interior_peak_estimates_do_not_warn(self):
+        # Peak at 40 °C — comfortably interior. Hybrid with a typed TL keeps
+        # the estimated Tg out of the transform, isolating the warning logic.
+        name = self._write_ramp('interior_bump.tsv', 40)
+        resp = self._post(self._temp_body(
+            name, transform_method='hybrid',
+            TL=40.0, Ea=200.0, C1_estimate=True, C2_estimate=True,
+            Tg_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        self.assertEqual(json.loads(resp.data)['response']['warnings'], [])
 
 
 if __name__ == '__main__':

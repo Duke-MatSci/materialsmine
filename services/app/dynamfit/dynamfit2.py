@@ -33,7 +33,6 @@ MAX_ABS_LOG10_SHIFT = 15.0
 # inverse-WLF scatter; arbitrary but stable so the temperature axis stays
 # comparable across uploads.
 VIS_REF_FREQUENCY_HZ = 1.0
-VIS_REF_TEMPERATURE_C = 30.0
 
 # Sizing rule for an auto-chosen Prony series, mirroring the frontend's
 # useDynamfitDefaults (PRONY_TERMS_PER_DECADE / PRONY_TERMS_MIN / _MAX), which
@@ -1798,21 +1797,26 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
 
     Mirror image of tts_temperature_to_frequency_V2, used to build the
     temperature-axis visualization for a frequency-domain upload. Selection of
-    the inverse-shift model, in priority order (shiftData wins, matching the
-    forward V2):
+    the inverse-shift model (shiftData wins, matching the forward V2):
 
-        1. manual  — shiftData present and usable → invert the shift table
+        1. manual — shiftData present → invert the shift table
            (_freq_to_temp_via_shift_table).
-        2. WLF     — shift_model == 'WLF' with Tg, C1, C2 all supplied →
+        2. WLF    — shift_model == 'WLF' with Tg, C1, C2 all supplied →
            analytic inverse WLF (tts_frequency_to_temperature / inverse_wlf_shift).
-        3. fallback — anything else (hybrid, missing params, or a failed attempt
-           above) → the universal-WLF view (fixed UNIVERSAL_WLF_* constants and
-           VIS_REF_TEMPERATURE_C), i.e. the historical behavior.
 
-    Unlike the forward tts_temperature_to_frequency_V2 (whose transform is
-    essential and *raises* on manual-without-file), this conversion is
-    visualization-only — the Prony fit runs on the frequency data directly — so
-    it must never raise/block: an unusable model silently degrades to (3).
+    Anything else raises. This used to degrade silently to a universal-WLF
+    view (the pre-V2 hardcoded behavior) because the conversion is
+    visualization-only and there was no way to warn without failing the whole
+    /extract/ response; that left users looking at curves synthesized from
+    constants they never chose, with no signal. Unusable inputs are the
+    user's to fix, so they now surface as the route's normal 400-with-message:
+
+        - hybrid has no inverse transform yet (the client ghosts the option
+          for frequency-domain data; this raise backs that up server-side),
+        - WLF without a full Tg/C1/C2 names what is missing — Tg is required
+          in this domain, it cannot be estimated from a master curve,
+        - a WLF singularity or an uninvertible shift table propagates instead
+          of being papered over.
 
     Parameters:
         freq_sweep_data (pd.DataFrame): Master curve with columns
@@ -1820,7 +1824,7 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
         shift_model (str): 'WLF', 'hybrid', or 'manual'.
         Tg (float): WLF reference temperature (used when shift_model == 'WLF').
         TL, Ea: Accepted for signature symmetry with the forward V2; unused
-            because no inverse-hybrid exists yet (hybrid → fallback).
+            until an inverse-hybrid exists (TL will be its required anchor).
         C1 (float): WLF parameter C1 (used when shift_model == 'WLF').
         C2 (float): WLF parameter C2 (used when shift_model == 'WLF').
         shiftData: Optional shift-factor table {'Temperature': ..., 'a_T': ...};
@@ -1830,22 +1834,46 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
     Returns:
         pd.DataFrame: Temperature-sweep data at omega_ref with columns
         ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
+
+    Raises:
+        ValueError: If the shift table cannot be inverted, the model is
+            hybrid, WLF parameters are incomplete, or the inverse WLF hits a
+            singularity.
     """
     if shiftData:
         try:
             return _freq_to_temp_via_shift_table(freq_sweep_data, shiftData, omega_ref)
-        except (ValueError, KeyError, AssertionError):
-            pass  # unusable shift table → universal-WLF visualization
-    elif shift_model == 'WLF' and Tg is not None and C1 is not None and C2 is not None:
-        try:
-            return tts_frequency_to_temperature(freq_sweep_data, omega_ref, Tg, C1, C2)
-        except ValueError:
-            pass  # WLF singularity → universal-WLF visualization
-
-    # Universal-WLF fallback (hybrid, insufficient params, or a failed attempt).
-    return tts_frequency_to_temperature(
-        freq_sweep_data, omega_ref, VIS_REF_TEMPERATURE_C,
-        UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+        except (ValueError, KeyError, AssertionError) as exc:
+            raise ValueError(
+                "The uploaded shift-factor table could not be inverted to build "
+                f"the temperature view ({exc}). Clean or replace the shift file, "
+                "or switch to the WLF model."
+            ) from exc
+    if shift_model == 'manual':
+        # Mirrors the forward transform's contract (which also raises here).
+        raise ValueError(
+            "Manual shift model selected but no shift-factor file was provided. "
+            "Upload a shift-factor file or pick 'WLF'."
+        )
+    if shift_model == 'hybrid':
+        raise ValueError(
+            "The hybrid model has no inverse transform yet, so it cannot build "
+            "a temperature view from frequency-domain data. Use WLF or upload "
+            "a manual shift-factor file."
+        )
+    if shift_model == 'WLF':
+        missing = [name for name, val in
+                   (('Tg', Tg), ('C1', C1), ('C2', C2)) if val is None]
+        if missing:
+            raise ValueError(
+                f"WLF needs {', '.join(missing)} to build the temperature view "
+                "for frequency-domain data. Tg cannot be estimated from a "
+                "master curve — enter it directly."
+            )
+        return tts_frequency_to_temperature(freq_sweep_data, omega_ref, Tg, C1, C2)
+    assert False, (
+        f"Unreachable shift_model {shift_model!r}: update_line_chart's intent "
+        "gate admits only a requested transform here."
     )
 
 
@@ -1873,6 +1901,40 @@ def argmax_peak(signal: np.ndarray) -> int:
             "No peaks found. Try lowering the prominence parameter or enter the value manually."
         )
     return int(peaks[np.argmax(signal[peaks])])
+
+
+def peak_edge_warning(peak_T: float, T: np.ndarray, label: str,
+                      margin: float = 5.0):
+    """
+    Warn when an estimated peak temperature sits near the data's edge.
+
+    A tan-δ or E-loss peak within margin °C of the measured range's end is
+    suspect: the true peak may lie beyond the range, or the "peak" may be a
+    boundary/instrument artifact (the failure mode that motivated this check —
+    the bundled Agilus30 ramp's since-cropped tail rows spiked tan δ at the
+    hot edge and dragged the Tg estimate 21 °C hot). The estimate itself is
+    still used by the caller; this only produces the user-facing caution.
+
+    Parameters:
+        peak_T (float): Estimated peak temperature in °C.
+        T (numpy.ndarray): 1-D array of the data's temperatures in °C.
+        label (str): Parameter name for the message ('Tg' or 'TL').
+        margin (float): Proximity threshold in °C. Defaults to 5.
+
+    Returns:
+        str | None: Warning message, or None when the peak is comfortably
+        interior.
+    """
+    T = np.asarray(T, dtype=float)
+    lo, hi = float(T.min()), float(T.max())
+    if min(peak_T - lo, hi - peak_T) < margin:
+        return (
+            f"Estimated {label} = {peak_T:g} °C is within {margin:g} °C of the "
+            f"edge of the data's temperature range ({lo:g} to {hi:g} °C); the "
+            "true peak may lie outside the measured range or be an edge "
+            f"artifact. Consider supplying {label} manually."
+        )
+    return None
 
 
 def _decimate_for_plot(df: pd.DataFrame) -> tuple:
@@ -2513,24 +2575,16 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             )
         freq_sweep_data = df.rename(columns={'E Storage': "E'", 'E Loss': "E''"})
         # Counterpart of the temperature branch's has_shift_params guard below,
-        # but an *intent* test rather than a capability one. The forward
-        # transform can genuinely fail, whereas tts_frequency_to_temperature_V2
-        # never does — it degrades to a universal-WLF view — so without this gate
-        # every frequency upload silently grew a temperature curve computed from
-        # UNIVERSAL_WLF_* at VIS_REF_TEMPERATURE_C, constants that have nothing
-        # to do with the uploaded material and that the user never chose.
-        # The temperature axis is a transform of the upload, not the upload
-        # itself, so it is only drawn when a transform was actually requested.
+        # but an *intent* test rather than a capability one: the temperature
+        # axis is a transform of the upload, not the upload itself, so it is
+        # only drawn when a transform was actually requested. Once requested,
+        # unusable inputs RAISE out of V2 (hybrid-without-inverse, incomplete
+        # or singular WLF, uninvertible shift table) and surface as the
+        # route's 400 snackbar — the silent universal-WLF fallback is gone.
         if shift_model in (None, 'none') and shiftData is None:
             fig4 = go.Figure()
             fig41 = go.Figure()
         else:
-            # A visualization only (the Prony fit below runs on the frequency
-            # data directly), so this never blocks: an unusable shift model
-            # degrades to a universal-WLF view inside V2.
-            # TODO: hybrid still has no analytic inverse and falls back to
-            # universal WLF; add a reverse-hybrid model when one becomes
-            # available.
             temp_sweep_data = tts_frequency_to_temperature_V2(
                 freq_sweep_data, shift_model,
                 Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
@@ -2538,6 +2592,18 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
             fig4, fig41 = _build_temperature_figures(plot_temp)
             _annotate_decimation((fig4, fig41), temp_decimation)
+            # Label the provenance: this axis is synthesized, not measured,
+            # and the user should see which inverse produced it.
+            if shiftData:
+                _stamp_notice((fig4, fig41), (
+                    "temperature view inverted from the uploaded shift factors "
+                    "(visualization only — the fit uses the frequency data)"
+                ))
+            else:
+                _stamp_notice((fig4, fig41), (
+                    f"temperature view via inverse WLF at Tg = {Tg:g} °C "
+                    "(visualization only — the fit uses the frequency data)"
+                ))
             T_derived = temp_sweep_data['Temperature'].to_numpy()
             shift_fig, shift_records = _build_shift_figure(
                 shiftData or shift_reference,

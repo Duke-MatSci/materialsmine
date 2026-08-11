@@ -7,7 +7,7 @@ import numpy as np
 from flask import request, Blueprint, jsonify,  Response
 
 from app.dynamfit.dynamfit2 import (
-    update_line_chart, argmax_peak,
+    update_line_chart, argmax_peak, peak_edge_warning,
     UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
     fit_wlf_coefficients, fit_hybrid_coefficients,
 )
@@ -163,15 +163,36 @@ def extract_data_from_file(request_id):
             C1 = UNIVERSAL_WLF_C1
         if C2_estimate:
             C2 = UNIVERSAL_WLF_C2
+        # A peak estimate hugging the edge of the measured range is suspect
+        # (truncated transition, or an instrument artifact at the ramp's end),
+        # so those estimates ride back with a warning the client can show.
+        # Peak estimation is temperature-domain only: a master curve's tan-δ
+        # and E-loss peaks sit at FREQUENCIES, and reading one off as a °C
+        # value was a unit error that happened to draw plausible axes. The
+        # client no longer offers the checkboxes in the frequency domain;
+        # this 400 backs that up at the API.
+        estimate_warnings = []
+        if (Tg_estimate or TL_estimate) and domain != 'temperature':
+            return jsonify({'message': (
+                'Tg/TL cannot be estimated from a frequency-domain master '
+                'curve — its tan-δ and E-loss peaks are frequencies, not '
+                'temperatures. Enter the value directly.'
+            )}), 400
         if Tg_estimate or TL_estimate:
-            domain_col = {"temperature": "Temperature", "frequency": "Frequency"}[domain]
+            temperatures = uploadData["Temperature"]
             # Tg from the tan-δ peak
             if Tg_estimate:
                 tan_delta = (uploadData["E Loss"] / uploadData["E Storage"])
-                Tg = uploadData[domain_col][argmax_peak(tan_delta)]
+                Tg = temperatures[argmax_peak(tan_delta)]
+                warning = peak_edge_warning(Tg, temperatures, 'Tg')
+                if warning:
+                    estimate_warnings.append(warning)
             # TL from the E_loss peak
             if TL_estimate:
-                TL =  uploadData[domain_col][argmax_peak(uploadData["E Loss"])]
+                TL = temperatures[argmax_peak(uploadData["E Loss"])]
+                warning = peak_edge_warning(TL, temperatures, 'TL')
+                if warning:
+                    estimate_warnings.append(warning)
         # Use "generic" Ea for thermoplastic elastomers
         if Ea_estimate:
             Ea = 200  # kJ/mol
@@ -236,6 +257,7 @@ def extract_data_from_file(request_id):
                 "Tg": Tg,
                 "Ea": Ea,
                 "TL": TL,
+                "warnings": estimate_warnings,
             }
         }
         end_time = datetime.datetime.now()
