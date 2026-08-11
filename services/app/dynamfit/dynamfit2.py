@@ -2059,6 +2059,33 @@ def _annotate_fit_quality(figs, quality) -> None:
     _stamp_notice(figs, " | ".join(parts + ["lower is better"]))
 
 
+def _place_tan_delta_axis(fig) -> None:
+    """
+    Keep the tan delta facet's tick labels clear of both neighbors.
+
+    tan delta is dimensionless and cannot share the modulus panel's scale, so
+    its facet needs tick labels of its own. On the default left side they sit
+    in the narrow gap between the facets and overlap the plot to their left, so
+    they go on the outside edge instead — the only place they fit without
+    taking width from the plots.
+
+    That lands them where the legend sits: plotly's automargin reserves room on
+    the right for the legend but not for tick labels, so the two are drawn over
+    each other. Nudging the legend past its 1.02 default clears the labels, and
+    automargin widens the margin to match, so nothing runs off the figure.
+
+    The offset can only be given in paper units — a fraction of the plot width —
+    while the labels it has to clear are a fixed pixel width, so the gap closes
+    as the figure narrows. 1.10 keeps them apart down to roughly a 500px figure,
+    which covers every width PlotlyView asks for on a desktop viewport.
+
+    Parameters:
+        fig: Two-facet Figure whose second column is tan delta.
+    """
+    fig.update_yaxes(side='right', col=2)
+    fig.update_layout(legend_x=1.10)
+
+
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
     Build E vs Temperature and tan-delta vs Temperature figures.
@@ -2108,6 +2135,7 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     )
     fig41.update_yaxes(matches=None, showticklabels=True)
     fig41.update_yaxes(type="log", col=1)
+    _place_tan_delta_axis(fig41)
     fig4.update_yaxes(exponentformat='power')
     fig41.update_yaxes(exponentformat='power')
     return fig4, fig41
@@ -2179,6 +2207,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     )
     fig11.update_yaxes(matches=None, showticklabels=True)
     fig11.update_yaxes(type="log", col=1)
+    _place_tan_delta_axis(fig11)
     for fig in (fig1, fig11):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')

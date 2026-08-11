@@ -116,6 +116,20 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         self.assertEqual(hline.y[0], hline.y[1])
         self.assertGreater(hline.y[0], 0)
 
+    def test_fig11_tan_delta_ticks_sit_on_the_outside_edge(self):
+        # tan delta cannot share the modulus panel's scale, so its facet keeps
+        # its own tick labels; on the default left side they overlap the plot
+        # to their left. fig1's facets DO share a scale, so its second axis
+        # draws no labels and needs no such treatment.
+        fig1, fig11 = self.result[0], self.result[1]
+        self.assertTrue(fig11.layout.yaxis2.showticklabels)
+        self.assertEqual(fig11.layout.yaxis2.side, 'right')
+        self.assertFalse(fig1.layout.yaxis2.showticklabels)
+        # Those labels land in the legend's lane — automargin reserves room for
+        # the legend but not for them — so the legend clears its 1.02 default.
+        self.assertGreater(fig11.layout.legend.x, 1.02)
+        self.assertIsNone(fig1.layout.legend.x)
+
     def test_fig4_fig41_empty_without_a_transform_request(self):
         # The class fixture asks for no shift model, so the temperature axis —
         # a transform of the upload rather than the upload itself — is not
@@ -485,6 +499,13 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         self.assertEqual(coef_df, [])
         self.assertGreater(len(fig4.data), 0)
         self.assertGreater(len(fig41.data), 0)
+        # Same unshared-tan-delta axis as the frequency figure: outside edge,
+        # with the legend moved off it.
+        self.assertTrue(fig41.layout.yaxis2.showticklabels)
+        self.assertEqual(fig41.layout.yaxis2.side, 'right')
+        self.assertGreater(fig41.layout.legend.x, 1.02)
+        self.assertFalse(fig4.layout.yaxis2.showticklabels)
+        self.assertIsNone(fig4.layout.legend.x)
 
     def test_WLF_shift_populates_all_figures(self):
         result = update_line_chart(
