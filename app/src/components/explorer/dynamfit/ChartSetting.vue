@@ -483,7 +483,7 @@
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTLValue"
-                  placeholder="TL"
+                  :placeholder="tlPlaceholder"
                   :disabled="!ttsp || tLEstimated"
                 ></md-input>
               </md-field>
@@ -499,7 +499,7 @@
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTgValue"
-                  :placeholder="isFrequencyDomain ? 'Tg (required)' : 'Tg'"
+                  :placeholder="tgPlaceholder"
                   :disabled="!ttsp || tgEstimated"
                 ></md-input>
               </md-field>
@@ -516,7 +516,7 @@
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspC1Value"
-                  placeholder="C1"
+                  :placeholder="c1Placeholder"
                   :disabled="!ttsp || c1Estimated"
                 ></md-input>
               </md-field>
@@ -532,7 +532,7 @@
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspC2Value"
-                  placeholder="C2"
+                  :placeholder="c2Placeholder"
                   :disabled="!ttsp || c2Estimated"
                 ></md-input>
               </md-field>
@@ -548,7 +548,7 @@
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspEAValue"
-                  placeholder="EA"
+                  :placeholder="eaPlaceholder"
                   :disabled="!ttsp || eAEstimated"
                 ></md-input>
               </md-field>
@@ -824,6 +824,21 @@ const cAxisLabel = computed(() =>
 );
 
 const isFrequencyDomain = computed(() => selectedProperty.value === 'frequency');
+
+// Ghosted-input placeholders name each estimate's source while its box is
+// checked. The values are client-side constants on purpose — the universal
+// WLF numbers and generic Ea are fixed server-side (see UNIVERSAL_WLF_* and
+// the Ea estimate in the trive routes), so echoing them from the backend
+// would be plumbing for data that cannot vary; the data-derived ones name
+// their derivation instead of a number the client cannot know.
+const tgPlaceholder = computed(() => {
+  if (tgEstimated.value) return 'Tg (tan δ peak)';
+  return isFrequencyDomain.value ? 'Tg (required)' : 'Tg';
+});
+const tlPlaceholder = computed(() => (tLEstimated.value ? 'TL (E″ peak)' : 'TL'));
+const c1Placeholder = computed(() => (c1Estimated.value ? 'C1 (17.44, Universal)' : 'C1'));
+const c2Placeholder = computed(() => (c2Estimated.value ? 'C2 (51.6, Universal)' : 'C2'));
+const eaPlaceholder = computed(() => (eAEstimated.value ? 'EA (200 kJ/mol, Universal)' : 'EA'));
 
 // Error columns are only known WITH the fit response: upload-data echoes every
 // column upload_init produced, keyed by name. Before the first response
