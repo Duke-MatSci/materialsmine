@@ -411,7 +411,7 @@
         </div>
       </div>
       <div
-        v-if="cTtspVisible"
+        v-if="!disableInput"
         style="display: flex; justify-content: space-between; align-items: center"
       >
         <md-checkbox v-model="ttsp" class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm">
@@ -727,7 +727,6 @@ const relativeErrorPercent = computed<number>({
 const sentRequest = ref(false);
 const updateBtn = ref(false);
 const cTtspApplied = ref(false);
-const cTtspVisible = ref(true);
 const cShiftModelOpen = ref(true);
 const selectedPolymerFile = ref('');
 
@@ -882,7 +881,6 @@ const resetAll = async (): Promise<void> => {
   store.commit('explorer/setDynamfitManualFile', '');
   store.commit('explorer/resetDynamfitShiftCoefficients');
   cTtspApplied.value = false;
-  cTtspVisible.value = true;
   cShiftModelOpen.value = true;
   cFormatOpen.value = false;
   selectedPolymerFile.value = '';
@@ -933,6 +931,45 @@ const applyDefaultPronyTerms = (fileText: string): void => {
   if (terms !== null) dynamfit.value.range = terms;
 };
 
+// Clear everything inside the ω-T segment — model, coefficients, estimate
+// flags, shift file, stored fit results — without touching the checkbox
+// itself. skipCoeffWatcher marks the writes as programmatic, keeping the
+// transformMethod watcher's cascade (and the Update link) from firing over
+// a reset.
+const resetTtspSegment = (): void => {
+  skipCoeffWatcher.value = true;
+  transformMethod.value = '';
+  ttspTgValue.value = null;
+  ttspC1Value.value = null;
+  ttspC2Value.value = null;
+  ttspTLValue.value = null;
+  ttspEAValue.value = null;
+  tgEstimated.value = false;
+  c1Estimated.value = false;
+  c2Estimated.value = false;
+  tLEstimated.value = false;
+  eAEstimated.value = false;
+  cTtspApplied.value = false;
+  cShiftModelOpen.value = true;
+  store.commit('explorer/setDynamfitManualFile', '');
+  store.commit('explorer/resetDynamfitShiftCoefficients');
+  // Release only after the watcher queue for this batch has flushed.
+  nextTick(() => {
+    skipCoeffWatcher.value = false;
+  });
+};
+
+// Fresh data must not inherit the previous dataset's ω-T setup: the deep
+// dynamfit watcher refits as soon as fileUpload is written, and any transform
+// still armed here would be applied to the new file silently. Call this in
+// the same synchronous block as the load so the reset and the file write land
+// in one watcher flush.
+const resetTtspForNewData = (): void => {
+  skipCoeffWatcher.value = true;
+  ttsp.value = false;
+  resetTtspSegment();
+};
+
 const onInputChange = async (e: Event): Promise<void> => {
   useSample.value = false;
   displayInfo('Uploading File...');
@@ -953,6 +990,7 @@ const onInputChange = async (e: Event): Promise<void> => {
       isTemp: isTemp.value,
     });
     if (fileName) {
+      resetTtspForNewData();
       applyDefaultPronyTerms(fileText);
       dynamfit.value.fileUpload = fileName;
       store.commit('explorer/setDynamfitSourceType', 'upload');
@@ -1135,7 +1173,6 @@ const updateChart = async (): Promise<void> => {
       await fitShiftAndExtract(payload);
       updateBtn.value = false;
       if (selectedProperty.value === 'temperature') cTtspApplied.value = true;
-      cTtspVisible.value = false;
       cShiftModelOpen.value = false;
       nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     } catch (err: unknown) {
@@ -1174,9 +1211,13 @@ const updateChart = async (): Promise<void> => {
   store.commit('explorer/setDynamfitDomain', selectedProperty.value);
   await store.dispatch('explorer/fetchDynamfitData', payload);
   updateBtn.value = false;
-  if (transformMethod.value) {
-    if (selectedProperty.value === 'temperature') cTtspApplied.value = true;
-    cTtspVisible.value = false;
+  // Gate on what was actually SENT, not on transformMethod being set: with the
+  // box unchecked the payload says 'none', and treating that as "applied" used
+  // to collapse the config and (in the temperature domain) reveal fit controls
+  // for a fit that doesn't exist.
+  const transformSent = payload.transform_method !== 'none';
+  if (selectedProperty.value === 'temperature') cTtspApplied.value = transformSent;
+  if (transformSent) {
     cShiftModelOpen.value = false;
     nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
@@ -1219,6 +1260,7 @@ const loadPolymerFile = async (filePath: string, sourceType: string): Promise<vo
       isTemp: isTemp.value,
     });
     if (uploadedName) {
+      resetTtspForNewData();
       applyDefaultPronyTerms(fileText);
       dynamfit.value.fileUpload = uploadedName;
       store.commit('explorer/setDynamfitSourceType', sourceType);
@@ -1292,6 +1334,7 @@ const handleSelect = async (): Promise<void> => {
     }
 
     const data = resp?.response ?? {};
+    resetTtspForNewData();
     store.commit('explorer/setDynamfitDomain', selectedProperty.value);
     store.commit('explorer/setDynamfitFileMeta', {
       label: currentItem.value?.title ?? '',
@@ -1401,7 +1444,6 @@ watch(selectedProperty, (v) => {
   if (v !== 'select') {
     cDataSourceOpen.value = true;
     cTtspApplied.value = false;
-    cTtspVisible.value = true;
     cShiftModelOpen.value = true;
   }
 });
@@ -1426,13 +1468,24 @@ watch(
   }
 );
 
+// Checking or unchecking ω-T changes what the next update sends, so it arms
+// the Update link; programmatic writes (data-load reset, session reset) come
+// flagged and stay silent. Unchecking abandons the transform outright, so the
+// whole segment resets — otherwise the hidden model and coefficients would
+// silently revive on the next check.
+watch(ttsp, (checked) => {
+  if (resetting.value || skipCoeffWatcher.value) return;
+  if (!checked) resetTtspSegment();
+  updateBtn.value = true;
+});
+
 watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov) => {
   if (cv[0] && cv[0] === true) ttspTgValue.value = null;
   if (cv[1] && cv[1] === true) ttspC1Value.value = null;
   if (cv[2] && cv[2] === true) ttspC2Value.value = null;
   if (cv[3] && cv[3] === true) ttspTLValue.value = null;
   if (cv[4] && cv[4] === true) ttspEAValue.value = null;
-  if (cv !== ov) updateBtn.value = true;
+  if (!skipCoeffWatcher.value && cv !== ov) updateBtn.value = true;
 });
 
 watch(ttspTgValue, (v) => {
