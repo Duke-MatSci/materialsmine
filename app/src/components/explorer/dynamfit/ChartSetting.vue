@@ -153,15 +153,19 @@
                   weights (1/σ) and replace the Relative Error setting below. They are not
                   drawn as error bars.
                 </p>
-                <a
-                  class="btn-text btn--noradius"
-                  href="/dynamfit-template-error.tsv"
-                  download
-                >
-                  <span class="md-body-1">Download template with error columns</span>
-                </a>
               </div>
             </template>
+          </div>
+          <!-- Template downloads sit at the upload level, not buried inside
+               the format explainer above. -->
+          <div class="u_display-flex u_centralize_content" style="gap: 0.5rem; flex-wrap: wrap">
+            <a class="btn-text btn--noradius" href="/dynamfit-template.tsv" download>
+              <span class="md-body-1">Download Template</span>
+            </a>
+            <HelpPopover label="Template format">{{ downloadTitle() }}</HelpPopover>
+            <a class="btn-text btn--noradius" href="/dynamfit-template-error.tsv" download>
+              <span class="md-body-1">Download Template with Error Columns</span>
+            </a>
           </div>
           <div class="u_display-flex u_centralize_content">
             <button @click="cGoBackToMain" class="btn btn--primary u--b-rad">Back</button>
@@ -357,7 +361,7 @@
     <!-- Smoothness/RelError + ω-T Transformation -->
     <div class="viz-u-mgbottom-sm">
       <div
-        v-if="selectedProperty !== 'temperature' || cTtspApplied"
+        v-if="!disableInput && (selectedProperty !== 'temperature' || cTtspApplied)"
         class="u--layout-flex u--layout-flex-justify-sb grid_gap-small u_margin-bottom-small"
       >
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
@@ -609,6 +613,20 @@
               </md-field>
             </div>
           </template>
+
+          <!-- The section's own apply button: every widget above is inert
+               until it is hit, so it lives with them rather than carrying a
+               bespoke visibility state at the panel's foot. -->
+          <div class="u_display-flex u_centralize_content utility-margin-top">
+            <a
+              class="btn-text btn--noradius"
+              :class="{ disabled: !updateBtn }"
+              href="#"
+              @click="handleUpdate"
+            >
+              <span class="md-body-1">Update</span>
+            </a>
+          </div>
         </template>
       </template>
     </div>
@@ -624,26 +642,6 @@
       </span>
     </div>
 
-    <!-- Update / Download Template -->
-    <div class="grid grid_col-2">
-      <div>
-        <a
-          v-if="dynamfit.fileUpload.length"
-          class="btn-text btn--noradius"
-          :class="{ disabled: !updateBtn }"
-          href="#"
-          @click="handleUpdate"
-        >
-          <span class="md-body-1">Update</span>
-        </a>
-      </div>
-      <div class="utility-align--right">
-        <a class="btn-text btn--noradius" href="/dynamfit-template.tsv" download>
-          <span class="md-body-1">Download Template</span>
-        </a>
-        <HelpPopover label="Template format">{{ downloadTitle() }}</HelpPopover>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -804,7 +802,6 @@ const skipCoeffWatcher = ref(false);
 // watcher queue. Every watcher that can start a fit checks it, so tearing the
 // session down never fires a request against the file we just deleted.
 const resetting = ref(false);
-let coeffDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Computed
 const token = computed(() => store.getters['auth/token']);
@@ -884,12 +881,6 @@ const isManual = computed(() => {
 const resetAll = async (): Promise<void> => {
   resetting.value = true;
 
-  // A debounced coefficient fit armed just before Reset would otherwise fire
-  // 500 ms later against the deleted file.
-  if (coeffDebounceTimer) {
-    clearTimeout(coeffDebounceTimer);
-    coeffDebounceTimer = null;
-  }
   // Unconditionally, not just when a file exists: the toast we most need to
   // clear is the one raised by a failed fit that never produced a file.
   store.commit('resetSnackbar');
@@ -1254,6 +1245,9 @@ const updateChart = async (): Promise<void> => {
 };
 
 const handleUpdate = async (): Promise<void> => {
+  // The link is always rendered inside the Shift-Factor Model section now;
+  // the disabled class ghosts it, this guard makes the state real.
+  if (!updateBtn.value) return;
   updateBtn.value = false;
   await updateChart();
 };
@@ -1511,14 +1505,20 @@ watch(
   }
 );
 
-// Checking or unchecking ω-T changes what the next update sends, so it arms
-// the Update link; programmatic writes (data-load reset, session reset) come
-// flagged and stay silent. Unchecking abandons the transform outright, so the
-// whole segment resets — otherwise the hidden model and coefficients would
-// silently revive on the next check.
+// Checking ω-T reveals the config and arms Update; nothing is sent until the
+// button is hit. UNCHECKING acts immediately: it abandons the transform
+// outright — segment reset (otherwise the hidden model would silently revive
+// on the next check) and a repaint without the transform, emptying the
+// figures that only the transform filled. Update applies config; withdrawing
+// it should not need a second click. Programmatic writes (data-load reset,
+// session reset) come flagged and stay silent.
 watch(ttsp, (checked) => {
   if (resetting.value || skipCoeffWatcher.value) return;
-  if (!checked) resetTtspSegment();
+  if (!checked) {
+    resetTtspSegment();
+    if (dynamfit.value?.fileUpload) updateChart();
+    return;
+  }
   updateBtn.value = true;
 });
 
@@ -1547,93 +1547,28 @@ watch(ttspEAValue, (v) => {
   if (v) eAEstimated.value = false;
 });
 
-// In manual mode the debounced coefficient watcher below deliberately bails,
-// so a hand-entered Tg/TL anchor would otherwise leave the Update link
-// disabled with no path to the fit. Programmatic write-backs are excluded —
-// they arrive under skipCoeffWatcher and already came from an update.
-watch([ttspTgValue, ttspTLValue], () => {
-  if (isManual.value && !skipCoeffWatcher.value && !resetting.value) {
-    updateBtn.value = true;
-  }
-});
-
-// Debounced watcher: when ttsp coefficient inputs change, call /extract if fileUpload exists
+// Coefficient edits are inert until Update: typing a value (or clearing one)
+// only arms the button. The old debounced auto-extract here meant an
+// unchecked-estimate + hand-typed Ea repainted the figures before Update was
+// ever hit. Programmatic write-backs are excluded — they arrive under
+// skipCoeffWatcher and already came from an update. This also covers the
+// manual-mode Tg/TL anchors, which previously needed their own watcher.
 watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
-  if (resetting.value) return;
-  if (skipCoeffWatcher.value) return;
+  if (resetting.value || skipCoeffWatcher.value) return;
   if (!ttsp.value) return;
-  if (!transformMethod.value || !(isWLF.value || isHybrid.value)) return;
-
-  if (coeffDebounceTimer) clearTimeout(coeffDebounceTimer);
-  coeffDebounceTimer = setTimeout(async () => {
-    // A reset may have started during the 500 ms debounce window.
-    if (resetting.value) return;
-    if (!dynamfit.value?.fileUpload) {
-      store.commit('setSnackbar', {
-        message: 'Please upload or select a data file in Data Source first.',
-        duration: 4000,
-      });
-      return;
-    }
-
-    const payload: Record<string, unknown> = {
-      useSample: useSample.value,
-      file_name: dynamfit.value.fileUpload,
-      number_of_prony: dynamfit.value.range,
-      model: dynamfit.value.model,
-      domain: selectedProperty.value,
-      smoothness: smoothness.value,
-      relative_error: relativeError.value,
-      transform_method: transformMethod.value,
-    };
-
-    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
-
-    if (isHybrid.value) {
-      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTLValue.value) payload.TL = ttspTLValue.value;
-      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
-    }
-
-    // Same display-only passthrough as updateChart's WLF/hybrid branch.
-    if (mFile.value) payload.shift_reference_file = mFile.value;
-
-    store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-    await store.dispatch('explorer/fetchDynamfitData', payload);
-  }, 500);
+  updateBtn.value = true;
 });
 
-// Watcher: a freshly uploaded shift file (mFile) goes straight through the
-// same best-effort-fit-then-extract path as the Update button, so the charts
-// always load — with fitted coefficients when a Tg/TL anchor is available,
-// with the raw shift table applied when not.
-watch(mFile, async (newFile) => {
+// A freshly uploaded shift file is likewise inert (onShiftFileChange arms
+// Update); the fit-then-extract runs when the user hits the button. Only the
+// no-data hint fires here, since Update could not do anything yet.
+watch(mFile, (newFile) => {
   if (!newFile) return;
   if (!ttsp.value) return;
   if (resetting.value) return;
-
   if (!dynamfit.value?.fileUpload) {
     displayInfo('Shift file loaded. Select or upload a data file to fit and see charts.', 5000);
-    return;
   }
-
-  const payload: Record<string, unknown> = {
-    useSample: useSample.value,
-    file_name: dynamfit.value.fileUpload,
-    number_of_prony: dynamfit.value.range,
-    model: dynamfit.value.model,
-    domain: selectedProperty.value,
-    smoothness: smoothness.value,
-    relative_error: relativeError.value,
-  };
-  store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-  await fitShiftAndExtract(payload);
 });
 
 watch(
