@@ -446,13 +446,21 @@
             <md-radio id="cTransformMethodWLF" v-model="transformMethod" value="WLF">
               WLF
             </md-radio>
-            <md-radio id="cTransformMethodHybrid" v-model="transformMethod" value="hybrid">
+            <md-radio
+              id="cTransformMethodHybrid"
+              v-model="transformMethod"
+              value="hybrid"
+              :disabled="isFrequencyDomain"
+            >
               Hybrid
             </md-radio>
             <md-radio id="cTransformMethodManual" v-model="transformMethod" value="manual">
               Manual
             </md-radio>
           </div>
+          <span v-if="isFrequencyDomain" class="dynamfit-hint">
+            Hybrid needs temperature-domain data — it has no inverse transform yet.
+          </span>
 
           <!-- Manual file info -->
           <div v-if="isManual" class="md-alert md-alert--info utility-margin-top">
@@ -465,17 +473,38 @@
             </span>
           </div>
 
-          <!-- Coefficient fields (WLF / Hybrid) -->
+          <!-- Coefficient fields (WLF / Hybrid). The model's anchor leads the
+               list: TL is the hybrid crossover, Tg the WLF reference. In the
+               frequency domain Tg has no estimate checkbox — a master curve's
+               tan-δ peak is a frequency, so there is nothing to estimate a
+               temperature from, and the server refuses Tg_estimate there. -->
           <template v-if="isWLF || isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+              <md-field class="dynamfit-field--half">
+                <md-input
+                  v-model="ttspTLValue"
+                  placeholder="TL"
+                  :disabled="!ttsp || tLEstimated"
+                ></md-input>
+              </md-field>
+              <md-checkbox
+                :disabled="ttspDisabled"
+                v-model="tLEstimated"
+                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
+              >
+                Use Estimated TL
+              </md-checkbox>
+            </div>
             <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTgValue"
-                  placeholder="Tg"
+                  :placeholder="isFrequencyDomain ? 'Tg (required)' : 'Tg'"
                   :disabled="!ttsp || tgEstimated"
                 ></md-input>
               </md-field>
               <md-checkbox
+                v-if="!isFrequencyDomain"
                 :disabled="ttspDisabled"
                 v-model="tgEstimated"
                 class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
@@ -513,22 +542,6 @@
                 class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
               >
                 Use Estimated C2
-              </md-checkbox>
-            </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
-              <md-field class="dynamfit-field--half">
-                <md-input
-                  v-model="ttspTLValue"
-                  placeholder="TL"
-                  :disabled="!ttsp || tLEstimated"
-                ></md-input>
-              </md-field>
-              <md-checkbox
-                :disabled="ttspDisabled"
-                v-model="tLEstimated"
-                class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
-              >
-                Use Estimated TL
               </md-checkbox>
             </div>
             <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
@@ -809,6 +822,8 @@ const dynamfitData = computed(() => {
 const cAxisLabel = computed(() =>
   selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (Hz)'
 );
+
+const isFrequencyDomain = computed(() => selectedProperty.value === 'frequency');
 
 // Error columns are only known WITH the fit response: upload-data echoes every
 // column upload_init produced, keyed by name. Before the first response
@@ -1402,7 +1417,10 @@ watch(transformMethod, (newValue) => {
   // first; checking the boxes here would cascade into the estimate watcher
   // below, which nulls the inputs — wiping the freshly fitted coefficients.
   if (!skipCoeffWatcher.value && (newValue === 'WLF' || newValue === 'hybrid')) {
-    tgEstimated.value = true;
+    // No Tg estimate in the frequency domain: a master curve's tan-δ peak is
+    // a frequency, and the server 400s a frequency-domain Tg_estimate. The
+    // checkbox is hidden there; Tg must be typed.
+    if (!isFrequencyDomain.value) tgEstimated.value = true;
     c1Estimated.value = true;
     c2Estimated.value = true;
     if (newValue === 'hybrid') {
@@ -1445,6 +1463,16 @@ watch(selectedProperty, (v) => {
     cDataSourceOpen.value = true;
     cTtspApplied.value = false;
     cShiftModelOpen.value = true;
+    if (v === 'frequency') {
+      // Hybrid is ghosted in the frequency domain (no inverse transform), so
+      // a hybrid setup cannot survive the switch; an armed Tg estimate would
+      // 400 there for the same reason and just unchecks.
+      if (transformMethod.value === 'hybrid') {
+        resetTtspSegment();
+      } else if (tgEstimated.value) {
+        tgEstimated.value = false;
+      }
+    }
   }
 });
 

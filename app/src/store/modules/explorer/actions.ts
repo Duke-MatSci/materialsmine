@@ -195,6 +195,16 @@ export default {
       }
       if (gen !== state.dynamfitResetCount) return;
       commit('setDynamfitData', data);
+      // Server-side cautions that don't fail the request — today, estimated
+      // Tg/TL peaks sitting suspiciously close to the data's temperature edge.
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      if (warnings.length) {
+        commit(
+          'setSnackbar',
+          { message: warnings.join(' '), duration: 8000 },
+          { root: true }
+        );
+      }
     } catch (err: any) {
       if (gen !== state.dynamfitResetCount) return;
       const snackbar: any = { message: err.message, type: 'error' };
