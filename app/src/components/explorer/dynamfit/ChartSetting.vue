@@ -773,6 +773,11 @@ const allPolymerFiles = [
     domain: 'frequency',
   },
   {
+    path: '/docs/dynamfit/polycarbonate-150C_mastercurve.tsv',
+    label: 'Polycarbonate (150°C)',
+    domain: 'frequency',
+  },
+  {
     path: '/docs/dynamfit/agilus30-1Hz_temp.tsv',
     label: 'Agilus30 (1Hz)',
     domain: 'temperature',
