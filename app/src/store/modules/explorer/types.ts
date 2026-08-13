@@ -22,6 +22,11 @@ export interface ExplorerState {
     a_T_ref: number | null;
     // Reduced chi-squared of the /fit-shift coefficient fit (log10 space).
     chi2_reduced: number | null;
+    // Which model produced the coefficients above. Distinct from
+    // dynamfitTransformMethod, which says what drives the omega-T transform:
+    // manual mode fits a WLF or hybrid curve to the uploaded shift table for
+    // the shift figure while the table itself keeps doing the transforming.
+    model: 'WLF' | 'hybrid' | null;
   };
   dynamfitSourceType: string;
   // The API only ever echoes the mangled upload name, so the catalog label and

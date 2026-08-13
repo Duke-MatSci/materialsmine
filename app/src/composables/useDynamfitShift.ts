@@ -15,6 +15,9 @@ export interface ShiftCoefficients {
   TL: number | null;
   a_T_ref: number | null;
   chi2_reduced: number | null;
+  // The model /fit-shift actually ran, which in manual mode is not the
+  // selected transform method — see resolveExtractTransformMethod.
+  model?: ShiftFitModel | null;
 }
 
 /**
@@ -42,6 +45,30 @@ export function resolveShiftFitModel(
     if (hasTL) return 'hybrid';
   }
   return null;
+}
+
+/**
+ * The transform_method to send with a /tri-ve/extract/ payload.
+ *
+ * These are two different questions wearing one name. The radio picks what
+ * drives the omega-T transform; transform_method on the extract additionally
+ * picks which model curve the shift figure draws, since _build_shift_figure
+ * only draws for 'WLF' or 'hybrid'. In manual mode those diverge: the uploaded
+ * table does the transforming (supplying shift_file_name makes shiftData win
+ * server-side, in both transform directions), while the borrowed fit from
+ * resolveShiftFitModel is what the dashed curve should show. So a manual-mode
+ * extract names the fitted model and the table still wins.
+ *
+ * Adopting the fitted model into the radio instead — which is what this
+ * replaces — took the user out of manual mode, so the next repaint dropped
+ * shift_file_name and asked the server to invert a hybrid model it cannot
+ * invert.
+ */
+export function resolveExtractTransformMethod(
+  transformMethod: string,
+  fittedModel: ShiftFitModel | null | undefined
+): string {
+  return fittedModel ?? transformMethod;
 }
 
 /**

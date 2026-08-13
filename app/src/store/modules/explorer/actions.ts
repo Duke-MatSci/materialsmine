@@ -254,6 +254,7 @@ export default {
       TL: response.TL ?? null,
       a_T_ref: response.a_T_ref ?? null,
       chi2_reduced: response.chi2_reduced ?? null,
+      model: response.transform_method ?? null,
     });
 
     return response;

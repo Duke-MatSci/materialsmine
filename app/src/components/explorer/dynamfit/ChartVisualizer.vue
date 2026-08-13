@@ -206,10 +206,15 @@ const shiftTable = computed<Record<string, unknown>[]>(
 // Fitted shift coefficients as parameter/value rows. A lone transform_method
 // row means nothing has been fitted — collapse that to empty so the tab shows
 // its empty state and the download button disables.
+//
+// The heading row names the model that produced these numbers, not the selected
+// transform: manual mode fits a WLF or hybrid curve to the uploaded table, so
+// 'manual' over a set of C1/C2/Ea/TL rows would misattribute them.
 const shiftCoefficientRows = computed<{ parameter: string; value: string | number }[]>(() => {
+  const coefficients = store.getters['explorer/getDynamfitShiftCoefficients'];
   const rows = buildShiftCoefficientRows(
-    transformMethod.value || 'none',
-    store.getters['explorer/getDynamfitShiftCoefficients']
+    coefficients.model || transformMethod.value || 'none',
+    coefficients
   );
   return rows.length > 1 ? rows : [];
 });

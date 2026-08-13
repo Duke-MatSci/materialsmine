@@ -100,6 +100,7 @@ export default {
       TL: null,
       a_T_ref: null,
       chi2_reduced: null,
+      model: null,
     };
   },
 };

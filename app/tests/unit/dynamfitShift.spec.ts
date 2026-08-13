@@ -6,6 +6,7 @@
  */
 import {
   resolveShiftFitModel,
+  resolveExtractTransformMethod,
   buildShiftCoefficientRows,
   ShiftCoefficients,
 } from '@/composables/useDynamfitShift';
@@ -61,6 +62,7 @@ describe('buildShiftCoefficientRows', () => {
     // WLF co-fits this offset too, so a fitted WLF result is not pinned at 1.
     a_T_ref: 2.17,
     chi2_reduced: 0.211,
+    model: 'WLF',
   };
 
   it('emits a parameter/value row for the method and each non-null value', () => {
@@ -72,6 +74,11 @@ describe('buildShiftCoefficientRows', () => {
       { parameter: 'a_T_ref', value: 2.17 },
       { parameter: 'chi2_reduced', value: 0.211 },
     ]);
+  });
+
+  it('leaves the fitted model out of the value rows — it heads them instead', () => {
+    const rows = buildShiftCoefficientRows('WLF', fitted);
+    expect(rows.map((r) => r.parameter)).not.toContain('model');
   });
 
   it('skips null values so a WLF export has no blank Ea/TL rows', () => {
@@ -89,9 +96,30 @@ describe('buildShiftCoefficientRows', () => {
       TL: null,
       a_T_ref: null,
       chi2_reduced: null,
+      model: null,
     };
     expect(buildShiftCoefficientRows('none', empty)).toEqual([
       { parameter: 'transform_method', value: 'none' },
     ]);
+  });
+});
+
+describe('resolveExtractTransformMethod', () => {
+  it('names the fitted model in manual mode, so the figure draws its curve', () => {
+    // The extract also carries shift_file_name, which keeps the uploaded table
+    // driving the transform — naming 'hybrid' here only picks the dashed curve.
+    expect(resolveExtractTransformMethod('manual', 'hybrid')).toBe('hybrid');
+    expect(resolveExtractTransformMethod('manual', 'WLF')).toBe('WLF');
+  });
+
+  it('falls back to the selected method when nothing has been fitted', () => {
+    expect(resolveExtractTransformMethod('manual', null)).toBe('manual');
+    expect(resolveExtractTransformMethod('WLF', null)).toBe('WLF');
+    expect(resolveExtractTransformMethod('none', undefined)).toBe('none');
+  });
+
+  it('leaves an explicitly chosen model alone', () => {
+    expect(resolveExtractTransformMethod('WLF', 'WLF')).toBe('WLF');
+    expect(resolveExtractTransformMethod('hybrid', 'hybrid')).toBe('hybrid');
   });
 });

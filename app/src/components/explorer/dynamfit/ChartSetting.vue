@@ -658,7 +658,10 @@ import {
   RELATIVE_ERROR_DEFAULT_PERCENT,
   SMOOTHNESS_DEFAULT_PERCENT,
 } from '@/composables/useDynamfitDefaults';
-import { resolveShiftFitModel } from '@/composables/useDynamfitShift';
+import {
+  resolveShiftFitModel,
+  resolveExtractTransformMethod,
+} from '@/composables/useDynamfitShift';
 import Pagination from '@/components/explorer/Pagination.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
 
@@ -882,6 +885,12 @@ const isManual = computed(() => {
   return ttsp.value && transformMethod.value === 'manual';
 });
 
+// Everything the last successful /fit-shift returned, including which model it
+// ran. Kept in the store rather than in transformMethod: the radio says what
+// drives the transform, this says what was fitted, and in manual mode those are
+// different answers. Cleared wherever the coefficients are.
+const shiftFit = computed(() => store.getters['explorer/getDynamfitShiftCoefficients']);
+
 // Methods
 const resetAll = async (): Promise<void> => {
   resetting.value = true;
@@ -1101,15 +1110,30 @@ const clearDynamfitData = (): void => {
  * unconditionally. The previous version sent transform_method 'manual' to
  * /fit-shift (a guaranteed 400) and awaited it ahead of the extract in one
  * try, so uploading a shift file killed the charts along with the fit.
+ *
+ * refit distinguishes an Update click, which is the only thing that can change
+ * what the shift fit sees, from a repaint that merely needs the same fit drawn
+ * again.
  */
-const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Promise<void> => {
-  const fitModel = resolveShiftFitModel(
-    transformMethod.value,
-    ttspTgValue.value,
-    ttspTLValue.value
-  );
+const fitShiftAndExtract = async (
+  extractPayload: Record<string, unknown>,
+  refit = true
+): Promise<void> => {
+  const fitModel = refit
+    ? resolveShiftFitModel(transformMethod.value, ttspTgValue.value, ttspTLValue.value)
+    : null;
 
-  if (fitModel) {
+  if (!refit) {
+    // A repaint (prony terms, smoothness, relative error) changes nothing the
+    // shift fit depends on, so re-running it would spend a round-trip to
+    // reproduce numbers we already hold — and re-toast the "enter an anchor"
+    // nudge below on every drag of the slider. Replay the stored fit instead so
+    // the shift figure keeps its curve and its misfit stamp.
+    const fitted = shiftFit.value;
+    for (const key of ['C1', 'C2', 'Tg', 'Ea', 'TL', 'a_T_ref', 'chi2_reduced']) {
+      if (fitted[key] != null) extractPayload[key] = fitted[key];
+    }
+  } else if (fitModel) {
     const fitPayload: Record<string, unknown> = {
       shift_file_name: mFile.value,
       transform_method: fitModel,
@@ -1123,12 +1147,12 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
     try {
       const fitted = await store.dispatch('explorer/fetchFitShiftData', fitPayload);
 
-      // Programmatic write-back: raise the guard before touching the refs or
-      // the model, so neither the debounced coefficient watcher (duplicate
-      // extract) nor the transformMethod watcher (estimate-box cascade that
-      // nulls the inputs) reacts. Released after the watcher flush.
+      // Programmatic write-back: raise the guard before touching the refs, so
+      // neither the coefficient watcher (which arms Update) nor the estimate
+      // watchers react. Released after the watcher flush. The fitted MODEL is
+      // deliberately not written into transformMethod — see
+      // resolveExtractTransformMethod.
       skipCoeffWatcher.value = true;
-      if (fitted.transform_method) transformMethod.value = fitted.transform_method;
       if (fitted.C1 != null) ttspC1Value.value = fitted.C1;
       if (fitted.C2 != null) ttspC2Value.value = fitted.C2;
       if (fitted.Tg != null) ttspTgValue.value = fitted.Tg;
@@ -1151,6 +1175,10 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
       if (fitted.a_T_ref != null) extractPayload.a_T_ref = fitted.a_T_ref;
       if (fitted.chi2_reduced != null) extractPayload.chi2_reduced = fitted.chi2_reduced;
     } catch (err: unknown) {
+      // Drop the previous fit with it: leaving one standing would keep drawing
+      // its curve — and naming its model on the extract — beside a figure the
+      // user just failed to refit.
+      store.commit('explorer/resetDynamfitShiftCoefficients');
       const error = err as Error;
       store.commit('setSnackbar', {
         message: `Shift fit failed: ${error.message || 'unknown error'} — charts use the uploaded shift factors directly.`,
@@ -1159,13 +1187,22 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
       });
     }
   } else {
+    // No anchor means no fit — including any earlier one, whose anchor the user
+    // has since cleared.
+    store.commit('explorer/resetDynamfitShiftCoefficients');
     displayInfo(
       'Enter Tg (WLF) or TL (hybrid) to fit shift coefficients. Charts use the uploaded shift factors directly.',
       5000
     );
   }
 
-  extractPayload.transform_method = transformMethod.value;
+  // 'hybrid'/'WLF' here draws that model's curve on the shift figure;
+  // shift_file_name alongside it keeps the uploaded table driving the
+  // transform. Both, deliberately — see resolveExtractTransformMethod.
+  extractPayload.transform_method = resolveExtractTransformMethod(
+    transformMethod.value,
+    shiftFit.value.model
+  );
   extractPayload.shift_file_name = mFile.value;
   await store.dispatch('explorer/fetchDynamfitData', extractPayload);
 };
@@ -1202,7 +1239,7 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
   if (isManual.value && mFile.value) {
     try {
       store.commit('explorer/setDynamfitDomain', selectedProperty.value);
-      await fitShiftAndExtract(payload);
+      await fitShiftAndExtract(payload, fromUpdate);
       updateBtn.value = false;
       if (selectedProperty.value === 'temperature') cTtspApplied.value = true;
       if (fromUpdate) store.commit('explorer/triggerDynamfitTransformTab');

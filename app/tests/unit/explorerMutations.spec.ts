@@ -69,15 +69,16 @@ describe('explorer mutations — dynamfit shift coefficients', () => {
     TL: null,
     a_T_ref: 1.0,
     chi2_reduced: 0.211,
+    model: 'WLF',
   };
 
-  it('setDynamfitShiftCoefficients stores every field, including chi2_reduced', () => {
+  it('setDynamfitShiftCoefficients stores every field, including the fitted model', () => {
     const state = makeState();
     mutations.setDynamfitShiftCoefficients(state, fitted);
     expect(state.dynamfitShiftCoefficients).toEqual(fitted);
   });
 
-  it('resetDynamfitShiftCoefficients nulls every field, including chi2_reduced', () => {
+  it('resetDynamfitShiftCoefficients nulls every field, including the fitted model', () => {
     const state = makeState({ dynamfitShiftCoefficients: fitted });
     mutations.resetDynamfitShiftCoefficients(state);
     expect(state.dynamfitShiftCoefficients).toEqual({
@@ -88,6 +89,7 @@ describe('explorer mutations — dynamfit shift coefficients', () => {
       TL: null,
       a_T_ref: null,
       chi2_reduced: null,
+      model: null,
     });
   });
 });
