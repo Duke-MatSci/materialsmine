@@ -19,7 +19,11 @@ The data spans T down to -30 °C (50 °C below T_ref=20), which previously
 caused a 10**exponent overflow in the optimizer (ValueError → HTTP 400) with
 the default UNIVERSAL_WLF_C2=51.6 initial guess. The pole-avoidance fix uses
 an analytic log10(a_T) model so overflow can't propagate as an exception, and
-enforces C2 >= c2_min throughout. Observed log10-RMSE ≈ 0.437 (threshold: 0.55).
+enforces C2 >= c2_min throughout. a_T_ref is co-fitted here too and must be
+applied when reconstructing: this file IS referenced to 20 °C, but the offset
+is still free (a_T_ref ≈ 2.17), because the WLF form fits the whole table
+better when it is not nailed to that one point. Observed log10-RMSE ≈ 0.364,
+down from 0.437 when the curve was anchored (threshold: 0.45).
 
 Hybrid calibration (VeroCyan 80C): all three parameters (C1, C2, Ea) fitted
 freely from defaults; a_T_ref (the vertical reference offset) is co-fitted and
@@ -103,30 +107,36 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         self.assertEqual(result['transform_method'], 'WLF')
         self.assertIsNone(result['Ea'])
         self.assertIsNone(result['TL'])
-        self.assertEqual(result['a_T_ref'], 1.0)
 
         C1 = result['C1']
         C2 = result['C2']
+        # Co-fitted vertical offset. Free even though this file is referenced
+        # to T_ref, so it lands near 2.17 rather than exactly 1 — the fit
+        # trades the anchor point for a better match across the whole table.
+        a_T_ref = result['a_T_ref']
+        self.assertTrue(np.isfinite(a_T_ref) and a_T_ref > 0,
+                        f"Expected finite positive a_T_ref, got {a_T_ref}")
         self.assertTrue(np.isfinite(C1) and C1 > 0, f"Expected finite positive C1, got {C1}")
         self.assertTrue(np.isfinite(C2) and C2 > 0, f"Expected finite positive C2, got {C2}")
 
-        # RMSE check: load real data and reconstruct with fitted coefficients.
-        # Both-free observed RMSE ≈ 0.437; threshold 0.55 allows optimizer
-        # variance without masking a regression to a grossly wrong solution.
+        # RMSE check: load real data and reconstruct with fitted coefficients,
+        # applying the surfaced a_T_ref as a consumer would. Both-free observed
+        # RMSE ≈ 0.364; threshold 0.45 allows optimizer variance without
+        # masking a regression to a grossly wrong solution.
         shift_data = upload_init('agilus30 (8) shift factors 20C clean.txt', 'shift')
         T = np.asarray(shift_data['Temperature'], dtype=float)
         a_T = np.asarray(shift_data['a_T'], dtype=float)
-        reconstructed = wlf_shift(T, 20.0, C1, C2)
+        reconstructed = wlf_shift(T, 20.0, C1, C2, a_T_ref)
         log_rmse = np.sqrt(np.mean((np.log10(reconstructed) - np.log10(a_T)) ** 2))
-        self.assertLess(log_rmse, 0.55,
-                        f"WLF log10-RMSE {log_rmse:.4f} exceeds 0.55 — fit likely diverged")
+        self.assertLess(log_rmse, 0.45,
+                        f"WLF log10-RMSE {log_rmse:.4f} exceeds 0.45 — fit likely diverged")
 
         # chi2_reduced must agree with the reconstruction above: with no Error
-        # column sigma is one decade, so chi2/nu == RMSE² · n/(n − 2). Observed
-        # ≈ 0.211.
+        # column sigma is one decade, so chi2/nu == RMSE² · n/(n − 3) — three
+        # free parameters now, C1, C2 and the offset. Observed ≈ 0.155.
         chi2 = result['chi2_reduced']
         n = len(T)
-        self.assertAlmostEqual(chi2, log_rmse ** 2 * n / (n - 2), places=10)
+        self.assertAlmostEqual(chi2, log_rmse ** 2 * n / (n - 3), places=10)
 
     def test_hybrid_e2e_converges_and_fit_is_accurate(self):
         """

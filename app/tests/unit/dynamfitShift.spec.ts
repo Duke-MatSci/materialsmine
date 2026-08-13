@@ -58,7 +58,8 @@ describe('buildShiftCoefficientRows', () => {
     Tg: 20,
     Ea: null,
     TL: null,
-    a_T_ref: 1.0,
+    // WLF co-fits this offset too, so a fitted WLF result is not pinned at 1.
+    a_T_ref: 2.17,
     chi2_reduced: 0.211,
   };
 
@@ -68,7 +69,7 @@ describe('buildShiftCoefficientRows', () => {
       { parameter: 'Tg', value: 20 },
       { parameter: 'C1', value: 22.7 },
       { parameter: 'C2', value: 190.2 },
-      { parameter: 'a_T_ref', value: 1.0 },
+      { parameter: 'a_T_ref', value: 2.17 },
       { parameter: 'chi2_reduced', value: 0.211 },
     ]);
   });

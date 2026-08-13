@@ -941,9 +941,11 @@ def smooth_prony_fit(
 #     print(f'C2: {C2}')
 #     return 10 ** (-C1 * (T - T_ref) / (C2 + (T - T_ref)))
 
-def wlf_log10_shift(T: np.ndarray, T_ref: float, C1: float, C2: float) -> np.ndarray:
+def wlf_log10_shift(T: np.ndarray, T_ref: float, C1: float, C2: float,
+                    a_T_ref: float = 1.0) -> np.ndarray:
     """
-    Return log10(a_T) = -C1 * (T - T_ref) / (C2 + (T - T_ref)) directly.
+    Return log10(a_T) = -C1 * (T - T_ref) / (C2 + (T - T_ref)) directly,
+    plus log10(a_T_ref).
 
     Computing in log10 space avoids the 10**exponent overflow that occurs for
     cold data (T well below T_ref) when the exponent is large but finite.
@@ -955,14 +957,19 @@ def wlf_log10_shift(T: np.ndarray, T_ref: float, C1: float, C2: float) -> np.nda
         T_ref (float): Reference temperature in °C.
         C1 (float): WLF parameter C1.
         C2 (float): WLF parameter C2.
+        a_T_ref (float): Shift factor at T_ref, i.e. a vertical offset on the
+            whole curve. The bare WLF equation is 1 at T_ref; measured shift
+            factors need not be referenced there (see fit_wlf_coefficients,
+            which co-fits this). Defaults to 1.0, which adds exactly zero.
 
     Returns:
         numpy.ndarray: 1-D array of log10(a_T) values, same length as T.
     """
-    return -C1 * (T - T_ref) / (C2 + (T - T_ref))
+    return -C1 * (T - T_ref) / (C2 + (T - T_ref)) + np.log10(a_T_ref)
 
 
-def wlf_shift(T, T_ref: float, C1: float, C2: float) -> np.ndarray:
+def wlf_shift(T, T_ref: float, C1: float, C2: float,
+              a_T_ref: float = 1.0) -> np.ndarray:
     """
     Calculate the WLF shift factor a_T.
 
@@ -979,9 +986,12 @@ def wlf_shift(T, T_ref: float, C1: float, C2: float) -> np.ndarray:
         T_ref (float): Reference temperature.
         C1 (float): WLF parameter C1.
         C2 (float): WLF parameter C2.
+        a_T_ref (float): Shift factor at T_ref; scales every returned value
+            (the hybrid_shift argument of the same name does the same job).
 
     Returns:
-        numpy.ndarray: 1-D array of shift factors a_T, same length as T.
+        numpy.ndarray: 1-D array of shift factors a_T, same length as T, where
+            a_T at T_ref is a_T_ref.
 
     Raises:
         ValueError: If the WLF denominator C2 + (T - T_ref) reaches zero or the
@@ -994,7 +1004,7 @@ def wlf_shift(T, T_ref: float, C1: float, C2: float) -> np.ndarray:
         "divide by zero detected when calculating WLF. "
         "Please adjust parameters or manually provide shift factors."
     ):
-        a_T = np.power(10.0, wlf_log10_shift(T, T_ref, C1, C2))
+        a_T = np.power(10.0, wlf_log10_shift(T, T_ref, C1, C2, a_T_ref))
         if not np.all(np.isfinite(a_T)):
             raise FloatingPointError("Non-finite result in WLF computation")
         return a_T
@@ -1232,12 +1242,22 @@ def fit_wlf_coefficients(
         return_quality: bool = False,
 ) -> tuple:
     """
-    Fit WLF shift-model coefficients (C1, C2) to shift-domain data.
+    Fit WLF shift-model coefficients (C1, C2) to shift-domain data, co-fitting
+    the vertical reference offset a_T_ref.
 
     Uses scipy.optimize.curve_fit in log10(a_T) space so that points spanning
     many decades of shift factor receive uniform weight. T_ref is required and
     is never optimized — it is a physical input (e.g. Tg) supplied by the
     caller.
+
+    The bare WLF equation is 1 at T_ref, but measured shift factors need not be
+    referenced there: a master curve built at 150 °C carries a_T == 1 at 150 °C,
+    not at Tg. Anchoring the curve at 1 anyway makes C1 and C2 absorb the
+    offset, so a_T_ref — the data's shift factor at T_ref — is always co-fitted,
+    exactly as fit_hybrid_coefficients does at TL. It is carried through the
+    optimizer as log10(a_T_ref): that is the space the fit and the data live in,
+    it needs no positivity bound, and data referenced decades away stays as well
+    scaled as data referenced at T_ref.
 
     Individual parameters can be fixed at their supplied values by setting the
     corresponding fix_* flag. A supplied-but-not-fixed value becomes the
@@ -1249,6 +1269,10 @@ def fit_wlf_coefficients(
     to keep the WLF denominator positive (1 °C margin). The fit uses
     wlf_log10_shift directly (log10_space=True) to avoid the 10**exponent
     overflow that otherwise occurs for cold data (T well below T_ref).
+
+    Fixing both C1 and C2 no longer leaves nothing to optimize — the offset is
+    still fitted against the supplied curve, which is a one-parameter linear
+    least squares the optimizer solves at once.
 
     Parameters:
         T (numpy.ndarray): 1-D array of temperatures in °C, same length as a_T.
@@ -1270,7 +1294,9 @@ def fit_wlf_coefficients(
             degrees of freedom are not positive).
 
     Returns:
-        tuple: (C1_fit, C2_fit) — fitted (or fixed) WLF coefficients — with
+        tuple: (C1_fit, C2_fit, a_T_ref) — fitted (or fixed) WLF coefficients
+        plus the co-fitted reference shift factor a_T_ref (the data's shift
+        factor at T_ref; 1.0 when the data is referenced to T_ref) — with
         chi2_reduced appended when return_quality is True.
 
     Raises:
@@ -1299,57 +1325,69 @@ def fit_wlf_coefficients(
     # log10 finite for any finite C1.
     c2_min = (T_ref - float(np.min(T))) + 1.0
 
-    # Build a model over only the free parameters; fixed ones are closed over.
-    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject.
-    if fix_C1 and fix_C2:
-        # Nothing to optimize; the quality tail below still scores the
-        # supplied model against the data (n_free = 0, dof = n).
-        C1_fit, C2_fit = C1_0, C2_0
-    elif fix_C1:
-        # C2 free: use analytic log10 form and enforce c2_min bound.
-        def model(T_arg, C2_p):
-            return wlf_log10_shift(T_arg, T_ref, C1_0, C2_p)
-        C2_start = max(C2_0, c2_min)
-        (C2_fit,) = _curve_fit_shift(
-            model, T, np.log10(a_T), p0=[C2_start],
-            bounds=([c2_min], [np.inf]), log10_space=True, sigma=sigma,
-        )
-        C1_fit = C1_0
-    elif fix_C2:
-        # C1 free, C2 fixed: no overflow risk (denominator is fixed and positive
-        # as long as the fixed C2 was chosen appropriately by the caller).
-        def model(T_arg, C1_p):
-            return wlf_shift(T_arg, T_ref, C1_p, C2_0)
-        (C1_fit,) = _curve_fit_shift(model, T, np.log10(a_T), p0=[C1_0],
-                                     sigma=sigma)
-        C2_fit = C2_0
-    else:
-        # Both free: use analytic log10 form directly (avoids 10**exponent
-        # overflow for cold data) and enforce c2_min on C2.
-        def model(T_arg, C1_p, C2_p):
-            return wlf_log10_shift(T_arg, T_ref, C1_p, C2_p)
-        C2_start = max(C2_0, c2_min)
-        C1_fit, C2_fit = _curve_fit_shift(
-            model, T, np.log10(a_T), p0=[C1_0, C2_start],
-            bounds=([-np.inf, c2_min], [np.inf, np.inf]), log10_space=True,
-            sigma=sigma,
-        )
+    log10_a_T = np.log10(a_T)
+    # A free C2 starts no closer to the pole than the bound allows; a fixed one
+    # is the caller's to get right, and the guard below reports it if they did not.
+    C2_start = C2_0 if fix_C2 else max(C2_0, c2_min)
 
-    if not return_quality:
-        return float(C1_fit), float(C2_fit)
-
-    log10_model = wlf_log10_shift(T, T_ref, C1_fit, C2_fit)
-    if not np.all(np.isfinite(log10_model)):
-        # Only reachable with fixed parameters: every fitted path bounds C2
-        # away from the pole. Same message wlf_shift raises for this case.
+    # Seed the offset at its conditional optimum given the starting C1/C2 — the
+    # sigma-weighted mean residual, which is the exact least-squares solution for
+    # a lone additive term. Seeding at a_T == 1 (or at an interpolated point, as
+    # the hybrid fit must because of its kink at TL) is wrong by whole decades
+    # for a file referenced away from T_ref, and costs iterations from the start.
+    with np.errstate(divide='ignore', invalid='ignore'):
+        resid_0 = log10_a_T - wlf_log10_shift(T, T_ref, C1_0, C2_start)
+    if not np.all(np.isfinite(resid_0)):
+        # Only a fixed C2 can put a data point on the pole; every fitted path
+        # bounds C2 away from it. Same message wlf_shift raises for this case.
         raise ValueError(
             "divide by zero detected when calculating WLF. "
             "Please adjust parameters or manually provide shift factors."
         )
-    n_free = 2 - int(fix_C1) - int(fix_C2)
-    chi2 = _shift_chi2_reduced(log10_model - np.log10(a_T), sigma, n_free)
-    return float(C1_fit), float(C2_fit), chi2
+    weights = 1.0 / sigma ** 2
+    log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
+
+    # Build a model over only the free parameters; fixed ones are closed over.
+    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
+    # scipy versions reject. The offset is always free.
+    free_names = [n for n, fixed in
+                  [('C1', fix_C1), ('C2', fix_C2), ('log10_a_T_ref', False)]
+                  if not fixed]
+    p0 = [v for v, fixed in
+          [(C1_0, fix_C1), (C2_start, fix_C2), (log10_a_T_ref_0, False)]
+          if not fixed]
+    lb = [c2_min if n == 'C2' else -np.inf for n in free_names]
+    ub = [np.inf] * len(free_names)
+
+    def model(T_arg, *free_vals):
+        vals = dict(zip(free_names, free_vals))
+        return wlf_log10_shift(
+            T_arg, T_ref,
+            vals.get('C1', C1_0),
+            vals.get('C2', C2_0),
+        ) + vals['log10_a_T_ref']
+
+    fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub),
+                              log10_space=True, sigma=sigma)
+    result = dict(zip(free_names, fitted))
+    C1_fit = float(result.get('C1', C1_0))
+    C2_fit = float(result.get('C2', C2_0))
+    a_T_ref_fit = 10.0 ** float(result['log10_a_T_ref'])
+
+    if not return_quality:
+        return C1_fit, C2_fit, a_T_ref_fit
+
+    log10_model = wlf_log10_shift(T, T_ref, C1_fit, C2_fit, a_T_ref_fit)
+    if not np.all(np.isfinite(log10_model)):
+        # The pole is ruled out above, so this catches only an offset that
+        # under/overflowed the 10** round-trip on its way out of the optimizer.
+        raise ValueError(
+            "divide by zero detected when calculating WLF. "
+            "Please adjust parameters or manually provide shift factors."
+        )
+    n_free = 3 - int(fix_C1) - int(fix_C2)  # a_T_ref always free
+    chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
+    return C1_fit, C2_fit, a_T_ref_fit, chi2
 
 
 def fit_hybrid_coefficients(
@@ -2355,9 +2393,12 @@ def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
         Tg, TL, C1, C2, Ea: Shift-model parameters; the curve is skipped
             unless its model's full set is present (Tg/C1/C2 for WLF,
             TL/C1/C2/Ea for hybrid).
-        a_T_ref (float): Vertical offset for the hybrid curve (the data's
-            shift factor at TL, co-fitted by fit_hybrid_coefficients). None
-            falls back to 1.0 — correct only for data referenced to TL.
+        a_T_ref (float): Vertical offset for the model curve — the data's
+            shift factor at the model's anchor, co-fitted by
+            fit_wlf_coefficients (at Tg) or fit_hybrid_coefficients (at TL).
+            None falls back to 1.0, which is right when no shift file was
+            fitted (the model is then its own reference) and wrong for a file
+            referenced anywhere else.
         data_T_range (tuple): (min, max) temperature of the viscoelastic
             data, or None when no temperature axis exists.
         chi2_reduced (float): Fit-time reduced chi-squared to stamp on the
@@ -2399,7 +2440,10 @@ def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
         """log10(a_T) of the model at T_arr; non-finite/out-of-window -> nan."""
         if shift_model == 'WLF':
             with np.errstate(divide='ignore', invalid='ignore'):
-                log10_a = wlf_log10_shift(T_arr, Tg, C1, C2)
+                log10_a = wlf_log10_shift(
+                    T_arr, Tg, C1, C2,
+                    a_T_ref if a_T_ref is not None else 1.0,
+                )
         else:
             # hybrid_shift raises ValueError at a hand-entered pole (fitted
             # parameters cannot reach one: C2 is floored at 1 and its WLF
@@ -2523,7 +2567,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             back to the universal-WLF view.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
             Supplying one counts as requesting a transform even under 'none'.
-        a_T_ref (float): Vertical offset for the hybrid curve on the shift
+        a_T_ref (float): Vertical offset for the model curve on the shift
             figure (from fit_hybrid_coefficients via /fit-shift/). Display
             only — the transform itself never reads it.
         shift_chi2_reduced (float): Fit-time reduced chi-squared of the shift

@@ -60,5 +60,7 @@ SHIFT_DATA_WITH_ERROR = {**SHIFT_DATA, 'Error': SHIFT_ERROR}
 C1_RETURNED = 14.0
 C2_RETURNED = 45.0
 EA_RETURNED = 80.0
-A_T_REF_RETURNED = 1.0
+# Deliberately not 1.0: both fits co-fit this offset, and a 1.0 sentinel could
+# not tell a surfaced fit result from a hardcoded anchor value.
+A_T_REF_RETURNED = 9.07
 CHI2_RETURNED = 0.42

@@ -1,7 +1,7 @@
 """
 Shift-coefficient calibration: `fit_wlf_coefficients` (recovers C1/C2) and
-`fit_hybrid_coefficients` (recovers C1/C2/Ea and co-fits the a_T_ref offset)
-from measured shift-factor data.
+`fit_hybrid_coefficients` (recovers C1/C2/Ea) from measured shift-factor data.
+Both co-fit the a_T_ref offset — the data's shift factor at the model's anchor.
 
 Pure functions running the real optimizer on small synthetic data — no Flask
 app, no disk. Run when changing the fit math, the pole-avoidance bounds, or the
@@ -44,7 +44,7 @@ class TestFitWlfCoefficients(unittest.TestCase):
 
     def test_round_trip_recovers_C1_and_C2(self):
         # Both params free — fit must recover the true values to tight tolerance.
-        C1_fit, C2_fit = fit_wlf_coefficients(
+        C1_fit, C2_fit, _ = fit_wlf_coefficients(
             self.T, self.a_T, self.T_REF,
             C1=self.C1_TRUE, C2=self.C2_TRUE,
         )
@@ -53,7 +53,7 @@ class TestFitWlfCoefficients(unittest.TestCase):
 
     def test_fixed_C1_returned_exactly_and_C2_fitted(self):
         # C1 is pinned; C2 must be fitted back to truth.
-        C1_fit, C2_fit = fit_wlf_coefficients(
+        C1_fit, C2_fit, _ = fit_wlf_coefficients(
             self.T, self.a_T, self.T_REF,
             C1=self.C1_TRUE, C2=self.C2_TRUE,
             fix_C1=True,
@@ -67,9 +67,51 @@ class TestFitWlfCoefficients(unittest.TestCase):
         # the universal constants are both the truth and the starting point.
         T = np.linspace(30.0, 80.0, 20)
         a_T = wlf_shift(T, self.T_REF, UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2)
-        C1_fit, C2_fit = fit_wlf_coefficients(T, a_T, self.T_REF)
+        C1_fit, C2_fit, _ = fit_wlf_coefficients(T, a_T, self.T_REF)
         self.assertAlmostEqual(C1_fit, UNIVERSAL_WLF_C1, places=4)
         self.assertAlmostEqual(C2_fit, UNIVERSAL_WLF_C2, places=4)
+
+    def test_returns_a_T_ref_near_one_for_Tg_referenced_data(self):
+        # setUpClass data is exact WLF at T_REF (a_T == 1 there), so the
+        # co-fitted offset must come back at 1.0 and leave C1/C2 alone.
+        *_, a_T_ref = fit_wlf_coefficients(self.T, self.a_T, self.T_REF)
+        self.assertAlmostEqual(a_T_ref, 1.0, places=6)
+
+    def test_recovers_offset_when_data_is_not_referenced_to_Tg(self):
+        # A master curve built at some other temperature carries a_T == 1
+        # there, not at Tg — the whole table is scaled by a constant. The fit
+        # must attribute that constant to a_T_ref and still return the true
+        # shape parameters, over decades of offset in both directions.
+        for K in (1.0e3, 1.0e-6):
+            with self.subTest(K=K):
+                C1_fit, C2_fit, a_T_ref = fit_wlf_coefficients(
+                    self.T, self.a_T * K, self.T_REF)
+                self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+                self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+                self.assertAlmostEqual(a_T_ref / K, 1.0, places=4)
+
+    def test_offset_is_fitted_even_with_both_shape_params_fixed(self):
+        # C1/C2 fixed leaves the offset as the only free parameter — a
+        # one-parameter linear least squares, not "nothing to optimize".
+        K = 250.0
+        C1_fit, C2_fit, a_T_ref = fit_wlf_coefficients(
+            self.T, self.a_T * K, self.T_REF,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, fix_C1=True, fix_C2=True,
+        )
+        self.assertEqual((C1_fit, C2_fit), (self.C1_TRUE, self.C2_TRUE))
+        self.assertAlmostEqual(a_T_ref / K, 1.0, places=6)
+
+    def test_offset_beats_the_anchored_fit_on_offset_data(self):
+        # The point of co-fitting: anchoring at a_T == 1 forces C1/C2 to absorb
+        # the offset, which they cannot do without distorting the shape.
+        K = 100.0
+        C1_fit, C2_fit, a_T_ref = fit_wlf_coefficients(
+            self.T, self.a_T * K, self.T_REF)
+        free = np.log10(wlf_shift(self.T, self.T_REF, C1_fit, C2_fit, a_T_ref))
+        anchored = np.log10(wlf_shift(self.T, self.T_REF, C1_fit, C2_fit))
+        target = np.log10(self.a_T * K)
+        self.assertLess(np.abs(free - target).max(), 1e-6)
+        self.assertGreater(np.abs(anchored - target).max(), 1.0)
 
     def test_nonpositive_a_T_raises_value_error(self):
         # a_T containing zero is physically meaningless; log10 is undefined.
@@ -99,7 +141,7 @@ class TestFitWlfCoefficients(unittest.TestCase):
 
         # Both C1 and C2 free, default initial guesses — this is the case that
         # used to raise ValueError before the fix.
-        C1_fit, C2_fit = fit_wlf_coefficients(T, a_T, T_ref_local)
+        C1_fit, C2_fit, _ = fit_wlf_coefficients(T, a_T, T_ref_local)
 
         self.assertTrue(np.isfinite(C1_fit) and C1_fit > 0,
                         f"Expected finite positive C1, got {C1_fit}")
@@ -247,15 +289,15 @@ class TestShiftFitQuality(unittest.TestCase):
         rng = np.random.RandomState(0)
         cls.a_T_noisy = cls.a_T * 10.0 ** (0.1 * rng.randn(len(cls.T)))
 
-    def test_default_arity_is_unchanged(self):
+    def test_default_arity_carries_the_co_fitted_offset(self):
         self.assertEqual(
-            len(fit_wlf_coefficients(self.T, self.a_T, self.T_REF)), 2)
+            len(fit_wlf_coefficients(self.T, self.a_T, self.T_REF)), 3)
 
     def test_wlf_quality_arity_and_exact_data_chi2_is_zero(self):
         result = fit_wlf_coefficients(
             self.T, self.a_T, self.T_REF, return_quality=True)
-        self.assertEqual(len(result), 3)
-        self.assertLess(result[2], 1e-10)
+        self.assertEqual(len(result), 4)
+        self.assertLess(result[3], 1e-10)
 
     def test_hybrid_quality_arity_and_exact_data_chi2_is_zero(self):
         T = np.linspace(-10.0, 90.0, 25)
@@ -272,14 +314,15 @@ class TestShiftFitQuality(unittest.TestCase):
         self.assertLess(chi2, 1.0)
 
     def test_dof_not_positive_gives_none(self):
-        # 2 points, 2 free params → nu = 0 → chi2_reduced undefined.
+        # 2 points, 3 free params (C1, C2 and the offset) → nu < 0 → undefined.
         *_, chi2 = fit_wlf_coefficients(
             self.T[:2], self.a_T[:2], self.T_REF, return_quality=True)
         self.assertIsNone(chi2)
 
-    def test_both_fixed_scores_supplied_model_with_full_dof(self):
-        # No optimization, but the supplied model is still scored (n_free=0).
-        C1_fit, C2_fit, chi2 = fit_wlf_coefficients(
+    def test_both_fixed_scores_supplied_model_against_fitted_offset(self):
+        # Only the offset is optimized (n_free=1); C1/C2 are echoed and the
+        # supplied curve is still scored.
+        C1_fit, C2_fit, _a_T_ref, chi2 = fit_wlf_coefficients(
             self.T, self.a_T_noisy, self.T_REF,
             C1=self.C1_TRUE, C2=self.C2_TRUE, fix_C1=True, fix_C2=True,
             return_quality=True,
@@ -295,8 +338,8 @@ class TestShiftFitQuality(unittest.TestCase):
                                   sigma_a_T=sigma, return_quality=True)
         r2 = fit_wlf_coefficients(self.T, self.a_T_noisy, self.T_REF,
                                   sigma_a_T=2.0 * sigma, return_quality=True)
-        np.testing.assert_allclose(r1[:2], r2[:2], rtol=1e-6)
-        self.assertAlmostEqual(r1[2] / r2[2], 4.0, places=6)
+        np.testing.assert_allclose(r1[:3], r2[:3], rtol=1e-6)
+        self.assertAlmostEqual(r1[3] / r2[3], 4.0, places=6)
 
     def test_ones_sigma_reproduces_unweighted_fit(self):
         # sigma_log10 == 1 for every point is curve_fit's implicit default.
@@ -304,7 +347,7 @@ class TestShiftFitQuality(unittest.TestCase):
         ones = fit_wlf_coefficients(
             self.T, self.a_T_noisy, self.T_REF,
             sigma_a_T=np.abs(self.a_T_noisy) * np.log(10.0))
-        np.testing.assert_allclose(unweighted, ones[:2], rtol=0, atol=0)
+        np.testing.assert_allclose(unweighted, ones, rtol=0, atol=0)
 
     def test_nonuniform_sigma_moves_the_fit(self):
         # Point weights must actually reach the optimizer, not just the score.

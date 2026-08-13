@@ -89,7 +89,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
     # ------------------------------------------------------------------
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_happy_path_returns_eight_coefficient_keys(
@@ -104,18 +105,22 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         )
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
-    def test_wlf_happy_path_a_T_ref_is_one(
+    def test_wlf_happy_path_surfaces_co_fit_a_T_ref(
             self, _exists, _upload, _fit):
-        # WLF is anchored at T_ref=Tg where a_T == 1 by construction.
+        # The WLF fit co-fits the vertical offset at Tg (the shift file need
+        # not be referenced there), and the route must surface what it fitted
+        # rather than the 1.0 the anchored model used to imply.
         resp = self._post(self._base_wlf_body())
         data = json.loads(resp.data)
-        self.assertEqual(data['a_T_ref'], 1.0)
+        self.assertEqual(data['a_T_ref'], A_T_REF_RETURNED)
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_happy_path_ea_and_tl_are_null(
@@ -126,7 +131,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertIsNone(data['TL'])
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_happy_path_c1_c2_are_plain_floats(
@@ -163,7 +169,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertEqual(data['a_T_ref'], A_T_REF_RETURNED)
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_supplied_c1_passes_fix_c1_true_to_fit(
@@ -175,7 +182,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertTrue(kwargs.get('fix_C1'))
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_response_lacks_chart_keys(
@@ -188,7 +196,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
             self.assertNotIn(chart_key, data)
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_surfaces_chi2_and_requests_quality(
@@ -211,7 +220,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertEqual(data['chi2_reduced'], CHI2_RETURNED)
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init',
            return_value=SHIFT_DATA_WITH_ERROR)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
@@ -226,7 +236,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
                          list(SHIFT_DATA_WITH_ERROR['Error']))
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_wlf_without_error_column_sigma_is_none(
@@ -237,7 +248,8 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         self.assertIsNone(kwargs.get('sigma_a_T'))
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
-           return_value=(C1_RETURNED, C2_RETURNED, CHI2_RETURNED))
+           return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
+                         CHI2_RETURNED))
     @patch('app.dynamfit.routes.upload_init', return_value=SHIFT_DATA)
     @patch('app.dynamfit.routes.check_file_exists', return_value=True)
     def test_string_coefficients_are_coerced_to_float(

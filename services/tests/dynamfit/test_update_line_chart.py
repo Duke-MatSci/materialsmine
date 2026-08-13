@@ -390,6 +390,25 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
         self.assertTrue(all(set(r) == {'Temperature', 'a_T (model)'}
                             for r in shift_records))
 
+    def test_wlf_curve_honors_a_T_ref_offset(self):
+        # The WLF curve carries the same co-fitted offset the hybrid one does;
+        # without it a fit against a table referenced away from Tg draws a
+        # curve parallel to — and decades off — its own Experiment markers.
+        kwargs = dict(shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2)
+        *_, fig_unit, _ = self._run(**kwargs)
+        *_, fig_shifted, _ = self._run(a_T_ref=100.0, **kwargs)
+        unit = self._trace(fig_unit, 'WLF fit')
+        shifted = self._trace(fig_shifted, 'WLF fit')
+        # Compare at shared temperatures, not by position: the offset moves
+        # which grid points clear the |log10 a_T| window, so the two traces
+        # are drawn over different (overlapping) spans of the same grid.
+        common, i_unit, i_shift = np.intersect1d(
+            np.array(unit.x), np.array(shifted.x), return_indices=True)
+        self.assertGreater(len(common), 0)
+        np.testing.assert_allclose(
+            np.array(shifted.y)[i_shift] / np.array(unit.y)[i_unit],
+            100.0, rtol=1e-9)
+
     def test_hybrid_curve_honors_a_T_ref_offset(self):
         kwargs = dict(shift_model='hybrid', TL=40.0, C1=self.C1, C2=self.C2,
                       Ea=150.0)

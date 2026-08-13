@@ -1143,8 +1143,9 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
       if (fitted.Tg != null) extractPayload.Tg = fitted.Tg;
       if (fitted.Ea != null) extractPayload.Ea = fitted.Ea;
       if (fitted.TL != null) extractPayload.TL = fitted.TL;
-      // Display-only passthroughs for the shift figure: the hybrid curve's
-      // vertical offset and the fit-time χ²/ν stamp. Deliberately absent from
+      // Display-only passthroughs for the shift figure: the fitted curve's
+      // vertical offset (a_T_ref, co-fitted by both models) and the fit-time
+      // χ²/ν stamp. Deliberately absent from
       // the debounced coefficient watcher's payload, so hand-editing a
       // coefficient drops the then-stale readout.
       if (fitted.a_T_ref != null) extractPayload.a_T_ref = fitted.a_T_ref;

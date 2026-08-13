@@ -93,7 +93,7 @@ def extract_data_from_file(request_id):
         TL_estimate = data.get('TL_estimate', False)
 
         # Display-only passthroughs for the shift figure, echoed by the client
-        # from its last /fit-shift/ response: the hybrid curve's vertical
+        # from its last /fit-shift/ response: the model curve's vertical
         # offset and the fit-time reduced chi-squared (only the fit knows how
         # many parameters were free, so it is not recomputed here).
         a_T_ref = as_float_or_none(data.get('a_T_ref'), 'a_T_ref')
@@ -303,9 +303,10 @@ def fit_shift_coefficients(request_id):
     data file and so cannot estimate them. Supplying any of C1/C2/Ea holds that
     coefficient fixed instead of fitting it.
 
-    The hybrid fit co-fits a vertical reference offset, surfaced as a_T_ref (the
-    data's shift factor at TL; 1.0 only if the file is truly referenced to TL).
-    For WLF, a_T_ref is 1.0 by construction (the fit is anchored at T_ref=Tg).
+    Both fits co-fit a vertical reference offset, surfaced as a_T_ref: the
+    data's shift factor at the model's anchor (Tg for WLF, TL for hybrid), and
+    1.0 only if the file is truly referenced there. Without it the shape
+    parameters bend to drag the curve through a_T == 1 at the anchor.
     """
     try:
         start_time = datetime.datetime.now()
@@ -339,7 +340,7 @@ def fit_shift_coefficients(request_id):
         if shift_model == 'WLF':
             if Tg is None:
                 return jsonify({'message': 'Tg is required for WLF coefficient fitting'}), 400
-            C1_fit, C2_fit, chi2_reduced = fit_wlf_coefficients(
+            C1_fit, C2_fit, a_T_ref, chi2_reduced = fit_wlf_coefficients(
                 T, a_T, T_ref=Tg,
                 C1=C1, C2=C2,
                 fix_C1=(C1 is not None),
@@ -351,8 +352,7 @@ def fit_shift_coefficients(request_id):
                 'transform_method': 'WLF',
                 'Tg': Tg, 'C1': C1_fit, 'C2': C2_fit,
                 'Ea': None, 'TL': None,
-                # WLF is anchored at T_ref=Tg, where a_T == 1 by construction.
-                'a_T_ref': 1.0,
+                'a_T_ref': a_T_ref,
                 'chi2_reduced': chi2_reduced,
             }
         else:  # hybrid
