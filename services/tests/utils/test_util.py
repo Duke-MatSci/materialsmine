@@ -110,6 +110,39 @@ class TestUploadInit(unittest.TestCase):
         self.assertEqual(set(result.keys()), {'Frequency', 'E Storage', 'E Loss'})
         np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
 
+    def test_parses_excel_export_with_bom_trailing_commas_and_crlf(self):
+        # The shape Excel actually writes: UTF-8 BOM, CRLF, and a trailing
+        # comma on every row. The empty last field made is_numeric_row reject
+        # every line, so a perfectly good file reported "No numeric rows".
+        path = os.path.join(Config.FILES_DIRECTORY, 'excel.csv')
+        with open(path, 'wb') as f:
+            f.write(b'\xef\xbb\xbf1,100,10,\r\n2,200,20,\r\n')
+        result = upload_init('excel.csv', 'frequency')
+        self.assertEqual(set(result.keys()), {'Frequency', 'E Storage', 'E Loss'})
+        np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
+
+    def test_bom_does_not_drop_first_data_row(self):
+        # The BOM glues onto the first field, so float() rejects it and the row
+        # reads as a header — silently losing a data point rather than failing.
+        path = os.path.join(Config.FILES_DIRECTORY, 'bom.csv')
+        with open(path, 'wb') as f:
+            f.write(b'\xef\xbb\xbf1,100,10\n2,200,20\n')
+        result = upload_init('bom.csv', 'frequency')
+        np.testing.assert_array_equal(result['Frequency'], [1.0, 2.0])
+
+    def test_trailing_delimiter_with_header_row_still_skips_header(self):
+        name = self._write(
+            'trailing_header.csv',
+            "Frequency,E Storage,E Loss,\n1,100,10,\n2,200,20,\n",
+        )
+        result = upload_init(name, 'frequency')
+        np.testing.assert_array_equal(result['E Loss'], [10.0, 20.0])
+
+    def test_trailing_tab_in_tsv_is_dropped(self):
+        name = self._write('trailing.tsv', "1\t100\t10\t\n2\t200\t20\t\n")
+        result = upload_init(name, 'frequency')
+        np.testing.assert_array_equal(result['E Storage'], [100.0, 200.0])
+
     def test_shift_domain_returns_2col_dict(self):
         name = self._write('shift.csv', "Temperature,a_T\n0,0.5\n25,1.0\n")
         result = upload_init(name, 'shift')

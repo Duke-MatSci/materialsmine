@@ -107,11 +107,28 @@ def upload_init(file_name, domain):
         )
 
     file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
-    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+    # utf-8-sig, not utf-8: Excel stamps a BOM on its CSV exports, and it lands
+    # glued to the first field of the first row. float() rejects it, so the row
+    # reads as a header and its data is silently dropped from the fit.
+    with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as f:
         csvlines = f.readlines()
 
     if not csvlines:
         raise ValueError(f"File {file_name} is empty.")
+
+    # Spreadsheet exports routinely end every row with the delimiter, leaving a
+    # trailing empty field that neither is_numeric_row nor np.loadtxt can read
+    # as a float — so an otherwise perfect file reports "no numeric rows".
+    # Dropping those costs nothing: a genuinely empty column is unparseable on
+    # either path. Whitespace-split (.txt) files have no such field to drop.
+    if delimiter is not None:
+        trimmed = []
+        for line in csvlines:
+            line = line.rstrip()
+            while line.endswith(delimiter):
+                line = line[: -len(delimiter)].rstrip()
+            trimmed.append(line + '\n')
+        csvlines = trimmed
 
     valid_start_index = None
     for i, row in enumerate(csvlines):
