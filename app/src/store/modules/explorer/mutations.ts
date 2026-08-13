@@ -73,6 +73,9 @@ export default {
   triggerDynamfitSurprise(state: ExplorerState): void {
     state.dynamfitSurpriseRequest++;
   },
+  triggerDynamfitTransformTab(state: ExplorerState): void {
+    state.dynamfitTransformTabRequest++;
+  },
   setDynamfitTransformMethod(
     state: ExplorerState,
     payload: 'none' | 'WLF' | 'hybrid' | 'manual'

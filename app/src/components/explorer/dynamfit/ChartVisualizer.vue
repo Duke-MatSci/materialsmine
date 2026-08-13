@@ -274,8 +274,19 @@ watch(dynamfitData, (newVal, oldVal) => {
 
   if (wasEmpty) {
     controlledTab.value = dynamfitDomain.value === 'temperature' ? 'tab-temp-new' : 'tab-home';
-  } else if (transformMethod.value && transformMethod.value !== 'none') {
-    controlledTab.value = dynamfitDomain.value === 'frequency' ? 'tab-temp-new' : 'tab-home';
   }
 });
+
+// The cross-domain charts are what an omega-T transform just produced, so an
+// Update that applied one lands the user on them. Driven by the setting
+// panel's explicit signal rather than by the data watcher above: a repaint
+// from any other control (prony terms, smoothness, a new file) still carries
+// the applied transform_method, and switching tabs under those would yank the
+// user off whatever they were reading.
+watch(
+  () => store.state.explorer.dynamfitTransformTabRequest,
+  () => {
+    controlledTab.value = dynamfitDomain.value === 'frequency' ? 'tab-temp-new' : 'tab-home';
+  }
+);
 </script>

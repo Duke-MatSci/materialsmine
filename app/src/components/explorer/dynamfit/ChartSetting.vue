@@ -1169,7 +1169,12 @@ const fitShiftAndExtract = async (extractPayload: Record<string, unknown>): Prom
   await store.dispatch('explorer/fetchDynamfitData', extractPayload);
 };
 
-const updateChart = async (): Promise<void> => {
+// `fromUpdate` says the user hit the Update button, as opposed to one of the
+// watchers below repainting after a prony/smoothness/file change. Only that
+// click is allowed to move the visualizer to the cross-domain tab: a repaint
+// that happens to carry the already-applied transform should leave the user on
+// whatever tab they were reading.
+const updateChart = async (fromUpdate = false): Promise<void> => {
   // Belt and braces: the watchers below already guard, but this also covers the
   // handleSelect() shortcut just underneath.
   if (resetting.value) return;
@@ -1199,6 +1204,7 @@ const updateChart = async (): Promise<void> => {
       await fitShiftAndExtract(payload);
       updateBtn.value = false;
       if (selectedProperty.value === 'temperature') cTtspApplied.value = true;
+      if (fromUpdate) store.commit('explorer/triggerDynamfitTransformTab');
       cShiftModelOpen.value = false;
       nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
     } catch (err: unknown) {
@@ -1244,6 +1250,7 @@ const updateChart = async (): Promise<void> => {
   const transformSent = payload.transform_method !== 'none';
   if (selectedProperty.value === 'temperature') cTtspApplied.value = transformSent;
   if (transformSent) {
+    if (fromUpdate) store.commit('explorer/triggerDynamfitTransformTab');
     cShiftModelOpen.value = false;
     nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
@@ -1254,7 +1261,7 @@ const handleUpdate = async (): Promise<void> => {
   // the disabled class ghosts it, this guard makes the state real.
   if (!updateBtn.value) return;
   updateBtn.value = false;
-  await updateChart();
+  await updateChart(true);
 };
 
 const goBack = (): void => {

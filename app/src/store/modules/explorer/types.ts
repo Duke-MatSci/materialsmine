@@ -31,6 +31,9 @@ export interface ExplorerState {
     originalName: string;
   };
   dynamfitSurpriseRequest: number;
+  // Bumped when an Update click applies an omega-T transform, so the visualizer
+  // can jump to the cross-domain tab for that click and only that click.
+  dynamfitTransformTabRequest: number;
   // Bumped on every dynamfit reset so in-flight fits can tell they are stale.
   dynamfitResetCount: number;
   dynamfit: {
