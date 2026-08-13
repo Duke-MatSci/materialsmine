@@ -23,7 +23,7 @@
 
     <!-- Domain -->
     <div class="viz-u-mgbottom-big">
-      <label class="md-body-2">Domain</label>
+      <label class="md-body-2">Input data domain</label>
       <div class="dynamfit-domain-switcher">
         <button
           :class="[
