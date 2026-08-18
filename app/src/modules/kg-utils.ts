@@ -61,8 +61,10 @@ async function saveSDDDataset(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
+    console.log('response:', response);
     return response;
   } catch (err) {
+    console.log('err:', err);
     const uploadedFiles: FileItem[] = [];
     if (distrRes?.files) uploadedFiles.push(...distrRes.files);
     if (imgRes?.files) uploadedFiles.push(...imgRes.files);
