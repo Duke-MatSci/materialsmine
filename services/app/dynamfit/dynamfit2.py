@@ -384,6 +384,58 @@ def _prony_objective(
     return loss, 2 * grad  # more chain rule (squared errors)
 
 
+def _scaled_smoothness(smoothness: float, npen: int, dof: int,
+                       log_range: float) -> float:
+    """
+    Turn the user-facing smoothness knob into the penalty weight actually used.
+
+    Makes the knob mean the same thing on any upload. The data term sums over
+    n_resid residuals while the penalty sums over npen - 2 second differences,
+    so both need normalizing, and the penalty needs more care than it looks:
+
+      * dof, because the data term grows with the row count. Without this a
+        41k-row broadband file needed ~100x the smoothness a 400-row file needs
+        for the same effect.
+      * 1/h**3, because a second difference is NOT a second derivative. On a
+        log-tau grid of spacing h, d2H = h**2 * H'' + O(h**4), and turning the
+        sum into an integral costs another h, so sum(d2H)**2 ~ h**3 *
+        integral(H''**2). That hidden h**3 ~ npen**-3 is why an uncorrected
+        weight silently weakens as terms are added: the recovered spectrum was
+        measured to get 18x rougher going from N=23 to N=100 at a fixed knob
+        setting, i.e. N was a second, undocumented smoothness control. With the
+        correction it moves 1.2x.
+
+    The pair gives V/dof = chi2_reduced + smoothness**2 * (log_range *
+    curvature), so smoothness**2 is exactly the exchange rate between the two
+    numbers the fit-quality readout puts on the plot. Note that when N is chosen
+    per decade of span, h is constant and this reduces to a pure rescaling of
+    the older dof-only normalization; the 1/h**3 only does work when N is
+    overridden independently of the span.
+
+    Lives here rather than inline in smooth_prony_fit because _prony_fit_quality
+    has to charge the Laplace expansion the SAME weight the fit was run with,
+    and it can rebuild that weight from arguments it already takes. One formula,
+    so a score cannot come to belong to a different fit than the one that ran.
+
+    Parameters:
+        smoothness (float): The user-facing knob. 0 disables the penalty.
+        npen (int): Number of penalized terms, i.e. the grid size N.
+        dof (int): Residual degrees of freedom of the full problem, n_resid - m.
+        log_range (float): ln(tau_max / tau_min) of the fit grid.
+
+    Returns:
+        float: The weight to hand _prony_objective. Falls back to smoothness
+        unchanged when fewer than 3 penalized terms leave np.diff(..., n=2)
+        empty, or when a degenerate span leaves h undefined; the penalty term
+        is identically zero either way, so any finite weight does, and this
+        avoids a zero division.
+    """
+    if npen < 3 or log_range <= 0:
+        return smoothness
+    h = log_range / (npen - 1)
+    return smoothness * np.sqrt(max(dof, 1) / h ** 3)
+
+
 # Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the data
 # misfit alone; neg_log_posterior is the Laplace-approximated negative log
 # posterior of lam = smoothness**2; curvature is the roughness of the fitted log
@@ -440,21 +492,25 @@ def _prony_fit_quality(
         solid: bool,
         n_resid: int,
         log_range: float,
-        prior_lam: float = None,
 ) -> _FitQuality:
     """
     Score a converged Prony fit: reduced chi-squared and the log posterior of lam.
 
     The second number is a Laplace (saddle-point) approximation of
 
-        log pi_lam = -V(H) + 0.5 * (log|A| + n_tau * log(lam) - log|C|) - lam
+        log pi_lam = -V(H) + 0.5 * (log|A| + n_tau * log(lam) - log|C|) - lam0
 
-    with H = logcoefs, lam = smoothness**2, V = rho^2 + lam * eta^2 (the
-    _prony_objective loss), A = L.T @ L for the second-difference operator L
-    behind the penalty, and C = lam * A + J.T @ J + diag(r.T @ J) — which is
-    exactly 0.5 * Hess(V), the second-derivative term being diagonal because
-    the coefficients are parameterized as exp(logcoefs). The trailing -lam is a
-    unit-rate exponential prior on lam.
+    with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2,
+    V = rho^2 + lam * eta^2 (the _prony_objective loss), A = L.T @ L for the
+    second-difference operator L behind the penalty, and
+    C = lam * A + J.T @ J + diag(r.T @ J) — which is exactly 0.5 * Hess(V), the
+    second-derivative term being diagonal because the coefficients are
+    parameterized as exp(logcoefs). The trailing -lam0 is a unit-rate
+    exponential prior, charged against the UNSCALED lam0 = smoothness**2: the
+    prior belongs on the user-facing knob, not on the internally normalized
+    weight, which would punish a large or finely-gridded upload far harder than
+    a small one for identical physical smoothing and so undo the very
+    normalization _scaled_smoothness applies.
 
     Two details that are easy to get wrong:
 
@@ -487,8 +543,11 @@ def _prony_fit_quality(
         data (numpy.ndarray): 1-D array of target values, pre-weighted.
         basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
             basis @ exp(logcoefs) is the model.
-        smoothness (float): Penalty strength actually used in the fit, i.e. the
-            internally normalized value, since lam * A must match the fitted V.
+        smoothness (float): The user-facing knob, UNSCALED. The weight the
+            fit ran with is rebuilt here through _scaled_smoothness, whose other
+            three inputs (npen, dof, log_range) are all already on hand — so
+            lam * A matches the fitted V by construction rather than by the
+            caller remembering which of two values to pass where.
         solid (bool): Whether the leading coefficient is an equilibrium term
             excluded from the smoothness penalty.
         n_resid (int): Residual count of the FULL problem (2 * len(omega)), used
@@ -496,9 +555,6 @@ def _prony_fit_quality(
             whose length is the reduced m + 1 for any upload size.
         log_range (float): ln(tau_max / tau_min) of the fit grid, for the
             curvature normalization. Also unavailable from the reduced system.
-        prior_lam (float): lam to charge the exponential prior for. Defaults to
-            smoothness**2; pass the UNSCALED smoothness**2 so the prior tracks
-            the user-facing knob rather than the internally normalized one.
 
     Returns:
         _FitQuality: (chi2_reduced, neg_log_posterior, curvature), all floats and
@@ -533,11 +589,14 @@ def _prony_fit_quality(
     # about. npen < 3 would also reach log(npen - 1) = log(0) below.
     neg_log_posterior = None
     if len(curve) and smoothness:
-        lam = smoothness * smoothness
+        # The weight the fit was actually run with. len(curve) already
+        # guarantees npen >= 3, so only a degenerate span takes the fallback.
+        scaled = _scaled_smoothness(smoothness, npen, dof, log_range)
+        lam = scaled * scaled
         # Take V from the objective itself so the two cannot drift apart on the
         # penalty convention. Note V is NOT a marginal likelihood: it is the
         # unnormalized negative log JOINT density at the mode (misfit+penalty).
-        V, _ = _prony_objective(logcoefs, data, basis, smoothness, solid)
+        V, _ = _prony_objective(logcoefs, data, basis, scaled, solid)
 
         # r.T @ J, the exact second-derivative term. Same expression as the
         # objective's gradient before the chain rule is doubled and before the
@@ -573,10 +632,9 @@ def _prony_fit_quality(
                 - np.log(12.0)
             )
             # abs(): the penalty is sign-agnostic in smoothness (it enters
-            # squared) and nothing upstream rejects a negative value.
-            loglam = 2 * np.log(abs(smoothness))
-            if prior_lam is None:
-                prior_lam = lam
+            # squared) and nothing upstream rejects a negative value. The
+            # scale factor is positive, so it carries that sign through.
+            loglam = 2 * np.log(abs(scaled))
             # Negated so that lower is better. This is a log DENSITY, so
             # positivity is not guaranteed — it holds in practice because V
             # dominates for any real upload. Deliberately not clamped.
@@ -584,7 +642,7 @@ def _prony_fit_quality(
                 V
                 - 0.5 * (logpdetA + (npen - 2) * loglam - logdetC)
                 - 0.5 * (2 + solid) * np.log(np.pi)
-                + prior_lam
+                + smoothness * smoothness
             )
 
     return _FitQuality(
@@ -773,12 +831,13 @@ def smooth_prony_fit(
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the smoothing prior on the
             log-coefficients. Pass 0 to disable. Normalized internally by
-            sqrt(dof / h**3), h being the log-tau grid spacing, which makes it
-            the exchange rate between the two numbers the fit-quality readout
-            reports: V/dof = chi2_reduced + smoothness**2 * (log_range *
-            curvature). A given value therefore produces comparable smoothing
-            whether the file has 400 rows or 40,000, whether it is fit with 20
-            terms or 100, and whether it covers 4 decades or 20.
+            sqrt(dof / h**3) (see _scaled_smoothness), h being the log-tau grid
+            spacing, which makes it the exchange rate between the two numbers
+            the fit-quality readout reports: V/dof = chi2_reduced +
+            smoothness**2 * (log_range * curvature). A given value therefore
+            produces comparable smoothing whether the file has 400 rows or
+            40,000, whether it is fit with 20 terms or 100, and whether it
+            covers 4 decades or 20.
         solid (bool): Whether to include an equilibrium-modulus term.
         return_fit_quality (bool): Append a _FitQuality to the return tuple.
             Off by default so existing two-value unpacking keeps working.
@@ -858,37 +917,11 @@ def smooth_prony_fit(
         x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
     else:
         x0 = np.full(m, np.log(E_stor.max() / m))
-    # Make the knob mean the same thing on any upload. The data term sums over
-    # n_res residuals while the penalty sums over N-2 second differences, so
-    # both need normalizing, and the penalty needs more care than it looks:
-    #
-    #   * dof, because the data term grows with the row count. Without this a
-    #     41k-row broadband file needed ~100x the smoothness a 400-row file
-    #     needs for the same effect.
-    #   * 1/h**3, because a second difference is NOT a second derivative.
-    #     On a log-tau grid of spacing h, d2H = h**2 * H'' + O(h**4), and
-    #     turning the sum into an integral costs another h, so
-    #     sum(d2H)**2 ~ h**3 * integral(H''**2). That hidden h**3 ~ N**-3 is
-    #     why an uncorrected weight silently weakens as terms are added: the
-    #     recovered spectrum was measured to get 18x rougher going from N=23 to
-    #     N=100 at a fixed knob setting, i.e. N was a second, undocumented
-    #     smoothness control. With the correction it moves 1.2x.
-    #
-    # The pair gives V/dof = chi2_reduced + smoothness**2 * integral(H''**2),
-    # so smoothness**2 is exactly the exchange rate between the two numbers the
-    # fit-quality readout puts on the plot. Note that when N is chosen per
-    # decade of span, h is constant and this reduces to a pure rescaling of the
-    # older dof-only normalization; the 1/h**3 only does work when N is
-    # overridden independently of the span.
+    # Normalize the knob so it means the same thing on any upload; see
+    # _scaled_smoothness, which _prony_fit_quality re-derives from the same
+    # inputs so the reported score belongs to the fit that was actually run.
     log_range = np.log(tau_i[-1] / tau_i[0])
-    if N >= 3 and log_range > 0:
-        h = log_range / (N - 1)
-        smoothness_scaled = smoothness * np.sqrt(max(dof, 1) / h ** 3)
-    else:
-        # Fewer than 3 terms leaves np.diff(..., n=2) empty and a degenerate
-        # span leaves h undefined; the penalty term is identically zero either
-        # way, so any finite weight does, and this one avoids a zero division.
-        smoothness_scaled = smoothness
+    smoothness_scaled = _scaled_smoothness(smoothness, N, dof, log_range)
     # Upper bound on log-coefficients: no single Prony term should exceed
     # ~1000x the data maximum. Without this, the line search was measured to
     # push exp(logcoefs) into overflow on broadband master curves.
@@ -919,15 +952,9 @@ def smooth_prony_fit(
         )
 
     quality = _prony_fit_quality(
-        result.x, z, R, smoothness_scaled, solid,
+        result.x, z, R, smoothness, solid,
         n_resid=n_res,
         log_range=log_range,
-        # UNSCALED: the exp(-lam) prior belongs on the user-facing knob, not on
-        # the internally normalized weight. Charged against the scaled lam it
-        # would penalize a large or finely-gridded upload far harder than a
-        # small one for identical physical smoothing, undoing the normalization
-        # above.
-        prior_lam=smoothness * smoothness,
     )
     return tau_i, E_i, quality
 

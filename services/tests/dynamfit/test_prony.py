@@ -30,6 +30,7 @@ from app.dynamfit.dynamfit2 import (
     compute_relaxation_modulus,
     _prony_objective,
     _prony_fit_quality,
+    _scaled_smoothness,
     _prony_reduce,
     _build_coef_records,
     smooth_prony_fit,
@@ -38,8 +39,9 @@ from app.dynamfit.dynamfit2 import (
 
 
 # Arbitrary positive log-tau span for the algebraic _prony_fit_quality tests,
-# which build random bases rather than real relaxation grids. Only the
-# curvature normalization reads it, and those tests use the same value.
+# which build random bases rather than real relaxation grids. Both the curvature
+# normalization and _scaled_smoothness read it, so every helper and test in that
+# group has to use the SAME value or they stop describing one fit.
 LOG_RANGE = float(np.log(1e6))
 
 TAU = np.array([0.1, 1.0, 10.0])
@@ -331,22 +333,27 @@ class TestPronyObjective(unittest.TestCase):
 
 
 def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
-                       n_resid, log_range=None, prior_lam=None):
+                       n_resid, log_range, prior_lam=None):
     """Straightforward dense reference for _prony_fit_quality.
 
     Materializes L, A, J and C and uses eigvalsh/slogdet — everything the
     production code avoids via a closed-form pseudo-determinant and banded
-    in-place accumulation. Takes the same pre-weighted system the production
-    function does. Returns (chi2, neg_log_posterior) with the posterior None
-    exactly when C is not positive definite, matching the contract.
+    in-place accumulation. Takes the same pre-weighted system and the same
+    UNSCALED smoothness the production function does, and re-derives the
+    sqrt(dof / h**3) normalization independently rather than importing it.
+    Returns (chi2, neg_log_posterior) with the posterior None exactly when C is
+    not positive definite, matching the contract.
 
-    log_range is accepted and ignored so callers can share one kwargs dict with
-    _prony_fit_quality; it only feeds the curvature field, which this reference
-    does not compute.
+    prior_lam exists only here, so one test can show that production charges the
+    exponential prior at the unscaled knob rather than at the scaled weight; the
+    production signature has no such override.
     """
     m = len(logcoefs)
     npen = m - solid
-    lam = smoothness * smoothness
+    dof = n_resid - m
+    h = log_range / (npen - 1)
+    scaled = smoothness * np.sqrt(max(dof, 1) / h ** 3)
+    lam = scaled * scaled
     coefs = np.exp(logcoefs)
     resid = data - basis @ coefs
     L = np.zeros((npen - 2, m))
@@ -358,7 +365,6 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     V = resid @ resid + lam * (logcoefs @ A @ logcoefs)
     J = -(basis * coefs)
     C = lam * A + J.T @ J + np.diag(resid @ J)
-    dof = n_resid - m
     chi2 = (resid @ resid) / dof if dof > 0 else None
     if np.linalg.eigvalsh(C).min() <= 0:
         return chi2, None
@@ -370,7 +376,7 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
                  + nonzero.sum() * np.log(lam)
                  - np.linalg.slogdet(C)[1])
         - 0.5 * (2 + solid) * np.log(np.pi)
-        + (lam if prior_lam is None else prior_lam)
+        + (smoothness * smoothness if prior_lam is None else prior_lam)
     )
     return chi2, neg_log_posterior
 
@@ -402,6 +408,12 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     arbitrary point. Errors are set to the noise actually injected, which puts
     reduced chi-squared near 1. basis and data come back weighted by 1/std, the
     form the scoring functions take.
+
+    smoothness is the user-facing knob, and the minimize call is given the
+    SCALED weight, exactly as smooth_prony_fit does — otherwise the point would
+    be stationary for a different V than the one _prony_fit_quality rebuilds
+    from the same knob, and the posterior it returned would be meaningless.
+    Callers must score with n_resid=2*len(data) and log_range=LOG_RANGE to match.
     """
     omega = np.logspace(-2, 2, 60)
     tau_i = prony_relaxation_space(1 / omega.max(), 1 / omega.min(), N)
@@ -411,9 +423,10 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     std = np.abs(clean) * 0.02
     data = clean + std * rng.normal(size=len(clean))
     basis, data = basis / std[:, None], data / std
+    scaled = _scaled_smoothness(smoothness, N, 2 * len(data) - (N + 1), LOG_RANGE)
     result = minimize(
         _prony_objective, np.log(truth),
-        args=(data, basis, smoothness, True),
+        args=(data, basis, scaled, True),
         jac=True, method='L-BFGS-B',
     )
     return basis, data, result.x
@@ -549,8 +562,8 @@ class TestPronyFitQuality(unittest.TestCase):
                         basis, data, x = _random_fit_problem(
                             self.rng, N, solid,
                         )
-                        kwargs = dict(n_resid=2 * len(data), log_range=LOG_RANGE,
-                                      prior_lam=0.37)
+                        kwargs = dict(n_resid=2 * len(data),
+                                      log_range=LOG_RANGE)
                         got = _prony_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
@@ -632,18 +645,43 @@ class TestPronyFitQuality(unittest.TestCase):
             quality.chi2_reduced, expected, delta=1e-9 * expected,
         )
 
-    def test_prior_lam_overrides_scaled_lambda(self):
-        # smooth_prony_fit charges the exponential prior against the UNSCALED
-        # smoothness so the prior doesn't punish large uploads; that override
-        # must replace lam exactly, not add to it.
-        basis, data, x = _converged_fit_problem(self.rng, smoothness=2.0)
-        kwargs = dict(n_resid=2 * len(data), log_range=LOG_RANGE)
-        default = _prony_fit_quality(x, data, basis, 2.0, True, **kwargs)
-        override = _prony_fit_quality(x, data, basis, 2.0, True,
-                                      prior_lam=0.25, **kwargs)
+    def test_prior_is_charged_on_the_unscaled_knob(self):
+        # lam in the Laplace expansion is the SCALED weight, but the exponential
+        # prior is charged at the raw knob: against the scaled lam it would
+        # punish a large or finely-gridded upload far harder than a small one
+        # for identical physical smoothing, undoing the normalization. Nothing
+        # else in the expression separates the two, so pin it here.
+        smoothness = 2.0
+        basis, data, x = _converged_fit_problem(self.rng, smoothness=smoothness)
+        m = basis.shape[1]
+        n_resid = 2 * len(data)
+        scaled = _scaled_smoothness(smoothness, m - 1, n_resid - m, LOG_RANGE)
+        # The test is only meaningful while the two candidates are far apart.
+        self.assertGreater(scaled, 3 * smoothness)
+
+        kwargs = dict(n_resid=n_resid, log_range=LOG_RANGE)
+        got = _prony_fit_quality(x, data, basis, smoothness, True, **kwargs)
+        self.assertIsNotNone(got.neg_log_posterior)
+        _, on_knob = _dense_fit_quality(x, data, basis, smoothness, True,
+                                        prior_lam=smoothness ** 2, **kwargs)
+        _, on_weight = _dense_fit_quality(x, data, basis, smoothness, True,
+                                          prior_lam=scaled ** 2, **kwargs)
+        self.assertAlmostEqual(got.neg_log_posterior, on_knob,
+                               delta=1e-9 * abs(on_knob))
+        self.assertAlmostEqual(on_weight - on_knob,
+                               scaled ** 2 - smoothness ** 2, places=6)
+
+    def test_scaled_smoothness_falls_back_when_the_penalty_is_empty(self):
+        # Fewer than 3 penalized terms leaves np.diff(..., n=2) empty and a
+        # degenerate span leaves h undefined; the penalty is identically zero
+        # either way, so the knob passes through rather than dividing by zero.
+        self.assertEqual(_scaled_smoothness(0.4, 2, 100, LOG_RANGE), 0.4)
+        self.assertEqual(_scaled_smoothness(0.4, 20, 100, 0.0), 0.4)
+        # And the live branch is the documented sqrt(dof / h**3).
+        h = LOG_RANGE / 19
         self.assertAlmostEqual(
-            default.neg_log_posterior - override.neg_log_posterior,
-            2.0 ** 2 - 0.25, places=6,
+            _scaled_smoothness(0.4, 20, 100, LOG_RANGE),
+            0.4 * np.sqrt(100 / h ** 3), places=12,
         )
 
     def test_none_posterior_when_not_positive_definite(self):
