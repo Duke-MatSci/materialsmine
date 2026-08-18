@@ -1134,7 +1134,8 @@ const submitForm = async () => {
       dialog.value.type = 'success';
     } catch (err: any) {
       toggleDialogBox();
-      setSnackbar({ message: err.response ?? err });
+      const message = err?.failed?.[0]?.errors?.[0] ?? err.response ?? err;
+      setSnackbar({ message });
       clearFileList();
       doi.value = '';
       dataset.value = { ...DEFAULT_DATASET };
