@@ -64,7 +64,7 @@ const fileMgr = multer({ storage: fileStorage, fileFilter }).fields([
   { name: 'uploadfile', maxCount: 20 }
 ]);
 
-const minioUpload = (req, res, next) => {
+const minioUpload = async (req, res, next) => {
   // Boolean flag which determines whether to upload to the object store.
   if (req.query?.isTemp) return next();
 
@@ -73,10 +73,12 @@ const minioUpload = (req, res, next) => {
     return next();
   }
 
-  files.forEach((file) => {
-    minioPutObject(file, req);
-  });
-  next();
+  try {
+    await Promise.all(files.map((file) => minioPutObject(file, req)));
+    next();
+  } catch (err) {
+    next(err);
+  }
 };
 
 const minioPutObject = (file, req) => {
@@ -90,19 +92,22 @@ const minioPutObject = (file, req) => {
     'X-Amz-Meta-Data': 'MaterialsMine Project'
   };
 
-  minioClient.fPutObject(
-    bucketName,
-    file.filename,
-    file.path,
-    metaData,
-    (err, objInfo) => {
-      if (err) {
-        console.log(err);
+  return new Promise((resolve, reject) => {
+    minioClient.fPutObject(
+      bucketName,
+      file.filename,
+      file.path,
+      metaData,
+      (err, objInfo) => {
+        deleteFile(file.path, req);
+        if (err) {
+          reject(err);
+        } else {
+          resolve(objInfo);
+        }
       }
-
-      deleteFile(file.path, req);
-    }
-  );
+    );
+  });
 };
 
 module.exports = {
