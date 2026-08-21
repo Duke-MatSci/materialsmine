@@ -43,6 +43,19 @@ def as_float_or_none(value, name):
     """
     if value is None:
         return None
+    return as_float(value, name)
+
+
+def as_float(value, name):
+    """
+    Coerce a required request field to float.
+
+    The fit controls are number inputs, and an emptied number input travels
+    as the string '' (v-model.number cannot coerce ''), so without this the
+    range guards below compare a str to an int and die as a 500. Raises
+    ValueError (the routes' 400 path) naming the field when the value is not
+    a number.
+    """
     try:
         return float(value)
     except (TypeError, ValueError):
@@ -69,16 +82,16 @@ def extract_data_from_file(request_id):
         data = request.get_json()
         file_name = data.get('file_name')
         number_of_prony = data.get('number_of_prony', 100)
-        smoothness = data.get('smoothness', 0)
+        smoothness = as_float(data.get('smoothness', 0), 'smoothness')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
-        relative_error = data.get('relative_error', 0.2)
+        relative_error = as_float(data.get('relative_error', 0.2), 'relative_error')
         # Multiplier on the file's own error columns; the client sends both
         # this and relative_error every time, and update_line_chart consumes
         # whichever matches the upload's shape. That keeps the first fit after
         # an upload correct even though the client only learns whether error
         # columns exist from that fit's response.
-        error_scale = data.get('error_scale', 1.0)
+        error_scale = as_float(data.get('error_scale', 1.0), 'error_scale')
         # Default to 'none', not a real model: an absent transform_method means
         # the caller did not ask for a ω-T transformation. Defaulting to 'hybrid'
         # made "no transform requested" indistinguishable from "hybrid

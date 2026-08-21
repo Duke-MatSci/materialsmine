@@ -382,7 +382,6 @@
             min="0"
             max="100"
             :step="PERCENT_INPUT_STEP"
-            :placeholder="SMOOTHNESS_DEFAULT_PERCENT"
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
@@ -420,7 +419,6 @@
             min="0"
             max="100"
             :step="ERROR_SCALE_STEP"
-            :placeholder="ERROR_SCALE_DEFAULT"
           />
           <input
             v-else
@@ -436,7 +434,6 @@
             min="0"
             max="200"
             :step="PERCENT_INPUT_STEP"
-            :placeholder="RELATIVE_ERROR_DEFAULT_PERCENT"
           />
         </div>
       </div>
@@ -744,25 +741,34 @@ const eAEstimated = ref(false);
 const cDataSourceOpen = ref(true);
 const cFormatOpen = ref(false);
 // Held as the fractions the API takes; the inputs bind to the percent proxies
-// below so the units on screen match the labels.
-const smoothness = ref<number>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
-const relativeError = ref<number>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
+// below so the units on screen match the labels. The boxes start at the real
+// defaults (no placeholder: the spinner steps from the box's value, and a
+// placeholder made it step from '' → 0.1 instead of from 4 → 4.1). A cleared
+// box is '' (what v-model.number yields for an emptied number input) and
+// stands for the default; the payload substitutes it at send time.
+type Blankable = number | '';
+const smoothness = ref<Blankable>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
+const relativeError = ref<Blankable>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
 // The widget's other mode: a plain multiplier on the file's own error
 // columns. Both values ride in every request and the server consumes
 // whichever matches the upload's shape, so neither mode can corrupt the
 // other — see the error_scale comment in services routes.py.
-const errorScale = ref<number>(ERROR_SCALE_DEFAULT);
+const errorScale = ref<Blankable>(ERROR_SCALE_DEFAULT);
 
-const smoothnessPercent = computed<number>({
-  get: () => fractionToPercent(smoothness.value),
+/** The value a blank box stands for; what actually travels to the server. */
+const orDefault = (v: Blankable, fallback: number): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+
+const smoothnessPercent = computed<Blankable>({
+  get: () => (smoothness.value === '' ? '' : fractionToPercent(smoothness.value)),
   set: (v) => {
-    smoothness.value = percentToFraction(v);
+    smoothness.value = v === '' ? '' : percentToFraction(v);
   },
 });
-const relativeErrorPercent = computed<number>({
-  get: () => fractionToPercent(relativeError.value),
+const relativeErrorPercent = computed<Blankable>({
+  get: () => (relativeError.value === '' ? '' : fractionToPercent(relativeError.value)),
   set: (v) => {
-    relativeError.value = percentToFraction(v);
+    relativeError.value = v === '' ? '' : percentToFraction(v);
   },
 });
 const sentRequest = ref(false);
@@ -1264,9 +1270,9 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
     number_of_prony: dynamfit.value.range,
     model: dynamfit.value.model,
     domain: selectedProperty.value,
-    smoothness: smoothness.value,
-    relative_error: relativeError.value,
-    error_scale: errorScale.value,
+    smoothness: orDefault(smoothness.value, percentToFraction(SMOOTHNESS_DEFAULT_PERCENT)),
+    relative_error: orDefault(relativeError.value, percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT)),
+    error_scale: orDefault(errorScale.value, ERROR_SCALE_DEFAULT),
     // Say "no transform" out loud rather than leaving the key off. Both
     // branches below overwrite this when ω-T is checked; unchecked, it keeps
     // the server from inferring a shift model and returning a temperature
@@ -1548,6 +1554,7 @@ watch(
 
 watch([smoothness, relativeError, errorScale], () => {
   if (resetting.value) return;
+  // A blank box is a real setting (the default), so it refits like any other.
   updateChart();
 });
 

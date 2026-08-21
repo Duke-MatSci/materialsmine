@@ -615,6 +615,17 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
         self.assertEqual(resp.status_code, 400, resp.data[:400])
         self.assertIn('error scale must be positive', json.loads(resp.data)['message'])
 
+    def test_blank_numeric_fields_return_400(self):
+        # An emptied number input travels as '' (v-model.number cannot coerce
+        # it). Before coercion the range guards compared str to int and the
+        # TypeError surfaced as a 500; each field must be a readable 400.
+        name = self._write('plain.tsv', self._rows(3))
+        for field in ('smoothness', 'relative_error', 'error_scale'):
+            with self.subTest(field=field):
+                resp = self._post(self._body(name, **{field: ''}))
+                self.assertEqual(resp.status_code, 400, resp.data[:400])
+                self.assertIn(f'{field} must be a number', json.loads(resp.data)['message'])
+
 
 class TestPeakEdgeWarning(unittest.TestCase):
     """
