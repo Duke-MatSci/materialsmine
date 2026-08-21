@@ -474,13 +474,25 @@ class TestExtractRoute(unittest.TestCase):
         self.assertTrue(response['mytable'])
         self.assertTrue(response['complex-chart']['data'])
 
-    def test_frequency_hybrid_returns_400_no_inverse(self):
-        # Hybrid has no inverse transform; the client ghosts the option for
-        # frequency data and the route refuses it with a clear message instead
-        # of silently substituting a universal-WLF view.
-        resp = self._post(self._freq_body(transform_method='hybrid'))
+    def test_frequency_hybrid_returns_200_with_temp_charts(self):
+        # The inverse hybrid: a typed TC plus estimated C1/C2/Ea builds the
+        # temperature view from a frequency-domain master curve.
+        temp, tand = self._temp_chart_traces(self._freq_body(
+            transform_method='hybrid', TC=20.0,
+            C1_estimate=True, C2_estimate=True, Ea_estimate=True,
+        ))
+        self.assertTrue(temp)
+        self.assertTrue(tand)
+
+    def test_frequency_hybrid_without_TC_returns_400(self):
+        # TC cannot be estimated from a master curve (its E″ peak is a
+        # frequency); the route names the missing anchor.
+        resp = self._post(self._freq_body(
+            transform_method='hybrid',
+            C1_estimate=True, C2_estimate=True, Ea_estimate=True,
+        ))
         self.assertEqual(resp.status_code, 400, resp.data[:400])
-        self.assertIn('no inverse transform', json.loads(resp.data)['message'])
+        self.assertIn('Tc', json.loads(resp.data)['message'])
 
     def test_frequency_wlf_without_Tg_returns_400(self):
         resp = self._post(self._freq_body(

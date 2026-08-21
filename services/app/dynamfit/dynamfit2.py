@@ -1616,6 +1616,128 @@ def inverse_wlf_shift(a_T, T_ref: float, C1: float, C2: float) -> np.ndarray:
         return T
 
 
+def _inverse_arr_shift(a_T: np.ndarray, T_ref: float, Ea: float) -> np.ndarray:
+    """
+    Calculate the temperature T corresponding to an Arrhenius shift factor a_T.
+
+    Inverts _arr_shift's
+        ln(a_T) = (Ea_J_per_mol / R) * (1/T_K - 1/T_ref_K)
+    to give
+        T_K = 1 / (1/T_ref_K + ln(a_T) / m),   m = 1000 * Ea / R.
+
+    Parameters:
+        a_T (numpy.ndarray): 1-D array of positive shift factors.
+        T_ref (float): Reference temperature in °C.
+        Ea (float): Activation energy in kJ/mol.
+
+    Returns:
+        numpy.ndarray: 1-D array of temperatures in °C, same length as a_T.
+
+    Raises:
+        ValueError: If a_T <= 0 (log undefined), Ea == 0 (no temperature
+            dependence to invert), or the required temperature falls at or
+            below absolute zero (1/T_K crossing 0 shows up as a non-positive
+            reciprocal). Unreachable from inverse_hybrid_shift's split for
+            physical parameters — a_T >= 1 with Ea > 0 keeps 1/T_K above
+            1/T_ref_K — but reachable with a hand-typed negative Ea.
+    """
+    T_ref_K = T_ref + 273.15
+    m = (Ea * 1000.0) / R
+    with _fp_safe(
+        "invalid shift factor when inverting Arrhenius (a_T must be positive "
+        "and the required temperature above absolute zero). Please adjust "
+        "parameters."
+    ):
+        inv_T_K = 1.0 / T_ref_K + np.log(a_T) / m
+        if np.any(inv_T_K <= 0):
+            raise FloatingPointError(
+                "Inverse Arrhenius temperature at or below absolute zero")
+        T = 1.0 / inv_T_K - 273.15
+        if not np.all(np.isfinite(T)):
+            raise FloatingPointError(
+                "Non-finite result in inverse Arrhenius computation")
+        return T
+
+
+def inverse_hybrid_shift(
+        a_T,
+        T_ref: float,
+        C1: float,
+        C2: float,
+        Ea: float,
+        a_T_ref: float = 1.0,
+) -> np.ndarray:
+    """
+    Calculate the temperature T corresponding to a hybrid shift factor a_T.
+
+    Inverse of hybrid_shift: shift factors at or above a_T_ref (the hybrid's
+    value at T_ref) invert through Arrhenius — the forward's T <= T_ref
+    branch — and the rest through WLF (T > T_ref). For physical parameters
+    (Ea > 0, C1 > 0, C2 > 0) both branches are monotone decreasing in T and
+    meet continuously at (T_ref, a_T_ref), so the split threshold is exact;
+    the boundary value itself maps to T_ref through either branch.
+
+    Unlike hybrid_shift (whose piecewise assembly needs a sorted T), the
+    branch test here is elementwise, so a_T may arrive in any order and the
+    output preserves it.
+
+    Parameters:
+        a_T: Shift factor(s). Scalars and 0-D arrays are promoted to a
+            length-1 1-D array; 1-D arrays pass through.
+        T_ref (float): Reference temperature in °C; WLF/Arrhenius boundary.
+        C1 (float): WLF parameter C1.
+        C2 (float): WLF parameter C2.
+        Ea (float): Arrhenius activation energy in kJ/mol.
+        a_T_ref (float): The data's shift factor at T_ref (the same vertical
+            offset hybrid_shift applies); incoming a_T are divided by it
+            before the branch test.
+
+    Returns:
+        numpy.ndarray: 1-D array of temperatures in °C, same length as a_T.
+
+    Raises:
+        ValueError: If a_T is non-positive or non-finite; if a WLF-side value
+            lies at or beyond the model's 10**-C1 horizon (WLF only reaches
+            that value as T → ∞, and past it inverse_wlf_shift's formula
+            returns a finite temperature on the wrong branch of its
+            hyperbola); or if the branch results contradict the split —
+            possible only for unphysical parameter signs, which break the
+            monotonicity the threshold relies on.
+    """
+    a_T = np.atleast_1d(np.asarray(a_T, dtype=float))
+    assert a_T.ndim == 1, "a_T must be a 1-D numpy.ndarray or scalar"
+    if not np.all(np.isfinite(a_T)) or np.any(a_T <= 0):
+        raise ValueError(
+            "invalid shift factor when inverting the hybrid model "
+            "(a_T must be positive and finite). Please adjust parameters."
+        )
+    scaled = a_T / a_T_ref
+    cold = scaled >= 1.0  # Arrhenius side: T <= T_ref
+    T = np.empty_like(scaled)
+    if np.any(cold):
+        T[cold] = _inverse_arr_shift(scaled[cold], T_ref, Ea)
+    if np.any(~cold):
+        wlf_side = scaled[~cold]
+        if np.any(np.log10(wlf_side) <= -C1):
+            raise ValueError(
+                "shift factor beyond the WLF horizon when inverting the "
+                f"hybrid model: log10(a_T) reaches -C1 = {-C1:g} only as the "
+                "temperature goes to infinity. Please adjust parameters or "
+                "manually provide shift factors."
+            )
+        T[~cold] = inverse_wlf_shift(wlf_side, T_ref, C1, C2)
+    # float_correction gives the boundary the same numerical slack as the
+    # forward searchsorted split.
+    if (np.any(T[cold] > T_ref + float_correction)
+            or np.any(T[~cold] < T_ref - float_correction)):
+        raise ValueError(
+            "the hybrid model is not monotonic with these parameters "
+            "(inversion needs Ea > 0, C1 > 0, and C2 > 0). Please adjust "
+            "parameters or manually provide shift factors."
+        )
+    return T
+
+
 def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
                                     Tg=None, TC=None, C1=None, C2=None, Ea=None,
                                     shiftData=None):
@@ -1775,6 +1897,55 @@ def tts_frequency_to_temperature(
     }).sort_values('Temperature').reset_index(drop=True)
 
 
+def tts_frequency_to_temperature_hybrid(
+        freq_sweep_data: pd.DataFrame,
+        omega_ref: float,
+        TC: float,
+        C1: float,
+        C2: float,
+        Ea: float,
+) -> pd.DataFrame:
+    """
+    Convert frequency-sweep viscoelastic data to temperature-sweep data via
+    inverse hybrid TTS.
+
+    The hybrid analog of tts_frequency_to_temperature: for each row computes
+    a_T = Frequency / omega_ref and inverts the hybrid Arrhenius/WLF model
+    about TC (inverse_hybrid_shift) to find the temperature that would
+    produce that shift factor. The returned DataFrame is at the reference
+    frequency omega_ref.
+
+    Parameters:
+        freq_sweep_data (pd.DataFrame): Input data with columns
+            ['Frequency', "E'", "E''"].
+        omega_ref (float): Reference frequency for shifting.
+        TC (float): WLF/Arrhenius crossover temperature in °C.
+        C1 (float): WLF parameter C1.
+        C2 (float): WLF parameter C2.
+        Ea (float): Arrhenius activation energy in kJ/mol.
+
+    Returns:
+        pd.DataFrame: Temperature-sweep data at omega_ref with columns
+        ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature with a
+        fresh 0..N-1 index. Input freq_sweep_data is not mutated.
+
+    Raises:
+        ValueError: If the inverse-hybrid computation hits a singularity or a
+            frequency lies beyond the model's WLF horizon (see
+            inverse_hybrid_shift).
+    """
+    omega = freq_sweep_data['Frequency'].to_numpy()
+    a_T = omega / omega_ref
+    shifted_T = inverse_hybrid_shift(a_T, TC, C1, C2, Ea)
+
+    return pd.DataFrame({
+        'Frequency': np.full(len(omega), omega_ref),
+        'Temperature': shifted_T,
+        "E'": freq_sweep_data["E'"].to_numpy(),
+        "E''": freq_sweep_data["E''"].to_numpy(),
+    }).sort_values('Temperature').reset_index(drop=True)
+
+
 def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
                                   omega_ref: float) -> pd.DataFrame:
     """
@@ -1869,6 +2040,9 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
            (_freq_to_temp_via_shift_table).
         2. WLF    — shift_model == 'WLF' with Tg, C1, C2 all supplied →
            analytic inverse WLF (tts_frequency_to_temperature / inverse_wlf_shift).
+        3. hybrid — shift_model == 'hybrid' with TC, C1, C2, Ea all supplied →
+           analytic inverse hybrid (tts_frequency_to_temperature_hybrid /
+           inverse_hybrid_shift).
 
     Anything else raises. This used to degrade silently to a universal-WLF
     view (the pre-V2 hardcoded behavior) because the conversion is
@@ -1877,22 +2051,24 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
     constants they never chose, with no signal. Unusable inputs are the
     user's to fix, so they now surface as the route's normal 400-with-message:
 
-        - hybrid has no inverse transform yet (the client ghosts the option
-          for frequency-domain data; this raise backs that up server-side),
-        - WLF without a full Tg/C1/C2 names what is missing — Tg is required
-          in this domain, it cannot be estimated from a master curve,
-        - a WLF singularity or an uninvertible shift table propagates instead
-          of being papered over.
+        - WLF or hybrid with an incomplete parameter set names what is
+          missing — the anchor (Tg or TC) is required in this domain, it
+          cannot be estimated from a master curve,
+        - a WLF/hybrid singularity, a frequency beyond the hybrid's WLF
+          horizon, or an uninvertible shift table propagates instead of
+          being papered over.
 
     Parameters:
         freq_sweep_data (pd.DataFrame): Master curve with columns
             ['Frequency', "E'", "E''"].
         shift_model (str): 'WLF', 'hybrid', or 'manual'.
         Tg (float): WLF reference temperature (used when shift_model == 'WLF').
-        TC, Ea: Accepted for signature symmetry with the forward V2; unused
-            until an inverse-hybrid exists (TC will be its required anchor).
-        C1 (float): WLF parameter C1 (used when shift_model == 'WLF').
-        C2 (float): WLF parameter C2 (used when shift_model == 'WLF').
+        TC (float): WLF/Arrhenius crossover temperature (used when
+            shift_model == 'hybrid').
+        C1 (float): WLF parameter C1 (used for 'WLF' and 'hybrid').
+        C2 (float): WLF parameter C2 (used for 'WLF' and 'hybrid').
+        Ea (float): Arrhenius activation energy in kJ/mol (used when
+            shift_model == 'hybrid').
         shiftData: Optional shift-factor table {'Temperature': ..., 'a_T': ...};
             when usable it takes priority (manual path).
         omega_ref (float): Reference (physical) frequency; a_T == 1 there.
@@ -1902,9 +2078,9 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
         ['Frequency', 'Temperature', "E'", "E''"], sorted by Temperature.
 
     Raises:
-        ValueError: If the shift table cannot be inverted, the model is
-            hybrid, WLF parameters are incomplete, or the inverse WLF hits a
-            singularity.
+        ValueError: If the shift table cannot be inverted, WLF or hybrid
+            parameters are incomplete, or the inverse WLF/hybrid hits a
+            singularity or the hybrid's WLF horizon.
     """
     if shiftData:
         try:
@@ -1922,11 +2098,17 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
             "Upload a shift-factor file or pick 'WLF'."
         )
     if shift_model == 'hybrid':
-        raise ValueError(
-            "The hybrid model has no inverse transform yet, so it cannot build "
-            "a temperature view from frequency-domain data. Use WLF or upload "
-            "a manual shift-factor file."
-        )
+        missing = [name for name, val in
+                   (('Tc', TC), ('C1', C1), ('C2', C2), ('Ea', Ea))
+                   if val is None]
+        if missing:
+            raise ValueError(
+                f"Hybrid needs {', '.join(missing)} to build the temperature "
+                "view for frequency-domain data. Tc cannot be estimated from "
+                "a master curve — enter it directly."
+            )
+        return tts_frequency_to_temperature_hybrid(
+            freq_sweep_data, omega_ref, TC, C1, C2, Ea)
     if shift_model == 'WLF':
         missing = [name for name, val in
                    (('Tg', Tg), ('C1', C1), ('C2', C2)) if val is None]
@@ -2586,8 +2768,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         Tg, C1, C2, Ea, TC: Shift-model parameters. In the temperature domain
             they drive the temperature→frequency transform that feeds the Prony
             fit; in the frequency domain they (and shiftData) drive the
-            frequency→temperature visualization only (manual/WLF; hybrid falls
-            back to a universal-WLF view).
+            frequency→temperature visualization only (manual/WLF/hybrid).
         shift_model (str): 'WLF', 'hybrid', 'manual', or 'none'/None for no
             transform at all. 'none' is not merely "no usable parameters" — it
             means the caller did not ask for a transform, and in the frequency
@@ -2686,9 +2867,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         # but an *intent* test rather than a capability one: the temperature
         # axis is a transform of the upload, not the upload itself, so it is
         # only drawn when a transform was actually requested. Once requested,
-        # unusable inputs RAISE out of V2 (hybrid-without-inverse, incomplete
-        # or singular WLF, uninvertible shift table) and surface as the
-        # route's 400 snackbar — the silent universal-WLF fallback is gone.
+        # unusable inputs RAISE out of V2 (incomplete or singular WLF/hybrid,
+        # uninvertible shift table) and surface as the route's 400 snackbar —
+        # the silent universal-WLF fallback is gone.
         if shift_model in (None, 'none') and shiftData is None:
             fig4 = go.Figure()
             fig41 = go.Figure()
@@ -2705,6 +2886,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             if shiftData:
                 _stamp_notice((fig4, fig41), (
                     "temperature view inverted from the uploaded shift factors "
+                    "(visualization only — the fit uses the frequency data)"
+                ))
+            elif shift_model == 'hybrid':
+                _stamp_notice((fig4, fig41), (
+                    f"temperature view via inverse hybrid at Tc = {TC:g} °C "
                     "(visualization only — the fit uses the frequency data)"
                 ))
             else:

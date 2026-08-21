@@ -1,7 +1,8 @@
 """
 Time–temperature superposition shift factors and the TTS frequency/temperature
 conversions: WLF, Arrhenius (`_arr_shift`), the piecewise `hybrid_shift`, the
-inverse WLF, and the two `tts_*` DataFrame transforms that apply them.
+inverse WLF and inverse hybrid, and the `tts_*` DataFrame transforms that
+apply them.
 
 Pure functions — no Flask app, no disk access. Run while iterating on shift
 math or the TTS collapse/scatter logic.
@@ -23,8 +24,11 @@ from app.dynamfit.dynamfit2 import (
     _arr_shift,
     hybrid_shift,
     inverse_wlf_shift,
+    _inverse_arr_shift,
+    inverse_hybrid_shift,
     tts_temperature_to_frequency_V2,
     tts_frequency_to_temperature,
+    tts_frequency_to_temperature_hybrid,
     tts_frequency_to_temperature_V2,
 )
 
@@ -251,6 +255,93 @@ class TestInverseWlfShift(unittest.TestCase):
             inverse_wlf_shift(np.array([0.0]), self.T_REF, self.C1, self.C2)
         with self.assertRaises(ValueError):
             inverse_wlf_shift(np.array([-1.0]), self.T_REF, self.C1, self.C2)
+
+
+class TestInverseHybridShift(unittest.TestCase):
+    """
+    Inverse of the piecewise hybrid model. The branch decision is a threshold
+    at a_T == a_T_ref (the hybrid's value at T_ref): at-or-above inverts
+    through Arrhenius, below through WLF — exact for physical parameters,
+    where both branches are monotone decreasing and meet at (T_ref, a_T_ref).
+    """
+
+    T_REF = 25.0
+    C1 = 17.44
+    C2 = 51.6
+    EA = 200.0
+
+    def test_identity_at_a_T_unity(self):
+        result = inverse_hybrid_shift(np.array([1.0]), self.T_REF,
+                                      self.C1, self.C2, self.EA)
+        np.testing.assert_allclose(result, [self.T_REF])
+
+    def test_round_trip_spanning_the_crossover(self):
+        # Forward then inverse recovers T on BOTH sides of T_REF, including
+        # points close to the kink.
+        T = np.array([-20.0, 0.0, 24.0, 25.0, 26.0, 60.0, 120.0])
+        a_T = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA)
+        T_back = inverse_hybrid_shift(a_T, self.T_REF, self.C1, self.C2, self.EA)
+        np.testing.assert_allclose(T_back, T, atol=1e-9)
+
+    def test_branches_match_the_dedicated_inverses(self):
+        # Cold side (a_T > 1) is pure inverse Arrhenius; hot side (a_T < 1)
+        # is pure inverse WLF about the same reference.
+        cold = np.array([10.0, 1e3])
+        hot = np.array([0.5, 1e-3])
+        got_hot = inverse_hybrid_shift(hot, self.T_REF, self.C1, self.C2, self.EA)
+        np.testing.assert_allclose(
+            got_hot, inverse_wlf_shift(hot, self.T_REF, self.C1, self.C2))
+        got_cold = inverse_hybrid_shift(cold, self.T_REF, self.C1, self.C2, self.EA)
+        expected_cold = _inverse_arr_shift(cold, self.T_REF, self.EA)
+        self.assertTrue(np.all(got_cold <= self.T_REF))
+        np.testing.assert_allclose(got_cold, expected_cold)
+
+    def test_a_T_ref_rescales_the_threshold(self):
+        # Data referenced off T_REF: forward with a_T_ref K, inverse with the
+        # same K, round-trips.
+        K = 10.0 ** 1.7
+        T = np.array([-10.0, 25.0, 80.0])
+        a_T = hybrid_shift(T, self.T_REF, self.C1, self.C2, self.EA, a_T_ref=K)
+        T_back = inverse_hybrid_shift(a_T, self.T_REF, self.C1, self.C2,
+                                      self.EA, a_T_ref=K)
+        np.testing.assert_allclose(T_back, T, atol=1e-9)
+
+    def test_preserves_input_order_without_sorting(self):
+        # Unlike hybrid_shift, the input needs no sort order (the branch test
+        # is elementwise); output stays aligned with input.
+        T = np.array([60.0, -20.0, 25.0, 120.0, 0.0])
+        a_T = np.concatenate([
+            hybrid_shift(np.sort(T), self.T_REF, self.C1, self.C2, self.EA)
+        ])[np.argsort(np.argsort(T))]
+        T_back = inverse_hybrid_shift(a_T, self.T_REF, self.C1, self.C2, self.EA)
+        np.testing.assert_allclose(T_back, T, atol=1e-9)
+
+    def test_accepts_scalar(self):
+        result = inverse_hybrid_shift(1.0, self.T_REF, self.C1, self.C2, self.EA)
+        self.assertIsInstance(result, np.ndarray)
+        self.assertEqual(result.shape, (1,))
+
+    def test_raises_on_nonpositive_a_T(self):
+        for bad in (0.0, -1.0, np.nan):
+            with self.assertRaises(ValueError):
+                inverse_hybrid_shift(np.array([bad]), self.T_REF,
+                                     self.C1, self.C2, self.EA)
+
+    def test_raises_beyond_the_wlf_horizon(self):
+        # log10(a_T) <= -C1 is reached by WLF only as T → ∞; past it the raw
+        # inverse-WLF formula would return a finite wrong-branch temperature,
+        # so the hybrid inverse must refuse instead.
+        beyond = np.array([10.0 ** (-self.C1 - 0.5)])
+        with self.assertRaises(ValueError) as ctx:
+            inverse_hybrid_shift(beyond, self.T_REF, self.C1, self.C2, self.EA)
+        self.assertIn('horizon', str(ctx.exception))
+
+    def test_raises_on_unphysical_parameters(self):
+        # Negative Ea makes the Arrhenius side increase with T, contradicting
+        # the split; the branch-consistency check catches it.
+        with self.assertRaises(ValueError):
+            inverse_hybrid_shift(np.array([100.0]), self.T_REF,
+                                 self.C1, self.C2, -self.EA)
 
 
 class TestTtsTemperatureToFrequencyV2(unittest.TestCase):
@@ -535,10 +626,10 @@ class TestTtsFrequencyToTemperature(unittest.TestCase):
 
 class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
     """
-    The manual + WLF frequency→temperature visualization inverse. Anything
-    else — hybrid, incomplete WLF, an uninvertible table — RAISES so the
-    route's 400 snackbar tells the user their inputs were unusable (the old
-    silent universal-WLF fallback is gone).
+    The manual + WLF + hybrid frequency→temperature visualization inverse.
+    Anything else — incomplete WLF/hybrid parameters, an uninvertible table —
+    RAISES so the route's 400 snackbar tells the user their inputs were
+    unusable (the old silent universal-WLF fallback is gone).
     """
 
     OMEGA_REF = 1.0
@@ -624,14 +715,57 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
         self.assertIn('Tg', str(ctx.exception))
         self.assertIn('enter it directly', str(ctx.exception))
 
-    # --- error paths (the old silent universal-WLF fallback is gone) ---
-    def test_hybrid_raises_no_inverse(self):
+    # --- hybrid path ---
+    def test_hybrid_path_matches_dedicated_function(self):
+        df = self._master_df([0.1, 1.0, 10.0])
+        TC, C1, C2, Ea = 20.0, 17.44, 51.6, 200.0
+        got = tts_frequency_to_temperature_V2(
+            df, 'hybrid', TC=TC, C1=C1, C2=C2, Ea=Ea,
+        )
+        exp = tts_frequency_to_temperature_hybrid(
+            df, self.OMEGA_REF, TC, C1, C2, Ea,
+        )
+        np.testing.assert_allclose(got['Temperature'].values,
+                                   exp['Temperature'].values)
+
+    def test_hybrid_round_trip_against_temp_V2(self):
+        # Scatter a temp sweep spanning the crossover with the forward hybrid,
+        # then invert with the V2 hybrid path → recover the temperatures.
+        TC, C1, C2, Ea = 25.0, 17.44, 51.6, 200.0
+        temps = [5.0, 25.0, 45.0]
+        temp_df = pd.DataFrame(
+            {'Temperature': temps, "E'": [1.0, 2.0, 3.0], "E''": [0.1, 0.2, 0.3]}
+        )
+        scattered = tts_temperature_to_frequency_V2(
+            temp_df, 'hybrid', TC=TC, C1=C1, C2=C2, Ea=Ea,
+        )
+        recovered = tts_frequency_to_temperature_V2(
+            scattered, 'hybrid', TC=TC, C1=C1, C2=C2, Ea=Ea,
+        )
+        np.testing.assert_allclose(
+            np.sort(recovered['Temperature'].values), sorted(temps), atol=1e-9,
+        )
+
+    def test_insufficient_hybrid_params_raises_naming_the_gap(self):
         df = self._master_df([0.1, 1.0, 10.0])
         with self.assertRaises(ValueError) as ctx:
             tts_frequency_to_temperature_V2(
-                df, 'hybrid', TC=20.0, C1=17.44, C2=51.6, Ea=200.0,
+                df, 'hybrid', TC=20.0, C1=17.44, C2=51.6, Ea=None,
             )
-        self.assertIn('no inverse transform', str(ctx.exception))
+        self.assertIn('Ea', str(ctx.exception))
+
+    def test_hybrid_without_TC_raises_and_says_enter_it(self):
+        # Same contract as WLF's Tg: the crossover cannot be estimated from a
+        # master curve, so the message must steer the user to type it.
+        df = self._master_df([0.1, 1.0, 10.0])
+        with self.assertRaises(ValueError) as ctx:
+            tts_frequency_to_temperature_V2(
+                df, 'hybrid', C1=17.44, C2=51.6, Ea=200.0,
+            )
+        self.assertIn('Tc', str(ctx.exception))
+        self.assertIn('enter it directly', str(ctx.exception))
+
+    # --- error paths (the old silent universal-WLF fallback is gone) ---
 
     def test_manual_without_shiftData_raises(self):
         # Now mirrors tts_temperature_to_frequency_V2's manual contract.

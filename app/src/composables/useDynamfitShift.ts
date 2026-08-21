@@ -61,8 +61,8 @@ export function resolveShiftFitModel(
  *
  * Adopting the fitted model into the radio instead — which is what this
  * replaces — took the user out of manual mode, so the next repaint dropped
- * shift_file_name and asked the server to invert a hybrid model it cannot
- * invert.
+ * shift_file_name and silently swapped the transform from the measured table
+ * to the fitted model curve.
  */
 export function resolveExtractTransformMethod(
   transformMethod: string,

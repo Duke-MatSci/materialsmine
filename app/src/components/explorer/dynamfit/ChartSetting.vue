@@ -476,21 +476,13 @@
             <md-radio id="cTransformMethodWLF" v-model="transformMethod" value="WLF">
               WLF
             </md-radio>
-            <md-radio
-              id="cTransformMethodHybrid"
-              v-model="transformMethod"
-              value="hybrid"
-              :disabled="isFrequencyDomain"
-            >
+            <md-radio id="cTransformMethodHybrid" v-model="transformMethod" value="hybrid">
               Hybrid
             </md-radio>
             <md-radio id="cTransformMethodManual" v-model="transformMethod" value="manual">
               Manual
             </md-radio>
           </div>
-          <span v-if="isFrequencyDomain" class="dynamfit-hint">
-            Hybrid needs temperature-domain data — it has no inverse transform yet.
-          </span>
 
           <!-- Manual file info -->
           <div v-if="isManual" class="md-alert md-alert--info utility-margin-top">
@@ -505,9 +497,10 @@
 
           <!-- Coefficient fields (WLF / Hybrid). The model's anchor leads the
                list: TC is the hybrid crossover, Tg the WLF reference. In the
-               frequency domain Tg has no estimate checkbox — a master curve's
-               tan-δ peak is a frequency, so there is nothing to estimate a
-               temperature from, and the server refuses Tg_estimate there. -->
+               frequency domain neither anchor has an estimate checkbox — a
+               master curve's tan-δ and E″ peaks are frequencies, so there is
+               nothing to estimate a temperature from, and the server refuses
+               Tg_estimate/TC_estimate there. -->
           <template v-if="isWLF || isHybrid">
             <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
               <md-field class="dynamfit-field--half">
@@ -518,6 +511,7 @@
                 ></md-input>
               </md-field>
               <md-checkbox
+                v-if="!isFrequencyDomain"
                 :disabled="ttspDisabled"
                 v-model="tCEstimated"
                 class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
@@ -878,7 +872,10 @@ const tgPlaceholder = computed(() => {
   if (tgEstimated.value) return 'Tg (tan δ peak)';
   return isFrequencyDomain.value ? 'Tg (required)' : 'Tg';
 });
-const tcPlaceholder = computed(() => (tCEstimated.value ? 'Tc (E″ peak)' : 'Tc'));
+const tcPlaceholder = computed(() => {
+  if (tCEstimated.value) return 'Tc (E″ peak)';
+  return isFrequencyDomain.value ? 'Tc (required)' : 'Tc';
+});
 const c1Placeholder = computed(() => (c1Estimated.value ? 'C1 (17.44, Universal)' : 'C1'));
 const c2Placeholder = computed(() => (c2Estimated.value ? 'C2 (51.6, Universal)' : 'C2'));
 const eaPlaceholder = computed(() => (eAEstimated.value ? 'EA (200 kJ/mol, Universal)' : 'EA'));
@@ -1517,14 +1514,15 @@ watch(transformMethod, (newValue) => {
   // first; checking the boxes here would cascade into the estimate watcher
   // below, which nulls the inputs — wiping the freshly fitted coefficients.
   if (!skipCoeffWatcher.value && (newValue === 'WLF' || newValue === 'hybrid')) {
-    // No Tg estimate in the frequency domain: a master curve's tan-δ peak is
-    // a frequency, and the server 400s a frequency-domain Tg_estimate. The
-    // checkbox is hidden there; Tg must be typed.
+    // No Tg/TC estimate in the frequency domain: a master curve's tan-δ and
+    // E″ peaks are frequencies, and the server 400s a frequency-domain
+    // Tg_estimate/TC_estimate. The checkboxes are hidden there; the anchor
+    // must be typed.
     if (!isFrequencyDomain.value) tgEstimated.value = true;
     c1Estimated.value = true;
     c2Estimated.value = true;
     if (newValue === 'hybrid') {
-      tCEstimated.value = true;
+      if (!isFrequencyDomain.value) tCEstimated.value = true;
       eAEstimated.value = true;
     }
   }
@@ -1564,14 +1562,11 @@ watch(selectedProperty, (v) => {
     cTtspApplied.value = false;
     cShiftModelOpen.value = true;
     if (v === 'frequency') {
-      // Hybrid is ghosted in the frequency domain (no inverse transform), so
-      // a hybrid setup cannot survive the switch; an armed Tg estimate would
-      // 400 there for the same reason and just unchecks.
-      if (transformMethod.value === 'hybrid') {
-        resetTtspSegment();
-      } else if (tgEstimated.value) {
-        tgEstimated.value = false;
-      }
+      // Anchor estimates need temperature-domain data (the server 400s a
+      // frequency-domain Tg_estimate/TC_estimate), so an armed estimate just
+      // unchecks; the typed value, if any, survives the switch.
+      if (tgEstimated.value) tgEstimated.value = false;
+      if (tCEstimated.value) tCEstimated.value = false;
     }
   }
 });

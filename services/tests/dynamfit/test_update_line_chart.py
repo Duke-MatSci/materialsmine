@@ -21,7 +21,7 @@ from unittest.mock import patch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from app.dynamfit.dynamfit2 import (
-    wlf_shift, update_line_chart, inverse_wlf_shift,
+    wlf_shift, update_line_chart, inverse_wlf_shift, inverse_hybrid_shift,
     compute_complex, smooth_prony_fit, prony_terms_for_span,
     _PLOT_MAX_POINTS, _FitQuality, MAX_ABS_LOG10_SHIFT,
 )
@@ -168,7 +168,7 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
 
 class TestUpdateLineChartFrequencyShift(unittest.TestCase):
     """
-    Frequency-domain shift-model paths (manual / WLF) that drive the
+    Frequency-domain shift-model paths (manual / WLF / hybrid) that drive the
     temperature-axis visualization (fig4/fig41). Unusable inputs RAISE out of
     tts_frequency_to_temperature_V2 (no silent universal-WLF fallback), so a
     requested-but-broken transform blocks the response like any other input
@@ -215,11 +215,17 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
         expected = np.unique(inverse_wlf_shift(omega / 1.0, Tg, C1, C2))
         np.testing.assert_allclose(self._fig4_temps(result), expected, rtol=1e-6)
 
-    def test_frequency_hybrid_raises_no_inverse(self):
-        # Backs up the client-side ghosting of hybrid for frequency data.
+    def test_frequency_hybrid_populates_temp_figs(self):
+        TC, C1, C2, Ea = 20.0, 17.44, 51.6, 200.0
+        result = self._run(shift_model='hybrid', TC=TC, C1=C1, C2=C2, Ea=Ea)
+        omega = self.uploadData['Frequency']
+        expected = np.unique(inverse_hybrid_shift(omega / 1.0, TC, C1, C2, Ea))
+        np.testing.assert_allclose(self._fig4_temps(result), expected, rtol=1e-6)
+
+    def test_frequency_hybrid_missing_Ea_raises(self):
         with self.assertRaises(ValueError) as ctx:
-            self._run(shift_model='hybrid', TC=20.0, C1=17.44, C2=51.6, Ea=200.0)
-        self.assertIn('no inverse transform', str(ctx.exception))
+            self._run(shift_model='hybrid', TC=20.0, C1=17.44, C2=51.6)
+        self.assertIn('Ea', str(ctx.exception))
 
     def test_frequency_manual_without_shiftData_raises(self):
         # Same contract as the temperature branch's forward transform: manual
@@ -237,8 +243,11 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
         # The "labeled" half of the contract: the synthesized temperature axis
         # names the inverse that produced it.
         wlf = self._run(shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6)
+        hybrid = self._run(shift_model='hybrid', TC=20.0, C1=17.44, C2=51.6,
+                           Ea=200.0)
         manual = self._run(shift_model='manual', shiftData=self.shiftData)
         for result, needle in ((wlf, 'inverse WLF at Tg = 30'),
+                               (hybrid, 'inverse hybrid at Tc = 20'),
                                (manual, 'uploaded shift factors')):
             for fig in (result[4], result[5]):
                 texts = [a.text for a in fig.layout.annotations if a.text]
