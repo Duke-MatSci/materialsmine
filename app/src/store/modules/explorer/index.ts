@@ -37,7 +37,7 @@ export default {
         C2: null,
         Tg: null,
         Ea: null,
-        TL: null,
+        TC: null,
         a_T_ref: null,
         chi2_reduced: null,
         model: null,

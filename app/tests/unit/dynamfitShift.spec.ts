@@ -16,7 +16,7 @@ describe('resolveShiftFitModel', () => {
     expect(resolveShiftFitModel('WLF', 20, null)).toBe('WLF');
   });
 
-  it('passes hybrid through when its TL anchor is present', () => {
+  it('passes hybrid through when its TC anchor is present', () => {
     expect(resolveShiftFitModel('hybrid', null, 80)).toBe('hybrid');
   });
 
@@ -25,7 +25,7 @@ describe('resolveShiftFitModel', () => {
     expect(resolveShiftFitModel('hybrid', 20, null)).toBeNull();
   });
 
-  it('maps manual to WLF when Tg is set, hybrid when only TL is set', () => {
+  it('maps manual to WLF when Tg is set, hybrid when only TC is set', () => {
     // /fit-shift rejects 'manual' with a 400, so manual mode must borrow a
     // real model — the old code sent 'manual' and every fit died on it.
     expect(resolveShiftFitModel('manual', 20, null)).toBe('WLF');
@@ -58,7 +58,7 @@ describe('buildShiftCoefficientRows', () => {
     C2: 190.2,
     Tg: 20,
     Ea: null,
-    TL: null,
+    TC: null,
     // WLF co-fits this offset too, so a fitted WLF result is not pinned at 1.
     a_T_ref: 2.17,
     chi2_reduced: 0.211,
@@ -81,10 +81,10 @@ describe('buildShiftCoefficientRows', () => {
     expect(rows.map((r) => r.parameter)).not.toContain('model');
   });
 
-  it('skips null values so a WLF export has no blank Ea/TL rows', () => {
+  it('skips null values so a WLF export has no blank Ea/Tc rows', () => {
     const rows = buildShiftCoefficientRows('WLF', fitted);
     expect(rows.map((r) => r.parameter)).not.toContain('Ea');
-    expect(rows.map((r) => r.parameter)).not.toContain('TL');
+    expect(rows.map((r) => r.parameter)).not.toContain('Tc');
   });
 
   it('returns only the method row when nothing has been fitted', () => {
@@ -93,7 +93,7 @@ describe('buildShiftCoefficientRows', () => {
       C2: null,
       Tg: null,
       Ea: null,
-      TL: null,
+      TC: null,
       a_T_ref: null,
       chi2_reduced: null,
       model: null,

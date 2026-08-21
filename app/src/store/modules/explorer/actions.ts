@@ -226,7 +226,7 @@ export default {
       C1?: number | null;
       C2?: number | null;
       Ea?: number | null;
-      TL?: number | null;
+      TC?: number | null;
     }
   ): Promise<Record<string, any>> {
     const url = '/api/mn/fit-shift';
@@ -251,7 +251,7 @@ export default {
       C2: response.C2 ?? null,
       Tg: response.Tg ?? null,
       Ea: response.Ea ?? null,
-      TL: response.TL ?? null,
+      TC: response.TC ?? null,
       a_T_ref: response.a_T_ref ?? null,
       chi2_reduced: response.chi2_reduced ?? null,
       model: response.transform_method ?? null,

@@ -18,7 +18,7 @@ export interface ExplorerState {
     C2: number | null;
     Tg: number | null;
     Ea: number | null;
-    TL: number | null;
+    TC: number | null;
     a_T_ref: number | null;
     // Reduced chi-squared of the /fit-shift coefficient fit (log10 space).
     chi2_reduced: number | null;

@@ -90,13 +90,13 @@ def extract_data_from_file(request_id):
         C1 = as_float_or_none(data.get('C1'), 'C1')
         C2 = as_float_or_none(data.get('C2'), 'C2')
         Ea = as_float_or_none(data.get('Ea'), 'Ea')
-        TL = as_float_or_none(data.get('TL'), 'TL')
+        TC = as_float_or_none(data.get('TC'), 'TC')
 
         Tg_estimate = data.get('Tg_estimate', False)
         C1_estimate = data.get('C1_estimate', False)
         C2_estimate = data.get('C2_estimate', False)
         Ea_estimate = data.get('Ea_estimate', False)
-        TL_estimate = data.get('TL_estimate', False)
+        TC_estimate = data.get('TC_estimate', False)
 
         # Display-only passthroughs for the shift figure, echoed by the client
         # from its last /fit-shift/ response: the model curve's vertical
@@ -183,13 +183,13 @@ def extract_data_from_file(request_id):
         # client no longer offers the checkboxes in the frequency domain;
         # this 400 backs that up at the API.
         estimate_warnings = []
-        if (Tg_estimate or TL_estimate) and domain != 'temperature':
+        if (Tg_estimate or TC_estimate) and domain != 'temperature':
             return jsonify({'message': (
-                'Tg/TL cannot be estimated from a frequency-domain master '
+                'Tg/Tc cannot be estimated from a frequency-domain master '
                 'curve — its tan-δ and E-loss peaks are frequencies, not '
                 'temperatures. Enter the value directly.'
             )}), 400
-        if Tg_estimate or TL_estimate:
+        if Tg_estimate or TC_estimate:
             temperatures = uploadData["Temperature"]
             # Tg from the tan-δ peak
             if Tg_estimate:
@@ -198,17 +198,19 @@ def extract_data_from_file(request_id):
                 warning = peak_edge_warning(Tg, temperatures, 'Tg')
                 if warning:
                     estimate_warnings.append(warning)
-            # TL from the E_loss peak
-            if TL_estimate:
+            # The E_loss peak temperature is TL by convention; it serves as
+            # the default estimate of the WLF/Arrhenius crossover TC.
+            if TC_estimate:
                 TL = temperatures[argmax_peak(uploadData["E Loss"])]
-                warning = peak_edge_warning(TL, temperatures, 'TL')
+                TC = TL
+                warning = peak_edge_warning(TC, temperatures, 'Tc')
                 if warning:
                     estimate_warnings.append(warning)
         # Use "generic" Ea for thermoplastic elastomers
         if Ea_estimate:
             Ea = 200  # kJ/mol
 
-        shift_params = dict(Tg=Tg, C1=C1, C2=C2, Ea=Ea, TL=TL, shift_model=shift_model, shiftData=shiftData)
+        shift_params = dict(Tg=Tg, C1=C1, C2=C2, Ea=Ea, TC=TC, shift_model=shift_model, shiftData=shiftData)
 
         # Assuming the update_line_chart function returns values in a specific order
         result = update_line_chart(uploadData, number_of_prony, smoothness,
@@ -268,7 +270,7 @@ def extract_data_from_file(request_id):
                 "C2": C2,
                 "Tg": Tg,
                 "Ea": Ea,
-                "TL": TL,
+                "TC": TC,
                 "warnings": estimate_warnings,
             }
         }
@@ -310,13 +312,13 @@ def fit_shift_coefficients(request_id):
     (chi2_reduced; None when there are no surplus degrees of freedom) — no
     Prony fit, no charts.
 
-    WLF requires Tg (the a_T == 1 anchor); hybrid requires TL. Both are
+    WLF requires Tg (the a_T == 1 anchor); hybrid requires TC. Both are
     upstream-supplied inputs — this route does not load the main viscoelastic
     data file and so cannot estimate them. Supplying any of C1/C2/Ea holds that
     coefficient fixed instead of fitting it.
 
     Both fits co-fit a vertical reference offset, surfaced as a_T_ref: the
-    data's shift factor at the model's anchor (Tg for WLF, TL for hybrid), and
+    data's shift factor at the model's anchor (Tg for WLF, TC for hybrid), and
     1.0 only if the file is truly referenced there. Without it the shape
     parameters bend to drag the curve through a_T == 1 at the anchor.
     """
@@ -329,7 +331,7 @@ def fit_shift_coefficients(request_id):
         C1 = as_float_or_none(data.get('C1'), 'C1')
         C2 = as_float_or_none(data.get('C2'), 'C2')
         Ea = as_float_or_none(data.get('Ea'), 'Ea')
-        TL = as_float_or_none(data.get('TL'), 'TL')
+        TC = as_float_or_none(data.get('TC'), 'TC')
 
         if not shift_file_name:
             return jsonify({'message': 'No shift file name provided'}), 400
@@ -363,15 +365,15 @@ def fit_shift_coefficients(request_id):
             result_data = {
                 'transform_method': 'WLF',
                 'Tg': Tg, 'C1': C1_fit, 'C2': C2_fit,
-                'Ea': None, 'TL': None,
+                'Ea': None, 'TC': None,
                 'a_T_ref': a_T_ref,
                 'chi2_reduced': chi2_reduced,
             }
         else:  # hybrid
-            if TL is None:
-                return jsonify({'message': 'TL is required for hybrid coefficient fitting'}), 400
+            if TC is None:
+                return jsonify({'message': 'Tc is required for hybrid coefficient fitting'}), 400
             C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced = fit_hybrid_coefficients(
-                T, a_T, TL=TL,
+                T, a_T, TC=TC,
                 C1=C1, C2=C2, Ea=Ea,
                 fix_C1=(C1 is not None),
                 fix_C2=(C2 is not None),
@@ -382,7 +384,7 @@ def fit_shift_coefficients(request_id):
             result_data = {
                 'transform_method': 'hybrid',
                 'Tg': None, 'C1': C1_fit, 'C2': C2_fit,
-                'Ea': Ea_fit, 'TL': TL,
+                'Ea': Ea_fit, 'TC': TC,
                 'a_T_ref': a_T_ref,
                 'chi2_reduced': chi2_reduced,
             }

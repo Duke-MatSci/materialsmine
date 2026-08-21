@@ -55,7 +55,7 @@
           three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub>,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
           a <strong>hybrid</strong> WLF/Arrhenius model that adds a low-temperature crossover
-          T<sub>L</sub> and an activation energy E<sub>A</sub>, and a <strong>manual</strong>
+          T<sub>C</sub> and an activation energy E<sub>A</sub>, and a <strong>manual</strong>
           model that takes a two-column shift-factor file you supply. Once shift factors are
           known, the same fit is reported against frequency, against temperature, and — through
           the Prony series — against time.

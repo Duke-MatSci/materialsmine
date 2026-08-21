@@ -274,9 +274,9 @@ class TestTtsTemperatureToFrequencyV2(unittest.TestCase):
         })
 
     def _params(self, **overrides):
-        # T_REF stands in for both Tg (WLF reference) and TL (hybrid crossover);
+        # T_REF stands in for both Tg (WLF reference) and TC (hybrid crossover);
         # the fixture data round-trips for either interpretation.
-        kwargs = dict(Tg=self.T_REF, TL=self.T_REF,
+        kwargs = dict(Tg=self.T_REF, TC=self.T_REF,
                       C1=self.C1, C2=self.C2, Ea=self.EA)
         kwargs.update(overrides)
         return kwargs
@@ -629,7 +629,7 @@ class TestTtsFrequencyToTemperatureV2(unittest.TestCase):
         df = self._master_df([0.1, 1.0, 10.0])
         with self.assertRaises(ValueError) as ctx:
             tts_frequency_to_temperature_V2(
-                df, 'hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0,
+                df, 'hybrid', TC=20.0, C1=17.44, C2=51.6, Ea=200.0,
             )
         self.assertIn('no inverse transform', str(ctx.exception))
 

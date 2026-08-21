@@ -218,7 +218,7 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
     def test_frequency_hybrid_raises_no_inverse(self):
         # Backs up the client-side ghosting of hybrid for frequency data.
         with self.assertRaises(ValueError) as ctx:
-            self._run(shift_model='hybrid', TL=20.0, C1=17.44, C2=51.6, Ea=200.0)
+            self._run(shift_model='hybrid', TC=20.0, C1=17.44, C2=51.6, Ea=200.0)
         self.assertIn('no inverse transform', str(ctx.exception))
 
     def test_frequency_manual_without_shiftData_raises(self):
@@ -410,7 +410,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
             100.0, rtol=1e-9)
 
     def test_hybrid_curve_honors_a_T_ref_offset(self):
-        kwargs = dict(shift_model='hybrid', TL=40.0, C1=self.C1, C2=self.C2,
+        kwargs = dict(shift_model='hybrid', TC=40.0, C1=self.C1, C2=self.C2,
                       Ea=150.0)
         *_, fig_unit, _ = self._run(**kwargs)
         *_, fig_shifted, _ = self._run(a_T_ref=100.0, **kwargs)
@@ -542,7 +542,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         result = update_line_chart(
             self.synthetic_temp_data, number_of_prony=8, smoothness=0.1,
             fit_settings=True, domain='temperature',
-            Tg=self.T_REF, TL=self.T_REF, C1=self.C1, C2=self.C2,
+            Tg=self.T_REF, TC=self.T_REF, C1=self.C1, C2=self.C2,
             Ea=self.EA, shift_model='hybrid',
         )
         fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
@@ -562,7 +562,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         result = update_line_chart(
             data, number_of_prony=8, smoothness=0.1,
             fit_settings=True, domain='temperature',
-            TL=self.T_REF, C1=self.C1, C2=self.C2,
+            TC=self.T_REF, C1=self.C1, C2=self.C2,
             Ea=self.EA, shift_model='hybrid',
         )
         fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
@@ -571,13 +571,13 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
         self.assertGreater(len(coef_df), 0)
 
     def test_hybrid_works_without_Tg(self):
-        # hybrid_shift uses TL (not Tg) as the WLF/Arrhenius crossover, so
+        # hybrid_shift uses TC (not Tg) as the WLF/Arrhenius crossover, so
         # update_line_chart should drive the master-curve path even when Tg is
         # not supplied.
         result = update_line_chart(
             self.synthetic_temp_data, number_of_prony=8, smoothness=0.1,
             fit_settings=True, domain='temperature',
-            TL=self.T_REF, C1=self.C1, C2=self.C2, Ea=self.EA,
+            TC=self.T_REF, C1=self.C1, C2=self.C2, Ea=self.EA,
             shift_model='hybrid',
         )
         fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result

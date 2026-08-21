@@ -79,7 +79,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         body = {
             'shift_file_name': 'shift.txt',
             'transform_method': 'hybrid',
-            'TL': 25.0,
+            'TC': 25.0,
         }
         body.update(overrides)
         return body
@@ -100,7 +100,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         data = json.loads(resp.data)
         self.assertEqual(
             set(data.keys()),
-            {'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TL', 'a_T_ref',
+            {'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TC', 'a_T_ref',
              'chi2_reduced'},
         )
 
@@ -128,7 +128,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         resp = self._post(self._base_wlf_body())
         data = json.loads(resp.data)
         self.assertIsNone(data['Ea'])
-        self.assertIsNone(data['TL'])
+        self.assertIsNone(data['TC'])
 
     @patch('app.dynamfit.routes.fit_wlf_coefficients',
            return_value=(C1_RETURNED, C2_RETURNED, A_T_REF_RETURNED,
@@ -154,7 +154,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         data = json.loads(resp.data)
         self.assertIsNone(data['Tg'])
         self.assertIsInstance(data['Ea'], float)
-        self.assertIsInstance(data['TL'], float)
+        self.assertIsInstance(data['TC'], float)
 
     @patch('app.dynamfit.routes.fit_hybrid_coefficients',
            return_value=(C1_RETURNED, C2_RETURNED, EA_RETURNED, A_T_REF_RETURNED, CHI2_RETURNED))
@@ -314,7 +314,7 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
         body = {
             'shift_file_name': 'shift.txt',
             'transform_method': 'hybrid',
-            # TL intentionally omitted
+            # TC intentionally omitted
         }
         resp = self._post(body)
         self.assertEqual(resp.status_code, 400)

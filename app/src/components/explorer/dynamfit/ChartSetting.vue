@@ -504,7 +504,7 @@
           </div>
 
           <!-- Coefficient fields (WLF / Hybrid). The model's anchor leads the
-               list: TL is the hybrid crossover, Tg the WLF reference. In the
+               list: TC is the hybrid crossover, Tg the WLF reference. In the
                frequency domain Tg has no estimate checkbox — a master curve's
                tan-δ peak is a frequency, so there is nothing to estimate a
                temperature from, and the server refuses Tg_estimate there. -->
@@ -512,17 +512,17 @@
             <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
               <md-field class="dynamfit-field--half">
                 <md-input
-                  v-model="ttspTLValue"
-                  :placeholder="tlPlaceholder"
-                  :disabled="!ttsp || tLEstimated"
+                  v-model="ttspTCValue"
+                  :placeholder="tcPlaceholder"
+                  :disabled="!ttsp || tCEstimated"
                 ></md-input>
               </md-field>
               <md-checkbox
                 :disabled="ttspDisabled"
-                v-model="tLEstimated"
+                v-model="tCEstimated"
                 class="u--layout-flex viz-u-mgup-sm viz-u-mgbottom-sm u_centralize_items"
               >
-                Use Estimated TL
+                Use Estimated Tc
               </md-checkbox>
             </div>
             <div class="u--layout-flex u--layout-flex-justify-sb">
@@ -623,19 +623,19 @@
             <!-- Anchor inputs for fitting the uploaded shift factors: WLF and
                  hybrid each need their reference temperature before /fit-shift
                  can run, and neither field exists elsewhere in manual mode —
-                 without these the "enter Tg or TL" nudge would be a dead end.
+                 without these the "enter Tg or TC" nudge would be a dead end.
                  No estimate checkboxes: estimation is an extract-side feature,
                  the coefficient fit needs an explicit anchor. -->
             <p class="dynamfit-shift-upload__label">
               To also fit WLF or hybrid coefficients to the shift factors, enter the model's
-              anchor: Tg for WLF, TL for hybrid.
+              anchor: Tg for WLF, Tc for hybrid.
             </p>
             <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
                 <md-input v-model="ttspTgValue" placeholder="Tg (fits WLF)"></md-input>
               </md-field>
               <md-field class="dynamfit-field--half">
-                <md-input v-model="ttspTLValue" placeholder="TL (fits hybrid)"></md-input>
+                <md-input v-model="ttspTCValue" placeholder="Tc (fits hybrid)"></md-input>
               </md-field>
             </div>
           </template>
@@ -741,9 +741,9 @@ const ttspC1Value = ref(null);
 const c1Estimated = ref(false);
 const ttspC2Value = ref(null);
 const c2Estimated = ref(false);
-const ttspTLValue = ref(null);
+const ttspTCValue = ref(null);
 const ttspEAValue = ref(null);
-const tLEstimated = ref(false);
+const tCEstimated = ref(false);
 const eAEstimated = ref(false);
 // Open on arrival: the source buttons are the first thing the user needs, and
 // nothing collapses them again except an explicit click on the header caret.
@@ -878,7 +878,7 @@ const tgPlaceholder = computed(() => {
   if (tgEstimated.value) return 'Tg (tan δ peak)';
   return isFrequencyDomain.value ? 'Tg (required)' : 'Tg';
 });
-const tlPlaceholder = computed(() => (tLEstimated.value ? 'TL (E″ peak)' : 'TL'));
+const tcPlaceholder = computed(() => (tCEstimated.value ? 'Tc (E″ peak)' : 'Tc'));
 const c1Placeholder = computed(() => (c1Estimated.value ? 'C1 (17.44, Universal)' : 'C1'));
 const c2Placeholder = computed(() => (c2Estimated.value ? 'C2 (51.6, Universal)' : 'C2'));
 const eaPlaceholder = computed(() => (eAEstimated.value ? 'EA (200 kJ/mol, Universal)' : 'EA'));
@@ -967,12 +967,12 @@ const resetAll = async (): Promise<void> => {
   ttspTgValue.value = null;
   ttspC1Value.value = null;
   ttspC2Value.value = null;
-  ttspTLValue.value = null;
+  ttspTCValue.value = null;
   ttspEAValue.value = null;
   tgEstimated.value = false;
   c1Estimated.value = false;
   c2Estimated.value = false;
-  tLEstimated.value = false;
+  tCEstimated.value = false;
   eAEstimated.value = false;
   store.commit('explorer/setDynamfitSourceType', '');
   // Start state: the four source buttons, per the panel's default.
@@ -1017,12 +1017,12 @@ const resetTtspSegment = (): void => {
   ttspTgValue.value = null;
   ttspC1Value.value = null;
   ttspC2Value.value = null;
-  ttspTLValue.value = null;
+  ttspTCValue.value = null;
   ttspEAValue.value = null;
   tgEstimated.value = false;
   c1Estimated.value = false;
   c2Estimated.value = false;
-  tLEstimated.value = false;
+  tCEstimated.value = false;
   eAEstimated.value = false;
   cTtspApplied.value = false;
   cShiftModelOpen.value = true;
@@ -1160,7 +1160,7 @@ const fitShiftAndExtract = async (
   refit = true
 ): Promise<void> => {
   const fitModel = refit
-    ? resolveShiftFitModel(transformMethod.value, ttspTgValue.value, ttspTLValue.value)
+    ? resolveShiftFitModel(transformMethod.value, ttspTgValue.value, ttspTCValue.value)
     : null;
 
   if (!refit) {
@@ -1170,7 +1170,7 @@ const fitShiftAndExtract = async (
     // nudge below on every drag of the slider. Replay the stored fit instead so
     // the shift figure keeps its curve and its misfit stamp.
     const fitted = shiftFit.value;
-    for (const key of ['C1', 'C2', 'Tg', 'Ea', 'TL', 'a_T_ref', 'chi2_reduced']) {
+    for (const key of ['C1', 'C2', 'Tg', 'Ea', 'TC', 'a_T_ref', 'chi2_reduced']) {
       if (fitted[key] != null) extractPayload[key] = fitted[key];
     }
   } else if (fitModel) {
@@ -1181,7 +1181,7 @@ const fitShiftAndExtract = async (
     if (ttspTgValue.value) fitPayload.Tg = ttspTgValue.value;
     if (ttspC1Value.value) fitPayload.C1 = ttspC1Value.value;
     if (ttspC2Value.value) fitPayload.C2 = ttspC2Value.value;
-    if (ttspTLValue.value) fitPayload.TL = ttspTLValue.value;
+    if (ttspTCValue.value) fitPayload.TC = ttspTCValue.value;
     if (ttspEAValue.value) fitPayload.Ea = ttspEAValue.value;
 
     try {
@@ -1197,7 +1197,7 @@ const fitShiftAndExtract = async (
       if (fitted.C2 != null) ttspC2Value.value = fitted.C2;
       if (fitted.Tg != null) ttspTgValue.value = fitted.Tg;
       if (fitted.Ea != null) ttspEAValue.value = fitted.Ea;
-      if (fitted.TL != null) ttspTLValue.value = fitted.TL;
+      if (fitted.TC != null) ttspTCValue.value = fitted.TC;
       setTimeout(() => {
         skipCoeffWatcher.value = false;
       }, 0);
@@ -1206,7 +1206,7 @@ const fitShiftAndExtract = async (
       if (fitted.C2 != null) extractPayload.C2 = fitted.C2;
       if (fitted.Tg != null) extractPayload.Tg = fitted.Tg;
       if (fitted.Ea != null) extractPayload.Ea = fitted.Ea;
-      if (fitted.TL != null) extractPayload.TL = fitted.TL;
+      if (fitted.TC != null) extractPayload.TC = fitted.TC;
       // Display-only passthroughs for the shift figure: the fitted curve's
       // vertical offset (a_T_ref, co-fitted by both models) and the fit-time
       // χ²/ν stamp. Deliberately absent from
@@ -1231,7 +1231,7 @@ const fitShiftAndExtract = async (
     // has since cleared.
     store.commit('explorer/resetDynamfitShiftCoefficients');
     displayInfo(
-      'Enter Tg (WLF) or TL (hybrid) to fit shift coefficients. Charts use the uploaded shift factors directly.',
+      'Enter Tg (WLF) or Tc (hybrid) to fit shift coefficients. Charts use the uploaded shift factors directly.',
       5000
     );
   }
@@ -1307,9 +1307,9 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
 
     if (isHybrid.value) {
       if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTLValue.value) payload.TL = ttspTLValue.value;
+      if (ttspTCValue.value) payload.TC = ttspTCValue.value;
       if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tLEstimated.value) payload.TL_estimate = tLEstimated.value;
+      if (tCEstimated.value) payload.TC_estimate = tCEstimated.value;
     }
 
     // A previously uploaded shift file stays on the shift figure as the
@@ -1524,7 +1524,7 @@ watch(transformMethod, (newValue) => {
     c1Estimated.value = true;
     c2Estimated.value = true;
     if (newValue === 'hybrid') {
-      tLEstimated.value = true;
+      tCEstimated.value = true;
       eAEstimated.value = true;
     }
   }
@@ -1613,11 +1613,11 @@ watch(ttsp, (checked) => {
   updateBtn.value = true;
 });
 
-watch([tgEstimated, c1Estimated, c2Estimated, tLEstimated, eAEstimated], (cv, ov) => {
+watch([tgEstimated, c1Estimated, c2Estimated, tCEstimated, eAEstimated], (cv, ov) => {
   if (cv[0] && cv[0] === true) ttspTgValue.value = null;
   if (cv[1] && cv[1] === true) ttspC1Value.value = null;
   if (cv[2] && cv[2] === true) ttspC2Value.value = null;
-  if (cv[3] && cv[3] === true) ttspTLValue.value = null;
+  if (cv[3] && cv[3] === true) ttspTCValue.value = null;
   if (cv[4] && cv[4] === true) ttspEAValue.value = null;
   if (!skipCoeffWatcher.value && cv !== ov) updateBtn.value = true;
 });
@@ -1631,8 +1631,8 @@ watch(ttspC1Value, (v) => {
 watch(ttspC2Value, (v) => {
   if (v) c2Estimated.value = false;
 });
-watch(ttspTLValue, (v) => {
-  if (v) tLEstimated.value = false;
+watch(ttspTCValue, (v) => {
+  if (v) tCEstimated.value = false;
 });
 watch(ttspEAValue, (v) => {
   if (v) eAEstimated.value = false;
@@ -1643,8 +1643,8 @@ watch(ttspEAValue, (v) => {
 // unchecked-estimate + hand-typed Ea repainted the figures before Update was
 // ever hit. Programmatic write-backs are excluded — they arrive under
 // skipCoeffWatcher and already came from an update. This also covers the
-// manual-mode Tg/TL anchors, which previously needed their own watcher.
-watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTLValue, ttspEAValue], () => {
+// manual-mode Tg/TC anchors, which previously needed their own watcher.
+watch([ttspTgValue, ttspC1Value, ttspC2Value, ttspTCValue, ttspEAValue], () => {
   if (resetting.value || skipCoeffWatcher.value) return;
   if (!ttsp.value) return;
   updateBtn.value = true;

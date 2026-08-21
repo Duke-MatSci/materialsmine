@@ -12,7 +12,7 @@ export interface ShiftCoefficients {
   C2: number | null;
   Tg: number | null;
   Ea: number | null;
-  TL: number | null;
+  TC: number | null;
   a_T_ref: number | null;
   chi2_reduced: number | null;
   // The model /fit-shift actually ran, which in manual mode is not the
@@ -25,7 +25,7 @@ export interface ShiftCoefficients {
  * the anchors on hand — or null when no fit is possible yet.
  *
  * /fit-shift only accepts 'WLF' or 'hybrid', and each needs its anchor (Tg
- * anchors WLF at a_T == 1; TL is the hybrid WLF/Arrhenius crossover). The
+ * anchors WLF at a_T == 1; TC is the hybrid WLF/Arrhenius crossover). The
  * 'manual' transform has no fit model of its own, so it borrows whichever
  * model its anchors support, preferring WLF when both are set (fewer free
  * parameters). Sending 'manual' to the route is a 400 — the old code did, and
@@ -34,15 +34,15 @@ export interface ShiftCoefficients {
 export function resolveShiftFitModel(
   transformMethod: string,
   Tg: unknown,
-  TL: unknown
+  TC: unknown
 ): ShiftFitModel | null {
   const hasTg = Tg !== null && Tg !== undefined && Tg !== '';
-  const hasTL = TL !== null && TL !== undefined && TL !== '';
+  const hasTC = TC !== null && TC !== undefined && TC !== '';
   if (transformMethod === 'WLF') return hasTg ? 'WLF' : null;
-  if (transformMethod === 'hybrid') return hasTL ? 'hybrid' : null;
+  if (transformMethod === 'hybrid') return hasTC ? 'hybrid' : null;
   if (transformMethod === 'manual') {
     if (hasTg) return 'WLF';
-    if (hasTL) return 'hybrid';
+    if (hasTC) return 'hybrid';
   }
   return null;
 }
@@ -74,7 +74,8 @@ export function resolveExtractTransformMethod(
 /**
  * Flatten the fitted shift coefficients into parameter/value rows for CSV
  * export. Null (unfitted/unused) entries are skipped so a WLF export doesn't
- * carry blank Ea/TL rows.
+ * carry blank Ea/Tc rows. Row labels are display names ('Tc', no subscript
+ * available in CSV), not the wire field ('TC').
  */
 export function buildShiftCoefficientRows(
   transformMethod: string,
@@ -85,7 +86,7 @@ export function buildShiftCoefficientRows(
   ];
   const entries: [string, number | null][] = [
     ['Tg', coefficients.Tg],
-    ['TL', coefficients.TL],
+    ['Tc', coefficients.TC],
     ['C1', coefficients.C1],
     ['C2', coefficients.C2],
     ['Ea', coefficients.Ea],

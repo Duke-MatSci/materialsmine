@@ -1282,7 +1282,7 @@ def fit_wlf_coefficients(
     referenced there: a master curve built at 150 °C carries a_T == 1 at 150 °C,
     not at Tg. Anchoring the curve at 1 anyway makes C1 and C2 absorb the
     offset, so a_T_ref — the data's shift factor at T_ref — is always co-fitted,
-    exactly as fit_hybrid_coefficients does at TL. It is carried through the
+    exactly as fit_hybrid_coefficients does at TC. It is carried through the
     optimizer as log10(a_T_ref): that is the space the fit and the data live in,
     it needs no positivity bound, and data referenced decades away stays as well
     scaled as data referenced at T_ref.
@@ -1361,7 +1361,7 @@ def fit_wlf_coefficients(
     # Seed the offset at its conditional optimum given the starting C1/C2 — the
     # sigma-weighted mean residual, which is the exact least-squares solution for
     # a lone additive term. Seeding at a_T == 1 (or at an interpolated point, as
-    # the hybrid fit must because of its kink at TL) is wrong by whole decades
+    # the hybrid fit must because of its kink at TC) is wrong by whole decades
     # for a file referenced away from T_ref, and costs iterations from the start.
     with np.errstate(divide='ignore', invalid='ignore'):
         resid_0 = log10_a_T - wlf_log10_shift(T, T_ref, C1_0, C2_start)
@@ -1421,7 +1421,7 @@ def fit_wlf_coefficients(
 def fit_hybrid_coefficients(
         T: np.ndarray,
         a_T: np.ndarray,
-        TL: float,
+        TC: float,
         C1: float = None,
         C2: float = None,
         Ea: float = None,
@@ -1437,7 +1437,7 @@ def fit_hybrid_coefficients(
     shift-domain data.
 
     Uses scipy.optimize.curve_fit in log10(a_T) space so that points spanning
-    many decades of shift factor receive uniform weight. TL is required and is
+    many decades of shift factor receive uniform weight. TC is required and is
     never optimized — it is produced upstream by the E-loss-peak logic in the
     extract step and is a physical input, not a fit parameter.
 
@@ -1453,7 +1453,7 @@ def fit_hybrid_coefficients(
             Must be monotonically sorted (ascending or descending) as required by
             hybrid_shift.
         a_T (numpy.ndarray): 1-D array of positive shift factors (linear scale).
-        TL (float): WLF/Arrhenius crossover temperature in °C; passed through
+        TC (float): WLF/Arrhenius crossover temperature in °C; passed through
             to hybrid_shift and never optimized.
         C1 (float): Initial guess for WLF C1. Defaults to UNIVERSAL_WLF_C1 if
             None.
@@ -1475,12 +1475,12 @@ def fit_hybrid_coefficients(
     Returns:
         tuple: (C1_fit, C2_fit, Ea_fit, a_T_ref) — fitted (or fixed) hybrid
             coefficients plus the co-fitted reference shift factor a_T_ref (the
-            data's shift factor at TL; 1.0 when the data is referenced to TL) —
+            data's shift factor at TC; 1.0 when the data is referenced to TC) —
             with chi2_reduced appended when return_quality is True.
 
     Raises:
         ValueError: If any a_T value is non-positive (log10 undefined), if any
-            sigma_a_T value is non-positive, if TL falls outside the data range
+            sigma_a_T value is non-positive, if TC falls outside the data range
             so a model segment is degenerate, or if curve_fit does not converge.
     """
     T = np.atleast_1d(T)
@@ -1509,26 +1509,26 @@ def fit_hybrid_coefficients(
     else:
         ascending = True  # single element; direction irrelevant
 
-    if not fix_Ea and TL <= T[-(not ascending)]:
-        raise ValueError("TL is below the range of the shift factor data, leading"
+    if not fix_Ea and TC <= T[-(not ascending)]:
+        raise ValueError("Tc is below the range of the shift factor data, leading"
                          "to a degenerate Arrhenius segment of hybrid fit. Check data "
-                         "or supply a different TL.")
+                         "or supply a different Tc.")
 
-    if not (fix_C1 or fix_C2) and TL >= T[-(ascending)]:
-        raise ValueError("TL is above the range of the shift factor data, leading"
+    if not (fix_C1 or fix_C2) and TC >= T[-(ascending)]:
+        raise ValueError("Tc is above the range of the shift factor data, leading"
                          "to a degenerate WLF segment of hybrid fit. Check data or "
-                         "supply a different TL.")
+                         "supply a different Tc.")
 
-    # The shift factors may not be referenced to TL, but hybrid_shift is always 1
-    # at TL. So a_T_ref (the data's shift factor at TL) is co-fitted as a vertical
+    # The shift factors may not be referenced to TC, but hybrid_shift is always 1
+    # at TC. So a_T_ref (the data's shift factor at TC) is co-fitted as a vertical
     # offset rather than read off a single interpolated point: interpolating
-    # across the WLF/Arrhenius kink at TL biases the estimate (and hence the whole
-    # fit) even when the data is referenced exactly to TL. The interp value only
+    # across the WLF/Arrhenius kink at TC biases the estimate (and hence the whole
+    # fit) even when the data is referenced exactly to TC. The interp value only
     # seeds the optimizer; np.interp needs ascending samples, so order them.
     log10_a_T = np.log10(a_T)
     T_asc = T if ascending else T[::-1]
     log10_asc = log10_a_T if ascending else log10_a_T[::-1]
-    a_T_ref_0 = 10 ** float(np.interp(TL, T_asc, log10_asc))
+    a_T_ref_0 = 10 ** float(np.interp(TC, T_asc, log10_asc))
 
     # Build a model over only the free parameters; fixed ones are closed over.
     # This avoids passing degenerate lb==ub bounds to curve_fit, which some
@@ -1542,7 +1542,7 @@ def fit_hybrid_coefficients(
 
     # C2 floored at 1.0 to stay off the WLF pole; a_T_ref floored just above 0 so
     # the log10 wrapper in _curve_fit_shift stays finite. Hybrid's WLF branch only
-    # sees T > TL (not cold data), so the 10**exponent overflow that afflicts
+    # sees T > TC (not cold data), so the 10**exponent overflow that afflicts
     # fit_wlf_coefficients cannot occur here; log10_space=False is intentional.
     _floor = {'C2': 1.0, 'a_T_ref': np.finfo(float).tiny}
     lb = [_floor.get(n, -np.inf) for n in free_names]
@@ -1551,7 +1551,7 @@ def fit_hybrid_coefficients(
     def model(T_arg, *free_vals):
         vals = dict(zip(free_names, free_vals))
         return hybrid_shift(
-            T_arg, TL,
+            T_arg, TC,
             vals.get('C1', C1_0),
             vals.get('C2', C2_0),
             vals.get('Ea', Ea_0),
@@ -1572,7 +1572,7 @@ def fit_hybrid_coefficients(
     # Same failure modes as the fit itself: hybrid_shift raises ValueError at a
     # pole or on overflow, which the route already maps to HTTP 400.
     log10_model = np.log10(hybrid_shift(
-        T, TL, C1_fit, C2_fit, Ea_fit, a_T_ref_fit, ascending,
+        T, TC, C1_fit, C2_fit, Ea_fit, a_T_ref_fit, ascending,
     ))
     n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
     chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
@@ -1617,7 +1617,7 @@ def inverse_wlf_shift(a_T, T_ref: float, C1: float, C2: float) -> np.ndarray:
 
 
 def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
-                                    Tg=None, TL=None, C1=None, C2=None, Ea=None,
+                                    Tg=None, TC=None, C1=None, C2=None, Ea=None,
                                     shiftData=None):
     """
     Convert temperature-sweep viscoelastic data to frequency-sweep data via TTS.
@@ -1627,7 +1627,7 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
     sorted by Temperature ascending before the shift is applied.
 
     The reference temperature is selected from shift_model: 'WLF' uses Tg
-    (glass transition); 'hybrid' uses TL (WLF/Arrhenius crossover).
+    (glass transition); 'hybrid' uses TC (WLF/Arrhenius crossover).
 
     Parameters:
         temp_sweep_data (pd.DataFrame): Input data with columns
@@ -1636,10 +1636,10 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
             1.0 Hz is assumed (typical for a fixed-frequency DMA temperature sweep).
         shift_model (str): Which shift function to apply. 'WLF' uses
             wlf_shift across all temperatures; 'hybrid' uses hybrid_shift
-            (Arrhenius at or below TL, WLF above); 'manual' requires
+            (Arrhenius at or below TC, WLF above); 'manual' requires
             shiftData and uses it directly.
         Tg (float): WLF reference temperature (used when shift_model == 'WLF').
-        TL (float): Hybrid WLF/Arrhenius crossover temperature (used when
+        TC (float): Hybrid WLF/Arrhenius crossover temperature (used when
             shift_model == 'hybrid').
         C1 (float): WLF equation parameter C1.
         C2 (float): WLF equation parameter C2.
@@ -1698,7 +1698,7 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
     elif shift_model == 'WLF':
         a_T = wlf_shift(T, Tg, C1, C2)
     elif shift_model == 'hybrid':
-        a_T = hybrid_shift(T, TL, C1, C2, Ea)
+        a_T = hybrid_shift(T, TC, C1, C2, Ea)
     elif shift_model == 'manual':
         raise ValueError(
             "Manual shift model selected but no shift-factor file was provided. "
@@ -1710,7 +1710,7 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
             "or 'manual'. The route must restrict shift_model to this set."
         )
 
-    T_ref = {'WLF': Tg, 'hybrid': TL}.get(shift_model)  # None for 'manual'
+    T_ref = {'WLF': Tg, 'hybrid': TC}.get(shift_model)  # None for 'manual'
 
     # Drop rows outside the valid shift window (see MAX_ABS_LOG10_SHIFT).
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -1855,7 +1855,7 @@ def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
 
 
 def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, *,
-                                    Tg=None, TL=None, C1=None, C2=None, Ea=None,
+                                    Tg=None, TC=None, C1=None, C2=None, Ea=None,
                                     shiftData=None,
                                     omega_ref: float = VIS_REF_FREQUENCY_HZ) -> pd.DataFrame:
     """
@@ -1889,8 +1889,8 @@ def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, 
             ['Frequency', "E'", "E''"].
         shift_model (str): 'WLF', 'hybrid', or 'manual'.
         Tg (float): WLF reference temperature (used when shift_model == 'WLF').
-        TL, Ea: Accepted for signature symmetry with the forward V2; unused
-            until an inverse-hybrid exists (TL will be its required anchor).
+        TC, Ea: Accepted for signature symmetry with the forward V2; unused
+            until an inverse-hybrid exists (TC will be its required anchor).
         C1 (float): WLF parameter C1 (used when shift_model == 'WLF').
         C2 (float): WLF parameter C2 (used when shift_model == 'WLF').
         shiftData: Optional shift-factor table {'Temperature': ..., 'a_T': ...};
@@ -1984,7 +1984,7 @@ def peak_edge_warning(peak_T: float, T: np.ndarray, label: str,
     Parameters:
         peak_T (float): Estimated peak temperature in °C.
         T (numpy.ndarray): 1-D array of the data's temperatures in °C.
-        label (str): Parameter name for the message ('Tg' or 'TL').
+        label (str): Display name for the message ('Tg' or 'Tc').
         margin (float): Proximity threshold in °C. Defaults to 5.
 
     Returns:
@@ -2399,7 +2399,7 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray) -> list:
 _SHIFT_TABLE_MAX_ROWS = 50
 
 
-def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+def _build_shift_figure(shiftData, shift_model, Tg, TC, C1, C2, Ea, a_T_ref,
                         data_T_range, chi2_reduced) -> tuple:
     """
     Build the shift-factor figure (a_T vs Temperature, log-y) and its table.
@@ -2418,12 +2418,12 @@ def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
             upload_init(..., 'shift'); falsy for none.
         shift_model (str): 'WLF', 'hybrid', 'manual', or 'none'/None. Only
             'WLF' and 'hybrid' can draw a model curve.
-        Tg, TL, C1, C2, Ea: Shift-model parameters; the curve is skipped
+        Tg, TC, C1, C2, Ea: Shift-model parameters; the curve is skipped
             unless its model's full set is present (Tg/C1/C2 for WLF,
-            TL/C1/C2/Ea for hybrid).
+            TC/C1/C2/Ea for hybrid).
         a_T_ref (float): Vertical offset for the model curve — the data's
             shift factor at the model's anchor, co-fitted by
-            fit_wlf_coefficients (at Tg) or fit_hybrid_coefficients (at TL).
+            fit_wlf_coefficients (at Tg) or fit_hybrid_coefficients (at TC).
             None falls back to 1.0, which is right when no shift file was
             fitted (the model is then its own reference) and wrong for a file
             referenced anywhere else.
@@ -2460,7 +2460,7 @@ def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
         (shift_model == 'WLF'
          and Tg is not None and C1 is not None and C2 is not None)
         or (shift_model == 'hybrid'
-            and TL is not None and C1 is not None and C2 is not None
+            and TC is not None and C1 is not None and C2 is not None
             and Ea is not None)
     )
 
@@ -2475,10 +2475,10 @@ def _build_shift_figure(shiftData, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
         else:
             # hybrid_shift raises ValueError at a hand-entered pole (fitted
             # parameters cannot reach one: C2 is floored at 1 and its WLF
-            # branch only sees T > TL). No curve is better than a 500.
+            # branch only sees T > TC). No curve is better than a 500.
             try:
                 log10_a = np.log10(hybrid_shift(
-                    T_arr, TL, C1, C2, Ea,
+                    T_arr, TC, C1, C2, Ea,
                     a_T_ref if a_T_ref is not None else 1.0, True,
                 ))
             except ValueError:
@@ -2563,7 +2563,7 @@ EXPECTED_DOMAIN_COLUMNS = {
 
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
-                      Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None,
+                      Tg=None, C1=None, C2=None, Ea=None, TC=None, shift_model=None, shiftData=None,
                       relative_error=0.2, error_scale=1.0, a_T_ref=None,
                       shift_chi2_reduced=None, shift_reference=None):
     """
@@ -2583,7 +2583,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation modulus and spectrum figures.
         domain (str): 'frequency' or 'temperature'.
-        Tg, C1, C2, Ea, TL: Shift-model parameters. In the temperature domain
+        Tg, C1, C2, Ea, TC: Shift-model parameters. In the temperature domain
             they drive the temperature→frequency transform that feeds the Prony
             fit; in the frequency domain they (and shiftData) drive the
             frequency→temperature visualization only (manual/WLF; hybrid falls
@@ -2695,7 +2695,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         else:
             temp_sweep_data = tts_frequency_to_temperature_V2(
                 freq_sweep_data, shift_model,
-                Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
+                Tg=Tg, TC=TC, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
             )
             plot_temp, temp_decimation = _decimate_for_plot(temp_sweep_data)
             fig4, fig41 = _build_temperature_figures(plot_temp)
@@ -2715,7 +2715,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             T_derived = temp_sweep_data['Temperature'].to_numpy()
             shift_fig, shift_records = _build_shift_figure(
                 shiftData or shift_reference,
-                shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+                shift_model, Tg, TC, C1, C2, Ea, a_T_ref,
                 (float(T_derived.min()), float(T_derived.max())),
                 shift_chi2_reduced,
             )
@@ -2729,13 +2729,13 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         # `is not None` rather than truthy checks: Tg = 0 °C is a valid
         # reference, and the route default-fills numeric estimates that may
         # legitimately be zero. Tg is required only for WLF (used as T_ref);
-        # hybrid_shift uses TL as the WLF/Arrhenius crossover and never reads Tg.
+        # hybrid_shift uses TC as the WLF/Arrhenius crossover and never reads Tg.
         has_shift_params = (
             shiftData is not None
             or (shift_model == "WLF"
                 and Tg is not None and C1 is not None and C2 is not None)
             or (shift_model == "hybrid"
-                and TL is not None and C1 is not None and C2 is not None
+                and TC is not None and C1 is not None and C2 is not None
                 and Ea is not None)
         )
         if not has_shift_params:
@@ -2751,7 +2751,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
         freq_sweep_data = tts_temperature_to_frequency_V2(
             temp_sweep_data, shift_model,
-            Tg=Tg, TL=TL, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
+            Tg=Tg, TC=TC, C1=C1, C2=C2, Ea=Ea, shiftData=shiftData,
         )
 
         # Built after the transform so tts_temperature_to_frequency_V2 keeps
@@ -2766,7 +2766,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             marker_data = {'Temperature': np.sort(T_upload),
                            'a_T': pd.DataFrame(marker_data)['a_T'].to_numpy()}
         shift_fig, shift_records = _build_shift_figure(
-            marker_data, shift_model, Tg, TL, C1, C2, Ea, a_T_ref,
+            marker_data, shift_model, Tg, TC, C1, C2, Ea, a_T_ref,
             (float(T_upload.min()), float(T_upload.max())),
             shift_chi2_reduced,
         )

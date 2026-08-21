@@ -27,7 +27,7 @@ down from 0.437 when the curve was anchored (threshold: 0.45).
 
 Hybrid calibration (VeroCyan 80C): all three parameters (C1, C2, Ea) fitted
 freely from defaults; a_T_ref (the vertical reference offset) is co-fitted and
-must be applied when reconstructing (the VeroCyan data is not referenced to TL,
+must be applied when reconstructing (the VeroCyan data is not referenced to TC,
 a_T_ref ≈ 9.07). Observed log10-RMSE ≈ 0.704 (threshold: 1.0).
 """
 import unittest
@@ -106,7 +106,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         result = json.loads(resp.data)
         self.assertEqual(result['transform_method'], 'WLF')
         self.assertIsNone(result['Ea'])
-        self.assertIsNone(result['TL'])
+        self.assertIsNone(result['TC'])
 
         C1 = result['C1']
         C2 = result['C2']
@@ -140,7 +140,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
 
     def test_hybrid_e2e_converges_and_fit_is_accurate(self):
         """
-        Hybrid Arrhenius/WLF fit on VeroCyan shift data (T_L=80 °C).
+        Hybrid Arrhenius/WLF fit on VeroCyan shift data (T_C=80 °C).
 
         All three parameters (C1, C2, Ea) are fitted freely from default initial
         guesses — no body-level C1/C2/Ea, so the optimizer is fully exercised.
@@ -150,7 +150,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         body = {
             'shift_file_name': 'VeroCyan (5) shift factors 80C clean.txt',
             'transform_method': 'hybrid',
-            'TL': 80.0,
+            'TC': 80.0,
             # No C1, C2, Ea — all three are freely fitted
         }
         resp = self._post(body)
@@ -168,7 +168,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
                             f"Expected finite positive {name}, got {val}")
 
         # The route now surfaces the co-fit vertical reference offset; the VeroCyan
-        # data is not referenced to TL, so a_T_ref must be finite, positive, ≠ 1.
+        # data is not referenced to TC, so a_T_ref must be finite, positive, ≠ 1.
         a_T_ref = result['a_T_ref']
         self.assertTrue(np.isfinite(a_T_ref) and a_T_ref > 0,
                         f"Expected finite positive a_T_ref, got {a_T_ref}")
@@ -289,7 +289,7 @@ class TestExtractRoute(unittest.TestCase):
                     'relaxation-spectrum-chart', 'complex-temp-chart',
                     'temp-tand-chart', 'shift-chart', 'shift-table',
                     'mytable', 'upload-data',
-                    'C1', 'C2', 'Tg', 'Ea', 'TL', 'warnings'):
+                    'C1', 'C2', 'Tg', 'Ea', 'TC', 'warnings'):
             self.assertIn(key, response)
 
     def test_upload_data_is_array_of_row_objects(self):
@@ -317,12 +317,12 @@ class TestExtractRoute(unittest.TestCase):
 
     def test_frequency_peak_estimation_returns_400(self):
         """
-        Tg/TL estimation is temperature-domain only: a master curve's tan-δ
+        Tg/TC estimation is temperature-domain only: a master curve's tan-δ
         and E-loss peaks are frequencies, and reading one off as a °C value
         was a unit error. The client no longer offers the checkboxes for
         frequency data; the route refuses them with a units message.
         """
-        resp = self._post(self._freq_body(Tg_estimate=True, TL_estimate=True))
+        resp = self._post(self._freq_body(Tg_estimate=True, TC_estimate=True))
         self.assertEqual(resp.status_code, 400, resp.data[:400])
         self.assertIn('frequencies, not', json.loads(resp.data)['message'])
 
@@ -607,7 +607,7 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
 class TestPeakEdgeWarning(unittest.TestCase):
     """
     Unit tests for peak_edge_warning: the edge-proximity caution attached to
-    estimated Tg/TL peaks. The threshold is strict — a peak exactly margin
+    estimated Tg/TC peaks. The threshold is strict — a peak exactly margin
     degrees from the edge is trusted.
     """
 
@@ -623,9 +623,9 @@ class TestPeakEdgeWarning(unittest.TestCase):
         self.assertIn('manually', msg)
 
     def test_peak_near_hot_edge_warns(self):
-        msg = peak_edge_warning(79.0, self.T, 'TL')
+        msg = peak_edge_warning(79.0, self.T, 'Tc')
         self.assertIsNotNone(msg)
-        self.assertIn('TL', msg)
+        self.assertIn('Tc', msg)
 
     def test_peak_exactly_at_margin_is_trusted(self):
         self.assertIsNone(peak_edge_warning(5.0, self.T, 'Tg'))
@@ -638,7 +638,7 @@ class TestPeakEdgeWarning(unittest.TestCase):
 
 class TestExtractRouteEstimateWarnings(unittest.TestCase):
     """
-    E2E: estimated Tg/TL peaks near the temperature edge must ride back in
+    E2E: estimated Tg/TC peaks near the temperature edge must ride back in
     the response's warnings array (and interior peaks must not), through the
     real route with real files.
     """
@@ -707,43 +707,43 @@ class TestExtractRouteEstimateWarnings(unittest.TestCase):
         self.assertIn('Tg', warnings[0])
 
     def test_both_estimates_near_edge_warn_twice(self):
-        # Peak at 78 °C — within 5° of the hot edge; Tg and TL both estimate
-        # to it. Hybrid keeps the transform well-defined at that TL.
+        # Peak at 78 °C — within 5° of the hot edge; Tg and TC both estimate
+        # to it. Hybrid keeps the transform well-defined at that TC.
         name = self._write_ramp('hot_edge_bump.tsv', 78)
         resp = self._post(self._temp_body(
             name, transform_method='hybrid', Ea=200.0,
-            Tg_estimate=True, TL_estimate=True,
+            Tg_estimate=True, TC_estimate=True,
             C1_estimate=True, C2_estimate=True,
         ))
         self.assertEqual(resp.status_code, 200, resp.data[:400])
         warnings = json.loads(resp.data)['response']['warnings']
         self.assertEqual(len(warnings), 2)
         self.assertIn('Tg', warnings[0])
-        self.assertIn('TL', warnings[1])
+        self.assertIn('Tc', warnings[1])
 
     def test_estimated_shift_params_echo_serializes(self):
-        # Tg/TL filled by *_estimate are numpy scalars read out of the data
+        # Tg/TC filled by *_estimate are numpy scalars read out of the data
         # array; the echoed response must still JSON-serialize and carry them
         # as plain numbers (regression guard against numpy values in the
-        # echoed C1/C2/Tg/Ea/TL).
+        # echoed C1/C2/Tg/Ea/TC).
         name = self._write_ramp('echo_bump.tsv', 40)
         resp = self._post(self._temp_body(
             name, transform_method='hybrid', Ea=200.0,
-            Tg_estimate=True, TL_estimate=True,
+            Tg_estimate=True, TC_estimate=True,
             C1_estimate=True, C2_estimate=True,
         ))
         self.assertEqual(resp.status_code, 200, resp.data[:400])
         response = json.loads(resp.data)['response']
         self.assertIsInstance(response['Tg'], (int, float))
-        self.assertIsInstance(response['TL'], (int, float))
+        self.assertIsInstance(response['TC'], (int, float))
 
     def test_interior_peak_estimates_do_not_warn(self):
-        # Peak at 40 °C — comfortably interior. Hybrid with a typed TL keeps
+        # Peak at 40 °C — comfortably interior. Hybrid with a typed TC keeps
         # the estimated Tg out of the transform, isolating the warning logic.
         name = self._write_ramp('interior_bump.tsv', 40)
         resp = self._post(self._temp_body(
             name, transform_method='hybrid',
-            TL=40.0, Ea=200.0, C1_estimate=True, C2_estimate=True,
+            TC=40.0, Ea=200.0, C1_estimate=True, C2_estimate=True,
             Tg_estimate=True,
         ))
         self.assertEqual(resp.status_code, 200, resp.data[:400])

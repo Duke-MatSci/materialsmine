@@ -152,20 +152,20 @@ class TestFitWlfCoefficients(unittest.TestCase):
 class TestFitHybridCoefficients(unittest.TestCase):
     """Tests for fit_hybrid_coefficients — pure function, no Flask app needed."""
 
-    TL = 25.0       # WLF/Arrhenius crossover — required input, never fitted
+    TC = 25.0       # WLF/Arrhenius crossover — required input, never fitted
     C1_TRUE = 14.0
     C2_TRUE = 45.0
     EA_TRUE = 80.0  # kJ/mol — well within curve_fit's convergence basin
 
     @classmethod
     def setUpClass(cls):
-        # Span both sides of TL so both Arrhenius and WLF branches are exercised.
+        # Span both sides of TC so both Arrhenius and WLF branches are exercised.
         cls.T = np.linspace(5.0, 70.0, 30)
-        cls.a_T = hybrid_shift(cls.T, cls.TL, cls.C1_TRUE, cls.C2_TRUE, cls.EA_TRUE)
+        cls.a_T = hybrid_shift(cls.T, cls.TC, cls.C1_TRUE, cls.C2_TRUE, cls.EA_TRUE)
 
     def test_round_trip_recovers_C1_C2_and_Ea(self):
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
-            self.T, self.a_T, self.TL,
+            self.T, self.a_T, self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
         )
         self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
@@ -175,7 +175,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
     def test_fixed_Ea_returned_exactly_and_others_fitted(self):
         # Ea is pinned; C1 and C2 must be recovered from the data.
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
-            self.T, self.a_T, self.TL,
+            self.T, self.a_T, self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
             fix_Ea=True,
         )
@@ -187,23 +187,23 @@ class TestFitHybridCoefficients(unittest.TestCase):
         bad_a_T = self.a_T.copy()
         bad_a_T[5] = 0.0
         with self.assertRaises(ValueError):
-            fit_hybrid_coefficients(self.T, bad_a_T, self.TL)
+            fit_hybrid_coefficients(self.T, bad_a_T, self.TC)
 
     def test_returns_a_T_ref_near_one_for_TL_referenced_data(self):
-        # setUpClass data is built referenced to TL (hybrid_shift, a_T_ref=1), so
+        # setUpClass data is built referenced to TC (hybrid_shift, a_T_ref=1), so
         # the co-fitted a_T_ref recovers ~1.0.
         *_, a_T_ref = fit_hybrid_coefficients(
-            self.T, self.a_T, self.TL,
+            self.T, self.a_T, self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
         )
         self.assertAlmostEqual(a_T_ref, 1.0, places=4)
 
     def test_cofits_offset_for_unreferenced_data(self):
-        # Data scaled by a known constant K (reference shifted off TL): the fit
+        # Data scaled by a known constant K (reference shifted off TC): the fit
         # recovers K as a_T_ref and the same C1/C2/Ea.
         K = 12.0
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
-            self.T, K * self.a_T, self.TL,
+            self.T, K * self.a_T, self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
         )
         self.assertAlmostEqual(a_T_ref, K, places=3)
@@ -212,29 +212,29 @@ class TestFitHybridCoefficients(unittest.TestCase):
         self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=3)
 
     def test_degenerate_Arrhenius_guard_fires_and_suppressed_by_fix_Ea(self):
-        # All data above TL → empty Arrhenius segment → ValueError while Ea is
+        # All data above TC → empty Arrhenius segment → ValueError while Ea is
         # free; fixing Ea suppresses the guard and the WLF-only fit succeeds.
         T = np.linspace(30.0, 70.0, 20)
         a_T = wlf_shift(T, 25.0, self.C1_TRUE, self.C2_TRUE)
         with self.assertRaises(ValueError):
-            fit_hybrid_coefficients(T, a_T, TL=25.0)
+            fit_hybrid_coefficients(T, a_T, TC=25.0)
         C1_fit, C2_fit, Ea_fit, _ = fit_hybrid_coefficients(
-            T, a_T, TL=25.0, Ea=self.EA_TRUE, fix_Ea=True,
+            T, a_T, TC=25.0, Ea=self.EA_TRUE, fix_Ea=True,
         )
         self.assertEqual(Ea_fit, self.EA_TRUE)
         self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=3)
         self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=3)
 
     def test_degenerate_WLF_guard_fires_and_suppressed_by_fix_C(self):
-        # All data below TL → empty WLF segment → ValueError while C1/C2 are
+        # All data below TC → empty WLF segment → ValueError while C1/C2 are
         # free; fixing them suppresses the guard and the Arrhenius-only fit
         # recovers Ea.
         T = np.linspace(5.0, 20.0, 20)
         a_T = _arr_shift(T, 25.0, self.EA_TRUE)
         with self.assertRaises(ValueError):
-            fit_hybrid_coefficients(T, a_T, TL=25.0)
+            fit_hybrid_coefficients(T, a_T, TC=25.0)
         C1_fit, C2_fit, Ea_fit, _ = fit_hybrid_coefficients(
-            T, a_T, TL=25.0, C1=self.C1_TRUE, C2=self.C2_TRUE,
+            T, a_T, TC=25.0, C1=self.C1_TRUE, C2=self.C2_TRUE,
             fix_C1=True, fix_C2=True,
         )
         self.assertEqual((C1_fit, C2_fit), (self.C1_TRUE, self.C2_TRUE))
@@ -244,7 +244,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
         # C1/C2/Ea all fixed → echoed exactly; a_T_ref is still co-fitted.
         K = 7.0
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
-            self.T, K * self.a_T, self.TL,
+            self.T, K * self.a_T, self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
             fix_C1=True, fix_C2=True, fix_Ea=True,
         )
@@ -258,7 +258,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
         # Reversed (descending) T/a_T must recover the same coefficients — checks
         # the direction handling and the ascending-ordered a_T_ref interpolation.
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
-            self.T[::-1], self.a_T[::-1], self.TL,
+            self.T[::-1], self.a_T[::-1], self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
         )
         self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
@@ -302,7 +302,7 @@ class TestShiftFitQuality(unittest.TestCase):
     def test_hybrid_quality_arity_and_exact_data_chi2_is_zero(self):
         T = np.linspace(-10.0, 90.0, 25)
         a_T = hybrid_shift(T, 40.0, self.C1_TRUE, self.C2_TRUE, 120.0, 3.0, True)
-        result = fit_hybrid_coefficients(T, a_T, TL=40.0, return_quality=True)
+        result = fit_hybrid_coefficients(T, a_T, TC=40.0, return_quality=True)
         self.assertEqual(len(result), 5)
         self.assertLess(result[4], 1e-8)
 
