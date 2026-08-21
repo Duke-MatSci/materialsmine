@@ -81,7 +81,7 @@
           <div class="dynamfit-source-grid u_margin-bottom-small">
             <button class="dynamfit-source-btn" @click="cSelectSource('popular')">
               <md-icon style="margin-left: 0; margin-right: 0.25rem">star</md-icon>
-              Popular Polymer
+              Popular Polymers
             </button>
             <button class="dynamfit-source-btn" @click="cSelectSource('surprise')">
               <md-icon style="margin-left: 0; margin-right: 0.25rem">shuffle</md-icon>
@@ -752,12 +752,12 @@ const allPolymerFiles = [
   },
   {
     path: '/docs/dynamfit/dgeba-ipd-wide-bar-170C_mastercurve.tsv',
-    label: 'DGEBA-IPD Wide Bar (170°C)',
+    label: 'DGEBA-IPD (170°C)',
     domain: 'frequency',
   },
   {
     path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
-    label: 'PETMP-TATATO Wide Bar (55°C)',
+    label: 'PETMP-TATATO (55°C)',
     domain: 'frequency',
   },
   {
@@ -766,17 +766,17 @@ const allPolymerFiles = [
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/polystyrene-260kDa-100C_mastercurve.tsv',
-    label: 'Polystyrene 260kDa (100°C)',
+    path: '/docs/dynamfit/Cavaille-PS-98k-master-93C.csv',
+    label: 'Polystyrene 98kDa, shear (93°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/PMMA-R10_mastercurve.tsv',
-    label: 'PMMA (R10)',
+    path: '/docs/dynamfit/PMMA-R09-master-clean-148C.csv',
+    label: 'PMMA R09 (148°C)',
     domain: 'frequency',
   },
   {
-    path: '/docs/dynamfit/polycarbonate-150C_mastercurve.tsv',
+    path: '/docs/dynamfit/fisher-polycarbonate-150C_mastercurve.csv',
     label: 'Polycarbonate (150°C)',
     domain: 'frequency',
   },
@@ -787,17 +787,22 @@ const allPolymerFiles = [
   },
   {
     path: '/docs/dynamfit/dgeba-ipd-wide-bar-1Hz_temp.tsv',
-    label: 'DGEBA-IPD Wide Bar (1Hz)',
+    label: 'DGEBA-IPD (1Hz)',
     domain: 'temperature',
   },
   {
     path: '/docs/dynamfit/PETMP-TATATO-OLD-wide-bar-1Hz_temp.tsv',
-    label: 'PETMP-TATATO Wide Bar (1Hz)',
+    label: 'PETMP-TATATO (1Hz)',
     domain: 'temperature',
   },
   {
     path: '/docs/dynamfit/VeroCyan-1Hz_temp.tsv',
     label: 'VeroCyan (1Hz)',
+    domain: 'temperature',
+  },
+  {
+    path: '/docs/dynamfit/PMMA-R09-temp-sweep-clean.csv',
+    label: 'PMMA R09 (1Hz)',
     domain: 'temperature',
   },
 ];
