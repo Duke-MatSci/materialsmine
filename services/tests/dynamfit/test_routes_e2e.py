@@ -567,8 +567,8 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
 
     def test_shared_error_column_returns_200_and_is_echoed(self):
         # Guards the contract the frontend's error-column detection relies on:
-        # upload-data must echo the error keys, or the Relative Error ghosting
-        # silently stops working with no other signal.
+        # upload-data must echo the error keys, or the error widget silently
+        # stays in Relative Error mode with no other signal.
         name = self._write('shared_err.tsv', self._rows(4))
         resp = self._post(self._body(name))
         self.assertEqual(resp.status_code, 200, resp.data[:400])
@@ -594,6 +594,14 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
         resp = self._post(self._body(name, relative_error=0))
         self.assertEqual(resp.status_code, 400, resp.data[:400])
         self.assertIn('relative error must be positive', json.loads(resp.data)['message'])
+
+    def test_error_scale_zero_returns_400(self):
+        # Same division by zero via the columns branch, where std_scale
+        # multiplies the file's own sigmas.
+        name = self._write('scaled_err.tsv', self._rows(4))
+        resp = self._post(self._body(name, error_scale=0))
+        self.assertEqual(resp.status_code, 400, resp.data[:400])
+        self.assertIn('error scale must be positive', json.loads(resp.data)['message'])
 
 
 class TestPeakEdgeWarning(unittest.TestCase):

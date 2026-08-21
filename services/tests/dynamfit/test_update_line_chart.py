@@ -1015,6 +1015,35 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
             )
         self.assertEqual(spy.call_args.kwargs['std_scale'], 1.0)
 
+    def test_error_scale_kwarg_rides_in_std_scale_with_columns(self):
+        # The scale must ride in std_scale rather than the array, so every
+        # move of the Error Scale widget shares one cached reduction — the
+        # same trick relative_error uses on the no-columns path.
+        err = np.array([1.0, 2.0, 3.0])
+        data = self._freq_data({'Error': err})
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency', error_scale=2.0,
+            )
+        kwargs = spy.call_args.kwargs
+        self.assertEqual(kwargs['std_scale'], 2.0)
+        np.testing.assert_array_equal(kwargs['E_stor_std'], err)
+        np.testing.assert_array_equal(kwargs['E_loss_std'], err)
+
+    def test_error_scale_ignored_without_columns(self):
+        # The mirror of test_error_columns_leave_std_scale_at_one: with no
+        # columns the widget is in Relative Error mode, and the scale value
+        # (sent on every request regardless) must not touch the fallback.
+        data = self._freq_data()
+        with self._spy() as spy:
+            update_line_chart(
+                data, number_of_prony=5, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+                relative_error=0.5, error_scale=3.0,
+            )
+        self.assertEqual(spy.call_args.kwargs['std_scale'], 0.5)
+
     def test_temperature_per_modulus_error_columns_flow_through_tts(self):
         # The temperature branch routes data through tts_temperature_to_frequency_V2,
         # which reorders rows by post-shift Frequency. The per-row error values

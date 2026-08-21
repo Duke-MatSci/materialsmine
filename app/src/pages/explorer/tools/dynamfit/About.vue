@@ -44,9 +44,11 @@
         </p>
         <p>
           Each data point is weighted by its uncertainty. If your file supplies error columns
-          those values are used directly; otherwise the <em>Relative Error</em> setting supplies
-          an assumed fractional uncertainty, so that each point is weighted by
-          σ = relative error × |E*|.
+          those values set the point-to-point weighting, and an <em>Error Scale</em> setting
+          multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
+          fit if your instrument understates its uncertainty. Otherwise the
+          <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
+          that each point is weighted by σ = (relative error ÷ 100) × |E*|.
         </p>
         <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
@@ -77,8 +79,8 @@
           Error is an <strong>absolute standard deviation in Pa</strong> — the same units as the
           moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5% uncertainty is
           <strong>5e7</strong>, not 0.05. Every error value must be greater than zero. Error
-          columns set the fit weights (1/σ) and replace the Relative Error setting; they are not
-          drawn as error bars.
+          columns set the fit weights (1/σ), and the Relative Error setting becomes an Error
+          Scale that multiplies them; they are not drawn as error bars.
         </p>
         <p>
           A manual shift-factor file, if you use one, is two columns: temperature and a<sub

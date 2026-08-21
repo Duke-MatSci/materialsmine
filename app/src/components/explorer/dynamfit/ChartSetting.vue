@@ -150,8 +150,8 @@
                 </p>
                 <p>
                   Every error value must be greater than 0. Error columns set the fit
-                  weights (1/σ) and replace the Relative Error setting below. They are not
-                  drawn as error bars.
+                  weights (1/σ), and the setting below becomes an Error Scale that
+                  multiplies them. They are not drawn as error bars.
                 </p>
               </div>
             </template>
@@ -386,7 +386,19 @@
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
-          <label for="relativeErrorC" class="md-body-2">
+          <!-- One widget slot, two modes: the same knob reads as a relative
+               error when the fit synthesizes sigma from |E*|, and as a plain
+               multiplier on the file's own error columns when it has them. -->
+          <label v-if="cHasErrorColumns" for="errorScaleC" class="md-body-2">
+            Error Scale
+            <HelpPopover label="Error Scale">
+              Multiplies the error columns supplied by your file: 1.0 uses them exactly
+              as given, 2.0 doubles every σ. Point-to-point weighting still comes from
+              the file; this only scales it, which shifts χ²/dof and the smoothness
+              trade-off.
+            </HelpPopover>
+          </label>
+          <label v-else for="relativeErrorC" class="md-body-2">
             Relative Error (%)
             <HelpPopover label="Relative Error">
               Assumed measurement uncertainty as a percentage: the fit weights each point by
@@ -395,10 +407,27 @@
             </HelpPopover>
           </label>
           <input
-            :disabled="cRelativeErrorDisabled"
+            v-if="cHasErrorColumns"
+            :disabled="disableInput"
+            v-model.number="errorScale"
+            :class="[
+              disableInput ? 'nuplot-masked' : '',
+              'form__input form__input--flat',
+            ]"
+            type="number"
+            name="errorScale"
+            id="errorScaleC"
+            min="0"
+            max="100"
+            :step="ERROR_SCALE_STEP"
+            :placeholder="ERROR_SCALE_DEFAULT"
+          />
+          <input
+            v-else
+            :disabled="disableInput"
             v-model.number="relativeErrorPercent"
             :class="[
-              cRelativeErrorDisabled ? 'nuplot-masked' : '',
+              disableInput ? 'nuplot-masked' : '',
               'form__input form__input--flat',
             ]"
             type="number"
@@ -409,9 +438,6 @@
             :step="PERCENT_INPUT_STEP"
             :placeholder="RELATIVE_ERROR_DEFAULT_PERCENT"
           />
-          <span v-if="cHasErrorColumns" class="dynamfit-hint">
-            Using error columns of data source.
-          </span>
         </div>
       </div>
       <div
@@ -654,6 +680,8 @@ import {
   computeDefaultPronyTerms,
   fractionToPercent,
   percentToFraction,
+  ERROR_SCALE_DEFAULT,
+  ERROR_SCALE_STEP,
   PERCENT_INPUT_STEP,
   RELATIVE_ERROR_DEFAULT_PERCENT,
   SMOOTHNESS_DEFAULT_PERCENT,
@@ -725,6 +753,11 @@ const cFormatOpen = ref(false);
 // below so the units on screen match the labels.
 const smoothness = ref<number>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
 const relativeError = ref<number>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
+// The widget's other mode: a plain multiplier on the file's own error
+// columns. Both values ride in every request and the server consumes
+// whichever matches the upload's shape, so neither mode can corrupt the
+// other — see the error_scale comment in services routes.py.
+const errorScale = ref<number>(ERROR_SCALE_DEFAULT);
 
 const smoothnessPercent = computed<number>({
   get: () => fractionToPercent(smoothness.value),
@@ -852,12 +885,15 @@ const eaPlaceholder = computed(() => (eAEstimated.value ? 'EA (200 kJ/mol, Unive
 
 // Error columns are only known WITH the fit response: upload-data echoes every
 // column upload_init produced, keyed by name. Before the first response
-// dynamfitData is {}, so disableInput already ghosts the Relative Error input;
-// both flags flip on the same commit. Known stale window: loadPolymerFile()
-// swaps the file without clearing dynamfitData, so this can read true for one
-// request after replacing a 5-column file with a 3-column one. Clearing first
-// would flip disableInput mid-request and collapse the whole panel, which is
-// worse than a briefly stale hint.
+// dynamfitData is {}, so disableInput already ghosts the error widget; both
+// flags flip on the same commit. This drives which MODE the widget renders in
+// (Relative Error % vs Error Scale), not whether it is enabled. Known stale
+// window: loadPolymerFile() swaps the file without clearing dynamfitData, so
+// this can read wrong for one request after replacing a 5-column file with a
+// 3-column one — harmless, because every request carries both mode's values
+// and the server consumes the one matching the upload's actual shape.
+// Clearing first would flip disableInput mid-request and collapse the whole
+// panel, which is worse than a briefly stale label.
 const cHasErrorColumns = computed<boolean>(() => {
   const rows = dynamfitData.value?.['upload-data'];
   if (!Array.isArray(rows) || !rows.length) return false;
@@ -867,8 +903,6 @@ const cHasErrorColumns = computed<boolean>(() => {
     (cols.includes('E Storage Error') && cols.includes('E Loss Error'))
   );
 });
-
-const cRelativeErrorDisabled = computed(() => disableInput.value || cHasErrorColumns.value);
 
 const updateControls = computed(() => {
   return !!dynamfit.value?.fileUpload || !!results.value?.xmls?.length;
@@ -918,6 +952,7 @@ const resetAll = async (): Promise<void> => {
   ttsp.value = false;
   smoothness.value = percentToFraction(SMOOTHNESS_DEFAULT_PERCENT);
   relativeError.value = percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT);
+  errorScale.value = ERROR_SCALE_DEFAULT;
   store.commit('explorer/setDynamfitManualFile', '');
   store.commit('explorer/resetDynamfitShiftCoefficients');
   cTtspApplied.value = false;
@@ -1129,7 +1164,7 @@ const fitShiftAndExtract = async (
     : null;
 
   if (!refit) {
-    // A repaint (prony terms, smoothness, relative error) changes nothing the
+    // A repaint (prony terms, smoothness, relative error / error scale) changes nothing the
     // shift fit depends on, so re-running it would spend a round-trip to
     // reproduce numbers we already hold — and re-toast the "enter an anchor"
     // nudge below on every drag of the slider. Replay the stored fit instead so
@@ -1234,6 +1269,7 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
     domain: selectedProperty.value,
     smoothness: smoothness.value,
     relative_error: relativeError.value,
+    error_scale: errorScale.value,
     // Say "no transform" out loud rather than leaving the key off. Both
     // branches below overwrite this when ω-T is checked; unchecked, it keeps
     // the server from inferring a shift model and returning a temperature
@@ -1512,7 +1548,7 @@ watch(
   { deep: true }
 );
 
-watch([smoothness, relativeError], () => {
+watch([smoothness, relativeError, errorScale], () => {
   if (resetting.value) return;
   updateChart();
 });

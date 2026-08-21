@@ -34,6 +34,16 @@ export const RELATIVE_ERROR_DEFAULT_PERCENT = 1;
 // range of either knob without making the steppers useless.
 export const PERCENT_INPUT_STEP = 0.1;
 
+/**
+ * When the upload supplies its own error column(s), the error widget switches
+ * from "Relative Error (%)" to "Error Scale": a unitless multiplier on the
+ * file's sigmas. 1.0 means "use the columns exactly as supplied", which is why
+ * it is the default — the first fit after an upload must respect the file
+ * before the client even knows the columns exist.
+ */
+export const ERROR_SCALE_DEFAULT = 1.0;
+export const ERROR_SCALE_STEP = 0.1;
+
 /** Convert a percentage from the settings inputs into the fraction the API wants. */
 export function percentToFraction(percent: number): number {
   if (!Number.isFinite(percent)) return percent;

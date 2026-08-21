@@ -870,7 +870,8 @@ def smooth_prony_fit(
     assert isinstance(E_loss_std, np.ndarray) and E_loss_std.shape == E_loss.shape, \
         "E_loss_std must be a 1-D numpy.ndarray matching E_loss"
     # Not merely "non-zero": a negative scale would flip the sign of every
-    # weighted residual, and the route already rejects relative_error <= 0.
+    # weighted residual, and the route already rejects relative_error <= 0
+    # and error_scale <= 0 (whichever feeds std_scale).
     assert std_scale > 0, "std_scale must be positive"
 
     tau_max = 1 / np.min(omega)
@@ -2563,8 +2564,8 @@ EXPECTED_DOMAIN_COLUMNS = {
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
                       Tg=None, C1=None, C2=None, Ea=None, TL=None, shift_model=None, shiftData=None,
-                      relative_error=0.2, a_T_ref=None, shift_chi2_reduced=None,
-                      shift_reference=None):
+                      relative_error=0.2, error_scale=1.0, a_T_ref=None,
+                      shift_chi2_reduced=None, shift_reference=None):
     """
     Update the dynamfit figures and Prony coefficient table for an uploaded dataset.
 
@@ -2594,6 +2595,13 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             back to the universal-WLF view.
         shiftData: Optional precomputed shift factors {'Temperature': ..., 'a_T': ...}.
             Supplying one counts as requesting a transform even under 'none'.
+        relative_error (float): Fractional uncertainty used to synthesize the
+            per-point sigma (relative_error * |E*|) when the upload carries no
+            error columns. Ignored when it does.
+        error_scale (float): Uniform multiplier on the upload's own error
+            columns when present; 1.0 uses them as supplied. Ignored when the
+            upload has none. Kept separate from relative_error so each widget
+            mode has a wire field the other mode cannot corrupt.
         a_T_ref (float): Vertical offset for the model curve on the shift
             figure (from fit_hybrid_coefficients via /fit-shift/). Display
             only — the transform itself never reads it.
@@ -2780,18 +2788,19 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     E_stor_arr = df['E Storage'].to_numpy()
     E_loss_arr = df['E Loss'].to_numpy()
-    # std_scale carries relative_error INSTEAD of baking it into the array. The
-    # synthesized sigma is then just |E*|, identical on every move of the
-    # relative-error widget, so all of them share one cached reduction; folding
-    # the factor in here would make each move a different array and cost a full
+    # std_scale carries relative_error/error_scale INSTEAD of baking either
+    # into the array. The sigma array is then identical on every move of the
+    # error widget, so all of them share one cached reduction; folding the
+    # factor in here would make each move a different array and cost a full
     # QR over every row. The fit is the same either way (see _prony_reduce).
-    std_scale = 1.0
     if 'E Storage Error' in df.columns and 'E Loss Error' in df.columns:
         E_stor_std = df['E Storage Error'].to_numpy()
         E_loss_std = df['E Loss Error'].to_numpy()
+        std_scale = error_scale
     elif 'Error' in df.columns:
         E_stor_std = df['Error'].to_numpy()
         E_loss_std = E_stor_std
+        std_scale = error_scale
     else:
         E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr)
         E_loss_std = E_stor_std

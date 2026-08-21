@@ -73,6 +73,12 @@ def extract_data_from_file(request_id):
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
         relative_error = data.get('relative_error', 0.2)
+        # Multiplier on the file's own error columns; the client sends both
+        # this and relative_error every time, and update_line_chart consumes
+        # whichever matches the upload's shape. That keeps the first fit after
+        # an upload correct even though the client only learns whether error
+        # columns exist from that fit's response.
+        error_scale = data.get('error_scale', 1.0)
         # Default to 'none', not a real model: an absent transform_method means
         # the caller did not ask for a ω-T transformation. Defaulting to 'hybrid'
         # made "no transform requested" indistinguishable from "hybrid
@@ -127,6 +133,11 @@ def extract_data_from_file(request_id):
         # every row, dividing by zero in smooth_prony_fit's weighted design matrix.
         if relative_error <= 0:
             return jsonify({'message': 'The relative error must be positive'}), 400
+
+        # Same guard as relative_error: zero would zero every supplied sigma,
+        # negative would flip the weighted residuals.
+        if error_scale <= 0:
+            return jsonify({'message': 'The error scale must be positive'}), 400
 
         if fit_settings not in [True, False]:
             return jsonify({'message': 'The fit settings must be either True or False'}), 400
@@ -203,6 +214,7 @@ def extract_data_from_file(request_id):
         result = update_line_chart(uploadData, number_of_prony, smoothness,
                                    fit_settings, domain,
                                    relative_error=relative_error,
+                                   error_scale=error_scale,
                                    a_T_ref=a_T_ref,
                                    shift_chi2_reduced=shift_chi2_reduced,
                                    shift_reference=shift_reference,
