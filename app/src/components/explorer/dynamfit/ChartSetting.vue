@@ -94,10 +94,10 @@
         <!-- Upload sub-panel -->
         <template v-if="dataType === 'upload'">
           <div class="dynamfit-shift-upload">
-            <p class="dynamfit-shift-upload__label">
-              Upload a viscoelastic data file (CSV, TSV, or TXT) with {{ cAxisLabel }}, E' (Pa), E" (Pa).
-            </p>
             <template v-if="!dynamfit.fileUpload">
+              <p class="dynamfit-shift-upload__label">
+                Upload a viscoelastic data file (CSV, TSV, or TXT) with {{ cAxisLabel }}, E' (Pa), E" (Pa).
+              </p>
               <div class="form__file-input">
                 <div class="md-theme-default">
                   <label class="btn btn--primary u--b-rad" for="C_Viscoelastic_Data">
@@ -590,7 +590,7 @@
           <template v-if="isManual">
             <div class="dynamfit-shift-upload">
               <p class="dynamfit-shift-upload__label">
-                Upload a shift-factor file (2 columns: Temperature, a_T)
+                Upload a shift-factor file (2 columns: Temperature in °C, a_T)
               </p>
               <template v-if="!mFile">
                 <div class="form__file-input">
@@ -622,14 +622,14 @@
                  the coefficient fit needs an explicit anchor. -->
             <p class="dynamfit-shift-upload__label">
               To also fit WLF or hybrid coefficients to the shift factors, enter the model's
-              anchor: Tg for WLF, Tc for hybrid.
+              anchor in °C: Tg for WLF, Tc for hybrid.
             </p>
             <div class="u--layout-flex u--layout-flex-justify-sb">
               <md-field class="dynamfit-field--half">
-                <md-input v-model="ttspTgValue" placeholder="Tg (fits WLF)"></md-input>
+                <md-input v-model="ttspTgValue" placeholder="Tg (°C, fits WLF)"></md-input>
               </md-field>
               <md-field class="dynamfit-field--half">
-                <md-input v-model="ttspTCValue" placeholder="Tc (fits hybrid)"></md-input>
+                <md-input v-model="ttspTCValue" placeholder="Tc (°C, fits hybrid)"></md-input>
               </md-field>
             </div>
           </template>
@@ -869,12 +869,12 @@ const isFrequencyDomain = computed(() => selectedProperty.value === 'frequency')
 // would be plumbing for data that cannot vary; the data-derived ones name
 // their derivation instead of a number the client cannot know.
 const tgPlaceholder = computed(() => {
-  if (tgEstimated.value) return 'Tg (tan δ peak)';
-  return isFrequencyDomain.value ? 'Tg (required)' : 'Tg';
+  if (tgEstimated.value) return 'Tg (°C, tan δ peak)';
+  return isFrequencyDomain.value ? 'Tg (°C, required)' : 'Tg (°C)';
 });
 const tcPlaceholder = computed(() => {
-  if (tCEstimated.value) return 'Tc (E″ peak)';
-  return isFrequencyDomain.value ? 'Tc (required)' : 'Tc';
+  if (tCEstimated.value) return 'Tc (°C, E″ peak)';
+  return isFrequencyDomain.value ? 'Tc (°C, required)' : 'Tc (°C)';
 });
 const c1Placeholder = computed(() => (c1Estimated.value ? 'C1 (17.44, Universal)' : 'C1'));
 const c2Placeholder = computed(() => (c2Estimated.value ? 'C2 (51.6, Universal)' : 'C2'));

@@ -36,6 +36,14 @@
           frequency and can be overridden with the slider.
         </p>
         <p>
+          Throughout Tri-VE, <em>E</em> is used as a generic symbol for modulus. The method itself
+          is agnostic to input modulus: the same fit and interconversions apply
+          equally to the shear modulus (G), the bulk modulus (K), or Young's modulus (E). Supply
+          whichever your instrument reports, and read E', E", E(t), and E<sub>i</sub> in the
+          plots and tables as that modulus. Currently all example files are Young's modulus except
+          where indicated otherwise.
+        </p>
+        <p>
           The weights are found by a non-negative least-squares fit in log-coefficient space,
           regularized with a curvature (second-difference) penalty on the spectrum — a nonlinear
           Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
@@ -52,13 +60,19 @@
         </p>
         <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
-          three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub>,
+          three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub> in °C,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
           a <strong>hybrid</strong> WLF/Arrhenius model that adds a low-temperature crossover
-          T<sub>C</sub> and an activation energy E<sub>A</sub>, and a <strong>manual</strong>
-          model that takes a two-column shift-factor file you supply. Once shift factors are
-          known, the same fit is reported against frequency, against temperature, and — through
-          the Prony series — against time.
+          T<sub>C</sub> (°C) and an activation energy E<sub>A</sub> (kJ/mol), and a
+          <strong>manual</strong> model that takes a two-column shift-factor file you supply.
+          Once shift factors are known, the same fit is reported against frequency, against
+          temperature, and — through the Prony series — against time. A good way to choose
+          T<sub>g</sub> is from your domain knowledge of the polymer system. In the temperature
+          domain, one way to estimate T<sub>C</sub> is the peak temperature of the loss modulus curve,
+          and this value is automatically suggested. You can use it, or a somewhat lower
+          temperature with good effect. If you are working in the frequency domain, choose a number below
+          T<sub>g</sub> somewhat, but we lack an anchor to choose it automatically for you, so
+          you may have to try a few options to get a good fit.
         </p>
       </section>
 
@@ -66,9 +80,9 @@
         <h2 class="visualize_header-h1">Data format</h2>
         <p>
           Upload a CSV, TSV, or TXT file. Columns are read by position and count; a header row is
-          optional and is ignored entirely. The first column is frequency (or temperature, if you
-          are starting in the temperature domain), followed by the storage and loss moduli in
-          pascals. Three column layouts are accepted:
+          optional and is ignored entirely. The first column is frequency in Hz (or temperature
+          in °C, if you are starting in the temperature domain), followed by the storage and loss
+          moduli in pascals. Three column layouts are accepted:
         </p>
         <ul class="tri-ve-about__list">
           <li>Frequency · E' · E"</li>
@@ -83,9 +97,9 @@
           Scale that multiplies them; they are not drawn as error bars.
         </p>
         <p>
-          A manual shift-factor file, if you use one, is two columns: temperature and a<sub
-            >T</sub
-          >.
+          A manual shift-factor file, if you use one, is two columns: temperature in °C and
+          a<sub>T</sub>. All temperatures entered or uploaded anywhere in Tri-VE are in degrees
+          Celsius.
         </p>
         <p class="tri-ve-about__downloads">
           <a class="btn-text btn--noradius" href="/dynamfit-template.tsv" download>

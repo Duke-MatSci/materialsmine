@@ -2351,12 +2351,12 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
         id_vars=["Temperature"],
         value_vars=["E'", "E''"],
         var_name='Modulus',
-        value_name="Young's Modulus (Pa)",
+        value_name="Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     fig4 = px.line(
-        df_melt, x="Temperature", y="Young's Modulus (Pa)",
+        df_melt, x="Temperature", y="Modulus (Pa)",
         log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -2367,16 +2367,16 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     df41_tand = pd.DataFrame()
     df41_tand["Temperature"] = df41_concat[df41_concat["Modulus"] == "E''"]["Temperature"]
     df41_tand["Type"] = df41_concat[df41_concat["Modulus"] == "E''"]["Type"]
-    df41_tand["Young's Modulus (Pa)"] = (
-        df41_concat[df41_concat["Modulus"] == "E''"]["Young's Modulus (Pa)"].to_numpy() /
-        df41_concat[df41_concat["Modulus"] == "E'"]["Young's Modulus (Pa)"].to_numpy()
+    df41_tand["Modulus (Pa)"] = (
+        df41_concat[df41_concat["Modulus"] == "E''"]["Modulus (Pa)"].to_numpy() /
+        df41_concat[df41_concat["Modulus"] == "E'"]["Modulus (Pa)"].to_numpy()
     )
     df41_tand['Modulus'] = 'tan delta'
     df41_concat = pd.concat([df41_concat, df41_tand], ignore_index=True)
 
     fig41 = px.line(
         df41_concat[df41_concat['Modulus'] != "E''"],
-        x="Temperature", y="Young's Modulus (Pa)",
+        x="Temperature", y="Modulus (Pa)",
         facet_col='Modulus',
         color="Type", line_dash="Type",
         labels={"Temperature": "Temperature (C)"},
@@ -2411,21 +2411,21 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
-        var_name='Modulus', value_name="Young's Modulus (Pa)",
+        var_name='Modulus', value_name="Modulus (Pa)",
     )
     df_melt["Type"] = "Experiment"
 
     cx_x, cx_y, cx_z = complex_df.columns[0], complex_df.columns[1], complex_df.columns[2]
     complex_melt = pd.melt(
         complex_df, id_vars=[cx_x], value_vars=[cx_y, cx_z],
-        var_name='Modulus', value_name="Young's Modulus (Pa)",
+        var_name='Modulus', value_name="Modulus (Pa)",
     )
     complex_melt["Type"] = f"{N_nz}-Term Prony"
 
     df_concat = pd.concat([df_melt, complex_melt], ignore_index=True)
 
     fig1 = px.line(
-        df_concat, x=cx_x, y="Young's Modulus (Pa)",
+        df_concat, x=cx_x, y="Modulus (Pa)",
         log_x=True, log_y=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",
@@ -2437,16 +2437,16 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     df11_tand = pd.DataFrame()
     df11_tand["Frequency"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Frequency"]
     df11_tand["Type"] = df11_concat[df11_concat["Modulus"] == "E Loss"]["Type"]
-    df11_tand["Young's Modulus (Pa)"] = (
-        df11_concat[df11_concat["Modulus"] == "E Loss"]["Young's Modulus (Pa)"].to_numpy() /
-        df11_concat[df11_concat["Modulus"] == "E Storage"]["Young's Modulus (Pa)"].to_numpy()
+    df11_tand["Modulus (Pa)"] = (
+        df11_concat[df11_concat["Modulus"] == "E Loss"]["Modulus (Pa)"].to_numpy() /
+        df11_concat[df11_concat["Modulus"] == "E Storage"]["Modulus (Pa)"].to_numpy()
     )
     df11_tand['Modulus'] = 'tan delta'
     df11_concat = pd.concat([df11_concat, df11_tand], ignore_index=True)
 
     fig11 = px.line(
         df11_concat[df11_concat['Modulus'] != "E Loss"],
-        x="Frequency", y="Young's Modulus (Pa)",
+        x="Frequency", y="Modulus (Pa)",
         log_x=True,
         facet_col='Modulus',
         color="Type", line_dash="Type",

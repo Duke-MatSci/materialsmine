@@ -8,27 +8,27 @@
         md-dynamic-height
         @md-changed="onTabChanged"
       >
-        <md-tab id="tab-home" md-label="Complex, E*(iω)" class="u_relative">
+        <md-tab id="tab-home" md-label="Complex (ω)" class="u_relative">
           <PlotlyView :chart="dynamfitData['complex-chart']" key="1" />
         </md-tab>
-        <md-tab id="tab-exp" md-label="E'(ω), tan(δ)">
+        <md-tab id="tab-exp" md-label="Storage (ω), tan(δ)">
           <PlotlyView :chart="dynamfitData['complex-tand-chart']" key="2" />
         </md-tab>
-        <md-tab id="tab-temp-new" md-label="Complex, E*(T)" class="u_relative">
+        <md-tab id="tab-temp-new" md-label="Complex (T)" class="u_relative">
           <PlotlyView :chart="dynamfitData['complex-temp-chart']" key="3" />
         </md-tab>
-        <md-tab id="tab-temp" md-label="E'(T), tan(δ)">
+        <md-tab id="tab-temp" md-label="Storage (T), tan(δ)">
           <PlotlyView :chart="dynamfitData['temp-tand-chart']" key="4" />
         </md-tab>
-        <md-tab id="tab-relax" md-label="Relaxation, E(t)">
+        <md-tab id="tab-relax" md-label="Relaxation (t)">
           <PlotlyView :chart="dynamfitData['relaxation-chart']" key="5" />
         </md-tab>
-        <md-tab id="tab-spec" md-label="Discrete Spectrum, Eᵢ">
+        <md-tab id="tab-spec" md-label="Discrete Spectrum">
           <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
         </md-tab>
-        <!-- Unicode has no subscript capital T, so the tab settles for ₜ —
-             the same plain-text-subscript approach as the Eᵢ tab. The figure
-             axis itself gets a true <sub>T</sub> (plotly renders HTML). -->
+        <!-- Unicode has no subscript capital T, so the tab settles for the
+             plain-text ₜ. The figure axis itself gets a true <sub>T</sub>
+             (plotly renders HTML). -->
         <md-tab id="tab-shift" md-label="Shift Factor, aₜ(T)">
           <PlotlyView :chart="dynamfitData['shift-chart']" key="7" />
 
