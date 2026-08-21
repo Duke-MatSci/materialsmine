@@ -41,7 +41,7 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
     def setUpClass(cls):
         Config.FILES_DIRECTORY = DATA_DIR
         cls.uploadData = upload_init(
-            'agilus30 (8) master curve 20C clean.txt', 'frequency',
+            'agilus30 (8) master curve 20C.txt', 'frequency',
         )
         cls.N = 10
         cls.result = update_line_chart(
@@ -179,7 +179,7 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
     def setUpClass(cls):
         Config.FILES_DIRECTORY = DATA_DIR
         cls.uploadData = upload_init(
-            'agilus30 (8) master curve 20C clean.txt', 'frequency',
+            'agilus30 (8) master curve 20C.txt', 'frequency',
         )
         # Monotonic synthetic shift table; a_T decreasing through 1.0 at T = 30.
         T = np.linspace(-20.0, 80.0, 21)
@@ -338,7 +338,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
 
     def test_frequency_none_yields_empty_figure_and_table(self):
         freq_data = upload_init(
-            'agilus30 (8) master curve 20C clean.txt', 'frequency')
+            'agilus30 (8) master curve 20C.txt', 'frequency')
         *_, shift_fig, shift_records = update_line_chart(
             freq_data, number_of_prony=8, smoothness=0.1,
             fit_settings=True, domain='frequency', shift_model='none',

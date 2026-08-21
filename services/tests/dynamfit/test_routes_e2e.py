@@ -235,7 +235,7 @@ class TestExtractRoute(unittest.TestCase):
     """
 
     _orig_files_dir = None
-    _FREQ_FILE = 'agilus30 (8) master curve 20C clean.txt'
+    _FREQ_FILE = 'agilus30 (8) master curve 20C.txt'
 
     @classmethod
     def setUpClass(cls):
