@@ -6,7 +6,7 @@ fit objective, the smooth Prony fit, and the argmax peak helper.
 Pure functions — no Flask app, no disk access — so this is the fastest subset
 and the one to run while iterating on the Prony math.
 
-    python -m unittest tests.dynamfit.test_prony
+    python -m unittest tests.trive.test_prony
 """
 import unittest
 import os
@@ -19,8 +19,8 @@ from scipy.optimize import minimize
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-import app.dynamfit.dynamfit2 as dynamfit2
-from app.dynamfit.dynamfit2 import (
+import app.trive.reduction as reduction
+from app.trive.prony import (
     prony_basis,
     prony_relaxation_space,
     prony_terms_for_span,
@@ -28,14 +28,13 @@ from app.dynamfit.dynamfit2 import (
     PRONY_TERMS_MAX,
     compute_complex,
     compute_relaxation_modulus,
-    _prony_objective,
-    _prony_fit_quality,
-    _scaled_smoothness,
-    _prony_reduce,
-    _build_coef_records,
-    smooth_prony_fit,
-    argmax_peak,
 )
+from app.trive.objective import _prony_objective, _scaled_smoothness
+from app.trive.reduction import _prony_reduce
+from app.trive.quality import _prony_fit_quality
+from app.trive.fit import smooth_prony_fit
+from app.trive.calibration import argmax_peak
+from app.trive.figures import _build_coef_records
 
 
 # Arbitrary positive log-tau span for the algebraic _prony_fit_quality tests,
@@ -797,7 +796,7 @@ class TestPronyReduce(unittest.TestCase):
     """The extracted QR reduction and its content-addressed LRU cache."""
 
     def setUp(self):
-        dynamfit2._REDUCE_CACHE.clear()
+        reduction._REDUCE_CACHE.clear()
         self.omega = np.logspace(-2, 2, 200)
         tau = np.logspace(-2, 2, 5)
         df = compute_complex(tau, np.array([100.0, 1e3, 2e3, 1e3, 500.0, 200.0]),
@@ -862,7 +861,7 @@ class TestPronyReduce(unittest.TestCase):
         # poison all of them. scipy doesn't write to what it is handed today;
         # make it raise if it ever does rather than corrupting results silently.
         self._reduce()
-        R, z = next(iter(dynamfit2._REDUCE_CACHE.values()))
+        R, z = next(iter(reduction._REDUCE_CACHE.values()))
         with self.assertRaises(ValueError):
             R[0, 0] = 1.0
         with self.assertRaises(ValueError):
@@ -880,12 +879,12 @@ class TestPronyReduce(unittest.TestCase):
         self.assertNotEqual(again[1][0], 12345.0)
 
     def test_evicts_least_recently_used(self):
-        for extra in range(dynamfit2._REDUCE_CACHE_SIZE + 2):
+        for extra in range(reduction._REDUCE_CACHE_SIZE + 2):
             bumped = self.E_stor.copy()
             bumped[0] += extra + 1
             self._reduce(E_stor=bumped)
         self.assertEqual(
-            len(dynamfit2._REDUCE_CACHE), dynamfit2._REDUCE_CACHE_SIZE,
+            len(reduction._REDUCE_CACHE), reduction._REDUCE_CACHE_SIZE,
         )
 
     def test_std_scale_matches_folding_the_factor_into_std(self):
@@ -895,10 +894,10 @@ class TestPronyReduce(unittest.TestCase):
         # round differently.
         for scale in (0.05, 0.5, 4.0):
             with self.subTest(scale=scale):
-                dynamfit2._REDUCE_CACHE.clear()
+                reduction._REDUCE_CACHE.clear()
                 folded = self._reduce(E_stor_std=self.std * scale,
                                       E_loss_std=self.std * scale)
-                dynamfit2._REDUCE_CACHE.clear()
+                reduction._REDUCE_CACHE.clear()
                 held_out = self._reduce(std_scale=scale)
                 np.testing.assert_allclose(held_out[0], folded[0], rtol=1e-9)
                 np.testing.assert_allclose(held_out[1], folded[1], rtol=1e-9)
@@ -1211,14 +1210,14 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         omega, E_stor, E_loss, std = _broadband_master_curve(2000)
         kwargs = dict(E_stor_std=std, E_loss_std=std,
                       N=20, smoothness=0.0, solid=True)
-        original = dynamfit2._QR_CHUNK_ROWS
+        original = reduction._QR_CHUNK_ROWS
         try:
-            dynamfit2._QR_CHUNK_ROWS = 64
+            reduction._QR_CHUNK_ROWS = 64
             _, E_many = smooth_prony_fit(omega, E_stor, E_loss, **kwargs)
-            dynamfit2._QR_CHUNK_ROWS = 10 ** 9
+            reduction._QR_CHUNK_ROWS = 10 ** 9
             _, E_one = smooth_prony_fit(omega, E_stor, E_loss, **kwargs)
         finally:
-            dynamfit2._QR_CHUNK_ROWS = original
+            reduction._QR_CHUNK_ROWS = original
         np.testing.assert_allclose(
             E_many, E_one, rtol=1e-6, atol=1e-6 * E_one.max(),
         )

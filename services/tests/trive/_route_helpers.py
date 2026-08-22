@@ -1,8 +1,8 @@
 """
-Shared fixtures for the dynamfit Flask route tests (test_routes,
+Shared fixtures for the Tri-VE Flask route tests (test_routes,
 test_routes_e2e). Underscore-prefixed so it is never collected as a test module.
 
-Builds a minimal Flask app registering only the dynamfit blueprint — this
+Builds a minimal Flask app registering only the Tri-VE blueprint — this
 avoids the FileHandler('/services/services_app.log') crash that create_app()
 would hit outside the docker container.
 """
@@ -17,25 +17,25 @@ from flask import Flask
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.routes import dynamfit
+from app.trive.routes import trive
 
 
 # Real fixture data shipped in the repo, used by the end-to-end route tests.
 REAL_FILES_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'dynamfit', 'files',
+    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files',
 ))
 
 
 def make_app():
     """
-    Build a minimal Flask test app that registers only the dynamfit blueprint,
+    Build a minimal Flask test app that registers only the Tri-VE blueprint,
     avoiding the FileHandler('/services/services_app.log') crash in create_app().
     SECRET_KEY is fixed so we can mint tokens without an .env file.
     """
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'test-secret'
     app.config['TESTING'] = True
-    app.register_blueprint(dynamfit)
+    app.register_blueprint(trive)
     return app
 
 

@@ -6,7 +6,7 @@ import numpy as np
 
 from flask import request, Blueprint, jsonify,  Response
 
-from app.dynamfit.dynamfit2 import (
+from app.trive import (
     update_line_chart, argmax_peak, peak_edge_warning,
     UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
     fit_wlf_coefficients, fit_hybrid_coefficients,
@@ -14,7 +14,7 @@ from app.dynamfit.dynamfit2 import (
 from app.utils.util import token_required, upload_init, request_logger, log_errors
 from app.config import Config
 
-dynamfit = Blueprint("dynamfit", __name__, url_prefix="/tri-ve")
+trive = Blueprint("trive", __name__, url_prefix="/tri-ve")
 
 
 def check_file_exists(file_name):
@@ -62,7 +62,7 @@ def as_float(value, name):
         raise ValueError(f"{name} must be a number; got {value!r}")
 
 
-@dynamfit.route('/extract/', methods=['POST'])
+@trive.route('/extract/', methods=['POST'])
 @log_errors
 @request_logger
 @token_required
@@ -312,7 +312,7 @@ def extract_data_from_file(request_id):
         return jsonify({'message': str(e)}), 500
 
 
-@dynamfit.route('/fit-shift/', methods=['POST'])
+@trive.route('/fit-shift/', methods=['POST'])
 @log_errors
 @request_logger
 @token_required

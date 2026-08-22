@@ -7,7 +7,7 @@ apply them.
 Pure functions — no Flask app, no disk access. Run while iterating on shift
 math or the TTS collapse/scatter logic.
 
-    python -m unittest tests.dynamfit.test_shift_factors
+    python -m unittest tests.trive.test_shift_factors
 """
 import unittest
 import os
@@ -19,13 +19,15 @@ import pandas as pd
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import (
+from app.trive.shift import (
     wlf_shift,
     _arr_shift,
     hybrid_shift,
     inverse_wlf_shift,
     _inverse_arr_shift,
     inverse_hybrid_shift,
+)
+from app.trive.tts import (
     tts_temperature_to_frequency_V2,
     tts_frequency_to_temperature,
     tts_frequency_to_temperature_hybrid,

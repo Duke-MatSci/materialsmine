@@ -7,7 +7,7 @@ Pure functions running the real optimizer on small synthetic data — no Flask
 app, no disk. Run when changing the fit math, the pole-avoidance bounds, or the
 degenerate-segment guards.
 
-    python -m unittest tests.dynamfit.test_coefficient_fits
+    python -m unittest tests.trive.test_coefficient_fits
 """
 import unittest
 import os
@@ -18,15 +18,14 @@ import numpy as np
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import (
+from app.trive.shift import (
     wlf_shift,
     _arr_shift,
     hybrid_shift,
-    fit_wlf_coefficients,
-    fit_hybrid_coefficients,
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
 )
+from app.trive.calibration import fit_wlf_coefficients, fit_hybrid_coefficients
 
 
 class TestFitWlfCoefficients(unittest.TestCase):

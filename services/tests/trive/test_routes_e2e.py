@@ -1,7 +1,7 @@
 """
 End-to-end route tests: real fixture files on disk + the real optimizer, with
 NO mocking of upload_init, check_file_exists, or the fit functions. These are
-the slowest dynamfit tests — they run the actual SciPy optimizer to
+the slowest Tri-VE tests — they run the actual SciPy optimizer to
 convergence and JSON-serialize the full response a client would receive.
 
 They complement test_routes (which mocks everything and checks wiring) by
@@ -12,7 +12,7 @@ regression on the real response envelope.
 Config.FILES_DIRECTORY is pointed at the checked-in files/ directory and
 restored in tearDownClass.
 
-    python -m unittest tests.dynamfit.test_routes_e2e
+    python -m unittest tests.trive.test_routes_e2e
 
 WLF calibration (agilus30 20C): both C1 and C2 fitted freely from defaults.
 The data spans T down to -30 °C (50 °C below T_ref=20), which previously
@@ -41,7 +41,8 @@ import numpy as np
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import wlf_shift, hybrid_shift, peak_edge_warning
+from app.trive.shift import wlf_shift, hybrid_shift
+from app.trive.calibration import peak_edge_warning
 from app.config import Config
 from app.utils.util import upload_init
 

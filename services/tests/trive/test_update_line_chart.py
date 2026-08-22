@@ -4,11 +4,11 @@ chart figures + coefficient table. Covers the frequency and temperature
 domains, the validation / contract-assertion paths, and the std error-column
 wiring into smooth_prony_fit.
 
-Some tests load real fixture files from app/dynamfit/files/ (via upload_init),
+Some tests load real fixture files from app/trive/files/ (via upload_init),
 so this subset touches disk and is slower than the pure-math suites. It does
 NOT spin up a Flask app — that's test_routes / test_routes_e2e.
 
-    python -m unittest tests.dynamfit.test_update_line_chart
+    python -m unittest tests.trive.test_update_line_chart
 """
 import unittest
 import os
@@ -20,17 +20,19 @@ from unittest.mock import patch
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.dynamfit.dynamfit2 import (
-    wlf_shift, update_line_chart, inverse_wlf_shift, inverse_hybrid_shift,
-    compute_complex, smooth_prony_fit, prony_terms_for_span,
-    _PLOT_MAX_POINTS, _FitQuality, MAX_ABS_LOG10_SHIFT,
-)
+from app.trive.prony import compute_complex, prony_terms_for_span
+from app.trive.quality import _FitQuality
+from app.trive.fit import smooth_prony_fit
+from app.trive.shift import wlf_shift, inverse_wlf_shift, inverse_hybrid_shift
+from app.trive.tts import MAX_ABS_LOG10_SHIFT
+from app.trive.figures import _PLOT_MAX_POINTS
+from app.trive.chart import update_line_chart
 from app.config import Config
 from app.utils.util import upload_init
 
 
 DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'dynamfit', 'files',
+    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files',
 ))
 
 
@@ -715,7 +717,7 @@ class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
     @staticmethod
     def _spy():
         return patch(
-            'app.dynamfit.dynamfit2.smooth_prony_fit',
+            'app.trive.chart.smooth_prony_fit',
             return_value=(np.array([1.0]), np.array([1.0]),
                           _FitQuality(1.0, 2.0, 3.0)),
         )
@@ -942,7 +944,7 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
         # Return a minimal valid fit result so downstream figure builders run.
         # update_line_chart asks for return_fit_quality, hence the third element.
         spy_target = patch(
-            'app.dynamfit.dynamfit2.smooth_prony_fit',
+            'app.trive.chart.smooth_prony_fit',
             return_value=(np.array([1.0]), np.array([1.0]),
                           _FitQuality(1.0, 2.0, 3.0)),
         )
