@@ -12,6 +12,7 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
+from unittest import mock
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
@@ -29,10 +30,15 @@ from app.trive.prony import (
     compute_complex,
     compute_relaxation_modulus,
 )
-from app.trive.objective import _prony_objective, _scaled_smoothness
+from app.trive.objective import (
+    _PronyLoss,
+    _prony_hessian,
+    _prony_objective,
+    _scaled_smoothness,
+)
 from app.trive.reduction import _prony_reduce
 from app.trive.quality import _prony_fit_quality
-from app.trive.fit import smooth_prony_fit
+from app.trive.fit import smooth_prony_fit, _PlateauProjectedProblem
 from app.trive.calibration import argmax_peak
 from app.trive.figures import _build_coef_records
 
@@ -44,8 +50,9 @@ from app.trive.figures import _build_coef_records
 LOG_RANGE = float(np.log(1e6))
 
 TAU = np.array([0.1, 1.0, 10.0])
-# Coefficient magnitudes ~exp(7) ≈ 1097, the solver's default x0, so the
-# round-trip recovery test in TestSmoothPronyFit converges from x0.
+# Coefficient magnitudes within a decade of each other and of max(E_stor)/m,
+# the solver's flat seed, so the round-trip recovery test in
+# TestSmoothPronyFit converges from it.
 VISCOUS_E = np.array([1000.0, 2000.0, 3000.0])
 SOLID_E = np.array([500.0, 1000.0, 2000.0, 3000.0])  # one extra leading equilibrium term
 
@@ -399,6 +406,23 @@ def _random_fit_problem(rng, N, solid, n_rows=None):
     return basis / std[:, None], data / std, rng.normal(size=m) * 0.25
 
 
+def _dense_half_hessian(x, data, basis, smoothness, solid):
+    """C = 0.5 * Hess(V) built the obvious dense way: lam * L.T @ L + J.T @ J
+    + diag(r.T @ J). The reference _prony_hessian's banded accumulation and
+    in-place scalings are checked against."""
+    N = len(x) - solid
+    m = len(x)
+    coefs = np.exp(x)
+    resid = data - basis @ coefs
+    L = np.zeros((max(N - 2, 0), m))
+    rows = np.arange(max(N - 2, 0))
+    L[rows, solid + rows] = 1.0
+    L[rows, solid + rows + 1] = -2.0
+    L[rows, solid + rows + 2] = 1.0
+    J = -(basis * coefs)
+    return smoothness * smoothness * (L.T @ L) + J.T @ J + np.diag(resid @ J)
+
+
 def _converged_fit_problem(rng, N=10, smoothness=1.0):
     """A well-posed problem minimized to convergence.
 
@@ -605,19 +629,98 @@ class TestPronyFitQuality(unittest.TestCase):
                             loss_at(x + e_i + e_j) - loss_at(x + e_i - e_j)
                             - loss_at(x - e_i + e_j) + loss_at(x - e_i - e_j)
                         ) / (4 * h * h)
-                lam = smoothness * smoothness
-                coefs = np.exp(x)
-                resid = data - basis @ coefs
-                L = np.zeros((N - 2, m))
-                rows = np.arange(N - 2)
-                L[rows, solid + rows] = 1.0
-                L[rows, solid + rows + 1] = -2.0
-                L[rows, solid + rows + 2] = 1.0
-                J = -(basis * coefs)
-                C = lam * (L.T @ L) + J.T @ J + np.diag(resid @ J)
+                C = _dense_half_hessian(x, data, basis, smoothness, solid)
                 np.testing.assert_allclose(
                     C, 0.5 * hessian, rtol=1e-3, atol=1e-4 * np.abs(C).max(),
                 )
+
+    def test_prony_hessian_matches_dense_reference(self):
+        # The one Hessian the Newton solver steps on and the Laplace score is
+        # charged for. N=3 collides the two boundary corrections of L.T @ L;
+        # N=2 with solid leaves no second difference at all (empty band).
+        for N in (2, 3, 4, 8, 20, 40):
+            for solid in (0, 1):
+                for smoothness in (0.0, 0.7, 11.0):
+                    with self.subTest(N=N, solid=solid, smoothness=smoothness):
+                        basis, data, x = _random_fit_problem(
+                            self.rng, N, solid,
+                        )
+                        got = _prony_hessian(x, data, basis, smoothness, solid)
+                        want = 2 * _dense_half_hessian(
+                            x, data, basis, smoothness, solid,
+                        )
+                        np.testing.assert_allclose(got, want, rtol=1e-12,
+                                                   atol=1e-12 * np.abs(want).max())
+                        np.testing.assert_allclose(got, got.T)
+
+    def test_prony_loss_shares_one_evaluation_between_fun_and_hess(self):
+        # The solver calls fun, jac and hess separately at each point; the
+        # intermediates must be computed once, whichever arrives first. np.exp
+        # runs exactly once per fresh evaluation, so it counts evaluations.
+        basis, data, x = _random_fit_problem(self.rng, 9, 1)
+        loss = _PronyLoss(data, basis, 0.6, True)
+        with mock.patch.object(np, 'exp', wraps=np.exp) as exp:
+            H = loss.hess(x)
+            V = loss.fun(x)
+            g = loss.jac(x)
+            self.assertEqual(exp.call_count, 1)
+            V2, g2 = loss.fun_jac(x.copy())   # equal point, different array
+            self.assertEqual(exp.call_count, 1)
+        np.testing.assert_array_equal(
+            H, _prony_hessian(x, data, basis, 0.6, True))
+        V_ref, g_ref = _prony_objective(x, data, basis, 0.6, True)
+        self.assertEqual(V, V_ref)
+        np.testing.assert_array_equal(g, g_ref)
+        self.assertEqual(V2, V_ref)
+        np.testing.assert_array_equal(g2, g_ref)
+
+    def test_prony_loss_cache_is_keyed_on_the_point_not_call_order(self):
+        # scipy evaluates the loss alone at rejected proposals and the Hessian
+        # first at accepted ones, so neither "fun fills, hess reuses" nor the
+        # reverse is safe. f(x1), f(x2), H(x1): the Hessian must belong to x1.
+        basis, data, x1 = _random_fit_problem(self.rng, 7, 0)
+        x2 = x1 + 0.3
+        loss = _PronyLoss(data, basis, 1.1, False)
+        loss.fun(x1)
+        loss.fun(x2)
+        np.testing.assert_array_equal(
+            loss.hess(x1), _prony_hessian(x1, data, basis, 1.1, False))
+        np.testing.assert_array_equal(
+            loss.hess(x2), _prony_hessian(x2, data, basis, 1.1, False))
+
+    def test_prony_loss_is_immune_to_the_caller_mutating_x(self):
+        # A point is stored by value; editing the caller's array in place
+        # must not turn a changed point into a cache hit.
+        basis, data, x = _random_fit_problem(self.rng, 6, 1)
+        loss = _PronyLoss(data, basis, 0.4, True)
+        V1 = loss.fun(x)
+        x += 0.5
+        V2 = loss.fun(x)
+        self.assertEqual(V2, _prony_objective(x, data, basis, 0.4, True)[0])
+        self.assertNotEqual(V1, V2)
+
+    def test_prony_loss_returns_fresh_arrays(self):
+        # Gradient and Hessian are handed to scipy, which may keep or scale
+        # them; they must not alias the cached intermediates or the Gram.
+        basis, data, x = _random_fit_problem(self.rng, 6, 1)
+        loss = _PronyLoss(data, basis, 0.4, True)
+        g = loss.jac(x)
+        H = loss.hess(x)
+        g[:] = 0
+        H[:] = 0
+        g2 = loss.jac(x)
+        np.testing.assert_array_equal(g2, _prony_objective(x, data, basis, 0.4, True)[1])
+        np.testing.assert_array_equal(
+            loss.hess(x), _prony_hessian(x, data, basis, 0.4, True))
+
+    def test_prony_hessian_leaves_the_basis_untouched(self):
+        # _prony_reduce hands out read-only cached arrays; the in-place
+        # scalings must land on the Gram product, never on the input.
+        basis, data, x = _random_fit_problem(self.rng, 6, 1)
+        basis.setflags(write=False)
+        before = basis.copy()
+        _prony_hessian(x, data, basis, 0.5, True)
+        np.testing.assert_array_equal(basis, before)
 
     def test_reduced_system_scores_on_the_full_problem_scale(self):
         # The reduction keeps its orthogonal-residual row, so chi2 taken from
@@ -1273,8 +1376,8 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
 
     def test_smoothness_path_converges_near_unsmoothed_optimum(self):
         # A mild penalty must not degrade the data term much relative to the
-        # exact NNLS optimum — this exercises the seeded, bounded L-BFGS-B on
-        # the reduced system.
+        # exact NNLS optimum — this exercises the Newton path on the reduced
+        # system.
         omega, E_stor, E_loss, std = _broadband_master_curve(1000)
         kwargs = dict(E_stor_std=std, E_loss_std=std, N=50, solid=True)
         tau_i, E_exact = smooth_prony_fit(
@@ -1365,6 +1468,196 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         for rec in records:
             self.assertNotEqual(rec['E_i'], 0)
             np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
+
+
+def _unresolved_equilibrium_curve(num_pts=200):
+    """Peaked Prony source whose 1e6 equilibrium modulus is three decades under
+    the 1e9 peak: with 20% error bars the data cannot resolve it, and a
+    smoothed fit legitimately clamps E_eq at exactly zero."""
+    tau = np.logspace(-4.0, 4.0, 9)
+    E_input = np.concatenate(
+        ([1e6], np.exp(-(np.log10(tau)) ** 2 / 4.0) * 1e9))
+    df = compute_complex(tau, E_input, num_pts=num_pts)
+    omega = df['Frequency'].to_numpy()
+    E_stor = df['E Storage'].to_numpy()
+    E_loss = df['E Loss'].to_numpy()
+    std = np.abs(E_stor + 1.0j * E_loss) * 0.2
+    return omega, E_stor, E_loss, std
+
+
+def _penalized_gradient(omega, E_stor, E_loss, std, tau_i, E_i, smoothness, solid):
+    """max |dV/dlogE| of the penalized objective smooth_prony_fit minimizes, at
+    the coefficients it returned — rebuilt from the same reduction and the same
+    normalized weight, so zero here means a genuine stationary point."""
+    N = len(tau_i)
+    m = N + solid
+    R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
+    scaled = _scaled_smoothness(
+        smoothness, N, 2 * len(omega) - m, np.log(tau_i[-1] / tau_i[0]))
+    _, grad = _prony_objective(np.log(E_i), z[:m], R[:m], scaled, solid)
+    return np.abs(grad).max()
+
+
+class TestSmoothPronyFitNewton(unittest.TestCase):
+    """The trust-exact Newton path: converges where L-BFGS-B stalled, keeps the
+    projected equilibrium modulus optimal, and scores the clamped case."""
+
+    def test_converges_where_lbfgsb_stalled(self):
+        # Regression. The former L-BFGS-B solver stopped on its relative-f
+        # test with the gradient still O(1) once the penalty made the Hessian
+        # ill-conditioned: on this very fixture at N=50, smoothness=1 it
+        # returned chi2_reduced = 7.9 with max |grad| = 0.67 and no posterior
+        # (C not positive definite there), against 0.013 and ~1e-10 at the
+        # true minimum.
+        omega, E_stor, E_loss, std = _broadband_master_curve(1000)
+        tau_i, E_i, quality = smooth_prony_fit(
+            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+            N=50, smoothness=1.0, solid=True, return_fit_quality=True,
+        )
+        self.assertTrue(np.all(np.isfinite(E_i)))
+        self.assertLess(quality.chi2_reduced, 0.1)
+        self.assertIsNotNone(quality.neg_log_posterior)
+        self.assertLess(
+            _penalized_gradient(omega, E_stor, E_loss, std, tau_i, E_i,
+                                1.0, True),
+            1e-3,
+        )
+
+    def test_stationary_across_term_count_and_smoothness(self):
+        # The ill-conditioning grows with both N and the penalty weight; the
+        # stall regressed differently at each corner of this grid. Stationarity
+        # is the solver-independent statement of "converged".
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        for N in (20, 60, 100):
+            for smoothness in (0.01, 1.0, 10.0):
+                for solid in (True, False):
+                    with self.subTest(N=N, smoothness=smoothness, solid=solid):
+                        tau_i, E_i = smooth_prony_fit(
+                            omega, E_stor, E_loss,
+                            E_stor_std=std, E_loss_std=std,
+                            N=N, smoothness=smoothness, solid=solid,
+                        )
+                        self.assertTrue(np.all(np.isfinite(E_i)))
+                        self.assertTrue(np.all(E_i >= 0))
+                        self.assertLess(
+                            _penalized_gradient(
+                                omega, E_stor, E_loss, std, tau_i, E_i,
+                                smoothness, solid),
+                            1e-2,
+                        )
+
+    def test_extreme_smoothness_stays_finite(self):
+        # Penalty weight ~1e4 x the data term: the regime where unbounded BFGS
+        # overflowed exp() to NaN from the NNLS seed. The trust region plus the
+        # flat seed (zero curvature, so the penalty contributes nothing to the
+        # first step) keep every coefficient finite.
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        for solid in (True, False):
+            with self.subTest(solid=solid):
+                tau_i, E_i, quality = smooth_prony_fit(
+                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+                    N=100, smoothness=100.0, solid=solid,
+                    return_fit_quality=True,
+                )
+                self.assertTrue(np.all(np.isfinite(E_i)))
+                self.assertTrue(np.isfinite(quality.chi2_reduced))
+                self.assertTrue(np.isfinite(quality.curvature))
+
+    def test_equilibrium_modulus_is_optimal_for_the_decaying_terms(self):
+        # Variable projection's guarantee: E_eq is the closed-form
+        # non-negative least-squares value given the returned decaying
+        # coefficients, on the FULL weighted problem, not just the reduced one.
+        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
+        tau_i, E_i = smooth_prony_fit(
+            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+            N=10, smoothness=0.1, solid=True,
+        )
+        self.assertGreater(E_i[0], 0)
+        weights = np.concatenate((std, std))
+        basis = prony_basis(omega, tau_i, solid=True) / weights[:, None]
+        data = np.concatenate((E_stor, E_loss)) / weights
+        r0 = basis[:, 0]
+        resid = data - basis[:, 1:] @ E_i[1:]
+        np.testing.assert_allclose(E_i[0], (r0 @ resid) / (r0 @ r0), rtol=1e-8)
+
+    def test_clamped_equilibrium_is_exactly_zero_and_still_scored(self):
+        # When the data cannot support an equilibrium modulus the projection
+        # clamps it at EXACTLY zero (an active set, not a rounding artifact).
+        # The fit is then the solid=False fit of the decaying terms, and the
+        # readout must say so with finite numbers rather than go blank: the
+        # posterior is the one of the N-term problem the solver converged on.
+        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
+        kwargs = dict(E_stor_std=std, E_loss_std=std, N=10, smoothness=1.0,
+                      return_fit_quality=True)
+        _, E_solid, q_solid = smooth_prony_fit(
+            omega, E_stor, E_loss, solid=True, **kwargs)
+        _, E_visc, q_visc = smooth_prony_fit(
+            omega, E_stor, E_loss, solid=False, **kwargs)
+        self.assertEqual(E_solid[0], 0.0)
+        self.assertEqual(len(E_solid), 11)
+        for value in q_solid:
+            self.assertIsNotNone(value)
+            self.assertTrue(np.isfinite(value))
+        # Same optimum to within the one-parameter difference in dof that
+        # feeds the normalized penalty weight.
+        np.testing.assert_allclose(E_solid[1:], E_visc, rtol=5e-3)
+        self.assertAlmostEqual(q_solid.chi2_reduced, q_visc.chi2_reduced,
+                               delta=5e-3 * q_visc.chi2_reduced)
+        self.assertAlmostEqual(q_solid.neg_log_posterior,
+                               q_visc.neg_log_posterior, delta=0.5)
+
+    def test_plateau_projection_is_exact(self):
+        # With E_eq > 0 the projected loss, gradient and Hessian must equal the
+        # full solid=True ones at (log E_eq(x), x): the loss by construction,
+        # the gradient because dV/dE_eq = 0 there, the Hessian as the Schur
+        # complement eliminating the log E_eq row — exact, not an envelope
+        # approximation, since V is quadratic in E_eq for fixed x.
+        rng = np.random.default_rng(7)
+        N, m = 8, 9
+        basis = np.abs(rng.normal(size=(m, m))) + 0.3
+        truth = np.exp(rng.normal(size=m))
+        data = basis @ truth
+        # Undershoot the decaying terms so the residual wants E_eq > 0.
+        x = np.log(0.5 * truth[1:])
+        problem = _PlateauProjectedProblem(data, basis, 0.8)
+        E_eq = problem.equilibrium(x)
+        self.assertGreater(E_eq, 0)
+        full_x = np.concatenate(([np.log(E_eq)], x))
+        loss_full, grad_full = _prony_objective(full_x, data, basis, 0.8, True)
+        loss, grad = problem.fun(x), problem.jac(x)
+        self.assertAlmostEqual(loss, loss_full, delta=1e-9 * loss_full)
+        self.assertAlmostEqual(grad_full[0], 0.0, delta=1e-9 * np.abs(grad_full).max())
+        np.testing.assert_allclose(grad, grad_full[1:], rtol=1e-9,
+                                   atol=1e-12 * np.abs(grad_full).max())
+        H = _prony_hessian(full_x, data, basis, 0.8, True)
+        schur = H[1:, 1:] - np.outer(H[1:, 0], H[0, 1:]) / H[0, 0]
+        np.testing.assert_allclose(problem.hess(x), schur, rtol=1e-9,
+                                   atol=1e-12 * np.abs(schur).max())
+        np.testing.assert_allclose(
+            problem.coefficients(x), np.concatenate(([E_eq], np.exp(x))))
+
+    def test_prony_loss_guard_rejects_overflowing_proposals(self):
+        # A proposal with any log-coefficient above the cap must read as +inf
+        # so the trust region shrinks instead of feeding exp() overflow into
+        # the reduced basis, where inf * mixed signs becomes NaN and scipy's
+        # trust-region loop neither accepts nor shrinks. Off by default.
+        rng = np.random.default_rng(3)
+        basis = np.abs(rng.normal(size=(6, 6))) + 0.3
+        data = basis @ np.exp(rng.normal(size=6))
+        over = np.full(6, 1.0)
+        over[-1] = 20.5
+        unguarded = _PronyLoss(data, basis, 0.3, False)
+        self.assertTrue(np.isfinite(unguarded.fun(over)))
+        guarded = _PronyLoss(data, basis, 0.3, False, log_cap=20.0)
+        self.assertTrue(np.isfinite(guarded.fun(np.full(6, 19.0))))
+        self.assertEqual(guarded.fun(over), np.inf)
+        grad = guarded.jac(over)
+        self.assertEqual(grad.shape, (6,))
+        self.assertTrue(np.all(np.isfinite(grad)))
+        # The projected problem inherits it through its two _PronyLoss views.
+        projected = _PlateauProjectedProblem(data, basis, 0.3, log_cap=20.0)
+        self.assertEqual(projected.fun(over[1:]), np.inf)
+        self.assertTrue(np.all(np.isfinite(projected.jac(over[1:]))))
 
 
 class TestArgmaxPeak(unittest.TestCase):

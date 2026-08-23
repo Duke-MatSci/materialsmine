@@ -5,7 +5,9 @@ quantities its penalty is built from.
 Kept in one module because the smoothness penalty and the reported curvature
 must agree on what "roughness of the log spectrum" means: `_log_curvature` is
 the single definition both `_prony_objective` (which squares it into the loss)
-and `quality._prony_fit_quality` (which reports it) go through.
+and `quality._prony_fit_quality` (which reports it) go through. Likewise
+`_PronyLoss.hess` is the one second derivative, used both by the Newton solver
+in `fit` and inside the Laplace determinant in `quality`.
 
 Depends on nothing else in the package — `quality` and `fit` both import from
 here, so keeping it a leaf is what keeps those two acyclic.
@@ -70,6 +72,180 @@ def _mean_sq_curvature(curve: np.ndarray, npen: int, log_range: float):
     return curve @ curve * (npen - 1) ** 3 / log_range ** 4
 
 
+class _PronyLoss:
+    """
+    The penalized Prony loss with its gradient and Hessian, sharing one
+    evaluation of the common intermediates.
+
+    scipy.optimize.minimize takes fun, jac and hess as separate callables and
+    calls all three at every accepted point. Computing them independently
+    would redo exp(logcoefs), the model, the residual and r.T @ J — everything
+    but the final assembly — and rebuild the constant Gram basis.T @ basis on
+    every Hessian. This object evaluates the intermediates once per point and
+    keeps them until a DIFFERENT point is asked for; whichever of fun / jac /
+    hess arrives first at a point pays, the others reuse. The cache is keyed
+    on the point rather than on call order because the order is not a
+    contract: scipy evaluates the Hessian before the loss at accepted points
+    but the loss alone at rejected proposals, and the sequence differs between
+    scipy versions. The Gram is built lazily on the first Hessian request and
+    kept for the life of the object.
+
+    This is the same single-slot memo scipy's own MemoizeJac would interpose
+    if fun were handed over as a combined (loss, gradient) with jac=True — kept
+    here instead so one layer owns the sharing and extends it to the Hessian,
+    which scipy never shares.
+
+    Coefficients are parameterized in log-space (E_i = exp(logcoefs)) so the
+    optimizer sees an unconstrained problem while the physical coefficients
+    remain positive. The loss is the sum of squared residuals between
+    basis @ exp(logcoefs) and data, plus an optional second-difference penalty
+    on logcoefs[solid:] scaled by smoothness. With J = -basis @ diag(coefs),
+    the Jacobian of the residual in log-space,
+
+        V       = r.r + smoothness**2 * |L x|**2
+        grad V  = 2 * (r.T @ J + smoothness**2 * L.T L x)
+        Hess V  = 2 * (J.T @ J + diag(r.T @ J) + smoothness**2 * L.T @ L)
+
+    The diag term is the exact second derivative, not a Gauss-Newton
+    approximation; it is diagonal because each model term depends on a single
+    log-coefficient through exp(). L is the second-difference stencil and
+    L.T @ L is accumulated onto its pentadiagonal bands directly, so neither L
+    nor J is ever materialized.
+
+    Residuals are UNWEIGHTED here: the caller passes an already-weighted
+    system. fit.smooth_prony_fit's _prony_reduce folds 1/std into R and z
+    before this is ever called.
+
+    Overflow guard (log_cap). With a cap set, any point with a log-coefficient
+    above it evaluates to +inf so a trust-region solver rejects the proposal
+    and shrinks. Without it an overflowed exp() reaches the basis, whose
+    QR-mixed signs turn inf * basis into NaN, and a NaN reduction ratio leaves
+    scipy's trust-region loop neither accepting nor shrinking — forever. Not
+    observed with the flat seed across 324 benchmark cases, but a hang is not
+    a failure mode to leave to luck. hess is unguarded: it is only ever asked
+    for at accepted, hence finite-loss, points.
+
+    Parameters:
+        data (numpy.ndarray): 1-D array of target values, pre-weighted.
+        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
+            basis @ exp(logcoefs) is the model. May be read-only: it is never
+            written to.
+        smoothness (float): Weight of the second-difference penalty on
+            logcoefs[solid:] — the SCALED weight the fit is run with. Pass 0
+            to disable.
+        solid (bool): Whether the leading coefficient is an equilibrium term
+            to exclude from the smoothness penalty.
+        log_cap (float or None): Largest log-coefficient fun/jac will
+            evaluate; None disables the guard (one-shot scoring and tests).
+    """
+
+    def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
+                 solid: bool, log_cap: float = None):
+        self._data = data
+        self._basis = basis
+        self._smoothness = smoothness
+        self._solid = solid
+        self._log_cap = log_cap
+        self._gram = None
+        self._x = None
+
+    def _capped(self, logcoefs: np.ndarray) -> bool:
+        return self._log_cap is not None and bool(np.any(logcoefs > self._log_cap))
+
+    def _at(self, logcoefs: np.ndarray) -> tuple:
+        """(coefs, resid, r.T @ J) at logcoefs, recomputed only if it moved."""
+        if self._x is None or not np.array_equal(logcoefs, self._x):
+            self._x = np.array(logcoefs, copy=True)
+            self._coefs = np.exp(logcoefs)
+            self._resid = self._data - self._basis @ self._coefs
+            # r.T @ J: the gradient before the chain rule is doubled and
+            # before the penalty is folded in; also the Hessian's exact
+            # second-derivative diagonal.
+            self._rj = -(self._basis.T @ self._resid) * self._coefs
+        return self._coefs, self._resid, self._rj
+
+    def residual(self, logcoefs: np.ndarray) -> np.ndarray:
+        """data - basis @ exp(logcoefs); cached with the rest. Do not write
+        to it."""
+        return self._at(logcoefs)[1]
+
+    def fun(self, logcoefs: np.ndarray) -> float:
+        """Loss, for scipy.optimize.minimize's fun=; +inf above log_cap."""
+        if self._capped(logcoefs):
+            return np.inf
+        _, resid, _ = self._at(logcoefs)
+        loss = resid @ resid
+        if self._smoothness:
+            curve = self._smoothness * _log_curvature(logcoefs, self._solid)
+            loss += curve @ curve
+        return loss
+
+    def jac(self, logcoefs: np.ndarray) -> np.ndarray:
+        """Gradient, for scipy.optimize.minimize's jac=; a fresh array.
+
+        Zeros above log_cap: never requested there (the trust region rejects
+        on fun alone) but kept finite so a caller that does ask gets an array,
+        not an overflow.
+        """
+        if self._capped(logcoefs):
+            return np.zeros_like(logcoefs)
+        _, _, rj = self._at(logcoefs)
+        grad = rj.copy()
+        if self._smoothness:
+            # smoothness**2 * curvature, spread back onto the stencil.
+            diffs = self._smoothness ** 2 * _log_curvature(logcoefs, self._solid)
+            grad_slice = grad[self._solid:]
+            grad_slice[:-2] += diffs
+            grad_slice[1:-1] -= 2 * diffs
+            grad_slice[2:] += diffs
+        return 2 * grad  # more chain rule (squared errors)
+
+    def fun_jac(self, logcoefs: np.ndarray) -> tuple:
+        """(loss, gradient) in one call, for one-shot callers."""
+        return self.fun(logcoefs), self.jac(logcoefs)
+
+    def hess(self, logcoefs: np.ndarray) -> np.ndarray:
+        """
+        Exact Hessian, for scipy.optimize.minimize's hess=.
+
+        Also the one definition of 0.5 * Hess(V) = C that
+        quality._prony_fit_quality puts inside its Laplace determinant, so the
+        curvature the optimizer converges on is the curvature the score is
+        charged for.
+
+        Returns:
+            numpy.ndarray: fresh (m, m) symmetric Hessian, m = len(logcoefs).
+        """
+        coefs, _, rj = self._at(logcoefs)
+        if self._gram is None:
+            self._gram = self._basis.T @ self._basis
+        # The product allocates, so the in-place scaling below cannot touch
+        # the cached Gram (nor a read-only basis).
+        H = self._gram * coefs   # -> J.T @ J; J = -basis @ diag(coefs), so its
+        H *= coefs[:, None]      # two sign flips cancel in the Gram.
+        # np.einsum('ii->i', H) is a writable stride view even when H is not
+        # contiguous; H.ravel()[::m + 1] would silently write to a copy instead.
+        np.einsum('ii->i', H)[...] += rj
+
+        if self._smoothness:
+            # lam * L.T @ L is pentadiagonal; accumulate the nine stencil
+            # outer-product terms straight onto its bands. Index pairs are
+            # strictly increasing within each (t, u) pass, so there is no
+            # fancy-index += aliasing. The loop also stays correct at npen == 3,
+            # where the two boundary corrections collide and the generic band
+            # pattern [1, 5, 6, ..., 6, 5, 1] does not apply — and at npen < 3,
+            # where band is empty and the penalty is identically zero.
+            lam = self._smoothness * self._smoothness
+            npen = len(logcoefs) - self._solid
+            band = self._solid + np.arange(max(npen - 2, 0))
+            for t, stencil_t in enumerate(_D2_STENCIL):
+                for u, stencil_u in enumerate(_D2_STENCIL):
+                    H[band + t, band + u] += lam * stencil_t * stencil_u
+
+        H *= 2  # squared errors, matching the factor jac returns
+        return H
+
+
 def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
@@ -78,56 +254,29 @@ def _prony_objective(
         solid: bool,
 ) -> tuple:
     """
-    Compute the loss and gradient for the smoothed Prony fit.
+    One-shot (loss, gradient) of the smoothed Prony fit at a point.
 
-    Designed to be passed to scipy.optimize.minimize with jac=True. Coefficients
-    are parameterized in log-space (E_i = exp(logcoefs)) so that the optimizer
-    sees an unconstrained problem while the physical coefficients remain
-    positive. The loss is the sum of squared residuals between
-    basis @ exp(logcoefs) and data, plus an optional second-difference penalty
-    on logcoefs[solid:] scaled by smoothness.
-
-    Residuals are UNWEIGHTED here: the caller passes an already-weighted system.
-    smooth_prony_fit's _prony_reduce folds 1/std into R and z before this is
-    ever called, so carrying a std array through would only buy a per-iteration
-    division by ones on the optimizer's hot path.
-
-    Parameters:
-        logcoefs (numpy.ndarray): 1-D array of log-coefficients to fit.
-        data (numpy.ndarray): 1-D array of target values, pre-weighted.
-        basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
-            basis @ exp(logcoefs) is the model.
-        smoothness (float): Strength of the second-difference penalty on
-            logcoefs[solid:]. Pass 0 to disable.
-        solid (bool): Whether the leading coefficient is an equilibrium term to
-            exclude from the smoothness penalty.
-
-    Returns:
-        tuple: (loss, gradient) where loss is a float and gradient is a 1-D
-        ndarray with the same shape as logcoefs.
+    Convenience form of _PronyLoss.fun_jac for callers that evaluate once
+    (scoring, tests). The solver itself holds a _PronyLoss so the Hessian can
+    share the evaluation; see that class for the definitions.
     """
-    coefs = np.exp(logcoefs)
-    estimate = basis @ coefs
-    resid = data - estimate
-    loss = resid @ resid
-    if smoothness:
-        curve = smoothness * _log_curvature(logcoefs, solid)
-        loss += curve @ curve
+    return _PronyLoss(data, basis, smoothness, solid).fun_jac(logcoefs)
 
-    grad = -(basis.T @ resid)
 
-    # apply chain rule because these are functions of
-    # coefs rather than logcoefs
-    grad *= coefs
+def _prony_hessian(
+        logcoefs: np.ndarray,
+        data: np.ndarray,
+        basis: np.ndarray,
+        smoothness: float,
+        solid: bool,
+) -> np.ndarray:
+    """
+    One-shot exact Hessian of the smoothed Prony fit at a point.
 
-    if smoothness:
-        diffs = smoothness * curve  # smoothness**2 * _log_curvature(...)
-        grad_slice = grad[solid:]
-        grad_slice[:-2] += diffs
-        grad_slice[1:-1] -= 2 * diffs
-        grad_slice[2:] += diffs
-
-    return loss, 2 * grad  # more chain rule (squared errors)
+    Convenience form of _PronyLoss.hess; same argument list as
+    _prony_objective. See _PronyLoss for the definition.
+    """
+    return _PronyLoss(data, basis, smoothness, solid).hess(logcoefs)
 
 
 def _scaled_smoothness(smoothness: float, npen: int, dof: int,

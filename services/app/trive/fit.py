@@ -5,22 +5,100 @@ data into (tau_i, E_i).
 Composes the rest of the fitting stack — `prony` for the grid, `reduction` for
 the exact QR compression, `objective` for the penalized loss, `quality` for the
 score — and owns the two decisions that need all four in view: how the
-user-facing smoothness knob is normalized, and which slice of the reduced
-system each solver may see.
+user-facing smoothness knob is normalized, and how the equilibrium modulus is
+kept out of the Newton solver's search (`_PlateauProjectedProblem`).
 """
 
 import numpy as np
 from scipy.optimize import minimize, nnls
 
 from .prony import prony_relaxation_space
-from .objective import (
-    _log_curvature,
-    _mean_sq_curvature,
-    _prony_objective,
-    _scaled_smoothness,
-)
+from .objective import _PronyLoss, _scaled_smoothness
 from .reduction import _prony_reduce
 from .quality import _FitQuality, _prony_fit_quality
+
+
+class _PlateauProjectedProblem:
+    """
+    The smoothed fit with the equilibrium (plateau) modulus projected out, so
+    the solver only searches the log-coefficients of the decaying terms.
+
+    Variable projection. For any fixed decaying coefficients c the optimal
+    non-negative equilibrium modulus is a one-variable NNLS with the closed
+    form
+
+        E_eq = max(0, r0 . (z - Rr c) / (r0 . r0))
+
+    (r0 the equilibrium column of the reduced basis, Rr the rest), so the
+    equilibrium term never has to be a search variable. While E_eq > 0 the
+    partially-minimized loss is EXACTLY the solid=False loss on the system
+    projected orthogonally to r0, (P z, P Rr); once it clamps at zero it is the
+    solid=False loss on (z, Rr) itself. A _PronyLoss on whichever pair applies
+    therefore gives the exact loss, gradient and Hessian of the projected
+    problem — no envelope-theorem approximation — and shares their common
+    intermediates between the solver's separate fun, jac and hess calls.
+
+    Why bother: in log-space the equilibrium term is unpenalized and its
+    gradient carries a factor of E_eq itself (chain rule), so a solver can run
+    it toward -inf, watch the gradient vanish, and declare convergence at a
+    point that is not a minimum of anything. Measured on the bundled VeroCyan
+    master curve: a 14x worse objective than the true optimum. The correct
+    answer is sometimes E_eq == 0 — that is a boundary optimum, not something
+    a penalty should push away from — and log-parameterization turns that
+    boundary into a spurious stationary point at infinity. Projection removes
+    the direction from the search entirely, guarantees E_eq is optimal for the
+    returned decaying terms, and lands the clamped case on an exact 0.0.
+
+    Exposes fun / jac / hess with the same signatures as _PronyLoss (which
+    also carries the overflow guard, via log_cap), plus equilibrium() and
+    coefficients() to rebuild the full vector. The solid=False fit needs none
+    of this and uses a _PronyLoss directly.
+    """
+
+    def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
+                 log_cap: float = None):
+        r0 = basis[:, 0]
+        self._r0 = r0
+        self._r0_sq = r0 @ r0
+        # Two views of the same problem: the clamped system (z, Rr) — whose
+        # residual also yields E_eq — and the system projected orthogonally
+        # off r0, for E_eq > 0. The projector is applied once to each array
+        # rather than materialized.
+        rest = basis[:, 1:]
+        self._clamped = _PronyLoss(data, rest, smoothness, False, log_cap)
+        self._free = _PronyLoss(
+            data - r0 * ((r0 @ data) / self._r0_sq),
+            rest - np.outer(r0, (r0 @ rest) / self._r0_sq),
+            smoothness, False, log_cap,
+        )
+
+    def equilibrium(self, logcoefs: np.ndarray) -> float:
+        """Optimal non-negative equilibrium modulus for these decaying terms.
+
+        Exactly 0.0 when the unconstrained optimum is negative — the clamp is
+        the active set of a one-variable NNLS, not a rounding artifact.
+        """
+        resid = self._clamped.residual(logcoefs)
+        return max(0.0, (self._r0 @ resid) / self._r0_sq)
+
+    def _loss(self, logcoefs: np.ndarray) -> _PronyLoss:
+        return self._free if self.equilibrium(logcoefs) > 0 else self._clamped
+
+    def fun(self, logcoefs: np.ndarray) -> float:
+        """Loss, for scipy.optimize.minimize's fun=."""
+        return self._loss(logcoefs).fun(logcoefs)
+
+    def jac(self, logcoefs: np.ndarray) -> np.ndarray:
+        """Gradient, for scipy.optimize.minimize's jac=."""
+        return self._loss(logcoefs).jac(logcoefs)
+
+    def hess(self, logcoefs: np.ndarray) -> np.ndarray:
+        """Exact Hessian, for scipy.optimize.minimize's hess=."""
+        return self._loss(logcoefs).hess(logcoefs)
+
+    def coefficients(self, logcoefs: np.ndarray) -> np.ndarray:
+        """Full coefficient vector, equilibrium term first."""
+        return np.concatenate(([self.equilibrium(logcoefs)], np.exp(logcoefs)))
 
 
 def smooth_prony_fit(
@@ -57,11 +135,28 @@ def smooth_prony_fit(
     deterministic, no line search, no initial guess. Coefficients may then be
     EXACTLY zero (downstream consumers already filter E_i != 0). With
     smoothness > 0 the log-space penalty is nonlinear in the coefficients, so
-    _prony_objective is minimized on the reduced system (basis=R, data=z, which
-    the reduction has already weighted by 1/std) with L-BFGS-B, seeded from the
-    NNLS solution and bounded above in log-space — without that bound the line
-    search was measured to run exp(logcoefs) into overflow on broadband
-    (many-decade) master curves.
+    the reduced problem is minimized by exact Newton in a trust region
+    (scipy's trust-exact, fed _PronyLoss.fun / .jac / .hess) over the
+    log-coefficients of the decaying terms, with the equilibrium modulus
+    projected out in closed form — see _PlateauProjectedProblem. The seed is
+    flat:
+    every term at log(max(E_stor) / m).
+
+    Why Newton, and why that seed. The penalty makes the Hessian's condition
+    number ~1e12 at ordinary settings, and first-order and limited-memory
+    methods cannot follow it: on a 324-case benchmark (four bundled master
+    curves plus synthetic 12-40 decade ones, N from 20 to 150, smoothness
+    1e-3 to 100) the previous L-BFGS-B solver stopped on its relative-f test
+    with the gradient still O(1) in 70 cases — 10x to 100x above the optimum
+    on every bundled file at N=100, smoothness=1 — and BFGS, trust-ncg and
+    Newton-CG each stalled or overflowed somewhere. trust-exact from the flat
+    seed matched the best objective found by any method in all 324 cases, in
+    ~25 evaluations (vs ~3800), 10x faster overall. The NNLS solution is NOT
+    used as the seed any more: its exact zeros clip into -7 log-unit spikes
+    which the penalty turns into an enormous initial gradient, and from there
+    trust-exact's subproblem solver was observed to loop without bound
+    (an unbounded `while True` in scipy that maxiter cannot cap) while BFGS
+    overflowed to NaN. Do not reintroduce it.
 
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
@@ -98,9 +193,12 @@ def smooth_prony_fit(
         N + bool(solid). Entries can be exactly zero (NNLS active set). With
         return_fit_quality, (tau_i, E_i, quality); quality.neg_log_posterior is
         None unless the fit converged to an INTERIOR minimum with smoothing on,
-        since the Laplace approximation behind it assumes a stationary point,
-        and quality.curvature is None on the unsmoothed path, where the NNLS
-        active set makes log-coefficients (and so their roughness) undefined.
+        since the Laplace approximation behind it assumes a stationary point
+        (when the projected equilibrium modulus clamps at exactly zero the
+        score is that of the N-term solid=False problem the solver actually
+        converged on), and quality.curvature is None on the unsmoothed path,
+        where the NNLS active set makes log-coefficients (and so their
+        roughness) undefined.
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -131,18 +229,17 @@ def smooth_prony_fit(
         omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i, solid, std_scale
     )
     # (R, z) carries the unreachable orthogonal residual as its last row, which
-    # is what puts every score on the full-problem scale. L-BFGS-B must NOT see
-    # it: its ftol is RELATIVE to f, so a constant the fit cannot reduce makes
-    # the stopping test lazier by exactly the factor it inflates f — measured at
-    # 13x the reducible residual on a 200-row upload, costing ~1e-5 in the
-    # converged coefficients. nnls is immune (finite active set, no tolerance)
-    # and wants the full norm, so only the minimize call takes the slice.
+    # is what puts every score on the full-problem scale. nnls wants the full
+    # norm. The Newton solver would be indifferent — a constant row changes
+    # neither gradient nor Hessian, and trust-exact stops on the gradient, not
+    # on a relative reduction of f the way L-BFGS-B did — so the slice is now
+    # only about not carrying a dead row through every evaluation.
     R_fit, z_fit = R[:m], z[:m]
 
     # Reduced problem with smoothness == 0 is exactly non-negative least
     # squares — solve it directly (finite algorithm, no iteration budget).
-    E_nnls, rnorm = nnls(R, z)
     if smoothness == 0:
+        E_nnls, rnorm = nnls(R, z)
         if not return_fit_quality:
             return tau_i, E_nnls
         # No penalty means no posterior over lam to report, but the misfit is
@@ -155,50 +252,60 @@ def smooth_prony_fit(
         )
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
-    # so run _prony_objective on the reduced system. Seed from the NNLS
-    # solution (clipping exact zeros so log stays finite); if NNLS zeroed
-    # everything, fall back to the data-scaled flat guess.
-    pos = E_nnls[E_nnls > 0]
-    if pos.size:
-        x0 = np.log(np.maximum(E_nnls, pos.min() * 1e-3))
-    else:
-        x0 = np.full(m, np.log(E_stor.max() / m))
-    # Normalize the knob so it means the same thing on any upload; see
+    # so run Newton on the reduced system with the equilibrium term projected
+    # out. Normalize the knob so it means the same thing on any upload; see
     # _scaled_smoothness, which _prony_fit_quality re-derives from the same
     # inputs so the reported score belongs to the fit that was actually run.
     log_range = np.log(tau_i[-1] / tau_i[0])
     smoothness_scaled = _scaled_smoothness(smoothness, N, dof, log_range)
-    # Upper bound on log-coefficients: no single Prony term should exceed
-    # ~1000x the data maximum. Without this, the line search was measured to
-    # push exp(logcoefs) into overflow on broadband master curves.
-    ub = np.log(E_stor.max()) + np.log(1e3)
+    # No single Prony term above ~1000x the data maximum: the overflow guard
+    # in _PronyLoss, same physical cap the old L-BFGS-B upper bound encoded.
+    log_cap = np.log(E_stor.max()) + np.log(1e3)
+    if solid:
+        problem = _PlateauProjectedProblem(
+            z_fit, R_fit, smoothness_scaled, log_cap)
+    else:
+        problem = _PronyLoss(z_fit, R_fit, smoothness_scaled, False, log_cap)
+    # Flat seed, data-scaled: zero curvature, so the penalty contributes
+    # nothing to the first step however large its weight.
+    x0 = np.full(N, np.log(E_stor.max() / m))
     with np.errstate(over='ignore', invalid='ignore'):
         result = minimize(
-            fun=_prony_objective,
+            fun=problem.fun,
             x0=x0,
-            args=(z_fit, R_fit, smoothness_scaled, solid),
-            jac=True,
-            method='L-BFGS-B',
-            bounds=[(None, ub)] * m,
+            jac=problem.jac,
+            hess=problem.hess,
+            method='trust-exact',
         )
-    E_i = np.exp(result.x)
+    # result.success is deliberately not consulted: near the optimum the
+    # trust radius can collapse on a precision-limited reduction ratio and
+    # scipy reports "bad approximation" with the gradient already ~1e-5.
+    E_i = problem.coefficients(result.x) if solid else np.exp(result.x)
     if not return_fit_quality:
         return tau_i, E_i
 
-    if np.any(result.x >= ub):
-        # The optimum sits on the log-space bound, so grad(V) != 0 there and the
-        # Laplace expansion behind neg_log_posterior does not apply. The misfit
-        # and the roughness need no stationarity, so both are still reported;
-        # the reduced residual is already a full-problem quantity.
-        resid = (z - R @ E_i)
-        return tau_i, E_i, _FitQuality(
-            resid @ resid / dof if dof > 0 else None,
-            None,
-            _mean_sq_curvature(_log_curvature(result.x, solid), N, log_range),
+    if solid and E_i[0] == 0:
+        # The projected equilibrium modulus clamped at zero, so in the full
+        # parameterization the optimum sits on a coefficient boundary:
+        # log(E_eq) = -inf and the Laplace expansion has no curvature in that
+        # direction. What the solver actually converged on there is the
+        # solid=False problem in the N decaying terms (see
+        # _PlateauProjectedProblem),
+        # and that problem's interior minimum IS this point — so score it as
+        # that: the posterior given the active set, the same convention NNLS
+        # uses for its exact zeros. n_resid is lowered by one so the dof
+        # _prony_fit_quality derives — and hence the penalty weight it rebuilds
+        # — stay exactly the fit's own: the pinned equilibrium term is still
+        # one of the fit's m parameters.
+        quality = _prony_fit_quality(
+            result.x, z, R[:, 1:], smoothness, False,
+            n_resid=n_res - 1,
+            log_range=log_range,
         )
+        return tau_i, E_i, quality
 
     quality = _prony_fit_quality(
-        result.x, z, R, smoothness, solid,
+        np.log(E_i), z, R, smoothness, solid,
         n_resid=n_res,
         log_range=log_range,
     )
