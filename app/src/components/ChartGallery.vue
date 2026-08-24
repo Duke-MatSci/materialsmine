@@ -256,13 +256,11 @@ const closeDialog = () => {
 
 const deleteChart = async (chart: any, retry = false) => {
   try {
-    if (!isAdmin.value) return; // temporary safeguard
+    if (!isAdmin.value) return;
 
-    // Retry is a flag to determine if the function is called from retry action
     if (!retry) {
       dialogLoading.value = true;
     }
-    await store.dispatch('explorer/curation/deleteEntityNanopub', chart.identifier);
     await store.dispatch('explorer/curation/deleteEntityES', {
       identifier: chart.identifier,
       type: 'charts',

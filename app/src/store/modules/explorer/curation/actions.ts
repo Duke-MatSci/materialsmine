@@ -2,7 +2,6 @@ import { CREATE_DATASET_ID_MUTATION } from '@/modules/gql/dataset-gql';
 import { SEARCH_SPREADSHEETLIST_QUERY } from '@/modules/gql/material-gql';
 import router from '@/router';
 import apollo from '@/modules/gql/apolloClient';
-import { deleteChart, saveXml } from '@/modules/vega-chart';
 import { isValidOrcid } from '@/modules/whyis-dataset';
 import { ActionContext } from 'vuex';
 import { CurationState } from './types';
@@ -95,10 +94,48 @@ export default {
   //   };
   // },
 
-  async deleteEntityNanopub(_context: Context, entityUri: string): Promise<any> {
-    // TODO: refactor delete function to generalize to other entity types
-    const response = await deleteChart(entityUri);
-    return response;
+  async deleteEntityNanopub({ rootGetters }: Context, entityUri: string): Promise<any> {
+    const id = entityUri.split('/').pop();
+    const token = rootGetters['auth/token'];
+    const response = await fetch(`/api/curate/dataset/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to delete dataset triples');
+    return response.json();
+  },
+
+  async submitDatasetToKG(
+    { rootGetters }: Context,
+    payload: {
+      id: string;
+      label: string;
+      description: string;
+      doi: string;
+      organization: string[];
+      distribution: string[];
+      thumbnail: string;
+    }
+  ): Promise<any> {
+    const { id, ...body } = payload;
+    const token = rootGetters['auth/token'];
+    const response = await fetch(`/api/curate/dataset/${id}/submit-kg`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.message || 'Failed to submit dataset to Knowledge Graph');
+    }
+    return response.json();
   },
 
   async deleteEntityES(
@@ -711,7 +748,6 @@ export default {
     }
     const response = await resp.json();
 
-    console.log('Fetched Change Logs:', response);
     const parseLogs = response?.changes?.map((log: any) => ({
       user: log.user,
       timestamp: log.date,

@@ -54,6 +54,7 @@ exports.curationSearchQuery = async (input) => {
 
   const data = await XmlData.aggregate([
     { $match: xmlDataFilter },
+    { $match: { curateState: { $in: ['Review', 'Completed'] } } },
     {
       $project: {
         id: '$_id',
@@ -68,7 +69,7 @@ exports.curationSearchQuery = async (input) => {
         isNewCuration: { $literal: false },
         status: {
           $cond: [
-            { $eq: ['$entityState', 'IngestSuccess'] },
+            { $eq: ['$curateState', 'Completed'] },
             'Approved',
             'Not Approved'
           ]
@@ -81,6 +82,7 @@ exports.curationSearchQuery = async (input) => {
         coll: 'curatedsamples',
         pipeline: [
           { $match: curationSampleFilter },
+          { $match: { curationState: { $in: ['Review', 'Completed'] } } },
           {
             $project: {
               id: '$_id',
@@ -104,7 +106,13 @@ exports.curationSearchQuery = async (input) => {
               },
               object: 1,
               isNewCuration: { $literal: true },
-              status: '$entityState',
+              status: {
+                $cond: [
+                  { $eq: ['$curationState', 'Completed'] },
+                  'Approved',
+                  'Not Approved'
+                ]
+              },
               user: 1
             }
           }
@@ -112,12 +120,16 @@ exports.curationSearchQuery = async (input) => {
       }
     },
     { $match: filter },
-    { $group: { _id: null, count: { $sum: 1 }, xmlData: { $push: '$$ROOT' } } },
+    {
+      $facet: {
+        count: [{ $count: 'total' }],
+        xmlData: [{ $skip: skip }, { $limit: pageSize }]
+      }
+    },
     {
       $project: {
-        _id: 0,
-        count: 1,
-        xmlData: { $slice: ['$xmlData', skip, pageSize] }
+        count: { $arrayElemAt: ['$count.total', 0] },
+        xmlData: 1
       }
     }
   ]);

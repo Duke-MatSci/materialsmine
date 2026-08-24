@@ -319,16 +319,32 @@ const customReset = async (type?: string): Promise<void> => {
 };
 
 const deleteDataset = async (dataset: DatasetItem): Promise<void> => {
-  if (!isAdmin.value) return; // temporary safeguard
+  if (!isAdmin.value) return;
   dialogLoading.value = true;
-  await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.identifier);
-  await store.dispatch('explorer/curation/deleteEntityES', {
-    identifier: dataset.identifier,
-    type: 'datasets',
-  });
-  toggleDialogBox();
-  dialogLoading.value = false;
-  await loadItems();
+  try {
+    await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.identifier);
+    const distribution = dataset.distribution
+      ? Array.isArray(dataset.distribution) ? dataset.distribution : [dataset.distribution]
+      : [];
+    if (distribution.length) {
+      await store.dispatch('explorer/curation/deleteEntityFiles', {
+        distribution,
+        thumbnail: dataset.thumbnail,
+      });
+    }
+    await store.dispatch('explorer/curation/deleteEntityES', {
+      identifier: dataset.identifier,
+      type: 'datasets',
+    });
+  } catch (error: any) {
+    store.commit('setSnackbar', {
+      message: error?.message ?? 'Failed to delete dataset',
+    }, { root: true });
+  } finally {
+    toggleDialogBox();
+    dialogLoading.value = false;
+    await loadItems();
+  }
 };
 
 const editDataset = (dataset: DatasetItem): void => {

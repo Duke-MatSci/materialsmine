@@ -157,6 +157,7 @@ module.exports = {
     loadxml: 'loadxml',
     ontology: '/ontology/extract/',
     'validate-ontology': '/ontology/validate/',
+    'delete-nanopub': '/ontology/nanopub/',
     'yaml-loader': '/yaml_converter/'
   },
   MGD_SVC_ERR_CODE: {

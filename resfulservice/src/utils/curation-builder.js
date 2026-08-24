@@ -3327,7 +3327,7 @@ function calculateTotal(input) {
 }
 
 async function publishToChangeLog(
-  { resp, id, failed, sampleIdForFailure },
+  { resp, id, failed, sampleIdForFailure, change },
   req,
   res,
   next,
@@ -3338,7 +3338,7 @@ async function publishToChangeLog(
       ...req,
       method: 'POST',
       body: {
-        change: [
+        change: change || [
           `${calculateTotal(
             resp?.persistence?.graphs_preview || []
           )} Triples added`
@@ -3385,8 +3385,9 @@ async function transformSddToNanopub(skeleton, logger) {
 
   if (!npId) throw new Error('Missing required "id" in nanopubSkeleton.');
 
-  // Derive baseId from npId (e.g. http://materialsmine.org/np/xxx → http://materialsmine.org/resource/pnc/xxx)
-  const npSlug = npId.split('/np/').pop();
+  // Extract the slug (last path segment) regardless of the origin/path the frontend sends
+  const npSlug = npId.split('/').pop();
+  const canonicalNpId = `${NP_BASE}${npSlug}`;
   const baseId = `${MM_BASE}pnc/${npSlug}`;
 
   // DOI enrichment via OpenAlex (same as XML ETL)
@@ -3451,9 +3452,9 @@ async function transformSddToNanopub(skeleton, logger) {
   };
 
   const now = new Date().toISOString();
-  const assertionId = `${npId}#assertion`;
-  const provId = `${npId}#provenance`;
-  const pubinfoId = `${npId}#pubinfo`;
+  const assertionId = `${canonicalNpId}#assertion`;
+  const provId = `${canonicalNpId}#provenance`;
+  const pubinfoId = `${canonicalNpId}#pubinfo`;
 
   // Provenance graph
   const authorTriples = (authors || []).map((a) => ({
@@ -3498,7 +3499,7 @@ async function transformSddToNanopub(skeleton, logger) {
   }));
 
   const pubinfoNp = {
-    '@id': npId,
+    '@id': canonicalNpId,
     'pav:createdBy': { '@id': curatorId },
     ...(hasText(title) ? { 'dct:title': title } : {}),
     ...(hasText(description) ? { 'dct:description': description } : {}),
@@ -3520,10 +3521,10 @@ async function transformSddToNanopub(skeleton, logger) {
     '@context': OUTPUT_CONTEXT,
     '@graph': [
       {
-        '@id': `${npId}#head`,
+        '@id': `${canonicalNpId}#head`,
         '@graph': [
           {
-            '@id': npId,
+            '@id': canonicalNpId,
             '@type': 'np:Nanopublication',
             'np:hasAssertion': { '@id': assertionId },
             'np:hasProvenance': { '@id': provId },

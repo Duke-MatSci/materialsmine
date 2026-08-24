@@ -1,5 +1,24 @@
 <template>
   <div class="xmlLoader">
+    <Dialog :minWidth="40" :active="dialogBoxActive">
+      <template #title>{{ approvalInProgress ? 'Confirmation' : 'Success' }}</template>
+      <template #content>
+        <div class="u_display-flex u_centralize_items u--margin-posmd">
+          <md-icon class="u--font-emph-smm u--margin-pos" style="color: green"
+            >check_circle</md-icon
+          >
+          <span>{{
+            approvalInProgress
+              ? 'Please confirm your submission'
+              : 'XML has been approved and successfully ingested into the knowledge graph'
+          }}</span>
+        </div>
+      </template>
+      <template #actions>
+        <md-button v-if="approvalInProgress" @click="submitApproval">Submit</md-button>
+        <md-button @click.prevent="closeDialogBox">Close</md-button>
+      </template>
+    </Dialog>
     <section class="u_width--max viz-u-postion__rel utility-roverflow" v-if="!yamlLoading">
       <md-drawer
         class="md-right"
@@ -71,6 +90,17 @@
           <md-tooltip md-direction="top">Comment</md-tooltip>
           <md-icon>comment</md-icon>
         </md-button>
+
+        <md-button
+          @click="handleApproveCuration"
+          v-if="
+            isAuth && xmlViewer.status === 'Approved' && xmlViewer.curationState === 'Completed'
+          "
+          class="md-fab md-dense md-primary btn--primary"
+        >
+          <md-tooltip md-direction="top">Resubmit XML</md-tooltip>
+          <md-icon>check</md-icon>
+        </md-button>
       </div>
     </section>
 
@@ -84,7 +114,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
+import { useXmlViewer } from '@/composables/useXmlViewer';
 import Comment from '@/components/explorer/Comment.vue';
+import Dialog from '@/components/Dialog.vue';
 import Spinner from '@/components/Spinner.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
 
@@ -98,13 +130,15 @@ const store = useStore();
 const router = useRouter();
 const route = useRoute();
 
-// Template refs
-const codeBlock = ref<HTMLElement>();
+// Composable
+const { xmlViewer, isAuth, dialogBoxActive, approveCuration, approval, closeDialogBox } =
+  useXmlViewer();
 
 // Reactive data
 const showSidepanel = ref(false);
 const type = ref('xml');
 const yamlLoading = ref(false);
+const approvalInProgress = ref(false);
 const isSmallTabView = computed(() => {
   return screen.width < 760;
 });
@@ -128,6 +162,18 @@ const controlID = computed(() => {
 const emptyState = computed(() => `No History Data Found for ${controlID.value}`);
 
 // Methods
+const handleApproveCuration = () => {
+  approvalInProgress.value = true;
+  approveCuration();
+};
+
+const submitApproval = async () => {
+  closeDialogBox();
+  approvalInProgress.value = false;
+  await approval();
+  store.dispatch('explorer/curation/fetchChangeLogs', xmlId.value);
+};
+
 const navBack = () => {
   router.back();
 };

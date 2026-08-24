@@ -1,6 +1,5 @@
 import { querySparql, parseSparql } from '@/modules/sparql';
-import { deleteNanopub, listNanopubs, postNewNanopub } from './whyis-utils';
-import { deleteResources } from './whyis-dataset';
+import { postNewNanopub } from './whyis-utils';
 
 interface VegaSpec {
   $schema?: string;
@@ -252,17 +251,8 @@ function copyChart(sourceChart: Chart): Chart {
   return newChart;
 }
 
-async function deleteChart(chartUri: string): Promise<any> {
-  return listNanopubs(chartUri).then((nanopubs) => {
-    if (!nanopubs || !nanopubs.length) return;
-    return Promise.all(nanopubs.map(async (nanopub) => await deleteNanopub(nanopub.np)));
-  });
-}
-
 async function saveChart(chart: Chart): Promise<any> {
-  if (chart.uri) {
-    await deleteChart(chart.uri);
-  } else {
+  if (!chart.uri) {
     chart.uri = generateChartId();
   }
 
@@ -450,7 +440,6 @@ export {
   saveChart,
   saveXml,
   publishXSD,
-  deleteChart,
   loadChart,
   copyChart,
   buildSparqlSpec,

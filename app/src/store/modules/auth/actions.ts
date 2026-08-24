@@ -1,20 +1,7 @@
 import router from '@/router';
+import { getTokenExp, clearAuthStorage } from '@/modules/auth-utils';
 
 let timer: any;
-
-// Helper function to clear local storage items
-const clearAuthStorage = (): void => {
-  const items = [
-    'token',
-    'userId',
-    'displayName',
-    'surName',
-    'givenName',
-    'isAdmin',
-    'tokenExpiration',
-  ];
-  items.forEach((item) => localStorage.removeItem(item));
-};
 
 // Helper function to set local storage items
 const setAuthStorage = (data: any): void => {
@@ -124,8 +111,10 @@ export default {
     const surName = res.surName ?? null;
     const givenName = res.givenName ?? null;
     const isAdmin = res.isAdmin ?? false;
-    const expiresIn = 9000 * 60 * 60;
-    const expirationDate = new Date().getTime() + expiresIn;
+
+    const exp = token ? getTokenExp(token) : null;
+    const expirationDate = exp ? exp * 1000 : new Date().getTime() + 8 * 60 * 60 * 1000;
+    const expiresIn = expirationDate - Date.now();
 
     if (token && userId && displayName) {
       setAuthStorage({

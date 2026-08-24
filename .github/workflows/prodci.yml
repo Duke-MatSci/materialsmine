@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '22'
       - name: Enable pnpm for frontend
-        run: corepack enable && corepack prepare pnpm@latest --activate
+        run: corepack enable && corepack prepare pnpm@9 --activate
       - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
