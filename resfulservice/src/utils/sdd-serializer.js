@@ -339,6 +339,8 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
 
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
+const SDD_BATCH_SIZE = 500;
+
 /**
  * Build the sio:hasAttribute array for an SDD nanopub assertion.
  *
@@ -383,9 +385,8 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     );
   }
 
-  // 2. Fetch and parse each CSV, generate attributes
-  const allSamples = [];
-  let fileOffset = 0;
+  // 2. Fetch and parse each CSV, collect all rows
+  const allCsvRows = [];
 
   for (const csvFile of csvFiles) {
     const csvUrl = csvFile['@id'];
@@ -393,25 +394,42 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     logger.info(`[sdd-serializer] Fetching CSV: ${csvLabel}`);
 
     const csvStream = await fetchFileStream(csvUrl);
-
     const csvRows = await parseCsvStream(csvStream);
     logger.info(
       `[sdd-serializer] Parsed ${csvRows.length} rows from ${csvLabel}`
     );
 
-    const samples = generateAttributes(csvRows, dictRows, npId, fileOffset);
-    allSamples.push(...samples);
-    fileOffset += csvRows.length;
+    for (let i = 0; i < csvRows.length; i++) allCsvRows.push(csvRows[i]);
   }
 
   logger.info(
-    `[sdd-serializer] Generated ${allSamples.length} sample nodes total`
+    `[sdd-serializer] Total CSV rows: ${allCsvRows.length}, dict rows: ${dictRows.length}`
   );
-  return allSamples;
+  return { allCsvRows, dictRows };
+}
+
+/**
+ * Split CSV rows into batches and generate attributes for each batch.
+ * @param {Object[]} allCsvRows - All parsed CSV rows
+ * @param {Object[]} dictRows - Parsed dict rows from XLSX
+ * @param {string} npId - Nanopub ID
+ * @param {number} [batchSize] - Rows per batch
+ * @returns {Object[][]} Array of batches, each an array of sample nodes
+ */
+function generateBatches(allCsvRows, dictRows, npId, batchSize = SDD_BATCH_SIZE) {
+  const batches = [];
+  for (let offset = 0; offset < allCsvRows.length; offset += batchSize) {
+    const slice = allCsvRows.slice(offset, offset + batchSize);
+    const samples = generateAttributes(slice, dictRows, npId, offset);
+    batches.push(samples);
+  }
+  return batches;
 }
 
 module.exports = {
   buildSddAttributes,
+  generateBatches,
+  SDD_BATCH_SIZE,
   // Exported for testing
   classifyDistributionFiles,
   parseDictSheet,
