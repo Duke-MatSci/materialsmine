@@ -78,10 +78,12 @@ def upsert_np_graphs_strict_transaction(
     jsonld_text: str,
     only_these_suffixes: Optional[List[str]] = None,  # e.g. ["#assertion", "#provenance", "#pubinfo", "#head"]
     timeout: int = 120,
+    append_only: bool = False,
 ) -> Tuple[bool, Dict[str, Any]]:
     """
     Build ONE SPARQL Update that clears and inserts all graphs in the nanopublication.
     Runs as a single transactional operation in Fuseki.
+    When append_only=True, skips the CLEAR step so new triples are added to existing graphs.
     Returns (ok, report).
     """
     base = Config.FUSEKI_BASE_URL or "http://host.docker.internal:3032"
@@ -109,12 +111,14 @@ def upsert_np_graphs_strict_transaction(
             continue
 
         nt = _nt_for_context(ctx).strip()
-        # CLEAR GRAPH + INSERT DATA for this graph
         if nt:
-            updates.append(f"CLEAR SILENT GRAPH <{graph_uri}> ; INSERT DATA {{ GRAPH <{graph_uri}> {{\n{nt}\n}} }}")
+            if append_only:
+                updates.append(f"INSERT DATA {{ GRAPH <{graph_uri}> {{\n{nt}\n}} }}")
+            else:
+                updates.append(f"CLEAR SILENT GRAPH <{graph_uri}> ; INSERT DATA {{ GRAPH <{graph_uri}> {{\n{nt}\n}} }}")
         else:
-            # If empty graph, just clear it.
-            updates.append(f"CLEAR SILENT GRAPH <{graph_uri}>")
+            if not append_only:
+                updates.append(f"CLEAR SILENT GRAPH <{graph_uri}>")
         graphs_summary[graph_uri] = {"triples": nt.count("\n")}
 
     if not updates:
