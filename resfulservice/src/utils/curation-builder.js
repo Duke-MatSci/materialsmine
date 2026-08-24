@@ -7,7 +7,7 @@ const {
   manageServiceRequest
 } = require('../controllers/managedServiceController');
 const { Writer, namedNode, literal, quad } = require('n3');
-const { buildSddAttributes } = require('./sdd-serializer');
+const { buildSddAttributes, generateBatches } = require('./sdd-serializer');
 
 const {
   mapUnit,
@@ -3281,6 +3281,7 @@ async function validateWithSHACL({
   inference = 'rdfs',
   resolveUrls = false,
   ontologyLink,
+  appendOnly = false,
   req,
   res,
   next
@@ -3293,7 +3294,8 @@ async function validateWithSHACL({
     data_format: format,
     inference,
     resolve_urls: resolveUrls,
-    persist: true
+    persist: true,
+    append_only: appendOnly
   };
   if (ontologyLink) body.ontology_link = ontologyLink;
 
@@ -3430,18 +3432,22 @@ async function transformSddToNanopub(skeleton, logger) {
     }
   }
 
-  // Build sio:hasAttribute from SDD + CSV distribution files
-  const sddAttributes = distribution
+  // Parse SDD + CSV files (does NOT generate attributes yet — that happens per batch)
+  const sddParsed = distribution
     ? await buildSddAttributes(distribution, npId, logger)
-    : [];
+    : { allCsvRows: [], dictRows: [] };
 
-  // Build assertion sample node
+  // Generate batches of sample nodes
+  const batches = generateBatches(sddParsed.allCsvRows, sddParsed.dictRows, npId);
+
+  // Build assertion sample node (first batch included; remaining batches handled by caller)
+  const firstBatchSamples = batches.length ? batches[0] : [];
   const sample = {
     '@id': baseId,
     '@type': 'dcat:Dataset',
     ...(distribution || {}),
     ...(depiction || {}),
-    'sio:hasAttribute': sddAttributes
+    'sio:hasAttribute': firstBatchSamples
   };
 
   const now = new Date().toISOString();
@@ -3543,7 +3549,46 @@ async function transformSddToNanopub(skeleton, logger) {
     ]
   };
 
-  return { nanopubId: npSlug, nanopub: doc, assertionId };
+  // Remaining batches (index 1+) for the caller to process
+  const remainingBatches = batches.slice(1);
+
+  return {
+    nanopubId: npSlug,
+    nanopub: doc,
+    assertionId,
+    remainingBatches,
+    totalBatches: batches.length,
+    // Metadata needed to build batch nanopubs
+    _batchMeta: { baseId, distribution, depiction, npId, assertionId }
+  };
+}
+
+/**
+ * Build a nanopub document for a subsequent batch of SDD samples.
+ * Only contains the assertion graph with the batch's samples appended to the dataset node.
+ * The other graphs (head, provenance, pubinfo) are omitted — they were persisted with batch 1.
+ */
+function buildBatchNanopub(batchSamples, batchMeta) {
+  const { baseId, distribution, depiction, npId, assertionId } = batchMeta;
+
+  const sample = {
+    '@id': baseId,
+    '@type': 'dcat:Dataset',
+    ...(distribution || {}),
+    ...(depiction || {}),
+    'sio:hasAttribute': batchSamples
+  };
+
+  return {
+    '@context': OUTPUT_CONTEXT,
+    '@graph': [
+      {
+        '@id': assertionId,
+        '@type': 'np:Assertion',
+        '@graph': [sample]
+      }
+    ]
+  };
 }
 
 /* ------------------------ Shared: Serialize + Validate + Publish ------------------------ */
@@ -3575,6 +3620,7 @@ async function serializeAndValidate({
   inference = 'rdfs',
   resolveUrls = true,
   ontologyLink,
+  appendOnly = false,
   id,
   req,
   res,
@@ -3607,6 +3653,7 @@ async function serializeAndValidate({
     inference,
     resolveUrls,
     ontologyLink,
+    appendOnly,
     req,
     res,
     next
@@ -3654,6 +3701,7 @@ async function serializeAndValidate({
 module.exports = {
   transformXmlToNanopub,
   transformSddToNanopub,
+  buildBatchNanopub,
   serializeAndValidate,
   toJsonLd,
   toTurtleAssertionOnly,
