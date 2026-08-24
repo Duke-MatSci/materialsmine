@@ -79,7 +79,7 @@ describe('Manage Service Controller Unit Tests:', function () {
     });
 
     it('should return a 200 success response and returns dynamfit chart data', async () => {
-      const appName = 'dynamfit';
+      const appName = 'tri-ve';
       req.params = { appName };
       sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(axios, 'request').returns(dynafitSuccessResponse);
@@ -95,7 +95,7 @@ describe('Manage Service Controller Unit Tests:', function () {
     });
 
     it('should return a error response returned from dynamfit managed service', async () => {
-      const appName = 'dynamfit';
+      const appName = 'tri-ve';
       req.params = { appName };
       sinon.stub(latency, 'latencyCalculator').returns(true);
       sinon.stub(jwt, 'sign').returns('askle90lk.s409sjgl0ad.s0akng40');
@@ -106,7 +106,7 @@ describe('Manage Service Controller Unit Tests:', function () {
     });
 
     it('should return a 500 server error when dynamfit server is not accessible', async function () {
-      const appName = 'dynamfit';
+      const appName = 'tri-ve';
       req.params = { appName };
       const nextSpy = sinon.spy();
       sinon.stub(axios, 'request').throws();

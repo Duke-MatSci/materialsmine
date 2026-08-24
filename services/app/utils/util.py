@@ -42,15 +42,28 @@ def upload_init(file_name, domain):
 
     Parameters:
         file_name (str): Filename to load, relative to Config.FILES_DIRECTORY.
-        domain (str): Domain tag controlling expected column count and the
-            keys of the returned dict. One of:
+        domain (str): Domain tag controlling accepted column counts and the
+            keys of the returned dict. Column names are assigned purely by
+            position and count — a leading header row, if present, is skipped
+            and never matched by name. One of:
                 'frequency'   → 3 cols: ['Frequency', 'E Storage', 'E Loss']
-                'temperature' → 3 cols: ['Temperature', 'E Storage', 'E Loss']
+                                4 cols: [..., 'Error']
+                                5 cols: [..., 'E Storage Error', 'E Loss Error']
+                'temperature' → the same three shapes, 'Temperature' first
                 'shift'       → 2 cols: ['Temperature', 'a_T']
+                                3 cols: [..., 'Error']
 
     Returns:
         dict[str, np.ndarray]: Column-name → 1-D float ndarray (all of equal
         length), in the column order listed above for the chosen domain.
+
+    Note:
+        The optional error columns are absolute per-point standard deviations
+        in the same units as the moduli (Pa) — not fractions. update_line_chart
+        consumes them as 1/sigma fit weights, overriding its relative_error
+        fallback. The 'shift' domain's Error column is the absolute per-point
+        standard deviation of a_T (linear scale); the shift-coefficient fits
+        consume it as 1/sigma weights and in the reported chi-squared.
 
     Raises:
         ValueError: If domain is unrecognized, the file extension is not
@@ -94,11 +107,28 @@ def upload_init(file_name, domain):
         )
 
     file_path = os.path.join(Config.FILES_DIRECTORY, file_name)
-    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+    # utf-8-sig, not utf-8: Excel stamps a BOM on its CSV exports, and it lands
+    # glued to the first field of the first row. float() rejects it, so the row
+    # reads as a header and its data is silently dropped from the fit.
+    with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as f:
         csvlines = f.readlines()
 
     if not csvlines:
         raise ValueError(f"File {file_name} is empty.")
+
+    # Spreadsheet exports routinely end every row with the delimiter, leaving a
+    # trailing empty field that neither is_numeric_row nor np.loadtxt can read
+    # as a float — so an otherwise perfect file reports "no numeric rows".
+    # Dropping those costs nothing: a genuinely empty column is unparseable on
+    # either path. Whitespace-split (.txt) files have no such field to drop.
+    if delimiter is not None:
+        trimmed = []
+        for line in csvlines:
+            line = line.rstrip()
+            while line.endswith(delimiter):
+                line = line[: -len(delimiter)].rstrip()
+            trimmed.append(line + '\n')
+        csvlines = trimmed
 
     valid_start_index = None
     for i, row in enumerate(csvlines):

@@ -43,6 +43,9 @@ export default {
   },
   resetDynamfitData(state: ExplorerState): void {
     state.dynamfitData = {};
+    // Generation counter: a fit dispatched before this reset must not commit
+    // its response (or its error toast) afterwards.
+    state.dynamfitResetCount++;
   },
   resetDynamfit(state: ExplorerState): void {
     state.dynamfit = {
@@ -51,15 +54,21 @@ export default {
       model: 'Linear',
       fileUpload: '',
     };
+    // Every reset path funnels through here, so clearing the display metadata
+    // alongside the file name keeps the two from drifting apart.
+    state.dynamfitFileMeta = { label: '', originalName: '' };
   },
   setDynamfitDomain(state: ExplorerState, payload: string): void {
     state.dynamfitDomain = payload;
   },
-  setDynamfitTabRequest(state: ExplorerState, payload: string): void {
-    state.dynamfitTabRequest = payload;
-  },
   setDynamfitSourceType(state: ExplorerState, payload: string): void {
     state.dynamfitSourceType = payload;
+  },
+  setDynamfitFileMeta(state: ExplorerState, payload: ExplorerState['dynamfitFileMeta']): void {
+    state.dynamfitFileMeta = {
+      label: payload?.label ?? '',
+      originalName: payload?.originalName ?? '',
+    };
   },
   triggerDynamfitSurprise(state: ExplorerState): void {
     state.dynamfitSurpriseRequest++;
@@ -67,7 +76,13 @@ export default {
   setDynamfitSddProgress(state: ExplorerState, payload: { batch: number; total: number } | null): void {
     state.dynamfitSddProgress = payload;
   },
-  setDynamfitTransformMethod(state: ExplorerState, payload: 'none' | 'WLF' | 'hybrid'): void {
+  triggerDynamfitTransformTab(state: ExplorerState): void {
+    state.dynamfitTransformTabRequest++;
+  },
+  setDynamfitTransformMethod(
+    state: ExplorerState,
+    payload: 'none' | 'WLF' | 'hybrid' | 'manual'
+  ): void {
     state.dynamfitTransformMethod = payload;
   },
   setDynamfitManualFile(state: ExplorerState, payload: string): void {
@@ -85,8 +100,10 @@ export default {
       C2: null,
       Tg: null,
       Ea: null,
-      TL: null,
+      TC: null,
       a_T_ref: null,
+      chi2_reduced: null,
+      model: null,
     };
   },
 };

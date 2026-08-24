@@ -505,26 +505,6 @@
     }
   }
 
-  &-readonly {
-    display: flex;
-    align-items: center;
-    padding: 0.4rem 0.8rem;
-    background-color: rgba($secondary-light, 0.3);
-    border-left: 3px solid $secondary;
-    border-radius: 0 3px 3px 0;
-    font-size: $small-size;
-
-    &__label {
-      font-weight: 700;
-      color: $primary;
-      margin-right: 0.4rem;
-    }
-
-    &__value {
-      color: $primary-grey;
-    }
-  }
-
   &-field--half {
     max-width: 40% !important;
 
@@ -547,6 +527,17 @@
     &__name {
       color: $primary-grey;
       font-size: $default-size;
+      // Truncate in CSS so the title attribute keeps the whole name.
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__file {
+      margin-left: 0.6rem;
+      color: $secondary-grey;
+      font-size: $small-size;
     }
 
     &__change {
@@ -571,6 +562,11 @@
     justify-content: center;
     padding: 0.5rem;
     border-radius: 3px;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
   }
 
   &-polymer-grid {
@@ -606,6 +602,55 @@
       color: $primary;
       margin-bottom: 0.6rem;
     }
+  }
+
+  &-format {
+    margin-bottom: 1.2rem;
+
+    &__summary {
+      font-size: $medium-size;
+      color: $primary-grey;
+      margin: 0.4rem 0 0;
+    }
+
+    &__body {
+      border-left: 3px solid $secondary;
+      background-color: rgba($secondary-light, 0.18);
+      border-radius: 0 3px 3px 0;
+      padding: 0.8rem 1rem;
+      margin-top: 0.6rem;
+      font-size: $medium-size;
+      line-height: 1.4;
+      color: $primary-grey;
+
+      p {
+        margin: 0 0 0.6rem;
+      }
+
+      b {
+        font-weight: 900;
+      }
+    }
+
+    &__shapes {
+      list-style: none;
+      margin: 0 0 0.6rem;
+      padding: 0;
+
+      li {
+        font-family: monospace;
+        color: $primary;
+        padding: 0.15rem 0;
+      }
+    }
+  }
+
+  &-hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: $medium-size;
+    line-height: 1.35;
+    color: $secondary-grey;
   }
 
   &-domain-switcher {

@@ -152,8 +152,8 @@ module.exports = {
   },
   ManagedServiceRegister: {
     chemprops: '/chemprops/call/',
-    dynamfit: '/dynamfit/extract/',
-    'fit-shift': '/dynamfit/fit-shift/',
+    'tri-ve': '/tri-ve/extract/',
+    'fit-shift': '/tri-ve/fit-shift/',
     loadxml: 'loadxml',
     ontology: '/ontology/extract/',
     'validate-ontology': '/ontology/validate/',
