@@ -76,8 +76,10 @@ async function saveSDDDataset(
       let finalPayload: any = null;
       let buffer = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
+      let done = false;
+      while (!done) {
+        const { done: streamDone, value } = await reader.read();
+        done = streamDone;
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
