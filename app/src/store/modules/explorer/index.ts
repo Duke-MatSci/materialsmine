@@ -43,6 +43,7 @@ export default {
       dynamfitTabRequest: '',
       dynamfitSourceType: '',
       dynamfitSurpriseRequest: 0,
+      dynamfitSddProgress: null,
       dynamfit: {
         range: 100,
         fitSettings: false,

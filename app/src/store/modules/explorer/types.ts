@@ -24,6 +24,7 @@ export interface ExplorerState {
   dynamfitTabRequest: string;
   dynamfitSourceType: string;
   dynamfitSurpriseRequest: number;
+  dynamfitSddProgress: { batch: number; total: number } | null;
   dynamfit: {
     range: number;
     fitSettings: boolean;
