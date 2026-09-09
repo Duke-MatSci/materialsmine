@@ -1,7 +1,7 @@
 # Running and Starting Managed Services Locally in Isolation
 
 This document outlines the steps to run and start the managed services,
-specifically Dynamfit and Chemprops, locally in isolation. Follow these
+specifically Tri-VE and Chemprops, locally in isolation. Follow these
 instructions to ensure that the services can be started independently from the
 rest of the applications.
 
@@ -11,7 +11,7 @@ rest of the applications.
 - [Setting up and Starting Managed Services](#setting-up-and-starting-managed-services)
 - [How to locally access the app](#how-to-locally-access-the-app)
 - [API Endpoints](#api-endpoints)
-  - [Dynamfit API Endpoints](#dynamfit-api-endpoints)
+  - [Tri-VE API Endpoints](#tri-ve-api-endpoints)
   - [Chemprops API Endpoints](#chemprops-api-endpoints)
 - [Onboarding Your Own Python Application](#onboarding-your-own-python-application)
   - [Step 1: Create a New Directory for Your Application](#step-1-create-a-new-directory-for-your-application)
@@ -45,7 +45,7 @@ package by following Step 4
 
 ## Setting up and Starting Managed Services
 
-To run either Dynamfit or Chemprops, etc in isolation,
+To run either Tri-VE or Chemprops, etc in isolation,
 
 1. Navigate to `docker-compose.yml` file.
 2. Comment out all the services in your `docker-compose.yml` except the
@@ -106,7 +106,8 @@ To run either Dynamfit or Chemprops, etc in isolation,
    - **`DEPLOYMENT_ADDRESS`**: Address used for deployment.
    - **`DOCKER_HUB_ADDRESS`**: Address of the Docker Hub repository.
    - **`DEPLOYMENT_SECRET`**: Secret key used for deployment.
-   - **`DYNAMFIT_TEST_FILE`**: Path to the test file for Dynamfit.
+   - **`DYNAMFIT_TEST_FILE`**: Path to the test file for Tri-VE (formerly
+     Dynamfit; the variable name is unchanged).
    - **`TKNS`**: Secret key for application security.
    - **`MANAGED_SERVICES_FILES_WORKING_DIR`**: Working directory for files used
      by managed services.
@@ -130,17 +131,17 @@ To access the Swagger documentation for the services, follow these steps:
     `http://localhost/api/api-docs/`
 4.  All newly added applications to managed services should access the newly
     onboarded app through postman/insomnia via `http://localhost:5050`
-5.  Both Chemprops and Dynamfit requires authentication for access, hence,
+5.  Both Chemprops and Tri-VE requires authentication for access, hence,
     generate a new auth token from swagger at `/mn/token`
 
 ## API Endpoints
 
-Below are the API endpoints to initialize Dynamfit and Chemprops via Swagger:
+Below are the API endpoints to initialize Tri-VE and Chemprops via Swagger:
 
-### Dynamfit API Endpoints
+### Tri-VE API Endpoints
 
 - **POST /files/upload**: Upload file to the server and retrieve the file name
-- **POST /mn/dynamfit**: Extracts data from a file(using the file name from
+- **POST /mn/tri-ve**: Extracts data from a file(using the file name from
   previous call) and generates chart data..
 
 ### Chemprops API Endpoints

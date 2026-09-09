@@ -6,25 +6,35 @@
           <h2 class="visualize_header-h1">Tools</h2>
           <div class="md-layout u_display-flex">
             <div class="md-layout-item md-layout-item_card">
-              <router-link to="/explorer/tools/dynamfit" v-slot="{ navigate, href }" custom>
+              <!-- -card-tall: this card carries an extra row for the About link -->
+              <router-link to="/explorer/tools/tri-ve" v-slot="{ navigate, href }" custom>
                 <div
-                  class="teams_container explorer_page-nav-card md-layout-item_card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-tall"
                   :href="href"
                   @click="navigate"
                 >
                   <md-icon class="explorer_page-nav-card_icon">stacked_line_chart</md-icon>
-                  <span class="explorer_page-nav-card_text">DynamFit</span>
+                  <span class="explorer_page-nav-card_text">Tri-VE</span>
                   <p class="md-layout-item_para md-layout-item_para_fl">
-                    A sign control algorithm that fits a viscoelastic mastercurve from DMA
-                    experiments with a Prony Series.
+                    Fit a Prony series to viscoelastic master-curve data and interconvert between
+                    the frequency, temperature, and time domains.
                   </p>
+                  <!-- @click.stop so the About link doesn't also fire the card's navigate -->
+                  <router-link
+                    class="btn-text btn--noradius"
+                    :to="{ name: 'TriVEAbout' }"
+                    @click.stop
+                  >
+                    About Tri-VE
+                  </router-link>
                 </div>
               </router-link>
             </div>
             <div class="md-layout-item md-layout-item_card">
+              <!-- matched to Tri-VE so the two cards in this row are the same height -->
               <router-link to="/nm/tools/chemprops" v-slot="{ navigate, href }" custom>
                 <div
-                  class="teams_container explorer_page-nav-card md-layout-item_card"
+                  class="teams_container explorer_page-nav-card md-layout-item_card md-layout-item_card-tall"
                   :href="href"
                   @click="navigate"
                 >
@@ -33,6 +43,9 @@
                   <p class="md-layout-item_para md-layout-item_para_fl">
                     A growing polymer name and filler name standardization database.
                   </p>
+                  <!-- Empty fourth row holding the slot an About ChemProps link will
+                       take, so this card's grid matches Tri-VE's in the meantime -->
+                  <span class="btn-text btn--noradius" aria-hidden="true">&nbsp;</span>
                 </div>
               </router-link>
             </div>

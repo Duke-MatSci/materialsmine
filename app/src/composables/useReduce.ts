@@ -13,10 +13,11 @@ export function useReduce() {
   const reduceDescription = (args: string, size = 50, startFromEnd = false) => {
     if (!args) return '';
     if (startFromEnd) {
-      const arr = args.split('')?.splice(-size);
-      const arrSplice = arr.reduce((a, b) => `${a} ${b}`, '');
-      const res = arrSplice.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return `...${res}`;
+      // Take the last `size` characters as-is. The previous implementation
+      // reduced over the character array with a space separator, which put a
+      // space between every single character of the tail.
+      const res = args.slice(-size).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return args.length > size ? `...${res}` : res;
     } else {
       const words = args.split(' ');
       if (words.length <= size) return args;

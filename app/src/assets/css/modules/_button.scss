@@ -185,3 +185,8 @@ a.btn-text,
     color: #fff !important;
   }
 }
+
+a.disabled {
+  pointer-events: none;
+  cursor: default;
+}

@@ -2,7 +2,7 @@
   <div>
     <md-snackbar
       :md-position="position"
-      :md-duration="!snackbar?.duration ? Infinity : snackbar.duration"
+      :md-duration="snackbarDuration"
       class="md-snackbar-adjust"
       v-model:mdActive="show"
     >
@@ -16,6 +16,14 @@
         @click="snackBarAction"
         >{{ snackbar?.callToActionText || 'Retry' }}</MdButton
       >
+      <MdButton
+        id="snackbarDismiss"
+        class="md-icon-button"
+        aria-label="Dismiss notification"
+        @click="dismiss"
+      >
+        <md-icon>close</md-icon>
+      </MdButton>
     </md-snackbar>
   </div>
 </template>
@@ -57,9 +65,31 @@ const snackbar = computed(
     }
 );
 
+// Error snackbars linger long enough to read the (often multi-word) backend
+// error text; success/info toasts keep their own short duration. A falsy
+// duration still means "persistent" (Infinity; dismissed via the Retry action
+// or a route change), so retryable errors with an action stay until acted on.
+const ERROR_MIN_MS = 8000;
+const snackbarDuration = computed(() => {
+  const s = snackbar.value;
+  if (!s?.duration) return Infinity;
+  return s.type === 'error'
+    ? Math.max(s.duration as number, ERROR_MIN_MS)
+    : (s.duration as number);
+});
+
 // Methods
 const resetSnackbar = () => {
   show.value = false;
+};
+
+// Persistent toasts (falsy duration) previously had no exit except the Retry
+// action, a route change, or a resetSnackbar commit from elsewhere. Clearing
+// the store state too keeps a re-raised identical message from being swallowed
+// by the watcher below.
+const dismiss = (): void => {
+  show.value = false;
+  store.commit('resetSnackbar');
 };
 
 const snackBarAction = async () => {

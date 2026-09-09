@@ -149,10 +149,17 @@ export default {
       );
     }
   },
-  async fetchDynamfitData({ commit, dispatch, rootGetters }: Context, payload: any): Promise<void> {
+  async fetchDynamfitData(
+    { commit, dispatch, rootGetters, state }: Context,
+    payload: any
+  ): Promise<void> {
     if (!payload.file_name) return;
 
-    const url = '/api/mn/dynamfit';
+    // Reset bumps this counter. A fit that was already in flight when the user
+    // hit Reset must not repopulate the charts, nor raise a "file not found"
+    // toast for the file it just deleted.
+    const gen = state.dynamfitResetCount;
+    const url = '/api/mn/tri-ve';
     const token = rootGetters['auth/token'];
     try {
       const req = await fetch(url, {
@@ -186,9 +193,21 @@ export default {
         };
         dispatch('contact/contactUs', data, { root: true });
       }
+      if (gen !== state.dynamfitResetCount) return;
       commit('setDynamfitData', data);
+      // Server-side cautions that don't fail the request — today, estimated
+      // Tg/TL peaks sitting suspiciously close to the data's temperature edge.
+      const warnings: string[] = Array.isArray(data?.warnings) ? data.warnings : [];
+      if (warnings.length) {
+        commit(
+          'setSnackbar',
+          { message: warnings.join(' '), duration: 8000 },
+          { root: true }
+        );
+      }
     } catch (err: any) {
-      const snackbar: any = { message: err.message };
+      if (gen !== state.dynamfitResetCount) return;
+      const snackbar: any = { message: err.message, type: 'error' };
       if (err?.cause === 400) {
         snackbar.duration = 3000;
       } else {
@@ -196,6 +215,49 @@ export default {
       }
       commit('setSnackbar', snackbar, { root: true });
     }
+  },
+
+  async fetchFitShiftData(
+    { commit, rootGetters }: Context,
+    payload: {
+      shift_file_name: string;
+      transform_method: 'WLF' | 'hybrid';
+      Tg?: number | null;
+      C1?: number | null;
+      C2?: number | null;
+      Ea?: number | null;
+      TC?: number | null;
+    }
+  ): Promise<Record<string, any>> {
+    const url = '/api/mn/fit-shift';
+    const token = rootGetters['auth/token'];
+    const req = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
+      },
+      body: JSON.stringify(payload),
+      method: 'POST',
+    });
+
+    const response = await req.json();
+    if (!req.ok) {
+      throw new Error(response?.message ?? 'Failed to fit shift coefficients');
+    }
+
+    commit('setDynamfitShiftCoefficients', {
+      C1: response.C1 ?? null,
+      C2: response.C2 ?? null,
+      Tg: response.Tg ?? null,
+      Ea: response.Ea ?? null,
+      TC: response.TC ?? null,
+      a_T_ref: response.a_T_ref ?? null,
+      chi2_reduced: response.chi2_reduced ?? null,
+      model: response.transform_method ?? null,
+    });
+
+    return response;
   },
 
   async duplicateXml(

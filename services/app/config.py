@@ -13,7 +13,6 @@ class Config:
     EMAIL_API_TOKEN = os.environ.get('AUTH_API_TOKEN_EMAIL', '')
     EMAIL_REFRESH_TOKEN = os.environ.get('AUTH_API_REFRESH_EMAIL', '')
     FILES_DIRECTORY = os.environ.get('FILES_WORKING_DIR', '/usr/src/files')
-    ALLOWED_EXTENSIONS = set(['tsv', 'csv'])
     API_SERVICES = os.environ.get('API_URL', 'http://restful:3001')
     GITHUB_USERNAME = os.environ.get('GITHUB_USERNAME')
     GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')

@@ -2,6 +2,7 @@ import { FileItem } from '@/types/app';
 import { deleteFile, parseFileName, saveDatasetFiles } from './whyis-dataset';
 import { querySparql } from './sparql';
 import { lodPrefix } from './whyis-utils';
+import store from '@/store/index';
 
 interface MetaData {
   did: string;
@@ -55,14 +56,74 @@ async function saveSDDDataset(
   }
 
   try {
-    const response = await querySparql('', {
-      endpoint: '/api/curate/publishsdd',
-      body: { nanopubSkeleton },
+    const token = store.getters['auth/token'];
+    const url = '/api/curate/publishsdd?output=json';
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nanopubSkeleton }),
     });
-    return response;
+
+    const contentType = res.headers.get('content-type') || '';
+
+    // SSE streaming response (multi-batch)
+    if (contentType.includes('text/event-stream')) {
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let finalPayload: any = null;
+      let buffer = '';
+
+      let done = false;
+      while (!done) {
+        const { done: streamDone, value } = await reader.read();
+        done = streamDone;
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.error) {
+              const msg = event.failure?.errors?.[0]?.message || event.message || 'Batch processing failed';
+              throw new Error(msg);
+            }
+            if (event.done) {
+              finalPayload = event;
+            }
+            if (event.batch && event.total) {
+              store.commit('explorer/setDynamfitSddProgress', {
+                batch: event.batch,
+                total: event.total,
+              });
+            }
+          } catch (parseErr: any) {
+            if (parseErr.message !== 'Batch processing failed') continue;
+            throw parseErr;
+          }
+        }
+      }
+
+      if (!finalPayload) throw new Error('Stream ended without completion event');
+      store.commit('explorer/setDynamfitSddProgress', null);
+      return finalPayload;
+    }
+
+    // Regular JSON response (single batch)
+    if (res.status !== 200 && res.status !== 201) {
+      const e = await res.json();
+      const errMsg = e.failed?.[0]?.errors?.[0] || e.message || 'Server error';
+      throw new Error(errMsg);
+    }
+    return await res.json();
   } catch (err) {
+    console.log('err:', err);
     const uploadedFiles: FileItem[] = [];
     if (distrRes?.files) uploadedFiles.push(...distrRes.files);
     if (imgRes?.files) uploadedFiles.push(...imgRes.files);

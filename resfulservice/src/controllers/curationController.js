@@ -2165,75 +2165,199 @@ exports.sddCurationETL = async (req, res, next) => {
   }
 
   try {
-    const processed = [];
-    const failed = [];
-
     const rawId = nanopubSkeleton.id || `sdd-${Date.now()}`;
     const id = rawId.split('/').pop() || rawId;
 
-    try {
-      // Transform skeleton → nanopub
-      const { nanopubId, nanopub, assertionId } =
-        await Builder.transformSddToNanopub(nanopubSkeleton, logger);
+    // Transform skeleton → nanopub (first batch included in nanopub)
+    const {
+      nanopubId,
+      nanopub,
+      assertionId,
+      remainingBatches,
+      totalBatches,
+      _batchMeta
+    } = await Builder.transformSddToNanopub(nanopubSkeleton, logger);
 
-      // Serialize → SHACL validate → changelog (shared logic)
-      const { success, result, failure } = await Builder.serializeAndValidate({
+    const isMultiBatch = totalBatches > 1;
+
+    // Helper to build the final JSON response payload
+    const buildFinalPayload = () => {
+      const distArr =
+        nanopubSkeleton.distribution?.['mm:hasDistribution']?.[
+          'dcat:distribution'
+        ] || [];
+      const depictionFile =
+        nanopubSkeleton.depiction?.['mm:hasDepiction']?.['foaf:depiction']?.[0];
+      return {
+        description: nanopubSkeleton.description || '',
+        identifier: nanopubSkeleton.id || '',
+        label: nanopubSkeleton.title || '',
+        thumbnail: depictionFile?.['dcat:accessURL'] || '',
+        doi: nanopubSkeleton.doi || '',
+        organization: (nanopubSkeleton.organizations || []).map(
+          (org) => org.name
+        ),
+        distribution: (Array.isArray(distArr) ? distArr : [distArr]).map(
+          (d) => d['@id']
+        )
+      };
+    };
+
+    // SSE helper
+    const sendSSE = (eventData) => {
+      res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    };
+
+    // When in SSE mode, create a mock res/next so downstream functions
+    // (latencyCalculator, createChangeLog, managedServiceRequest) don't
+    // write headers or invoke Express error handling on the real response.
+    const mockRes = {
+      header: () => mockRes,
+      setHeader: () => mockRes,
+      set: () => mockRes,
+      get: (key) => res.get(key),
+      status: () => mockRes,
+      json: () => mockRes,
+      send: () => mockRes
+    };
+    const mockNext = (err) => {
+      if (err) throw typeof err === 'object' && err.message ? err : new Error(String(err));
+    };
+    const batchRes = isMultiBatch ? mockRes : res;
+    const batchNext = isMultiBatch ? mockNext : next;
+
+    if (isMultiBatch) {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      });
+    }
+
+    // --- Batch 1: full nanopub (creates all 4 named graphs) ---
+    logger.info(`sddCurationETL(): Processing batch 1/${totalBatches}`);
+    const batch1Result = await Builder.serializeAndValidate({
+      nanopubId,
+      nanopub,
+      assertionId,
+      output,
+      inference,
+      resolveUrls,
+      ontologyLink,
+      appendOnly: false,
+      id,
+      req,
+      res: batchRes,
+      next: batchNext,
+      createChangeLogCb: null
+    });
+
+    if (!batch1Result.success) {
+      if (isMultiBatch) {
+        sendSSE({
+          error: true,
+          batch: 1,
+          total: totalBatches,
+          failure: batch1Result.failure
+        });
+        return res.end();
+      }
+      latency.latencyCalculator(res);
+      return res
+        .status(400)
+        .json({ ok: false, failed: [batch1Result.failure] });
+    }
+
+    if (isMultiBatch) {
+      sendSSE({ batch: 1, total: totalBatches, status: 'complete' });
+    }
+
+    // --- Remaining batches: append to existing assertion graph ---
+    for (let i = 0; i < remainingBatches.length; i++) {
+      const batchNum = i + 2;
+      logger.info(
+        `sddCurationETL(): Processing batch ${batchNum}/${totalBatches}`
+      );
+
+      const batchNanopub = Builder.buildBatchNanopub(
+        remainingBatches[i],
+        _batchMeta
+      );
+
+      const batchResult = await Builder.serializeAndValidate({
         nanopubId,
-        nanopub,
+        nanopub: batchNanopub,
         assertionId,
         output,
         inference,
-        resolveUrls,
+        resolveUrls: false,
         ontologyLink,
+        appendOnly: true,
         id,
         req,
-        res,
-        next,
-        createChangeLogCb: this.createChangeLog
+        res: batchRes,
+        next: batchNext,
+        createChangeLogCb: null
       });
 
-      if (!success) {
-        failed.push(failure);
-      } else {
-        processed.push(result);
+      if (!batchResult.success) {
+        logger.error(
+          `sddCurationETL(): Batch ${batchNum} failed`,
+          batchResult.failure
+        );
+        if (isMultiBatch) {
+          sendSSE({
+            error: true,
+            batch: batchNum,
+            total: totalBatches,
+            failure: batchResult.failure
+          });
+          return res.end();
+        }
       }
-    } catch (e) {
-      failed.push({
-        id,
-        sampleID: null,
-        stage: 'unexpected',
-        errors: [String(e?.message || e)]
-      });
+
+      if (isMultiBatch) {
+        sendSSE({ batch: batchNum, total: totalBatches, status: 'complete' });
+      }
     }
 
-    if (failed.length) {
-      latency.latencyCalculator(res);
-      return res.status(400).json({ ok: false, failed });
+    // --- Changelog: one entry for the entire curation ---
+    try {
+      const changeLogReq = {
+        ...req,
+        method: 'POST',
+        body: {
+          change: [`SDD curation published (${totalBatches} batch${totalBatches > 1 ? 'es' : ''})`],
+          resourceId: id,
+          published: true
+        },
+        isBackendCall: true
+      };
+      await this.createChangeLog(changeLogReq, batchRes, batchNext);
+    } catch (clErr) {
+      logger.error('sddCurationETL(): Changelog failed (non-fatal)', clErr);
     }
 
-    // Build response from nanopubSkeleton fields
-    const distArr =
-      nanopubSkeleton.distribution?.['mm:hasDistribution']?.[
-        'dcat:distribution'
-      ] || [];
-    const depictionFile =
-      nanopubSkeleton.depiction?.['mm:hasDepiction']?.['foaf:depiction']?.[0];
+    // --- Final response ---
+    if (isMultiBatch) {
+      sendSSE({ done: true, ...buildFinalPayload() });
+      return res.end();
+    }
 
     latency.latencyCalculator(res);
-    return res.status(200).json({
-      description: nanopubSkeleton.description || '',
-      identifier: nanopubSkeleton.id || '',
-      label: nanopubSkeleton.title || '',
-      thumbnail: depictionFile?.['dcat:accessURL'] || '',
-      doi: nanopubSkeleton.doi || '',
-      organization: (nanopubSkeleton.organizations || []).map(
-        (org) => org.name
-      ),
-      distribution: (Array.isArray(distArr) ? distArr : [distArr]).map(
-        (d) => d['@id']
-      )
-    });
+    return res.status(200).json(buildFinalPayload());
   } catch (err) {
+    if (res.headersSent) {
+      try {
+        res.write(
+          `data: ${JSON.stringify({ error: true, message: String(err?.message || err) })}\n\n`
+        );
+      } catch (_) {
+        /* ignore write errors on closed connections */
+      }
+      return res.end();
+    }
     return next(errorWriter(req, err, 'sddCurationETL', 500));
   }
 };

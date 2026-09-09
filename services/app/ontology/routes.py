@@ -244,6 +244,8 @@ def validate_ontology(request_id):
 
         graph_uri = root_id or "http://materialsmine.org/np/unknown-id"
 
+        append_only = payload.get("append_only", False)
+
         persistence_report = None
         if payload.get("persist", True):
             # Previewing what we'll write
@@ -256,8 +258,9 @@ def validate_ontology(request_id):
             # STRICT mode: one transactional update for all nanopub graphs
             ok, strict_report = upsert_np_graphs_strict_transaction(
                 jsonld_text=data_text or "",
-                only_these_suffixes=None,  # or restrict to ["#assertion", "#provenance", "#pubinfo", "#head"]
+                only_these_suffixes=None,
                 timeout=120,
+                append_only=append_only,
             )
 
             if not ok:

@@ -58,7 +58,12 @@ async function querySparql(
 
   const res = await fetch(urlEncodedQuery, requestOptions);
 
-  if (res.status !== 200) throw new Error((res as any).message || 'Server error, please try again');
+  if (res.status !== 200) {
+    const e = await res.json();
+    const err = e.failed?.[0]?.errors?.[0] || e.message || 'Server error, please try again';
+    throw new Error(err);
+  }
+  // if (res.status !== 200) throw new Error((res as any).message || 'Server error, please try again');
 
   const results = await res.json();
   return results;
