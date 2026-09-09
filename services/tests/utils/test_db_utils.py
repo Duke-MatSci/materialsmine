@@ -13,7 +13,12 @@ class TestSendPostRequest(TestCase):
         self.payload = {'key': 'value'}
         self.jwt_token = 'mock_jwt'
         self.request_id = 'mock_request_id'
-        self.url = 'http://localhost/api/mn/db/test_collection'
+        # Derive the expected URL from the same Config.API_SERVICES that
+        # db_utils.baseURL is built from, so the assertion holds regardless of
+        # the API_URL env (docker proxy vs. the restful:3001 default) instead of
+        # pinning one environment's value.
+        from app.config import Config
+        self.url = f'{Config.API_SERVICES}/mn/db/{self.collection}'
         self.headers = {
             'Authorization': f'Bearer {self.jwt_token}',
             'Content-Type': 'application/json'
@@ -30,7 +35,7 @@ class TestSendPostRequest(TestCase):
         # Popping the Flask app context after each test
         self.ctx.pop()
 
-    @patch('app.utils.util.generate_jwt', return_value=('mock_jwt', 'mock_request_id'))
+    @patch('app.utils.db_utils.generate_jwt', return_value=('mock_jwt', 'mock_request_id'))
     @patch('requests.post')
     def test_send_post_request_success_matching_id(self, mock_post, mock_generate_jwt):
         mock_response = Mock()
@@ -45,7 +50,7 @@ class TestSendPostRequest(TestCase):
         mock_post.assert_called_once_with(self.url, json=self.data, headers=self.headers)
         self.assertEqual(response, {'data': 'success'})
 
-    @patch('app.utils.util.generate_jwt', return_value=('mock_jwt', 'mock_request_id'))
+    @patch('app.utils.db_utils.generate_jwt', return_value=('mock_jwt', 'mock_request_id'))
     @patch('requests.post')
     def test_send_post_request_failure_mismatch_id(self, mock_post, mock_generate_jwt):
         mock_response = Mock()

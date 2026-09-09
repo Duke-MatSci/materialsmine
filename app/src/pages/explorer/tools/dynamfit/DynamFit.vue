@@ -1,12 +1,19 @@
 <template>
   <article class="u_width--max">
-    <header aria-label="dynamfit-header" class="explorer_page_header">
+    <header aria-label="tri-ve-header" class="explorer_page_header">
       <h1 class="visualize_header-h1 u_margin-top-med u_centralize_text">
-        DynamFit
+        Tri-VE
       </h1>
+      <p class="md-body-1 u_centralize_text u_margin-bottom-small">
+        Fit a Prony series to viscoelastic master-curve data and interconvert between the
+        frequency, temperature, and time domains.
+        <router-link :to="{ name: 'TriVEAbout' }" target="_blank" rel="noopener">
+          About Tri-VE
+        </router-link>
+      </p>
     </header>
     <main
-      aria-label="dynamfit-main"
+      aria-label="tri-ve-main"
       class="u--margin-posmd md-layout md-alignment-top-space-around u_relative"
     >
       <!-- <div
@@ -19,23 +26,23 @@
       </div> -->
       <!-- aside  -->
       <aside
-        aria-label="dynamfit-setting"
+        aria-label="tri-ve-setting"
         class="md-layout-item md-size-25 md-medium-size-35 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
         <ChartSetting />
       </aside>
       <!-- main  -->
       <section
-        aria-label="dynamfit-data"
+        aria-label="tri-ve-data"
         class="md-layout-item md-size-70 md-medium-size-60 md-small-size-100 md-xsmall-size-100 u_height--auto"
       >
-        <ChartVisualizer />
+        <ChartVisualizer @change-file="onChangeFileRequest" @surprise-me="onSurpriseMe" />
       </section>
     </main>
     <dialogbox :active="dialogBoxActive" :minWidth="40">
       <template v-slot:title>{{ dialog.title }}</template>
       <template v-slot:content>
-        <div>
+        <div v-if="dialog.type === 'select'">
           <select
             class="form__input form__input--adjust utility-padding-sm"
             v-model="selectedProp"
@@ -45,25 +52,27 @@
             <option value="c2">C2</option>
           </select>
         </div>
+        <div v-else-if="dialog.type === 'changeFile'">
+          Are you sure you want to remove the current file? This will clear the
+          chart data and allow you to upload a new file.
+        </div>
       </template>
       <template v-slot:actions>
-        <md-button @click.prevent="toggleDialogBox"> Submit </md-button>
-        <md-button @click.prevent="toggleDialogBox">Close</md-button>
+        <template v-if="dialog.type === 'select'">
+          <md-button @click.prevent="toggleDialogBox">Submit</md-button>
+          <md-button @click.prevent="toggleDialogBox">Close</md-button>
+        </template>
+        <template v-else-if="dialog.type === 'changeFile'">
+          <md-button @click.prevent="confirmChangeFile">Yes, Change</md-button>
+          <md-button @click.prevent="toggleDialogBox">Cancel</md-button>
+        </template>
       </template>
-      <!-- <template v-slot:actions>
-        <button
-          class="md-button btn btn--primary u--b-rad"
-          @click="dialogBoxActive = false"
-        >
-          Close
-        </button>
-      </template> -->
     </dialogbox>
   </article>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import ChartSetting from '@/components/explorer/dynamfit/ChartSetting.vue';
 import ChartVisualizer from '@/components/explorer/dynamfit/ChartVisualizer.vue';
@@ -71,7 +80,17 @@ import Dialog from '@/components/Dialog.vue';
 
 // Component name for debugging
 defineOptions({
-  name: 'DynamFit',
+  name: 'TriVE',
+});
+
+// This app has no route-title machinery, so the page sets (and restores) its own.
+let previousTitle = '';
+onMounted(() => {
+  previousTitle = document.title;
+  document.title = 'Tri-VE — MaterialsMine';
+});
+onBeforeUnmount(() => {
+  if (previousTitle) document.title = previousTitle;
 });
 
 // Components
@@ -82,8 +101,10 @@ const store = useStore();
 
 // Reactive state
 const selectedProp = ref('select');
+const isTemp = ref(true);
 const dialog = ref({
   title: 'Select',
+  type: 'select',
 });
 
 // Computed properties
@@ -92,5 +113,37 @@ const dialogBoxActive = computed(() => store.getters.dialogBox);
 // Methods
 const toggleDialogBox = (): void => {
   store.commit('setDialogBox');
+};
+
+const onChangeFileRequest = (): void => {
+  dialog.value = { title: 'Change Data File', type: 'changeFile' };
+  toggleDialogBox();
+};
+
+const onSurpriseMe = (): void => {
+  store.commit('explorer/triggerDynamfitSurprise');
+};
+
+const confirmChangeFile = async (): Promise<void> => {
+  toggleDialogBox();
+  const dynamfit = store.getters['explorer/dynamfit'];
+  const name = dynamfit?.fileUpload;
+  if (!name) return;
+
+  store.commit('resetSnackbar');
+
+  if (name !== 'test.tsv') {
+    const { deleted, error } = await store.dispatch('deleteFile', {
+      name,
+      isTemp: isTemp.value,
+    });
+    if (error || !deleted) return;
+  }
+
+  store.commit('explorer/resetDynamfit');
+  store.commit('explorer/resetDynamfitData');
+  store.commit('explorer/setDynamfitManualFile', '');
+  store.commit('explorer/resetDynamfitShiftCoefficients');
+  store.commit('explorer/setDynamfitSourceType', '');
 };
 </script>

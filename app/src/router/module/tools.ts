@@ -56,11 +56,11 @@ const toolSetRoutes: Array<RouteRecordRaw> = [
 
 const toolRoutes: Array<RouteRecordRaw> = [
   {
+    // The legacy nanomine tool page is superseded by Tri-VE under /explorer.
+    // The component is left on disk; deleting it is separate cleanup.
     path: 'dynamfit',
     name: 'Dynamfit',
-    component: () =>
-      import(/* webpackChunkName: "dynamfit" */ '@/pages/nanomine/tools/dynamfitTool/Dynamfit.vue'),
-    meta: { requiresAuth: false },
+    redirect: '/explorer/tools/tri-ve',
   },
   // {
   //   path: 'dynamfitResult',

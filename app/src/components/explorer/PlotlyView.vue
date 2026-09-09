@@ -27,13 +27,25 @@ const generateWidth = () => {
 
 const layout = ref({
   width: generateWidth(),
-  height: 360,
+  height: 460,
   margin: {
     b: 40,
     t: 40,
     l: 40,
     r: 40,
   },
+});
+
+// The chart's own layout wins on margin, ours wins on everything else.
+// Tri-VE stacks captions above the plot area and grows layout.margin.t to make
+// room for them; plain object spread put our defaults last and threw that away,
+// so the top caption was clipped in the browser while the figure JSON was fine.
+// Height alone cannot fix it — the captions sit in paper coordinates, so a
+// taller box pushes them further up while a fixed 40px margin stays put.
+const mergeLayout = (chartLayout: any = {}) => ({
+  ...chartLayout,
+  ...layout.value,
+  margin: { ...layout.value.margin, ...(chartLayout.margin ?? {}) },
 });
 
 const config = ref({ responsive: true });
@@ -49,7 +61,7 @@ const createPlot = () => {
 
   if (!isChartInvalid.value) {
     const { data = [], layout: chartLayout = {} } = props.chart;
-    Plotly.newPlot(container.value, data, { ...chartLayout, ...layout.value }, { ...config.value });
+    Plotly.newPlot(container.value, data, mergeLayout(chartLayout), { ...config.value });
   } else {
     Plotly.newPlot(container.value, [], { ...layout.value }, { ...config.value });
   }
@@ -62,7 +74,7 @@ const updatePlot = () => {
     Plotly.newPlot(container.value, [], { ...layout.value }, { ...config.value });
   } else {
     const { data = [], layout: chartLayout = {} } = props.chart;
-    Plotly.newPlot(container.value, data, { ...chartLayout, ...layout.value }, { ...config.value });
+    Plotly.newPlot(container.value, data, mergeLayout(chartLayout), { ...config.value });
   }
 };
 

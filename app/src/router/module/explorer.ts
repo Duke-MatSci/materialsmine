@@ -38,10 +38,21 @@ const explorerRoutes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: false },
       },
       {
-        path: 'dynamfit',
-        name: 'DynamFit',
+        path: 'tri-ve',
+        name: 'TriVE',
         component: () => import('@/pages/explorer/tools/dynamfit/DynamFit.vue'),
         meta: { requiresAuth: true },
+      },
+      {
+        path: 'tri-ve/about',
+        name: 'TriVEAbout',
+        component: () => import('@/pages/explorer/tools/dynamfit/About.vue'),
+        meta: { requiresAuth: false },
+      },
+      {
+        // Legacy path, kept so old links and bookmarks keep working.
+        path: 'dynamfit',
+        redirect: { name: 'TriVE' },
       },
     ],
   },

@@ -340,6 +340,71 @@
 }
 
 .dynamfit {
+  &-reset-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1.4rem;
+    background: linear-gradient(135deg, rgba($secondary, 0.08) 0%, rgba($secondary-light, 0.18) 100%);
+    border: 1px solid rgba($secondary, 0.2);
+    border-radius: 0.6rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+
+    &:hover {
+      border-color: rgba($secondary, 0.45);
+      background: linear-gradient(135deg, rgba($secondary, 0.12) 0%, rgba($secondary-light, 0.25) 100%);
+
+      .dynamfit-reset-bar__icon {
+        transform: rotate(-180deg);
+      }
+
+      .dynamfit-reset-bar__action {
+        color: $primary;
+      }
+    }
+
+    &__status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: $small-size;
+      font-weight: 600;
+      color: $secondary;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    &__pulse {
+      font-size: 0.8rem !important;
+      color: $secondary !important;
+      margin: 0 !important;
+      animation: dynamfit-pulse 2s ease-in-out infinite;
+    }
+
+    &__action {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: $small-size;
+      font-weight: 500;
+      color: $secondary-grey;
+      padding: 0;
+      transition: color 0.25s ease;
+    }
+
+    &__icon {
+      font-size: 1.6rem !important;
+      margin: 0 !important;
+      color: inherit !important;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  }
+
   &-note {
     position: absolute !important;
     bottom: 1rem;
@@ -357,6 +422,16 @@
 
     @include respond(tab-port) {
       max-width: calc(100% - 2rem);
+    }
+
+    &--below {
+      position: static !important;
+      margin-top: 0.8rem;
+      max-width: 100%;
+    }
+
+    b {
+      font-weight: 900;
     }
   }
 
@@ -383,6 +458,254 @@
 
     @include respond(phone) {
       min-height: 20vh;
+    }
+  }
+
+  &-separator {
+    border: none;
+    border-top: 1px solid $secondary-grey;
+    margin: 2.4rem 0 1.2rem;
+  }
+
+  &-toggle {
+    display: inline-flex;
+    border: 1px solid $primary;
+    border-radius: 3px;
+    overflow: hidden;
+
+    @include respond(phone) {
+      display: flex;
+      width: 100%;
+    }
+
+    &__option {
+      padding: 0.8rem 2.4rem;
+      font-size: $medium-size;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: $primary;
+      background-color: $primary-white;
+      border: none;
+      outline: none;
+
+      @include respond(phone) {
+        flex: 1;
+        text-align: center;
+      }
+
+      &--active {
+        background-color: $primary;
+        color: $primary-white;
+      }
+
+      &:not(:last-child) {
+        border-right: 1px solid $primary;
+      }
+    }
+  }
+
+  &-field--half {
+    max-width: 40% !important;
+
+    @include respond(phone) {
+      max-width: 100% !important;
+    }
+  }
+
+  &-file-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1.2rem;
+    margin-top: 1.2rem;
+    background-color: rgba($secondary-light, 0.3);
+    border-left: 3px solid $primary;
+    border-radius: 0 3px 3px 0;
+    font-size: $small-size;
+
+    &__name {
+      color: $primary-grey;
+      font-size: $default-size;
+      // Truncate in CSS so the title attribute keeps the whole name.
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__file {
+      margin-left: 0.6rem;
+      color: $secondary-grey;
+      font-size: $small-size;
+    }
+
+    &__change {
+      font-size: $small-size;
+      margin-left: 1rem;
+      white-space: nowrap;
+    }
+  }
+
+  &-source-grid {
+    display: flex;
+    gap: 1rem;
+  }
+
+  &-source-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid currentColor;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 3px;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+  }
+
+  &-polymer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0.4rem 0 0.8rem;
+
+    &__item {
+      flex: 0 0 50%;
+      display: flex;
+      align-items: center;
+
+      .md-radio {
+        margin: 1rem 0;
+      }
+
+      @include respond(phone) {
+        flex: 0 0 100%;
+      }
+    }
+  }
+
+  &-shift-upload {
+    border: 2px dashed $secondary-grey;
+    border-radius: 3px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+
+    &__label {
+      font-size: $small-size;
+      font-weight: 500;
+      color: $primary;
+      margin-bottom: 0.6rem;
+    }
+  }
+
+  &-format {
+    margin-bottom: 1.2rem;
+
+    &__summary {
+      font-size: $medium-size;
+      color: $primary-grey;
+      margin: 0.4rem 0 0;
+    }
+
+    &__body {
+      border-left: 3px solid $secondary;
+      background-color: rgba($secondary-light, 0.18);
+      border-radius: 0 3px 3px 0;
+      padding: 0.8rem 1rem;
+      margin-top: 0.6rem;
+      font-size: $medium-size;
+      line-height: 1.4;
+      color: $primary-grey;
+
+      p {
+        margin: 0 0 0.6rem;
+      }
+
+      b {
+        font-weight: 900;
+      }
+    }
+
+    &__shapes {
+      list-style: none;
+      margin: 0 0 0.6rem;
+      padding: 0;
+
+      li {
+        font-family: monospace;
+        color: $primary;
+        padding: 0.15rem 0;
+      }
+    }
+  }
+
+  &-hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: $medium-size;
+    line-height: 1.35;
+    color: $secondary-grey;
+  }
+
+  &-domain-switcher {
+    display: flex;
+    margin-top: 0.6rem;
+    background-color: rgba($secondary-grey, 0.15);
+    border-radius: 0.6rem;
+    padding: 0.3rem;
+    gap: 0.3rem;
+
+    &__option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 0.4rem;
+      background: transparent;
+      color: $secondary-grey;
+      font-size: $medium-size;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      outline: none;
+      position: relative;
+
+      &:hover:not(&--active) {
+        color: $primary;
+        background-color: rgba($primary-white, 0.6);
+      }
+
+      &--active {
+        background-color: $primary-white;
+        color: $primary;
+        box-shadow: 0 1px 3px rgba($primary-black, 0.12), 0 1px 2px rgba($primary-black, 0.08);
+      }
+    }
+
+    &__icon {
+      font-size: 1.8rem !important;
+      margin: 0 !important;
+      color: inherit !important;
+    }
+
+    @include respond(phone) {
+      &__option {
+        padding: 0.6rem 0.6rem;
+        font-size: $small-size;
+      }
+
+      &__icon {
+        font-size: 1.4rem !important;
+      }
     }
   }
 }

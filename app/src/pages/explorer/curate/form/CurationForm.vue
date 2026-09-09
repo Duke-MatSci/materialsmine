@@ -76,6 +76,7 @@
                       name="searchKeyword"
                       id="searchKeyword"
                       placeholder="Search Fields"
+                      @keydown.enter.prevent="selectFirstSearchResult"
                     ></md-input>
                     <md-icon>search</md-icon>
                   </md-field>
@@ -113,7 +114,7 @@
                 md-dynamic-height
               >
                 <md-step
-                  v-for="step in Math.ceil(tempInputObj[title].length / 5)"
+                  v-for="step in Math.ceil(tempInputObj[title].length / ITEMS_PER_STEP)"
                   :md-error="
                     vStepError[title].includes(step) ? 'Field Error' : null
                   "
@@ -128,8 +129,8 @@
                     <template v-if="verticalActive === `v_${step}`">
                       <div
                         v-for="(item, id) in tempInputObj[title].slice(
-                          (step - 1) * 5,
-                          step * 5
+                          (step - 1) * ITEMS_PER_STEP,
+                          step * ITEMS_PER_STEP
                         )"
                         :key="`form_${id}`"
                         :class="[
@@ -151,22 +152,6 @@
                             }}
                           </p>
                         </div>
-
-                        <!-- For handling general case types i.e list, string, file -->
-                        <template
-                          v-if="
-                            item.detail.type !== 'multiples' &&
-                            item.detail.type !== 'varied_multiples'
-                          "
-                        >
-                          <InputComponent
-                            @update-step-error="updateStepError(title, step)"
-                            :title="title"
-                            :name="item.name"
-                            :uniqueKey="item.ref"
-                            :inputObj="item.detail"
-                          />
-                        </template>
 
                         <!-- For handling varied_multiples -->
                         <template
@@ -226,11 +211,20 @@
                           </div>
                         </template>
                         <!-- For handling type multiples -->
-                        <template>
+                        <template v-else-if="item.detail.type === 'multiples'">
                           <MultipleInputComponent
                             @update-step-error="updateStepError(title, step)"
                             :title="title"
-                            v-if="item.detail.type === 'multiples'"
+                            :name="item.name"
+                            :uniqueKey="item.ref"
+                            :inputObj="item.detail"
+                          />
+                        </template>
+                        <!-- For handling general case types i.e list, string, file -->
+                        <template v-else>
+                          <InputComponent
+                            @update-step-error="updateStepError(title, step)"
+                            :title="title"
                             :name="item.name"
                             :uniqueKey="item.ref"
                             :inputObj="item.detail"
@@ -251,7 +245,7 @@
                       </button>
                       <button
                         class="md-button btn btn--tertiary btn--noradius"
-                        v-if="step < Math.ceil(tempInputObj[title].length / 5)"
+                        v-if="step < Math.ceil(tempInputObj[title].length / ITEMS_PER_STEP)"
                         @click.prevent="verticalActive = `v_${step + 1}`"
                       >
                         Next
@@ -324,7 +318,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router';
 import { useStore } from 'vuex';
 import CurateNavBar from '@/components/curate/CurateNavBar.vue';
@@ -456,21 +450,50 @@ const searchCurationForm = (): void => {
   showDropdown.value = true;
 };
 
-const showInputLocation = async (arr: any[] = [], title: string | null = null): Promise<void> => {
-  resetVStep.value = false;
-  await nextTick();
-  const ref = arr;
-  const formTitle = !title ? ref.shift() : title;
-  const formArr = tempInputObj.value[formTitle];
+const selectFirstSearchResult = (): void => {
+  if (searchResult.value.length) {
+    showInputLocation(searchResult.value[0]);
+  }
+};
+
+const ITEMS_PER_STEP = 5;
+
+const getVerticalStepForRef = (formTitle: string, fieldRef: any[]): string => {
+  const formArr = tempInputObj.value[formTitle] || [];
   const matchIndex = formArr.findIndex(
-    (currVal) => JSON.stringify(currVal.ref) === JSON.stringify([...ref])
+    (currVal: any) => JSON.stringify(currVal.ref) === JSON.stringify(fieldRef)
   );
+  const vIndex = Math.max(Math.floor(matchIndex / ITEMS_PER_STEP) + 1, 1);
+  return `v_${vIndex}`;
+};
+
+const showInputLocation = (arr: any[] = [], title: string | null = null): void => {
+  const ref = [...arr];
+  const formTitle = !title ? ref.shift() : title;
   const hIndex = titles.value.findIndex((val) => val === formTitle);
-  const vIndex = Math.floor(matchIndex / 5) + 1;
-  await nextTick();
-  active.value = `stepper_${hIndex}`;
-  verticalActive.value = `v_${vIndex}`;
+  if (hIndex < 0) return;
+
   searchKeyword.value = '';
+  showDropdown.value = false;
+
+  // md-steppers only initializes correctly via physical header clicks (vue-material bug).
+  // Programmatic clicks must be deferred to avoid interference from the active Vue event cycle.
+  setTimeout(() => {
+    const navBtns = document.querySelectorAll('.form__stepper-curate .md-steppers-navigation button');
+    (navBtns[hIndex] as HTMLElement)?.click();
+
+    setTimeout(() => {
+      const targetStep = getVerticalStepForRef(formTitle, [...ref]);
+      const stepEl = document.getElementById(targetStep);
+      const headerBtn = stepEl?.querySelector('.md-stepper-header') as HTMLElement;
+      if (!headerBtn) return;
+
+      headerBtn.click();
+      setTimeout(() => {
+        stepEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    }, 800);
+  }, 50);
 };
 
 const disableRender = async (e: Event): Promise<void> => {
@@ -530,7 +553,7 @@ const showErrorsLocation = (title: string, obj: any, ref: string[] = []): void =
       if (matchIndex < 5 && matchIndex !== -1) {
         updateStepError(title, 1);
       } else if (matchIndex !== -1) {
-        updateStepError(title, Math.floor(matchIndex / 5) + 1);
+        updateStepError(title, Math.floor(matchIndex / ITEMS_PER_STEP) + 1);
       }
     }
   }

@@ -1,82 +1,192 @@
 <template>
-  <div class="u_width--max utility-bg_border-dark u--b-rad">
-    <md-tabs
-      :md-active-tab="dynamfitDomain === 'frequency' ? 'tab-home' : 'tab-temp-new'"
-      class="form__stepper form__stepper-curate dialog-box_content u-reset-transform"
-      md-dynamic-height
-    >
-      <md-tab id="tab-home" md-label="Complex, E*(iω)" class="u_relative">
-        <PlotlyView :chart="dynamfitData['complex-chart']" key="1" />
-        <div class="dynamfit-note" v-if="isTempData">
-          <strong>Note:</strong> The frequency response is computed from uploaded temperature data,
-          assuming WLF with universal constants
-        </div>
-      </md-tab>
-      <md-tab id="tab-exp" md-label="E'(ω), tan(δ)">
-        <PlotlyView :chart="dynamfitData['complex-tand-chart']" key="2" />
-      </md-tab>
-      <md-tab id="tab-temp-new" md-label="Complex, E*(T)" class="u_relative">
-        <PlotlyView :chart="dynamfitData['complex-temp-chart']" key="3" />
-        <div class="dynamfit-note" v-if="isFrequencyData">
-          <strong>Note:</strong> The temperature response is computed from uploaded frequency data,
-          assuming WLF with universal constants
-        </div>
-      </md-tab>
-      <md-tab id="tab-temp" md-label="E'(T), tan(δ)">
-        <PlotlyView :chart="dynamfitData['temp-tand-chart']" key="4" />
-      </md-tab>
-      <md-tab id="tab-relax" md-label="Relaxation, E(t)">
-        <PlotlyView :chart="dynamfitData['relaxation-chart']" key="5" />
-      </md-tab>
-      <md-tab id="tab-spec" md-label="R Spectrum, H(𝜏)">
-        <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
-      </md-tab>
-      <md-tab id="tab-upload" md-label="Uploaded Data">
-        <TableComponent :tableData="upload" sortBy="i" />
-      </md-tab>
-      <md-tab id="tab-Prony" md-label="Prony Coeff">
-        <TableComponent :tableData="prony" sortBy="i" />
+  <div class="">
+    <!-- Charts -->
+    <div class="u_width--max utility-bg_border-dark u--b-rad">
+      <md-tabs
+        :md-active-tab="controlledTab"
+        class="form__stepper form__stepper-curate dialog-box_content u-reset-transform"
+        md-dynamic-height
+        @md-changed="onTabChanged"
+      >
+        <md-tab id="tab-home" md-label="Complex (ω)" class="u_relative">
+          <PlotlyView :chart="dynamfitData['complex-chart']" key="1" />
+        </md-tab>
+        <md-tab id="tab-exp" md-label="Storage (ω), tan(δ)">
+          <PlotlyView :chart="dynamfitData['complex-tand-chart']" key="2" />
+        </md-tab>
+        <md-tab id="tab-temp-new" md-label="Complex (T)" class="u_relative">
+          <PlotlyView :chart="dynamfitData['complex-temp-chart']" key="3" />
+        </md-tab>
+        <md-tab id="tab-temp" md-label="Storage (T), tan(δ)">
+          <PlotlyView :chart="dynamfitData['temp-tand-chart']" key="4" />
+        </md-tab>
+        <md-tab id="tab-relax" md-label="Relaxation (t)">
+          <PlotlyView :chart="dynamfitData['relaxation-chart']" key="5" />
+        </md-tab>
+        <md-tab id="tab-spec" md-label="Discrete Spectrum">
+          <PlotlyView :chart="dynamfitData['relaxation-spectrum-chart']" key="6" />
+        </md-tab>
+        <!-- Unicode has no subscript capital T, so the tab settles for the
+             plain-text ₜ. The figure axis itself gets a true <sub>T</sub>
+             (plotly renders HTML). -->
+        <md-tab id="tab-shift" md-label="Shift Factor, aₜ(T)">
+          <PlotlyView :chart="dynamfitData['shift-chart']" key="7" />
 
-        <download-csv :data="prony" name="fit_coef.csv">
-          <button :disabled="!prony.length" class="md-button btn btn--primary u--b-rad">
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!shiftTable.length"
+            @click="downloadCsv(shiftTable, shiftCsvName)"
+          >
+            Download Shift Factors
+          </button>
+        </md-tab>
+        <md-tab id="tab-upload" md-label="Uploaded Data">
+          <TableComponent :tableData="upload" sortBy="i" />
+
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!upload.length"
+            @click="downloadCsv(upload, uploadCsvName)"
+          >
+            Download Data
+          </button>
+        </md-tab>
+        <md-tab id="tab-Prony" md-label="Prony Coeff">
+          <TableComponent :tableData="prony" sortBy="i" />
+
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!prony.length"
+            @click="downloadCsv(prony, pronyCsvName)"
+          >
             Download Coefficients
           </button>
-        </download-csv>
-      </md-tab>
-    </md-tabs>
+        </md-tab>
+        <md-tab id="tab-shift-coeff" md-label="Shift Coeff">
+          <!-- Insertion order is the meaningful order here (method, anchors,
+               coefficients, offset, misfit) — no sortBy on purpose. -->
+          <TableComponent
+            :tableData="shiftCoefficientRows"
+            emptyState="No Shift Coefficients Fitted"
+          />
+
+          <button
+            class="md-button btn btn--primary u--b-rad"
+            :disabled="!shiftCoefficientRows.length"
+            @click="downloadCsv(shiftCoefficientRows, shiftCoeffCsvName)"
+          >
+            Download Shift Coefficients
+          </button>
+        </md-tab>
+      </md-tabs>
+    </div>
+
+    <!-- File name bar -->
+    <div v-if="fileUpload" class="dynamfit-file-bar">
+      <!-- The server name is a mangled `<adjective_animal>-<ISO>-<original>`,
+           so lead with what the user recognises and keep the real name in the
+           tooltip. Truncation is CSS, not JS, so the tooltip stays complete. -->
+      <span class="dynamfit-file-bar__name" :title="fileUpload">
+        <strong>{{ fileMeta.label || fileMeta.originalName || fileUpload }}</strong>
+        <span v-if="fileMeta.label && fileMeta.originalName" class="dynamfit-file-bar__file">
+          {{ fileMeta.originalName }}
+        </span>
+      </span>
+      <button
+        class="btn btn--primary dynamfit-file-bar__change"
+        @click.prevent="handleFileBarAction"
+      >
+        {{ sourceType === 'surprise' ? 'Surprise Me' : 'Change' }}
+      </button>
+    </div>
+
+    <!-- Both tabs on a cross-domain axis are derived, not measured, so the
+         provenance note belongs on each of them, not just the first. -->
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isTempData && onFreqTab && freqChartsBuilt"
+    >
+      <b>Note:</b> The frequency response is computed from uploaded temperature data, using your
+      selected shift factor model
+    </div>
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isFrequencyData && onTempTab && tempChartsBuilt"
+    >
+      <b>Note:</b> The temperature response is computed from uploaded frequency data, using your
+      selected shift factor model
+    </div>
+
+    <!-- The cross-domain charts are only built when a transform was requested.
+         Say why the tab is blank rather than leaving the user staring at it. -->
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isFrequencyData && onTempTab && !tempChartsBuilt"
+    >
+      <b>Note:</b> Check <b>ω-T Transformation</b> in the settings panel to compute the
+      temperature response from this frequency data.
+    </div>
+    <div
+      class="dynamfit-note dynamfit-note--below"
+      v-if="isTempData && onFreqTab && !freqChartsBuilt"
+    >
+      <b>Note:</b> Check <b>ω-T Transformation</b> in the settings panel to compute the
+      frequency response from this temperature data.
+    </div>
+    <div class="dynamfit-note dynamfit-note--below" v-if="onShiftTab && !shiftChartBuilt">
+      <b>Note:</b> Check <b>ω-T Transformation</b> and pick a shift model — or upload a
+      shift-factor file — to see the shift factors applied to this data.
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import PlotlyView from '@/components/explorer/PlotlyView.vue';
 import TableComponent from '@/components/explorer/TableComponent.vue';
+import { downloadCsv, toCsvBaseName } from '@/composables/useCsvDownload';
+import { buildShiftCoefficientRows } from '@/composables/useDynamfitShift';
 
-// Component name for debugging
 defineOptions({
   name: 'ChartVisualizer',
 });
 
-// Type definitions
 interface DynamfitData {
   'complex-chart'?: unknown;
   'complex-tand-chart'?: unknown;
   'complex-temp-chart'?: unknown;
   'temp-tand-chart'?: unknown;
+  'shift-chart'?: unknown;
   'relaxation-chart'?: unknown;
   'relaxation-spectrum-chart'?: unknown;
   mytable?: Record<string, unknown>[];
+  'shift-table'?: Record<string, unknown>[];
   'upload-data'?: Record<string, unknown>[];
 }
 
-// Components
-// const downloadCsv = JsonCSV;
-
-// Store
+const activeTab = ref('');
 const store = useStore();
 
-// Computed properties
+const emit = defineEmits<{
+  (e: 'change-file'): void;
+  (e: 'surprise-me'): void;
+}>();
+
+const sourceType = computed(() => store.state.explorer.dynamfitSourceType);
+
+const fileMeta = computed<{ label: string; originalName: string }>(
+  () => store.state.explorer.dynamfitFileMeta ?? { label: '', originalName: '' }
+);
+
+const handleFileBarAction = (): void => {
+  if (sourceType.value === 'surprise') {
+    emit('surprise-me');
+  } else {
+    emit('change-file');
+  }
+};
+
 const dynamfitData = computed<DynamfitData>(() => store.getters['explorer/getDynamfitData']);
 
 const dynamfitDomain = computed<string>(() => store.getters['explorer/getDynamfitDomain']);
@@ -89,6 +199,26 @@ const upload = computed<Record<string, unknown>[]>(
   () => store.state.explorer.dynamfitData?.['upload-data'] ?? []
 );
 
+const shiftTable = computed<Record<string, unknown>[]>(
+  () => store.state.explorer.dynamfitData?.['shift-table'] ?? []
+);
+
+// Fitted shift coefficients as parameter/value rows. A lone transform_method
+// row means nothing has been fitted — collapse that to empty so the tab shows
+// its empty state and the download button disables.
+//
+// The heading row names the model that produced these numbers, not the selected
+// transform: manual mode fits a WLF or hybrid curve to the uploaded table, so
+// 'manual' over a set of C1/C2/Ea/TC rows would misattribute them.
+const shiftCoefficientRows = computed<{ parameter: string; value: string | number }[]>(() => {
+  const coefficients = store.getters['explorer/getDynamfitShiftCoefficients'];
+  const rows = buildShiftCoefficientRows(
+    coefficients.model || transformMethod.value || 'none',
+    coefficients
+  );
+  return rows.length > 1 ? rows : [];
+});
+
 const isFrequencyData = computed(() => {
   return dynamfitDomain.value === 'frequency' && dynamfitData.value['complex-chart'];
 });
@@ -97,13 +227,71 @@ const isTempData = computed(() => {
   return dynamfitDomain.value === 'temperature' && dynamfitData.value['complex-temp-chart'];
 });
 
-// Watchers
-// watch(
-//   dynamfitData,
-//   (newVal, oldVal) => {
-//     console.log('New Value:', newVal);
-//     console.log('Old Value:', oldVal);
-//   },
-//   { deep: true, immediate: true }
-// );
+// A chart key is always present in the response; what varies is whether it
+// carries any traces. The server returns an empty figure for the cross-domain
+// charts when no ω-T transform was requested.
+const chartHasTraces = (key: keyof DynamfitData): boolean => {
+  const chart = dynamfitData.value[key] as { data?: unknown[] } | undefined;
+  return !!chart?.data?.length;
+};
+
+const freqChartsBuilt = computed(() => chartHasTraces('complex-chart'));
+const tempChartsBuilt = computed(() => chartHasTraces('complex-temp-chart'));
+const shiftChartBuilt = computed(() => chartHasTraces('shift-chart'));
+
+const onFreqTab = computed(() => ['tab-home', 'tab-exp'].includes(activeTab.value));
+const onTempTab = computed(() => ['tab-temp-new', 'tab-temp'].includes(activeTab.value));
+const onShiftTab = computed(() => activeTab.value === 'tab-shift');
+
+const dynamfit = computed(() => store.getters['explorer/dynamfit']);
+const fileUpload = computed(() => dynamfit.value?.fileUpload || '');
+
+// Name exports after whatever the user recognises the dataset as, not after
+// the mangled server-side upload name.
+const csvBaseName = computed<string>(() =>
+  toCsvBaseName(fileMeta.value.label || fileMeta.value.originalName || fileUpload.value)
+);
+
+const uploadCsvName = computed(() => `${csvBaseName.value}_data.csv`);
+const pronyCsvName = computed(() => `${csvBaseName.value}_prony.csv`);
+const shiftCsvName = computed(() => `${csvBaseName.value}_shift_factors.csv`);
+const shiftCoeffCsvName = computed(() => `${csvBaseName.value}_shift_coefficients.csv`);
+
+const controlledTab = ref(dynamfitDomain.value === 'frequency' ? 'tab-home' : 'tab-temp-new');
+
+const onTabChanged = (tabId: string): void => {
+  activeTab.value = tabId;
+  controlledTab.value = tabId;
+};
+
+const transformMethod = computed(() => store.getters['explorer/getDynamfitTransformMethod']);
+
+watch(dynamfitData, (newVal, oldVal) => {
+  const wasEmpty = !oldVal || !Object.keys(oldVal).length;
+  const hasData = newVal && Object.keys(newVal).length > 0;
+  // Cleared data means the session was reset (or the file changed): go back to
+  // the first tab instead of leaving the last-viewed one selected.
+  if (!hasData) {
+    controlledTab.value = 'tab-home';
+    activeTab.value = '';
+    return;
+  }
+
+  if (wasEmpty) {
+    controlledTab.value = dynamfitDomain.value === 'temperature' ? 'tab-temp-new' : 'tab-home';
+  }
+});
+
+// The cross-domain charts are what an omega-T transform just produced, so an
+// Update that applied one lands the user on them. Driven by the setting
+// panel's explicit signal rather than by the data watcher above: a repaint
+// from any other control (prony terms, smoothness, a new file) still carries
+// the applied transform_method, and switching tabs under those would yank the
+// user off whatever they were reading.
+watch(
+  () => store.state.explorer.dynamfitTransformTabRequest,
+  () => {
+    controlledTab.value = dynamfitDomain.value === 'frequency' ? 'tab-temp-new' : 'tab-home';
+  }
+);
 </script>

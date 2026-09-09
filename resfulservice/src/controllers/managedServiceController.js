@@ -45,7 +45,7 @@ exports.manageServiceRequest = async (req, res, next) => {
 
     req.reqId = reqId;
     if (appName === 'loadxml') {
-      req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister.dynamfit}`;
+      req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister['tri-ve']}`;
     } else if (!controlId) {
       req.url = `${req.env?.MANAGED_SERVICE_ADDRESS}${ManagedServiceRegister[appName]}`;
     } else {
@@ -217,7 +217,7 @@ const _managedServiceCall = async (req, res) => {
 
       // Write to CSV
       XLSX.writeFile(workbook, filePath, { bookType: 'csv' });
-      logger.info(`New Dynamfit file created: ${filePath}`);
+      logger.info(`New Tri-VE file created: ${filePath}`);
     }
     reqBody = remainingBody;
     reqBody.file_name = fileName;
@@ -253,6 +253,7 @@ const _managedServiceCall = async (req, res) => {
       errorObj.systemEmail = req.env?.SYSTEM_EMAIL;
     }
     const output = { ...errorObj, ...response.data, appName };
+    if (req.isBackendCall) return output;
     latency.latencyCalculator(res);
     return res.status(200).json(output);
   } else {

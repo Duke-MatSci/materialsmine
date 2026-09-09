@@ -677,7 +677,7 @@ async function validateXmlAgainstXsd(TMP_DIRECTORY, xmlString, xsdUrl) {
 // }
 function prepareForValidation(doc) {
   const clone =
-    typeof doc === 'string' ? JSON.parse(doc) : JSON.parse(JSON.stringify(doc));
+    typeof doc === 'string' ? JSON.parse(doc) : structuredClone(doc);
 
   const UNIT_MAP = { nm: 'unit:NanoM', Hz: 'unit:HZ' /* extend as needed */ };
 
