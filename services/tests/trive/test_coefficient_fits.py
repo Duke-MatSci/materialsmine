@@ -255,7 +255,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
 
     def test_descending_T_round_trip(self):
         # Reversed (descending) T/a_T must recover the same coefficients — checks
-        # the direction handling and the ascending-ordered a_T_ref interpolation.
+        # the direction handling of the model and its co-fitted a_T_ref.
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
             self.T[::-1], self.a_T[::-1], self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
@@ -273,7 +273,7 @@ class TestHybridOffsetFarFromTC(unittest.TestCase):
     TC = 25.0
     # Coefficients the fit is seeded with (and pinned to when fixed). The data
     # below is generated with different ones plus noise, so the optimum
-    # offset is not the interpolated value at TC the fit is seeded from.
+    # offset is not simply the data's value at TC.
     C1 = 14.0
     C2 = 45.0
     EA = 80.0
@@ -321,7 +321,7 @@ class TestHybridOffsetFarFromTC(unittest.TestCase):
             hybrid_shift(self.T, self.TC, self.C1, self.C2, self.EA))
         weights = sigma_log10 ** -2
         expected = float(weights @ resid / weights.sum())
-        # Guard: the optimum is not where the interpolated seed already sits.
+        # Guard: the optimum is not simply the data's interpolated value at TC.
         seed = np.interp(self.TC, self.T, np.log10(a_T))
         self.assertGreater(abs(expected - seed), 0.1)
 

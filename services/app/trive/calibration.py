@@ -239,8 +239,7 @@ def fit_wlf_coefficients(
 
     # Seed the offset at its conditional optimum given the starting C1/C2 — the
     # sigma-weighted mean residual, which is the exact least-squares solution for
-    # a lone additive term. Seeding at a_T == 1 (or at an interpolated point, as
-    # the hybrid fit must because of its kink at TC) is wrong by whole decades
+    # a lone additive term. Seeding at a_T == 1 is wrong by whole decades
     # for a file referenced away from T_ref, and costs iterations from the start.
     with np.errstate(divide='ignore', invalid='ignore'):
         resid_0 = log10_a_T - wlf_log10_shift(T, T_ref, C1_0, C2_start)
@@ -318,7 +317,11 @@ def fit_hybrid_coefficients(
     Uses scipy.optimize.curve_fit in log10(a_T) space so that points spanning
     many decades of shift factor receive uniform weight. TC is required and is
     never optimized — it is produced upstream by the E-loss-peak logic in the
-    extract step and is a physical input, not a fit parameter.
+    extract step and is a physical input, not a fit parameter. The data's
+    shift factor at TC, a_T_ref, is always co-fitted as a vertical offset and,
+    as in fit_wlf_coefficients, carried through the optimizer as
+    log10(a_T_ref), so data referenced decades away from TC fits as well as
+    data referenced at it.
 
     Individual parameters can be fixed at their supplied values by setting the
     corresponding fix_* flag. A supplied-but-not-fixed value becomes the
@@ -450,11 +453,10 @@ def fit_hybrid_coefficients(
     if not return_quality:
         return C1_fit, C2_fit, Ea_fit, a_T_ref_fit
 
-    # Same failure modes as the fit itself: hybrid_shift raises ValueError at a
-    # pole or on overflow, which the route already maps to HTTP 400.
-    log10_model = np.log10(hybrid_shift(
-        T, TC, C1_fit, C2_fit, Ea_fit, a_T_ref_fit, ascending,
-    ))
+    # Score the model the optimizer saw, so the residual is the one it
+    # minimized. Same failure modes as the fit itself: hybrid_shift raises
+    # ValueError at a pole or on overflow, which the route maps to HTTP 400.
+    log10_model = model(T, *fitted)
     n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
     chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
     return C1_fit, C2_fit, Ea_fit, a_T_ref_fit, chi2
