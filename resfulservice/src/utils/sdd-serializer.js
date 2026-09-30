@@ -251,7 +251,7 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
 
     dict.forEach((d) => {
       const isInferred = d.column.startsWith('??');
-      const value = matchKeys(d.column, d.label, row);
+      const value = isInferred ? undefined : matchKeys(d.column, d.label, row);
 
       if (value !== undefined || isInferred) {
         const attributeId = generateAttributeId(sampleId, d.column);
