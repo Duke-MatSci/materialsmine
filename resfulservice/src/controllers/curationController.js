@@ -2035,6 +2035,20 @@ exports.curationETL = async (req, res, next) => {
           .slice(2)}`;
         const { rawXml, id = defaultId } = await CH.getText(src);
         idForFailure = id;
+
+        // Verify curation is approved before publishing
+        const newCuration = await CuratedSamples.findOne({ _id: id });
+        const oldCuration = !newCuration ? await XmlData.findOne({ title: id }) : null;
+        const record = newCuration || oldCuration;
+        if (record) {
+          const state = newCuration ? record.entityState : record.entityState;
+          const approvedStates = ['Approved', 'IngestSuccess'];
+          if (!approvedStates.includes(state)) {
+            failed.push({ id, sampleID: null, stage: 'approval', errors: ['Curation must be approved before publishing'] });
+            continue;
+          }
+        }
+
         const xml = CH.normalizeXml(rawXml);
 
         // XSD validation
