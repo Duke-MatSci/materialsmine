@@ -257,14 +257,53 @@ function parseDictSheet(buffer) {
 /* ────────────────────── Attribute generation ────────────────── */
 
 /**
- * Build attribute triples from CSV rows and dict definitions.
- * Ported from serializer linkDataGenerator with full DictRow field handling.
+ * Populate common predicates on a node from a dict row definition.
+ */
+function applyDictPredicates(node, d, sampleId, codeMappings) {
+  if (d.label && d.label !== d.column) node['rdfs:label'] = d.label;
+  if (d.role) node['sio:hasRole'] = { '@id': d.role };
+  if (d.inRelationTo) {
+    const predicate = d.relation || 'sio:inRelationTo';
+    node[predicate] = getInferredValues(sampleId, d.inRelationTo);
+  }
+  if (d.attributeOf) {
+    node['sio:isAttributeOf'] = getInferredValues(sampleId, d.attributeOf);
+  }
+  if (d.unit) {
+    const unitUri = resolveCodeMapping(d.unit, codeMappings);
+    node['sio:hasUnit'] = [
+      { ...(unitUri ? { '@type': unitUri } : {}), '@value': d.unit }
+    ];
+  }
+  if (d.comment) node['rdfs:comment'] = d.comment;
+  if (d.definition) node['skos:definition'] = d.definition;
+  if (d.format) node['sio:hasFormat'] = d.format;
+  if (d.time) {
+    node['sio:hasTimepoint'] = getInferredValues(sampleId, d.time);
+  }
+  if (d.wasDerivedFrom) {
+    node['prov:wasDerivedFrom'] = getInferredValues(sampleId, d.wasDerivedFrom);
+  }
+  if (d.wasGeneratedBy) {
+    node['prov:wasGeneratedBy'] = getInferredValues(
+      sampleId,
+      d.wasGeneratedBy
+    );
+  }
+}
+
+/**
+ * Build structured assertion nodes from CSV rows and dict definitions.
+ * Entity rows (have `entity`, no `attribute`) become structural parent nodes.
+ * Attribute rows (have `attribute`) become leaf nodes nested under their parent
+ * entity via the `attributeOf` column.
  *
  * @param {Object[]} csvRows - Parsed CSV row objects
  * @param {Object[]} dict - Parsed dict rows from XLSX
  * @param {string} npId - Nanopub ID (used to build sample IDs)
  * @param {number} fileOffset - Offset for sample numbering across multiple CSVs
- * @returns {Object[]} Array of sample assertion nodes
+ * @param {Map} codeMappings - Code mappings from the SDD
+ * @returns {Object[]} Array of root assertion nodes (entities with nested attributes)
  */
 function generateAttributes(
   csvRows,
@@ -273,101 +312,76 @@ function generateAttributes(
   fileOffset,
   codeMappings = new Map()
 ) {
+  const hasEntities = dict.some((d) => d.entity && !d.attribute);
   const samples = [];
 
   csvRows.forEach((row, rowIndex) => {
     const sampleId = `${npId}/sample-${fileOffset + rowIndex + 1}`;
-    const attributes = [];
+    const nodeMap = new Map();
+    const childrenOf = new Map();
+    const rootNodes = [];
 
     dict.forEach((d) => {
+      const isEntity = !!(d.entity && !d.attribute);
       const isInferred = d.column.startsWith('??');
       const value = isInferred ? undefined : matchKeys(d.column, d.label, row);
 
-      if (value !== undefined || isInferred) {
-        const attributeId =
-          d.template && !isInferred
-            ? resolveTemplate(d.template, row)
-            : generateAttributeId(sampleId, d.column);
-        const attr = { '@id': attributeId };
+      if (value === undefined && !isInferred) return;
 
-        // @type from attribute or entity
-        const attrType = d.attribute || d.entity;
-        if (attrType) attr['@type'] = attrType;
+      const nodeId =
+        d.template && !isInferred
+          ? resolveTemplate(d.template, row)
+          : generateAttributeId(sampleId, d.column);
+      const node = { '@id': nodeId };
 
-        // rdfs:label — use label when it differs from the column name
-        if (d.label && d.label !== d.column) attr['rdfs:label'] = d.label;
+      if (isEntity) {
+        node['@type'] = d.entity;
+      } else if (d.attribute) {
+        node['@type'] = d.attribute;
+      }
 
-        // sio:hasValue — numeric as xsd:double, else string literal
-        if (value !== undefined && value !== '') {
-          attr['sio:hasValue'] = isNaN(Number(value))
-            ? String(value)
-            : { '@value': Number(value), '@type': 'xsd:double' };
-        }
+      applyDictPredicates(node, d, sampleId, codeMappings);
 
-        // sio:hasRole
-        if (d.role) attr['sio:hasRole'] = { '@id': d.role };
+      if (!isEntity && value !== undefined && value !== '') {
+        node['sio:hasValue'] = isNaN(Number(value))
+          ? String(value)
+          : { '@value': Number(value), '@type': 'xsd:double' };
+      }
 
-        // sio:inRelationTo or custom relation
-        if (d.inRelationTo) {
-          const predicate = d.relation || 'sio:inRelationTo';
-          attr[predicate] = getInferredValues(sampleId, d.inRelationTo);
-        }
+      const colKey = d.column.replace(/^\?\?/, '').trim().toLowerCase();
+      nodeMap.set(colKey, node);
 
-        // sio:hasAttribute (from attributeOf — nested attribute reference)
-        if (d.attributeOf) {
-          attr['sio:hasAttribute'] = getInferredValues(sampleId, d.attributeOf);
-        }
-
-        // sio:hasUnit
-        if (d.unit) {
-          const unitUri = resolveCodeMapping(d.unit, codeMappings);
-          attr['sio:hasUnit'] = [
-            {
-              ...(unitUri ? { '@type': unitUri } : {}),
-              '@value': d.unit
-            }
-          ];
-        }
-
-        // rdfs:comment
-        if (d.comment) attr['rdfs:comment'] = d.comment;
-
-        // skos:definition
-        if (d.definition) attr['skos:definition'] = d.definition;
-
-        // sio:hasFormat
-        if (d.format) attr['sio:hasFormat'] = d.format;
-
-        // sio:hasTimepoint (resolved as inferred value)
-        if (d.time) {
-          attr['sio:hasTimepoint'] = getInferredValues(sampleId, d.time);
-        }
-
-        // prov:wasDerivedFrom
-        if (d.wasDerivedFrom) {
-          attr['prov:wasDerivedFrom'] = getInferredValues(
-            sampleId,
-            d.wasDerivedFrom
-          );
-        }
-
-        // prov:wasGeneratedBy
-        if (d.wasGeneratedBy) {
-          attr['prov:wasGeneratedBy'] = getInferredValues(
-            sampleId,
-            d.wasGeneratedBy
-          );
-        }
-
-        attributes.push(attr);
+      if (d.attributeOf) {
+        const parentKey = d.attributeOf
+          .replace(/^\?\?/, '')
+          .trim()
+          .toLowerCase();
+        if (!childrenOf.has(parentKey)) childrenOf.set(parentKey, []);
+        childrenOf.get(parentKey).push(node);
+      } else {
+        rootNodes.push(node);
       }
     });
 
-    samples.push({
-      '@id': sampleId,
-      '@type': 'sio:SIO_001050',
-      'sio:hasAttribute': attributes
-    });
+    if (hasEntities) {
+      for (const [parentKey, children] of childrenOf) {
+        const parent = nodeMap.get(parentKey);
+        if (parent) {
+          parent['sio:hasAttribute'] = children;
+        } else {
+          rootNodes.push(...children);
+        }
+      }
+      samples.push(...rootNodes);
+    } else {
+      const allNodes = [...rootNodes];
+      for (const children of childrenOf.values()) allNodes.push(...children);
+      samples.push({
+        '@id': sampleId,
+        '@type': 'sio:SIO_001050',
+        'sio:hasAttribute': allNodes
+      });
+    }
   });
 
   return samples;
