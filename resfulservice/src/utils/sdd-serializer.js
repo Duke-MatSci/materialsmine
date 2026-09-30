@@ -122,6 +122,18 @@ function getInferredValues(sampleId, value) {
 }
 
 /**
+ * Resolve a URI template by replacing {col_name} placeholders with CSV row values.
+ */
+function resolveTemplate(template, row) {
+  return template.replace(/\{([^}]+)\}/g, (_, col) => {
+    const key = Object.keys(row).find(
+      (k) => k.trim().toLowerCase() === col.trim().toLowerCase()
+    );
+    return key !== undefined ? encodeURIComponent(row[key]) : '';
+  });
+}
+
+/**
  * Match a dict column name to a CSV row key.
  * Tries exact match on column first, then falls back to label.
  * Both comparisons are case-insensitive but require full equality, not substring.
@@ -192,7 +204,8 @@ const DICT_COLUMNS = [
   'relation',
   'inRelationTo',
   'wasDerivedFrom',
-  'wasGeneratedBy'
+  'wasGeneratedBy',
+  'template'
 ];
 
 /**
@@ -254,7 +267,9 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
       const value = isInferred ? undefined : matchKeys(d.column, d.label, row);
 
       if (value !== undefined || isInferred) {
-        const attributeId = generateAttributeId(sampleId, d.column);
+        const attributeId = d.template && !isInferred
+          ? resolveTemplate(d.template, row)
+          : generateAttributeId(sampleId, d.column);
         const attr = { '@id': attributeId };
 
         // @type from attribute or entity
