@@ -267,7 +267,7 @@ function slug(s, fallback = 'item') {
   return out || fallback;
 }
 
-async function getText(maybeUrlOrXml) {
+async function getText(maybeUrlOrXml, { requireApproval = false } = {}) {
   if (typeof maybeUrlOrXml !== 'string') {
     throw new Error('XML must be a string or URL');
   }
@@ -280,7 +280,7 @@ async function getText(maybeUrlOrXml) {
       }
     `,
       variables: {
-        input: { id, isNewCuration }
+        input: { id, isNewCuration, requireApproval }
       }
     };
 
@@ -289,13 +289,20 @@ async function getText(maybeUrlOrXml) {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    const { data, errors } = await graphqlClient.post('/graphql', payload);
-    if (errors) {
-      throw new Error(`GraphQL errors: ${String(errors)}`);
+    const { data: gqlResponse } = await graphqlClient.post('/graphql', payload);
+    if (gqlResponse.errors?.length) {
+      const msg = gqlResponse.errors.map((e) => e.message).join('; ');
+      throw new Error(msg);
+    }
+    const viewer = gqlResponse.data?.xmlViewer;
+    if (!viewer || viewer.extensions) {
+      const errMsg =
+        viewer?.extensions?.message || 'XML not found or not accessible';
+      throw new Error(errMsg);
     }
     return {
-      id: data?.data?.id || data?.data?.xmlViewer?.id || '',
-      rawXml: data?.data?.xmlViewer?.xmlString || ''
+      id: viewer.id || '',
+      rawXml: viewer.xmlString || ''
     };
   }
 
