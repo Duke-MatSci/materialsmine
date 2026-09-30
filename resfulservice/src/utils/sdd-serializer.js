@@ -276,6 +276,9 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
         const attrType = d.attribute || d.entity;
         if (attrType) attr['@type'] = attrType;
 
+        // rdfs:label — use label when it differs from the column name
+        if (d.label && d.label !== d.column) attr['rdfs:label'] = d.label;
+
         // sio:hasValue — numeric as xsd:double, else string literal
         if (value !== undefined && value !== '') {
           attr['sio:hasValue'] = isNaN(Number(value))
