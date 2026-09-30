@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const minioClient = require('./minio');
 const FileManager = require('./fileManager');
-const { MinioBucket } = require('../../config/constant');
+const { MinioBucket, UNIT_IRI } = require('../../config/constant');
 const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
 
 /**
@@ -62,40 +62,7 @@ function streamToBuffer(stream) {
 }
 
 /* ────────────────────────── Unit Map ────────────────────────── */
-// Merged from serializer parser.ts + config/constant UNIT_IRI
-const unitMap = {
-  // From serializer
-  '%': 'http://www.ontology-of-units-of-measure.org/resource/om-2/Percent',
-  '1/s': 'http://www.ontology-of-units-of-measure.org/resource/om-2/PerSecond',
-  'a/m^2':
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/AmperePerSquareMetre',
-  c: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Coulomb',
-  'c/min':
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/CoulombPerMinute',
-  celcius:
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
-  celsius:
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
-  'celsius/min':
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsiusPerMinute',
-  'celsius/minute':
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsiusPerMinute',
-  days: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Day',
-  nm: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Nanometre',
-  'mg/ml':
-    'http://www.ontology-of-units-of-measure.org/resource/om-2/MilligramPerMillilitre',
-  // From config/constant UNIT_IRI
-  Celsius: 'http://qudt.org/vocab/unit/DEG_C',
-  hours: 'http://qudt.org/vocab/unit/HR',
-  hour: 'http://qudt.org/vocab/unit/HR',
-  minutes: 'http://qudt.org/vocab/unit/MIN',
-  minute: 'http://qudt.org/vocab/unit/MIN',
-  kV: 'http://qudt.org/vocab/unit/KiloV',
-  'g/cm^3': 'http://qudt.org/vocab/unit/GM-PER-CentiM3',
-  'MV/cm': 'http://qudt.org/vocab/unit/MegaV-PER-CentiM',
-  um: 'http://qudt.org/vocab/unit/MicroM',
-  Hz: 'http://qudt.org/vocab/unit/HZ'
-};
+const unitMap = UNIT_IRI;
 
 /* ────────────────────────── Helpers ────────────────────────── */
 
@@ -208,18 +175,60 @@ const DICT_COLUMNS = [
   'template'
 ];
 
+const CODE_MAPPINGS_SHEET_NAME = 'Code Mappings';
+
+/**
+ * Parse the Code Mappings sheet from an XLSX workbook.
+ * Returns a map of lowercase code → { uri, label }.
+ * @param {Object} workbook - Parsed XLSX workbook
+ * @returns {Map<string, {uri: string, label: string}>}
+ */
+function parseCodeMappingsSheet(workbook) {
+  const codeMappings = new Map();
+  const sheet = workbook.Sheets[CODE_MAPPINGS_SHEET_NAME];
+  if (!sheet) return codeMappings;
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!Array.isArray(row)) continue;
+    const code = row[0] != null ? String(row[0]).trim() : '';
+    const uri = row[1] != null ? String(row[1]).trim() : '';
+    if (code && uri) {
+      codeMappings.set(code.toLowerCase(), {
+        uri,
+        label: row[2] != null ? String(row[2]).trim() : ''
+      });
+    }
+  }
+  return codeMappings;
+}
+
+/**
+ * Resolve a shorthand code to a URI using code mappings, then the hardcoded unitMap.
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
+ * @param {Map} codeMappings - Parsed code mappings from the SDD
+ * @returns {string|undefined} The resolved URI, or undefined
+ */
+function resolveCodeMapping(code, codeMappings) {
+  if (!code) return undefined;
+  const key = code.trim().toLowerCase();
+  const mapped = codeMappings.get(key);
+  if (mapped) return mapped.uri;
+  return unitMap[key] || unitMap[code] || undefined;
+}
+
 /**
  * Parse the Dictionary Mapping sheet from an XLSX buffer.
+ * Also parses the Code Mappings sheet if present.
  * @param {Buffer} buffer - XLSX file contents
- * @returns {Object[]} Array of dict row objects
+ * @returns {{ dictRows: Object[], codeMappings: Map }} Parsed dictionary rows and code mappings
  */
 function parseDictSheet(buffer) {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const sheet = workbook.Sheets[DICT_SHEET_NAME];
   if (!sheet) {
-    throw new Error(
-      `SDD file is missing the "${DICT_SHEET_NAME}" sheet.`
-    );
+    throw new Error(`SDD file is missing the "${DICT_SHEET_NAME}" sheet.`);
   }
 
   const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
@@ -240,7 +249,9 @@ function parseDictSheet(buffer) {
     if (entry.column) dictRows.push(entry);
   }
 
-  return dictRows;
+  const codeMappings = parseCodeMappingsSheet(workbook);
+
+  return { dictRows, codeMappings };
 }
 
 /* ────────────────────── Attribute generation ────────────────── */
@@ -255,7 +266,13 @@ function parseDictSheet(buffer) {
  * @param {number} fileOffset - Offset for sample numbering across multiple CSVs
  * @returns {Object[]} Array of sample assertion nodes
  */
-function generateAttributes(csvRows, dict, npId, fileOffset) {
+function generateAttributes(
+  csvRows,
+  dict,
+  npId,
+  fileOffset,
+  codeMappings = new Map()
+) {
   const samples = [];
 
   csvRows.forEach((row, rowIndex) => {
@@ -267,9 +284,10 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
       const value = isInferred ? undefined : matchKeys(d.column, d.label, row);
 
       if (value !== undefined || isInferred) {
-        const attributeId = d.template && !isInferred
-          ? resolveTemplate(d.template, row)
-          : generateAttributeId(sampleId, d.column);
+        const attributeId =
+          d.template && !isInferred
+            ? resolveTemplate(d.template, row)
+            : generateAttributeId(sampleId, d.column);
         const attr = { '@id': attributeId };
 
         // @type from attribute or entity
@@ -297,19 +315,15 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
 
         // sio:hasAttribute (from attributeOf — nested attribute reference)
         if (d.attributeOf) {
-          attr['sio:hasAttribute'] = getInferredValues(
-            sampleId,
-            d.attributeOf
-          );
+          attr['sio:hasAttribute'] = getInferredValues(sampleId, d.attributeOf);
         }
 
         // sio:hasUnit
         if (d.unit) {
-          const unitKey = d.unit.toLowerCase();
+          const unitUri = resolveCodeMapping(d.unit, codeMappings);
           attr['sio:hasUnit'] = [
             {
-              ...(unitMap[unitKey] ? { '@type': unitMap[unitKey] } : {}),
-              ...(unitMap[d.unit] ? { '@type': unitMap[d.unit] } : {}),
+              ...(unitUri ? { '@type': unitUri } : {}),
               '@value': d.unit
             }
           ];
@@ -396,9 +410,9 @@ async function buildSddAttributes(distributionLd, npId, logger) {
   logger.info(`[sdd-serializer] Fetching SDD file: ${sddUrl}`);
   const sddStream = await fetchFileStream(sddUrl);
   const sddBuffer = await streamToBuffer(sddStream);
-  const dictRows = parseDictSheet(sddBuffer);
+  const { dictRows, codeMappings } = parseDictSheet(sddBuffer);
   logger.info(
-    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows from SDD`
+    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows, ${codeMappings.size} code mappings from SDD`
   );
 
   if (!dictRows.length) {
@@ -427,7 +441,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
   logger.info(
     `[sdd-serializer] Total CSV rows: ${allCsvRows.length}, dict rows: ${dictRows.length}`
   );
-  return { allCsvRows, dictRows };
+  return { allCsvRows, dictRows, codeMappings };
 }
 
 /**
@@ -438,11 +452,23 @@ async function buildSddAttributes(distributionLd, npId, logger) {
  * @param {number} [batchSize] - Rows per batch
  * @returns {Object[][]} Array of batches, each an array of sample nodes
  */
-function generateBatches(allCsvRows, dictRows, npId, batchSize = SDD_BATCH_SIZE) {
+function generateBatches(
+  allCsvRows,
+  dictRows,
+  npId,
+  batchSize = SDD_BATCH_SIZE,
+  codeMappings = new Map()
+) {
   const batches = [];
   for (let offset = 0; offset < allCsvRows.length; offset += batchSize) {
     const slice = allCsvRows.slice(offset, offset + batchSize);
-    const samples = generateAttributes(slice, dictRows, npId, offset);
+    const samples = generateAttributes(
+      slice,
+      dictRows,
+      npId,
+      offset,
+      codeMappings
+    );
     batches.push(samples);
   }
   return batches;
@@ -455,9 +481,10 @@ module.exports = {
   // Exported for testing
   classifyDistributionFiles,
   parseDictSheet,
+  parseCodeMappingsSheet,
+  resolveCodeMapping,
   generateAttributes,
   generateAttributeId,
   getInferredValues,
-  matchKeys,
-  unitMap
+  matchKeys
 };
