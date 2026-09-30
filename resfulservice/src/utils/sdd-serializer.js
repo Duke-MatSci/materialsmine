@@ -122,14 +122,18 @@ function getInferredValues(sampleId, value) {
 }
 
 /**
- * Match a dict label to a CSV row key (case-insensitive substring match).
- * Returns the first matching value or undefined.
+ * Match a dict column name to a CSV row key.
+ * Tries exact match on column first, then falls back to label.
+ * Both comparisons are case-insensitive but require full equality, not substring.
  */
-function matchKeys(label, row) {
-  const needle = String(label).trim().toLowerCase();
-  const key = Object.keys(row).find((k) =>
-    k.trim().toLowerCase().includes(needle)
-  );
+function matchKeys(column, label, row) {
+  const colNeedle = String(column).trim().toLowerCase();
+  const keys = Object.keys(row);
+  let key = keys.find((k) => k.trim().toLowerCase() === colNeedle);
+  if (key === undefined && label && label !== column) {
+    const labelNeedle = String(label).trim().toLowerCase();
+    key = keys.find((k) => k.trim().toLowerCase() === labelNeedle);
+  }
   return key !== undefined ? row[key] : undefined;
 }
 
@@ -247,7 +251,7 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
 
     dict.forEach((d) => {
       const isInferred = d.column.startsWith('??');
-      const value = matchKeys(d.label, row);
+      const value = matchKeys(d.column, d.label, row);
 
       if (value !== undefined || isInferred) {
         const attributeId = generateAttributeId(sampleId, d.column);
