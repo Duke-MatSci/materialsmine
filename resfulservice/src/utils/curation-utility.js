@@ -359,7 +359,8 @@ function pick(obj, path, fallback = undefined) {
 const toArray = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const asDecimal = (v) =>
   v == null || v === '' ? undefined : Number.isFinite(+v) ? +v : undefined;
-const mapUnit = (u) => (u ? UNIT_IRI[String(u).trim()] || null : null);
+const mapUnit = (u) =>
+  u ? UNIT_IRI[String(u).trim().toLowerCase()] || null : null;
 
 /* ------------------------ Value helpers ------------------------ */
 const litStr = (v) =>
