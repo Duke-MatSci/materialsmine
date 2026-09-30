@@ -269,7 +269,7 @@ function generateAttributes(csvRows, dict, npId, fileOffset) {
         }
 
         // sio:hasRole
-        if (d.role) attr['sio:hasRole'] = d.role;
+        if (d.role) attr['sio:hasRole'] = { '@id': d.role };
 
         // sio:inRelationTo or custom relation
         if (d.inRelationTo) {
