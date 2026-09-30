@@ -737,6 +737,17 @@ function prepareForValidation(doc) {
 }
 
 module.exports = {
+  xlsxFileReader: exports.xlsxFileReader,
+  isTifFile: exports.isTifFile,
+  xmlGenerator: exports.xmlGenerator,
+  jsonGenerator: exports.jsonGenerator,
+  jsonSchemaGenerator: exports.jsonSchemaGenerator,
+  jsonSchemaToXsdGenerator: exports.jsonSchemaToXsdGenerator,
+  parseCSV: exports.parseCSV,
+  generateCSVData: exports.generateCSVData,
+  parseXSDFile: exports.parseXSDFile,
+  unZipFolder: exports.unZipFolder,
+  readFolder: exports.readFolder,
   extractBareDOI,
   toDoiIri,
   fetchPaperDetails,
