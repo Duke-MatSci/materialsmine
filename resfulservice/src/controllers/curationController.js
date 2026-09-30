@@ -2569,8 +2569,13 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
 };
 
 exports.deleteDataset = async (req, res, next) => {
-  const { logger } = req;
+  const { logger, user } = req;
   logger.info('deleteDataset(): Function Entry');
+
+  if (user?.roles !== userRoles.isAdmin) {
+    return next(errorWriter(req, 'Admin access required', 'deleteDataset', 403));
+  }
+
   const { id } = req.params;
 
   if (!id) {
