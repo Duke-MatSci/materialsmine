@@ -153,12 +153,26 @@ async function fetchAndStoreRemoteFile(url, logger) {
 }
 
 /**
- * Pre-process CSV rows to resolve file references.
- * Scans dict rows for format values of 'file', 'folder', or 'url'.
- * Replaces raw cell values with resolved reference objects:
- *   { __fileRef: true, files: [{ url, name, isImage }] }
+ * Find a distribution entry whose label ends with the given filename.
+ * Upload middleware prepends a unique prefix (e.g. "random-timestamp-filename.ext"),
+ * so we match by suffix to find the original file.
  */
-async function resolveFileReferences(csvRows, dict, logger) {
+function findDistributionEntry(filename, distEntries) {
+  const needle = filename.toLowerCase();
+  return distEntries.find((entry) => {
+    const label = (entry['rdfs:label'] || '').toLowerCase();
+    return label === needle || label.endsWith(`-${needle}`);
+  });
+}
+
+/**
+ * Pre-process CSV rows to resolve file references.
+ * Scans dict rows for format values of 'file' or 'url'.
+ * For 'file', matches the CSV cell value against distribution entries by suffix.
+ * Replaces raw cell values with resolved reference objects:
+ *   { __fileRef: true, files: [{ url, name, schemaType }] }
+ */
+async function resolveFileReferences(csvRows, dict, distEntries, logger) {
   const fileColumns = dict.filter(
     (d) => d.format && FILE_FORMATS.has(d.format.toLowerCase())
   );
@@ -180,17 +194,18 @@ async function resolveFileReferences(csvRows, dict, logger) {
 
       try {
         if (fmt === 'file') {
-          const exists = await objectExists(raw);
-          if (!exists) {
+          const entry = findDistributionEntry(raw, distEntries);
+          if (!entry) {
             logger.warn(
-              `[sdd-serializer] File not found in object store: ${raw}`
+              `[sdd-serializer] File "${raw}" not found in distribution entries`
             );
+            continue;
           }
+          const url = entry['@id'];
+          const name = entry['rdfs:label'] || raw;
           row[colKey] = {
             __fileRef: true,
-            files: [
-              { url: buildFileUrl(raw), name: raw, schemaType: fileSchemaType(raw) }
-            ]
+            files: [{ url, name: raw, schemaType: fileSchemaType(raw) }]
           };
         } else if (fmt === 'url') {
           const { objectName, originalName } =
@@ -510,7 +525,7 @@ function generateAttributes(
       const isInferred = d.column.startsWith('??');
       const value = isInferred ? undefined : matchKeys(d.column, d.label, row);
 
-      if (value === undefined && !isInferred) return;
+      if ((value === undefined || value === '') && !isInferred) return;
 
       const nodeId =
         d.template && !isInferred
@@ -683,10 +698,14 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     `[sdd-serializer] Total CSV rows: ${allCsvRows.length}, dict rows: ${dictRows.length}`
   );
 
-  // 3. Resolve file references (file, folder, url format columns)
+  // 3. Resolve file references (file, url format columns)
+  const distArr =
+    distributionLd?.['mm:hasDistribution']?.['dcat:distribution'] || [];
+  const distEntries = Array.isArray(distArr) ? distArr : [distArr];
   const resolvedCsvRows = await resolveFileReferences(
     allCsvRows,
     dictRows,
+    distEntries,
     logger
   );
 
@@ -737,5 +756,6 @@ module.exports = {
   getInferredValues,
   matchKeys,
   matchDictToHeaders,
-  resolveFileReferences
+  resolveFileReferences,
+  findDistributionEntry
 };
