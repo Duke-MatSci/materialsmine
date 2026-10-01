@@ -151,7 +151,8 @@
                 <p>
                   Every error value must be greater than 0. Error columns set the fit
                   weights (1/σ), and the setting below becomes an Error Scale that
-                  multiplies them. They are not drawn as error bars.
+                  multiplies them. They are not drawn on the data points, but they
+                  feed the ±1σ bands drawn around the fit.
                 </p>
               </div>
             </template>
