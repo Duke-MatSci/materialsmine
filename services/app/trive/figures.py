@@ -16,6 +16,10 @@ import plotly.graph_objects as go
 from .prony import compute_complex, compute_relaxation_modulus
 from .shift import hybrid_shift, wlf_log10_shift
 from .tts import MAX_ABS_LOG10_SHIFT
+from .uncertainty import (
+    _SIGMA_DISPLAY_CAP, complex_modulus_sigma, relaxation_sigma,
+    sigma_log_coefficients, spectrum_error_bars,
+)
 
 
 # Experiment traces with more rows than this are thinned before plotting —
@@ -187,6 +191,95 @@ def _place_tan_delta_axis(fig) -> None:
     fig.update_yaxes(side='right', col=2)
     fig.update_layout(legend_x=1.10)
 
+# Legend name of the +-1 sigma credible ribbons, and their fill opacity.
+_CREDIBLE_BAND = '±1σ credible'
+_BAND_ALPHA = 0.25
+
+
+def _rgba(color: str, alpha: float) -> str:
+    """'#rrggbb' or 'rgb(r,g,b)' as an rgba() string with the given alpha."""
+    color = color.strip()
+    if color.startswith('#') and len(color) == 7:
+        r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+        return f'rgba({r},{g},{b},{alpha})'
+    if color.startswith('rgb(') and color.endswith(')'):
+        return f'rgba({color[4:-1]},{alpha})'
+    return color
+
+
+def _trace_line_color(fig, name_fragment: str) -> str:
+    """Line color of the first trace whose name contains the fragment."""
+    return next(t.line.color for t in fig.data
+                if name_fragment in (t.name or ''))
+
+
+def _band_pair(x, y, sigma, log_y: bool, xaxis: str, yaxis: str,
+               name: str, fillcolor: str, showlegend: bool) -> tuple:
+    """
+    The (lower, upper) go.Scatter edges of a +-1 sigma ribbon around y.
+
+    sigma is capped at y (e^cap - 1) so a poorly constrained tail cannot
+    blow up a log axis. On log panels the lower edge y^2 / (y + capped sigma)
+    is positive and log-symmetric with the upper; linear panels use
+    max(y - sigma, 0).
+
+    Returns:
+        tuple: (lower, upper); upper fills to the trace before it.
+    """
+    y = np.asarray(y, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    capped = np.minimum(sigma, y * np.expm1(_SIGMA_DISPLAY_CAP))
+    upper = y + capped
+    lower = y * y / (y + capped) if log_y else np.maximum(y - sigma, 0.0)
+    common = dict(x=x, mode='lines', line=dict(width=0), hoverinfo='skip',
+                  name=name, legendgroup=name, xaxis=xaxis, yaxis=yaxis)
+    return (go.Scatter(y=lower, showlegend=False, **common),
+            go.Scatter(y=upper, fill='tonexty', fillcolor=fillcolor,
+                       showlegend=showlegend, **common))
+
+
+def _prepend_ribbons(fig, ribbons, name: str, color: str) -> None:
+    """
+    Draw ribbons under every existing trace of fig, one legend entry in all.
+
+    Parameters:
+        fig: Figure to draw on.
+        ribbons: (x, y, sigma, log_y, xaxis, yaxis) tuples, one per ribbon.
+        name (str): Legend name and legendgroup of the ribbons.
+        color (str): Base color; filled at _BAND_ALPHA.
+    """
+    fill = _rgba(color, _BAND_ALPHA)
+    traces = []
+    for k, (x, y, sigma, log_y, xaxis, yaxis) in enumerate(ribbons):
+        traces.extend(_band_pair(x, y, sigma, log_y, xaxis, yaxis,
+                                 name, fill, showlegend=k == 0))
+    if not traces:
+        return
+    # plotly takes new traces only by appending; rotate them to the front.
+    fig.add_traces(traces)
+    n = len(traces)
+    fig.data = fig.data[-n:] + fig.data[:-n]
+
+
+def _prony_trace(fig, xaxis: str):
+    """The Prony overlay trace on the given x axis."""
+    return next(t for t in fig.data
+                if 'Term Prony' in (t.name or '') and t.xaxis == xaxis)
+
+
+def _add_complex_ribbons(fig, col2_key: str, col2_log: bool, tau_i, E_i,
+                         covariance) -> None:
+    """Credible ribbons under the Prony curve in both facets of fig."""
+    ribbons = []
+    for xaxis, yaxis, key, log_y in (('x', 'y', 'E Storage', True),
+                                     ('x2', 'y2', col2_key, col2_log)):
+        curve = _prony_trace(fig, xaxis)
+        x = np.asarray(curve.x, dtype=float)
+        sigma = complex_modulus_sigma(x, tau_i, E_i, covariance)[key]
+        ribbons.append((curve.x, curve.y, sigma, log_y, xaxis, yaxis))
+    _prepend_ribbons(fig, ribbons, _CREDIBLE_BAND,
+                     _trace_line_color(fig, 'Term Prony'))
+
 
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
@@ -244,7 +337,7 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
 
 
 def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
-                           N_nz: int) -> tuple:
+                           N_nz: int, covariance=None) -> tuple:
     """
     Build E vs frequency and tan-delta vs frequency figures with Prony overlay.
 
@@ -256,6 +349,8 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         N_nz (int): Number of nonzero DECAYING Prony coefficients, i.e. the
             equilibrium term excluded; used in trace names. Matches the row
             count of the coefficient table _build_coef_records returns.
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; when given, both figures carry +-1 sigma credible ribbons.
 
     Returns:
         tuple: (fig1, fig11) where fig1 is E' / E'' vs Frequency and fig11 is
@@ -310,6 +405,10 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     fig11.update_yaxes(matches=None, showticklabels=True)
     fig11.update_yaxes(type="log", col=1)
     _place_tan_delta_axis(fig11)
+    if covariance is not None:
+        _add_complex_ribbons(fig1, 'E Loss', True, tau_i, E_i, covariance)
+        _add_complex_ribbons(fig11, 'tan delta', False, tau_i, E_i,
+                             covariance)
     for fig in (fig1, fig11):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
@@ -317,7 +416,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
 
 
 def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
-                              fit_settings: bool) -> tuple:
+                              fit_settings: bool, covariance=None) -> tuple:
     """
     Build relaxation-modulus and discrete-spectrum figures.
 
@@ -330,6 +429,9 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
             both figures.
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation-modulus figure; if False, return only its line trace.
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; when given, E(t) carries a +-1 sigma credible ribbon and
+            the spectrum dots carry error bars.
 
     Returns:
         tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus
@@ -405,6 +507,20 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
 
     if not fit_settings:
         fig2 = fig2a
+
+    if covariance is not None:
+        curve = _prony_trace(fig2, 'x')
+        sigma = relaxation_sigma(np.asarray(curve.x, dtype=float),
+                                 tau_i, E_i, covariance)
+        _prepend_ribbons(fig2, [(curve.x, curve.y, sigma, True, 'x', 'y')],
+                         _CREDIBLE_BAND, _trace_line_color(fig2, 'Term Prony'))
+        n = len(tau_i)
+        plus, minus = spectrum_error_bars(
+            E_i[-n:], sigma_log_coefficients(covariance)[-n:])
+        fig3.update_traces(
+            error_y=dict(type='data', symmetric=False,
+                         array=plus, arrayminus=minus),
+            selector=dict(name=f"{N_nz}-Term Prony"))
 
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')
