@@ -7,6 +7,8 @@ the exact QR compression, `objective` for the penalized loss, `quality` for the
 score — and owns the two decisions that need all four in view: how the
 user-facing smoothness knob is normalized, and how the equilibrium modulus is
 kept out of the Newton solver's search (`_PlateauProjectedProblem`).
+It also bounds that search: a stalled or diverging solve becomes a ValueError
+naming the remedy (`SmoothPronyFitTimeout`, `SmoothPronyFitDiverged`).
 """
 
 import contextlib
@@ -23,6 +25,8 @@ from .quality import _FitQuality, _prony_fit_quality
 
 
 # Wall-clock budget for the Newton solve, in seconds; read at call time.
+# Policy, not only a hang guard: a fit slower than this is rejected with a
+# remedy rather than left to finish, even if it would have converged.
 _NEWTON_TIME_BUDGET = 1.0
 
 # Shift added to the diagonal of the SOLVER's Hessian, in ulps of its largest
@@ -246,6 +250,11 @@ def smooth_prony_fit(
     (an unbounded `while True` in scipy that maxiter cannot cap) while BFGS
     overflowed to NaN. Do not reintroduce it.
 
+    The flat seed does not make that loop unreachable: an exactly-zero
+    Hessian eigenvalue still cycles it. So the solver's Hessian (not the
+    scored one) carries a rounding-level diagonal shift (_shifted_hessian),
+    and the solve runs under _newton_watchdog with _NEWTON_TIME_BUDGET.
+
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
         E_stor (numpy.ndarray): 1-D array of storage-modulus values, same
@@ -288,6 +297,12 @@ def smooth_prony_fit(
         converged on), and quality.curvature is None on the unsmoothed path,
         where the NNLS active set makes log-coefficients (and so their
         roughness) undefined.
+
+    Raises:
+        SmoothPronyFitTimeout: the Newton solve outran _NEWTON_TIME_BUDGET.
+        SmoothPronyFitDiverged: scipy raised a ValueError inside the solve.
+        Both are ValueErrors whose message names the grid size N and the
+        remedy, so the routes answer them with a 400.
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"

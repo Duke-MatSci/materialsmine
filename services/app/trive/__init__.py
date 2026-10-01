@@ -16,7 +16,8 @@ bottom-up:
     quality      scoring a converged fit: reduced chi-squared, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness
     fit          smooth_prony_fit — composes the four above into the single
-                 call that turns data into (tau_i, E_i)
+                 call that turns data into (tau_i, E_i), failing fast with
+                 a remedy when the Newton solve stalls
 
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift
