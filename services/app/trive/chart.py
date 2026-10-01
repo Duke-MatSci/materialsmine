@@ -16,11 +16,12 @@ from app.utils.util import log_errors
 
 from .prony import prony_terms_for_span
 from .fit import smooth_prony_fit
-from .reduction import prony_rank_limit
+from .reduction import prony_rank_limit, prony_resolution
 from .tts import tts_frequency_to_temperature_V2, tts_temperature_to_frequency_V2
 from .figures import (
     _annotate_decimation,
     _annotate_fit_quality,
+    _annotate_grid_suggestion,
     _build_coef_records,
     _build_complex_figures,
     _build_relaxation_figures,
@@ -329,6 +330,13 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     # decimation notice stacks above it. See _stamp_notice.
     _annotate_fit_quality((fig1, fig11), fit_quality)
     _annotate_decimation((fig1, fig11), freq_decimation)
+    resolution = prony_resolution(
+        omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
+        tau_i, E_i, smoothness, std_scale=std_scale)
+    if resolution is not None:
+        resolution = int(round(resolution))
+    _annotate_grid_suggestion((fig1, fig11), len(tau_i), resolution,
+                              max_prony)
     fig2, fig3 = _build_relaxation_figures(
         tau_i, E_i, N_nz, fit_settings, fit_quality.covariance)
     coef_records = _build_coef_records(tau_i, E_i, fit_quality.covariance)

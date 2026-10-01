@@ -8,6 +8,8 @@ Presentation only — nothing here changes a number the fit produced. `chart`
 orchestrates the calls; the figures go out as JSON via the route.
 """
 
+import math
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -129,6 +131,34 @@ def _annotate_decimation(figs, percent) -> None:
     _stamp_notice(figs, (
         f"too many data points, plot traces decimated by {percent}% for speed"
         " (the fit uses all points)"
+    ))
+
+
+def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
+    """
+    Suggest a finer relaxation grid when the data resolves more terms than
+    were requested.
+
+    Suggests min(max_prony, ceil(1.5 * resolution)): a grid needs nodes
+    around each resolved direction to place it, and past the numerical rank
+    extra nodes are redundant. No-op when either count is None, when the
+    request already meets the resolution, or when the cap leaves nothing to
+    raise. Stamped last, so it takes the top row.
+
+    Parameters:
+        figs: Iterable of plotly Figures to annotate.
+        requested_n (int): The Prony term count the fit ran with.
+        resolution (int or None): reduction.prony_resolution, rounded.
+        max_prony (int or None): The numerical-rank cap on the grid size.
+    """
+    if resolution is None or max_prony is None or requested_n >= resolution:
+        return
+    n_suggest = min(int(max_prony), int(math.ceil(1.5 * resolution)))
+    if n_suggest <= requested_n:
+        return
+    _stamp_notice(figs, (
+        "if the error profile is accurate, the data can support more terms;"
+        f" try a relaxation grid size of {n_suggest}"
     ))
 
 

@@ -16,7 +16,11 @@ import hashlib
 from collections import OrderedDict
 
 import numpy as np
+from scipy.linalg import cho_solve
+from scipy.optimize import nnls
 
+from .objective import (
+    _add_penalty_inplace, _penalty_trace, _scaled_smoothness)
 from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
 
 
@@ -167,6 +171,22 @@ def _prony_reduce(
     return reduced[0] / std_scale, reduced[1] / std_scale
 
 
+def _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, solid,
+                  std_scale):
+    """
+    The probe grid (_RANK_PROBE_TERMS log-spaced tau over the data window)
+    and its reduction. Shared so every probe consumer hits one cache entry.
+
+    Returns:
+        tuple: (tau_probe, R, z) as _prony_reduce returns R and z.
+    """
+    tau = prony_relaxation_space(
+        1 / np.max(omega), 1 / np.min(omega), _RANK_PROBE_TERMS)
+    R, z = _prony_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                         tau, solid, std_scale)
+    return tau, R, z
+
+
 def prony_rank_limit(
         omega: np.ndarray,
         E_stor: np.ndarray,
@@ -196,11 +216,114 @@ def prony_rank_limit(
     Returns:
         int: the rank, clipped to [1, PRONY_TERMS_MAX].
     """
-    tau = prony_relaxation_space(
-        1 / np.max(omega), 1 / np.min(omega), _RANK_PROBE_TERMS)
-    R, _ = _prony_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                         tau, solid, std_scale)
+    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                            solid, std_scale)
     sigma = np.linalg.svd(R, compute_uv=False)
     eps = np.finfo(np.result_type(E_stor, E_loss)).eps
     rank = int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])) - bool(solid)
     return min(max(rank, 1), PRONY_TERMS_MAX)
+
+
+def prony_noise_ceiling(
+        omega: np.ndarray,
+        E_stor: np.ndarray,
+        E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
+        solid: bool = True,
+        std_scale: float = 1.0,
+) -> int:
+    """
+    Probe singular directions the stated error determines to better than the
+    modulus scale: sigma_k * max(E_stor) > 1. A smoothness-free ceiling on
+    what any smoothed fit can leave to the data.
+
+    Parameters:
+        As prony_rank_limit.
+
+    Returns:
+        int: the count, unclipped, equilibrium column included.
+    """
+    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                            solid, std_scale)
+    sigma = np.linalg.svd(R, compute_uv=False)
+    return int(np.count_nonzero(sigma * np.max(E_stor) > 1.0))
+
+
+def prony_resolution(
+        omega: np.ndarray,
+        E_stor: np.ndarray,
+        E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
+        tau_i: np.ndarray,
+        E_i: np.ndarray,
+        smoothness: float,
+        solid: bool = True,
+        std_scale: float = 1.0,
+):
+    """
+    How many relaxation terms a dense grid would resolve at this smoothing.
+
+    With smoothness 0 this is the NNLS active-set size on the probe grid.
+    Otherwise it is the effective parameter count
+    gamma = N_probe - lam * tr(L.T L inv(H)) of the smoothed problem
+    linearized at the given fit, its spectrum resampled onto the probe grid.
+    The fit's own effective count is bounded by its term count; this one is
+    not, so it can say when the data supports more terms than were asked for.
+
+    Parameters:
+        omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
+            data and per-point standard deviations, as the fit receives them.
+        tau_i (numpy.ndarray): The fit's relaxation grid, ascending.
+        E_i (numpy.ndarray): The fitted coefficients, equilibrium first when
+            solid.
+        smoothness (float): The knob the fit ran with.
+        solid (bool): Whether the fit carried an equilibrium term.
+        std_scale (float): As passed to smooth_prony_fit.
+
+    Returns:
+        float or None: the resolution in terms; None when it is undefined
+        (fewer than two fit nodes, non-positive coefficients, or a probe
+        Hessian that is not positive definite).
+    """
+    tau_probe, R, z = _probe_reduce(omega, E_stor, E_loss, E_stor_std,
+                                    E_loss_std, solid, std_scale)
+    n_probe = len(tau_probe)
+    if not smoothness:
+        coefs, _ = nnls(R, z)
+        return float(np.count_nonzero(coefs[int(solid):] > 0))
+
+    if len(tau_i) < 2:
+        return None
+    E_dec = np.asarray(E_i)[len(E_i) - len(tau_i):]
+    if not (np.all(np.isfinite(E_dec)) and np.all(E_dec > 0)):
+        return None
+    m_probe = n_probe + solid
+    R = R[:m_probe]
+    log_tau_fit, log_tau_probe = np.log(tau_i), np.log(tau_probe)
+    h_fit = (log_tau_fit[-1] - log_tau_fit[0]) / (len(tau_i) - 1)
+    h_probe = (log_tau_probe[-1] - log_tau_probe[0]) / (n_probe - 1)
+    # Coefficient per node tracks node spacing, preserving the summed modulus.
+    c = np.exp(np.interp(log_tau_probe, log_tau_fit, np.log(E_dec))
+               + np.log(h_probe / h_fit))
+    has_eq = bool(solid and len(E_i) == len(tau_i) + 1 and E_i[0] > 0)
+    if has_eq:
+        c = np.concatenate(([E_i[0]], c))
+    elif solid:
+        R = R[:, 1:]
+    log_range = log_tau_probe[-1] - log_tau_probe[0]
+    lam = _scaled_smoothness(
+        smoothness, n_probe, 2 * len(omega) - m_probe, log_range) ** 2
+    # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
+    H = (R.T @ R) * c * c[:, None]
+    _add_penalty_inplace(H, lam, has_eq)
+    if not np.all(np.isfinite(H)):
+        return None
+    try:
+        chol = np.linalg.cholesky(H)
+    except np.linalg.LinAlgError:
+        return None
+    sigma = cho_solve((chol, True), np.eye(len(c)))
+    gamma = n_probe - lam * _penalty_trace(sigma, has_eq)
+    return float(gamma) if np.isfinite(gamma) else None

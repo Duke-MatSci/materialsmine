@@ -63,7 +63,11 @@ from .prony import (  # noqa: E402
     prony_relaxation_space,
     prony_terms_for_span,
 )
-from .reduction import prony_rank_limit  # noqa: E402
+from .reduction import (  # noqa: E402
+    prony_noise_ceiling,
+    prony_rank_limit,
+    prony_resolution,
+)
 from .shift import (  # noqa: E402
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
@@ -101,7 +105,9 @@ __all__ = [
     'inverse_wlf_shift',
     'peak_edge_warning',
     'prony_basis',
+    'prony_noise_ceiling',
     'prony_rank_limit',
+    'prony_resolution',
     'prony_relaxation_space',
     'prony_terms_for_span',
     'smooth_prony_fit',
