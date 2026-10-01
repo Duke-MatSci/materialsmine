@@ -65,6 +65,12 @@
           that each point is weighted by σ = (relative error ÷ 100) × |E*|.
           Either way the errors are read as standard deviations, so the posterior is ∝ exp(−V/2)
           with V = χ<sup>2</sup> + λ·Σ(second differences of ln E<sub>i</sub>)<sup>2</sup>.
+          The fit readout's <em>misfit</em> (χ<sup>2</sup>/ν) uses a different ν from λ's: it
+          divides χ<sup>2</sup> by the data values fitted minus the parameters the data actually
+          determined. With smoothing on, that parameter count is an effective one, smaller than
+          the number of Prony terms, because the smoothing rather than the data fixes the rest;
+          with smoothing off, it is the number of nonzero coefficients. So once the relaxation
+          grid is fine enough to resolve your data, the misfit stops changing with the grid size.
           The fit readout's <em>surprisal</em> is −log π(s<sup>2</sup>): lower is better, and the
           s<sup>2</sup> minimizing it is the smoothness the evidence prefers.
         </p>
