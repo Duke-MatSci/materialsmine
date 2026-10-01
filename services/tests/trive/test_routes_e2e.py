@@ -306,6 +306,21 @@ class TestExtractRoute(unittest.TestCase):
         self.assertLessEqual(response['max_prony'], 100)
         self.assertNotIn('noise_prony', response)
 
+    def test_coarse_grid_extract_suggests_a_finer_grid(self):
+        """A coarse grid's complex-modulus chart JSON carries the grid-size
+        suggestion; the noise ceiling behind it stays server-side."""
+        resp = self._post(self._freq_body(
+            number_of_prony=6, smoothness=0.3, relative_error=0.01))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        texts = [a.get('text', '') for a in
+                 response['complex-chart']['layout'].get('annotations', [])]
+        self.assertTrue(any(
+            t.startswith('if the error profile is accurate, the data can '
+                         'support more terms; try a relaxation grid size of ')
+            for t in texts), texts)
+        self.assertEqual([k for k in response if 'noise' in k], [])
+
     def test_smoothed_extract_carries_credible_ribbons(self):
         """A smoothed fit's chart JSON carries the +-1 sigma ribbons."""
         resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))

@@ -16,7 +16,7 @@ import sys
 from unittest import mock
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize, minimize_scalar
+from scipy.optimize import minimize, minimize_scalar, nnls
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -2861,6 +2861,234 @@ class TestMisfitPerEffectiveDegreeOfFreedom(unittest.TestCase):
         rr = resid @ resid
         self.assertAlmostEqual(quality.chi2_reduced * (n_resid - (N + 1)),
                                rr, delta=1e-8 * rr)
+
+
+def _probe_tau(omega):
+    """The rank probe's relaxation grid, rebuilt from its definition."""
+    return prony_relaxation_space(
+        1 / omega.max(), 1 / omega.min(), reduction._RANK_PROBE_TERMS)
+
+
+def _dense_probe_gamma(omega, E_stor, E_loss, std, std_scale, tau_i, E_i,
+                       smoothness, solid):
+    """prony_resolution's smoothed definition, built densely from the basis:
+    the fit resampled onto the probe (log-linear in log tau, times
+    h_probe / h_fit), Gauss-Newton Hessian plus lam' L.T L, and
+    gamma = N_probe - lam' tr(L.T L inv(H)). The equilibrium column is kept
+    only when E_i[0] > 0."""
+    tau_p = _probe_tau(omega)
+    n_probe = len(tau_p)
+    weights = std_scale * np.concatenate((std, std))
+    basis = prony_basis(omega, tau_p, solid) / weights[:, None]
+    log_fit, log_probe = np.log(tau_i), np.log(tau_p)
+    h_fit = (log_fit[-1] - log_fit[0]) / (len(tau_i) - 1)
+    h_probe = (log_probe[-1] - log_probe[0]) / (n_probe - 1)
+    E_dec = E_i[len(E_i) - len(tau_i):]
+    c = np.exp(np.interp(log_probe, log_fit, np.log(E_dec))) * h_probe / h_fit
+    keep_eq = bool(solid and E_i[0] > 0)
+    if keep_eq:
+        c = np.concatenate(([E_i[0]], c))
+    elif solid:
+        basis = basis[:, 1:]
+    J = basis * c
+    L = np.zeros((n_probe - 2, len(c)))
+    for k in range(n_probe - 2):
+        L[k, keep_eq + k:keep_eq + k + 3] = (1.0, -2.0, 1.0)
+    lam = _scaled_smoothness(
+        smoothness, n_probe, 2 * len(omega) - (n_probe + solid),
+        log_probe[-1] - log_probe[0]) ** 2
+    H = J.T @ J + lam * L.T @ L
+    return n_probe - lam * np.trace(L.T @ L @ np.linalg.inv(H))
+
+
+class TestPronyNoiseCeiling(unittest.TestCase):
+    """reduction.prony_noise_ceiling: the number of probe singular values
+    sigma_k with sigma_k * max(E_stor) > 1. Server-side only; it bounds the
+    resolution counts the grid suggestion is built on."""
+
+    def setUp(self):
+        reduction._REDUCE_CACHE.clear()
+
+    def test_counts_probe_singular_values_above_one_over_the_peak_storage(
+            self):
+        omega, E_stor, E_loss, sigma = _bundled_master_curve(
+            'agilus30-20C_mastercurve.tsv')
+        for std_scale in (0.01, 0.05):
+            with self.subTest(std_scale=std_scale):
+                ceiling = reduction.prony_noise_ceiling(
+                    omega, E_stor, E_loss, sigma, sigma,
+                    std_scale=std_scale)
+                R, _ = _prony_reduce(omega, E_stor, E_loss, sigma, sigma,
+                                     _probe_tau(omega), True, std_scale)
+                singular = np.linalg.svd(R, compute_uv=False)
+                self.assertIs(type(ceiling), int)
+                self.assertEqual(
+                    ceiling,
+                    int(np.count_nonzero(singular * E_stor.max() > 1)))
+
+    def test_moves_with_the_error_level_unlike_the_rank_cap(self):
+        omega, E_stor, E_loss, sigma = _bundled_master_curve(
+            'agilus30-20C_mastercurve.tsv')
+        tight, loose = (
+            reduction.prony_noise_ceiling(
+                omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
+            for rel in (0.01, 0.05))
+        self.assertGreater(tight, loose)
+
+    def test_bounds_resolution_and_effective_terms_on_bundled_curves(self):
+        """An empirical consistency bound, not a theorem: on every bundled
+        master curve, prony_resolution and the fit's effective_terms stay at
+        or below the ceiling, at the default grid and at the rank cap."""
+        # The ceiling is the count under an isotropic prior at the scale of
+        # max(E_stor); the smoothing prior and NNLS positivity are the more
+        # informative ones on these files.
+        for name in BUNDLED_MASTER_CURVES:
+            omega, E_stor, E_loss, sigma = _bundled_master_curve(name)
+            for rel in (0.01, 0.05):
+                ceiling = reduction.prony_noise_ceiling(
+                    omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
+                cap = reduction.prony_rank_limit(
+                    omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
+                for smoothness in (0.0, 0.1, 0.3, 1.0):
+                    for N in (prony_terms_for_span(omega), cap):
+                        with self.subTest(file=name, rel=rel,
+                                          smoothness=smoothness, N=N):
+                            tau_i, E_i, quality = smooth_prony_fit(
+                                omega, E_stor, E_loss, sigma, sigma, N,
+                                smoothness, return_fit_quality=True,
+                                std_scale=rel)
+                            resolution = reduction.prony_resolution(
+                                omega, E_stor, E_loss, sigma, sigma,
+                                tau_i, E_i, smoothness, std_scale=rel)
+                            self.assertIsNotNone(resolution)
+                            self.assertLessEqual(resolution, ceiling)
+                            if quality.effective_terms is not None:
+                                self.assertLessEqual(
+                                    quality.effective_terms, ceiling)
+
+    def test_exported_from_the_package(self):
+        import app.trive as trive
+        self.assertIs(trive.prony_noise_ceiling,
+                      reduction.prony_noise_ceiling)
+        self.assertIs(trive.prony_resolution, reduction.prony_resolution)
+
+
+class TestPronyResolution(unittest.TestCase):
+    """reduction.prony_resolution: how many relaxation terms a dense grid
+    would resolve from the data. Unsmoothed, the probe grid's NNLS active
+    set; smoothed, MacKay's gamma for the fit linearized onto the probe."""
+
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    RELATIVE_ERROR = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        with mock.patch.object(Config, 'FILES_DIRECTORY', TRIVE_FILES_DIR):
+            upload = upload_init(cls.FILE, 'frequency')
+        cls.omega = upload['Frequency']
+        cls.E_stor, cls.E_loss = upload['E Storage'], upload['E Loss']
+        cls.sigma = np.abs(cls.E_stor + 1.0j * cls.E_loss)
+        cls._fits = {}
+
+    def setUp(self):
+        reduction._REDUCE_CACHE.clear()
+
+    def _fit(self, N, smoothness, solid=True):
+        """(tau_i, E_i, quality) of the file at 1% error, cached."""
+        key = (N, smoothness, solid)
+        if key not in self._fits:
+            self._fits[key] = smooth_prony_fit(
+                self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
+                N, smoothness, solid=solid, return_fit_quality=True,
+                std_scale=self.RELATIVE_ERROR,
+            )
+        return self._fits[key]
+
+    def _resolution(self, tau_i, E_i, smoothness, solid=True):
+        return reduction.prony_resolution(
+            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
+            tau_i, E_i, smoothness, solid=solid,
+            std_scale=self.RELATIVE_ERROR)
+
+    def test_unsmoothed_is_the_probe_nnls_active_set(self):
+        # Decaying terms only: the equilibrium column is not counted.
+        tau_i, E_i, _ = self._fit(6, 0.0)
+        resolution = self._resolution(tau_i, E_i, 0.0)
+        R, z = _prony_reduce(self.omega, self.E_stor, self.E_loss,
+                             self.sigma, self.sigma, _probe_tau(self.omega),
+                             True, self.RELATIVE_ERROR)
+        self.assertIs(type(resolution), float)
+        self.assertEqual(resolution,
+                         float(np.count_nonzero(nnls(R, z)[0][1:])))
+
+    def test_smoothed_is_the_linearized_probe_gamma(self):
+        # Interior equilibrium, the same fit with E_eq set to exactly zero
+        # (synthetic: no bundled fit clamps it here; the column is dropped),
+        # and a solid=False fit.
+        cases = []
+        tau_i, E_i, _ = self._fit(12, 0.3)
+        self.assertGreater(E_i[0], 0)
+        cases.append(('interior', tau_i, E_i, True))
+        clamped = E_i.copy()
+        clamped[0] = 0.0
+        cases.append(('clamped', tau_i, clamped, True))
+        tau_v, E_v, _ = self._fit(12, 0.3, solid=False)
+        cases.append(('viscous', tau_v, E_v, False))
+        for label, tau, E, solid in cases:
+            with self.subTest(case=label):
+                resolution = self._resolution(tau, E, 0.3, solid=solid)
+                expected = _dense_probe_gamma(
+                    self.omega, self.E_stor, self.E_loss, self.sigma,
+                    self.RELATIVE_ERROR, tau, E, 0.3, solid)
+                self.assertIs(type(resolution), float)
+                self.assertAlmostEqual(resolution, expected,
+                                       delta=1e-8 * expected)
+
+    def test_coarse_and_fine_fits_track_the_converged_effective_terms(self):
+        # The point of linearizing on a dense probe: a coarse fit, whose own
+        # gamma is capped by its N, still sees what the rank-cap fit
+        # resolves.
+        cap = reduction.prony_rank_limit(
+            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
+            std_scale=self.RELATIVE_ERROR)
+        for smoothness in (1.0, 0.1):
+            target = self._fit(cap, smoothness)[2].effective_terms
+            for N in (12, 32):
+                with self.subTest(smoothness=smoothness, N=N):
+                    tau_i, E_i, _ = self._fit(N, smoothness)
+                    resolution = self._resolution(tau_i, E_i, smoothness)
+                    self.assertLessEqual(abs(resolution - target),
+                                         0.25 * target)
+
+    def test_shares_the_probe_reduction_with_the_rank_limit(self):
+        tau_i, E_i, _ = self._fit(12, 0.3)
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        reduction.prony_rank_limit(
+            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
+            std_scale=self.RELATIVE_ERROR)
+        with mock.patch.object(np.linalg, 'qr', counting_qr):
+            smoothed = self._resolution(tau_i, E_i, 0.3)
+            unsmoothed = self._resolution(tau_i, E_i, 0.0)
+        self.assertIsNotNone(smoothed)
+        self.assertIsNotNone(unsmoothed)
+        self.assertEqual(calls, [], msg='probe cache miss')
+
+    def test_none_on_degenerate_fits(self):
+        tau_i, E_i, _ = self._fit(12, 0.3)
+        zeroed, nonfinite = E_i.copy(), E_i.copy()
+        zeroed[4] = 0.0
+        nonfinite[4] = np.nan
+        for label, tau, E in (('one node', tau_i[:1], E_i[:2]),
+                              ('zero term', tau_i, zeroed),
+                              ('nan term', tau_i, nonfinite)):
+            with self.subTest(case=label):
+                self.assertIsNone(self._resolution(tau, E, 0.3))
 
 
 def _spin(seconds):

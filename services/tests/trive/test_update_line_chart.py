@@ -15,6 +15,7 @@ import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
 import base64
+import inspect
 import json
 import re
 import numpy as np
@@ -38,6 +39,8 @@ from app.trive.uncertainty import (
     sigma_log_coefficients, spectrum_error_bars,
 )
 import app.trive.reduction as reduction
+import app.trive.figures as figures
+import plotly.graph_objects as go
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -2298,6 +2301,175 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             self.assertTrue(lengths)
             self.assertTrue(all(n_ <= _PLOT_MAX_POINTS for n_ in lengths))
             self.assertEqual(len(self._decimation_notices(fig)), 1)
+
+
+_SUGGESTION = ('if the error profile is accurate, the data can support more '
+               'terms; try a relaxation grid size of ')
+
+
+def _suggestions(fig):
+    """Grid-suggestion captions stamped on fig."""
+    return [a.text for a in fig.layout.annotations
+            if a.text and a.text.startswith(_SUGGESTION)]
+
+
+class TestAnnotateGridSuggestion(unittest.TestCase):
+    """figures._annotate_grid_suggestion(figs, requested_n, resolution,
+    max_prony): caption S = min(max_prony, ceil(1.5 * resolution)) only when
+    the request is below the resolution and S would raise it."""
+
+    def _stamp(self, requested_n, resolution, max_prony):
+        figs = (go.Figure(), go.Figure())
+        figures._annotate_grid_suggestion(
+            figs, requested_n, resolution, max_prony)
+        return figs
+
+    def test_stamps_one_and_a_half_times_the_resolution(self):
+        for requested_n, resolution, max_prony, size in (
+                (10, 20, 100, 30), (4, 7, 100, 11), (19, 20, 100, 30)):
+            with self.subTest(requested_n=requested_n,
+                              resolution=resolution):
+                for fig in self._stamp(requested_n, resolution, max_prony):
+                    self.assertEqual(
+                        [(a.name, a.text) for a in fig.layout.annotations],
+                        [('figure-notice', f'{_SUGGESTION}{size}')])
+
+    def test_cap_limits_the_suggested_size(self):
+        for fig in self._stamp(10, 20, 25):
+            self.assertEqual(_suggestions(fig), [f'{_SUGGESTION}25'])
+
+    def test_silent_when_there_is_nothing_to_suggest(self):
+        for label, args in (
+                ('no resolution', (10, None, 100)),
+                ('no cap', (10, 20, None)),
+                ('request meets resolution', (20, 20, 100)),
+                ('request above resolution', (40, 20, 100)),
+                ('cap equals request', (10, 20, 10)),
+                ('cap below request', (10, 20, 8))):
+            with self.subTest(case=label):
+                for fig in self._stamp(*args):
+                    self.assertEqual(len(fig.layout.annotations), 0)
+
+
+class TestUpdateLineChartGridSuggestion(unittest.TestCase):
+    """update_line_chart stamps the grid suggestion on fig1 and fig11 when
+    the grid the fit ran with is coarser than reduction.prony_resolution,
+    computed from that fit with the fit's own arrays and std_scale."""
+
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    RELATIVE_ERROR = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        cls.uploadData = upload_init(cls.FILE, 'frequency')
+
+    def _run(self, N, smoothness, **kwargs):
+        """(result, the size the caption should suggest) for one call."""
+        fits = []
+
+        def recording_fit(*args, **fit_kwargs):
+            out = smooth_prony_fit(*args, **fit_kwargs)
+            fits.append((fit_kwargs, out))
+            return out
+
+        with patch('app.trive.chart.smooth_prony_fit',
+                   side_effect=recording_fit):
+            result = update_line_chart(
+                self.uploadData, number_of_prony=N, smoothness=smoothness,
+                fit_settings=False, domain='frequency',
+                relative_error=self.RELATIVE_ERROR, **kwargs,
+            )
+        (fit, (tau_i, E_i, _)), = fits
+        resolution = reduction.prony_resolution(
+            fit['omega'], fit['E_stor'], fit['E_loss'],
+            fit['E_stor_std'], fit['E_loss_std'], tau_i, E_i, smoothness,
+            std_scale=fit['std_scale'])
+        size = min(result[9], int(np.ceil(1.5 * round(resolution))))
+        return result, size
+
+    def test_coarse_grid_suggests_a_finer_one_on_both_complex_figures(self):
+        for N in (4, 6):
+            for smoothness in (0.3, 0.0):
+                with self.subTest(N=N, smoothness=smoothness):
+                    result, size = self._run(N, smoothness)
+                    self.assertGreater(size, N)
+                    self.assertLessEqual(size, result[9])
+                    for fig in (result[0], result[1]):
+                        self.assertEqual(_suggestions(fig),
+                                         [f'{_SUGGESTION}{size}'])
+
+    def test_generous_grid_has_no_suggestion(self):
+        cap = self._run(6, 0.0)[0][9]
+        for N in (64, cap):
+            for smoothness in (0.3, 0.0):
+                with self.subTest(N=N, smoothness=smoothness):
+                    result, _ = self._run(N, smoothness)
+                    for fig in (result[0], result[1]):
+                        self.assertEqual(_suggestions(fig), [])
+
+    def test_only_the_complex_figures_carry_it(self):
+        result, _ = self._run(4, 0.3, shift_model='WLF', Tg=30.0,
+                              C1=17.44, C2=51.6)
+        self.assertTrue(_suggestions(result[0]))
+        for index in (2, 3, 4, 5, 7):
+            with self.subTest(figure=index):
+                self.assertEqual(_suggestions(result[index]), [])
+
+    def test_stacks_above_the_fit_quality_readout(self):
+        # It reads the same on every slider move, so like the decimation
+        # notice it takes a row above the readout being watched.
+        fig1 = self._run(4, 0.3)[0][0]
+        notices = [a for a in fig1.layout.annotations
+                   if a.name == 'figure-notice']
+        readout = [a for a in notices if 'lower is better' in a.text]
+        suggestion = [a for a in notices if a.text.startswith(_SUGGESTION)]
+        self.assertEqual((len(readout), len(suggestion)), (1, 1))
+        self.assertGreater(suggestion[0].y, readout[0].y)
+
+    def test_return_shape_is_unchanged(self):
+        result, _ = self._run(4, 0.3)
+        self.assertEqual(len(result), 10)
+        self.assertIs(type(result[9]), int)
+
+    def test_temperature_preview_has_no_suggestion(self):
+        T = np.linspace(0.0, 80.0, 30)
+        result = update_line_chart(
+            {'Temperature': T,
+             'E Storage': np.linspace(1000.0, 10.0, len(T)),
+             'E Loss': np.full(len(T), 50.0)},
+            number_of_prony=2, smoothness=0.0,
+            fit_settings=False, domain='temperature',
+        )
+        for fig in result[:6]:
+            self.assertEqual(_suggestions(fig), [])
+
+    def test_measures_the_grid_the_fit_ran_with(self):
+        # A temperature upload caps the request at the transformed span, so
+        # the suggestion compares against the fit's len(tau_i), not the
+        # number the client sent.
+        T = np.linspace(0.0, 80.0, 13)
+        with patch('app.trive.chart.smooth_prony_fit',
+                   wraps=smooth_prony_fit) as fit, \
+                patch('app.trive.chart._annotate_grid_suggestion') as stamp:
+            result = update_line_chart(
+                {'Temperature': T,
+                 'E Storage': np.linspace(1000.0, 10.0, len(T)),
+                 'E Loss': np.full(len(T), 50.0)},
+                number_of_prony=100, smoothness=0.1,
+                fit_settings=False, domain='temperature',
+                Tg=25.0, C1=17.44, C2=51.6, shift_model='WLF',
+            )
+        N = fit.call_args.kwargs['N']
+        self.assertLess(N, 100)
+        args = inspect.signature(figures._annotate_grid_suggestion).bind(
+            *stamp.call_args.args, **stamp.call_args.kwargs).arguments
+        figs = list(args['figs'])
+        self.assertEqual(len(figs), 2)
+        self.assertIs(figs[0], result[0])
+        self.assertIs(figs[1], result[1])
+        self.assertEqual(args['requested_n'], N)
+        self.assertEqual(args['max_prony'], result[9])
 
 
 if __name__ == '__main__':
