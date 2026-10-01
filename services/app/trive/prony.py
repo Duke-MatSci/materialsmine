@@ -134,7 +134,8 @@ def prony_terms_for_span(omega: np.ndarray) -> int:
 
 
 def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
-                    num_pts: int = 1000) -> pd.DataFrame:
+                    num_pts: int = 1000,
+                    extend_decades: float = 0.0) -> pd.DataFrame:
     """
     Compute the complex modulus on a log-spaced frequency grid.
 
@@ -148,6 +149,8 @@ def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
         E_i (numpy.ndarray): 1-D array of Prony coefficients (same length as
             tau_i, or one longer to include an equilibrium-modulus term).
         num_pts (int): Number of points in the output frequency grid.
+        extend_decades (float): Decades the grid runs past the window on
+            each side; num_pts stays the total count.
 
     Returns:
         pandas.DataFrame: Frame with num_pts rows and columns
@@ -157,7 +160,8 @@ def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
         "tau_i must be a 1-D numpy.ndarray"
     assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
         "E_i must be a 1-D numpy.ndarray"
-    omega = np.logspace(-np.log10(np.max(tau_i)), -np.log10(np.min(tau_i)), num_pts)
+    d = extend_decades
+    omega = np.logspace(-np.log10(np.max(tau_i)) - d, -np.log10(np.min(tau_i)) + d, num_pts)
     basis = prony_basis(omega, tau_i, solid=not (len(E_i) == len(tau_i)))
     complex = basis @ E_i
     real, imag = complex.reshape(2, num_pts)
@@ -166,7 +170,8 @@ def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
 
 
 def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
-                               num_pts: int = 1000) -> pd.DataFrame:
+                               num_pts: int = 1000,
+                               extend_decades: float = 0.0) -> pd.DataFrame:
     """
     Compute the time-domain relaxation modulus on a log-spaced time grid.
 
@@ -180,6 +185,8 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
         E_i (numpy.ndarray): 1-D array of Prony coefficients (same length as
             tau_i, or one longer to include an equilibrium-modulus term).
         num_pts (int): Number of points in the output time grid.
+        extend_decades (float): Decades the grid runs past the window on
+            each side; num_pts stays the total count.
 
     Returns:
         pandas.DataFrame: Frame with num_pts rows and columns "Time", "E".
@@ -188,7 +195,8 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
         "tau_i must be a 1-D numpy.ndarray"
     assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
         "E_i must be a 1-D numpy.ndarray"
-    t = np.logspace(np.log10(np.min(tau_i)), np.log10(np.max(tau_i)), num_pts)
+    d = extend_decades
+    t = np.logspace(np.log10(np.min(tau_i)) - d, np.log10(np.max(tau_i)) + d, num_pts)
     # dimensionless time t/τ
     dt = np.outer(t, 1 / tau_i)
     solid = not (len(E_i) == len(tau_i))

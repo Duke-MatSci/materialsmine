@@ -267,6 +267,52 @@ def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
     fig.data = fig.data[-n:] + fig.data[:-n]
 
 
+# Decades the drawn Prony curves run past the data window on each side.
+# Display only: the series has no terms out there.
+_DRAW_EXTENSION_DECADES = 1.0
+
+# Margin added to each end of a pinned y range, as a fraction of its span.
+_PIN_MARGIN = 0.05
+
+
+def _pin_y_ranges(fig, lo: float, hi: float) -> None:
+    """
+    Set each Prony-carrying y axis's range from its content inside the window.
+
+    The Prony curve is drawn past the window, where its tails would rescale
+    the plot; the range instead brackets the curve, the 'Experiment' data and
+    the ribbon edges at lo <= x <= hi, plus a small margin. Matched axes
+    share their governing axis's range. An axis with no usable values stays
+    on autorange.
+
+    Parameters:
+        fig: Figure carrying the extended Prony overlay.
+        lo (float): Lower x edge of the data window.
+        hi (float): Upper x edge of the data window.
+    """
+    groups = {}
+    for t in fig.data:
+        name = t.name or ''
+        if not (name in ('Experiment', _CREDIBLE_BAND, _PREDICTION_BAND)
+                or ('Term Prony' in name and t.mode != 'markers')):
+            continue
+        axis = fig.layout['yaxis' + (t.yaxis or 'y')[1:]]
+        key = axis.matches or t.yaxis or 'y'
+        x = np.asarray(t.x, dtype=float)
+        y = np.asarray(t.y, dtype=float)
+        keep = (x >= lo) & (x <= hi) & np.isfinite(y)
+        groups.setdefault(key, []).append(y[keep])
+    for key, values in groups.items():
+        axis = fig.layout['yaxis' + key[1:]]
+        y = np.concatenate(values)
+        if axis.type == 'log':
+            y = np.log10(y[y > 0])
+        if y.size == 0 or y.min() == y.max():
+            continue
+        pad = _PIN_MARGIN * (y.max() - y.min())
+        axis.range = [y.min() - pad, y.max() + pad]
+
+
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
     """
     Build E vs Temperature and tan-delta vs Temperature figures.
@@ -345,7 +391,8 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         tuple: (fig1, fig11) where fig1 is E' / E'' vs Frequency and fig11 is
         E' / tan-delta vs Frequency.
     """
-    complex_df = compute_complex(tau_i, E_i)
+    complex_df = compute_complex(tau_i, E_i,
+                                 extend_decades=_DRAW_EXTENSION_DECADES)
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
@@ -414,6 +461,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
                 fig11, [storage, ('x2', 'y2', sig['tan delta'], False)],
                 name, color)
     for fig in (fig1, fig11):
+        _pin_y_ranges(fig, 1 / np.max(tau_i), 1 / np.min(tau_i))
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
     return fig1, fig11
@@ -443,7 +491,8 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         coefficients as dots at (tau_i, E_i) with a horizontal reference line
         at the long-term (equilibrium) modulus when one is present.
     """
-    relax = compute_relaxation_modulus(tau_i, E_i)
+    relax = compute_relaxation_modulus(
+        tau_i, E_i, extend_decades=_DRAW_EXTENSION_DECADES)
     relax["Type"] = f"{N_nz}-Term Prony"
     fig2a = px.line(
         relax, x="Time", y="E",
@@ -523,6 +572,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
                          array=plus, arrayminus=minus),
             selector=dict(name=f"{N_nz}-Term Prony"))
 
+    _pin_y_ranges(fig2, np.min(tau_i), np.max(tau_i))
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
