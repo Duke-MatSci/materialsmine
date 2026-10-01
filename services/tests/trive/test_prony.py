@@ -827,7 +827,8 @@ class TestPronyFitQuality(unittest.TestCase):
         # either way, so the knob passes through rather than dividing by zero.
         self.assertEqual(_scaled_smoothness(0.4, 2, 100, LOG_RANGE), 0.4)
         self.assertEqual(_scaled_smoothness(0.4, 20, 100, 0.0), 0.4)
-        # And the live branch is Eq. 7, lam = smoothness**2 * dof
+        # And the live branch is the smoothness-weight definition,
+        # lam = smoothness**2 * dof
         # * (npen - 1)**3 / log_range**4, with dof floored at 1.
         self.assertAlmostEqual(
             _scaled_smoothness(0.4, 20, 100, LOG_RANGE) ** 2,
@@ -1883,8 +1884,8 @@ def _bundled_master_curve(name):
 
 class TestSmoothnessPerUnitLogTau(unittest.TestCase):
     """The knob weighs misfit per degree of freedom against curvature per unit
-    ln(tau) (Eq. 7 of the manuscript), so one setting means the same thing
-    on master curves of any span."""
+    ln(tau) (the smoothness-weight definition of the manuscript), so one
+    setting means the same thing on master curves of any span."""
 
     RELATIVE_ERROR = 0.01
 

@@ -284,8 +284,8 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     """
     Turn the user-facing smoothness knob into the penalty weight actually used.
 
-    Makes the knob mean the same thing on any upload. The weight is Eq. 7 of
-    the manuscript,
+    Makes the knob mean the same thing on any upload. The weight is the
+    smoothness-weight definition of the manuscript,
 
         lam = smoothness**2 * dof * (npen - 1)**3 / log_range**4
             = smoothness**2 * dof / (h**3 * log_range),
