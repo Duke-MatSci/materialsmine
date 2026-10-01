@@ -7,6 +7,9 @@ O(rows) x O(N) weighted least-squares problem into an (N + 2) x (N + 1)
 triangle, exactly. See `_prony_reduce` for why the residual row is kept, and the
 project README/CLAUDE notes for the benchmark that says not to "simplify" it
 away.
+
+`prony_rank_limit` reuses the reduction on a fixed probe grid to count the
+relaxation terms the data's window can resolve.
 """
 
 import hashlib
@@ -24,10 +27,12 @@ from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
 _QR_CHUNK_ROWS = 8192
 
 # Reduced systems retained by _prony_reduce's LRU cache. Each entry holds only
-# the (m + 1) x (m + 1) triangle — at most ~102 x 102, since the route caps N at
-# 100 — so the cache stays tiny no matter how large the uploads that produced it.
+# the (m + 1) x (m + 1) triangle — at most ~102 x 102 for a fit, since the route
+# caps N at 100, and 110 x 110 for prony_rank_limit's probe — so the cache
+# stays tiny no matter how large the uploads that produced it.
 # Sized for a smoothness sweep, which varies only `smoothness` and can reuse one
-# reduction throughout.
+# reduction throughout; each dataset occupies two slots, its fit grid and the
+# rank probe.
 _REDUCE_CACHE_SIZE = 4
 
 
@@ -198,4 +203,4 @@ def prony_rank_limit(
     sigma = np.linalg.svd(R, compute_uv=False)
     eps = np.finfo(np.result_type(E_stor, E_loss)).eps
     rank = int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])) - bool(solid)
-    return int(min(max(rank, 1), PRONY_TERMS_MAX))
+    return min(max(rank, 1), PRONY_TERMS_MAX)

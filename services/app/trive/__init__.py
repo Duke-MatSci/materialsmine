@@ -12,7 +12,8 @@ bottom-up:
                  curvature its smoothness penalty is built from, and the
                  scaling that makes `smoothness` mesh-independent
     reduction    the chunked QR that compresses the weighted least-squares
-                 problem to O(N) rows, and its content-addressed LRU cache
+                 problem to O(N) rows, and its content-addressed LRU cache;
+                 also the probe-basis rank behind the term-count limit
     quality      scoring a converged fit: reduced chi-squared, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness
     fit          smooth_prony_fit — composes the four above into the single
@@ -57,6 +58,7 @@ from .prony import (  # noqa: E402
     prony_relaxation_space,
     prony_terms_for_span,
 )
+from .reduction import prony_rank_limit  # noqa: E402
 from .shift import (  # noqa: E402
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
@@ -94,6 +96,7 @@ __all__ = [
     'inverse_wlf_shift',
     'peak_edge_warning',
     'prony_basis',
+    'prony_rank_limit',
     'prony_relaxation_space',
     'prony_terms_for_span',
     'smooth_prony_fit',
