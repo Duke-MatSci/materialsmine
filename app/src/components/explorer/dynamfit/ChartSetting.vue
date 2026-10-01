@@ -331,7 +331,9 @@
           coefficient table report how many terms the fit actually kept. After a fit, the
           slider's maximum drops to the number of distinct terms your data's span and precision
           can carry; beyond it, extra terms only duplicate their neighbours and are filled in by
-          the smoothing, not the data.
+          the smoothing, not the data. When the grid is coarser than your data can resolve at
+          the stated error and smoothness, the frequency plots show a note suggesting a larger
+          grid size; that suggestion is only as good as the error you entered.
         </HelpPopover>
       </label>
       <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">

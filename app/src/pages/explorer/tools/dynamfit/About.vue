@@ -71,6 +71,9 @@
           the number of Prony terms, because the smoothing rather than the data fixes the rest;
           with smoothing off, it is the number of nonzero coefficients. So once the relaxation
           grid is fine enough to resolve your data, the misfit stops changing with the grid size.
+          When the grid is coarser than that, the frequency plots carry a note suggesting a
+          larger relaxation grid size; it is worked out from your stated error, so it holds only
+          if that error is right.
           The fit readout's <em>surprisal</em> is −log π(s<sup>2</sup>): lower is better, and the
           s<sup>2</sup> minimizing it is the smoothness the evidence prefers.
         </p>
