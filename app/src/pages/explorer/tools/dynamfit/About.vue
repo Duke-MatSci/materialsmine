@@ -84,6 +84,12 @@
           on E(t) or the spectrum, which are not measured directly.
         </p>
         <p>
+          On a smoothed fit the coefficient table and its CSV download gain two columns,
+          <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
+          in Pa, the same range the error bars on the spectrum plot show. With smoothing off
+          these columns are absent.
+        </p>
+        <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
           three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub> in °C,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
