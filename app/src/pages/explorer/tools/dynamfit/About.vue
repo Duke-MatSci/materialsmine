@@ -78,6 +78,12 @@
           label suggests. With smoothing off there are no bands.
         </p>
         <p>
+          The frequency-domain plots also carry a second, wider ±1σ band in the data's color.
+          This is a prediction interval: where a new measurement would be expected to land. It
+          combines the curve's uncertainty with your stated measurement error. It is not drawn
+          on E(t) or the spectrum, which are not measured directly.
+        </p>
+        <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
           three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub> in °C,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
