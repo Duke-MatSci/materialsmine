@@ -49,6 +49,12 @@
           Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
           strength of that penalty: larger values give a smoother, better-conditioned spectrum,
           and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
+          With s = <em>Smoothness</em> ÷ 100, the penalty weight is
+          λ = s<sup>2</sup>·ν·(n−1)<sup>3</sup>/L<sup>4</sup>, where ν is the degrees of freedom
+          (data values fitted minus parameters fitted), n the number of Prony terms, and
+          L = ln(τ<sub>max</sub>/τ<sub>min</sub>) the span of the relaxation grid. This makes the
+          penalty the mean squared curvature per unit ln τ, so one setting carries across master
+          curves of different span.
         </p>
         <p>
           Each data point is weighted by its uncertainty. If your file supplies error columns
@@ -57,6 +63,10 @@
           fit if your instrument understates its uncertainty. Otherwise the
           <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
           that each point is weighted by σ = (relative error ÷ 100) × |E*|.
+          Either way the errors are read as standard deviations, so the posterior is ∝ exp(−V/2)
+          with V = χ<sup>2</sup> + λ·Σ(second differences of ln E<sub>i</sub>)<sup>2</sup>.
+          The fit readout's <em>surprisal</em> is −log π(s<sup>2</sup>): lower is better, and the
+          s<sup>2</sup> minimizing it is the smoothness the evidence prefers.
         </p>
         <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports

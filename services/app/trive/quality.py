@@ -20,7 +20,7 @@ from .objective import (
 
 # Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the data
 # misfit alone; neg_log_posterior is the Laplace-approximated negative log
-# posterior of lam = smoothness**2 under exp(-V/2), the posterior the stated
+# posterior of smoothness**2 under exp(-V/2), the posterior the stated
 # errors imply as standard deviations; curvature is the roughness of the
 # fitted log spectrum. All three are "lower is better", and any may be
 # None — see _prony_fit_quality for the conditions.
@@ -77,11 +77,11 @@ def _prony_fit_quality(
         log_range: float,
 ) -> _FitQuality:
     """
-    Score a converged Prony fit: reduced chi-squared and the log posterior of lam.
+    Score a converged Prony fit: reduced chi-squared and log pi(smoothness**2).
 
     The second number is a Laplace (saddle-point) approximation of
 
-        log pi_lam = -V(H) / 2 + 0.5 * (log pdet A + rank(A) * log(lam))
+        log pi(lam0) = -V(H) / 2 + 0.5 * (log pdet A + rank(A) * log(lam))
                      - 0.5 * log|Hess V|
                      + 0.5 * (m * log(2) + (2 + solid) * log(2 pi)) - lam0
 

@@ -243,7 +243,7 @@ def smooth_prony_fit(
         E_nnls, rnorm = nnls(R, z)
         if not return_fit_quality:
             return tau_i, E_nnls
-        # No penalty means no posterior over lam to report, but the misfit is
+        # No penalty means no posterior over smoothness**2, but the misfit is
         # still meaningful — and nnls already handed us ||R c - z||, which the
         # reduction's residual row makes a full-problem quantity. Curvature is
         # genuinely undefined here, not merely unavailable: NNLS's active set
