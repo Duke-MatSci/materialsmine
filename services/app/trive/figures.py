@@ -529,19 +529,31 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     return fig2, fig3
 
 
-def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray) -> list:
+def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
+                        covariance=None) -> list:
     """
     Build the Prony coefficient table as a list of records.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; with len(tau_i) rows, or one more with the equilibrium
+            row first.
 
     Returns:
         list: List of dicts with keys 'i', 'tau_i', 'E_i' — one per nonzero
-        coefficient, with 'i' the original (pre-filter) index.
+        coefficient, with 'i' the original (pre-filter) index. With a
+        covariance, also 'E_i_lower' and 'E_i_upper': the 1-sigma interval
+        fig3 draws as error bars, in Pa.
     """
-    coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_i[len(E_i) - len(tau_i):]})
+    E_terms = np.asarray(E_i, dtype=float)[len(E_i) - len(tau_i):]
+    coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_terms})
+    if covariance is not None:
+        s = np.minimum(sigma_log_coefficients(covariance)[-len(tau_i):],
+                       _SIGMA_DISPLAY_CAP)
+        coef_df["E_i_lower"] = E_terms * np.exp(-s)
+        coef_df["E_i_upper"] = E_terms * np.exp(s)
     coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
     coef_df = coef_df.rename(columns={'index': 'i'})
     return coef_df.to_dict("records")

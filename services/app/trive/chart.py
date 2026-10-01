@@ -327,7 +327,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     _annotate_decimation((fig1, fig11), freq_decimation)
     fig2, fig3 = _build_relaxation_figures(
         tau_i, E_i, N_nz, fit_settings, fit_quality.covariance)
-    coef_records = _build_coef_records(tau_i, E_i)
+    coef_records = _build_coef_records(tau_i, E_i, fit_quality.covariance)
 
     return (fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
             shift_fig, shift_records, max_prony)
