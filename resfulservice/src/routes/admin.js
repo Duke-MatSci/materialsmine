@@ -5,11 +5,12 @@ const loginController = require('../controllers/loginController');
 const isAuth = require('../middlewares/isAuth');
 const { latencyTimer } = require('../middlewares/latencyTimer');
 
+// TODO: Remove — dead endpoint, no callers in frontend, backend, or scripts
 router
   .route('/es/bulk')
-  .post(AdminController.bulkElasticSearchImport)
-  .put(AdminController.dataDump)
-  .delete(AdminController.dataDump);
+  .post(isAuth, AdminController.bulkElasticSearchImport)
+  .put(isAuth, AdminController.dataDump)
+  .delete(isAuth, AdminController.dataDump);
 
 router
   .route('/populate-datasets-properties')
