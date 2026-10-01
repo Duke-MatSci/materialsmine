@@ -95,6 +95,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig11 (plotly.graph_objects.Figure): The updated line chart.
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
+            When the fit reports a covariance (smoothed fits), fig1, fig11
+            and fig2 carry 1-sigma credible ribbons and fig3 error bars.
         fig4 (plotly.graph_objects.Figure): The temperature line chart. Empty in
             the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.

@@ -27,7 +27,8 @@ bottom-up:
                  data, and the peak finder that estimates Tg and TC
     tts          applying a shift model to a data frame, both directions
 
-    figures      plotly figures, their captions, plot-trace thinning, the
+    figures      plotly figures, their captions, the uncertainty ribbons and
+                 error bars, plot-trace thinning, the
                  shift-factor figure, and the coefficient table
     chart        update_line_chart — the whole pipeline, called by the route
 
