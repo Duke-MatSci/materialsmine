@@ -743,10 +743,10 @@ const eAEstimated = ref(false);
 // nothing collapses them again except an explicit click on the header caret.
 const cDataSourceOpen = ref(true);
 const cFormatOpen = ref(false);
-// Held as the fractions the API takes; the inputs bind to the percent proxies
-// below so the units on screen match the labels. The boxes start at the real
+// Held as the values the API takes; the relative-error input binds to the
+// percent proxy below so the units on screen match its label. The boxes start at the real
 // defaults (no placeholder: the spinner steps from the box's value, and a
-// placeholder made it step from '' → 0.1 instead of from 4 → 4.1). A cleared
+// placeholder made it step from '' → 0.1 instead of from 1 → 1.1). A cleared
 // box is '' (what v-model.number yields for an emptied number input) and
 // stands for the default; the payload substitutes it at send time.
 type Blankable = number | '';
