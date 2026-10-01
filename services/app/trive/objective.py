@@ -208,7 +208,7 @@ class _PronyLoss:
         """
         Exact Hessian, for scipy.optimize.minimize's hess=.
 
-        Also the one definition of 0.5 * Hess(V) = C that
+        Also the one definition of Hess V that
         quality._prony_fit_quality puts inside its Laplace determinant, so the
         curvature the optimizer converges on is the curvature the score is
         charged for.

@@ -20,9 +20,10 @@ from .objective import (
 
 # Fit-quality readout for a converged smooth_prony_fit. chi2_reduced is the data
 # misfit alone; neg_log_posterior is the Laplace-approximated negative log
-# posterior of lam = smoothness**2; curvature is the roughness of the fitted log
-# spectrum. All three are "lower is better", and any may be None — see
-# _prony_fit_quality for the conditions.
+# posterior of lam = smoothness**2 under exp(-V/2), the posterior the stated
+# errors imply as standard deviations; curvature is the roughness of the
+# fitted log spectrum. All three are "lower is better", and any may be
+# None — see _prony_fit_quality for the conditions.
 #
 # chi2_reduced and curvature are the two coordinates of the classical L-curve:
 # sweep smoothness, plot one against the other, and the corner nearest the
@@ -80,17 +81,23 @@ def _prony_fit_quality(
 
     The second number is a Laplace (saddle-point) approximation of
 
-        log pi_lam = -V(H) + 0.5 * (log|A| + n_tau * log(lam))
-                     + 0.5 * m * log(2 pi) - 0.5 * log|Hess V| - lam0
+        log pi_lam = -V(H) / 2 + 0.5 * (log pdet A + rank(A) * log(lam))
+                     - 0.5 * log|Hess V|
+                     + 0.5 * (m * log(2) + (2 + solid) * log(2 pi)) - lam0
 
     with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2,
     V = rho^2 + lam * eta^2 (the _PronyLoss loss), A = L.T @ L for the
     second-difference operator L behind the penalty, and Hess V the exact
     second derivative 2 * (lam * A + J.T @ J + diag(r.T @ J)) — taken straight
     from _PronyLoss.hess, the same array the Newton solver in fit converges
-    on, so there is no separate curvature convention here to drift from it
-    (an older form of this function carried C = 0.5 * Hess V and a matching
-    pi-for-2pi in the constants). The trailing -lam0 is a unit-rate
+    on, so there is no separate curvature convention here to drift from it.
+
+    The posterior is proportional to exp(-V/2). data and basis are weighted by
+    1/std, so the weighted residuals are unit-variance: the stated error is the
+    standard deviation, the likelihood is exp(-rho^2 / 2), and the smoothness
+    the evidence prefers agrees with the noise level chi2_reduced is judged
+    against. Laplace over exp(-V/2) sees the curvature Hess V / 2; its factor
+    of 2 is the m * log(2) in the constant. The trailing -lam0 is a unit-rate
     exponential prior, charged against the UNSCALED lam0 = smoothness**2: the
     prior belongs on the user-facing knob, not on the internally normalized
     weight, which would punish a large or finely-gridded upload far harder than
@@ -103,14 +110,15 @@ def _prony_fit_quality(
       a null space of dimension 2 + solid (a constant, a linear ramp, and the
       unpenalized equilibrium term). The determinant the formula needs is the
       PSEUDO-determinant, and the exponent of lam is rank(A) = npen - 2, not
-      n_tau. Inflating that exponent to the full dimension adds a spurious
+      m. Inflating that exponent to the full dimension adds a spurious
       0.5 * (m - rank) * log(lam) drift that biases the result toward
       oversmoothing. Conveniently pdet(L.T @ L) == det(L @ L.T) ==
       npen**2 * (npen**2 - 1) / 12 exactly, so no decomposition of A is needed.
     * The null directions carry a flat prior whose normalizer, together with the
-      Laplace prefactor and the Gaussian normalizer of the penalty over its
-      rank(A) directions, contributes a constant 0.5 * (m * log(2) + (2 + solid)
-      * log(pi)). It is included, so the result is comparable across
+      Laplace prefactor (4 pi)**(m/2) and the Gaussian normalizer
+      (lam / 2 pi)**(rank/2) * pdet(A)**0.5 of the penalty over its rank(A)
+      directions, leaves a constant 0.5 * (m * log(2) + (2 + solid)
+      * log(2 pi)). It is included, so the result is comparable across
       smoothness, N, row count, AND solid.
 
     This is an approximation, not an identity — expect ~0.1 nat of Laplace error
@@ -184,9 +192,10 @@ def _prony_fit_quality(
     # about. npen < 3 would also reach log(npen - 1) = log(0) below.
     neg_log_posterior = None
     if len(curve) and smoothness:
-        # Note V is NOT a marginal likelihood: it is the unnormalized negative
-        # log JOINT density at the mode (misfit+penalty). hess() returns a
-        # fresh array, so nothing cached is at stake in the factorization.
+        # Note V/2 is NOT a marginal likelihood: it is the unnormalized
+        # negative log JOINT density at the mode (misfit+penalty). hess()
+        # returns a fresh array, so nothing cached is at stake in the
+        # factorization.
         V = loss.fun(logcoefs)
         chol = _cholesky_or_none(loss.hess(logcoefs))
         if chol is not None:
@@ -200,7 +209,7 @@ def _prony_fit_quality(
             # scale factor is positive, so it carries that sign through.
             loglam = 2 * np.log(abs(scaled))
             # Negated so that lower is better. This is a log DENSITY, so
-            # positivity is not guaranteed — it holds in practice because V
+            # positivity is not guaranteed — it holds in practice because V/2
             # dominates for any real upload. Deliberately not clamped.
             neg_log_posterior = (
                 0.5 * V
