@@ -32,7 +32,8 @@ from .uncertainty import (
 # ~2000 points per trace is far denser than any screen resolves.
 _PLOT_MAX_POINTS = 2000
 
-# Figure notices — the decimation warning and the fit-quality readout — are gray
+# Figure notices — the fit-quality readout, the decimation warning and the
+# grid-size suggestion — are gray
 # right-aligned captions in paper coordinates above the plot, one per row. They
 # cannot share a row: each runs 85-100 characters, so even anchored to opposite
 # edges they collided in the middle at every width the frontend renders at. Row
@@ -119,7 +120,7 @@ def _annotate_decimation(figs, percent) -> None:
     Stamp a decimation notice onto each figure when plot thinning occurred.
 
     No-op when percent is None. Stamped after the fit-quality readout, so on
-    the figures that carry both this one takes the upper row: it says the same
+    the figures that carry both this one takes the row above it: it says the same
     thing on every slider move, where the readout is the number being watched.
 
     Parameters:
@@ -148,10 +149,14 @@ def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
     Parameters:
         figs: Iterable of plotly Figures to annotate.
         requested_n (int): The Prony term count the fit ran with.
-        resolution (int or None): reduction.prony_resolution, rounded.
+        resolution (float or None): reduction.prony_resolution; rounded to
+            whole terms before it is compared or scaled.
         max_prony (int or None): The numerical-rank cap on the grid size.
     """
-    if resolution is None or max_prony is None or requested_n >= resolution:
+    if resolution is None or max_prony is None:
+        return
+    resolution = int(round(resolution))
+    if requested_n >= resolution:
         return
     n_suggest = min(int(max_prony), int(math.ceil(1.5 * resolution)))
     if n_suggest <= requested_n:

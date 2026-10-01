@@ -100,7 +100,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             and fig2 carry 1-sigma credible ribbons and fig3 error bars;
             fig1 and fig11 also carry 1-sigma prediction ribbons. The Prony
             curves and ribbons on fig1, fig11 and fig2 run past the data
-            window (see figures._DRAW_EXTENSION_DECADES).
+            window (see figures._DRAW_EXTENSION_DECADES). fig1 and fig11
+            are captioned with the fit-quality readout, a decimation notice
+            when the traces were thinned, and a suggested relaxation grid
+            size when the data resolves more terms than the grid the fit ran
+            with (figures._annotate_grid_suggestion).
         fig4 (plotly.graph_objects.Figure): The temperature line chart. Empty in
             the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
@@ -326,15 +330,14 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
              E_loss_std * std_scale / mag)
     fig1, fig11 = _build_complex_figures(
         plot_df, tau_i, E_i, N_nz, fit_quality.covariance, noise)
-    # Order sets the rows: the readout takes the one nearest the plot and the
-    # decimation notice stacks above it. See _stamp_notice.
-    _annotate_fit_quality((fig1, fig11), fit_quality)
-    _annotate_decimation((fig1, fig11), freq_decimation)
     resolution = prony_resolution(
         omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
         tau_i, E_i, smoothness, std_scale=std_scale)
-    if resolution is not None:
-        resolution = int(round(resolution))
+    # Order sets the rows: the readout takes the one nearest the plot, the
+    # decimation notice stacks above it and the grid suggestion above both.
+    # See _stamp_notice.
+    _annotate_fit_quality((fig1, fig11), fit_quality)
+    _annotate_decimation((fig1, fig11), freq_decimation)
     _annotate_grid_suggestion((fig1, fig11), len(tau_i), resolution,
                               max_prony)
     fig2, fig3 = _build_relaxation_figures(

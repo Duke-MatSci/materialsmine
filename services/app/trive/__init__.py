@@ -13,7 +13,8 @@ bottom-up:
                  scaling that makes `smoothness` mesh-independent
     reduction    the chunked QR that compresses the weighted least-squares
                  problem to O(N) rows, and its content-addressed LRU cache;
-                 also the probe-basis rank behind the term-count limit
+                 also the probe-basis rank behind the term-count limit and
+                 the probe resolution behind the grid-size suggestion
     quality      scoring a converged fit: chi-squared per effective degree of
                  freedom, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness

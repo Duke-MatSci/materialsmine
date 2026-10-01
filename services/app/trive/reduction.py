@@ -22,6 +22,7 @@ from scipy.optimize import nnls
 from .objective import (
     _add_penalty_inplace, _penalty_trace, _scaled_smoothness)
 from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
+from .quality import _cholesky_or_none
 
 
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
@@ -187,6 +188,14 @@ def _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, solid,
     return tau, R, z
 
 
+def _probe_singular_values(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                           solid, std_scale):
+    """Singular values of the reduced probe basis, descending."""
+    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                            solid, std_scale)
+    return np.linalg.svd(R, compute_uv=False)
+
+
 def prony_rank_limit(
         omega: np.ndarray,
         E_stor: np.ndarray,
@@ -216,9 +225,8 @@ def prony_rank_limit(
     Returns:
         int: the rank, clipped to [1, PRONY_TERMS_MAX].
     """
-    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                            solid, std_scale)
-    sigma = np.linalg.svd(R, compute_uv=False)
+    sigma = _probe_singular_values(omega, E_stor, E_loss, E_stor_std,
+                                   E_loss_std, solid, std_scale)
     eps = np.finfo(np.result_type(E_stor, E_loss)).eps
     rank = int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])) - bool(solid)
     return min(max(rank, 1), PRONY_TERMS_MAX)
@@ -238,15 +246,18 @@ def prony_noise_ceiling(
     modulus scale: sigma_k * max(E_stor) > 1. A smoothness-free ceiling on
     what any smoothed fit can leave to the data.
 
+    Not sent to the client. Its one use is as an empirical consistency bound:
+    the tests assert that prony_resolution and the fit's effective_terms
+    never exceed it on the bundled curves. That is observed, not a theorem.
+
     Parameters:
         As prony_rank_limit.
 
     Returns:
         int: the count, unclipped, equilibrium column included.
     """
-    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                            solid, std_scale)
-    sigma = np.linalg.svd(R, compute_uv=False)
+    sigma = _probe_singular_values(omega, E_stor, E_loss, E_stor_std,
+                                   E_loss_std, solid, std_scale)
     return int(np.count_nonzero(sigma * np.max(E_stor) > 1.0))
 
 
@@ -318,12 +329,9 @@ def prony_resolution(
     # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
     H = (R.T @ R) * c * c[:, None]
     _add_penalty_inplace(H, lam, has_eq)
-    if not np.all(np.isfinite(H)):
+    chol = _cholesky_or_none(H)
+    if chol is None:
         return None
-    try:
-        chol = np.linalg.cholesky(H)
-    except np.linalg.LinAlgError:
-        return None
-    sigma = cho_solve((chol, True), np.eye(len(c)))
-    gamma = n_probe - lam * _penalty_trace(sigma, has_eq)
+    H_inv = cho_solve((chol, True), np.eye(len(c)))
+    gamma = n_probe - lam * _penalty_trace(H_inv, has_eq)
     return float(gamma) if np.isfinite(gamma) else None
