@@ -160,8 +160,9 @@ def _prony_fit_quality(
             caller remembering which of two values to pass where.
         solid (bool): Whether the leading coefficient is an equilibrium term
             excluded from the smoothness penalty.
-        n_resid (int): Residual count of the FULL problem (2 * len(omega)), used
-            for the chi-squared degrees of freedom. It cannot be read off `data`,
+        n_resid (int): Residual count of the FULL problem (2 * len(omega)),
+            whose n_resid - m is the classical dof the penalty weight is
+            built from. It cannot be read off `data`,
             whose length is the reduced m + 1 for any upload size.
         log_range (float): ln(tau_max / tau_min) of the fit grid, for the
             curvature normalization. Also unavailable from the reduced system.
@@ -171,9 +172,12 @@ def _prony_fit_quality(
             n_resid.
 
     Returns:
-        _FitQuality: (chi2_reduced, neg_log_posterior, curvature, covariance);
-        the first three are floats and all "lower is better". chi2_reduced is None when the fit has no degrees
-        of freedom left; neg_log_posterior is None when the posterior is
+        _FitQuality: (chi2_reduced, neg_log_posterior, curvature, covariance,
+        effective_terms);
+        the first three are floats and all "lower is better". chi2_reduced is
+        chi-squared over nu = n_chi2 - (effective_terms + solid) when there
+        is a covariance, else over the classical n_chi2 - m; it is None when
+        nu is not positive; neg_log_posterior is None when the posterior is
         undefined (no penalty, or fewer than 3 penalized terms) or when the
         Laplace expansion does not apply (Hess V not positive definite, or
         non-finite); curvature is None when fewer than 3 penalized terms leave
@@ -183,6 +187,9 @@ def _prony_fit_quality(
         normalization happens once, at the single return. covariance is
         2 * inv(Hess V), the Laplace posterior covariance of logcoefs, or None
         when smoothness is 0 or Hess V is not positive definite.
+        effective_terms is npen - lam * tr(L.T @ L @ covariance), the
+        penalized terms the data rather than the penalty determined (MacKay's
+        gamma), or None without a covariance.
     """
     m = len(logcoefs)
     npen = m - solid

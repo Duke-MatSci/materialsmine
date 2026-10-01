@@ -348,9 +348,11 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
         instead, so one setting smooths a 4-decade master curve as hard as a
         20-decade one.
 
-    Together they give V/dof = chi2_reduced + smoothness**2 * curvature, so
-    smoothness**2 is exactly the exchange rate between the two numbers the
-    fit-quality readout puts on the plot, with no span factor left over. When
+    Together they give V/dof = chi2/dof + smoothness**2 * curvature, so
+    smoothness**2 is exactly the exchange rate between misfit and roughness,
+    with no span factor left over. This dof is the classical n_resid - m; the
+    readout's chi2_reduced divides chi2 by the smaller effective count
+    instead (see _prony_fit_quality). When
     N is chosen per decade of span, h is constant and the 1/h**3 is a fixed
     factor; it only does work when N is overridden independently of the span.
 
@@ -362,7 +364,8 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     Parameters:
         smoothness (float): The user-facing knob. 0 disables the penalty.
         npen (int): Number of penalized terms, i.e. the grid size N.
-        dof (int): Residual degrees of freedom of the full problem, n_resid - m.
+        dof (int): Residual degrees of freedom of the full problem, n_resid - m
+            (the classical count, not the readout's effective one).
         log_range (float): ln(tau_max / tau_min) of the fit grid.
 
     Returns:

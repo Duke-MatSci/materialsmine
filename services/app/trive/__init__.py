@@ -14,7 +14,8 @@ bottom-up:
     reduction    the chunked QR that compresses the weighted least-squares
                  problem to O(N) rows, and its content-addressed LRU cache;
                  also the probe-basis rank behind the term-count limit
-    quality      scoring a converged fit: reduced chi-squared, the Laplace
+    quality      scoring a converged fit: chi-squared per effective degree of
+                 freedom, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness
     fit          smooth_prony_fit — composes the four above into the single
                  call that turns data into (tau_i, E_i), failing fast with

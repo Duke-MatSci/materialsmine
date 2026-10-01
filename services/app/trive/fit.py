@@ -271,8 +271,10 @@ def smooth_prony_fit(
             sqrt(dof / (h**3 * log_range)) (see _scaled_smoothness), h being
             the log-tau grid spacing, which makes it the exchange rate
             between the two numbers
-            the fit-quality readout reports: V/dof = chi2_reduced +
-            smoothness**2 * curvature. A given value therefore
+            the fit-quality readout reports: V/dof = chi2/dof +
+            smoothness**2 * curvature, dof being the classical n_resid - m
+            (the readout's chi2_reduced divides chi2 by the smaller effective
+            count instead; see _prony_fit_quality). A given value therefore
             produces comparable smoothing whether the file has 400 rows or
             40,000, whether it is fit with 20 terms or 100, and whether it
             covers 4 decades or 20.
@@ -420,7 +422,9 @@ def smooth_prony_fit(
         # uses for its exact zeros. n_resid is lowered by one so the dof
         # _prony_fit_quality derives — and hence the penalty weight it rebuilds
         # — stay exactly the fit's own: the pinned equilibrium term is still
-        # one of the fit's m parameters.
+        # one of the fit's m parameters. n_chi2 keeps the full count, since
+        # the misfit charges only parameters the data determined and a
+        # pinned zero is not one.
         quality = _prony_fit_quality(
             result.x, z, R[:, 1:], smoothness, False,
             n_resid=n_res - 1,
