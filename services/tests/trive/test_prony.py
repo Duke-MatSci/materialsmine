@@ -1186,6 +1186,15 @@ class TestPronyRankLimit(unittest.TestCase):
         self.assertLess(wide, PRONY_TERMS_MAX)  # compare counts, not clips
         self.assertLess(narrow, wide)
 
+    def test_very_wide_span_is_clipped_to_the_route_limit(self):
+        omega, E_stor, E_loss, std = _debye_window(16)
+        sqrt_count, _ = self._probe_counts(
+            omega, E_stor, E_loss, std, solid=True)
+        self.assertGreater(sqrt_count - 1, PRONY_TERMS_MAX)  # precondition
+        max_prony = reduction.prony_rank_limit(
+            omega, E_stor, E_loss, std, std)
+        self.assertEqual(max_prony, PRONY_TERMS_MAX)
+
     def test_float32_moduli_lower_the_count(self):
         omega, E_stor, E_loss, std = _debye_window(4)
         full = reduction.prony_rank_limit(omega, E_stor, E_loss, std, std)
