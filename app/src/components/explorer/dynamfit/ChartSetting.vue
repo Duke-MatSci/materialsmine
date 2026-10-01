@@ -327,7 +327,10 @@
           detail but can overfit noisy data. This is an upper bound rather than the answer:
           the fit discards terms it does not need, and temperature-domain data is capped
           against the frequency span the ω-T transform produces. The figure legends and the
-          coefficient table report how many terms the fit actually kept.
+          coefficient table report how many terms the fit actually kept. After a fit, the
+          slider's maximum drops to the number of distinct terms your data's span and precision
+          can carry; beyond it, extra terms only duplicate their neighbours and are filled in by
+          the smoothing, not the data.
         </HelpPopover>
       </label>
       <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
@@ -339,12 +342,12 @@
           v-model.lazy.number="dynamfit.range"
           type="range"
           min="1"
-          max="100"
+          :max="cPronyMax"
           :class="[disableInput ? 'nuplot-masked' : '']"
           class="nuplot-range-slider u--layout-width u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
         />
         <div
-          :style="{ left: `${dynamfit.range}%` }"
+          :style="{ left: `${cPronyTooltipLeft}%` }"
           v-if="showToolTip"
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
@@ -354,7 +357,7 @@
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
         <div>1</div>
-        <div>100</div>
+        <div>{{ cPronyMax }}</div>
       </div>
     </div>
 
@@ -679,6 +682,8 @@ import {
   SMOOTHNESS_MAX,
   SMOOTHNESS_MIN,
   SMOOTHNESS_STEP,
+  effectivePronyMax,
+  pronyTooltipLeft,
 } from '@/composables/useDynamfitDefaults';
 import {
   resolveShiftFitModel,
@@ -858,6 +863,15 @@ const disableInput = computed(() => {
 const dynamfitData = computed(() => {
   return store.getters['explorer/getDynamfitData'];
 });
+
+// The server's term cap for the extracted data; null on the temperature
+// preview or before the first response.
+const cServerMaxProny = computed<number | null>(() => {
+  const cap = dynamfitData.value?.max_prony;
+  return Number.isInteger(cap) && cap >= 1 ? cap : null;
+});
+const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, dynamfit.value.range));
+const cPronyTooltipLeft = computed(() => pronyTooltipLeft(dynamfit.value.range, cPronyMax.value));
 
 const cAxisLabel = computed(() =>
   selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (Hz)'

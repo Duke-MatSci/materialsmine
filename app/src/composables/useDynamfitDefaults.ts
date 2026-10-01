@@ -101,3 +101,27 @@ export function computeDefaultPronyTerms(
 
   return Math.min(PRONY_TERMS_MAX, Math.max(PRONY_TERMS_MIN, Math.round(k * decades)));
 }
+
+/**
+ * Maximum for the grid-size slider: the server's term cap for the extracted
+ * data, limited to PRONY_TERMS_MAX. The cap never falls below the current
+ * value, because a range input whose max drops under its value clamps the
+ * thumb without firing input and leaves v-model out of step with the store.
+ */
+export function effectivePronyMax(
+  serverMax: number | null | undefined,
+  currentValue: number
+): number {
+  if (typeof serverMax !== 'number' || !Number.isInteger(serverMax) || serverMax < 1) {
+    return PRONY_TERMS_MAX;
+  }
+  const cap = Math.min(PRONY_TERMS_MAX, serverMax);
+  return Number.isFinite(currentValue) ? Math.max(cap, currentValue) : cap;
+}
+
+/** Tooltip position, in percent, of a value on a 1..max range track. */
+export function pronyTooltipLeft(value: number, max: number): number {
+  if (max <= 1) return 0;
+  const left = ((value - 1) / (max - 1)) * 100;
+  return Math.min(100, Math.max(0, left));
+}
