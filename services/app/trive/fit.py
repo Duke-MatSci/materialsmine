@@ -33,6 +33,16 @@ _NEWTON_TIME_BUDGET = 1.0
 # absolute diagonal entry; read at call time. Only the Newton step sees it.
 _NEWTON_HESSIAN_SHIFT_EPS = 64
 
+# How many times a solve that scipy aborts with a ValueError is restarted
+# from its last accepted iterate before the failure is reported; read at
+# call time. See _restarting_minimize.
+_NEWTON_MAX_RESTARTS = 6
+
+# scipy's default initial trust radius, and the factor by which it shrinks
+# a rejected step's radius; each restart applies the factor once more.
+_TRUST_RADIUS_INITIAL = 1.0
+_TRUST_RADIUS_SHRINK = 0.25
+
 
 class SmoothPronyFitTimeout(ValueError):
     """The Newton solve exceeded _NEWTON_TIME_BUDGET.
@@ -42,7 +52,8 @@ class SmoothPronyFitTimeout(ValueError):
 
 
 class SmoothPronyFitDiverged(ValueError):
-    """scipy raised a ValueError inside the Newton solve.
+    """scipy raised a ValueError inside the Newton solve, and restarting
+    from the last accepted iterate did not get past it.
 
     A ValueError so the routes answer 400 with the message and its remedy.
     """
@@ -113,6 +124,50 @@ def _shifted_hessian(hess, eps_multiple: float):
         H[np.diag_indices_from(H)] += shift
         return H
     return shifted
+
+
+def _restarting_minimize(x0, **kwargs):
+    """
+    scipy.optimize.minimize, restarted from its last accepted iterate with a
+    smaller trust region when scipy aborts with a ValueError.
+
+    scipy 1.10.1's trust-exact subproblem breaks when the trust radius has
+    just shrunk at a positive definite Hessian: it reuses the previous
+    solve's lower bound on the damping factor, starts above the answer,
+    lets its Newton update carry the damping factor below zero, and takes
+    the square root of a negative product. A solve that STARTS at the
+    smaller radius has no previous bound to reuse, so each restart quarters
+    the initial radius (scipy's own shrink factor). The objective is
+    untouched and the progress made is kept. At most _NEWTON_MAX_RESTARTS
+    restarts are made; the caller's time budget covers all attempts
+    together.
+
+    Parameters:
+        x0 (numpy.ndarray): Seed of the first attempt.
+        **kwargs: Passed to minimize unchanged (fun, jac, hess, method).
+
+    Returns:
+        scipy.optimize.OptimizeResult: The result of the attempt that
+        finished.
+
+    Raises:
+        ValueError: scipy's own, once the restarts are used up.
+    """
+    last = [np.asarray(x0)]
+
+    def record(xk):
+        last[0] = np.array(xk, copy=True)
+
+    radius = _TRUST_RADIUS_INITIAL
+    for restarts_left in range(_NEWTON_MAX_RESTARTS, -1, -1):
+        try:
+            return minimize(x0=last[0], callback=record,
+                            options={'initial_trust_radius': radius},
+                            **kwargs)
+        except ValueError:
+            if not restarts_left:
+                raise
+            radius *= _TRUST_RADIUS_SHRINK
 
 
 class _PlateauProjectedProblem:
@@ -260,6 +315,13 @@ def smooth_prony_fit(
     scored one) carries a rounding-level diagonal shift (_shifted_hessian),
     and the solve runs under _newton_watchdog with _NEWTON_TIME_BUDGET.
 
+    scipy 1.10.1's subproblem can also drive its own damping factor negative
+    and then to NaN, which surfaces as a ValueError from a finite, positive
+    definite Hessian (bundled agilus curve, N = 48, smoothness 0.3, 1%
+    error). The loss is not at fault, so the solve is restarted from its
+    last accepted iterate with a smaller trust region, which takes a
+    different path to the same optimum. See _restarting_minimize.
+
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
         E_stor (numpy.ndarray): 1-D array of storage-modulus values, same
@@ -311,7 +373,8 @@ def smooth_prony_fit(
 
     Raises:
         SmoothPronyFitTimeout: the Newton solve outran _NEWTON_TIME_BUDGET.
-        SmoothPronyFitDiverged: scipy raised a ValueError inside the solve.
+        SmoothPronyFitDiverged: scipy raised a ValueError inside the solve
+            and _NEWTON_MAX_RESTARTS restarts did not get past it.
         Both are ValueErrors whose message names the grid size N and the
         remedy, so the routes answer them with a 400.
     """
@@ -392,7 +455,7 @@ def smooth_prony_fit(
     try:
         with _newton_watchdog(budget), \
                 np.errstate(over='ignore', invalid='ignore'):
-            result = minimize(
+            result = _restarting_minimize(
                 fun=problem.fun,
                 x0=x0,
                 jac=problem.jac,

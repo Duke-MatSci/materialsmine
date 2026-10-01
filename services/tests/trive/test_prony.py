@@ -3295,6 +3295,117 @@ class TestNewtonWatchdog(unittest.TestCase):
         self._assert_actionable(str(caught.exception))
 
 
+class TestNewtonRestart(unittest.TestCase):
+    """A ValueError from inside scipy's solve restarts Newton from the last
+    accepted iterate with a quartered initial trust radius, a bounded number
+    of times, before it is reported."""
+
+    N = 13
+    BOOM = 'array must not contain infs or NaNs'
+
+    # (directory, file, N, smoothness) at 1% relative error: fits on which
+    # scipy 1.10.1's trust-exact subproblem takes its damping factor below
+    # zero and then to NaN, while N - 1 and N + 1 converge untouched. The
+    # second needs two restarts: the same radius fails again at once.
+    NAN_DAMPING_CASES = (
+        (TRIVE_FILES_DIR, 'agilus30 (8) master curve 20C.txt', 48, 0.3),
+        (BUNDLED_DIR, 'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
+         40, 0.1),
+    )
+
+    def _fit(self):
+        omega, E_stor, E_loss, sigma = _single_debye_master()
+        return smooth_prony_fit(omega, E_stor, E_loss, sigma, sigma,
+                                N=self.N, smoothness=0.3, std_scale=0.01)
+
+    @staticmethod
+    def _radius(kwargs):
+        return kwargs['options']['initial_trust_radius']
+
+    def test_fits_that_trip_scipys_nan_damping_converge(self):
+        for directory, name, N, smoothness in self.NAN_DAMPING_CASES:
+            with mock.patch.object(Config, 'FILES_DIRECTORY', directory):
+                upload = upload_init(name, 'frequency')
+            omega = upload['Frequency']
+            E_stor, E_loss = upload['E Storage'], upload['E Loss']
+            sigma = np.abs(E_stor + 1.0j * E_loss)
+
+            def fit(n):
+                return smooth_prony_fit(
+                    omega, E_stor, E_loss, sigma, sigma, N=n,
+                    smoothness=smoothness, std_scale=0.01,
+                    return_fit_quality=True)
+
+            with self.subTest(file=name):
+                # Precondition: without restarts this fit is the failure.
+                with mock.patch.object(prony_fit, '_NEWTON_MAX_RESTARTS', 0):
+                    with self.assertRaises(prony_fit.SmoothPronyFitDiverged):
+                        fit(N)
+                _, E_i, quality = fit(N)
+                self.assertTrue(np.all(np.isfinite(E_i)))
+                self.assertIsNotNone(quality.covariance)
+                for neighbour in (N - 1, N + 1):
+                    self.assertAlmostEqual(
+                        quality.chi2_reduced / fit(neighbour)[2].chi2_reduced,
+                        1.0, delta=1e-3)
+
+    def test_restart_resumes_from_the_last_accepted_iterate(self):
+        seeds, radii = [], []
+
+        def flaky(*args, **kwargs):
+            x0 = np.array(kwargs['x0'], copy=True)
+            seeds.append(x0)
+            radii.append(self._radius(kwargs))
+            if len(seeds) == 1:
+                kwargs['callback'](x0 + 0.5)
+                kwargs['callback'](x0 + 1.0)
+                raise ValueError(self.BOOM)
+            return minimize(*args, **kwargs)
+
+        with mock.patch.object(prony_fit, 'minimize', flaky):
+            _, E_i = self._fit()
+        self.assertEqual(len(seeds), 2)
+        np.testing.assert_array_equal(seeds[1], seeds[0] + 1.0)
+        self.assertEqual(radii, [1.0, 0.25])
+        self.assertTrue(np.all(np.isfinite(E_i)))
+
+    def test_restarts_are_bounded_and_each_quarters_the_trust_radius(self):
+        # No step is ever accepted here, so every attempt has the same seed:
+        # only the smaller radius makes a retry different from the last.
+        seeds, radii = [], []
+
+        def always_fails(*args, **kwargs):
+            seeds.append(np.array(kwargs['x0'], copy=True))
+            radii.append(self._radius(kwargs))
+            raise ValueError(self.BOOM)
+
+        with mock.patch.object(prony_fit, 'minimize', always_fails):
+            with self.assertRaises(prony_fit.SmoothPronyFitDiverged):
+                self._fit()
+        attempts = prony_fit._NEWTON_MAX_RESTARTS + 1
+        self.assertEqual(len(radii), attempts)
+        self.assertGreaterEqual(attempts, 3)
+        np.testing.assert_allclose(radii, 0.25 ** np.arange(attempts))
+        for seed in seeds[1:]:
+            np.testing.assert_array_equal(seed, seeds[0])
+
+    def test_restarts_share_the_one_time_budget(self):
+        import time
+
+        def slow_then_fails(*args, **kwargs):
+            kwargs['callback'](np.asarray(kwargs['x0']) + 0.5)
+            _spin(0.08)
+            raise ValueError(self.BOOM)
+
+        start = time.monotonic()
+        with mock.patch.object(prony_fit, 'minimize', slow_then_fails), \
+                mock.patch.object(prony_fit, '_NEWTON_TIME_BUDGET', 0.1), \
+                mock.patch.object(prony_fit, '_NEWTON_MAX_RESTARTS', 50):
+            with self.assertRaises(prony_fit.SmoothPronyFitTimeout):
+                self._fit()
+        self.assertLess(time.monotonic() - start, 0.9)
+
+
 class TestArgmaxPeak(unittest.TestCase):
     def test_finds_known_peak(self):
         # Gaussian centered at x=1.5 on a fine grid → peak index lands on 1.5.
