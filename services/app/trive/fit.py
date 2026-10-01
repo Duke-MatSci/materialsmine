@@ -296,7 +296,11 @@ def smooth_prony_fit(
         score is that of the N-term solid=False problem the solver actually
         converged on), and quality.curvature is None on the unsmoothed path,
         where the NNLS active set makes log-coefficients (and so their
-        roughness) undefined.
+        roughness) undefined. quality.covariance, the Laplace covariance of
+        the log-coefficients, is None there too and wherever Hess V is not
+        positive definite; its rows follow E_i (equilibrium first when
+        solid) except on the clamped path, which covers the N decaying
+        terms only.
 
     Raises:
         SmoothPronyFitTimeout: the Newton solve outran _NEWTON_TIME_BUDGET.

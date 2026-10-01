@@ -23,7 +23,7 @@ from .objective import (
 # misfit alone; neg_log_posterior is the Laplace-approximated negative log
 # posterior of smoothness**2 under exp(-V/2), the posterior the stated
 # errors imply as standard deviations; curvature is the roughness of the
-# fitted log spectrum. All three are "lower is better", and any may be
+# fitted log spectrum. These three scores are "lower is better", and any may be
 # None — see _prony_fit_quality for the conditions.
 #
 # chi2_reduced and curvature are the two coordinates of the classical L-curve:
@@ -134,8 +134,8 @@ def _prony_fit_quality(
     non-stationary point the expansion has an unaccounted linear term.
 
     Expects the QR-REDUCED system from smooth_prony_fit (basis=R, data=z), which
-    the route's N <= 100 cap bounds at ~102 rows; peak allocation is then two
-    m x m arrays. That system is already weighted by 1/std, so residuals here are
+    the route's N <= 100 cap bounds at ~102 rows; peak allocation is then a
+    few m x m arrays (Hess V, its factor, the covariance). That system is already weighted by 1/std, so residuals here are
     unweighted — see _prony_objective — and it carries the orthogonal residual
     the fit cannot reach as its own row, so both numbers come out on the
     full-problem scale and stay comparable across N with nothing to add back.
@@ -159,8 +159,8 @@ def _prony_fit_quality(
             curvature normalization. Also unavailable from the reduced system.
 
     Returns:
-        _FitQuality: (chi2_reduced, neg_log_posterior, curvature), all floats and
-        all "lower is better". chi2_reduced is None when the fit has no degrees
+        _FitQuality: (chi2_reduced, neg_log_posterior, curvature, covariance);
+        the first three are floats and all "lower is better". chi2_reduced is None when the fit has no degrees
         of freedom left; neg_log_posterior is None when the posterior is
         undefined (no penalty, or fewer than 3 penalized terms) or when the
         Laplace expansion does not apply (Hess V not positive definite, or

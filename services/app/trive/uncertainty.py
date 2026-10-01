@@ -46,7 +46,7 @@ def _check_shapes(tau_i: np.ndarray, E_i: np.ndarray, covariance: np.ndarray):
 
 def _sigma(G: np.ndarray, covariance: np.ndarray) -> np.ndarray:
     """sqrt(g @ covariance @ g) for each row g of G, roundoff clipped at 0."""
-    var = np.einsum('ij,jk,ik->i', G, covariance, G)
+    var = np.einsum('ij,ij->i', G @ covariance, G)
     return np.sqrt(np.clip(var, 0.0, None))
 
 
