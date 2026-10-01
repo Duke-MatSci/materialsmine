@@ -7,10 +7,13 @@
 import * as defaults from '@/composables/useDynamfitDefaults';
 import {
   computeDefaultPronyTerms,
+  effectivePronyMax,
   fractionToPercent,
   percentToFraction,
   PERCENT_INPUT_STEP,
+  PRONY_TERMS_MAX,
   PRONY_TERMS_PER_DECADE,
+  pronyTooltipLeft,
   RELATIVE_ERROR_DEFAULT_PERCENT,
   SMOOTHNESS_DEFAULT,
   SMOOTHNESS_MAX,
@@ -72,6 +75,61 @@ describe('computeDefaultPronyTerms', () => {
 
   it('skips non-positive values that log10 cannot use', () => {
     expect(computeDefaultPronyTerms('0\t1e9\n-1\t1e9\n1\t1e9')).toBeNull();
+  });
+});
+
+describe('effectivePronyMax', () => {
+  it('stops the slider at the term count the server says the data can carry', () => {
+    expect(effectivePronyMax(30, 10)).toBe(30);
+    expect(effectivePronyMax(30, 30)).toBe(30);
+  });
+
+  it('falls back to the static maximum when there is no usable server cap', () => {
+    // null on the temperature preview, undefined before the first response;
+    // a non-integer or a count below one term is no cap at all.
+    expect(PRONY_TERMS_MAX).toBe(100);
+    for (const cap of [null, undefined, NaN, 12.5, 0, -3]) {
+      expect(effectivePronyMax(cap, 10)).toBe(PRONY_TERMS_MAX);
+    }
+  });
+
+  it('clamps a server cap above the static maximum down to it', () => {
+    expect(effectivePronyMax(250, 10)).toBe(PRONY_TERMS_MAX);
+  });
+
+  it('never drops the maximum below the current value', () => {
+    // A range input whose max falls under its value clamps the thumb without
+    // firing input, so v-model and the store would silently disagree.
+    expect(effectivePronyMax(30, 80)).toBe(80);
+  });
+
+  it('treats an emptied or non-numeric current value as unconstraining', () => {
+    // v-model.number hands back '' for an emptied input.
+    expect(effectivePronyMax(30, NaN)).toBe(30);
+    expect(effectivePronyMax(30, '' as unknown as number)).toBe(30);
+  });
+
+  it('allows the degenerate one-term slider', () => {
+    expect(effectivePronyMax(1, 1)).toBe(1);
+  });
+});
+
+describe('pronyTooltipLeft', () => {
+  it('places the tooltip proportionally along a track running from 1 to max', () => {
+    expect(pronyTooltipLeft(1, 30)).toBe(0);
+    expect(pronyTooltipLeft(30, 30)).toBe(100);
+    expect(pronyTooltipLeft(11, 21)).toBe(50);
+    expect(pronyTooltipLeft(34, 100)).toBeCloseTo(100 / 3, 10);
+  });
+
+  it('pins the tooltip to the start when the track has no length', () => {
+    expect(pronyTooltipLeft(1, 1)).toBe(0);
+    expect(pronyTooltipLeft(1, 0)).toBe(0);
+  });
+
+  it('keeps the tooltip on the track for a value outside 1..max', () => {
+    expect(pronyTooltipLeft(40, 30)).toBe(100);
+    expect(pronyTooltipLeft(0, 30)).toBe(0);
   });
 });
 
