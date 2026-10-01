@@ -70,7 +70,9 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         self.assertIsInstance(coef_df, list)
         self.assertGreater(len(coef_df), 0)
         for row in coef_df:
-            self.assertSetEqual(set(row.keys()), {'i', 'tau_i', 'E_i'})
+            self.assertLessEqual({'i', 'tau_i', 'E_i'}, set(row))
+            self.assertLessEqual(set(row) - {'i', 'tau_i', 'E_i'},
+                                 {'E_i_lower', 'E_i_upper'})
             self.assertNotEqual(row['E_i'], 0.0)
         # 'i' values are the original DataFrame indices, all nonnegative
         self.assertTrue(all(row['i'] >= 0 for row in coef_df))
@@ -918,9 +920,32 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         self.assertIsNone(self.no_cov_fit[2])
         self._check_display_absent(self.no_cov)
 
-    def test_coefficient_table_keys_unchanged(self):
-        for row in self.result[6]:
-            self.assertSetEqual(set(row.keys()), {'i', 'tau_i', 'E_i'})
+    def test_table_without_covariance_keeps_three_keys(self):
+        for result in (self.unsmoothed, self.no_cov):
+            self.assertGreater(len(result[6]), 0)
+            for row in result[6]:
+                self.assertSetEqual(set(row), {'i', 'tau_i', 'E_i'})
+
+    def test_table_bounds_match_the_spectrum_error_bars(self):
+        # Row 'i' is the pre-filter term index, one dot per tau_i in fig3.
+        for result in (self.result, self.weak):
+            dots = self._spectrum_dots(result[3])
+            plus = np.asarray(dots.error_y.array, dtype=float)
+            minus = np.asarray(dots.error_y.arrayminus, dtype=float)
+            self.assertGreater(len(result[6]), 0)
+            for row in result[6]:
+                self.assertSetEqual(
+                    set(row), {'i', 'tau_i', 'E_i', 'E_i_lower', 'E_i_upper'})
+                lower, upper = row['E_i_lower'], row['E_i_upper']
+                E = row['E_i']
+                self.assertTrue(np.isfinite([lower, upper]).all())
+                self.assertGreater(lower, 0.0)
+                self.assertLessEqual(lower, E)
+                self.assertLessEqual(E, upper)
+                np.testing.assert_allclose(upper - E, plus[row['i']],
+                                           rtol=1e-9)
+                np.testing.assert_allclose(E - lower, minus[row['i']],
+                                           rtol=1e-9)
 
     # --- (5) serialization -----------------------------------------------
 

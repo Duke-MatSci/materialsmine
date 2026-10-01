@@ -327,6 +327,19 @@ class TestExtractRoute(unittest.TestCase):
             names = [t.get('name') for t in response[key]['data']]
             self.assertEqual(names.count('±1σ prediction'), traces, key)
 
+    def test_smoothed_extract_table_carries_coefficient_bounds(self):
+        """Each mytable row of a smoothed fit carries its +-1 sigma in Pa."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        mytable = json.loads(resp.data)['response']['mytable']
+        self.assertTrue(mytable)
+        for row in mytable:
+            self.assertIn('E_i_lower', row)
+            self.assertIn('E_i_upper', row)
+            self.assertLess(0.0, row['E_i_lower'])
+            self.assertLessEqual(row['E_i_lower'], row['E_i'])
+            self.assertLessEqual(row['E_i'], row['E_i_upper'])
+
     def test_request_above_max_prony_still_fits(self):
         """The cap is advisory: any N in the route's 1..100 range fits."""
         resp = self._post(self._freq_body())

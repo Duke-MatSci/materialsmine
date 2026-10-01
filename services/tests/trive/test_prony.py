@@ -43,6 +43,7 @@ from app.trive.quality import _FitQuality, _prony_fit_quality
 from app.trive.fit import smooth_prony_fit, _PlateauProjectedProblem
 from app.trive.calibration import argmax_peak
 from app.trive.figures import _build_coef_records
+from app.trive.uncertainty import _SIGMA_DISPLAY_CAP
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -1739,6 +1740,95 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         for rec in records:
             self.assertNotEqual(rec['E_i'], 0)
             np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
+
+
+class TestCoefRecordsBounds(unittest.TestCase):
+    """
+    With a covariance, each table row carries the +-1 sigma interval of its
+    coefficient, [E exp(-s), E exp(s)] in Pa with s capped at six decades;
+    without one the table keeps exactly 'i', 'tau_i' and 'E_i'.
+    """
+
+    TAU = np.logspace(-2, 1, 4)
+    E = np.array([1e6, 3e5, 2e7, 4e4])
+    # Distinct per term, so a row that reads its neighbour's sigma shows.
+    SIGMA = np.array([0.1, 0.4, 0.9, 1.6])
+    BOUND_KEYS = {'E_i_lower', 'E_i_upper'}
+
+    def _check_bounds(self, records, E, sigma):
+        """Row k is term records[k]['i'], with 1-sigma of ln E sigma[i]."""
+        for rec in records:
+            i = rec['i']
+            s = min(sigma[i], _SIGMA_DISPLAY_CAP)
+            self.assertAlmostEqual(rec['E_i'], E[i])
+            np.testing.assert_allclose(
+                [rec['E_i_lower'], rec['E_i_upper']],
+                [E[i] * np.exp(-s), E[i] * np.exp(s)], rtol=1e-12)
+
+    def test_no_covariance_keeps_three_keys(self):
+        for records in (_build_coef_records(self.TAU, self.E),
+                        _build_coef_records(self.TAU, self.E,
+                                            covariance=None)):
+            for rec in records:
+                self.assertSetEqual(set(rec), {'i', 'tau_i', 'E_i'})
+
+    def test_bounds_are_the_log_normal_interval(self):
+        cov = np.diag(self.SIGMA ** 2)
+        records = _build_coef_records(self.TAU, self.E, covariance=cov)
+        self.assertEqual(len(records), len(self.TAU))
+        for rec in records:
+            self.assertSetEqual(set(rec), {'i', 'tau_i', 'E_i'} |
+                                self.BOUND_KEYS)
+        self._check_bounds(records, self.E, self.SIGMA)
+
+    def test_equilibrium_row_does_not_shift_the_alignment(self):
+        # The equilibrium sigma differs from every decaying one, so reading
+        # row k + 1 as row k would put the wrong interval on every term.
+        E = np.concatenate(([5e3], self.E))
+        cov = np.diag(np.concatenate(([3.0], self.SIGMA)) ** 2)
+        records = _build_coef_records(self.TAU, E, covariance=cov)
+        self.assertEqual(len(records), len(self.TAU))
+        self._check_bounds(records, self.E, self.SIGMA)
+
+    def test_clamped_equilibrium_uses_the_decaying_covariance(self):
+        # E_i carries the equilibrium term but the covariance does not.
+        E = np.concatenate(([0.0], self.E))
+        cov = np.diag(self.SIGMA ** 2)
+        records = _build_coef_records(self.TAU, E, covariance=cov)
+        self.assertEqual(len(records), len(self.TAU))
+        self._check_bounds(records, self.E, self.SIGMA)
+
+    def test_bounds_are_built_before_the_zero_filter(self):
+        E = self.E.copy()
+        E[1] = 0.0
+        cov = np.diag(self.SIGMA ** 2)
+        records = _build_coef_records(self.TAU, E, covariance=cov)
+        self.assertEqual([rec['i'] for rec in records], [0, 2, 3])
+        self._check_bounds(records, E, self.SIGMA)
+
+    def test_sigma_above_the_cap_is_capped(self):
+        sigma = np.array([0.5, 20.0, 1e3, _SIGMA_DISPLAY_CAP])
+        records = _build_coef_records(self.TAU, self.E,
+                                      covariance=np.diag(sigma ** 2))
+        for rec in records:
+            lower, E, upper = rec['E_i_lower'], rec['E_i'], rec['E_i_upper']
+            self.assertTrue(np.isfinite([lower, upper]).all())
+            self.assertGreater(lower, 0.0)
+            self.assertLessEqual(lower, E)
+            self.assertLessEqual(E, upper)
+        for rec in records[1:]:
+            self.assertAlmostEqual(rec['E_i_upper'] / rec['E_i'], 1e6,
+                                   delta=1e-6)
+            self.assertAlmostEqual(rec['E_i_lower'] / rec['E_i'], 1e-6,
+                                   delta=1e-18)
+        self._check_bounds(records, self.E, sigma)
+
+    def test_bounds_are_plain_floats(self):
+        records = _build_coef_records(
+            self.TAU, self.E, covariance=np.diag(self.SIGMA ** 2))
+        for rec in records:
+            for key in self.BOUND_KEYS:
+                self.assertIs(type(rec[key]), float, key)
 
 
 def _unresolved_equilibrium_curve(num_pts=200):
