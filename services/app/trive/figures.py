@@ -274,14 +274,18 @@ _DRAW_EXTENSION_DECADES = 1.0
 # Margin added to each end of a pinned y range, as a fraction of its span.
 _PIN_MARGIN = 0.05
 
+# Window edges come from 1/omega of the data extremes, so an edge point can
+# miss a strict comparison by an ulp.
+_WINDOW_RTOL = 1e-9
+
 
 def _pin_y_ranges(fig, lo: float, hi: float) -> None:
     """
     Set each Prony-carrying y axis's range from its content inside the window.
 
     The Prony curve is drawn past the window, where its tails would rescale
-    the plot; the range instead brackets the curve, the 'Experiment' data and
-    the ribbon edges at lo <= x <= hi, plus a small margin. Matched axes
+    the plot; the range instead brackets every trace's points at
+    lo <= x <= hi, plus a small margin. Matched axes
     share their governing axis's range. An axis with no usable values stays
     on autorange.
 
@@ -291,11 +295,8 @@ def _pin_y_ranges(fig, lo: float, hi: float) -> None:
         hi (float): Upper x edge of the data window.
     """
     groups = {}
+    lo, hi = lo * (1 - _WINDOW_RTOL), hi * (1 + _WINDOW_RTOL)
     for t in fig.data:
-        name = t.name or ''
-        if not (name in ('Experiment', _CREDIBLE_BAND, _PREDICTION_BAND)
-                or ('Term Prony' in name and t.mode != 'markers')):
-            continue
         axis = fig.layout['yaxis' + (t.yaxis or 'y')[1:]]
         key = axis.matches or t.yaxis or 'y'
         x = np.asarray(t.x, dtype=float)
