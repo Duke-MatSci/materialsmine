@@ -22,6 +22,7 @@ from scipy.optimize import minimize, minimize_scalar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import app.trive.reduction as reduction
+import app.trive.fit as prony_fit
 from app.trive.prony import (
     prony_basis,
     prony_relaxation_space,
@@ -2096,6 +2097,210 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
             msg=f'pooled RMS gap ratio (mean / integral curvature): '
                 f'{pooled:.3f}',
         )
+
+
+def _spin(seconds):
+    """Busy-wait in Python for at most `seconds`.
+
+    A stand-in for scipy's unbounded subproblem loop that a watchdog can
+    interrupt (it runs bytecode, unlike time.sleep), and bounded so that a
+    broken watchdog fails the test instead of hanging the suite.
+    """
+    import time
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        pass
+
+
+def _single_debye_master():
+    """(omega, E_stor, E_loss, sigma) of a noise-free single Debye relaxation.
+
+    tau = 1 over the two decades omega = 1..100, so the only spectral mass
+    sits at the long-tau end of the fit window, on a small plateau. The
+    smoothed fit then has an exactly-zero Hessian eigenvalue (a log-linear
+    ramp that neither data nor penalty sees), on which scipy's trust-exact
+    subproblem loops forever without a shift: at std_scale=0.01 this happens
+    for the (N, smoothness) pairs in HANG_CASES, and not at nearby settings.
+    """
+    omega = np.logspace(0.0, 2.0, 60)
+    E_stor = 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2)
+    E_loss = 1e6 * omega / (1 + omega ** 2) + 1e2
+    return omega, E_stor, E_loss, np.abs(E_stor + 1.0j * E_loss)
+
+
+class TestNewtonHessianShift(unittest.TestCase):
+    """The solver's Hessian carries a diagonal shift of
+    _NEWTON_HESSIAN_SHIFT_EPS ulps of its largest diagonal entry; it changes
+    the Newton step only, never the objective or the optimum."""
+
+    HANG_CASES = ((14, 1.0), (18, 0.7), (20, 0.3))
+
+    @staticmethod
+    def _matrix(dtype=np.float64):
+        # Negative diagonal entry largest in magnitude, so max|diag| differs
+        # from max(diag).
+        return np.array([[2.0, 0.5, 0.0],
+                         [0.5, -7.0, 1.0],
+                         [0.0, 1.0, 3.0]], dtype=dtype)
+
+    def test_shift_multiple_is_64(self):
+        self.assertEqual(prony_fit._NEWTON_HESSIAN_SHIFT_EPS, 64)
+
+    def test_shift_adds_scaled_identity_and_nothing_elsewhere(self):
+        H = self._matrix()
+        original = H.copy()
+        shifted = prony_fit._shifted_hessian(lambda _x: H, 64)(np.zeros(3))
+        expected = 64 * np.finfo(np.float64).eps * 7.0
+        np.testing.assert_array_equal(np.diag(shifted),
+                                      np.diag(original) + expected)
+        off = ~np.eye(3, dtype=bool)
+        np.testing.assert_array_equal(shifted[off], original[off])
+
+    def test_shift_does_not_mutate_the_wrapped_hessian(self):
+        # _PronyLoss memoizes its Hessian and hands back the same array, so
+        # an in-place shift would compound on every call at one point and
+        # corrupt the Hessian the fit quality is scored on.
+        H = self._matrix()
+        original = H.copy()
+        wrapped = prony_fit._shifted_hessian(lambda _x: H, 64)
+        first = wrapped(np.zeros(3)).copy()
+        second = wrapped(np.zeros(3))
+        np.testing.assert_array_equal(H, original)
+        np.testing.assert_array_equal(second, first)
+
+    def test_zero_multiple_is_a_passthrough(self):
+        H = self._matrix()
+        out = prony_fit._shifted_hessian(lambda _x: H, 0)(np.zeros(3))
+        np.testing.assert_array_equal(out, self._matrix())
+
+    def test_shift_follows_the_array_dtype(self):
+        H = self._matrix(np.float32)
+        out = prony_fit._shifted_hessian(lambda _x: H, 64)(np.zeros(3))
+        self.assertEqual(out.dtype, np.float32)
+        expected = np.float32(64 * np.finfo(np.float32).eps * 7.0)
+        np.testing.assert_allclose(np.diag(out) - np.diag(self._matrix(
+            np.float32)), expected, rtol=1e-3)
+
+    def test_zero_eigenvalue_fit_completes(self):
+        # Without the shift each of these cycles forever inside scipy.
+        omega, E_stor, E_loss, sigma = _single_debye_master()
+        for N, smoothness in self.HANG_CASES:
+            with self.subTest(N=N, smoothness=smoothness):
+                tau_i, E_i = smooth_prony_fit(
+                    omega, E_stor, E_loss, sigma, sigma, N=N,
+                    smoothness=smoothness, solid=True, std_scale=0.01)
+                self.assertEqual(len(tau_i), N)
+                self.assertEqual(len(E_i), N + 1)
+                self.assertTrue(np.all(np.isfinite(E_i)))
+                self.assertTrue(np.all(E_i > 0))
+
+    def test_shift_leaves_bundled_fits_at_the_same_optimum(self):
+        for name in BUNDLED_MASTER_CURVES:
+            with self.subTest(file=name):
+                omega, E_stor, E_loss, sigma = _bundled_master_curve(name)
+                kwargs = dict(N=prony_terms_for_span(omega), smoothness=0.3,
+                              solid=True, std_scale=0.01)
+                _, shifted = smooth_prony_fit(
+                    omega, E_stor, E_loss, sigma, sigma, **kwargs)
+                with mock.patch.object(
+                        prony_fit, '_NEWTON_HESSIAN_SHIFT_EPS', 0):
+                    _, exact = smooth_prony_fit(
+                        omega, E_stor, E_loss, sigma, sigma, **kwargs)
+                np.testing.assert_allclose(shifted[0], exact[0], rtol=1e-6)
+                self.assertLess(
+                    np.abs(np.log(shifted[1:]) - np.log(exact[1:])).max(),
+                    1e-6)
+
+
+class TestNewtonWatchdog(unittest.TestCase):
+    """The Newton solve runs under a wall-clock budget, and a solver failure
+    surfaces as a ValueError naming the grid size and the remedy."""
+
+    N = 13
+
+    def _fit(self):
+        omega, E_stor, E_loss, sigma = _single_debye_master()
+        return smooth_prony_fit(omega, E_stor, E_loss, sigma, sigma,
+                                N=self.N, smoothness=0.3, std_scale=0.01)
+
+    def _assert_actionable(self, message):
+        lowered = message.lower()
+        self.assertIn('relaxation grid size', lowered)
+        self.assertRegex(message, rf'\b{self.N}\b')
+        self.assertIn('lower', lowered)
+        self.assertIn('smoothness', lowered)
+        self.assertIn('error', lowered)
+
+    def test_budget_is_one_second(self):
+        self.assertEqual(prony_fit._NEWTON_TIME_BUDGET, 1.0)
+
+    def test_watchdog_interrupts_a_pure_python_loop(self):
+        # Built outside the try so a missing or broken watchdog cannot pass
+        # as the interruption.
+        watchdog = prony_fit._newton_watchdog(0.1)
+        entered = False
+        interrupted = None
+        try:
+            with watchdog:
+                entered = True
+                _spin(5.0)
+                self.fail('watchdog never fired')
+        except (AssertionError, KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException as exc:
+            interrupted = exc
+        self.assertTrue(entered)
+        self.assertIsNotNone(interrupted)
+
+    def test_watchdog_exits_cleanly_when_the_body_is_prompt(self):
+        # Nothing may stay armed: run Python well past the budget afterwards
+        # and reach the end without an injected exception.
+        import time
+        with prony_fit._newton_watchdog(0.05):
+            pass
+        time.sleep(0.2)
+        _spin(0.1)
+
+    def test_hanging_solve_raises_timeout_naming_the_remedy(self):
+        def hanging_minimize(*args, **kwargs):
+            _spin(10.0)
+            raise AssertionError('watchdog never fired')
+
+        with mock.patch.object(prony_fit, 'minimize', hanging_minimize):
+            with self.assertRaises(prony_fit.SmoothPronyFitTimeout) as caught:
+                self._fit()
+        message = str(caught.exception)
+        self.assertIn('did not converge', message.lower())
+        self.assertIn('1 second', message)
+        self._assert_actionable(message)
+
+    def test_budget_is_read_at_call_time(self):
+        import time
+
+        def hanging_minimize(*args, **kwargs):
+            _spin(10.0)
+            raise AssertionError('watchdog never fired')
+
+        start = time.monotonic()
+        with mock.patch.object(prony_fit, 'minimize', hanging_minimize), \
+                mock.patch.object(prony_fit, '_NEWTON_TIME_BUDGET', 0.1):
+            with self.assertRaises(prony_fit.SmoothPronyFitTimeout):
+                self._fit()
+        self.assertLess(time.monotonic() - start, 0.9)
+
+    def test_timeout_is_a_value_error(self):
+        # The routes turn ValueError into a 400 carrying the message.
+        self.assertTrue(issubclass(prony_fit.SmoothPronyFitTimeout,
+                                   ValueError))
+
+    def test_scipy_value_error_becomes_diverged(self):
+        boom = ValueError('array must not contain infs or NaNs')
+        with mock.patch.object(prony_fit, 'minimize', side_effect=boom):
+            with self.assertRaises(prony_fit.SmoothPronyFitDiverged) as caught:
+                self._fit()
+        self.assertTrue(issubclass(prony_fit.SmoothPronyFitDiverged,
+                                   ValueError))
+        self._assert_actionable(str(caught.exception))
 
 
 class TestArgmaxPeak(unittest.TestCase):
