@@ -3,7 +3,8 @@ Prony-series core math: basis construction, the relaxation grid, the forward
 transforms (complex modulus / relaxation modulus / relaxation spectrum), the
 fit objective, the smooth Prony fit, and the argmax peak helper.
 
-Pure functions — no Flask app, no disk access — so this is the fastest subset
+Pure functions — no Flask app, and no disk access beyond the bundled master
+curves TestSurprisalOnBundledMasterCurves reads — so this is the fastest subset
 and the one to run while iterating on the Prony math.
 
     python -m unittest tests.trive.test_prony
@@ -15,7 +16,7 @@ import sys
 from unittest import mock
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
+from scipy.optimize import minimize, minimize_scalar
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -41,6 +42,8 @@ from app.trive.quality import _prony_fit_quality
 from app.trive.fit import smooth_prony_fit, _PlateauProjectedProblem
 from app.trive.calibration import argmax_peak
 from app.trive.figures import _build_coef_records
+from app.config import Config
+from app.utils.util import upload_init
 
 
 # Arbitrary positive log-tau span for the algebraic _prony_fit_quality tests,
@@ -348,7 +351,11 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     UNSCALED smoothness the production function does, and re-derives the
     sqrt(dof / h**3) normalization independently rather than importing it.
     Returns (chi2, neg_log_posterior) with the posterior None exactly when C is
-    not positive definite, matching the contract.
+    not positive definite, matching the contract. The likelihood is exp(-V/2),
+    so the weighted residuals are unit-variance and the stated errors are
+    standard deviations; with C = Hess(V/2) the Laplace prefactor and the
+    Gaussian prior's normalizer leave only the (2 + solid) null directions'
+    log(2 pi) behind.
 
     prior_lam exists only here, so one test can show that production charges the
     exponential prior at the unscaled knob rather than at the scaled weight; the
@@ -377,11 +384,11 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     eigs = np.linalg.eigvalsh(A)
     nonzero = eigs > eigs.max() * 1e-10
     neg_log_posterior = (
-        V
+        0.5 * V
         - 0.5 * (np.log(eigs[nonzero]).sum()
                  + nonzero.sum() * np.log(lam)
                  - np.linalg.slogdet(C)[1])
-        - 0.5 * (2 + solid) * np.log(np.pi)
+        - 0.5 * (2 + solid) * np.log(2 * np.pi)
         + (smoothness * smoothness if prior_lam is None else prior_lam)
     )
     return chi2, neg_log_posterior
@@ -772,6 +779,48 @@ class TestPronyFitQuality(unittest.TestCase):
                                delta=1e-9 * abs(on_knob))
         self.assertAlmostEqual(on_weight - on_knob,
                                scaled ** 2 - smoothness ** 2, places=6)
+
+    def test_surprisal_is_the_laplace_evidence_of_exp_minus_half_V(self):
+        # The stated errors are standard deviations, so the likelihood is
+        # exp(-rho**2 / 2) and the posterior exp(-V / 2): the same noise level
+        # chi2_reduced is judged against. Laplace over exp(-V/2) gives
+        # (4 pi)**(m/2) * det(Hess V)**-0.5, and the Gaussian prior's
+        # normalizer (lam / 2 pi)**(r/2) * pdet(A)**0.5 cancels all but the
+        # (2 + solid) null directions' 2 pi. Rebuilt here from the fit's own
+        # reduced system, for both values of solid, since that count differs.
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        N, smoothness = 20, 0.1
+        for solid in (True, False):
+            with self.subTest(solid=solid):
+                tau_i, E_i, quality = smooth_prony_fit(
+                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+                    N=N, smoothness=smoothness, solid=solid,
+                    return_fit_quality=True,
+                )
+                # Interior optimum, so the full system is the one scored.
+                self.assertTrue(np.all(E_i > 0))
+                R, z = _prony_reduce(
+                    omega, E_stor, E_loss, std, std, tau_i, solid)
+                x = np.log(E_i)
+                m = N + solid
+                r = N - 2
+                dof = 2 * len(omega) - m
+                lam = _scaled_smoothness(
+                    smoothness, N, dof, np.log(tau_i[-1] / tau_i[0])) ** 2
+                loss = _PronyLoss(z, R, np.sqrt(lam), solid)
+                V = loss.fun(x)
+                sign, logdet_hess = np.linalg.slogdet(loss.hess(x))
+                self.assertEqual(sign, 1.0)
+                logpdetA = np.log(N ** 2 * (N ** 2 - 1) / 12)
+                expected = (
+                    V / 2
+                    - 0.5 * (logpdetA + r * np.log(lam) - logdet_hess)
+                    - 0.5 * (m * np.log(2) + (2 + solid) * np.log(2 * np.pi))
+                    + smoothness ** 2
+                )
+                self.assertIsNotNone(quality.neg_log_posterior)
+                np.testing.assert_allclose(
+                    quality.neg_log_posterior, expected, rtol=1e-9)
 
     def test_scaled_smoothness_falls_back_when_the_penalty_is_empty(self):
         # Fewer than 3 penalized terms leaves np.diff(..., n=2) empty and a
@@ -1658,6 +1707,129 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         projected = _PlateauProjectedProblem(data, basis, 0.3, log_cap=20.0)
         self.assertEqual(projected.fun(over[1:]), np.inf)
         self.assertTrue(np.all(np.isfinite(projected.jac(over[1:]))))
+
+
+BUNDLED_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..', '..', 'app', 'public', 'docs',
+    'dynamfit',
+))
+
+BUNDLED_MASTER_CURVES = (
+    'Cavaille-PS-98k-master-93C.csv',
+    'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
+    'PMMA-R09-master-clean-148C.csv',
+    'VeroCyan-80C_mastercurve.tsv',
+    'agilus30-20C_mastercurve.tsv',
+    'dgeba-ipd-wide-bar-170C_mastercurve.tsv',
+    'fisher-polycarbonate-150C_mastercurve.csv',
+)
+
+
+def _exp_minus_v_surprisal(omega, E_stor, E_loss, sigma, std_scale, tau_i,
+                           E_i, smoothness):
+    """The exp(-V) convention's surprisal at a fit smooth_prony_fit returned.
+
+    The score as it reads when the posterior is taken to be exp(-V), i.e. as
+    if the noise were the stated error divided by sqrt(2): V in place of V/2,
+    and pi in place of 2 pi. The penalty weight lam is read off the fit itself
+    through stationarity, 0 = r.T @ J + lam * A x, rather than rebuilt from
+    the knob, so this reference does not depend on how the knob is scaled.
+    A clamped equilibrium term is scored as the solid=False problem in the
+    decaying terms, as smooth_prony_fit scores it.
+    """
+    R, z = _prony_reduce(omega, E_stor, E_loss, sigma, sigma, tau_i, True,
+                         std_scale)
+    if E_i[0] > 0:
+        x, basis, solid = np.log(E_i), R, True
+    else:
+        x, basis, solid = np.log(E_i[1:]), R[:, 1:], False
+    m = len(x)
+    npen = m - solid
+    rj = _PronyLoss(z, basis, 0.0, solid).jac(x) / 2
+    d2 = np.diff(x[solid:], n=2)
+    Ax = np.zeros(m)
+    Ax_pen = Ax[solid:]
+    Ax_pen[:-2] += d2
+    Ax_pen[1:-1] -= 2 * d2
+    Ax_pen[2:] += d2
+    lam = -(rj @ Ax) / (Ax @ Ax)
+    loss = _PronyLoss(z, basis, np.sqrt(lam), solid)
+    logpdetA = np.log(npen ** 2 * (npen ** 2 - 1) / 12)
+    return (
+        loss.fun(x)
+        - 0.5 * (logpdetA + (npen - 2) * np.log(lam)
+                 - np.linalg.slogdet(loss.hess(x))[1])
+        - 0.5 * (m * np.log(2) + (2 + solid) * np.log(np.pi))
+        + smoothness ** 2
+    )
+
+
+class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
+    """Minimizing the surprisal on the bundled master curves, fitted the way
+    the app fits them: sigma = 1% of |E*|, N from prony_terms_for_span."""
+
+    RELATIVE_ERROR = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        cls.curves = {}
+        with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
+            for name in BUNDLED_MASTER_CURVES:
+                upload = upload_init(name, 'frequency')
+                cls.curves[name] = (
+                    upload['Frequency'], upload['E Storage'], upload['E Loss'],
+                )
+
+    def test_surprisal_prefers_more_smoothing_than_the_exp_minus_v_convention(
+            self):
+        # Halving V halves the misfit's pull against the prior, so the
+        # evidence-preferred smoothness rises: the user measured 1.5x to 4.4x
+        # across these files. Each fit is scored both ways, a third-decade
+        # grid in log10(smoothness) brackets each argmin, and a bounded
+        # scalar search refines it to 0.01 decade; the 1.1x margin is several
+        # times that resolution.
+        coarse = np.arange(-8, 7) / 3
+        for name, (omega, E_stor, E_loss) in self.curves.items():
+            with self.subTest(file=name):
+                sigma = np.abs(E_stor + 1.0j * E_loss)
+                N = prony_terms_for_span(omega)
+                scores = {}
+
+                def scored(log_s):
+                    if log_s not in scores:
+                        s = 10.0 ** log_s
+                        tau_i, E_i, quality = smooth_prony_fit(
+                            omega, E_stor, E_loss, sigma, sigma, N, s,
+                            return_fit_quality=True,
+                            std_scale=self.RELATIVE_ERROR,
+                        )
+                        self.assertIsNotNone(quality.neg_log_posterior)
+                        scores[log_s] = (
+                            quality.neg_log_posterior,
+                            _exp_minus_v_surprisal(
+                                omega, E_stor, E_loss, sigma,
+                                self.RELATIVE_ERROR, tau_i, E_i, s),
+                        )
+                    return scores[log_s]
+
+                grid = [scored(float(log_s)) for log_s in coarse]
+                argmin = []
+                for k in (0, 1):
+                    i = int(np.argmin([pair[k] for pair in grid]))
+                    self.assertTrue(0 < i < len(coarse) - 1,
+                                    msg=f'argmin at grid edge: {i}')
+                    best = minimize_scalar(
+                        lambda log_s: scored(log_s)[k],
+                        bounds=(coarse[i - 1], coarse[i + 1]),
+                        method='bounded', options=dict(xatol=0.01),
+                    )
+                    argmin.append(best.x)
+                reported, exp_minus_v = argmin
+                self.assertGreater(
+                    10 ** (reported - exp_minus_v), 1.1,
+                    msg=f'smoothness {10 ** reported:.4g} (reported) vs '
+                        f'{10 ** exp_minus_v:.4g} (exp(-V))',
+                )
 
 
 class TestArgmaxPeak(unittest.TestCase):
