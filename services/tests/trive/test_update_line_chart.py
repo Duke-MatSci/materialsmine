@@ -1237,6 +1237,10 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         self.assertIn('χ²/ν', readout)
         self.assertIn('surprisal', readout)
         self.assertIn('curvature', readout)
+        # The unit-rate exponential prior is charged on the user-facing knob
+        # s², not on the internal weight λ, so the label names s².
+        self.assertIn('−log π(s²)', readout)
+        self.assertNotIn('π(λ)', readout)
 
     def test_quality_readout_puts_curvature_between_the_other_two(self):
         # chi-squared and curvature are the two L-curve coordinates, so they
