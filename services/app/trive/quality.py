@@ -85,8 +85,10 @@ def _prony_fit_quality(
                      - 0.5 * log|Hess V|
                      + 0.5 * (m * log(2) + (2 + solid) * log(2 pi)) - lam0
 
-    with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2,
-    V = rho^2 + lam * eta^2 (the _PronyLoss loss), A = L.T @ L for the
+    with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2
+    = smoothness**2 * dof * (npen - 1)**3 / log_range**4 (Eq. 7, dof floored
+    at 1; see _scaled_smoothness for why), V = rho^2 + lam * eta^2 (the
+    _PronyLoss loss), A = L.T @ L for the
     second-difference operator L behind the penalty, and Hess V the exact
     second derivative 2 * (lam * A + J.T @ J + diag(r.T @ J)) — taken straight
     from _PronyLoss.hess, the same array the Newton solver in fit converges

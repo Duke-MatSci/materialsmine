@@ -284,9 +284,16 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     """
     Turn the user-facing smoothness knob into the penalty weight actually used.
 
-    Makes the knob mean the same thing on any upload. The data term sums over
-    n_resid residuals while the penalty sums over npen - 2 second differences,
-    so both need normalizing, and the penalty needs more care than it looks:
+    Makes the knob mean the same thing on any upload. The weight is Eq. 7 of
+    the manuscript,
+
+        lam = smoothness**2 * dof * (npen - 1)**3 / log_range**4
+            = smoothness**2 * dof / (h**3 * log_range),
+
+    with dof floored at 1 and h = log_range / (npen - 1) the log-tau grid
+    spacing. The data term sums over n_resid residuals while the penalty sums
+    over npen - 2 second differences, so both need normalizing, and the
+    penalty needs more care than it looks:
 
       * dof, because the data term grows with the row count. Without this a
         41k-row broadband file needed ~100x the smoothness a 400-row file needs
@@ -299,13 +306,16 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
         measured to get 18x rougher going from N=23 to N=100 at a fixed knob
         setting, i.e. N was a second, undocumented smoothness control. With the
         correction it moves 1.2x.
+      * 1/log_range, because the integral of H''**2 grows with the span.
+        Dividing by it charges the MEAN squared curvature per unit ln(tau)
+        instead, so one setting smooths a 4-decade master curve as hard as a
+        20-decade one.
 
-    The pair gives V/dof = chi2_reduced + smoothness**2 * (log_range *
-    curvature), so smoothness**2 is exactly the exchange rate between the two
-    numbers the fit-quality readout puts on the plot. Note that when N is chosen
-    per decade of span, h is constant and this reduces to a pure rescaling of
-    the older dof-only normalization; the 1/h**3 only does work when N is
-    overridden independently of the span.
+    Together they give V/dof = chi2_reduced + smoothness**2 * curvature, so
+    smoothness**2 is exactly the exchange rate between the two numbers the
+    fit-quality readout puts on the plot, with no span factor left over. When
+    N is chosen per decade of span, h is constant and the 1/h**3 is a fixed
+    factor; it only does work when N is overridden independently of the span.
 
     Lives here rather than inline in smooth_prony_fit because _prony_fit_quality
     has to charge the Laplace expansion the SAME weight the fit was run with,
