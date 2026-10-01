@@ -366,22 +366,22 @@
       >
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
           <label for="smoothnessC" class="md-body-2">
-            Smoothness (%)
+            Smoothness
             <HelpPopover label="Smoothness">
-              Penalty on curvature of the relaxation spectrum, as a percentage.  Larger values give
-              a smoother spectrum; 0 disables smoothing; over 100% is possible but not recommended.
+              Penalty on curvature of the relaxation spectrum. Larger values give a smoother
+              spectrum; 0 disables smoothing.
             </HelpPopover>
           </label>
           <input
             :disabled="disableInput"
-            v-model.number="smoothnessPercent"
+            v-model.number="smoothness"
             :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
             type="number"
             name="smoothness"
             id="smoothnessC"
-            min="0"
-            max="100"
-            :step="PERCENT_INPUT_STEP"
+            :min="SMOOTHNESS_MIN"
+            :max="SMOOTHNESS_MAX"
+            :step="SMOOTHNESS_STEP"
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
@@ -675,7 +675,10 @@ import {
   ERROR_SCALE_STEP,
   PERCENT_INPUT_STEP,
   RELATIVE_ERROR_DEFAULT_PERCENT,
-  SMOOTHNESS_DEFAULT_PERCENT,
+  SMOOTHNESS_DEFAULT,
+  SMOOTHNESS_MAX,
+  SMOOTHNESS_MIN,
+  SMOOTHNESS_STEP,
 } from '@/composables/useDynamfitDefaults';
 import {
   resolveShiftFitModel,
@@ -747,7 +750,7 @@ const cFormatOpen = ref(false);
 // box is '' (what v-model.number yields for an emptied number input) and
 // stands for the default; the payload substitutes it at send time.
 type Blankable = number | '';
-const smoothness = ref<Blankable>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
+const smoothness = ref<Blankable>(SMOOTHNESS_DEFAULT);
 const relativeError = ref<Blankable>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
 // The widget's other mode: a plain multiplier on the file's own error
 // columns. Both values ride in every request and the server consumes
@@ -759,12 +762,6 @@ const errorScale = ref<Blankable>(ERROR_SCALE_DEFAULT);
 const orDefault = (v: Blankable, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 
-const smoothnessPercent = computed<Blankable>({
-  get: () => (smoothness.value === '' ? '' : fractionToPercent(smoothness.value)),
-  set: (v) => {
-    smoothness.value = v === '' ? '' : percentToFraction(v);
-  },
-});
 const relativeErrorPercent = computed<Blankable>({
   get: () => (relativeError.value === '' ? '' : fractionToPercent(relativeError.value)),
   set: (v) => {
@@ -953,7 +950,7 @@ const resetAll = async (): Promise<void> => {
   dataType.value = undefined;
   transformMethod.value = '';
   ttsp.value = false;
-  smoothness.value = percentToFraction(SMOOTHNESS_DEFAULT_PERCENT);
+  smoothness.value = SMOOTHNESS_DEFAULT;
   relativeError.value = percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT);
   errorScale.value = ERROR_SCALE_DEFAULT;
   store.commit('explorer/setDynamfitManualFile', '');
@@ -1270,7 +1267,7 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
     number_of_prony: dynamfit.value.range,
     model: dynamfit.value.model,
     domain: selectedProperty.value,
-    smoothness: orDefault(smoothness.value, percentToFraction(SMOOTHNESS_DEFAULT_PERCENT)),
+    smoothness: orDefault(smoothness.value, SMOOTHNESS_DEFAULT),
     relative_error: orDefault(relativeError.value, percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT)),
     error_scale: orDefault(errorScale.value, ERROR_SCALE_DEFAULT),
     // Say "no transform" out loud rather than leaving the key off. Both

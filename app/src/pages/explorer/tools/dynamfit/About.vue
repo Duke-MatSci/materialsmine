@@ -49,7 +49,7 @@
           Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
           strength of that penalty: larger values give a smoother, better-conditioned spectrum,
           and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
-          With s = <em>Smoothness</em> ÷ 100, the penalty weight is
+          With s the <em>Smoothness</em> value, the penalty weight is
           λ = s<sup>2</sup>·ν·(n−1)<sup>3</sup>/L<sup>4</sup>, where ν is the degrees of freedom
           (data values fitted minus parameters fitted), n the number of Prony terms, and
           L = ln(τ<sub>max</sub>/τ<sub>min</sub>) the span of the relaxation grid. This makes the
