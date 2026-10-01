@@ -9,6 +9,10 @@ user-facing smoothness knob is normalized, and how the equilibrium modulus is
 kept out of the Newton solver's search (`_PlateauProjectedProblem`).
 """
 
+import contextlib
+import ctypes
+import threading
+
 import numpy as np
 from scipy.optimize import minimize, nnls
 
@@ -16,6 +20,90 @@ from .prony import prony_relaxation_space
 from .objective import _PronyLoss, _scaled_smoothness
 from .reduction import _prony_reduce
 from .quality import _FitQuality, _prony_fit_quality
+
+
+# Wall-clock budget for the Newton solve, in seconds; read at call time.
+_NEWTON_TIME_BUDGET = 1.0
+
+# Shift added to the diagonal of the SOLVER's Hessian, in ulps of its largest
+# absolute diagonal entry; read at call time. Only the Newton step sees it.
+_NEWTON_HESSIAN_SHIFT_EPS = 64
+
+
+class SmoothPronyFitTimeout(ValueError):
+    """The Newton solve exceeded _NEWTON_TIME_BUDGET.
+
+    A ValueError so the routes answer 400 with the message and its remedy.
+    """
+
+
+class SmoothPronyFitDiverged(ValueError):
+    """scipy raised a ValueError inside the Newton solve.
+
+    A ValueError so the routes answer 400 with the message and its remedy.
+    """
+
+
+class _NewtonBudgetExceeded(BaseException):
+    """Injected by _newton_watchdog; BaseException so nothing swallows it."""
+
+
+@contextlib.contextmanager
+def _newton_watchdog(budget: float):
+    """
+    Raise _NewtonBudgetExceeded in the calling thread after `budget` seconds.
+
+    scipy 1.10.1's trust-exact subproblem is an unbounded loop that maxiter
+    cannot cap; an exactly-zero Hessian eigenvalue can make it cycle forever.
+    A daemon timer injects the exception with PyThreadState_SetAsyncExc, which
+    interrupts pure-Python execution only, not a blocked C call. On exit the
+    timer is cancelled and any undelivered injection is cleared.
+
+    Parameters:
+        budget (float): Seconds before the body is interrupted.
+    """
+    tid = ctypes.c_ulong(threading.get_ident())
+
+    def expire():
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            tid, ctypes.py_object(_NewtonBudgetExceeded))
+
+    timer = threading.Timer(budget, expire)
+    timer.daemon = True
+    timer.start()
+    try:
+        yield
+    finally:
+        timer.cancel()
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+
+
+def _shifted_hessian(hess, eps_multiple: float):
+    """
+    Wrap a Hessian callable so the solver sees H + shift * I.
+
+    shift = eps_multiple * eps * max|diag H|, eps being the machine epsilon
+    of H's dtype. An exactly-zero eigenvalue (a direction both the smoothness
+    penalty and the data leave flat) sends scipy 1.10.1's subproblem loop
+    into a cycle; a rounding-level shift gives it representable curvature.
+    The array `hess` returns is never mutated.
+
+    Parameters:
+        hess (callable): logcoefs -> (m, m) Hessian array.
+        eps_multiple (float): Shift in units of the array's machine epsilon.
+
+    Returns:
+        callable: logcoefs -> the shifted Hessian, for minimize's hess=.
+    """
+    def shifted(logcoefs: np.ndarray) -> np.ndarray:
+        H = hess(logcoefs)
+        if not eps_multiple:
+            return H
+        shift = eps_multiple * np.finfo(H.dtype).eps * np.abs(np.diag(H)).max()
+        H = H.copy()
+        H[np.diag_indices_from(H)] += shift
+        return H
+    return shifted
 
 
 class _PlateauProjectedProblem:
@@ -270,14 +358,28 @@ def smooth_prony_fit(
     # Flat seed, data-scaled: zero curvature, so the penalty contributes
     # nothing to the first step however large its weight.
     x0 = np.full(N, np.log(E_stor.max() / m))
-    with np.errstate(over='ignore', invalid='ignore'):
-        result = minimize(
-            fun=problem.fun,
-            x0=x0,
-            jac=problem.jac,
-            hess=problem.hess,
-            method='trust-exact',
-        )
+    remedy = ('Lower the relaxation grid size, or raise the smoothness or '
+              'the assumed error.')
+    budget = _NEWTON_TIME_BUDGET
+    try:
+        with _newton_watchdog(budget), \
+                np.errstate(over='ignore', invalid='ignore'):
+            result = minimize(
+                fun=problem.fun,
+                x0=x0,
+                jac=problem.jac,
+                hess=_shifted_hessian(problem.hess, _NEWTON_HESSIAN_SHIFT_EPS),
+                method='trust-exact',
+            )
+    except _NewtonBudgetExceeded:
+        unit = 'second' if budget == 1 else 'seconds'
+        raise SmoothPronyFitTimeout(
+            f'The smoothed fit did not converge within {budget:g} {unit} at '
+            f'a relaxation grid size of {N}. {remedy}') from None
+    except ValueError as exc:
+        raise SmoothPronyFitDiverged(
+            f'The smoothed fit diverged at a relaxation grid size of {N}. '
+            f'{remedy}') from exc
     # result.success is deliberately not consulted: near the optimum the
     # trust radius can collapse on a precision-limited reduction ratio and
     # scipy reports "bad approximation" with the gradient already ~1e-5.
