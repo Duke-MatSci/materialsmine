@@ -19,6 +19,8 @@ bottom-up:
     fit          smooth_prony_fit — composes the four above into the single
                  call that turns data into (tau_i, E_i), failing fast with
                  a remedy when the Newton solve stalls
+    uncertainty  delta-method 1-sigma bands: the reported covariance carried
+                 to the spectrum, the complex moduli and E(t)
 
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift

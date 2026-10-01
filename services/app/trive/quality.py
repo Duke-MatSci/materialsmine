@@ -9,6 +9,7 @@ only caller; `figures._annotate_fit_quality` formats what comes out.
 from collections import namedtuple
 
 import numpy as np
+from scipy.linalg import cho_solve
 
 from .objective import (
     _log_curvature,
@@ -38,8 +39,13 @@ from .objective import (
 # DIFFERENCE: see _mean_sq_curvature for why the distinction decides whether
 # the number survives a change of N. Its square root is an RMS bend in nepers
 # per (ln tau)**2.
+#
+# covariance is the Laplace posterior covariance 2 * inv(Hess V) of the
+# log-coefficients, rows in the order of the problem scored; None when there
+# is no penalty or Hess V is not positive definite.
 _FitQuality = namedtuple(
-    '_FitQuality', 'chi2_reduced neg_log_posterior curvature'
+    '_FitQuality', 'chi2_reduced neg_log_posterior curvature covariance',
+    defaults=(None,),
 )
 
 
@@ -162,7 +168,9 @@ def _prony_fit_quality(
         no second difference to take. The two reported quantities are means —
         chi-squared per degree of freedom, squared log-spectrum curvature per
         unit ln(tau) — while the algebra below works in raw sums, so every
-        normalization happens once, at the single return.
+        normalization happens once, at the single return. covariance is
+        2 * inv(Hess V), the Laplace posterior covariance of logcoefs, or None
+        when smoothness is 0 or Hess V is not positive definite.
     """
     m = len(logcoefs)
     npen = m - solid
@@ -193,35 +201,40 @@ def _prony_fit_quality(
     # second difference to exist means there is no prior on lam to be posterior
     # about. npen < 3 would also reach log(npen - 1) = log(0) below.
     neg_log_posterior = None
-    if len(curve) and smoothness:
+    covariance = None
+    # hess() returns a fresh array, so nothing cached is at stake in the
+    # factorization. The covariance needs only a penalty, not a second
+    # difference: a 2-term smoothed fit still has a posterior over logcoefs.
+    chol = _cholesky_or_none(loss.hess(logcoefs)) if smoothness else None
+    if chol is not None:
+        covariance = cho_solve((chol, True), 2 * np.eye(m))
+        covariance = 0.5 * (covariance + covariance.T)
+    if len(curve) and chol is not None:
         # Note V/2 is NOT a marginal likelihood: it is the unnormalized
-        # negative log JOINT density at the mode (misfit+penalty). hess()
-        # returns a fresh array, so nothing cached is at stake in the
-        # factorization.
+        # negative log JOINT density at the mode (misfit+penalty).
         V = loss.fun(logcoefs)
-        chol = _cholesky_or_none(loss.hess(logcoefs))
-        if chol is not None:
-            logdet_hess = 2 * np.log(np.diag(chol)).sum()
-            logpdetA = (
-                2 * np.log(npen) + np.log(npen - 1) + np.log(npen + 1)
-                - np.log(12.0)
-            )
-            # abs(): the penalty is sign-agnostic in smoothness (it enters
-            # squared) and nothing upstream rejects a negative value. The
-            # scale factor is positive, so it carries that sign through.
-            loglam = 2 * np.log(abs(scaled))
-            # Negated so that lower is better. This is a log DENSITY, so
-            # positivity is not guaranteed — it holds in practice because V/2
-            # dominates for any real upload. Deliberately not clamped.
-            neg_log_posterior = (
-                0.5 * V
-                - 0.5 * (logpdetA + (npen - 2) * loglam - logdet_hess)
-                - 0.5 * (m * np.log(2.0) + (2 + solid) * np.log(2 * np.pi))
-                + smoothness * smoothness
-            )
+        logdet_hess = 2 * np.log(np.diag(chol)).sum()
+        logpdetA = (
+            2 * np.log(npen) + np.log(npen - 1) + np.log(npen + 1)
+            - np.log(12.0)
+        )
+        # abs(): the penalty is sign-agnostic in smoothness (it enters
+        # squared) and nothing upstream rejects a negative value. The
+        # scale factor is positive, so it carries that sign through.
+        loglam = 2 * np.log(abs(scaled))
+        # Negated so that lower is better. This is a log DENSITY, so
+        # positivity is not guaranteed — it holds in practice because V/2
+        # dominates for any real upload. Deliberately not clamped.
+        neg_log_posterior = (
+            0.5 * V
+            - 0.5 * (logpdetA + (npen - 2) * loglam - logdet_hess)
+            - 0.5 * (m * np.log(2.0) + (2 + solid) * np.log(2 * np.pi))
+            + smoothness * smoothness
+        )
 
     return _FitQuality(
         chi2 / dof if dof > 0 else None,
         neg_log_posterior,
         _mean_sq_curvature(curve, npen, log_range),
+        covariance,
     )
