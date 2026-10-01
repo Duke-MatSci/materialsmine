@@ -39,7 +39,7 @@ from app.trive.objective import (
     _scaled_smoothness,
 )
 from app.trive.reduction import _prony_reduce
-from app.trive.quality import _prony_fit_quality
+from app.trive.quality import _FitQuality, _prony_fit_quality
 from app.trive.fit import smooth_prony_fit, _PlateauProjectedProblem
 from app.trive.calibration import argmax_peak
 from app.trive.figures import _build_coef_records
@@ -948,6 +948,86 @@ class TestPronyFitQuality(unittest.TestCase):
             quality.chi2_reduced, expected, delta=1e-6 * expected,
         )
 
+    def test_covariance_field_defaults_to_none(self):
+        """_FitQuality carries a fourth field, covariance, defaulting to None
+        so three-positional construction keeps working."""
+        self.assertEqual(
+            _FitQuality._fields,
+            ('chi2_reduced', 'neg_log_posterior', 'curvature', 'covariance'),
+        )
+        self.assertIsNone(_FitQuality(1.0, None, None).covariance)
+
+    def test_covariance_is_two_inverse_hessians(self):
+        """Sigma = 2 inv(Hess V) at the optimum, for the V the solver
+        minimizes: exactly symmetric and positive definite."""
+        smoothness = 1.0
+        basis, data, x = _converged_fit_problem(self.rng, smoothness=smoothness)
+        m = len(x)
+        n_resid = 2 * len(data)
+        quality = _prony_fit_quality(
+            x, data, basis, smoothness, True,
+            n_resid=n_resid, log_range=LOG_RANGE,
+        )
+        cov = quality.covariance
+        self.assertIsNotNone(cov)
+        self.assertEqual(cov.shape, (m, m))
+        np.testing.assert_array_equal(cov, cov.T)
+        np.linalg.cholesky(cov)  # raises unless positive definite
+        scaled = _scaled_smoothness(smoothness, m - 1, n_resid - m, LOG_RANGE)
+        H = _PronyLoss(data, basis, scaled, True).hess(x)
+        err = np.abs(cov @ H - 2 * np.eye(m)).max()
+        self.assertLess(err, 1e-10 * np.linalg.norm(H) * np.linalg.norm(cov))
+
+    def test_covariance_approaches_classical_least_squares(self):
+        """As smoothness -> 0+ at an exact fit, Sigma -> inv(J.T @ J) with
+        J = basis * coefs, the weighted least-squares covariance of the
+        log-parameters."""
+        basis = np.abs(self.rng.normal(size=(30, 9))) + 0.3
+        truth = np.exp(self.rng.normal(size=9))
+        data = basis @ truth
+        quality = _prony_fit_quality(
+            np.log(truth), data, basis, 1e-8, True,
+            n_resid=len(data), log_range=LOG_RANGE,
+        )
+        J = basis * truth
+        np.testing.assert_allclose(
+            quality.covariance, np.linalg.inv(J.T @ J), rtol=1e-3,
+        )
+
+    def test_covariance_none_when_smoothness_zero(self):
+        """No penalty, no log-space posterior: covariance is None."""
+        basis, data, x = _random_fit_problem(self.rng, 8, True)
+        quality = _prony_fit_quality(
+            x, data, basis, 0.0, True, n_resid=2 * len(data),
+            log_range=LOG_RANGE,
+        )
+        self.assertIsNone(quality.covariance)
+
+    def test_covariance_none_when_hessian_not_positive_definite(self):
+        """Away from a local minimum there is no Laplace posterior."""
+        basis, data, _ = _converged_fit_problem(self.rng)
+        x = np.full(basis.shape[1], -10.0)
+        quality = _prony_fit_quality(
+            x, data, basis, 0.5, True, n_resid=2 * len(data),
+            log_range=LOG_RANGE,
+        )
+        self.assertIsNone(quality.neg_log_posterior)
+        self.assertIsNone(quality.covariance)
+
+    def test_covariance_present_with_fewer_than_three_penalized_terms(self):
+        """Not gated on a second difference existing: a 2-term smoothed fit
+        has a covariance even though neg_log_posterior is None."""
+        basis = np.abs(self.rng.normal(size=(10, 3))) + 0.3
+        truth = np.exp(self.rng.normal(size=3))
+        data = basis @ truth
+        quality = _prony_fit_quality(
+            np.log(truth), data, basis, 1.5, True,
+            n_resid=len(data), log_range=LOG_RANGE,
+        )
+        self.assertIsNone(quality.neg_log_posterior)
+        self.assertIsNotNone(quality.covariance)
+        self.assertEqual(quality.covariance.shape, (3, 3))
+
 
 class TestPronyReduce(unittest.TestCase):
     """The extracted QR reduction and its content-addressed LRU cache."""
@@ -1786,7 +1866,8 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
             omega, E_stor, E_loss, solid=False, **kwargs)
         self.assertEqual(E_solid[0], 0.0)
         self.assertEqual(len(E_solid), 11)
-        for value in q_solid:
+        for field in ('chi2_reduced', 'neg_log_posterior', 'curvature'):
+            value = getattr(q_solid, field)
             self.assertIsNotNone(value)
             self.assertTrue(np.isfinite(value))
         # Same optimum to within the one-parameter difference in dof that
@@ -1796,6 +1877,65 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
                                delta=5e-3 * q_visc.chi2_reduced)
         self.assertAlmostEqual(q_solid.neg_log_posterior,
                                q_visc.neg_log_posterior, delta=0.5)
+
+    def _reduced_hessian(self, omega, E_stor, E_loss, std, tau_i, x,
+                         smoothness, solid, dof):
+        """Hess V of the reduced system smooth_prony_fit minimizes, at x."""
+        m = len(tau_i) + solid
+        R, z = _prony_reduce(
+            omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
+        scaled = _scaled_smoothness(
+            smoothness, len(tau_i), dof, np.log(tau_i[-1] / tau_i[0]))
+        return _PronyLoss(z[:m], R[:m], scaled, solid).hess(x)
+
+    def _assert_two_inverse_hessians(self, cov, H):
+        m = len(H)
+        np.testing.assert_array_equal(cov, cov.T)
+        np.linalg.cholesky(cov)  # raises unless positive definite
+        err = np.abs(cov @ H - 2 * np.eye(m)).max()
+        self.assertLess(err, 1e-8 * np.linalg.norm(H) * np.linalg.norm(cov))
+
+    def test_covariance_rows_follow_the_solver_parameterization(self):
+        """Interior solid fit: (N+1, N+1), log E_eq first. Clamped E_eq = 0
+        and solid=False: (N, N), decaying terms only. Each is 2 inv(Hess V)
+        of the reduced problem the solver had; the NNLS path has none."""
+        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
+        N = 10
+        n_res = 2 * len(omega)
+        kwargs = dict(E_stor_std=std, E_loss_std=std, N=N,
+                      return_fit_quality=True)
+        args = (omega, E_stor, E_loss, std)
+
+        tau_i, E_i, q = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=0.1, solid=True, **kwargs)
+        self.assertGreater(E_i[0], 0)
+        self.assertEqual(q.covariance.shape, (N + 1, N + 1))
+        H = self._reduced_hessian(
+            *args, tau_i, np.log(E_i), 0.1, True, n_res - (N + 1))
+        self._assert_two_inverse_hessians(q.covariance, H)
+
+        tau_i, E_i, q = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=4.3, solid=True, **kwargs)
+        self.assertEqual(E_i[0], 0.0)
+        self.assertEqual(q.covariance.shape, (N, N))
+        R, z = _prony_reduce(
+            omega, E_stor, E_loss, std, std, tau_i, True, 1.0)
+        scaled = _scaled_smoothness(
+            4.3, N, n_res - (N + 1), np.log(tau_i[-1] / tau_i[0]))
+        H = _PronyLoss(z[:N + 1], R[:N + 1, 1:], scaled, False).hess(
+            np.log(E_i[1:]))
+        self._assert_two_inverse_hessians(q.covariance, H)
+
+        tau_i, E_i, q = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=0.1, solid=False, **kwargs)
+        self.assertEqual(q.covariance.shape, (N, N))
+        H = self._reduced_hessian(
+            *args, tau_i, np.log(E_i), 0.1, False, n_res - N)
+        self._assert_two_inverse_hessians(q.covariance, H)
+
+        _, _, q = smooth_prony_fit(
+            omega, E_stor, E_loss, smoothness=0.0, solid=True, **kwargs)
+        self.assertIsNone(q.covariance)
 
     def test_plateau_projection_is_exact(self):
         # With E_eq > 0 the projected loss, gradient and Hessian must equal the
