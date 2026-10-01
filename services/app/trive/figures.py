@@ -18,7 +18,8 @@ from .shift import hybrid_shift, wlf_log10_shift
 from .tts import MAX_ABS_LOG10_SHIFT
 from .uncertainty import (
     _SIGMA_DISPLAY_CAP, coefficient_bounds, complex_modulus_noise,
-    complex_modulus_sigma, relaxation_sigma, sigma_log_coefficients, spectrum_error_bars,
+    complex_modulus_sigma, relaxation_sigma, sigma_log_coefficients,
+    spectrum_error_bars,
 )
 
 
@@ -281,11 +282,12 @@ _WINDOW_RTOL = 1e-9
 
 def _pin_y_ranges(fig, lo: float, hi: float) -> None:
     """
-    Set each Prony-carrying y axis's range from its content inside the window.
+    Set each y axis's range from its traces' points inside the window.
 
     The Prony curve is drawn past the window, where its tails would rescale
     the plot; the range instead brackets every trace's points at
-    lo <= x <= hi, plus a small margin. Matched axes
+    lo <= x <= hi (each edge loosened by _WINDOW_RTOL), plus a small margin.
+    Matched axes
     share their governing axis's range. An axis with no usable values stays
     on autorange.
 
@@ -373,6 +375,10 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
                            N_nz: int, covariance=None, noise=None) -> tuple:
     """
     Build E vs frequency and tan-delta vs frequency figures with Prony overlay.
+
+    The overlay and its ribbons run _DRAW_EXTENSION_DECADES past
+    1/max(tau_i)..1/min(tau_i) on each side; the y ranges are pinned to
+    that window (_pin_y_ranges).
 
     Parameters:
         df (pd.DataFrame): Experimental data with columns
@@ -472,6 +478,10 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
                               fit_settings: bool, covariance=None) -> tuple:
     """
     Build relaxation-modulus and discrete-spectrum figures.
+
+    E(t) and its ribbon run _DRAW_EXTENSION_DECADES past
+    min(tau_i)..max(tau_i) on each side, with fig2's y range pinned to
+    that window (_pin_y_ranges); fig3 is not extended.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.

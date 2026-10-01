@@ -139,7 +139,8 @@ def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
     """
     Compute the complex modulus on a log-spaced frequency grid.
 
-    Builds an angular-frequency grid spanning 1/max(tau_i) to 1/min(tau_i) and
+    Builds an angular-frequency grid spanning 1/max(tau_i) to 1/min(tau_i),
+    widened by extend_decades on each side, and
     evaluates the storage and loss moduli from the Prony coefficients in E_i.
     When E_i has one more element than tau_i, the leading coefficient is
     treated as an equilibrium-modulus term.
@@ -161,7 +162,8 @@ def compute_complex(tau_i: np.ndarray, E_i: np.ndarray,
     assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
         "E_i must be a 1-D numpy.ndarray"
     d = extend_decades
-    omega = np.logspace(-np.log10(np.max(tau_i)) - d, -np.log10(np.min(tau_i)) + d, num_pts)
+    omega = np.logspace(-np.log10(np.max(tau_i)) - d,
+                        -np.log10(np.min(tau_i)) + d, num_pts)
     basis = prony_basis(omega, tau_i, solid=not (len(E_i) == len(tau_i)))
     complex = basis @ E_i
     real, imag = complex.reshape(2, num_pts)
@@ -175,7 +177,8 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     """
     Compute the time-domain relaxation modulus on a log-spaced time grid.
 
-    Builds a time grid spanning min(tau_i) to max(tau_i) and evaluates the
+    Builds a time grid spanning min(tau_i) to max(tau_i),
+    widened by extend_decades on each side, and evaluates the
     decaying part of the Prony relaxation modulus from the coefficients in
     E_i. When E_i has one more element than tau_i, the leading
     equilibrium-modulus coefficient is excluded from the output.
@@ -196,7 +199,8 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     assert isinstance(E_i, np.ndarray) and E_i.ndim == 1, \
         "E_i must be a 1-D numpy.ndarray"
     d = extend_decades
-    t = np.logspace(np.log10(np.min(tau_i)) - d, np.log10(np.max(tau_i)) + d, num_pts)
+    t = np.logspace(np.log10(np.min(tau_i)) - d,
+                    np.log10(np.max(tau_i)) + d, num_pts)
     # dimensionless time t/τ
     dt = np.outer(t, 1 / tau_i)
     solid = not (len(E_i) == len(tau_i))
