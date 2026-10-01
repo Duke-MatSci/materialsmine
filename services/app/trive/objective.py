@@ -328,4 +328,4 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     if npen < 3 or log_range <= 0:
         return smoothness
     h = log_range / (npen - 1)
-    return smoothness * np.sqrt(max(dof, 1) / h ** 3)
+    return smoothness * np.sqrt(max(dof, 1) / (h ** 3 * log_range))
