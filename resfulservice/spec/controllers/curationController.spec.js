@@ -1249,7 +1249,7 @@ describe('Curation Controller', function () {
 
   context('deleteDataset', () => {
     it('should return 400 if dataset id is missing', async () => {
-      const deleteReq = { logger, params: {} };
+      const deleteReq = { logger, params: {}, user: { roles: 'isAdmin' } };
       const result = await XlsxController.deleteDataset(deleteReq, res, next);
       expect(result).to.have.property('message');
       expect(result.message).to.equal('Dataset id is required');
@@ -1262,7 +1262,7 @@ describe('Curation Controller', function () {
         logger,
         params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
         env: { MANAGED_SERVICE_ADDRESS: 'http://localhost:5050' },
-        user
+        user: { roles: 'isAdmin' }
       };
       sinon.stub(res, 'status').returnsThis();
       sinon.stub(res, 'json').returnsThis();
@@ -1285,7 +1285,7 @@ describe('Curation Controller', function () {
         logger,
         params: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' },
         env: { MANAGED_SERVICE_ADDRESS: 'http://localhost:5050' },
-        user
+        user: { roles: 'isAdmin' }
       };
       sinon.stub(axios, 'request').rejects(new Error('Service unavailable'));
 
