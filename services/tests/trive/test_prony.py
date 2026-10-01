@@ -22,6 +22,7 @@ from scipy.optimize import minimize, minimize_scalar
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import app.trive.reduction as reduction
+import app.trive.objective as objective
 import app.trive.fit as prony_fit
 from app.trive.prony import (
     prony_basis,
@@ -424,8 +425,11 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     UNSCALED smoothness the production function does, and re-derives the
     lam = smoothness**2 * dof * (npen - 1)**3 / log_range**4 normalization
     independently rather than importing it.
-    Returns (chi2, neg_log_posterior) with the posterior None exactly when C is
-    not positive definite, matching the contract. The likelihood is exp(-V/2),
+    Returns (chi2, neg_log_posterior, gamma) with the posterior None exactly
+    when C is not positive definite, matching the contract. gamma is MacKay's
+    npen - lam * tr(A inv(C)) when there is a penalty and C is positive
+    definite, else None; chi2 is then per n_resid - (gamma + solid), and per
+    the classical n_resid - m otherwise. The likelihood is exp(-V/2),
     so the weighted residuals are unit-variance and the stated errors are
     standard deviations; with C = Hess(V/2) the Laplace prefactor and the
     Gaussian prior's normalizer leave only the (2 + solid) null directions'
@@ -450,9 +454,16 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     V = resid @ resid + lam * (logcoefs @ A @ logcoefs)
     J = -(basis * coefs)
     C = lam * A + J.T @ J + np.diag(resid @ J)
-    chi2 = (resid @ resid) / dof if dof > 0 else None
     if np.linalg.eigvalsh(C).min() <= 0:
-        return chi2, None
+        chi2 = (resid @ resid) / dof if dof > 0 else None
+        return chi2, None, None
+    gamma = None
+    nu = dof
+    if smoothness:
+        # inv(C) is the covariance 2 * inv(Hess V), C being Hess V / 2.
+        gamma = npen - lam * np.trace(A @ np.linalg.inv(C))
+        nu = n_resid - (gamma + solid)
+    chi2 = (resid @ resid) / nu if nu > 0 else None
     eigs = np.linalg.eigvalsh(A)
     nonzero = eigs > eigs.max() * 1e-10
     neg_log_posterior = (
@@ -463,7 +474,7 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
         - 0.5 * (2 + solid) * np.log(2 * np.pi)
         + (smoothness * smoothness if prior_lam is None else prior_lam)
     )
-    return chi2, neg_log_posterior
+    return chi2, neg_log_posterior, gamma
 
 
 def _random_fit_problem(rng, N, solid, n_rows=None):
@@ -669,10 +680,15 @@ class TestPronyFitQuality(unittest.TestCase):
                         got = _prony_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
-                        chi2, nlp = _dense_fit_quality(
+                        chi2, nlp, gamma = _dense_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
                         self.assertAlmostEqual(got.chi2_reduced, chi2, places=9)
+                        if gamma is None:
+                            self.assertIsNone(got.effective_terms)
+                        else:
+                            self.assertAlmostEqual(
+                                got.effective_terms, gamma, places=9)
                         if nlp is None:
                             self.assertIsNone(got.neg_log_posterior)
                         else:
@@ -821,7 +837,9 @@ class TestPronyFitQuality(unittest.TestCase):
             np.log(truth), z, R, 1.0, True, n_resid=n_resid, log_range=LOG_RANGE,
         )
         resid = (y - clean) / std
-        expected = resid @ resid / (n_resid - len(truth))
+        # Per effective degree of freedom (gamma plus the free equilibrium
+        # term); the numerator is what this test is about.
+        expected = resid @ resid / (n_resid - (quality.effective_terms + 1))
         self.assertAlmostEqual(
             quality.chi2_reduced, expected, delta=1e-9 * expected,
         )
@@ -843,10 +861,12 @@ class TestPronyFitQuality(unittest.TestCase):
         kwargs = dict(n_resid=n_resid, log_range=LOG_RANGE)
         got = _prony_fit_quality(x, data, basis, smoothness, True, **kwargs)
         self.assertIsNotNone(got.neg_log_posterior)
-        _, on_knob = _dense_fit_quality(x, data, basis, smoothness, True,
-                                        prior_lam=smoothness ** 2, **kwargs)
-        _, on_weight = _dense_fit_quality(x, data, basis, smoothness, True,
-                                          prior_lam=scaled ** 2, **kwargs)
+        _, on_knob, _ = _dense_fit_quality(
+            x, data, basis, smoothness, True,
+            prior_lam=smoothness ** 2, **kwargs)
+        _, on_weight, _ = _dense_fit_quality(
+            x, data, basis, smoothness, True,
+            prior_lam=scaled ** 2, **kwargs)
         self.assertAlmostEqual(got.neg_log_posterior, on_knob,
                                delta=1e-9 * abs(on_knob))
         self.assertAlmostEqual(on_weight - on_knob,
@@ -942,6 +962,96 @@ class TestPronyFitQuality(unittest.TestCase):
         quality = _prony_fit_quality(x, data, basis, 1.0, True, n_resid=6, log_range=LOG_RANGE)
         self.assertIsNone(quality.chi2_reduced)
 
+    def test_penalty_helpers_match_the_dense_operator(self):
+        # _add_penalty_inplace and _penalty_trace are the banded forms of
+        # lam * L.T @ L and tr(L.T @ L @ sigma). npen == 3 collides the two
+        # boundary corrections; npen == 2 leaves the band empty.
+        for solid in (True, False):
+            for npen in (2, 3, 4, 10):
+                with self.subTest(solid=solid, npen=npen):
+                    m = npen + solid
+                    L = np.zeros((max(npen - 2, 0), m))
+                    rows = np.arange(max(npen - 2, 0))
+                    L[rows, solid + rows] = 1.0
+                    L[rows, solid + rows + 1] = -2.0
+                    L[rows, solid + rows + 2] = 1.0
+                    A = L.T @ L
+                    G = self.rng.normal(size=(m, m))
+                    sigma = G @ G.T + np.eye(m)
+                    dense = np.trace(A @ sigma)
+                    self.assertAlmostEqual(
+                        objective._penalty_trace(sigma, solid), dense,
+                        delta=1e-12 * (1 + abs(dense)))
+                    base = self.rng.normal(size=(m, m))
+                    H = base.copy()
+                    objective._add_penalty_inplace(H, 0.7, solid)
+                    np.testing.assert_allclose(H, base + 0.7 * A,
+                                               rtol=0, atol=1e-12)
+                    if npen < 3:
+                        self.assertEqual(
+                            objective._penalty_trace(sigma, solid), 0.0)
+                        np.testing.assert_array_equal(H, base)
+
+    def test_chi2_is_per_effective_degree_of_freedom(self):
+        # chi2_reduced divides by n_resid - (gamma + 1): the decaying terms
+        # count for what the data determined of them (MacKay's gamma =
+        # npen - lam * tr(L.T @ L @ Sigma)), the free equilibrium term for
+        # one. lam is the weight the fit ran with, which keeps the classical
+        # n_resid - m in _scaled_smoothness.
+        smoothness, N = 1.0, 10
+        basis, data, x = _converged_fit_problem(
+            self.rng, N=N, smoothness=smoothness)
+        m = N + 1
+        n_resid = 2 * len(data)
+        quality = _prony_fit_quality(
+            x, data, basis, smoothness, True,
+            n_resid=n_resid, log_range=LOG_RANGE,
+        )
+        lam = _scaled_smoothness(smoothness, N, n_resid - m, LOG_RANGE) ** 2
+        L = np.zeros((N - 2, m))
+        rows = np.arange(N - 2)
+        L[rows, 1 + rows] = 1.0
+        L[rows, 2 + rows] = -2.0
+        L[rows, 3 + rows] = 1.0
+        gamma = N - lam * np.trace(L.T @ L @ quality.covariance)
+        self.assertAlmostEqual(quality.effective_terms, gamma,
+                               delta=1e-9 * N)
+        self.assertGreater(quality.effective_terms, 0.0)
+        self.assertLess(quality.effective_terms, N)
+        resid = data - basis @ np.exp(x)
+        rr = resid @ resid
+        self.assertAlmostEqual(
+            quality.chi2_reduced * (n_resid - (gamma + 1)), rr,
+            delta=1e-9 * rr)
+        # Below the classical quotient, which charges every grid node.
+        self.assertLess(quality.chi2_reduced, rr / (n_resid - m))
+
+    def test_effective_terms_none_without_covariance(self):
+        # Same availability as the covariance it is read from; the misfit
+        # then falls back to the classical n_resid - m.
+        basis, data, x = _random_fit_problem(self.rng, 8, True)
+        n_resid = 2 * len(data)
+        quality = _prony_fit_quality(
+            x, data, basis, 0.0, True, n_resid=n_resid, log_range=LOG_RANGE,
+        )
+        self.assertIsNone(quality.effective_terms)
+        resid = data - basis @ np.exp(x)
+        self.assertAlmostEqual(quality.chi2_reduced,
+                               resid @ resid / (n_resid - 9),
+                               delta=1e-12 * quality.chi2_reduced)
+        basis, data, _ = _converged_fit_problem(self.rng)
+        x = np.full(basis.shape[1], -10.0)
+        n_resid = 2 * len(data)
+        quality = _prony_fit_quality(
+            x, data, basis, 0.5, True, n_resid=n_resid, log_range=LOG_RANGE,
+        )
+        self.assertIsNone(quality.covariance)
+        self.assertIsNone(quality.effective_terms)
+        resid = data - basis @ np.exp(x)
+        self.assertAlmostEqual(quality.chi2_reduced,
+                               resid @ resid / (n_resid - len(x)),
+                               delta=1e-12 * quality.chi2_reduced)
+
     def test_scan_has_interior_minimum(self):
         # The payoff: -log posterior should trade misfit against roughness and
         # land on an interior smoothness, not run to either end of the scan.
@@ -1007,27 +1117,37 @@ class TestPronyFitQuality(unittest.TestCase):
     def test_nnls_path_chi2_matches_explicit_residual(self):
         # The smoothness == 0 branch takes chi2 straight from nnls's returned
         # residual norm, never touching the full basis. Check that shortcut
-        # against the residual computed the long way.
+        # against the residual computed the long way. The denominator counts
+        # the active set only: a coefficient NNLS pinned at zero is not a
+        # parameter the data determined.
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         tau_i, E_i, quality = smooth_prony_fit(
             omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
             N=12, smoothness=0.0, solid=True, return_fit_quality=True,
         )
+        active = np.count_nonzero(E_i)
+        self.assertLess(active, len(E_i))  # the active set is a real subset
+        self.assertIsNone(quality.effective_terms)
         expected = _chi2_per_point(
             omega, E_stor, E_loss, std, tau_i, E_i,
-        ) * (2 * len(omega)) / (2 * len(omega) - len(E_i))
+        ) * (2 * len(omega)) / (2 * len(omega) - active)
         self.assertAlmostEqual(
             quality.chi2_reduced, expected, delta=1e-6 * expected,
         )
 
-    def test_covariance_field_defaults_to_none(self):
-        """_FitQuality carries a fourth field, covariance, defaulting to None
-        so three-positional construction keeps working."""
+    def test_covariance_and_effective_terms_fields_default_to_none(self):
+        """_FitQuality carries covariance and effective_terms after the three
+        scores, both defaulting to None so three- and four-positional
+        construction keeps working."""
         self.assertEqual(
             _FitQuality._fields,
-            ('chi2_reduced', 'neg_log_posterior', 'curvature', 'covariance'),
+            ('chi2_reduced', 'neg_log_posterior', 'curvature', 'covariance',
+             'effective_terms'),
         )
         self.assertIsNone(_FitQuality(1.0, None, None).covariance)
+        self.assertIsNone(_FitQuality(1.0, None, None).effective_terms)
+        self.assertIsNone(
+            _FitQuality(1.0, None, None, np.eye(2)).effective_terms)
 
     def test_covariance_is_two_inverse_hessians(self):
         """Sigma = 2 inv(Hess V) at the optimum, for the V the solver
@@ -2347,12 +2467,14 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
 
     def test_objective_per_dof_is_misfit_plus_smoothness_squared_curvature(
             self):
-        # V / nu = chi2_reduced + smoothness**2 * curvature, with all three
-        # read off the converged fit: the readout's two numbers and the knob
-        # are the whole objective, with no span factor left over. The
+        # V / nu = misfit / nu + smoothness**2 * curvature, nu being the
+        # classical n_resid - m the penalty weight is normalized by: the
+        # readout's two numbers and the knob are the whole objective, with
+        # no span factor left over. chi2_reduced is the misfit per EFFECTIVE
+        # degree of freedom, so the misfit is chi2_reduced * nu_eff. The
         # clamped-equilibrium fit is scored as the solid=False problem in N
-        # terms with n_resid lowered by one, so its nu and m are that
-        # problem's.
+        # terms; its weight keeps the pinned term in m, while nu_eff charges
+        # only gamma for it.
         broadband = _broadband_master_curve(600)
         unresolved = _unresolved_equilibrium_curve()
         cases = [
@@ -2370,20 +2492,21 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                 R, z = _prony_reduce(
                     omega, E_stor, E_loss, std, std, tau_i, solid)
                 n_resid = 2 * len(omega)
+                nu = n_resid - (N + solid)
                 if label == 'clamped equilibrium':
                     self.assertEqual(E_i[0], 0.0)
                     x, basis, pen_solid = np.log(E_i[1:]), R[:, 1:], False
-                    n_resid -= 1
                 else:
                     self.assertTrue(np.all(E_i > 0))
                     x, basis, pen_solid = np.log(E_i), R, solid
-                nu = n_resid - len(x)
+                nu_eff = n_resid - (quality.effective_terms + pen_solid)
                 log_range = np.log(tau_i[-1] / tau_i[0])
                 weight = _scaled_smoothness(smoothness, N, nu, log_range)
                 V = _PronyLoss(z, basis, weight, pen_solid).fun(x)
                 np.testing.assert_allclose(
                     V / nu,
-                    quality.chi2_reduced + smoothness ** 2 * quality.curvature,
+                    quality.chi2_reduced * nu_eff / nu
+                    + smoothness ** 2 * quality.curvature,
                     rtol=1e-10,
                 )
 
@@ -2415,10 +2538,12 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     std_scale=scale,
                 )
                 np.testing.assert_allclose(E_i, E_ref, rtol=1e-9)
+                self.assertGreater(E_i[0], 0)
                 resid = z - R @ E_ref
                 d2 = np.diff(np.log(E_ref[1:]), n=2)
+                nu_eff = 2 * len(omega) - (quality.effective_terms + 1)
                 np.testing.assert_allclose(
-                    quality.chi2_reduced, resid @ resid / dof, rtol=1e-9)
+                    quality.chi2_reduced, resid @ resid / nu_eff, rtol=1e-9)
                 np.testing.assert_allclose(
                     quality.curvature,
                     d2 @ d2 * (N - 1) ** 3 / log_range ** 4, rtol=1e-9)
@@ -2535,6 +2660,207 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
             msg=f'pooled RMS gap ratio (mean / integral curvature): '
                 f'{pooled:.3f}',
         )
+
+
+TRIVE_FILES_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files'))
+
+
+def _dense_effective_terms(covariance, lam, solid):
+    """MacKay's gamma = npen - lam * tr(L.T @ L @ Sigma), with the
+    second-difference operator L over the penalized terms built densely."""
+    m = len(covariance)
+    npen = m - solid
+    L = np.zeros((max(npen - 2, 0), m))
+    rows = np.arange(max(npen - 2, 0))
+    L[rows, solid + rows] = 1.0
+    L[rows, solid + rows + 1] = -2.0
+    L[rows, solid + rows + 2] = 1.0
+    return npen - lam * np.trace(L.T @ L @ covariance)
+
+
+class TestMisfitPerEffectiveDegreeOfFreedom(unittest.TestCase):
+    """chi2_reduced is the misfit per effective degree of freedom,
+    n_resid - (gamma + e): gamma counts the decaying terms the data
+    determined, e is 1 for a free (nonzero) equilibrium term. Without a
+    covariance the classical n_resid - m stands; the NNLS path counts its
+    active set. The penalty weight keeps the classical count throughout."""
+
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    RELATIVE_ERROR = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        with mock.patch.object(Config, 'FILES_DIRECTORY', TRIVE_FILES_DIR):
+            upload = upload_init(cls.FILE, 'frequency')
+        cls.omega = upload['Frequency']
+        cls.E_stor, cls.E_loss = upload['E Storage'], upload['E Loss']
+        cls.sigma = np.abs(cls.E_stor + 1.0j * cls.E_loss)
+        cls._fits = {}
+
+    @classmethod
+    def _agilus(cls, N, smoothness):
+        """(tau_i, E_i, quality) of the file at 1% error, solid, cached."""
+        key = (N, smoothness)
+        if key not in cls._fits:
+            cls._fits[key] = smooth_prony_fit(
+                cls.omega, cls.E_stor, cls.E_loss, cls.sigma, cls.sigma, N,
+                smoothness, solid=True, return_fit_quality=True,
+                std_scale=cls.RELATIVE_ERROR,
+            )
+        return cls._fits[key]
+
+    def test_effective_terms_are_bounded_and_fall_as_smoothness_rises(self):
+        # At most one per decaying term (a little slack: the Hessian is the
+        # full one, not Gauss-Newton), and more smoothing hands more of them
+        # to the prior.
+        N = 32
+        n_resid = 2 * len(self.omega)
+        counts = []
+        for smoothness in (0.1, 0.3, 1.0, 3.0):
+            with self.subTest(smoothness=smoothness):
+                tau_i, E_i, quality = self._agilus(N, smoothness)
+                self.assertGreater(E_i[0], 0)
+                lam = _scaled_smoothness(
+                    smoothness, N, n_resid - (N + 1),
+                    np.log(tau_i[-1] / tau_i[0])) ** 2
+                gamma = quality.effective_terms
+                self.assertAlmostEqual(
+                    gamma,
+                    _dense_effective_terms(quality.covariance, lam, True),
+                    delta=1e-6 * N)
+                self.assertGreater(gamma, 0.0)
+                self.assertLessEqual(gamma, N + 1e-6)
+                counts.append(gamma)
+        self.assertEqual(len(counts), 4)
+        for weaker, stronger in zip(counts, counts[1:]):
+            self.assertGreaterEqual(weaker, stronger, msg=f'{counts}')
+        self.assertGreater(counts[0], counts[-1])
+
+    def test_chi2_reduced_is_invariant_to_grid_size_once_data_is_resolved(
+            self):
+        # Past what the data resolves, gamma saturates and the fit stops
+        # changing, so the score must stop moving with N. The classical
+        # n_resid - m charges every grid node and drifts several percent
+        # over the same range: the regression this pins.
+        smoothness = 1.0
+        n_resid = 2 * len(self.omega)
+        cap = reduction.prony_rank_limit(
+            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
+            solid=True, std_scale=self.RELATIVE_ERROR)
+        self.assertGreaterEqual(cap, 64)
+        sizes = (32, 48, cap)
+        scores, classical = {}, {}
+        for N in sizes:
+            _, E_i, quality = self._agilus(N, smoothness)
+            self.assertGreater(E_i[0], 0)
+            self.assertIsNotNone(quality.effective_terms)
+            scores[N] = quality.chi2_reduced
+            misfit = quality.chi2_reduced * (
+                n_resid - (quality.effective_terms + 1))
+            classical[N] = misfit / (n_resid - (N + 1))
+        for N in sizes[:-1]:
+            with self.subTest(N=N):
+                self.assertAlmostEqual(scores[N] / scores[cap], 1.0,
+                                       delta=0.01)
+                self.assertGreater(
+                    abs(classical[N] / classical[cap] - 1.0), 0.02)
+
+    def test_interior_fit_charges_gamma_plus_the_free_equilibrium_term(self):
+        # Liquid: n_resid - gamma. Interior solid: n_resid - (gamma + 1).
+        # gamma is read from the reported covariance at the fit's own
+        # weight, whose dof is the classical n_resid - m.
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        N, smoothness = 30, 0.1
+        n_resid = 2 * len(omega)
+        for solid in (True, False):
+            with self.subTest(solid=solid):
+                tau_i, E_i, quality = smooth_prony_fit(
+                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+                    N=N, smoothness=smoothness, solid=solid,
+                    return_fit_quality=True,
+                )
+                self.assertTrue(np.all(E_i > 0))
+                R, z = _prony_reduce(
+                    omega, E_stor, E_loss, std, std, tau_i, solid)
+                resid = z - R @ E_i
+                rr = resid @ resid
+                lam = _scaled_smoothness(
+                    smoothness, N, n_resid - (N + solid),
+                    np.log(tau_i[-1] / tau_i[0])) ** 2
+                gamma = _dense_effective_terms(quality.covariance, lam, solid)
+                self.assertAlmostEqual(quality.effective_terms, gamma,
+                                       delta=1e-6 * N)
+                self.assertAlmostEqual(
+                    quality.chi2_reduced * (n_resid - (gamma + solid)), rr,
+                    delta=1e-8 * rr)
+
+    def test_clamped_equilibrium_term_is_not_charged(self):
+        # E_eq clamped to exactly 0 is not a parameter the data determined:
+        # the denominator is n_resid - gamma, n_resid the full 2 * len(omega).
+        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
+        N, smoothness = 10, 4.3
+        n_resid = 2 * len(omega)
+        tau_i, E_i, quality = smooth_prony_fit(
+            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+            N=N, smoothness=smoothness, solid=True, return_fit_quality=True,
+        )
+        self.assertEqual(E_i[0], 0.0)
+        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
+        resid = z - R[:, 1:] @ E_i[1:]
+        rr = resid @ resid
+        lam = _scaled_smoothness(
+            smoothness, N, n_resid - (N + 1),
+            np.log(tau_i[-1] / tau_i[0])) ** 2
+        gamma = _dense_effective_terms(quality.covariance, lam, False)
+        self.assertAlmostEqual(quality.effective_terms, gamma,
+                               delta=1e-6 * N)
+        self.assertAlmostEqual(quality.chi2_reduced * (n_resid - gamma), rr,
+                               delta=1e-8 * rr)
+
+    def test_clamped_score_keeps_the_fits_own_penalty_weight(self):
+        # Only the chi2 denominator moves: the clamped fit's weight counts
+        # the pinned term in m = N + 1, and the reported covariance is
+        # 2 inv(Hess V) at THAT weight. The weight at n_resid - N leaves a
+        # gradient ~1e6 times larger at the returned coefficients.
+        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
+        N, smoothness = 10, 4.3
+        n_resid = 2 * len(omega)
+        tau_i, E_i, quality = smooth_prony_fit(
+            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+            N=N, smoothness=smoothness, solid=True, return_fit_quality=True,
+        )
+        self.assertEqual(E_i[0], 0.0)
+        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
+        x = np.log(E_i[1:])
+        weight = _scaled_smoothness(
+            smoothness, N, n_resid - (N + 1), np.log(tau_i[-1] / tau_i[0]))
+        loss = _PronyLoss(z, R[:, 1:], weight, False)
+        self.assertLess(np.abs(loss.jac(x)).max(), 1e-6)
+        H = loss.hess(x)
+        err = np.abs(quality.covariance @ H - 2 * np.eye(N)).max()
+        self.assertLess(
+            err, 1e-8 * np.linalg.norm(H) * np.linalg.norm(quality.covariance))
+
+    def test_no_covariance_falls_back_to_the_classical_count(self):
+        # Hess V not positive definite: no covariance, no gamma, and the
+        # misfit is per n_resid - m as before.
+        omega, E_stor, E_loss, std = _broadband_master_curve(600)
+        N = 30
+        n_resid = 2 * len(omega)
+        with mock.patch('app.trive.quality._cholesky_or_none',
+                        return_value=None):
+            tau_i, E_i, quality = smooth_prony_fit(
+                omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
+                N=N, smoothness=0.1, solid=True, return_fit_quality=True,
+            )
+        self.assertIsNone(quality.covariance)
+        self.assertIsNone(quality.effective_terms)
+        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
+        resid = z - R @ E_i
+        rr = resid @ resid
+        self.assertAlmostEqual(quality.chi2_reduced * (n_resid - (N + 1)),
+                               rr, delta=1e-8 * rr)
 
 
 def _spin(seconds):
