@@ -407,8 +407,8 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
         # without it a fit against a table referenced away from Tg draws a
         # curve parallel to — and decades off — its own Experiment markers.
         kwargs = dict(shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2)
-        *_, fig_unit, _ = self._run(**kwargs)
-        *_, fig_shifted, _ = self._run(a_T_ref=100.0, **kwargs)
+        *_, fig_unit, _, _ = self._run(**kwargs)
+        *_, fig_shifted, _, _ = self._run(a_T_ref=100.0, **kwargs)
         unit = self._trace(fig_unit, 'WLF fit')
         shifted = self._trace(fig_shifted, 'WLF fit')
         # Compare at shared temperatures, not by position: the offset moves
@@ -424,8 +424,8 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
     def test_hybrid_curve_honors_a_T_ref_offset(self):
         kwargs = dict(shift_model='hybrid', TC=40.0, C1=self.C1, C2=self.C2,
                       Ea=150.0)
-        *_, fig_unit, _ = self._run(**kwargs)
-        *_, fig_shifted, _ = self._run(a_T_ref=100.0, **kwargs)
+        *_, fig_unit, _, _ = self._run(**kwargs)
+        *_, fig_shifted, _, _ = self._run(a_T_ref=100.0, **kwargs)
         y_unit = np.array(self._trace(fig_unit, 'hybrid fit').y)
         y_shifted = np.array(self._trace(fig_shifted, 'hybrid fit').y)
         # Same grid, curve multiplied by the offset (where both are drawn).
@@ -462,7 +462,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
         # The transform itself would raise; the figure must instead draw the
         # valid window and skip the rest — so use a shift file to carry the
         # transform and hand the curve bad parameters.
-        *_, shift_fig, _ = self._run(
+        *_, shift_fig, _, _ = self._run(
             shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=10.0,
             shiftData=self.shiftData)
         curve = self._trace(shift_fig, 'WLF fit')
@@ -478,9 +478,9 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
             return [a.text for a in (fig.layout.annotations or ())
                     if getattr(a, 'name', '') == 'figure-notice']
 
-        *_, without, _ = self._run(**kwargs)
+        *_, without, _, _ = self._run(**kwargs)
         self.assertEqual(notices(without), [])
-        *_, with_stamp, _ = self._run(shift_chi2_reduced=0.123, **kwargs)
+        *_, with_stamp, _, _ = self._run(shift_chi2_reduced=0.123, **kwargs)
         self.assertEqual(notices(with_stamp),
                          ['misfit (χ²/ν) = 0.123 | lower is better'])
 
@@ -544,7 +544,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             Tg=self.T_REF, C1=self.C1, C2=self.C2, shift_model='WLF',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertIsInstance(coef_df, list)
@@ -557,7 +557,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             Tg=self.T_REF, TC=self.T_REF, C1=self.C1, C2=self.C2,
             Ea=self.EA, shift_model='hybrid',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -577,7 +577,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             TC=self.T_REF, C1=self.C1, C2=self.C2,
             Ea=self.EA, shift_model='hybrid',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -592,7 +592,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             TC=self.T_REF, C1=self.C1, C2=self.C2, Ea=self.EA,
             shift_model='hybrid',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -605,7 +605,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             Tg=0.0, C1=self.C1, C2=self.C2, shift_model='WLF',
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -622,7 +622,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
             fit_settings=True, domain='temperature',
             shiftData=shiftData,
         )
-        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _ = result
+        fig1, fig11, fig2, fig3, fig4, fig41, coef_df, _, _, _ = result
         for fig in (fig1, fig11, fig2, fig3, fig4, fig41):
             self.assertGreater(len(fig.data), 0)
         self.assertGreater(len(coef_df), 0)
@@ -666,14 +666,14 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
         # exactly zero, which made the old count_nonzero over the whole vector
         # report the grid size plus the equilibrium term — 24 terms for a
         # 23-point grid whose table listed 23 rows.
-        fig1, fig11, fig2, fig3, _, _, coef_df, _, _ = self._run(23, 0.04)
+        fig1, fig11, fig2, fig3, _, _, coef_df, _, _, _ = self._run(23, 0.04)
         self.assertEqual(len(coef_df), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)), {23})
 
     def test_unsmoothed_labels_match_the_coefficient_table(self):
         # NNLS zeroes coefficients outright, so here the count is genuinely
         # below the grid size — and still must not pick up the equilibrium term.
-        fig1, fig11, fig2, fig3, _, _, coef_df, _, _ = self._run(23, 0.0)
+        fig1, fig11, fig2, fig3, _, _, coef_df, _, _, _ = self._run(23, 0.0)
         self.assertLess(len(coef_df), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)),
                          {len(coef_df)})
