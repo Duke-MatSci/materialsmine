@@ -203,9 +203,9 @@ def _prony_fit_quality(
             # positivity is not guaranteed — it holds in practice because V
             # dominates for any real upload. Deliberately not clamped.
             neg_log_posterior = (
-                V
+                0.5 * V
                 - 0.5 * (logpdetA + (npen - 2) * loglam - logdet_hess)
-                - 0.5 * (m * np.log(2.0) + (2 + solid) * np.log(np.pi))
+                - 0.5 * (m * np.log(2.0) + (2 + solid) * np.log(2 * np.pi))
                 + smoothness * smoothness
             )
 
