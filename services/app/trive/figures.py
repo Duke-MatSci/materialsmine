@@ -17,8 +17,8 @@ from .prony import compute_complex, compute_relaxation_modulus
 from .shift import hybrid_shift, wlf_log10_shift
 from .tts import MAX_ABS_LOG10_SHIFT
 from .uncertainty import (
-    _SIGMA_DISPLAY_CAP, complex_modulus_noise, complex_modulus_sigma,
-    relaxation_sigma, sigma_log_coefficients, spectrum_error_bars,
+    _SIGMA_DISPLAY_CAP, coefficient_bounds, complex_modulus_noise,
+    complex_modulus_sigma, relaxation_sigma, sigma_log_coefficients, spectrum_error_bars,
 )
 
 
@@ -550,10 +550,8 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
     E_terms = np.asarray(E_i, dtype=float)[len(E_i) - len(tau_i):]
     coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_terms})
     if covariance is not None:
-        s = np.minimum(sigma_log_coefficients(covariance)[-len(tau_i):],
-                       _SIGMA_DISPLAY_CAP)
-        coef_df["E_i_lower"] = E_terms * np.exp(-s)
-        coef_df["E_i_upper"] = E_terms * np.exp(s)
+        coef_df["E_i_lower"], coef_df["E_i_upper"] = coefficient_bounds(
+            E_terms, sigma_log_coefficients(covariance)[-len(tau_i):])
     coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
     coef_df = coef_df.rename(columns={'index': 'i'})
     return coef_df.to_dict("records")

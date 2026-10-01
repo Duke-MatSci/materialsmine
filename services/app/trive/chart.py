@@ -102,7 +102,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
             Empty under the same condition as fig4.
-        coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
+        coef_df (List[Dict[str, Union[float, int]]]): The coefficients
+            (see _build_coef_records); with a covariance each row also
+            carries its 1-sigma bounds, 'E_i_lower' and 'E_i_upper'.
         fig5 (plotly.graph_objects.Figure): The shift-factor figure (a_T vs
             Temperature): uploaded shift factors as markers and/or the
             WLF/hybrid model curve. Empty when no transform was requested or

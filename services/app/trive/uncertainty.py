@@ -67,12 +67,37 @@ def sigma_log_coefficients(covariance: np.ndarray) -> np.ndarray:
     return np.sqrt(np.diag(covariance))
 
 
+def _capped(E_terms, sigma_log, cap):
+    """E_terms and sigma_log as float arrays, sigma_log capped at cap."""
+    E_terms = np.asarray(E_terms, dtype=float)
+    return E_terms, np.minimum(np.asarray(sigma_log, dtype=float), cap)
+
+
+def coefficient_bounds(E_terms, sigma_log, cap=_SIGMA_DISPLAY_CAP):
+    """
+    The 1-sigma interval [E exp(-s), E exp(s)] of log-normal coefficients.
+
+    s is capped so the upper edge stays finite and the lower edge above
+    zero; spectrum_error_bars draws the same interval as offsets.
+
+    Parameters:
+        E_terms (numpy.ndarray): The coefficients.
+        sigma_log (numpy.ndarray): 1-sigma of their logarithms.
+        cap (float): Ceiling applied to sigma_log before exponentiating.
+
+    Returns:
+        tuple: (lower, upper) arrays.
+    """
+    E_terms, s = _capped(E_terms, sigma_log, cap)
+    return E_terms * np.exp(-s), E_terms * np.exp(s)
+
+
 def spectrum_error_bars(E_terms, sigma_log, cap=_SIGMA_DISPLAY_CAP):
     """
     Linear error-bar offsets for coefficients with a log-normal 1-sigma.
 
-    The interval [E exp(-s), E exp(s)] as offsets from E, with s capped so
-    the upper edge stays finite and the lower edge above zero.
+    The interval of coefficient_bounds as offsets from E, computed with
+    expm1 so a small s keeps its accuracy.
 
     Parameters:
         E_terms (numpy.ndarray): The coefficients.
@@ -82,8 +107,7 @@ def spectrum_error_bars(E_terms, sigma_log, cap=_SIGMA_DISPLAY_CAP):
     Returns:
         tuple: (plus, minus), both non-negative arrays.
     """
-    E_terms = np.asarray(E_terms, dtype=float)
-    s = np.minimum(np.asarray(sigma_log, dtype=float), cap)
+    E_terms, s = _capped(E_terms, sigma_log, cap)
     return E_terms * np.expm1(s), E_terms * -np.expm1(-s)
 
 
