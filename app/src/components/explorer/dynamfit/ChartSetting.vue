@@ -144,6 +144,14 @@
                   <li>{{ cAxisLabel }} · E' · E" · E' Error · E" Error</li>
                 </ul>
                 <p>
+                  Units are not checked.
+                  <template v-if="isFrequencyDomain">
+                    Frequency is taken as angular frequency in rad/s.
+                  </template>
+                  The moduli keep whatever units and kind of modulus you supply; they are
+                  labelled E and Pa regardless.
+                </p>
+                <p>
                   Error is an <b>absolute standard deviation in Pa</b> — the same units as
                   the moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5%
                   uncertainty is <b>5e7</b>, not 0.05.
@@ -877,7 +885,7 @@ const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, dynamf
 const cPronyTooltipLeft = computed(() => pronyTooltipLeft(dynamfit.value.range, cPronyMax.value));
 
 const cAxisLabel = computed(() =>
-  selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (Hz)'
+  selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (rad/s)'
 );
 
 const isFrequencyDomain = computed(() => selectedProperty.value === 'frequency');
@@ -1002,7 +1010,7 @@ const resetAll = async (): Promise<void> => {
 };
 
 const downloadTitle = (): string => {
-  const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (Hz)';
+  const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (rad/s)';
   return (
     `An example tsv file of 3 columns: ${axis}, E' (Pa), E" (Pa).`
   );

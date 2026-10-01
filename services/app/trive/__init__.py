@@ -80,7 +80,7 @@ from .shift import (  # noqa: E402
 )
 from .tts import (  # noqa: E402
     MAX_ABS_LOG10_SHIFT,
-    VIS_REF_FREQUENCY_HZ,
+    VIS_REF_FREQUENCY,
     tts_frequency_to_temperature,
     tts_frequency_to_temperature_V2,
     tts_frequency_to_temperature_hybrid,
@@ -95,7 +95,7 @@ __all__ = [
     'PRONY_TERMS_PER_DECADE',
     'UNIVERSAL_WLF_C1',
     'UNIVERSAL_WLF_C2',
-    'VIS_REF_FREQUENCY_HZ',
+    'VIS_REF_FREQUENCY',
     'argmax_peak',
     'compute_complex',
     'compute_relaxation_modulus',

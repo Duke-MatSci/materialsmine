@@ -129,15 +129,23 @@
         <h2 class="visualize_header-h1">Data format</h2>
         <p>
           Upload a CSV, TSV, or TXT file. Columns are read by position and count; a header row is
-          optional and is ignored entirely. The first column is frequency in Hz (or temperature
+          optional and is ignored entirely. The first column is frequency (or temperature
           in °C, if you are starting in the temperature domain), followed by the storage and loss
-          moduli in pascals. Three column layouts are accepted:
+          moduli. Three column layouts are accepted:
         </p>
         <ul class="tri-ve-about__list">
           <li>Frequency · E' · E"</li>
           <li>Frequency · E' · E" · Error</li>
           <li>Frequency · E' · E" · E' Error · E" Error</li>
         </ul>
+        <p>
+          Tri-VE does not inspect the units of your data. Frequency is assumed to be angular
+          frequency in rad/s: the values are used as given, so a file in Hz yields relaxation
+          times, and an E(t) time axis, 2π times too long. Multiply by 2π before uploading if
+          your instrument reports Hz. A temperature sweep is treated as measured at 1 rad/s. The
+          moduli are passed through unchanged: plots and tables label them E and Pa, but they
+          keep whatever units, and whatever kind of modulus, you supply.
+        </p>
         <p>
           Error is an <strong>absolute standard deviation in Pa</strong> — the same units as the
           moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5% uncertainty is

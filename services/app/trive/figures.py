@@ -435,6 +435,9 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     """
     complex_df = compute_complex(tau_i, E_i,
                                  extend_decades=_DRAW_EXTENSION_DECADES)
+    # Units are not inspected: the fit takes the frequency column as angular
+    # frequency, so the axes say rad/s; the moduli keep the units and the
+    # kind of modulus supplied, labelled E and Pa regardless.
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
@@ -457,7 +460,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         facet_col='Modulus',
         color="Type", line_dash="Type",
         line_dash_map={"Experiment": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Frequency": "Frequency (Hz)"},
+        labels={"Frequency": "Frequency (rad/s)"},
     )
 
     df11_concat = df_concat.copy()
@@ -478,7 +481,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         facet_col='Modulus',
         color="Type", line_dash="Type",
         line_dash_map={"Experiment": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Frequency": "Frequency (Hz)"},
+        labels={"Frequency": "Frequency (rad/s)"},
     )
     fig11.update_yaxes(matches=None, showticklabels=True)
     fig11.update_yaxes(type="log", col=1)
