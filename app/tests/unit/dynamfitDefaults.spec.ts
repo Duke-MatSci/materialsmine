@@ -4,6 +4,7 @@
  *
  * @jest-environment node
  */
+import * as defaults from '@/composables/useDynamfitDefaults';
 import {
   computeDefaultPronyTerms,
   fractionToPercent,
@@ -11,7 +12,10 @@ import {
   PERCENT_INPUT_STEP,
   PRONY_TERMS_PER_DECADE,
   RELATIVE_ERROR_DEFAULT_PERCENT,
-  SMOOTHNESS_DEFAULT_PERCENT,
+  SMOOTHNESS_DEFAULT,
+  SMOOTHNESS_MAX,
+  SMOOTHNESS_MIN,
+  SMOOTHNESS_STEP,
 } from '@/composables/useDynamfitDefaults';
 
 // Rows spanning `decades` decades of frequency, three columns, tab separated.
@@ -71,16 +75,42 @@ describe('computeDefaultPronyTerms', () => {
   });
 });
 
+describe('smoothness setting', () => {
+  it('defaults to the raw knob value the bundled curves were calibrated for', () => {
+    // 0.3 sits within 0.06 nats of the total surprisal minimum (s = 0.313)
+    // over the seven bundled master curves at 1% relative error.
+    expect(SMOOTHNESS_DEFAULT).toBe(0.3);
+  });
+
+  it('is entered as the raw knob, with no percent default left to convert', () => {
+    // The API has always taken the raw value; a percent constant would invite
+    // the consumer to keep sending percentToFraction of it.
+    expect('SMOOTHNESS_DEFAULT_PERCENT' in defaults).toBe(false);
+  });
+
+  it('offers 0 to 10 in steps of 0.1', () => {
+    expect(SMOOTHNESS_MIN).toBe(0);
+    expect(SMOOTHNESS_MAX).toBe(10);
+    expect(SMOOTHNESS_STEP).toBe(0.1);
+  });
+
+  it('puts the default on the step grid and within bounds', () => {
+    const steps = (SMOOTHNESS_DEFAULT - SMOOTHNESS_MIN) / SMOOTHNESS_STEP;
+    expect(Math.abs(steps - Math.round(steps))).toBeLessThan(1e-9);
+    expect(SMOOTHNESS_DEFAULT).toBeGreaterThanOrEqual(SMOOTHNESS_MIN);
+    expect(SMOOTHNESS_DEFAULT).toBeLessThanOrEqual(SMOOTHNESS_MAX);
+  });
+});
+
 describe('percent conversion for the fit settings', () => {
-  it('sends the defaults the fit was calibrated for', () => {
-    expect(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT)).toBe(0.04);
+  it('sends the relative error default the fit was calibrated for', () => {
     expect(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT)).toBe(0.01);
   });
 
-  it('keeps a step off the default free of binary noise', () => {
+  it('keeps a stepped percentage free of binary noise', () => {
     // 4.1 / 100 is 0.041000000000000004 unrounded, which then shows up in the
     // request payload and in anything that stringifies it.
-    expect(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT + PERCENT_INPUT_STEP)).toBe(0.041);
+    expect(percentToFraction(4 + PERCENT_INPUT_STEP)).toBe(0.041);
     expect(percentToFraction(0.3)).toBe(0.003);
   });
 
