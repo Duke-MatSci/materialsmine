@@ -7,6 +7,10 @@ credible intervals of the Laplace posterior, conditional on the stated errors
 and the smoothness setting; the bias smoothing itself introduces is not
 included.
 
+complex_modulus_noise is the exception: it takes the measurement error the
+fit ran with instead of the covariance, and adds in quadrature to
+complex_modulus_sigma to give a +-1 sigma prediction band.
+
 Shapes: E_i has len(tau_i) entries, or len(tau_i) + 1 with the equilibrium
 modulus first. The covariance is square with len(tau_i) rows, or
 len(tau_i) + 1 rows only when E_i carries the equilibrium term. An E_i of

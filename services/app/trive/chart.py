@@ -96,7 +96,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
             When the fit reports a covariance (smoothed fits), fig1, fig11
-            and fig2 carry 1-sigma credible ribbons and fig3 error bars.
+            and fig2 carry 1-sigma credible ribbons and fig3 error bars;
+            fig1 and fig11 also carry 1-sigma prediction ribbons.
         fig4 (plotly.graph_objects.Figure): The temperature line chart. Empty in
             the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
@@ -272,6 +273,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     E_stor_arr = df['E Storage'].to_numpy()
     E_loss_arr = df['E Loss'].to_numpy()
+    mag = np.abs(E_stor_arr + 1.0j * E_loss_arr)
     # std_scale carries relative_error/error_scale INSTEAD of baking either
     # into the array. The sigma array is then identical on every move of the
     # error widget, so all of them share one cached reduction; folding the
@@ -286,7 +288,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         E_loss_std = E_stor_std
         std_scale = error_scale
     else:
-        E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr)
+        E_stor_std = mag
         E_loss_std = E_stor_std
         std_scale = relative_error
     omega_arr = df['Frequency'].to_numpy()
@@ -315,7 +317,6 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     # (figures only — the fit above already consumed every row).
     df = df[['Frequency', 'E Storage', 'E Loss']]
     plot_df, freq_decimation = _decimate_for_plot(df)
-    mag = np.abs(E_stor_arr + 1.0j * E_loss_arr)
     noise = (omega_arr, E_stor_std * std_scale / mag,
              E_loss_std * std_scale / mag)
     fig1, fig11 = _build_complex_figures(

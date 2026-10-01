@@ -1,6 +1,6 @@
 """
 Everything that turns fit results into the payload the browser renders: the
-plotly figures, the captions stamped on them, the 1-sigma credible ribbons and spectrum error bars a smoothed fit's covariance adds, the thinning that keeps a
+plotly figures, the captions stamped on them, the 1-sigma credible and prediction ribbons and spectrum error bars a smoothed fit's covariance adds, the thinning that keeps a
 41k-row upload from bloating the response, and the coefficient table that
 accompanies the figures.
 
@@ -192,7 +192,8 @@ def _place_tan_delta_axis(fig) -> None:
     fig.update_layout(legend_x=1.10)
 
 
-# Legend name of the +-1 sigma credible ribbons, and their fill opacity.
+# Legend names of the +-1 sigma credible and prediction ribbons, and their
+# shared fill opacity.
 _CREDIBLE_BAND = '±1σ credible'
 _PREDICTION_BAND = '±1σ prediction'
 _BAND_ALPHA = 0.25
@@ -240,8 +241,7 @@ def _prony_trace(fig, xaxis: str):
                 if 'Term Prony' in (t.name or '') and t.xaxis == xaxis)
 
 
-def _add_credible_ribbons(fig, facets, name=_CREDIBLE_BAND,
-                          color=None) -> None:
+def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
     """
     Draw ribbons around the Prony curve, under every other trace.
 
@@ -407,10 +407,10 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         # Each call goes to the front, so the last drawn ends up first.
         for sig, name, color in bands:
             storage = ('x', 'y', sig['E Storage'], True)
-            _add_credible_ribbons(
+            _add_ribbons(
                 fig1, [storage, ('x2', 'y2', sig['E Loss'], True)],
                 name, color)
-            _add_credible_ribbons(
+            _add_ribbons(
                 fig11, [storage, ('x2', 'y2', sig['tan delta'], False)],
                 name, color)
     for fig in (fig1, fig11):
@@ -515,7 +515,7 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     if covariance is not None:
         sigma = relaxation_sigma(relax['Time'].to_numpy(), tau_i, E_i,
                                  covariance)
-        _add_credible_ribbons(fig2, [('x', 'y', sigma, True)])
+        _add_ribbons(fig2, [('x', 'y', sigma, True)])
         plus, minus = spectrum_error_bars(
             E_i[solid:], sigma_log_coefficients(covariance)[-len(tau_i):])
         fig3.update_traces(

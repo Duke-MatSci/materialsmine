@@ -20,7 +20,8 @@ bottom-up:
                  call that turns data into (tau_i, E_i), failing fast with
                  a remedy when the Newton solve stalls
     uncertainty  delta-method 1-sigma bands: the reported covariance carried
-                 to the spectrum, the complex moduli and E(t)
+                 to the spectrum, the complex moduli and E(t), and the
+                 measurement noise a prediction band adds to the moduli
 
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift
