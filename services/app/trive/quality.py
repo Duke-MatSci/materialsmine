@@ -14,6 +14,7 @@ from scipy.linalg import cho_solve
 from .objective import (
     _log_curvature,
     _mean_sq_curvature,
+    _penalty_trace,
     _PronyLoss,
     _scaled_smoothness,
 )
@@ -43,9 +44,15 @@ from .objective import (
 # covariance is the Laplace posterior covariance 2 * inv(Hess V) of the
 # log-coefficients, rows in the order of the problem scored; None when there
 # is no penalty or Hess V is not positive definite.
+#
+# effective_terms is the number of decaying terms the data determined,
+# npen - lam * tr(L.T @ L @ covariance); None without a covariance.
+# chi2_reduced divides by the residual count less those terms (and less a
+# nonzero equilibrium modulus) rather than the classical n - m.
 _FitQuality = namedtuple(
-    '_FitQuality', 'chi2_reduced neg_log_posterior curvature covariance',
-    defaults=(None,),
+    '_FitQuality',
+    'chi2_reduced neg_log_posterior curvature covariance effective_terms',
+    defaults=(None, None),
 )
 
 
@@ -81,6 +88,7 @@ def _prony_fit_quality(
         solid: bool,
         n_resid: int,
         log_range: float,
+        n_chi2: int = None,
 ) -> _FitQuality:
     """
     Score a converged Prony fit: reduced chi-squared and log pi(smoothness**2).
@@ -157,6 +165,10 @@ def _prony_fit_quality(
             whose length is the reduced m + 1 for any upload size.
         log_range (float): ln(tau_max / tau_min) of the fit grid, for the
             curvature normalization. Also unavailable from the reduced system.
+        n_chi2 (int): Residual count the chi-squared is divided over, when it
+            differs from n_resid (the clamped path, whose n_resid is lowered
+            only to keep the penalty weight the fit's own). Defaults to
+            n_resid.
 
     Returns:
         _FitQuality: (chi2_reduced, neg_log_posterior, curvature, covariance);
@@ -174,10 +186,12 @@ def _prony_fit_quality(
     """
     m = len(logcoefs)
     npen = m - solid
-    # Data misfit only — the smoothness penalty is not part of chi-squared.
-    # Regularization means the effective parameter count is below m, so this
-    # dof understates nu and chi2_reduced reads as an upper bound.
+    # Classical count, for the penalty weight; chi-squared uses the
+    # effective count below when a covariance exists.
     dof = n_resid - m
+    if n_chi2 is None:
+        n_chi2 = n_resid
+    nu = n_chi2 - m
 
     # The weight the fit was actually run with, so that V and its Hessian below
     # belong to the fit that ran. Falls back to the raw knob when the penalty
@@ -206,9 +220,15 @@ def _prony_fit_quality(
     # factorization. The covariance needs only a penalty, not a second
     # difference: a 2-term smoothed fit still has a posterior over logcoefs.
     chol = _cholesky_or_none(loss.hess(logcoefs)) if smoothness else None
+    effective_terms = None
     if chol is not None:
         covariance = cho_solve((chol, True), 2 * np.eye(m))
         covariance = 0.5 * (covariance + covariance.T)
+        # MacKay's count of well-determined penalized terms; the
+        # equilibrium term, when present, is unpenalized and fully counted.
+        effective_terms = (
+            npen - scaled * scaled * _penalty_trace(covariance, solid))
+        nu = n_chi2 - (effective_terms + solid)
     if len(curve) and chol is not None:
         # Note V/2 is NOT a marginal likelihood: it is the unnormalized
         # negative log JOINT density at the mode (misfit+penalty).
@@ -233,8 +253,9 @@ def _prony_fit_quality(
         )
 
     return _FitQuality(
-        chi2 / dof if dof > 0 else None,
+        chi2 / nu if nu > 0 else None,
         neg_log_posterior,
         _mean_sq_curvature(curve, npen, log_range),
         covariance,
+        effective_terms,
     )

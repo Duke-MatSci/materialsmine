@@ -350,13 +350,15 @@ def smooth_prony_fit(
         E_nnls, rnorm = nnls(R, z)
         if not return_fit_quality:
             return tau_i, E_nnls
+        # NNLS's exact zeros are not parameters the data determined.
+        nu = n_res - np.count_nonzero(E_nnls)
         # No penalty means no posterior over smoothness**2, but the misfit is
         # still meaningful — and nnls already handed us ||R c - z||, which the
         # reduction's residual row makes a full-problem quantity. Curvature is
         # genuinely undefined here, not merely unavailable: NNLS's active set
         # leaves coefficients EXACTLY zero, whose logs are -inf.
         return tau_i, E_nnls, _FitQuality(
-            rnorm ** 2 / dof if dof > 0 else None, None, None,
+            rnorm ** 2 / nu if nu > 0 else None, None, None,
         )
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
@@ -423,6 +425,7 @@ def smooth_prony_fit(
             result.x, z, R[:, 1:], smoothness, False,
             n_resid=n_res - 1,
             log_range=log_range,
+            n_chi2=n_res,
         )
         return tau_i, E_i, quality
 

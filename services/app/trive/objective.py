@@ -22,6 +22,54 @@ import numpy as np
 _D2_STENCIL = (1.0, -2.0, 1.0)
 
 
+def _penalty_band(m: int, solid: bool) -> np.ndarray:
+    """Leading row index of each second difference the penalty is taken over."""
+    return solid + np.arange(max(m - solid - 2, 0))
+
+
+def _add_penalty_inplace(H: np.ndarray, lam: float, solid: bool) -> None:
+    """
+    H += lam * L.T @ L, in place, on the penalized block.
+
+    L is the second-difference stencil over the penalized coordinates, so
+    L.T @ L is pentadiagonal; the nine stencil outer-product terms are
+    accumulated straight onto its bands. Index pairs are strictly increasing
+    within each (t, u) pass, so there is no fancy-index += aliasing. Correct
+    at npen == 3, where the boundary corrections collide, and a no-op at
+    npen < 3, where the band is empty.
+
+    Parameters:
+        H (numpy.ndarray): (m, m) array to accumulate onto.
+        lam (float): Penalty weight (the scaled smoothness, squared).
+        solid (bool): Whether row/column 0 is an unpenalized equilibrium term.
+    """
+    band = _penalty_band(len(H), solid)
+    for t, stencil_t in enumerate(_D2_STENCIL):
+        for u, stencil_u in enumerate(_D2_STENCIL):
+            H[band + t, band + u] += lam * stencil_t * stencil_u
+
+
+def _penalty_trace(sigma: np.ndarray, solid: bool) -> float:
+    """
+    tr(L.T @ L @ sigma), read from the bands _add_penalty_inplace writes.
+
+    Zero when npen < 3 (empty band).
+
+    Parameters:
+        sigma (numpy.ndarray): (m, m) symmetric matrix, e.g. a covariance.
+        solid (bool): Whether row/column 0 is an unpenalized equilibrium term.
+
+    Returns:
+        float: The trace.
+    """
+    band = _penalty_band(len(sigma), solid)
+    return float(sum(
+        stencil_t * stencil_u * sigma[band + t, band + u].sum()
+        for t, stencil_t in enumerate(_D2_STENCIL)
+        for u, stencil_u in enumerate(_D2_STENCIL)
+    ))
+
+
 def _log_curvature(logcoefs: np.ndarray, solid: bool) -> np.ndarray:
     """
     Second differences of the penalized log-coefficients.
@@ -228,19 +276,8 @@ class _PronyLoss:
         np.einsum('ii->i', H)[...] += rj
 
         if self._smoothness:
-            # lam * L.T @ L is pentadiagonal; accumulate the nine stencil
-            # outer-product terms straight onto its bands. Index pairs are
-            # strictly increasing within each (t, u) pass, so there is no
-            # fancy-index += aliasing. The loop also stays correct at npen == 3,
-            # where the two boundary corrections collide and the generic band
-            # pattern [1, 5, 6, ..., 6, 5, 1] does not apply — and at npen < 3,
-            # where band is empty and the penalty is identically zero.
-            lam = self._smoothness * self._smoothness
-            npen = len(logcoefs) - self._solid
-            band = self._solid + np.arange(max(npen - 2, 0))
-            for t, stencil_t in enumerate(_D2_STENCIL):
-                for u, stencil_u in enumerate(_D2_STENCIL):
-                    H[band + t, band + u] += lam * stencil_t * stencil_u
+            _add_penalty_inplace(
+                H, self._smoothness * self._smoothness, self._solid)
 
         H *= 2  # squared errors, matching the factor jac returns
         return H
