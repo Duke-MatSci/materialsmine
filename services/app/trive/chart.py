@@ -315,8 +315,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     # (figures only — the fit above already consumed every row).
     df = df[['Frequency', 'E Storage', 'E Loss']]
     plot_df, freq_decimation = _decimate_for_plot(df)
+    mag = np.abs(E_stor_arr + 1.0j * E_loss_arr)
+    noise = (omega_arr, E_stor_std * std_scale / mag,
+             E_loss_std * std_scale / mag)
     fig1, fig11 = _build_complex_figures(
-        plot_df, tau_i, E_i, N_nz, fit_quality.covariance)
+        plot_df, tau_i, E_i, N_nz, fit_quality.covariance, noise)
     # Order sets the rows: the readout takes the one nearest the plot and the
     # decimation notice stacks above it. See _stamp_notice.
     _annotate_fit_quality((fig1, fig11), fit_quality)

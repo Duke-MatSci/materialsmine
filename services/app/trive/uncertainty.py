@@ -118,6 +118,48 @@ def complex_modulus_sigma(omega, tau_i, E_i, covariance) -> dict:
     }
 
 
+def complex_modulus_noise(omega, tau_i, E_i, omega_data, rel_stor,
+                          rel_loss) -> dict:
+    """
+    1-sigma measurement noise of E', E'' and tan delta over omega.
+
+    The relative error profile (sigma / |E*| at omega_data) is interpolated
+    linearly in log-frequency, held at its edge values outside the data, and
+    scaled by the fitted |E*| at omega. tan delta treats the E' and E''
+    errors as independent.
+
+    Parameters:
+        omega (numpy.ndarray): Angular frequencies to evaluate at.
+        tau_i (numpy.ndarray): Relaxation times.
+        E_i (numpy.ndarray): Coefficients, equilibrium first if present.
+        omega_data (numpy.ndarray): Measured frequencies, in any order.
+        rel_stor (numpy.ndarray): Relative E' error at omega_data.
+        rel_loss (numpy.ndarray): Relative E'' error at omega_data.
+
+    Returns:
+        dict: 'E Storage', 'E Loss' and 'tan delta', each an array over omega.
+    """
+    omega, tau_i = np.asarray(omega, float), np.asarray(tau_i, float)
+    E_i = np.asarray(E_i, float)
+    omega_data = np.asarray(omega_data, float)
+    order = np.argsort(omega_data)
+    log_data = np.log(omega_data[order])
+    log_omega = np.log(omega)
+    n = len(omega)
+    curve = prony_basis(omega, tau_i, len(E_i) == len(tau_i) + 1) @ E_i
+    stor, loss = curve[:n], curve[n:]
+    mag = np.hypot(stor, loss)
+    s_stor = mag * np.interp(log_omega, log_data,
+                             np.asarray(rel_stor, float)[order])
+    s_loss = mag * np.interp(log_omega, log_data,
+                             np.asarray(rel_loss, float)[order])
+    return {
+        'E Storage': s_stor,
+        'E Loss': s_loss,
+        'tan delta': np.hypot(s_loss / stor, loss * s_stor / stor ** 2),
+    }
+
+
 def relaxation_sigma(t, tau_i, E_i, covariance) -> np.ndarray:
     """
     1-sigma of the decaying part of E(t) = sum_i E_i exp(-t / tau_i).

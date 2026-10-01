@@ -17,8 +17,8 @@ from .prony import compute_complex, compute_relaxation_modulus
 from .shift import hybrid_shift, wlf_log10_shift
 from .tts import MAX_ABS_LOG10_SHIFT
 from .uncertainty import (
-    _SIGMA_DISPLAY_CAP, complex_modulus_sigma, relaxation_sigma,
-    sigma_log_coefficients, spectrum_error_bars,
+    _SIGMA_DISPLAY_CAP, complex_modulus_noise, complex_modulus_sigma,
+    relaxation_sigma, sigma_log_coefficients, spectrum_error_bars,
 )
 
 
@@ -194,6 +194,7 @@ def _place_tan_delta_axis(fig) -> None:
 
 # Legend name of the +-1 sigma credible ribbons, and their fill opacity.
 _CREDIBLE_BAND = '±1σ credible'
+_PREDICTION_BAND = '±1σ prediction'
 _BAND_ALPHA = 0.25
 
 
@@ -239,21 +240,27 @@ def _prony_trace(fig, xaxis: str):
                 if 'Term Prony' in (t.name or '') and t.xaxis == xaxis)
 
 
-def _add_credible_ribbons(fig, facets) -> None:
+def _add_credible_ribbons(fig, facets, name=_CREDIBLE_BAND,
+                          color=None) -> None:
     """
-    Draw credible ribbons around the Prony curve, under every other trace.
+    Draw ribbons around the Prony curve, under every other trace.
 
     Parameters:
-        fig: Figure carrying the Prony overlay; the ribbons take its color.
+        fig: Figure carrying the Prony overlay.
         facets: (xaxis, yaxis, sigma, log_y) per ribbon, sigma evaluated at
             the x of that facet's Prony trace. One legend entry covers all.
+        name (str): Legend name of the ribbons.
+        color (str): Line color the fill is made from; None takes the
+            Prony overlay's.
     """
-    fill = _rgba(_prony_trace(fig, 'x').line.color, _BAND_ALPHA)
+    if color is None:
+        color = _prony_trace(fig, 'x').line.color
+    fill = _rgba(color, _BAND_ALPHA)
     traces = []
     for k, (xaxis, yaxis, sigma, log_y) in enumerate(facets):
         curve = _prony_trace(fig, xaxis)
         traces.extend(_band_pair(curve.x, curve.y, sigma, log_y, xaxis, yaxis,
-                                 _CREDIBLE_BAND, fill, showlegend=k == 0))
+                                 name, fill, showlegend=k == 0))
     # plotly takes new traces only by appending; rotate them to the front.
     fig.add_traces(traces)
     n = len(traces)
@@ -316,7 +323,7 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
 
 
 def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
-                           N_nz: int, covariance=None) -> tuple:
+                           N_nz: int, covariance=None, noise=None) -> tuple:
     """
     Build E vs frequency and tan-delta vs frequency figures with Prony overlay.
 
@@ -330,6 +337,9 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
             count of the coefficient table _build_coef_records returns.
         covariance (numpy.ndarray): Covariance of the log-coefficients, or
             None; when given, both figures carry +-1 sigma credible ribbons.
+        noise (tuple): (omega_data, rel_stor, rel_loss), the relative
+            measurement error the fit ran with, or None; with a covariance,
+            both figures also carry +-1 sigma prediction ribbons.
 
     Returns:
         tuple: (fig1, fig11) where fig1 is E' / E'' vs Frequency and fig11 is
@@ -385,13 +395,24 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
     fig11.update_yaxes(type="log", col=1)
     _place_tan_delta_axis(fig11)
     if covariance is not None:
-        sigma = complex_modulus_sigma(complex_df['Frequency'].to_numpy(),
-                                      tau_i, E_i, covariance)
-        storage = ('x', 'y', sigma['E Storage'], True)
-        _add_credible_ribbons(fig1, [storage,
-                                     ('x2', 'y2', sigma['E Loss'], True)])
-        _add_credible_ribbons(fig11, [storage,
-                                      ('x2', 'y2', sigma['tan delta'], False)])
+        omega = complex_df['Frequency'].to_numpy()
+        sigma = complex_modulus_sigma(omega, tau_i, E_i, covariance)
+        bands = [(sigma, _CREDIBLE_BAND, None)]
+        if noise is not None:
+            spread = complex_modulus_noise(omega, tau_i, E_i, *noise)
+            combined = {k: np.hypot(sigma[k], spread[k]) for k in sigma}
+            data_color = next(t for t in fig1.data
+                              if t.name == 'Experiment').line.color
+            bands.append((combined, _PREDICTION_BAND, data_color))
+        # Each call goes to the front, so the last drawn ends up first.
+        for sig, name, color in bands:
+            storage = ('x', 'y', sig['E Storage'], True)
+            _add_credible_ribbons(
+                fig1, [storage, ('x2', 'y2', sig['E Loss'], True)],
+                name, color)
+            _add_credible_ribbons(
+                fig11, [storage, ('x2', 'y2', sig['tan delta'], False)],
+                name, color)
     for fig in (fig1, fig11):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
