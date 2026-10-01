@@ -16,6 +16,7 @@ from app.utils.util import log_errors
 
 from .prony import prony_terms_for_span
 from .fit import smooth_prony_fit
+from .reduction import prony_rank_limit
 from .tts import tts_frequency_to_temperature_V2, tts_temperature_to_frequency_V2
 from .figures import (
     _annotate_decimation,
@@ -104,6 +105,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             WLF/hybrid model curve. Empty when no transform was requested or
             nothing is drawable (see _build_shift_figure).
         shift_records (list): The table behind fig5; [] when fig5 is empty.
+        max_prony (int or None): reduction.prony_rank_limit on the master
+            curve the fit consumed; None on the temperature preview.
 
     Raises:
         ValueError: If the uploaded data is empty, contains non-finite values,
@@ -225,7 +228,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             return (
                 empty, empty, empty, empty, fig4, fig41,
                 pd.DataFrame(columns=["tau_i", "E_i"]).to_dict("records"),
-                shift_fig, shift_records,
+                shift_fig, shift_records, None,
             )
 
         freq_sweep_data = tts_temperature_to_frequency_V2(
@@ -284,8 +287,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr)
         E_loss_std = E_stor_std
         std_scale = relative_error
+    omega_arr = df['Frequency'].to_numpy()
+    max_prony = prony_rank_limit(omega_arr, E_stor_arr, E_loss_arr,
+                                 E_stor_std, E_loss_std, std_scale=std_scale)
     tau_i, E_i, fit_quality = smooth_prony_fit(
-        omega=df['Frequency'].to_numpy(),
+        omega=omega_arr,
         E_stor=E_stor_arr,
         E_loss=E_loss_arr,
         E_stor_std=E_stor_std,
@@ -316,4 +322,4 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     coef_records = _build_coef_records(tau_i, E_i)
 
     return (fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
-            shift_fig, shift_records)
+            shift_fig, shift_records, max_prony)

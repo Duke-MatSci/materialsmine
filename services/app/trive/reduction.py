@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from .prony import prony_basis
+from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
 
 
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
@@ -29,6 +29,11 @@ _QR_CHUNK_ROWS = 8192
 # Sized for a smoothness sweep, which varies only `smoothness` and can reuse one
 # reduction throughout.
 _REDUCE_CACHE_SIZE = 4
+
+
+# Relaxation times on prony_rank_limit's probe grid: a few more than the route
+# accepts, so a rank at the route maximum is measured rather than imposed.
+_RANK_PROBE_TERMS = PRONY_TERMS_MAX + 8
 
 
 # digest -> (R, z), least-recently-used first. See _prony_reduce.
@@ -155,3 +160,42 @@ def _prony_reduce(
     if len(_REDUCE_CACHE) > _REDUCE_CACHE_SIZE:
         _REDUCE_CACHE.popitem(last=False)
     return reduced[0] / std_scale, reduced[1] / std_scale
+
+
+def prony_rank_limit(
+        omega: np.ndarray,
+        E_stor: np.ndarray,
+        E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
+        solid: bool = True,
+        std_scale: float = 1.0,
+) -> int:
+    """
+    The number of relaxation terms this dataset's Prony basis can carry.
+
+    Counts the singular values of the reduced probe basis (a fixed grid of
+    _RANK_PROBE_TERMS times over the data's window) above sqrt(eps) of the
+    largest. The fit factors the Gram, whose eigenvalues are the squared
+    singular values, so sqrt(eps) on the basis is eps on the Gram: terms past
+    this rank are redundant columns only the smoothing fills. Advisory only.
+
+    Parameters:
+        omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
+            data and per-point standard deviations, as the fit receives them.
+        solid (bool): Whether an equilibrium term is included; its column is
+            not a relaxation term and is not counted.
+        std_scale (float): Uniform multiplier on both std arrays; it scales
+            every singular value alike, so it cannot change the count.
+
+    Returns:
+        int: the rank, clipped to [1, PRONY_TERMS_MAX].
+    """
+    tau = prony_relaxation_space(
+        1 / np.max(omega), 1 / np.min(omega), _RANK_PROBE_TERMS)
+    R, _ = _prony_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                         tau, solid, std_scale)
+    sigma = np.linalg.svd(R, compute_uv=False)
+    eps = np.finfo(np.result_type(E_stor, E_loss)).eps
+    rank = int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])) - bool(solid)
+    return int(min(max(rank, 1), PRONY_TERMS_MAX))
