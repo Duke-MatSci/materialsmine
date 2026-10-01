@@ -1885,9 +1885,26 @@ def _bundled_master_curve(name):
 class TestSmoothnessPerUnitLogTau(unittest.TestCase):
     """The knob weighs misfit per degree of freedom against curvature per unit
     ln(tau) (the smoothness-weight definition of the manuscript), so one
-    setting means the same thing on master curves of any span."""
+    setting means the same thing on master curves of any span.
+
+    Tested by cropping: a curve fitted on half its span at one setting should
+    keep the spectrum the full-span fit gives there. The weight that best
+    reproduces the full-span fit on a crop is close to lam_full itself (within
+    0.84-1.19 lam_full in 23 of 28 bundled cases at smoothness <= 1), so a
+    rule passes by carrying lam across the cut. The mean-curvature weight
+    smoothness**2 * nu / (h**3 * L) does, up to the change in points per
+    decade nu / L; the integral-curvature weight smoothness**2 * nu / h**3
+    loses the span factor and lands a further factor 1/2 low. Only a
+    synthetic curve has uniform points per decade; on the bundled files the
+    mean rule gives lam_crop / lam_full from 0.64 to 1.29.
+    """
 
     RELATIVE_ERROR = 0.01
+
+    @classmethod
+    def setUpClass(cls):
+        cls.curves = {name: _bundled_master_curve(name)
+                      for name in BUNDLED_MASTER_CURVES}
 
     def test_objective_per_dof_is_misfit_plus_smoothness_squared_curvature(
             self):
@@ -1967,29 +1984,67 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     quality.curvature,
                     d2 @ d2 * (N - 1) ** 3 / log_range ** 4, rtol=1e-9)
 
+    def test_halving_the_span_carries_the_weight_across_the_cut(self):
+        # Uniform points per decade (601 samples, so one sits on the midpoint)
+        # and N_full = 2 * N_crop - 1, so both tau grids share the spacing h
+        # and L_crop / L_full = 1/2. The mean weight is then the integral
+        # weight over L, so its crop-to-full ratio is exactly twice the
+        # integral rule's for any nu. Here both the rows and the parameters
+        # go 2k - 1 to k, nu_full = 2 * nu_crop, and the counts put
+        # lam_crop / lam_full at 1: the mean rule carries one lam across the
+        # cut where the integral rule halves it.
+        omega, _, _, _ = _broadband_master_curve(601)
+        crop = omega[len(omega) // 2:]
+        N_crop = prony_terms_for_span(crop)
+        N_full = 2 * N_crop - 1
+        smoothness = 0.3
+        spans = {}
+        for span, o, N in (('full', omega, N_full), ('crop', crop, N_crop)):
+            log_range = np.log(o.max() / o.min())
+            nu = 2 * len(o) - (N + 1)
+            spans[span] = dict(
+                L=log_range, nu=nu, h=log_range / (N - 1),
+                mean=_scaled_smoothness(smoothness, N, nu, log_range) ** 2,
+                integral=_integral_curvature_weight(
+                    smoothness, N, nu, log_range) ** 2,
+            )
+        full, half = spans['full'], spans['crop']
+        np.testing.assert_allclose(half['h'], full['h'], rtol=1e-12)
+        np.testing.assert_allclose(half['L'] / full['L'], 0.5, rtol=1e-12)
+        mean_ratio = half['mean'] / full['mean']
+        integral_ratio = half['integral'] / full['integral']
+        np.testing.assert_allclose(mean_ratio, 2 * integral_ratio, rtol=1e-12)
+        np.testing.assert_allclose(
+            mean_ratio, half['nu'] * full['L'] / (full['nu'] * half['L']),
+            rtol=1e-12)
+
     def test_halving_the_span_keeps_the_retained_spectrum_near_the_full_fit(
             self):
-        # One knob setting on a full master curve and on its upper half in
-        # log10(omega), 3 terms per decade on each (prony_terms_for_span).
-        # The distance is the RMS gap in ln E_i between the half-span fit and
-        # the full-span fit interpolated onto its tau grid, leaving out the
-        # decade next to the cut, where the half fit has no data beyond its
-        # edge whatever the prior.
+        # One knob setting on each bundled master curve and on its upper half
+        # in log10(omega), 3 terms per decade on each (prony_terms_for_span),
+        # at 1% relative error and smoothness 0.3, the app's default. The
+        # distance is the RMS gap in ln E_i between the half-span fit and the
+        # full-span fit interpolated onto its tau grid, leaving out the decade
+        # next to the cut, where the half fit has no data beyond its edge
+        # whatever the prior.
         #
         # The comparison is against the integral-curvature weight at
         # smoothness / sqrt(L_full), which gives the SAME full-span fit, so
-        # only the crop separates the two. Halving the span halves the data
-        # term and the mean-curvature penalty alike, through nu, but the
-        # integral penalty also loses half its span and so falls twice as
-        # fast: that fit releases its prior on the crop and drifts from the
-        # full fit. Measured RMS gaps: PMMA 0.080 vs 0.201, VeroCyan 0.038
-        # vs 0.093, fisher 0.049 vs 0.222.
+        # only the crop separates the two. The full-span equality pins the
+        # production weight to the mean rule: a weight off by a span factor
+        # fails there before any crop is compared. Measured gap ratios (mean
+        # over integral): Cavaille 0.48, PETMP 0.59, PMMA 0.40, VeroCyan
+        # 0.41, agilus 0.50, dgeba 0.85, fisher 0.22; pooled 0.44. Under a
+        # strong prior (effective smoothness >~ 10) or on the lower-half crop
+        # both fits sit near the prior and the comparison does not
+        # discriminate, so neither is asserted. That includes the synthetic
+        # broadband curve at its own sigma = 0.2 |E*|, an effective knob
+        # 20-60x this one; at 1% and smoothness 0.3-1 it agrees (gap ratios
+        # 0.35-0.51), and its weight ratio is checked exactly above.
         smoothness = 0.3
-        for name in ('PMMA-R09-master-clean-148C.csv',
-                     'VeroCyan-80C_mastercurve.tsv',
-                     'fisher-polycarbonate-150C_mastercurve.csv'):
+        mean_gaps, integral_gaps = [], []
+        for name, (omega, E_stor, E_loss, sigma) in self.curves.items():
             with self.subTest(file=name):
-                omega, E_stor, E_loss, sigma = _bundled_master_curve(name)
                 lo, hi = np.log10(omega.min()), np.log10(omega.max())
                 keep = np.log10(omega) >= (lo + hi) / 2
                 full_range = np.log(omega.max() / omega.min())
@@ -2025,11 +2080,22 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
 
                 mean_gap = distance(mean_fits)
                 integral_gap = distance(integral_fits)
+                mean_gaps.append(mean_gap)
+                integral_gaps.append(integral_gap)
                 self.assertLess(
-                    mean_gap, 0.6 * integral_gap,
+                    mean_gap, integral_gap,
                     msg=f'RMS gap in ln E_i: {mean_gap:.3f} (mean curvature)'
                         f' vs {integral_gap:.3f} (integral curvature)',
                 )
+        self.assertEqual(len(mean_gaps), len(self.curves),
+                         msg='a file failed before its gaps were measured')
+        pooled = np.sqrt(np.mean(np.square(mean_gaps))
+                         / np.mean(np.square(integral_gaps)))
+        self.assertLess(
+            pooled, 0.6,
+            msg=f'pooled RMS gap ratio (mean / integral curvature): '
+                f'{pooled:.3f}',
+        )
 
 
 class TestArgmaxPeak(unittest.TestCase):
