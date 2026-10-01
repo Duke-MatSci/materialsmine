@@ -23,7 +23,7 @@ from unittest.mock import patch
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from app.trive.prony import compute_complex, prony_terms_for_span
+from app.trive.prony import compute_complex, prony_basis, prony_terms_for_span
 from app.trive.quality import _FitQuality
 from app.trive.fit import smooth_prony_fit
 from app.trive.shift import wlf_shift, inverse_wlf_shift, inverse_hybrid_shift
@@ -768,11 +768,13 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         return lower, upper
 
     def _pairs(self, fig):
-        """The ribbon pairs, checked to lead fig.data as (lower, upper)."""
+        """The ribbon pairs, checked to lead fig.data as (lower, upper);
+        only the wider prediction ribbons may be drawn before them."""
         bands = self._bands(fig)
         self.assertGreater(len(bands), 0, 'no credible ribbon drawn')
         self.assertEqual(len(bands) % 2, 0)
-        self.assertEqual(list(fig.data[:len(bands)]), bands,
+        rest = [t for t in fig.data if t.name != '±1σ prediction']
+        self.assertEqual(rest[:len(bands)], bands,
                          'ribbons must precede every other trace')
         return [tuple(bands[k:k + 2]) for k in range(0, len(bands), 2)]
 
@@ -961,6 +963,245 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         self._check_serializes_finite(self.weak)
         self._check_complex_ribbons(self.weak[0], 'E Loss', True,
                                     self.weak_fit)
+
+
+class TestUpdateLineChartPredictionBands(unittest.TestCase):
+    """
+    Where the instrument measures (the E', E'' and tan delta figures) a
+    smoothed fit also draws +-1 sigma prediction ribbons: the credible sigma
+    and the measurement noise the fit ran with, in quadrature. The
+    relaxation and spectrum figures measure nothing and get none.
+    """
+
+    PRED = '±1σ prediction'
+    CRED = '±1σ credible'
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    N = 20
+    ERROR_SCALE = 1.5
+
+    @classmethod
+    def _run(cls, upload, smoothness, **kwargs):
+        """update_line_chart, plus the fit it ran and the kwargs it ran on."""
+        calls = []
+
+        def record(*args, **kw):
+            out = smooth_prony_fit(*args, **kw)
+            calls.append((kw, out))
+            return out
+
+        with patch('app.trive.chart.smooth_prony_fit', side_effect=record):
+            result = update_line_chart(
+                upload, number_of_prony=cls.N, smoothness=smoothness,
+                fit_settings=True, domain='frequency', **kwargs,
+            )
+        kw, (tau_i, E_i, quality) = calls[-1]
+        return result, (tau_i, E_i, quality.covariance, kw)
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        upload = upload_init(cls.FILE, 'frequency')
+        cls.result, cls.fit = cls._run(upload, 0.3)
+        # Weak smoothing: the display cap bites on some points.
+        cls.weak, cls.weak_fit = cls._run(upload, 0.004)
+        cls.unsmoothed, _ = cls._run(upload, 0.0)
+        with patch('app.trive.quality._cholesky_or_none', return_value=None):
+            cls.no_cov, cls.no_cov_fit = cls._run(upload, 0.3)
+        # Uploaded error columns with two different relative profiles.
+        cls.err_upload = dict(upload)
+        mag = np.abs(upload['E Storage'] + 1.0j * upload['E Loss'])
+        n = len(mag)
+        cls.err_upload['E Storage Error'] = mag * np.logspace(-2, -1, n)
+        cls.err_upload['E Loss Error'] = mag * np.logspace(-1, -2, n)
+        cls.err, cls.err_fit = cls._run(cls.err_upload, 0.3,
+                                        error_scale=cls.ERROR_SCALE)
+
+    # --- helpers ---------------------------------------------------------
+
+    @staticmethod
+    def _named(fig, name):
+        return [t for t in fig.data if t.name == name]
+
+    @staticmethod
+    def _prony(fig, xaxis):
+        return next(t for t in fig.data if 'Term Prony' in (t.name or '')
+                    and t.xaxis == xaxis)
+
+    @staticmethod
+    def _by_facet(bands):
+        """{(xaxis, yaxis): (lower, upper)} for consecutive edge pairs."""
+        return {(bands[k].xaxis, bands[k].yaxis): (bands[k], bands[k + 1])
+                for k in range(0, len(bands), 2)}
+
+    @staticmethod
+    def _fit_magnitude(x, tau_i, E_i):
+        """|E*| of the fitted series at x, straight from the basis."""
+        basis = prony_basis(x, tau_i, len(E_i) > len(tau_i))
+        curve = basis @ E_i
+        return np.abs(curve[:len(x)] + 1.0j * curve[len(x):])
+
+    @staticmethod
+    def _profile_the_fit_ran_with(kw):
+        """(omega_data, rel_stor, rel_loss) from the fit's own arguments."""
+        mag = np.abs(kw['E_stor'] + 1.0j * kw['E_loss'])
+        return (kw['omega'], kw['E_stor_std'] * kw['std_scale'] / mag,
+                kw['E_loss_std'] * kw['std_scale'] / mag)
+
+    def _check_edges(self, fig, xaxis, yaxis, sigma, log_panel):
+        pairs = self._by_facet(self._named(fig, self.PRED))
+        self.assertIn((xaxis, yaxis), pairs, 'no prediction ribbon here')
+        lower, upper = pairs[(xaxis, yaxis)]
+        curve = self._prony(fig, xaxis)
+        want_lo, want_hi = TestUpdateLineChartCredibleBands._expected_edges(
+            curve.y, sigma, log_panel)
+        for edge in (lower, upper):
+            np.testing.assert_array_equal(edge.x, curve.x)
+        np.testing.assert_allclose(lower.y, want_lo, rtol=1e-9)
+        np.testing.assert_allclose(upper.y, want_hi, rtol=1e-9)
+
+    def _check_prediction_ribbons(self, fig, col2_key, col2_log, fit,
+                                  profile):
+        from app.trive.uncertainty import complex_modulus_noise
+        tau_i, E_i, cov = fit[:3]
+        pred = self._named(fig, self.PRED)
+        self.assertEqual(len(pred), 4, 'expected one ribbon per facet')
+        self.assertEqual(sorted(self._by_facet(pred)),
+                         [('x', 'y'), ('x2', 'y2')])
+        for xaxis, yaxis, key, log_panel in (
+                ('x', 'y', 'E Storage', True),
+                ('x2', 'y2', col2_key, col2_log)):
+            x = np.asarray(self._prony(fig, xaxis).x, dtype=float)
+            cred = complex_modulus_sigma(x, tau_i, E_i, cov)[key]
+            noise = complex_modulus_noise(x, tau_i, E_i, *profile)[key]
+            self._check_edges(fig, xaxis, yaxis, np.hypot(cred, noise),
+                              log_panel)
+
+    # --- (1) one prediction ribbon per frequency-domain facet ------------
+
+    def test_complex_figure_has_a_prediction_ribbon_in_each_facet(self):
+        self.assertIsNotNone(self.fit[2])
+        self._check_prediction_ribbons(
+            self.result[0], 'E Loss', True, self.fit,
+            self._profile_the_fit_ran_with(self.fit[3]))
+
+    def test_tan_delta_figure_has_a_prediction_ribbon_in_each_facet(self):
+        self._check_prediction_ribbons(
+            self.result[1], 'tan delta', False, self.fit,
+            self._profile_the_fit_ran_with(self.fit[3]))
+
+    def test_cap_applies_to_the_combined_sigma_under_weak_smoothing(self):
+        self.assertIsNotNone(self.weak_fit[2])
+        profile = self._profile_the_fit_ran_with(self.weak_fit[3])
+        self._check_prediction_ribbons(
+            self.weak[0], 'E Loss', True, self.weak_fit, profile)
+        self._check_prediction_ribbons(
+            self.weak[1], 'tan delta', False, self.weak_fit, profile)
+
+    # --- (2) the noise is the noise the fit ran with ---------------------
+
+    def test_relative_error_noise_is_r_times_the_fitted_magnitude(self):
+        """Relative Error r (no error columns): the storage facet's sigma is
+        exactly hypot(credible, r |E*_fit|)."""
+        tau_i, E_i, cov, kw = self.fit
+        self.assertEqual(kw['std_scale'], 0.2)  # the default setting
+        for fig in self.result[:2]:
+            x = np.asarray(self._prony(fig, 'x').x, dtype=float)
+            cred = complex_modulus_sigma(x, tau_i, E_i, cov)['E Storage']
+            noise = 0.2 * self._fit_magnitude(x, tau_i, E_i)
+            self._check_edges(fig, 'x', 'y', np.hypot(cred, noise), True)
+
+    def test_uploaded_error_columns_set_the_noise_profile(self):
+        """With error columns the profile is column * error_scale / |E*_data|
+        at the uploaded frequencies, storage and loss each their own."""
+        self.assertIsNotNone(self.err_fit[2])
+        up = self.err_upload
+        mag = np.abs(up['E Storage'] + 1.0j * up['E Loss'])
+        profile = (up['Frequency'],
+                   up['E Storage Error'] * self.ERROR_SCALE / mag,
+                   up['E Loss Error'] * self.ERROR_SCALE / mag)
+        self._check_prediction_ribbons(
+            self.err[0], 'E Loss', True, self.err_fit, profile)
+        self._check_prediction_ribbons(
+            self.err[1], 'tan delta', False, self.err_fit, profile)
+
+    # --- (3) draw order and styling --------------------------------------
+
+    def test_prediction_ribbons_are_drawn_first_then_credible(self):
+        for fig in self.result[:2]:
+            names = [t.name for t in fig.data]
+            self.assertEqual(names[:8], [self.PRED] * 4 + [self.CRED] * 4)
+            self.assertFalse(any((n or '').startswith('±1σ')
+                                 for n in names[8:]))
+
+    def test_prediction_ribbons_are_styled_as_their_own_legend_entry(self):
+        for fig in self.result[:2]:
+            pred = self._named(fig, self.PRED)
+            cred = self._named(fig, self.CRED)
+            for t in pred:
+                self.assertEqual(t.mode, 'lines')
+                self.assertEqual(t.line.width, 0)
+                self.assertEqual(t.hoverinfo, 'skip')
+                self.assertEqual(t.legendgroup, self.PRED)
+            self.assertEqual([t.showlegend for t in pred].count(True), 1)
+            self.assertEqual([t.showlegend for t in cred].count(True), 1)
+            experiment = next(t for t in fig.data if t.name == 'Experiment')
+            rgb = TestUpdateLineChartCredibleBands._rgb
+            for lower, upper in self._by_facet(pred).values():
+                self.assertNotEqual(lower.fill, 'tonexty')
+                self.assertEqual(upper.fill, 'tonexty')
+                self.assertTrue(upper.fillcolor.startswith('rgba('))
+                alpha = float(re.findall(r'[\d.]+', upper.fillcolor)[3])
+                self.assertAlmostEqual(alpha, 0.25)
+                self.assertEqual(rgb(upper.fillcolor),
+                                 rgb(experiment.line.color))
+                self.assertNotEqual(upper.fillcolor, cred[1].fillcolor)
+
+    def test_prediction_band_contains_the_credible_band(self):
+        for result in (self.result, self.err):
+            for fig in result[:2]:
+                pred = self._by_facet(self._named(fig, self.PRED))
+                cred = self._by_facet(self._named(fig, self.CRED))
+                self.assertEqual(set(pred), set(cred))
+                for facet, (c_lo, c_hi) in cred.items():
+                    p_lo, p_hi = pred[facet]
+                    p_hi_y = np.asarray(p_hi.y, dtype=float)
+                    c_hi_y = np.asarray(c_hi.y, dtype=float)
+                    self.assertTrue((p_hi_y >= c_hi_y).all(), facet)
+                    self.assertTrue((np.asarray(p_lo.y, dtype=float)
+                                     <= np.asarray(c_lo.y, dtype=float))
+                                    .all(), facet)
+                    # The noise is visible, not lost in the credible sigma.
+                    self.assertFalse(np.allclose(p_hi_y, c_hi_y, rtol=1e-3),
+                                     facet)
+
+    # --- (4) nothing measured, no prediction -----------------------------
+
+    def test_relaxation_and_spectrum_figures_get_no_prediction_ribbon(self):
+        self.assertGreater(len(self._named(self.result[2], self.CRED)), 0)
+        for fig in self.result[2:4]:
+            self.assertEqual(self._named(fig, self.PRED), [])
+
+    def test_no_covariance_draws_neither_band(self):
+        self.assertIsNone(self.no_cov_fit[2])
+        for result in (self.unsmoothed, self.no_cov):
+            for fig in result[:4]:
+                self.assertEqual(self._named(fig, self.PRED), [])
+                self.assertEqual(self._named(fig, self.CRED), [])
+
+    # --- (5) serialization -----------------------------------------------
+
+    def test_figures_with_both_bands_serialize_finite(self):
+        for result in (self.result, self.weak, self.err):
+            for fig in result[:2]:
+                text = fig.to_json()
+                self.assertNotIn('NaN', text)
+                self.assertNotIn('Infinity', text)
+                traces = [t for t in json.loads(text)['data']
+                          if t.get('name') == self.PRED]
+                self.assertEqual(len(traces), 4)
+                for trace in traces:
+                    TestUpdateLineChartCredibleBands._assert_wire_finite(
+                        self, trace['y'])
 
 
 class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):

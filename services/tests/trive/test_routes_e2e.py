@@ -316,6 +316,17 @@ class TestExtractRoute(unittest.TestCase):
             names = [t.get('name') for t in response[key]['data']]
             self.assertEqual(names.count('±1σ credible'), traces, key)
 
+    def test_smoothed_extract_carries_prediction_ribbons(self):
+        """Prediction ribbons ride on the measured-quantity charts only."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        for key, traces in (('complex-chart', 4), ('complex-tand-chart', 4),
+                            ('relaxation-chart', 0),
+                            ('relaxation-spectrum-chart', 0)):
+            names = [t.get('name') for t in response[key]['data']]
+            self.assertEqual(names.count('±1σ prediction'), traces, key)
+
     def test_request_above_max_prony_still_fits(self):
         """The cap is advisory: any N in the route's 1..100 range fits."""
         resp = self._post(self._freq_body())

@@ -277,6 +277,111 @@ class TestRelaxationSigma(unittest.TestCase):
             got, u.relaxation_sigma(self.t, self.tau_i, self.E_i, other))
 
 
+class TestComplexModulusNoise(unittest.TestCase):
+    """1-sigma measurement noise of a new reading: the data's relative
+    profile, interpolated in log-frequency, times the fitted |E*|."""
+
+    def setUp(self):
+        self.rng = np.random.default_rng(31)
+        self.tau_i = np.logspace(-2, 2, 6)
+        self.E_i = np.abs(self.rng.normal(size=7)) + 0.5  # solid, E_eq first
+        self.omega_data = np.logspace(-2, 2, 25)
+
+    def _fit_curve(self, omega, E_i=None):
+        """The fitted (E', E'') over omega, straight from the basis."""
+        E_i = self.E_i if E_i is None else E_i
+        basis = prony_basis(omega, self.tau_i, len(E_i) > len(self.tau_i))
+        curve = basis @ E_i
+        n = len(omega)
+        return curve[:n], curve[n:]
+
+    def _noise(self, omega, rel_stor, rel_loss, E_i=None, omega_data=None):
+        return _uncertainty().complex_modulus_noise(
+            omega, self.tau_i, self.E_i if E_i is None else E_i,
+            self.omega_data if omega_data is None else omega_data,
+            rel_stor, rel_loss)
+
+    def test_returns_the_three_curve_keys(self):
+        """One noise array over omega per drawn curve."""
+        rel = np.full(len(self.omega_data), 0.05)
+        omega = np.logspace(-3, 3, 17)
+        got = self._noise(omega, rel, rel)
+        self.assertEqual(set(got), {'E Storage', 'E Loss', 'tan delta'})
+        for key, value in got.items():
+            self.assertEqual(value.shape, omega.shape, msg=key)
+
+    def test_constant_profile_is_r_times_fitted_magnitude(self):
+        """A constant profile r gives r |E*_fit| on any grid, inside the data
+        window and beyond it, with or without an equilibrium term."""
+        omega = np.logspace(-5, 5, 41)  # wider than the data window
+        rel_s = np.full(len(self.omega_data), 0.05)
+        rel_l = np.full(len(self.omega_data), 0.08)
+        for E_i in (self.E_i, self.E_i[1:]):
+            with self.subTest(solid=len(E_i) > len(self.tau_i)):
+                got = self._noise(omega, rel_s, rel_l, E_i=E_i)
+                stor, loss = self._fit_curve(omega, E_i)
+                mag = np.abs(stor + 1.0j * loss)
+                np.testing.assert_allclose(
+                    got['E Storage'], 0.05 * mag, rtol=1e-12)
+                np.testing.assert_allclose(
+                    got['E Loss'], 0.08 * mag, rtol=1e-12)
+
+    def test_profile_is_linear_in_log_frequency_and_clamped(self):
+        """At a data point the profile is that point's value; at the
+        geometric midpoint of two neighbours it is their mean; beyond the
+        window it holds the edge value."""
+        rel = np.linspace(0.01, 0.10, len(self.omega_data))
+        mid = np.sqrt(self.omega_data[7] * self.omega_data[8])
+        probe = np.array([1e-6, self.omega_data[0] / 3, self.omega_data[7],
+                          mid, self.omega_data[-1] * 3, 1e6])
+        got = self._noise(probe, rel, rel)
+        stor, loss = self._fit_curve(probe)
+        mag = np.abs(stor + 1.0j * loss)
+        want = np.array([rel[0], rel[0], rel[7], (rel[7] + rel[8]) / 2,
+                         rel[-1], rel[-1]])
+        np.testing.assert_allclose(got['E Storage'] / mag, want, rtol=1e-12)
+        np.testing.assert_allclose(got['E Loss'] / mag, want, rtol=1e-12)
+
+    def test_unsorted_data_grid_gives_the_same_noise(self):
+        """omega_data arrives in upload order; permuting it together with the
+        profiles changes nothing."""
+        rel_s = np.linspace(0.01, 0.10, len(self.omega_data))
+        rel_l = np.linspace(0.20, 0.02, len(self.omega_data))
+        perm = self.rng.permutation(len(self.omega_data))
+        omega = np.logspace(-3, 3, 30)
+        got = self._noise(omega, rel_s, rel_l)
+        shuffled = self._noise(omega, rel_s[perm], rel_l[perm],
+                               omega_data=self.omega_data[perm])
+        for key in got:
+            np.testing.assert_allclose(shuffled[key], got[key], rtol=1e-12,
+                                       err_msg=key)
+
+    def test_storage_and_loss_follow_their_own_profiles(self):
+        """E' noise depends on rel_stor only and E'' noise on rel_loss only."""
+        rel_a = np.linspace(0.01, 0.10, len(self.omega_data))
+        rel_b = np.linspace(0.30, 0.03, len(self.omega_data))
+        omega = np.logspace(-3, 3, 30)
+        ab = self._noise(omega, rel_a, rel_b)
+        ba = self._noise(omega, rel_b, rel_a)
+        aa = self._noise(omega, rel_a, rel_a)
+        np.testing.assert_allclose(ab['E Storage'], aa['E Storage'],
+                                   rtol=1e-12)
+        np.testing.assert_allclose(ba['E Loss'], aa['E Loss'], rtol=1e-12)
+        self.assertFalse(np.allclose(ab['E Loss'], aa['E Loss']))
+
+    def test_tan_delta_noise_is_the_independent_ratio_formula(self):
+        """New E' and E'' readings are independent:
+        sqrt((s''/E')^2 + (E'' s'/E'^2)^2)."""
+        rel_s = np.linspace(0.01, 0.10, len(self.omega_data))
+        rel_l = np.linspace(0.20, 0.02, len(self.omega_data))
+        omega = np.logspace(-3, 3, 15)
+        got = self._noise(omega, rel_s, rel_l)
+        stor, loss = self._fit_curve(omega)
+        want = np.sqrt((got['E Loss'] / stor) ** 2
+                       + (loss * got['E Storage'] / stor ** 2) ** 2)
+        np.testing.assert_allclose(got['tan delta'], want, rtol=1e-12)
+
+
 class TestBandsOnARealFit(unittest.TestCase):
     """The covariance a smoothed fit reports, propagated through the bands."""
 
