@@ -1424,6 +1424,10 @@ class TestExtendedFigureAxisPin(unittest.TestCase):
         # in-window minimum of 0.308 (the data) — 0.64 decades of headroom.
         cls.pmma, cls.pmma_fit = _chart_and_fit(pmma, 20, 0.0)
         cls.runs = ((cls.agilus, cls.agilus_fit), (cls.pmma, cls.pmma_fit))
+        # Unsmoothed PETMP: some basis dots sit below the in-window curve.
+        petmp = upload_init('PETMP-TATATO master curve 55C clean.txt',
+                            'frequency')
+        cls.petmp, cls.petmp_fit = _chart_and_fit(petmp, 20, 0.0)
 
     # --- helpers ---------------------------------------------------------
 
@@ -1444,15 +1448,13 @@ class TestExtendedFigureAxisPin(unittest.TestCase):
 
     @staticmethod
     def _in_window(fig, yaxis, lo, hi):
-        """y of the Prony curve, data and ribbon edges on yaxis at
-        lo <= x <= hi; positive values only on a log axis."""
+        """y of every trace on yaxis (curve, data, ribbon edges, basis dots)
+        at lo <= x <= hi, to within _RTOL; positive values only on a log
+        axis."""
         log = _is_log(fig, yaxis)
         values = []
         for t in fig.data:
-            name = t.name or ''
-            if t.yaxis != yaxis or not (
-                    name == 'Experiment' or name in _BANDS
-                    or ('Term Prony' in name and t.mode != 'markers')):
+            if t.yaxis != yaxis:
                 continue
             x = np.asarray(t.x, dtype=float)
             y = np.asarray(t.y, dtype=float)
@@ -1499,6 +1501,40 @@ class TestExtendedFigureAxisPin(unittest.TestCase):
         for result, (tau_i, _, _) in self.runs:
             lo, hi = _time_window(tau_i)
             self._assert_brackets(result[2], 'y', lo, hi, 'fig2 y')
+
+    def test_relaxation_range_brackets_the_basis_dots(self):
+        """The basis overlay sits at the tau_i, inside the window by
+        definition, so fig2's range keeps every positive dot in view."""
+        fig2 = self.petmp[2]
+        dots = next(t for t in fig2.data if 'Term Basis' in (t.name or ''))
+        y = np.asarray(dots.y, dtype=float)
+        y = np.log10(y[y > 0])
+        r0, r1 = self._pinned_range(fig2, 'y')
+        self.assertLessEqual(r0, y.min())
+        self.assertGreaterEqual(r1, y.max())
+
+    def test_range_keeps_a_data_point_an_ulp_outside_the_window(self):
+        """The window comes from 1/omega of the data extremes, so an end
+        point may land a rounding error outside it; within _RTOL it is
+        still inside, and the range must still show it."""
+        tau_i = np.logspace(-3.0, 3.0, 13)
+        E_i = np.concatenate(([1e5], np.full(13, 1e6)))
+        lo, hi = _frequency_window(tau_i)
+        for edge in ('low', 'high'):
+            with self.subTest(edge):
+                data = compute_complex(tau_i, E_i, num_pts=60)
+                row = 0 if edge == 'low' else len(data) - 1
+                x = lo * (1 - 1e-12) if edge == 'low' else hi * (1 + 1e-12)
+                # Three decades past the rest of the storage values.
+                y = (data['E Storage'].min() / 1e3 if edge == 'low'
+                     else data['E Storage'].max() * 1e3)
+                data.loc[row, 'Frequency'] = x
+                data.loc[row, 'E Storage'] = y
+                fig1, fig11 = _build_complex_figures(data, tau_i, E_i, 13)
+                for name, fig in (('fig1', fig1), ('fig11', fig11)):
+                    r0, r1 = self._pinned_range(fig, 'y')
+                    self.assertLessEqual(r0, np.log10(y), name)
+                    self.assertGreaterEqual(r1, np.log10(y), name)
 
     def test_tan_delta_ticks_stay_on_the_right_with_the_pinned_range(self):
         for result, _ in self.runs:
