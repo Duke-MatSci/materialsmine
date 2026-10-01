@@ -84,6 +84,15 @@
           on E(t) or the spectrum, which are not measured directly.
         </p>
         <p>
+          The fitted curves are drawn one decade past your measured window on each side, showing
+          the Prony series exactly as it would be exported. The series has no terms outside the
+          window, so what is drawn there, curves and bands alike, is the model's own asymptote,
+          not a statement about your material. The plotted E(t) is the decaying part only (the
+          long-term modulus is left out), so past the last relaxation time it heads to zero
+          rather than to the plateau. The vertical axes are set from the measured window, so the
+          tails can run off the plot.
+        </p>
+        <p>
           On a smoothed fit the coefficient table and its CSV download gain two columns,
           <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
           in Pa, the same range the error bars on the spectrum plot show. With smoothing off
