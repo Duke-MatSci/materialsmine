@@ -14,6 +14,9 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
+import base64
+import json
+import re
 import numpy as np
 from unittest.mock import patch
 
@@ -27,6 +30,10 @@ from app.trive.shift import wlf_shift, inverse_wlf_shift, inverse_hybrid_shift
 from app.trive.tts import MAX_ABS_LOG10_SHIFT
 from app.trive.figures import _PLOT_MAX_POINTS
 from app.trive.chart import update_line_chart
+from app.trive.uncertainty import (
+    _SIGMA_DISPLAY_CAP, complex_modulus_sigma, relaxation_sigma,
+    sigma_log_coefficients, spectrum_error_bars,
+)
 import app.trive.reduction as reduction
 from app.config import Config
 from app.utils.util import upload_init
@@ -93,7 +100,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
     def test_fig2_trace_counts_with_fit_settings_true(self):
         # fit_settings=True → fig2 is an overlay fig (line + basis scatter).
         fig2 = self.result[2]
-        self.assertEqual(len(fig2.data), 2)
+        self.assertEqual(
+            sum(1 for t in fig2.data if t.name != '±1σ credible'), 2)
         names2 = {t.name for t in fig2.data}
         self.assertTrue(any('Basis' in n for n in names2))
 
@@ -111,7 +119,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         # Every figure labels the decaying terms only — the equilibrium
         # coefficient is a separate parameter, drawn here as its own trace — so
         # this label matches the one on the E(t) figure exactly.
-        decaying = int(self.result[2].data[0].name.split('-')[0])
+        curve = next(t for t in self.result[2].data if 'Term Prony' in t.name)
+        decaying = int(curve.name.split('-')[0])
         self.assertEqual(dots.name, f'{decaying}-Term Prony')
         hline = next(t for t in fig3.data if t.name == 'Long-Term Modulus')
         self.assertEqual(hline.mode, 'lines')
@@ -160,7 +169,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
             fit_settings=False, domain='frequency',
         )
         fig2, fig3 = result[2], result[3]
-        self.assertEqual(len(fig2.data), 1)
+        self.assertEqual(
+            sum(1 for t in fig2.data if t.name != '±1σ credible'), 1)
         self.assertNotIn('Basis', {t.name for t in fig2.data})
         # fig3 is the discrete-spectrum dot plot regardless of fit_settings.
         self.assertEqual(
@@ -445,8 +455,11 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
                          {'Experiment', 'WLF fit'})
         # Identical master curves prove the reference never reached the
         # transform (the interpolated table would shift the frequencies).
+        def experiment_x(fig):
+            return next(t.x for t in fig.data
+                        if t.name == 'Experiment' and t.xaxis == 'x')
         np.testing.assert_array_equal(
-            with_ref[0].data[0].x, without[0].data[0].x)
+            experiment_x(with_ref[0]), experiment_x(without[0]))
 
     def test_shiftdata_wins_over_shift_reference_for_markers(self):
         # When both are present the applied table is the honest marker source.
@@ -684,6 +697,270 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
         fig2 = self._run(23, 0.04)[2]
         basis = [t.name for t in fig2.data if 'Term Basis' in t.name]
         self.assertEqual(basis, ['23-Term Basis'])
+
+
+class TestUpdateLineChartCredibleBands(unittest.TestCase):
+    """
+    A smoothed fit draws +-1 sigma credible ribbons under its curves and
+    error bars on its spectrum; without a covariance (unsmoothed, or a
+    Hessian that is not positive definite) the figures are unchanged.
+    """
+
+    BAND = '±1σ credible'
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    N = 20
+
+    @classmethod
+    def _run(cls, smoothness, fit_settings=True):
+        """update_line_chart on the bundled file, plus the fit it used."""
+        fits = []
+
+        def record(*args, **kwargs):
+            out = smooth_prony_fit(*args, **kwargs)
+            fits.append(out)
+            return out
+
+        with patch('app.trive.chart.smooth_prony_fit', side_effect=record):
+            result = update_line_chart(
+                cls.uploadData, number_of_prony=cls.N,
+                smoothness=smoothness, fit_settings=fit_settings,
+                domain='frequency',
+            )
+        tau_i, E_i, quality = fits[-1]
+        return result, (tau_i, E_i, quality.covariance)
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        cls.uploadData = upload_init(cls.FILE, 'frequency')
+        cls.result, cls.fit = cls._run(0.3)
+        cls.result_no_basis, cls.fit_no_basis = cls._run(0.3, False)
+        # Weak smoothing: some log-sigmas exceed the display cap here.
+        cls.weak, cls.weak_fit = cls._run(0.004)
+        cls.unsmoothed, _ = cls._run(0.0)
+        with patch('app.trive.quality._cholesky_or_none', return_value=None):
+            cls.no_cov, cls.no_cov_fit = cls._run(0.3)
+
+    # --- helpers ---------------------------------------------------------
+
+    @classmethod
+    def _bands(cls, fig):
+        return [t for t in fig.data if t.name == cls.BAND]
+
+    @staticmethod
+    def _prony(fig, xaxis=None):
+        return next(t for t in fig.data if 'Term Prony' in (t.name or '')
+                    and (xaxis is None or t.xaxis == xaxis))
+
+    @staticmethod
+    def _rgb(color):
+        if color.startswith('#'):
+            return tuple(int(color[i:i + 2], 16) for i in (1, 3, 5))
+        return tuple(int(float(v)) for v in re.findall(r'[\d.]+', color)[:3])
+
+    @staticmethod
+    def _expected_edges(y, sigma, log_panel):
+        y = np.asarray(y, dtype=float)
+        sigma_c = np.minimum(sigma, y * np.expm1(_SIGMA_DISPLAY_CAP))
+        upper = y + sigma_c
+        lower = y ** 2 / (y + sigma_c) if log_panel \
+            else np.maximum(y - sigma, 0.0)
+        return lower, upper
+
+    def _pairs(self, fig):
+        """The ribbon pairs, checked to lead fig.data as (lower, upper)."""
+        bands = self._bands(fig)
+        self.assertGreater(len(bands), 0, 'no credible ribbon drawn')
+        self.assertEqual(len(bands) % 2, 0)
+        self.assertEqual(list(fig.data[:len(bands)]), bands,
+                         'ribbons must precede every other trace')
+        return [tuple(bands[k:k + 2]) for k in range(0, len(bands), 2)]
+
+    def _check_edge_style(self, fig):
+        bands = self._bands(fig)
+        for t in bands:
+            self.assertEqual(t.mode, 'lines')
+            self.assertEqual(t.line.width, 0)
+            self.assertEqual(t.hoverinfo, 'skip')
+            self.assertEqual(t.legendgroup, self.BAND)
+        shown = [t.showlegend for t in bands]
+        self.assertEqual(shown.count(True), 1)
+        self.assertEqual(shown.count(False), len(bands) - 1)
+        prony = self._prony(fig)
+        for lower, upper in self._pairs(fig):
+            self.assertNotEqual(lower.fill, 'tonexty')
+            self.assertEqual(upper.fill, 'tonexty')
+            self.assertTrue(upper.fillcolor.startswith('rgba('))
+            alpha = float(re.findall(r'[\d.]+', upper.fillcolor)[3])
+            self.assertEqual(self._rgb(upper.fillcolor),
+                             self._rgb(prony.line.color))
+            self.assertAlmostEqual(alpha, 0.25)
+
+    def _check_complex_ribbons(self, fig, col2_key, col2_log, fit):
+        tau_i, E_i, cov = fit
+        pairs = self._pairs(fig)
+        self.assertEqual(len(pairs), 2)
+        self.assertEqual(
+            sorted((lo.xaxis, lo.yaxis, hi.xaxis, hi.yaxis)
+                   for lo, hi in pairs),
+            [('x', 'y', 'x', 'y'), ('x2', 'y2', 'x2', 'y2')])
+        for lower, upper in pairs:
+            col2 = lower.xaxis == 'x2'
+            key = col2_key if col2 else 'E Storage'
+            log_panel = col2_log if col2 else True
+            curve = self._prony(fig, lower.xaxis)
+            x = np.asarray(curve.x, dtype=float)
+            sigma = complex_modulus_sigma(x, tau_i, E_i, cov)[key]
+            want_lo, want_hi = self._expected_edges(curve.y, sigma, log_panel)
+            for edge in (lower, upper):
+                np.testing.assert_array_equal(edge.x, curve.x)
+            np.testing.assert_allclose(lower.y, want_lo, rtol=1e-9)
+            np.testing.assert_allclose(upper.y, want_hi, rtol=1e-9)
+
+    def _check_relaxation_ribbon(self, fig, fit):
+        tau_i, E_i, cov = fit
+        pairs = self._pairs(fig)
+        self.assertEqual(len(pairs), 1)
+        lower, upper = pairs[0]
+        curve = self._prony(fig)
+        x = np.asarray(curve.x, dtype=float)
+        sigma = relaxation_sigma(x, tau_i, E_i, cov)
+        want_lo, want_hi = self._expected_edges(curve.y, sigma, True)
+        for edge in (lower, upper):
+            np.testing.assert_array_equal(edge.x, curve.x)
+        np.testing.assert_allclose(lower.y, want_lo, rtol=1e-9)
+        np.testing.assert_allclose(upper.y, want_hi, rtol=1e-9)
+
+    def _spectrum_dots(self, fig):
+        return next(t for t in fig.data if 'Term Prony' in (t.name or '')
+                    and t.mode == 'markers')
+
+    # --- (1) complex-modulus and tan-delta ribbons -----------------------
+
+    def test_complex_figure_has_a_credible_ribbon_in_each_facet(self):
+        self.assertIsNotNone(self.fit[2])
+        self._check_complex_ribbons(self.result[0], 'E Loss', True, self.fit)
+
+    def test_tan_delta_figure_has_a_credible_ribbon_in_each_facet(self):
+        self._check_complex_ribbons(
+            self.result[1], 'tan delta', False, self.fit)
+
+    def test_ribbon_edges_are_styled_as_one_legend_entry(self):
+        for fig in self.result[:3]:
+            self._check_edge_style(fig)
+
+    def test_log_panel_lower_edges_stay_positive(self):
+        for result in (self.result, self.weak):
+            for fig in (result[0], result[2]):
+                for lower, _ in self._pairs(fig):
+                    y = np.asarray(lower.y, dtype=float)
+                    self.assertTrue(np.isfinite(y).all())
+                    self.assertTrue((y > 0).all())
+
+    # --- (2) relaxation-modulus ribbon -----------------------------------
+
+    def test_relaxation_figure_has_a_credible_ribbon(self):
+        self._check_relaxation_ribbon(self.result[2], self.fit)
+
+    def test_relaxation_ribbon_without_the_basis_overlay(self):
+        fig2 = self.result_no_basis[2]
+        self._check_relaxation_ribbon(fig2, self.fit_no_basis)
+        self._check_edge_style(fig2)
+
+    # --- (3) spectrum error bars -----------------------------------------
+
+    def test_spectrum_dots_carry_asymmetric_error_bars(self):
+        tau_i, E_i, cov = self.fit
+        n = len(tau_i)
+        dots = self._spectrum_dots(self.result[3])
+        self.assertIsNotNone(dots.error_y.array)
+        self.assertIsNotNone(dots.error_y.arrayminus)
+        plus = np.asarray(dots.error_y.array, dtype=float)
+        minus = np.asarray(dots.error_y.arrayminus, dtype=float)
+        want_plus, want_minus = spectrum_error_bars(
+            E_i[-n:], sigma_log_coefficients(cov)[-n:])
+        np.testing.assert_allclose(plus, want_plus, rtol=1e-9)
+        np.testing.assert_allclose(minus, want_minus, rtol=1e-9)
+        for bar in (plus, minus):
+            self.assertTrue(np.isfinite(bar).all())
+            self.assertTrue((bar >= 0).all())
+        self.assertTrue((minus < np.asarray(dots.y, dtype=float)).all())
+        self.assertFalse(np.allclose(plus, minus))
+
+    def test_long_term_modulus_line_has_no_error_bars(self):
+        hline = next(t for t in self.result[3].data
+                     if t.name == 'Long-Term Modulus')
+        self.assertIsNone(hline.error_y.array)
+        self.assertIsNone(hline.error_y.arrayminus)
+
+    def test_error_bars_add_no_spectrum_traces(self):
+        self.assertEqual(len(self.result[3].data), len(self.no_cov[3].data))
+
+    # --- (4) no covariance, no display -----------------------------------
+
+    def _check_display_absent(self, result):
+        fig1, fig11, fig2, fig3 = result[:4]
+        for fig in (fig1, fig11, fig2, fig3):
+            self.assertEqual(self._bands(fig), [])
+        self.assertEqual(len(fig1.data), 4)
+        self.assertEqual(len(fig11.data), 4)
+        self.assertEqual(len(fig2.data), 2)
+        self.assertEqual(len(fig3.data), 2)
+        self.assertIsNone(self._spectrum_dots(fig3).error_y.array)
+        self.assertIsNone(self._spectrum_dots(fig3).error_y.arrayminus)
+
+    def test_unsmoothed_fit_draws_no_uncertainty(self):
+        self._check_display_absent(self.unsmoothed)
+
+    def test_missing_covariance_draws_no_uncertainty(self):
+        self.assertIsNone(self.no_cov_fit[2])
+        self._check_display_absent(self.no_cov)
+
+    def test_coefficient_table_keys_unchanged(self):
+        for row in self.result[6]:
+            self.assertSetEqual(set(row.keys()), {'i', 'tau_i', 'E_i'})
+
+    # --- (5) serialization -----------------------------------------------
+
+    def _assert_wire_finite(self, values):
+        """A serialized array: a plain list or plotly's base64 typed array."""
+        self.assertIsNotNone(values)
+        if isinstance(values, dict):
+            arr = np.frombuffer(base64.b64decode(values['bdata']),
+                                dtype=np.dtype(values['dtype']))
+        else:
+            # plotly writes NaN and inf in plain lists as null.
+            self.assertNotIn(None, values)
+            arr = np.asarray(values, dtype=float)
+        self.assertGreater(arr.size, 0)
+        self.assertTrue(np.isfinite(arr).all())
+
+    def _check_serializes_finite(self, result):
+        for fig in result[:4]:
+            text = fig.to_json()
+            self.assertNotIn('NaN', text)
+            self.assertNotIn('Infinity', text)
+            for trace in json.loads(text)['data']:
+                if trace.get('name') == self.BAND:
+                    self._assert_wire_finite(trace['y'])
+                if 'array' in trace.get('error_y', {}):
+                    self._assert_wire_finite(trace['error_y']['array'])
+                    self._assert_wire_finite(
+                        trace['error_y'].get('arrayminus'))
+        self.assertGreater(len(self._bands(result[0])), 0)
+        self.assertIsNotNone(self._spectrum_dots(result[3]).error_y.array)
+
+    def test_figures_serialize_without_non_finite_values(self):
+        self._check_serializes_finite(self.result)
+
+    def test_weak_smoothing_hits_the_cap_and_still_serializes(self):
+        cov = self.weak_fit[2]
+        self.assertIsNotNone(cov)
+        self.assertTrue(
+            (sigma_log_coefficients(cov) > _SIGMA_DISPLAY_CAP).any())
+        self._check_serializes_finite(self.weak)
+        self._check_complex_ribbons(self.weak[0], 'E Loss', True,
+                                    self.weak_fit)
 
 
 class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):

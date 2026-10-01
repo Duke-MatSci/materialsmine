@@ -306,6 +306,16 @@ class TestExtractRoute(unittest.TestCase):
         self.assertLessEqual(response['max_prony'], 100)
         self.assertNotIn('noise_prony', response)
 
+    def test_smoothed_extract_carries_credible_ribbons(self):
+        """A smoothed fit's chart JSON carries the +-1 sigma ribbons."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        for key, traces in (('complex-chart', 4), ('complex-tand-chart', 4),
+                            ('relaxation-chart', 2)):
+            names = [t.get('name') for t in response[key]['data']]
+            self.assertEqual(names.count('±1σ credible'), traces, key)
+
     def test_request_above_max_prony_still_fits(self):
         """The cap is advisory: any N in the route's 1..100 range fits."""
         resp = self._post(self._freq_body())
