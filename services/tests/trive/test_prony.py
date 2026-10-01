@@ -1132,6 +1132,134 @@ class TestPronyReduce(unittest.TestCase):
         )
 
 
+def _debye_window(decades, n_per_decade=30):
+    """(omega, E_stor, E_loss, std) of a noise-free single Debye relaxation
+    over `decades` of frequency from omega = 1, with a small plateau."""
+    omega = np.logspace(0.0, decades, max(60, int(n_per_decade * decades)))
+    E_stor = 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2)
+    E_loss = 1e6 * omega / (1 + omega ** 2) + 1e2
+    return omega, E_stor, E_loss, np.abs(E_stor + 1.0j * E_loss)
+
+
+class TestPronyRankLimit(unittest.TestCase):
+    """reduction.prony_rank_limit: the number of relaxation terms the data
+    can carry, the sqrt(eps) numerical rank of a fixed probe basis."""
+
+    def setUp(self):
+        reduction._REDUCE_CACHE.clear()
+
+    @staticmethod
+    def _limit(decades=4, **overrides):
+        omega, E_stor, E_loss, std = _debye_window(decades)
+        args = dict(omega=omega, E_stor=E_stor, E_loss=E_loss,
+                    E_stor_std=std, E_loss_std=std)
+        args.update(overrides)
+        return reduction.prony_rank_limit(**args)
+
+    @staticmethod
+    def _probe_counts(omega, E_stor, E_loss, std, solid):
+        """Singular-value counts above sqrt(eps) and eps on the probe grid,
+        rebuilt here from its definition."""
+        tau = prony_relaxation_space(
+            1 / omega.max(), 1 / omega.min(), PRONY_TERMS_MAX + 8)
+        R, _ = _prony_reduce(omega, E_stor, E_loss, std, std, tau, solid)
+        sigma = np.linalg.svd(R, compute_uv=False)
+        eps = np.finfo(np.result_type(E_stor, E_loss)).eps
+        return (int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])),
+                int(np.count_nonzero(sigma > eps * sigma[0])))
+
+    def test_returns_a_plain_int_within_the_route_range(self):
+        # The extract route serializes with stdlib json, which rejects numpy
+        # integer scalars.
+        max_prony = self._limit()
+        self.assertIs(type(max_prony), int)
+        self.assertGreaterEqual(max_prony, 1)
+        self.assertLessEqual(max_prony, PRONY_TERMS_MAX)
+
+    def test_uniform_std_scale_does_not_move_the_count(self):
+        counts = {self._limit(std_scale=s) for s in (0.01, 1.0, 100.0)}
+        self.assertEqual(len(counts), 1)
+
+    def test_wider_span_supports_more_terms(self):
+        narrow = self._limit(decades=2)
+        wide = self._limit(decades=4)
+        self.assertLess(wide, PRONY_TERMS_MAX)  # compare counts, not clips
+        self.assertLess(narrow, wide)
+
+    def test_float32_moduli_lower_the_count(self):
+        omega, E_stor, E_loss, std = _debye_window(4)
+        full = reduction.prony_rank_limit(omega, E_stor, E_loss, std, std)
+        low = reduction.prony_rank_limit(
+            omega, E_stor.astype(np.float32), E_loss.astype(np.float32),
+            std, std)
+        self.assertLess(low, full)
+
+    def test_threshold_is_sqrt_eps_not_eps(self):
+        # On a noise-free 2-decade window the sqrt(eps) rank is about half
+        # the eps rank; the equilibrium column is not a relaxation term.
+        omega, E_stor, E_loss, std = _debye_window(2)
+        max_prony = reduction.prony_rank_limit(
+            omega, E_stor, E_loss, std, std, solid=True)
+        sqrt_count, eps_count = self._probe_counts(
+            omega, E_stor, E_loss, std, solid=True)
+        self.assertEqual(max_prony, sqrt_count - 1)
+        self.assertLess(max_prony, eps_count - 1)
+
+    def test_viscous_count_drops_no_equilibrium_column(self):
+        omega, E_stor, E_loss, std = _debye_window(2)
+        max_prony = reduction.prony_rank_limit(
+            omega, E_stor, E_loss, std, std, solid=False)
+        sqrt_count, _ = self._probe_counts(
+            omega, E_stor, E_loss, std, solid=False)
+        self.assertEqual(max_prony, sqrt_count)
+
+    def test_tiny_upload_is_limited_by_its_row_count(self):
+        # Two frequencies give four weighted rows, one of them spent on the
+        # equilibrium column.
+        omega = np.array([1.0, 10.0])
+        E_stor = np.array([2e5, 8e5])
+        E_loss = np.array([1e5, 2e5])
+        std = np.abs(E_stor + 1.0j * E_loss)
+        max_prony = reduction.prony_rank_limit(
+            omega, E_stor, E_loss, std, std, std_scale=0.01)
+        self.assertIs(type(max_prony), int)
+        self.assertGreaterEqual(max_prony, 1)
+        self.assertLessEqual(max_prony, 2 * len(omega) - 1)
+
+    def test_repeat_call_reuses_its_own_cached_reduction(self):
+        # The probe has its own cache entry: a fit on the same data needs a
+        # pass of its own, and neither a repeat call nor a new std_scale
+        # redoes the pass over the rows.
+        omega, E_stor, E_loss, std = _debye_window(4)
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        np.linalg.qr = counting_qr
+        try:
+            first = reduction.prony_rank_limit(
+                omega, E_stor, E_loss, std, std)
+            after_probe = len(calls)
+            smooth_prony_fit(omega, E_stor, E_loss, std, std,
+                             N=8, smoothness=0.0)
+            after_fit = len(calls)
+            second = reduction.prony_rank_limit(
+                omega, E_stor, E_loss, std, std)
+            rescaled = reduction.prony_rank_limit(
+                omega, E_stor, E_loss, std, std, std_scale=0.05)
+        finally:
+            np.linalg.qr = original
+        self.assertGreater(after_probe, 0)
+        self.assertGreater(after_fit, after_probe,
+                           msg='fit grid should not collide with the probe')
+        self.assertEqual(len(calls), after_fit, msg='probe cache miss')
+        self.assertEqual(first, second)
+        self.assertEqual(first, rescaled)
+
+
 class TestSmoothPronyFit(unittest.TestCase):
     def setUp(self):
         # Small problem so the fit runs quickly; synthesize from a known Prony series.

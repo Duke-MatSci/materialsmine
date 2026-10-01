@@ -293,6 +293,40 @@ class TestExtractRoute(unittest.TestCase):
                     'C1', 'C2', 'Tg', 'Ea', 'TC', 'warnings'):
             self.assertIn(key, response)
 
+    def test_max_prony_is_a_json_integer(self):
+        """
+        max_prony must arrive as a JSON integer: the route uses stdlib
+        json.dumps, which raises on numpy scalars. No noise_prony is sent.
+        """
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIs(type(response['max_prony']), int)
+        self.assertGreaterEqual(response['max_prony'], 1)
+        self.assertLessEqual(response['max_prony'], 100)
+        self.assertNotIn('noise_prony', response)
+
+    def test_request_above_max_prony_still_fits(self):
+        """The cap is advisory: any N in the route's 1..100 range fits."""
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        max_prony = json.loads(resp.data)['response']['max_prony']
+        self.assertLess(max_prony, 100)  # precondition: there is room above
+        resp = self._post(self._freq_body(number_of_prony=100))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        self.assertTrue(json.loads(resp.data)['response']['mytable'])
+
+    def test_temperature_preview_max_prony_is_null(self):
+        """No transform means no master curve, so nothing to measure."""
+        resp = self._post({
+            'file_name': 'agilus30 (8) Temperature Ramp clean.txt',
+            'domain': 'temperature', 'number_of_prony': 5,
+        })
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIn('max_prony', sorted(response))
+        self.assertIsNone(response['max_prony'])
+
     def test_upload_data_is_array_of_row_objects(self):
         """
         upload-data must be an array of row-objects (one dict per data row),

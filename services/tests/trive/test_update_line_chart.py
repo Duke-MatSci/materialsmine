@@ -27,6 +27,7 @@ from app.trive.shift import wlf_shift, inverse_wlf_shift, inverse_hybrid_shift
 from app.trive.tts import MAX_ABS_LOG10_SHIFT
 from app.trive.figures import _PLOT_MAX_POINTS
 from app.trive.chart import update_line_chart
+import app.trive.reduction as reduction
 from app.config import Config
 from app.utils.util import upload_init
 
@@ -54,8 +55,8 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
             domain='frequency',
         )
 
-    def test_returns_9_tuple(self):
-        self.assertEqual(len(self.result), 9)
+    def test_returns_10_tuple(self):
+        self.assertEqual(len(self.result), 10)
 
     def test_coef_df_schema(self):
         coef_df = self.result[6]
@@ -203,7 +204,7 @@ class TestUpdateLineChartFrequencyShift(unittest.TestCase):
     def test_frequency_manual_uses_shiftData(self):
         manual = self._run(shift_model='manual', shiftData=self.shiftData)
         wlf = self._run(shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6)
-        self.assertEqual(len(manual), 9)
+        self.assertEqual(len(manual), 10)
         # The manual mapping reached fig4: its temperature axis differs from a
         # WLF evaluation (a different shape alone already proves it, since
         # np.interp clamps).
@@ -334,14 +335,14 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
 
     def test_no_transform_yields_empty_figure_and_table(self):
         # Temperature early-exit (no shift params) — nothing to draw.
-        *_, shift_fig, shift_records = self._run()
+        *_, shift_fig, shift_records, _ = self._run()
         self.assertEqual(len(shift_fig.data), 0)
         self.assertEqual(shift_records, [])
 
     def test_frequency_none_yields_empty_figure_and_table(self):
         freq_data = upload_init(
             'agilus30 (8) master curve 20C.txt', 'frequency')
-        *_, shift_fig, shift_records = update_line_chart(
+        *_, shift_fig, shift_records, _ = update_line_chart(
             freq_data, number_of_prony=8, smoothness=0.1,
             fit_settings=True, domain='frequency', shift_model='none',
         )
@@ -350,7 +351,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
 
     def test_manual_draws_markers_only(self):
         # 'manual' has no model curve of its own — Experiment markers only.
-        *_, shift_fig, shift_records = self._run(
+        *_, shift_fig, shift_records, _ = self._run(
             shift_model='manual', shiftData=self.shiftData)
         self.assertEqual([t.name for t in shift_fig.data], ['Experiment'])
         self.assertEqual(self._trace(shift_fig, 'Experiment').mode, 'markers')
@@ -361,7 +362,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
                          float(self.shiftData['a_T'][0]))
 
     def test_wlf_with_shift_file_draws_markers_and_dashed_curve(self):
-        *_, shift_fig, shift_records = self._run(
+        *_, shift_fig, shift_records, _ = self._run(
             shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2,
             shiftData=self.shiftData)
         self.assertEqual({t.name for t in shift_fig.data},
@@ -385,7 +386,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
                 self.assertIsNone(g)
 
     def test_model_only_wlf_draws_curve_over_data_range(self):
-        *_, shift_fig, shift_records = self._run(
+        *_, shift_fig, shift_records, _ = self._run(
             shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2)
         self.assertEqual([t.name for t in shift_fig.data], ['WLF fit'])
         curve = self._trace(shift_fig, 'WLF fit')
@@ -451,7 +452,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
         # When both are present the applied table is the honest marker source.
         ref = {'Temperature': np.array([10.0, 20.0]),
                'a_T': np.array([123.0, 1.0])}
-        *_, shift_fig, shift_records = self._run(
+        *_, shift_fig, shift_records, _ = self._run(
             shift_model='manual', shiftData=self.shiftData,
             shift_reference=ref)
         self.assertEqual(len(shift_records), len(self.shiftData['a_T']))
@@ -485,7 +486,7 @@ class TestUpdateLineChartShiftFigure(unittest.TestCase):
 
     def test_figure_and_table_survive_json_round_trip(self):
         import json as _json
-        *_, shift_fig, shift_records = self._run(
+        *_, shift_fig, shift_records, _ = self._run(
             shift_model='WLF', Tg=self.T_REF, C1=self.C1, C2=self.C2,
             shiftData=self.shiftData, shift_chi2_reduced=0.5)
         blob = _json.dumps({'shift-chart': _json.loads(shift_fig.to_json()),
@@ -520,7 +521,7 @@ class TestUpdateLineChartTemperature(unittest.TestCase):
 
     def test_early_exit_with_no_shift_params(self):
         (fig1, fig11, fig2, fig3, fig4, fig41, coef_df,
-         shift_fig, shift_records) = update_line_chart(
+         shift_fig, shift_records, _) = update_line_chart(
             self.real_temp_data, number_of_prony=10, smoothness=0.1,
             fit_settings=True, domain='temperature',
         )
@@ -769,6 +770,85 @@ class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
         self.assertEqual(spy.call_args.kwargs['N'], 100)
 
 
+class TestUpdateLineChartMaxProny(unittest.TestCase):
+    """
+    The tenth element is max_prony, the term count the fitted master curve
+    can carry (reduction.prony_rank_limit on the fit's own arrays), or None
+    on the temperature preview path where no master curve exists.
+    """
+
+    @staticmethod
+    def _debye(n=120):
+        omega = np.logspace(0.0, 4.0, n)
+        E_stor = 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2)
+        E_loss = 1e6 * omega / (1 + omega ** 2) + 1e2
+        return {'Frequency': omega, 'E Storage': E_stor, 'E Loss': E_loss}
+
+    def _run_with_spy(self, data, domain, **kwargs):
+        """Run update_line_chart; return (result, rank limit recomputed on
+        exactly the arrays and std_scale the fit was handed)."""
+        with patch('app.trive.chart.smooth_prony_fit',
+                   wraps=smooth_prony_fit) as spy:
+            result = update_line_chart(
+                data, number_of_prony=8, smoothness=0.1,
+                fit_settings=False, domain=domain, **kwargs,
+            )
+        fit = spy.call_args.kwargs
+        expected = reduction.prony_rank_limit(
+            fit['omega'], fit['E_stor'], fit['E_loss'],
+            fit['E_stor_std'], fit['E_loss_std'],
+            std_scale=fit['std_scale'],
+        )
+        return result, expected
+
+    def test_frequency_upload_reports_the_fit_curve_limit(self):
+        result, expected = self._run_with_spy(self._debye(), 'frequency')
+        self.assertEqual(len(result), 10)
+        self.assertIs(type(result[9]), int)
+        self.assertEqual(result[9], expected)
+
+    def test_upload_error_column_shapes_the_limit(self):
+        # The probe weights rows by the upload's own sigma, as the fit does;
+        # this column's shape moves the count off the |E*| default.
+        data = self._debye()
+        modulus = np.abs(data['E Storage'] + 1.0j * data['E Loss'])
+        data['Error'] = modulus * np.logspace(0.0, 4.0, len(modulus))
+        result, expected = self._run_with_spy(data, 'frequency')
+        self.assertEqual(result[9], expected)
+        default = reduction.prony_rank_limit(
+            data['Frequency'], data['E Storage'], data['E Loss'],
+            modulus, modulus)
+        self.assertNotEqual(result[9], default)
+
+    def test_temperature_upload_reports_the_master_curve_limit(self):
+        T = np.linspace(0.0, 80.0, 30)
+        data = {
+            'Temperature': T,
+            'E Storage': np.linspace(1000.0, 10.0, len(T)),
+            'E Loss': np.full(len(T), 50.0),
+        }
+        result, expected = self._run_with_spy(
+            data, 'temperature',
+            Tg=25.0, C1=17.44, C2=51.6, shift_model='WLF',
+        )
+        self.assertIs(type(result[9]), int)
+        self.assertEqual(result[9], expected)
+
+    def test_temperature_preview_reports_none(self):
+        T = np.linspace(0.0, 80.0, 30)
+        data = {
+            'Temperature': T,
+            'E Storage': np.linspace(1000.0, 10.0, len(T)),
+            'E Loss': np.full(len(T), 50.0),
+        }
+        result = update_line_chart(
+            data, number_of_prony=8, smoothness=0.1,
+            fit_settings=False, domain='temperature',
+        )
+        self.assertEqual(len(result), 10)
+        self.assertIsNone(result[9])
+
+
 class TestUpdateLineChartValidation(unittest.TestCase):
     """
     Validation paths in update_line_chart.
@@ -860,7 +940,7 @@ class TestUpdateLineChartValidation(unittest.TestCase):
         ok = self._freq([1.0, 2.0, 3.0], [100.0, 200.0, 300.0], [10.0, 20.0, 30.0])
         ok['E Storage Error'] = np.asarray([5.0, 10.0, 15.0], float)
         ok['E Loss Error'] = np.asarray([0.5, 1.0, 1.5], float)
-        self.assertEqual(len(self._call(ok, domain='frequency')), 9)
+        self.assertEqual(len(self._call(ok, domain='frequency')), 10)
 
     def test_temperature_domain_zero_error_raises_value_error(self):
         # WLF params chosen as in TestUpdateLineChartErrorColumns so every row
@@ -1127,7 +1207,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         )
 
     def test_large_upload_experiment_traces_are_thinned(self):
-        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _, _ = self.result
         for fig in (fig1, fig11, fig4, fig41):
             lengths = self._experiment_lengths(fig)
             self.assertTrue(lengths)  # experiment traces exist
@@ -1143,7 +1223,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         self.assertEqual(model_lengths, [1000, 1000])
 
     def test_figures_carry_decimation_notice_with_percentage(self):
-        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _, _ = self.result
         expected_pct = int(round(100.0 * (1 - _PLOT_MAX_POINTS / self.N_LARGE)))
         for fig in (fig1, fig11, fig4, fig41):
             notices = self._decimation_notices(fig)
@@ -1154,7 +1234,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
     def test_complex_figures_carry_fit_quality_readout(self):
         # The two figures that overlay the fit on the data get the scores; the
         # temperature-domain visualizations, which show no fit, do not.
-        fig1, fig11, _, _, fig4, fig41, _, _, _ = self.result
+        fig1, fig11, _, _, fig4, fig41, _, _, _, _ = self.result
         for fig in (fig1, fig11):
             readouts = self._quality_readouts(fig)
             self.assertEqual(len(readouts), 1)
@@ -1284,7 +1364,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             fit_settings=False, domain='frequency',
             shift_model='WLF', Tg=30.0, C1=17.44, C2=51.6,
         )
-        fig1, _, _, _, fig4, _, _, _, _ = result
+        fig1, _, _, _, fig4, _, _, _, _, _ = result
         self.assertTrue(all(n == 200 for n in self._experiment_lengths(fig1)))
         for fig in (fig1, fig4):
             self.assertEqual(self._decimation_notices(fig), [])
@@ -1298,7 +1378,7 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             'E Storage': np.linspace(1e9, 1e6, n),
             'E Loss': np.full(n, 1e5),
         }
-        _, _, _, _, fig4, fig41, _, _, _ = update_line_chart(
+        _, _, _, _, fig4, fig41, _, _, _, _ = update_line_chart(
             data, number_of_prony=5, smoothness=0.0,
             fit_settings=False, domain='temperature',
         )
