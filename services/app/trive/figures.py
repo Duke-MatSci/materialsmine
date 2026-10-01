@@ -154,7 +154,7 @@ def _annotate_fit_quality(figs, quality) -> None:
         parts.append(f"curvature (⟨H″²⟩) = {quality.curvature:.3g}")
     if quality.neg_log_posterior is not None:
         parts.append(
-            f"surprisal (−log π(λ)) = {quality.neg_log_posterior:.4g}"
+            f"surprisal (−log π(s²)) = {quality.neg_log_posterior:.4g}"
         )
     if not parts:
         return
