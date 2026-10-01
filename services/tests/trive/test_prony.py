@@ -253,6 +253,43 @@ class TestComputeComplex(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_complex(TAU, VISCOUS_E.reshape(1, -1))
 
+    def test_default_extension_is_the_classic_window_bit_for_bit(self):
+        """extend_decades=0 (the default) evaluates on exactly the grid
+        1/max(tau) .. 1/min(tau) it always has."""
+        for E_i in (VISCOUS_E, SOLID_E):
+            omega = np.logspace(-np.log10(np.max(TAU)),
+                                -np.log10(np.min(TAU)), 1000)
+            solid = len(E_i) != len(TAU)
+            real, imag = (prony_basis(omega, TAU, solid) @ E_i).reshape(2, -1)
+            for result in (compute_complex(TAU, E_i),
+                           compute_complex(TAU, E_i, extend_decades=0.0)):
+                np.testing.assert_array_equal(result['Frequency'], omega)
+                np.testing.assert_array_equal(result['E Storage'], real)
+                np.testing.assert_array_equal(result['E Loss'], imag)
+
+    def test_extend_decades_widens_the_grid_on_both_sides(self):
+        """omega spans 10^-d / max(tau) .. 10^d / min(tau), num_pts in all,
+        and the moduli are the same series evaluated there."""
+        for d in (1.0, 2.5):
+            for E_i in (VISCOUS_E, SOLID_E):
+                result = compute_complex(TAU, E_i, num_pts=300,
+                                         extend_decades=d)
+                omega = result['Frequency'].to_numpy()
+                self.assertEqual(len(omega), 300)
+                np.testing.assert_allclose(
+                    omega[[0, -1]],
+                    [10 ** -d / np.max(TAU), 10 ** d / np.min(TAU)],
+                    rtol=1e-12)
+                steps = np.diff(np.log10(omega))
+                np.testing.assert_allclose(steps, steps[0], rtol=1e-9)
+                solid = len(E_i) != len(TAU)
+                real, imag = (prony_basis(omega, TAU, solid) @ E_i
+                              ).reshape(2, -1)
+                np.testing.assert_allclose(result['E Storage'], real,
+                                           rtol=1e-12)
+                np.testing.assert_allclose(result['E Loss'], imag,
+                                           rtol=1e-12)
+
 
 class TestComputeRelaxationModulus(unittest.TestCase):
     def test_shape_and_columns_viscous(self):
@@ -290,6 +327,40 @@ class TestComputeRelaxationModulus(unittest.TestCase):
     def test_rejects_2d_E(self):
         with self.assertRaises(AssertionError):
             compute_relaxation_modulus(TAU, VISCOUS_E.reshape(1, -1))
+
+    def test_default_extension_is_the_classic_window_bit_for_bit(self):
+        """extend_decades=0 (the default) evaluates on exactly the grid
+        min(tau) .. max(tau) it always has."""
+        for E_i in (VISCOUS_E, SOLID_E):
+            t = np.logspace(np.log10(np.min(TAU)), np.log10(np.max(TAU)),
+                            1000)
+            solid = len(E_i) != len(TAU)
+            E = np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:]
+            for result in (compute_relaxation_modulus(TAU, E_i),
+                           compute_relaxation_modulus(TAU, E_i,
+                                                      extend_decades=0.0)):
+                np.testing.assert_array_equal(result['Time'], t)
+                np.testing.assert_array_equal(result['E'], E)
+
+    def test_extend_decades_widens_the_grid_on_both_sides(self):
+        """t spans min(tau) 10^-d .. max(tau) 10^d, num_pts in all, and E is
+        the same decaying series evaluated there."""
+        for d in (1.0, 2.5):
+            for E_i in (VISCOUS_E, SOLID_E):
+                result = compute_relaxation_modulus(TAU, E_i, num_pts=300,
+                                                    extend_decades=d)
+                t = result['Time'].to_numpy()
+                self.assertEqual(len(t), 300)
+                np.testing.assert_allclose(
+                    t[[0, -1]],
+                    [np.min(TAU) * 10 ** -d, np.max(TAU) * 10 ** d],
+                    rtol=1e-12)
+                steps = np.diff(np.log10(t))
+                np.testing.assert_allclose(steps, steps[0], rtol=1e-9)
+                solid = len(E_i) != len(TAU)
+                np.testing.assert_allclose(
+                    result['E'], np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:],
+                    rtol=1e-12)
 
 
 class TestPronyObjective(unittest.TestCase):

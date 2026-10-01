@@ -28,7 +28,10 @@ from app.trive.quality import _FitQuality
 from app.trive.fit import smooth_prony_fit
 from app.trive.shift import wlf_shift, inverse_wlf_shift, inverse_hybrid_shift
 from app.trive.tts import MAX_ABS_LOG10_SHIFT
-from app.trive.figures import _PLOT_MAX_POINTS
+from app.trive.figures import (
+    _PLOT_MAX_POINTS, _build_coef_records, _build_complex_figures,
+    _build_relaxation_figures,
+)
 from app.trive.chart import update_line_chart
 from app.trive.uncertainty import (
     _SIGMA_DISPLAY_CAP, complex_modulus_sigma, relaxation_sigma,
@@ -962,12 +965,17 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         self.assertGreater(arr.size, 0)
         self.assertTrue(np.isfinite(arr).all())
 
+    @staticmethod
+    def _load_strict(text):
+        """json.loads that fails on a bare NaN / Infinity token. A substring
+        search would also hit those letters inside base64 array data."""
+        def reject(token):
+            raise AssertionError(f'non-finite {token} in the figure JSON')
+        return json.loads(text, parse_constant=reject)
+
     def _check_serializes_finite(self, result):
         for fig in result[:4]:
-            text = fig.to_json()
-            self.assertNotIn('NaN', text)
-            self.assertNotIn('Infinity', text)
-            for trace in json.loads(text)['data']:
+            for trace in self._load_strict(fig.to_json())['data']:
                 if trace.get('name') == self.BAND:
                     self._assert_wire_finite(trace['y'])
                 if 'array' in trace.get('error_y', {}):
@@ -1218,15 +1226,339 @@ class TestUpdateLineChartPredictionBands(unittest.TestCase):
     def test_figures_with_both_bands_serialize_finite(self):
         for result in (self.result, self.weak, self.err):
             for fig in result[:2]:
-                text = fig.to_json()
-                self.assertNotIn('NaN', text)
-                self.assertNotIn('Infinity', text)
-                traces = [t for t in json.loads(text)['data']
-                          if t.get('name') == self.PRED]
+                data = TestUpdateLineChartCredibleBands._load_strict(
+                    fig.to_json())['data']
+                traces = [t for t in data if t.get('name') == self.PRED]
                 self.assertEqual(len(traces), 4)
                 for trace in traces:
                     TestUpdateLineChartCredibleBands._assert_wire_finite(
                         self, trace['y'])
+
+
+_BANDS = ('±1σ credible', '±1σ prediction')
+# Floating-point slack on window membership and on range comparisons.
+_RTOL = 1e-9
+
+
+def _chart_and_fit(upload, N, smoothness):
+    """update_line_chart on upload, plus the (tau_i, E_i, quality) it fit."""
+    fits = []
+
+    def record(*args, **kwargs):
+        out = smooth_prony_fit(*args, **kwargs)
+        fits.append(out)
+        return out
+
+    with patch('app.trive.chart.smooth_prony_fit', side_effect=record):
+        result = update_line_chart(
+            upload, number_of_prony=N, smoothness=smoothness,
+            fit_settings=True, domain='frequency',
+        )
+    return result, fits[-1]
+
+
+def _prony_curve(fig, xaxis='x'):
+    """The Prony line on the given x axis (not fig3's spectrum dots)."""
+    return next(t for t in fig.data if 'Term Prony' in (t.name or '')
+                and t.xaxis == xaxis and t.mode != 'markers')
+
+
+def _frequency_window(tau_i):
+    return 1.0 / np.max(tau_i), 1.0 / np.min(tau_i)
+
+
+def _time_window(tau_i):
+    return np.min(tau_i), np.max(tau_i)
+
+
+def _ribbon_pairs(fig):
+    """[(lower, upper)] per band and facet, in drawing order."""
+    groups = {}
+    for t in fig.data:
+        if t.name in _BANDS:
+            groups.setdefault((t.name, t.xaxis), []).append(t)
+    return [tuple(pair) for pair in groups.values()]
+
+
+def _is_log(fig, yaxis):
+    return fig.layout['yaxis' + yaxis[1:]].type == 'log'
+
+
+class TestExtendedPronyCurves(unittest.TestCase):
+    """
+    The fit runs on the data window only, but the drawn Prony curves and
+    their ribbons run one decade past it on each side, on the smoothed and
+    unsmoothed paths alike. The spectrum, table and labels are unchanged.
+    """
+
+    FILE = 'agilus30 (8) master curve 20C.txt'
+    N = 20
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        upload = upload_init(cls.FILE, 'frequency')
+        cls.smoothed, cls.smoothed_fit = _chart_and_fit(upload, cls.N, 0.3)
+        cls.unsmoothed, cls.unsmoothed_fit = _chart_and_fit(
+            upload, cls.N, 0.0)
+        cls.runs = ((cls.smoothed, cls.smoothed_fit),
+                    (cls.unsmoothed, cls.unsmoothed_fit))
+
+    def _assert_span(self, trace, lo, hi):
+        x = np.asarray(trace.x, dtype=float)
+        np.testing.assert_allclose([x.min(), x.max()], [lo, hi], rtol=_RTOL)
+
+    def test_frequency_curves_run_one_decade_past_the_window(self):
+        """fig1 and fig11 draw the series from 1/(10 max tau) to
+        10/min tau in both facets."""
+        for result, (tau_i, _, _) in self.runs:
+            lo, hi = _frequency_window(tau_i)
+            for fig in result[:2]:
+                for xaxis in ('x', 'x2'):
+                    self._assert_span(_prony_curve(fig, xaxis),
+                                      lo / 10, hi * 10)
+
+    def test_relaxation_curve_runs_one_decade_past_the_window(self):
+        """fig2 draws E(t) from min tau / 10 to 10 max tau."""
+        for result, (tau_i, _, _) in self.runs:
+            lo, hi = _time_window(tau_i)
+            self._assert_span(_prony_curve(result[2]), lo / 10, hi * 10)
+
+    def test_x_extent_is_the_same_with_smoothing_on_and_off(self):
+        """Same file, same N: the drawn x range does not depend on whether
+        smoothing is on, and both reach past the window."""
+        tau_i = self.smoothed_fit[0]
+        np.testing.assert_array_equal(self.unsmoothed_fit[0], tau_i)
+        for k, xaxis, (lo, hi) in (
+                (0, 'x', _frequency_window(tau_i)),
+                (0, 'x2', _frequency_window(tau_i)),
+                (1, 'x', _frequency_window(tau_i)),
+                (1, 'x2', _frequency_window(tau_i)),
+                (2, 'x', _time_window(tau_i))):
+            on = np.asarray(_prony_curve(self.smoothed[k], xaxis).x, float)
+            off = np.asarray(_prony_curve(self.unsmoothed[k], xaxis).x, float)
+            self.assertEqual((on.min(), on.max()), (off.min(), off.max()))
+            self.assertLess(on.min(), lo * (1 - _RTOL))
+            self.assertGreater(on.max(), hi * (1 + _RTOL))
+
+    def test_ribbons_ride_the_extended_grid(self):
+        """Every ribbon edge shares the x of the Prony curve on its axis,
+        so it too reaches one decade past the window."""
+        result, (tau_i, _, _) = self.runs[0]
+        windows = (_frequency_window(tau_i),) * 2 + (_time_window(tau_i),)
+        for fig, (lo, hi) in zip(result[:3], windows):
+            pairs = _ribbon_pairs(fig)
+            self.assertGreater(len(pairs), 0)
+            for pair in pairs:
+                curve = _prony_curve(fig, pair[0].xaxis)
+                for edge in pair:
+                    np.testing.assert_array_equal(edge.x, curve.x)
+                    self._assert_span(edge, lo / 10, hi * 10)
+
+    def test_ribbon_edges_at_the_extension_ends_are_finite_and_capped(self):
+        """At both ends of the extended grid the edges are finite, bracket
+        the curve, stay within six decades of it, and are positive on log
+        panels."""
+        cap = np.exp(_SIGMA_DISPLAY_CAP)
+        fig_names = ('fig1', 'fig11', 'fig2')
+        for name, fig in zip(fig_names, self.smoothed[:3]):
+            for lower, upper in _ribbon_pairs(fig):
+                curve = _prony_curve(fig, lower.xaxis)
+                log = _is_log(fig, lower.yaxis)
+                for end in (0, -1):
+                    where = f'{name} {lower.name} {lower.xaxis} end {end}'
+                    y = float(curve.y[end])
+                    lo, hi = float(lower.y[end]), float(upper.y[end])
+                    self.assertTrue(np.isfinite([lo, hi]).all(), where)
+                    self.assertLessEqual(lo, y, where)
+                    self.assertGreaterEqual(hi, y, where)
+                    self.assertLessEqual(hi, y * cap * (1 + _RTOL), where)
+                    if log:
+                        self.assertGreater(lo, 0.0, where)
+                        self.assertGreaterEqual(
+                            lo, y / cap * (1 - _RTOL), where)
+                    else:
+                        self.assertGreaterEqual(lo, 0.0, where)
+
+    def test_spectrum_table_and_labels_are_unchanged(self):
+        """No terms exist past the window: fig3's dots sit at tau_i, the
+        long-term line spans [min tau, max tau], the table is the fitted
+        coefficients and every label counts the decaying terms."""
+        for result, (tau_i, E_i, quality) in self.runs:
+            self.assertEqual(len(result), 10)
+            fig3 = result[3]
+            dots = next(t for t in fig3.data
+                        if 'Term Prony' in (t.name or '')
+                        and t.mode == 'markers')
+            np.testing.assert_array_equal(dots.x, tau_i)
+            hline = next(t for t in fig3.data
+                         if t.name == 'Long-Term Modulus')
+            self.assertEqual(tuple(hline.x), (tau_i.min(), tau_i.max()))
+            self.assertEqual(
+                result[6],
+                _build_coef_records(tau_i, E_i, quality.covariance))
+            n_nz = np.count_nonzero(E_i[len(E_i) - len(tau_i):])
+            labels = {t.name for fig in result[:4] for t in fig.data
+                      if 'Term Prony' in (t.name or '')}
+            self.assertEqual(labels, {f'{n_nz}-Term Prony'})
+
+
+class TestExtendedFigureAxisPin(unittest.TestCase):
+    """
+    Past the window the model heads somewhere uninteresting (E(t) to zero,
+    E'' down a decade per decade, E' down on a liquid fit), so every axis
+    carrying an extended Prony curve has its y range set from what lies
+    inside the window: it brackets the in-window curve, data and ribbons
+    and does not stretch to the out-of-window tail.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        agilus = upload_init('agilus30 (8) master curve 20C.txt', 'frequency')
+        pmma = upload_init('PMMA_shifted_R10_data.txt', 'frequency')
+        # Smoothed: both ribbons, and four nonpositive E'' rows whose
+        # negative tan delta the linear panel must still show.
+        cls.agilus, cls.agilus_fit = _chart_and_fit(agilus, 20, 0.3)
+        # Unsmoothed PMMA: the extended E'' falls to ~0.07, against an
+        # in-window minimum of 0.308 (the data) — 0.64 decades of headroom.
+        cls.pmma, cls.pmma_fit = _chart_and_fit(pmma, 20, 0.0)
+        cls.runs = ((cls.agilus, cls.agilus_fit), (cls.pmma, cls.pmma_fit))
+
+    # --- helpers ---------------------------------------------------------
+
+    @staticmethod
+    def _governing_axis(fig, yaxis):
+        """The layout axis whose range is drawn: a matched axis follows the
+        one it matches, so an explicit range there is shared."""
+        axis = fig.layout['yaxis' + yaxis[1:]]
+        if axis.matches:
+            axis = fig.layout['yaxis' + axis.matches[1:]]
+        return axis
+
+    def _pinned_range(self, fig, yaxis):
+        axis = self._governing_axis(fig, yaxis)
+        self.assertIsNotNone(axis.range, f'{yaxis} range is not pinned')
+        self.assertIsNot(axis.autorange, True)
+        return tuple(float(v) for v in axis.range)
+
+    @staticmethod
+    def _in_window(fig, yaxis, lo, hi):
+        """y of the Prony curve, data and ribbon edges on yaxis at
+        lo <= x <= hi; positive values only on a log axis."""
+        log = _is_log(fig, yaxis)
+        values = []
+        for t in fig.data:
+            name = t.name or ''
+            if t.yaxis != yaxis or not (
+                    name == 'Experiment' or name in _BANDS
+                    or ('Term Prony' in name and t.mode != 'markers')):
+                continue
+            x = np.asarray(t.x, dtype=float)
+            y = np.asarray(t.y, dtype=float)
+            keep = ((x >= lo * (1 - _RTOL)) & (x <= hi * (1 + _RTOL))
+                    & np.isfinite(y))
+            if log:
+                keep &= y > 0
+            values.append(y[keep])
+        return np.concatenate(values)
+
+    def _assert_brackets(self, fig, yaxis, lo, hi, where):
+        r0, r1 = self._pinned_range(fig, yaxis)
+        values = self._in_window(fig, yaxis, lo, hi)
+        self.assertGreater(len(values), 0, where)
+        if _is_log(fig, yaxis):
+            vmin, vmax = np.log10(values.min()), np.log10(values.max())
+        else:
+            vmin, vmax = values.min(), values.max()
+        slack = _RTOL * max(1.0, abs(vmin), abs(vmax))
+        self.assertLessEqual(r0, vmin + slack, where)
+        self.assertGreaterEqual(r1, vmax - slack, where)
+
+    # --- bracketing --------------------------------------------------------
+
+    def test_complex_figure_ranges_bracket_the_in_window_content(self):
+        for result, (tau_i, _, _) in self.runs:
+            lo, hi = _frequency_window(tau_i)
+            for yaxis in ('y', 'y2'):
+                self._assert_brackets(result[0], yaxis, lo, hi,
+                                      f'fig1 {yaxis}')
+
+    def test_tan_delta_figure_ranges_bracket_the_in_window_content(self):
+        """The E' panel is log (range in log10 units), tan delta linear."""
+        for result, (tau_i, _, _) in self.runs:
+            lo, hi = _frequency_window(tau_i)
+            fig11 = result[1]
+            self.assertTrue(_is_log(fig11, 'y'))
+            self.assertFalse(_is_log(fig11, 'y2'))
+            for yaxis in ('y', 'y2'):
+                self._assert_brackets(fig11, yaxis, lo, hi,
+                                      f'fig11 {yaxis}')
+
+    def test_relaxation_figure_range_brackets_the_in_window_content(self):
+        for result, (tau_i, _, _) in self.runs:
+            lo, hi = _time_window(tau_i)
+            self._assert_brackets(result[2], 'y', lo, hi, 'fig2 y')
+
+    def test_tan_delta_ticks_stay_on_the_right_with_the_pinned_range(self):
+        for result, _ in self.runs:
+            fig11 = result[1]
+            self.assertTrue(fig11.layout.yaxis2.showticklabels)
+            self.assertEqual(fig11.layout.yaxis2.side, 'right')
+            self.assertGreater(fig11.layout.legend.x, 1.02)
+
+    # --- exclusion ---------------------------------------------------------
+
+    def test_relaxation_range_ignores_the_decaying_tail(self):
+        """E(t) omits the equilibrium modulus and heads to zero past
+        max tau; the range bottom stays above where it ends up."""
+        for result, (tau_i, _, _) in self.runs:
+            fig2 = result[2]
+            drawn = np.asarray(_prony_curve(fig2).y, dtype=float)
+            inside = self._in_window(fig2, 'y', *_time_window(tau_i))
+            self.assertGreater(drawn.min(), 0.0)
+            self.assertLess(drawn.min(), inside.min() / 100)
+            r0, _ = self._pinned_range(fig2, 'y')
+            self.assertGreater(10 ** r0, drawn.min())
+
+    def test_loss_range_ignores_the_high_frequency_tail(self):
+        """PMMA, unsmoothed: the extended E'' falls below anything in the
+        window, and the E'' panel's range does not follow it."""
+        tau_i = self.pmma_fit[0]
+        fig1 = self.pmma[0]
+        drawn = np.asarray(_prony_curve(fig1, 'x2').y, dtype=float)
+        inside = self._in_window(fig1, 'y2', *_frequency_window(tau_i))
+        self.assertLess(drawn.min(), inside.min() / 2)
+        r0, _ = self._pinned_range(fig1, 'y2')
+        self.assertGreater(10 ** r0, drawn.min())
+
+    def test_storage_range_ignores_a_liquid_low_frequency_tail(self):
+        """With no equilibrium modulus (clamped to zero, or absent) E'
+        falls as omega^2 past the low-frequency edge; neither figure's E'
+        range follows it."""
+        tau_i = np.logspace(-3.0, 3.0, 13)
+        lo, hi = _frequency_window(tau_i)
+        for label, E_i in (
+                ('clamped', np.concatenate(([0.0], np.full(13, 1e6)))),
+                ('liquid', np.full(13, 1e6))):
+            with self.subTest(label):
+                _, fig3 = _build_relaxation_figures(tau_i, E_i, 13, True)
+                self.assertNotIn('Long-Term Modulus',
+                                 [t.name for t in fig3.data])
+                data = compute_complex(tau_i, E_i, num_pts=60)
+                fig1, fig11 = _build_complex_figures(data, tau_i, E_i, 13)
+                for name, fig in (('fig1', fig1), ('fig11', fig11)):
+                    curve = _prony_curve(fig, 'x')
+                    x = np.asarray(curve.x, dtype=float)
+                    y = np.asarray(curve.y, dtype=float)
+                    self.assertLess(x[np.argmin(y)], lo)
+                    self.assertLess(y.min(),
+                                    self._in_window(fig, 'y', lo, hi).min()
+                                    / 10)
+                    self._assert_brackets(fig, 'y', lo, hi, f'{name} y')
+                    r0, _ = self._pinned_range(fig, 'y')
+                    self.assertGreater(10 ** r0, y.min(), name)
+                self._assert_brackets(fig1, 'y2', lo, hi, 'fig1 y2')
 
 
 class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
