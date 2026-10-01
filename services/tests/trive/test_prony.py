@@ -2157,9 +2157,9 @@ class TestNewtonHessianShift(unittest.TestCase):
         np.testing.assert_array_equal(shifted[off], original[off])
 
     def test_shift_does_not_mutate_the_wrapped_hessian(self):
-        # _PronyLoss memoizes its Hessian and hands back the same array, so
-        # an in-place shift would compound on every call at one point and
-        # corrupt the Hessian the fit quality is scored on.
+        # The wrapper must not rely on its callable returning a fresh array:
+        # a caching Hessian would otherwise be corrupted, with the shift
+        # compounding on every call at one point.
         H = self._matrix()
         original = H.copy()
         wrapped = prony_fit._shifted_hessian(lambda _x: H, 64)
