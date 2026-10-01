@@ -63,9 +63,10 @@ def _newton_watchdog(budget: float):
     interrupts pure-Python execution only, not a blocked C call. On exit the
     timer is cancelled and any undelivered injection is cleared.
 
-    scipy >= 1.17 caps that subproblem loop (subproblem_maxiter), so once the
-    stack moves past Python 3.8 (the reason for the 1.10.1 pin) this thread
-    injection can be replaced by a plain maxiter budget on minimize.
+    scipy >= 1.17 bounds each subproblem (the trust-exact option
+    subproblem_maxiter, default 25), which lets minimize's own maxiter cap
+    the whole solve. Once the stack moves past Python 3.8 (the reason for
+    the 1.10.1 pin) that can replace this thread injection.
 
     Parameters:
         budget (float): Seconds before the body is interrupted.

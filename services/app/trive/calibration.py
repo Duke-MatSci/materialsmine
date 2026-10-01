@@ -56,11 +56,11 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
     # Fixed parameters are held constant by closure reparametrization
     # (excluded from the fit vector and captured in `model`) because
     # curve_fit rejects equal bounds with "Each lower bound must be strictly
-    # less than each upper bound". This is not a version gap: scipy 1.11's
-    # equal-bounds support landed in minimize and differential_evolution
-    # only, and least_squares (which curve_fit wraps) still rejects
-    # lb == ub. A scipy bump does not let the callers drop their
-    # per-parameter free/fixed branching.
+    # less than each upper bound". This is not a version gap: minimize
+    # already factors out lb == ub variables in the pinned scipy 1.10.1,
+    # but least_squares (which curve_fit wraps) rejects them there and
+    # still does on current scipy. A scipy bump does not let the callers
+    # drop their per-parameter free/fixed branching.
     if log10_space:
         fit_model = model
     else:
