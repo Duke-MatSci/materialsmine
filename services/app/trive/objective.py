@@ -98,10 +98,12 @@ def _mean_sq_curvature(curve: np.ndarray, npen: int, log_range: float):
     Converts the raw second differences into the mesh-independent quantity they
     approximate. A second difference is ell**2 * H'' + O(ell**4) for grid spacing
     ell = log_range / (npen - 1), so averaging over the npen - 2 interior nodes
+    gives
 
         mean(H''**2) = sum(d2H**2) / ((npen - 2) * ell**4)
 
-    Reporting that rather than sum(d2H)**2 / (npen - 2) is what makes the number
+    Reporting that rather than the mean squared second DIFFERENCE,
+    sum(d2H**2) / (npen - 2), which lacks the ell**4, is what makes the number
     comparable across N and across crops of the same data: sampling one fixed
     spectrum more finely shrinks every second difference, so the per-term mean
     falls ~90x over a 10x change in N where this moves ~1.2x.
@@ -335,25 +337,26 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
       * dof, because the data term grows with the row count. Without this a
         41k-row broadband file needed ~100x the smoothness a 400-row file needs
         for the same effect.
-      * 1/h**3, because a second difference is NOT a second derivative. On a
-        log-tau grid of spacing h, d2H = h**2 * H'' + O(h**4), and turning the
-        sum into an integral costs another h, so sum(d2H)**2 ~ h**3 *
-        integral(H''**2). That hidden h**3 ~ npen**-3 is why an uncorrected
-        weight silently weakens as terms are added: the recovered spectrum was
-        measured to get 18x rougher going from N=23 to N=100 at a fixed knob
-        setting, i.e. N was a second, undocumented smoothness control. With the
-        correction it moves 1.2x.
-      * 1/log_range, because the integral of H''**2 grows with the span.
-        Dividing by it charges the MEAN squared curvature per unit ln(tau)
-        instead, so one setting smooths a 4-decade master curve as hard as a
-        20-decade one.
+      * 1/ell**4, because a second difference is NOT a second derivative. On
+        a log-tau grid of spacing ell, d2H = ell**2 * H'' + O(ell**4), so
+        dividing each squared second difference by ell**4 turns it into a
+        squared second derivative. Left out, that hidden ell**4 ~ npen**-4 is
+        why an uncorrected weight silently weakens as terms are added: the
+        recovered spectrum was measured to get 18x rougher going from N=23 to
+        N=100 at a fixed knob setting, i.e. N was a second, undocumented
+        smoothness control. With the correction it moves 1.2x.
+      * 1/(npen - 2), because the sum of H''**2 grows with the number of
+        nodes. Dividing by the npen - 2 of them charges the MEAN squared
+        curvature over the interior nodes instead, so the weight grows with
+        neither the span nor the number of terms, and one setting smooths a
+        4-decade master curve as hard as a 20-decade one.
 
     Together they give V/dof = chi2/dof + smoothness**2 * curvature, so
     smoothness**2 is exactly the exchange rate between misfit and roughness,
     with no span factor left over. This dof is the classical n_resid - m; the
     readout's chi2_reduced divides chi2 by the smaller effective count
     instead (see _prony_fit_quality). When
-    N is chosen per decade of span, h is constant and the 1/h**3 is a fixed
+    N is chosen per decade of span, ell is constant and the 1/ell**4 is a fixed
     factor; it only does work when N is overridden independently of the span.
 
     Lives here rather than inline in smooth_prony_fit because _prony_fit_quality
@@ -371,7 +374,7 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     Returns:
         float: The weight to hand _prony_objective. Falls back to smoothness
         unchanged when fewer than 3 penalized terms leave np.diff(..., n=2)
-        empty, or when a degenerate span leaves h undefined; the penalty term
+        empty, or when a degenerate span leaves ell undefined; the penalty term
         is identically zero either way, so any finite weight does, and this
         avoids a zero division.
     """

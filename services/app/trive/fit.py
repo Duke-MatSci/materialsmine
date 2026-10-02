@@ -335,8 +335,7 @@ def smooth_prony_fit(
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the smoothing prior on the
             log-coefficients. Pass 0 to disable. Normalized internally by
-            sqrt(dof / (h**3 * log_range)) (see _scaled_smoothness), h being
-            the log-tau grid spacing, which makes it the exchange rate
+            _scaled_smoothness, which makes it the exchange rate
             between the two numbers
             the fit-quality readout reports: V/dof = chi2/dof +
             smoothness**2 * curvature, dof being the classical n_resid - m

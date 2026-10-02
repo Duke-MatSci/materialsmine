@@ -612,11 +612,11 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertIsNotNone(quality.curvature)
 
     def test_curvature_is_mesh_independent(self):
-        # The whole point of dividing by h**3 rather than by the term count:
-        # sample ONE fixed log-spectrum at several N over the same span and the
+        # The whole point of the ell**4 in the normalization: sample ONE fixed
+        # log-spectrum at several N over the same span and the
         # reported curvature must not move. A per-term mean fails this badly,
         # because sampling a fixed curve more finely shrinks every second
-        # difference (d2 ~ h**2), so it decays like N**-4.
+        # difference (d2 ~ ell**2), so it decays like N**-4.
         def spectrum(N):
             x = np.linspace(0.0, LOG_RANGE, N)
             return 3.0 * np.exp(-((x - LOG_RANGE / 2) / (LOG_RANGE / 6)) ** 2)
@@ -632,9 +632,9 @@ class TestPronyFitQuality(unittest.TestCase):
             reported.append(quality.curvature)
             curve = np.diff(logcoefs, n=2)
             per_term.append(curve @ curve / len(curve))
-        # Mesh-independent to within discretization error, which is O(h**2) and
-        # so falls ~4x per doubling: measured 0.185, 0.197, 0.200 against a
-        # continuum limit of 0.200, i.e. 7.5% low at N=20 and 0.2% at N=80.
+        # Mesh-independent to within discretization error: measured 0.195,
+        # 0.202, 0.202 against a continuum mean over the span of 0.201, i.e.
+        # 2.8% low at N=20 and within 1% from N=40 on.
         self.assertLess(max(reported) / min(reported), 1.10,
                         msg=f'curvature moved with N: {reported}')
         self.assertLess(reported[-1] / reported[-2], 1.02,
@@ -955,7 +955,7 @@ class TestPronyFitQuality(unittest.TestCase):
 
     def test_scaled_smoothness_falls_back_when_the_penalty_is_empty(self):
         # Fewer than 3 penalized terms leaves np.diff(..., n=2) empty and a
-        # degenerate span leaves h undefined; the penalty is identically zero
+        # degenerate span leaves ell undefined; the penalty is identically zero
         # either way, so the knob passes through rather than dividing by zero.
         self.assertEqual(_scaled_smoothness(0.4, 2, 100, LOG_RANGE), 0.4)
         self.assertEqual(_scaled_smoothness(0.4, 20, 100, 0.0), 0.4)
@@ -1111,7 +1111,7 @@ class TestPronyFitQuality(unittest.TestCase):
         E_loss = E_loss + std * rng.normal(size=len(omega))
 
         # Decade-spaced around the corner this fixture actually has. The useful
-        # range moved down ~30x when the penalty picked up its 1/h**3 factor;
+        # range moved down ~30x when the penalty picked up its 1/ell**3 factor;
         # the scan grid is calibration, not physics, so it moves with it.
         grid = [3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 0.01, 0.03, 0.1]
         scores = []
@@ -1894,7 +1894,7 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         self.assertLess(chi2_smooth, chi2_exact + 0.1)
 
     def test_smoothness_effect_is_term_count_invariant(self):
-        # The 1/h**3 in the penalty normalization, end to end. One dataset, one
+        # The 1/ell**4 in the penalty normalization, end to end. One dataset, one
         # smoothness, four term counts: the RECOVERED SPECTRUM must come out
         # equally rough, because there is only one true spectrum and N chooses
         # resolution, not smoothness.
@@ -1903,11 +1903,11 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         # the same sweep was measured to leave the spectrum 18x rougher at
         # N=100 than at N=23, i.e. raising N silently released the prior.
         #
-        # N starts at 40 because this fixture spans 16 decades: N=23 puts h at
+        # N starts at 40 because this fixture spans 16 decades: N=23 puts ell at
         # 1.7 in ln(tau), far too coarse for a second difference to approximate
         # a second derivative, and the fit is then limited by resolution rather
         # than by the prior. The correction is a continuum argument and needs a
-        # mesh that resolves the spectrum (h below ~1) before it applies.
+        # mesh that resolves the spectrum (ell below ~1) before it applies.
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         reported = []
         for N in (40, 60, 80, 100):
@@ -1934,11 +1934,11 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         # same thing. Measured as fidelity cost rather than roughness, because
         # different windows are intrinsically rough to different degrees.
         #
-        # N tracks the span at 3 terms per decade, holding h fixed — the policy
+        # N tracks the span at 3 terms per decade, holding ell fixed — the policy
         # the tool itself uses. Pinning N while cropping does NOT hold here and
         # cannot: that changes the mesh as well as the window, so a 16-decade
-        # fit at N=23 (h=1.7, chi2/nu 0.0025) and a 6-decade one at the same N
-        # (h=0.63, chi2/nu 0.0003) are not the same fit to begin with, and the
+        # fit at N=23 (ell=1.7, chi2/nu 0.0025) and a 6-decade one at the same N
+        # (ell=0.63, chi2/nu 0.0003) are not the same fit to begin with, and the
         # cost then ranges over 15x. That is resolution moving, not the knob.
         omega, E_stor, E_loss, std = _broadband_master_curve(2000)
         lo10, hi10 = np.log10(omega.min()), np.log10(omega.max())
@@ -2484,20 +2484,20 @@ def _bundled_master_curve(name):
 
 
 class TestSmoothnessPerUnitLogTau(unittest.TestCase):
-    """The knob weighs misfit per degree of freedom against curvature per unit
-    ln(tau) (the smoothness-weight definition of the manuscript), so one
-    setting means the same thing on master curves of any span.
+    """The knob weighs misfit per degree of freedom against the mean curvature
+    over the interior nodes (the smoothness-weight definition of the
+    manuscript), so one setting means the same thing on master curves of any
+    span.
 
     Tested by cropping: a curve fitted on half its span at one setting should
     keep the spectrum the full-span fit gives there. The weight that best
     reproduces the full-span fit on a crop is close to lam_full itself (within
     0.84-1.19 lam_full in 23 of 28 bundled cases at smoothness <= 1), so a
     rule passes by carrying lam across the cut. The mean-curvature weight
-    smoothness**2 * nu / ((N - 2) * ell**4) does, up to the change in points per
-    decade nu / L; the integral-curvature weight smoothness**2 * nu / ell**3
-    loses the span factor and lands a further factor 1/2 low. Only a
-    synthetic curve has uniform points per decade; on the bundled files the
-    mean rule gives lam_crop / lam_full from 0.65 to 1.34.
+    smoothness**2 * nu / ((N - 2) * ell**4) does, up to the change in data
+    per interior node nu / (N - 2): lam_crop / lam_full is 0.65 to 1.34 on
+    the bundled files. The integral-curvature weight smoothness**2 * nu /
+    ell**3 drops the node count and lands a further factor of about 1/2 low.
     """
 
     RELATIVE_ERROR = 0.01

@@ -30,7 +30,7 @@ from .objective import (
 # chi2_reduced and curvature are the two coordinates of the classical L-curve:
 # sweep smoothness, plot one against the other, and the corner nearest the
 # lower left is the regularization trade-off worth taking. Both are means, not
-# sums — chi2_reduced per degree of freedom, curvature per unit ln(tau) — so
+# sums — chi2_reduced per degree of freedom, curvature per interior node — so
 # the pair stays comparable across upload size, across N, and across crops of
 # the same data. curvature is deliberately the UNWEIGHTED roughness rather than
 # the lam-weighted penalty term, so that it does not move with the knob being
@@ -99,9 +99,8 @@ def _prony_fit_quality(
                      - 0.5 * log|Hess V|
                      + 0.5 * (m * log(2) + (2 + solid) * log(2 pi)) - lam0
 
-    with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2
-    = smoothness**2 * dof * (npen - 1)**3 / log_range**4 (the smoothness-weight
-    definition, dof floored at 1; see _scaled_smoothness for why),
+    with H = logcoefs, lam = _scaled_smoothness(smoothness, ...)**2 (the
+    smoothness-weight definition; see _scaled_smoothness for it and why),
     V = rho^2 + lam * eta^2 (the _PronyLoss loss), A = L.T @ L for the
     second-difference operator L behind the penalty, and Hess V the exact
     second derivative 2 * (lam * A + J.T @ J + diag(r.T @ J)) — taken straight
@@ -183,7 +182,7 @@ def _prony_fit_quality(
         non-finite); curvature is None when fewer than 3 penalized terms leave
         no second difference to take. The two reported quantities are means —
         chi-squared per degree of freedom, squared log-spectrum curvature per
-        unit ln(tau) — while the algebra below works in raw sums, so every
+        interior grid node — while the algebra below works in raw sums, so every
         normalization happens once, at the single return. covariance is
         2 * inv(Hess V), the Laplace posterior covariance of logcoefs, or None
         when smoothness is 0 or Hess V is not positive definite.
