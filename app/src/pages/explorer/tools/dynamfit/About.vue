@@ -77,10 +77,11 @@
           squared second derivative of <span class="tri-ve-about__eq">H = ln E<sub>i</sub></span> with respect to
           <span class="tri-ve-about__eq">ln τ</span>, built from the second differences Δ<sup>2</sup> along the relaxation grid:
           <span class="tri-ve-about__eq-display">
-            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>·(n−1)<sup>3</sup>/L<sup>4</sup>,</span>
+            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>/((n−2)·ℓ<sup>4</sup>),</span>
           </span>
           where n is the number of Prony terms and
-          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span> the span of the relaxation grid. The
+          <span class="tri-ve-about__eq">ℓ = L/(n−1)</span> the spacing of the relaxation grid in <span class="tri-ve-about__eq">ln τ</span>, with
+          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span> its span. The
           Prony weights E<sub>i</sub> are found by a regularized least-squares fit in
           log-coefficient space, which keeps them positive. It minimizes
           <span class="tri-ve-about__eq-display">
@@ -90,7 +91,7 @@
           <em>Smoothness</em> setting and dof the degrees of freedom (data values fitted minus
           parameters fitted). Larger values of s give a smoother, better-conditioned spectrum,
           and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
-          Because ⟨H″<sup>2</sup>⟩ is a mean per unit <span class="tri-ve-about__eq">ln τ</span> and dof scales the penalty with
+          Because ⟨H″<sup>2</sup>⟩ is an average along the grid and dof scales the penalty with
           the amount of data, <em>Smoothness</em> has a consistent meaning across datasets with
           different spans, data densities, and numbers of Prony terms.
         </p>
@@ -102,7 +103,7 @@
           On a smoothed fit the readout reports three numbers. <em>Misfit</em> is
           <span class="tri-ve-about__eq">χ<sup>2</sup>/ν</span>, where ν is the effective degrees of freedom: data values fitted
           minus the number of well-determined parameters of MacKay (1992).
-          <em>Curvature</em> is ⟨H″<sup>2</sup>⟩. <em>Surprisal</em> is
+          <em>Curvature</em> is ⟨H″<sup>2</sup>⟩ defined above. <em>Surprisal</em> is
           <span class="tri-ve-about__eq">−log π&thinsp;(s<sup>2</sup> | data)</span>, the negative log posterior of s<sup>2</sup> with
           the coefficients integrated out, under an exponential prior on s<sup>2</sup>. You can
           choose a good error scaling or relative error by, at zero smoothing, finding the value
