@@ -44,86 +44,6 @@
           where indicated otherwise.
         </p>
         <p>
-          The weights are found by a non-negative least-squares fit in log-coefficient space,
-          regularized with a curvature (second-difference) penalty on the spectrum — a nonlinear
-          Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
-          strength of that penalty: larger values give a smoother, better-conditioned spectrum,
-          and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
-          With <em>Smoothness</em> value s, the curvature penalty weight is
-          <span class="tri-ve-about__eq-display">
-            <span class="tri-ve-about__eq">λ = s<sup>2</sup>·dof·(n−1)<sup>3</sup>/L<sup>4</sup>,</span>
-          </span>
-          where dof is the degrees of freedom
-          (data values fitted minus parameters fitted), n the number of Prony terms, and
-          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span>
-          the span of the relaxation grid. Therefore, the
-          penalty is the mean squared curvature per unit <span class="tri-ve-about__eq">ln τ</span>, and gives <em>Smoothness</em> a
-          consistent meaning across datasets with different spans, data densities, and numbers
-          of Prony terms.
-        </p>
-        <p>
-          Each data point is weighted by its uncertainty. If your file supplies error columns
-          those values set the point-to-point weighting, and an <em>Error Scale</em> setting
-          multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
-          fit if your instrument understates its uncertainty. Otherwise the
-          <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
-          that each point is weighted by
-          <span class="tri-ve-about__eq-display">
-            <span class="tri-ve-about__eq">σ = (relative error ÷ 100) × |E*|.</span>
-          </span>
-          Either way the errors are read as standard deviations, so the coefficient posterior is
-          <span class="tri-ve-about__eq-display">
-            <span class="tri-ve-about__eq">π(E<sub>i</sub> | s<sup>2</sup>, data) ∝ exp(−V/2),</span>
-            with
-            <span class="tri-ve-about__eq">V = χ<sup>2</sup> + s<sup>2</sup>·dof·⟨H″<sup>2</sup>⟩.</span>
-          </span>
-          The readout's <em>curvature</em> is the mean squared second derivative of
-          <span class="tri-ve-about__eq">H = ln E<sub>i</sub></span> with respect to
-          <span class="tri-ve-about__eq">ln τ</span>, built
-          from the second differences Δ<sup>2</sup> along the relaxation grid:
-          <span class="tri-ve-about__eq-display">
-            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>·(n−1)<sup>3</sup>/L<sup>4</sup>.</span>
-          </span>
-          The fit readout's <em>misfit</em> is
-          <span class="tri-ve-about__eq">χ<sup>2</sup>/ν</span>, the squared weighted residuals
-          normalized by the effective degrees of freedom, and <em>surprisal</em> is
-          <span class="tri-ve-about__eq">−log π(s<sup>2</sup> | data)</span>, the negative log posterior of s² with the coefficients
-          integrated out, under an exponential prior on s<sup>2</sup>. You can choose a good error
-          scaling or relative error by, at zero smoothing, finding the value that sets misfit
-          to 1.0, or directly multiply the current setting by √misfit.
-          You can choose a good smoothing by finding the value that minimizes surprisal given
-          a constant error setting.
-        </p>
-        <p>
-          When smoothing is on, the fitted curves carry a shaded ±1σ band in the fit line's
-          color, and the spectrum dots carry error bars. Both come from the curvature of the
-          fit's objective at its optimum. The band is a credible interval on the curve itself:
-          it shows how tightly your error inputs and the <em>Smoothness</em> setting pin down
-          the fit, not how far the fit may sit from the truth. Smoothing bias is not included,
-          so at strong smoothing the true curve can fall outside the band more often than the
-          label suggests. With <span class="tri-ve-about__eq"><em>Smoothness</em> = 0</span> there are no bands.
-        </p>
-        <p>
-          The frequency-domain plots also carry a second, wider ±1σ band in the data's color.
-          This is a prediction interval: where a new measurement would be expected to land. It
-          combines the curve's uncertainty with your stated measurement error. It is not drawn
-          on E(t) or the discrete spectrum, which are not measured directly.
-        </p>
-        <p>
-          The fitted curves are drawn one decade past your measured window on each side, showing
-          an extrapolation of the Prony series as it would be exported.
-          The plotted E(t) is the decaying part only (the
-          long-term modulus is left out), so past the last relaxation time it heads to zero
-          rather than to the plateau. The vertical axes are set from the measured window, so the
-          tails can run off the plot.
-        </p>
-        <p>
-          On a smoothed fit the coefficient table and its CSV download gain two columns,
-          <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
-          in Pa, the same range the error bars on the spectrum plot show. With smoothing off
-          these columns are absent.
-        </p>
-        <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
           three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub> in °C,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
@@ -138,6 +58,86 @@
           temperature with good effect. If you are working in the frequency domain, choose a number below
           T<sub>g</sub> somewhat, but we lack an anchor to choose it automatically for you, so
           you may have to try a few options to get a good fit.
+        </p>
+        <p>
+          Each data point is weighted by its uncertainty. If your file supplies error columns
+          those values set the point-to-point weighting, and an <em>Error Scale</em> setting
+          multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
+          fit if your instrument understates its uncertainty. Otherwise the
+          <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
+          that each point is weighted by
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">σ = (relative error ÷ 100) × |E*|.</span>
+          </span>
+          Either way the errors are read as standard deviations, and χ<sup>2</sup> is the sum
+          of the squared, error-weighted residuals.
+        </p>
+        <p>
+          The roughness of the fitted spectrum is measured by its <em>curvature</em>, the mean
+          squared second derivative of <span class="tri-ve-about__eq">H = ln E<sub>i</sub></span> with respect to
+          <span class="tri-ve-about__eq">ln τ</span>, built from the second differences Δ<sup>2</sup> along the relaxation grid:
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>·(n−1)<sup>3</sup>/L<sup>4</sup>,</span>
+          </span>
+          where n is the number of Prony terms and
+          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span> the span of the relaxation grid. The
+          Prony weights E<sub>i</sub> are found by a regularized least-squares fit in
+          log-coefficient space, which keeps them positive. It minimizes
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">V = χ<sup>2</sup> + s<sup>2</sup>·dof·⟨H″<sup>2</sup>⟩,</span>
+          </span>
+          a nonlinear Tikhonov approach adapted from Shanbhag (2020). Here s is the
+          <em>Smoothness</em> setting and dof the degrees of freedom (data values fitted minus
+          parameters fitted). Larger values of s give a smoother, better-conditioned spectrum,
+          and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
+          Because ⟨H″<sup>2</sup>⟩ is a mean per unit <span class="tri-ve-about__eq">ln τ</span> and dof scales the penalty with
+          the amount of data, <em>Smoothness</em> has a consistent meaning across datasets with
+          different spans, data densities, and numbers of Prony terms.
+        </p>
+        <p>
+          Reading the errors as standard deviations makes the coefficient posterior
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">π&thinsp;(E<sub>i</sub> | s<sup>2</sup>, data) ∝ exp(−V/2).</span>
+          </span>
+          On a smoothed fit the readout reports three numbers. <em>Misfit</em> is
+          <span class="tri-ve-about__eq">χ<sup>2</sup>/ν</span>, where ν is the effective degrees of freedom: data values fitted
+          minus the number of well-determined parameters of MacKay (1992).
+          <em>Curvature</em> is ⟨H″<sup>2</sup>⟩. <em>Surprisal</em> is
+          <span class="tri-ve-about__eq">−log π&thinsp;(s<sup>2</sup> | data)</span>, the negative log posterior of s<sup>2</sup> with
+          the coefficients integrated out, under an exponential prior on s<sup>2</sup>. You can
+          choose a good error scaling or relative error by, at zero smoothing, finding the value
+          that sets misfit to 1.0, or directly multiply the current setting by √misfit.
+          You can choose a good smoothing by finding the value that minimizes surprisal given
+          a constant error setting.
+        </p>
+        <p>
+          When smoothing is on, the fitted curves carry a shaded ±1σ band in the fit line's
+          color, and the spectrum dots carry error bars. Both come from the second
+          derivative of V at its minimum. The band is a credible interval on the curve itself:
+          it shows how tightly your error inputs and the <em>Smoothness</em> setting pin down
+          the fit, not how far the fit may sit from the truth. Smoothing bias is not included,
+          so at strong smoothing the true curve can fall outside the band more often than the
+          label suggests. With <span class="tri-ve-about__eq"><em>Smoothness</em> = 0</span> there are no bands.
+        </p>
+        <p>
+          The frequency-domain plots also carry a second, wider ±1σ band in the data's color.
+          This is a prediction interval: where a new measurement would be expected to land. It
+          combines the curve's uncertainty with your stated measurement error. It is not drawn
+          on E(t) or the discrete spectrum, which are not measured directly.
+        </p>
+        <p>
+          On a smoothed fit the coefficient table and its CSV download gain two columns,
+          <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
+          in Pa, the same range the error bars on the spectrum plot show. With smoothing off
+          these columns are absent.
+        </p>
+        <p>
+          The fitted curves are drawn one decade past your measured window on each side, showing
+          an extrapolation of the Prony series as it would be exported.
+          The plotted E(t) is the decaying part only (the
+          long-term modulus is left out), so past the last relaxation time it heads to zero
+          rather than to the plateau. The vertical axes are set from the measured window, so the
+          tails can run off the plot.
         </p>
       </section>
 
@@ -201,6 +201,13 @@
             Bayesian Criterion," <em>Rheologica Acta</em>, 59(8), pp. 509–520.
             <a href="https://doi.org/10.1007/s00397-020-01212-w" target="_blank" rel="noopener">
               https://doi.org/10.1007/s00397-020-01212-w
+            </a>
+          </li>
+          <li>
+            MacKay, D. J. C. (1992) "Bayesian Interpolation," <em>Neural Computation</em>, 4(3),
+            pp. 415–447.
+            <a href="https://doi.org/10.1162/neco.1992.4.3.415" target="_blank" rel="noopener">
+              https://doi.org/10.1162/neco.1992.4.3.415
             </a>
           </li>
           <li>
