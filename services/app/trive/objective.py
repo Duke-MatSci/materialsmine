@@ -96,10 +96,10 @@ def _mean_sq_curvature(curve: np.ndarray, npen: int, log_range: float):
     Mean squared curvature of the log spectrum, d2(lnE)/d(ln tau)**2.
 
     Converts the raw second differences into the mesh-independent quantity they
-    approximate. A second difference is h**2 * H'' + O(h**4) for grid spacing
-    h = log_range / (npen - 1), and averaging over the span costs another h, so
+    approximate. A second difference is ell**2 * H'' + O(ell**4) for grid spacing
+    ell = log_range / (npen - 1), so averaging over the npen - 2 interior nodes
 
-        mean(H''**2) = sum(d2H)**2 / (h**3 * log_range)
+        mean(H''**2) = sum(d2H**2) / ((npen - 2) * ell**4)
 
     Reporting that rather than sum(d2H)**2 / (npen - 2) is what makes the number
     comparable across N and across crops of the same data: sampling one fixed
@@ -117,7 +117,8 @@ def _mean_sq_curvature(curve: np.ndarray, npen: int, log_range: float):
     """
     if not len(curve) or log_range <= 0:
         return None
-    return curve @ curve * (npen - 1) ** 3 / log_range ** 4
+    ell = log_range / (npen - 1)
+    return curve @ curve / ((npen - 2) * ell ** 4)
 
 
 class _PronyLoss:
@@ -324,10 +325,9 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     Makes the knob mean the same thing on any upload. The weight is the
     smoothness-weight definition of the manuscript,
 
-        lam = smoothness**2 * dof * (npen - 1)**3 / log_range**4
-            = smoothness**2 * dof / (h**3 * log_range),
+        lam = smoothness**2 * dof / ((npen - 2) * ell**4),
 
-    with dof floored at 1 and h = log_range / (npen - 1) the log-tau grid
+    with dof floored at 1 and ell = log_range / (npen - 1) the log-tau grid
     spacing. The data term sums over n_resid residuals while the penalty sums
     over npen - 2 second differences, so both need normalizing, and the
     penalty needs more care than it looks:
@@ -377,5 +377,5 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     """
     if npen < 3 or log_range <= 0:
         return smoothness
-    h = log_range / (npen - 1)
-    return smoothness * np.sqrt(max(dof, 1) / (h ** 3 * log_range))
+    ell = log_range / (npen - 1)
+    return smoothness * np.sqrt(max(dof, 1) / ((npen - 2) * ell ** 4))
