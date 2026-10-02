@@ -22,7 +22,7 @@
           The Prony series is a compact, portable description of a material's viscoelastic
           response, which makes it a convenient hand-off to finite-element solvers, to
           property-prediction pipelines, and to AI-driven materials design workflows. Tri-VE runs
-          inside MaterialsMine so that fits sit next to the curated data they came from.
+          inside MaterialsMine so that curated DMA data can be analyzed directly. (Coming soon!)
         </p>
       </section>
 
@@ -49,12 +49,17 @@
           Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
           strength of that penalty: larger values give a smoother, better-conditioned spectrum,
           and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
-          With s the <em>Smoothness</em> value, the penalty weight is
-          λ = s<sup>2</sup>·ν·(n−1)<sup>3</sup>/L<sup>4</sup>, where ν is the degrees of freedom
+          With <em>Smoothness</em> value s, the curvature penalty weight is
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">λ = s<sup>2</sup>·dof·(n−1)<sup>3</sup>/L<sup>4</sup>,</span>
+          </span>
+          where dof is the degrees of freedom
           (data values fitted minus parameters fitted), n the number of Prony terms, and
-          L = ln(τ<sub>max</sub>/τ<sub>min</sub>) the span of the relaxation grid. This makes the
-          penalty the mean squared curvature per unit ln τ, so one setting carries across master
-          curves of different span.
+          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span>
+          the span of the relaxation grid. Therefore, the
+          penalty is the mean squared curvature per unit <span class="tri-ve-about__eq">ln τ</span>, and gives <em>Smoothness</em> a
+          consistent meaning across datasets with different spans, data densities, and numbers
+          of Prony terms.
         </p>
         <p>
           Each data point is weighted by its uncertainty. If your file supplies error columns
@@ -62,20 +67,32 @@
           multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
           fit if your instrument understates its uncertainty. Otherwise the
           <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
-          that each point is weighted by σ = (relative error ÷ 100) × |E*|.
-          Either way the errors are read as standard deviations, so the posterior is ∝ exp(−V/2)
-          with V = χ<sup>2</sup> + λ·Σ(second differences of ln E<sub>i</sub>)<sup>2</sup>.
-          The fit readout's <em>misfit</em> (χ<sup>2</sup>/ν) uses a different ν from λ's: it
-          divides χ<sup>2</sup> by the data values fitted minus the parameters the data actually
-          determined. With smoothing on, that parameter count is an effective one, smaller than
-          the number of Prony terms, because the smoothing rather than the data fixes the rest;
-          with smoothing off, it is the number of nonzero coefficients. So once the relaxation
-          grid is fine enough to resolve your data, the misfit stops changing with the grid size.
-          When the grid is coarser than that, the frequency plots carry a note suggesting a
-          larger relaxation grid size; it is worked out from your stated error, so it holds only
-          if that error is right.
-          The fit readout's <em>surprisal</em> is −log π(s<sup>2</sup>): lower is better, and the
-          s<sup>2</sup> minimizing it is the smoothness the evidence prefers.
+          that each point is weighted by
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">σ = (relative error ÷ 100) × |E*|.</span>
+          </span>
+          Either way the errors are read as standard deviations, so the coefficient posterior is
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">π(E<sub>i</sub> | s<sup>2</sup>, data) ∝ exp(−V/2),</span>
+            with
+            <span class="tri-ve-about__eq">V = χ<sup>2</sup> + s<sup>2</sup>·dof·⟨H″<sup>2</sup>⟩.</span>
+          </span>
+          The readout's <em>curvature</em> is the mean squared second derivative of
+          <span class="tri-ve-about__eq">H = ln E<sub>i</sub></span> with respect to
+          <span class="tri-ve-about__eq">ln τ</span>, built
+          from the second differences Δ<sup>2</sup> along the relaxation grid:
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>·(n−1)<sup>3</sup>/L<sup>4</sup>.</span>
+          </span>
+          The fit readout's <em>misfit</em> is
+          <span class="tri-ve-about__eq">χ<sup>2</sup>/ν</span>, the squared weighted residuals
+          normalized by the effective degrees of freedom, and <em>surprisal</em> is
+          <span class="tri-ve-about__eq">−log π(s<sup>2</sup> | data)</span>, the negative log posterior of s² with the coefficients
+          integrated out, under an exponential prior on s<sup>2</sup>. You can choose a good error
+          scaling or relative error by, at zero smoothing, finding the value that sets misfit
+          to 1.0, or directly multiply the current setting by √misfit.
+          You can choose a good smoothing by finding the value that minimizes surprisal given
+          a constant error setting.
         </p>
         <p>
           When smoothing is on, the fitted curves carry a shaded ±1σ band in the fit line's
@@ -84,19 +101,18 @@
           it shows how tightly your error inputs and the <em>Smoothness</em> setting pin down
           the fit, not how far the fit may sit from the truth. Smoothing bias is not included,
           so at strong smoothing the true curve can fall outside the band more often than the
-          label suggests. With smoothing off there are no bands.
+          label suggests. With <span class="tri-ve-about__eq"><em>Smoothness</em> = 0</span> there are no bands.
         </p>
         <p>
           The frequency-domain plots also carry a second, wider ±1σ band in the data's color.
           This is a prediction interval: where a new measurement would be expected to land. It
           combines the curve's uncertainty with your stated measurement error. It is not drawn
-          on E(t) or the spectrum, which are not measured directly.
+          on E(t) or the discrete spectrum, which are not measured directly.
         </p>
         <p>
           The fitted curves are drawn one decade past your measured window on each side, showing
-          the Prony series exactly as it would be exported. The series has no terms outside the
-          window, so what is drawn there, curves and bands alike, is the model's own asymptote,
-          not a statement about your material. The plotted E(t) is the decaying part only (the
+          an extrapolation of the Prony series as it would be exported.
+          The plotted E(t) is the decaying part only (the
           long-term modulus is left out), so past the last relaxation time it heads to zero
           rather than to the plateau. The vertical axes are set from the measured window, so the
           tails can run off the plot.
@@ -150,7 +166,7 @@
           Error is an <strong>absolute standard deviation in Pa</strong> — the same units as the
           moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5% uncertainty is
           <strong>5e7</strong>, not 0.05. Every error value must be greater than zero. Error
-          columns set the fit weights (1/σ), and the Relative Error setting becomes an Error
+          columns set the fit weights <span class="tri-ve-about__eq">(1/σ)</span>, and the Relative Error setting becomes an Error
           Scale that multiplies them. They are not drawn as error bars on the experimental
           points, but they feed the ±1σ bands drawn around the fit.
         </p>
@@ -229,6 +245,19 @@ onBeforeUnmount(() => {
 
 .tri-ve-about__section p {
   margin-bottom: 0.75rem;
+}
+
+/* Inline equations break as a unit, never mid-expression. */
+.tri-ve-about__eq {
+  white-space: nowrap;
+}
+
+/* Lengthy equations get a centered line of their own. A span, since a block
+   element cannot sit inside the paragraph the sentence continues in. */
+.tri-ve-about__eq-display {
+  display: block;
+  margin: 0.5rem 0;
+  text-align: center;
 }
 
 .tri-ve-about__list,
