@@ -239,7 +239,9 @@ class TestComplexModulusSigma(unittest.TestCase):
 
 
 class TestRelaxationSigma(unittest.TestCase):
-    """1-sigma of E(t) = sum_i E_i exp(-t/tau_i), equilibrium term excluded."""
+    """1-sigma of E(t) = E_eq + sum_i E_i exp(-t/tau_i). With x = log(E),
+    dE/dx_eq = E_eq at every t, so the equilibrium row of the covariance and
+    its cross terms enter in full."""
 
     def setUp(self):
         self.rng = np.random.default_rng(23)
@@ -248,33 +250,60 @@ class TestRelaxationSigma(unittest.TestCase):
         self.E_i = np.abs(self.rng.normal(size=7)) + 0.5  # solid, E_eq first
         self.cov = _random_cov(self.rng, 7)
 
-    def test_matches_brute_force_over_the_decaying_block(self):
-        """sqrt(g Sigma g.T) with g_j = E_j exp(-t/tau_j) over the decaying
-        rows and columns of the covariance."""
+    def test_matches_brute_force_with_the_equilibrium_column(self):
+        """sqrt(g Sigma g.T) with g = [E_eq, E_j exp(-t/tau_j)] over the
+        full covariance, cross terms included."""
+        self.assertGreater(np.abs(self.cov[0, 1:]).max(), 1e-3)
         got = _uncertainty().relaxation_sigma(
             self.t, self.tau_i, self.E_i, self.cov)
-        G = np.exp(-np.outer(self.t, 1 / self.tau_i)) * self.E_i[1:]
+        decaying = np.exp(-np.outer(self.t, 1 / self.tau_i)) * self.E_i[1:]
+        G = np.column_stack((np.full(len(self.t), self.E_i[0]), decaying))
         np.testing.assert_allclose(
-            got, _quadratic_forms(G, self.cov[1:, 1:]), rtol=1e-10)
+            got, _quadratic_forms(G, self.cov), rtol=1e-10)
 
-    def test_equilibrium_row_is_marginalized_exactly(self):
-        """Dropping the equilibrium row is exact: the result equals the
-        viscous and clamped calls and ignores the row's contents."""
+    def test_matches_numerical_differentiation_of_the_full_curve(self):
+        """Central differences of E(t) in x = log(E_i), plateau included,
+        give the same sigma."""
+        x = np.log(self.E_i)
+        decay = np.exp(-np.outer(self.t, 1 / self.tau_i))
+
+        def forward(xv):
+            return np.exp(xv[0]) + decay @ np.exp(xv[1:])
+
+        h = 1e-6
+        G = np.empty((len(self.t), len(x)))
+        for j in range(len(x)):
+            up, down = x.copy(), x.copy()
+            up[j] += h
+            down[j] -= h
+            G[:, j] = (forward(up) - forward(down)) / (2 * h)
+        got = _uncertainty().relaxation_sigma(
+            self.t, self.tau_i, self.E_i, self.cov)
+        np.testing.assert_allclose(
+            got, _quadratic_forms(G, self.cov), rtol=1e-6)
+
+    def test_long_time_sigma_is_the_equilibrium_sigma(self):
+        """Once every term has decayed, sigma is E_eq sqrt(cov[0, 0])."""
+        t = np.array([1e6, 1e9]) * self.tau_i.max()
+        got = _uncertainty().relaxation_sigma(
+            t, self.tau_i, self.E_i, self.cov)
+        np.testing.assert_allclose(
+            got, self.E_i[0] * np.sqrt(self.cov[0, 0]), rtol=1e-12)
+
+    def test_n_row_covariance_propagates_the_decaying_terms_only(self):
+        """Viscous fits and the clamped E_eq = 0 fit carry an (N, N)
+        covariance: sqrt(g Sigma g.T) with g_j = E_j exp(-t/tau_j)."""
         u = _uncertainty()
-        got = u.relaxation_sigma(self.t, self.tau_i, self.E_i, self.cov)
         dec = self.cov[1:, 1:]
-        np.testing.assert_allclose(
-            got, u.relaxation_sigma(self.t, self.tau_i, self.E_i[1:], dec),
-            rtol=1e-12)
+        G = np.exp(-np.outer(self.t, 1 / self.tau_i)) * self.E_i[1:]
+        want = _quadratic_forms(G, dec)
         E_clamped = np.concatenate(([0.0], self.E_i[1:]))
-        np.testing.assert_allclose(
-            got, u.relaxation_sigma(self.t, self.tau_i, E_clamped, dec),
-            rtol=1e-12)
-        other = self.cov.copy()
-        other[0, :] = other[:, 0] = 0.3
-        other[0, 0] = 50.0
-        np.testing.assert_array_equal(
-            got, u.relaxation_sigma(self.t, self.tau_i, self.E_i, other))
+        for label, E_i in (('viscous', self.E_i[1:]),
+                           ('clamped', E_clamped)):
+            with self.subTest(label):
+                np.testing.assert_allclose(
+                    u.relaxation_sigma(self.t, self.tau_i, E_i, dec), want,
+                    rtol=1e-10)
 
 
 class TestComplexModulusNoise(unittest.TestCase):

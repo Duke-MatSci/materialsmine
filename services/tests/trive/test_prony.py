@@ -13,6 +13,7 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
+import json
 from unittest import mock
 import numpy as np
 import pandas as pd
@@ -309,7 +310,7 @@ class TestComputeRelaxationModulus(unittest.TestCase):
         self.assertEqual(len(result), 50)
 
     def test_modulus_decreasing_in_time(self):
-        # Positive E_i, equilibrium term excluded → E(t) is non-increasing in t.
+        # Positive E_i, no equilibrium term → E(t) is non-increasing in t.
         result = compute_relaxation_modulus(TAU, VISCOUS_E)
         self.assertTrue(np.all(np.diff(result['E'].values) <= 1e-12))
 
@@ -336,16 +337,17 @@ class TestComputeRelaxationModulus(unittest.TestCase):
             t = np.logspace(np.log10(np.min(TAU)), np.log10(np.max(TAU)),
                             1000)
             solid = len(E_i) != len(TAU)
-            E = np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:]
+            E_eq = E_i[0] if solid else 0.0
+            E = E_eq + np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:]
             for result in (compute_relaxation_modulus(TAU, E_i),
                            compute_relaxation_modulus(TAU, E_i,
                                                       extend_decades=0.0)):
                 np.testing.assert_array_equal(result['Time'], t)
-                np.testing.assert_array_equal(result['E'], E)
+                np.testing.assert_allclose(result['E'], E, rtol=1e-12)
 
     def test_extend_decades_widens_the_grid_on_both_sides(self):
         """t spans min(tau) 10^-d .. max(tau) 10^d, num_pts in all, and E is
-        the same decaying series evaluated there."""
+        the same series evaluated there."""
         for d in (1.0, 2.5):
             for E_i in (VISCOUS_E, SOLID_E):
                 result = compute_relaxation_modulus(TAU, E_i, num_pts=300,
@@ -359,9 +361,38 @@ class TestComputeRelaxationModulus(unittest.TestCase):
                 steps = np.diff(np.log10(t))
                 np.testing.assert_allclose(steps, steps[0], rtol=1e-9)
                 solid = len(E_i) != len(TAU)
+                E_eq = E_i[0] if solid else 0.0
                 np.testing.assert_allclose(
-                    result['E'], np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:],
+                    result['E'],
+                    E_eq + np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:],
                     rtol=1e-12)
+
+    def test_equilibrium_modulus_is_the_long_time_plateau(self):
+        """E(t) = E_eq + sum_i E_i exp(-t / tau_i): far past max(tau) every
+        term has decayed and E is E_eq; far before min(tau) none has, and E
+        is E_eq + sum(E_i)."""
+        result = compute_relaxation_modulus(TAU, SOLID_E, num_pts=200,
+                                            extend_decades=6.0)
+        E = result['E'].to_numpy()
+        E_eq, E_terms = SOLID_E[0], SOLID_E[1:]
+        self.assertAlmostEqual(E[-1], E_eq, delta=1e-12 * E_eq)
+        # exp(-1e-6) misses 1 by 1e-6 at the first point.
+        self.assertAlmostEqual(E[0], E_eq + E_terms.sum(),
+                               delta=1e-5 * (E_eq + E_terms.sum()))
+
+    def test_equilibrium_modulus_shifts_the_whole_curve_by_a_constant(self):
+        """Prepending E_eq adds exactly E_eq at every t; a clamped E_eq = 0
+        gives the curve of the decaying terms alone."""
+        viscous = compute_relaxation_modulus(TAU, VISCOUS_E, extend_decades=1.0)
+        for E_eq in (0.0, 500.0, 7e4):
+            with self.subTest(E_eq=E_eq):
+                solid = compute_relaxation_modulus(
+                    TAU, np.concatenate(([E_eq], VISCOUS_E)),
+                    extend_decades=1.0)
+                np.testing.assert_array_equal(solid['Time'], viscous['Time'])
+                np.testing.assert_allclose(
+                    solid['E'] - viscous['E'], E_eq,
+                    atol=1e-12 * (E_eq + VISCOUS_E.sum()))
 
 
 class TestPronyObjective(unittest.TestCase):
@@ -1959,7 +1990,8 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
 
     def test_zero_coefficients_flow_through_coef_records(self):
         # NNLS returns exact zeros (active set); the coefficient table filters
-        # them and keeps the original grid index in 'i'.
+        # them and keeps the original grid index in 'i'. A nonzero E_eq adds
+        # its own plateau row, which has no tau_i to look up.
         omega, E_stor, E_loss, std = _broadband_master_curve(500)
         tau_i, E_i = smooth_prony_fit(
             omega, E_stor, E_loss,
@@ -1968,10 +2000,12 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         )
         self.assertGreater(np.sum(E_i == 0), 0)  # sparsity actually occurs
         records = _build_coef_records(tau_i, E_i)
-        self.assertEqual(len(records), np.count_nonzero(E_i[1:]))
+        self.assertEqual(len(records),
+                         np.count_nonzero(E_i[1:]) + int(E_i[0] != 0))
         for rec in records:
             self.assertNotEqual(rec['E_i'], 0)
-            np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
+            if rec['tau_i'] != 'inf':
+                np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
 
 
 class TestCoefRecordsBounds(unittest.TestCase):
@@ -2016,11 +2050,12 @@ class TestCoefRecordsBounds(unittest.TestCase):
     def test_equilibrium_row_does_not_shift_the_alignment(self):
         # The equilibrium sigma differs from every decaying one, so reading
         # row k + 1 as row k would put the wrong interval on every term.
+        # The plateau row comes last (TestCoefRecordsPlateauRow).
         E = np.concatenate(([5e3], self.E))
         cov = np.diag(np.concatenate(([3.0], self.SIGMA)) ** 2)
         records = _build_coef_records(self.TAU, E, covariance=cov)
-        self.assertEqual(len(records), len(self.TAU))
-        self._check_bounds(records, self.E, self.SIGMA)
+        self.assertEqual(len(records), len(self.TAU) + 1)
+        self._check_bounds(records[:-1], self.E, self.SIGMA)
 
     def test_clamped_equilibrium_uses_the_decaying_covariance(self):
         # E_i carries the equilibrium term but the covariance does not.
@@ -2061,6 +2096,140 @@ class TestCoefRecordsBounds(unittest.TestCase):
         for rec in records:
             for key in self.BOUND_KEYS:
                 self.assertIs(type(rec[key]), float, key)
+
+
+class TestCoefRecordsPlateauRow(unittest.TestCase):
+    """
+    A nonzero equilibrium modulus E_eq gets one table row of its own, last,
+    as {'i': N, 'tau_i': 'inf', 'E_i': E_eq}: 'i' is the next index after the
+    N decaying terms, so a sort by 'i' keeps it last, and 'inf' is a string
+    because stdlib json writes a float inf as Infinity, which JSON.parse
+    rejects. With an equilibrium row in the covariance it also carries
+    [E_eq exp(-s), E_eq exp(s)], s = sqrt(cov[0, 0]) capped like every row.
+    """
+
+    TAU = np.logspace(-2, 1, 4)
+    E_TERMS = np.array([1e6, 3e5, 2e7, 4e4])
+    E_EQ = 5e3
+    E = np.concatenate(([E_EQ], E_TERMS))
+    SIGMA = np.array([0.1, 0.4, 0.9, 1.6])
+    SIGMA_EQ = 0.7
+    KEYS = {'i', 'tau_i', 'E_i'}
+    BOUND_KEYS = {'E_i_lower', 'E_i_upper'}
+
+    def _correlated_cov(self, sigma_eq=SIGMA_EQ):
+        """(N + 1) covariance, equilibrium first, with nonzero cross terms
+        between E_eq and the decaying terms."""
+        sigma = np.concatenate(([sigma_eq], self.SIGMA))
+        corr = np.full((5, 5), 0.3)
+        np.fill_diagonal(corr, 1.0)
+        return corr * np.outer(sigma, sigma)
+
+    def _plateau_rows(self, records):
+        return [rec for rec in records if rec['tau_i'] == 'inf']
+
+    def test_plateau_row_comes_last_with_the_next_index(self):
+        for cov in (None, self._correlated_cov()):
+            with self.subTest(covariance=cov is not None):
+                records = _build_coef_records(self.TAU, self.E,
+                                              covariance=cov)
+                self.assertEqual(len(self._plateau_rows(records)), 1)
+                self.assertEqual(len(records), len(self.TAU) + 1)
+                last = records[-1]
+                self.assertEqual(last['tau_i'], 'inf')
+                self.assertEqual(last['i'], len(self.TAU))
+                self.assertEqual(last['E_i'], self.E_EQ)
+                self.assertEqual([rec['i'] for rec in records],
+                                 sorted(rec['i'] for rec in records))
+
+    def test_plateau_row_without_a_covariance_has_three_keys(self):
+        records = _build_coef_records(self.TAU, self.E)
+        self.assertEqual(len(self._plateau_rows(records)), 1)
+        self.assertEqual(records[-1],
+                         {'i': len(self.TAU), 'tau_i': 'inf',
+                          'E_i': self.E_EQ})
+
+    def test_plateau_bounds_are_the_log_normal_interval_of_E_eq(self):
+        """Only cov[0, 0] sets the interval; the cross terms do not."""
+        records = _build_coef_records(self.TAU, self.E,
+                                      covariance=self._correlated_cov())
+        self.assertEqual(len(self._plateau_rows(records)), 1)
+        last = records[-1]
+        self.assertSetEqual(set(last), self.KEYS | self.BOUND_KEYS)
+        s = self.SIGMA_EQ
+        np.testing.assert_allclose(
+            [last['E_i_lower'], last['E_i_upper']],
+            [self.E_EQ * np.exp(-s), self.E_EQ * np.exp(s)], rtol=1e-12)
+
+    def test_plateau_sigma_above_the_cap_is_capped(self):
+        for sigma_eq in (_SIGMA_DISPLAY_CAP, 20.0, 1e3):
+            with self.subTest(sigma_eq=sigma_eq):
+                records = _build_coef_records(
+                    self.TAU, self.E,
+                    covariance=self._correlated_cov(sigma_eq))
+                self.assertEqual(len(self._plateau_rows(records)), 1)
+                last = records[-1]
+                self.assertTrue(
+                    np.isfinite([last['E_i_lower'], last['E_i_upper']]).all())
+                np.testing.assert_allclose(
+                    [last['E_i_lower'], last['E_i_upper']],
+                    [self.E_EQ * 1e-6, self.E_EQ * 1e6], rtol=1e-12)
+
+    def test_decaying_rows_are_unchanged_by_the_plateau_row(self):
+        """With no correlation the decaying rows equal the viscous table of
+        the same terms, bounds included."""
+        cov = np.diag(np.concatenate(([self.SIGMA_EQ], self.SIGMA)) ** 2)
+        records = _build_coef_records(self.TAU, self.E, covariance=cov)
+        self.assertEqual(len(records), len(self.TAU) + 1)
+        self.assertEqual(
+            records[:-1],
+            _build_coef_records(self.TAU, self.E_TERMS,
+                                covariance=np.diag(self.SIGMA ** 2)))
+
+    def test_no_plateau_row_for_a_viscous_fit(self):
+        for cov in (None, np.diag(self.SIGMA ** 2)):
+            with self.subTest(covariance=cov is not None):
+                records = _build_coef_records(self.TAU, self.E_TERMS,
+                                              covariance=cov)
+                self.assertEqual(self._plateau_rows(records), [])
+                self.assertEqual(len(records), len(self.TAU))
+
+    def test_no_plateau_row_when_the_equilibrium_modulus_is_zero(self):
+        # Clamped smoothed fit: E_eq == 0 with an (N, N) covariance; an
+        # unsmoothed NNLS zero: E_eq == 0 with no covariance.
+        E = np.concatenate(([0.0], self.E_TERMS))
+        for cov in (None, np.diag(self.SIGMA ** 2)):
+            with self.subTest(covariance=cov is not None):
+                records = _build_coef_records(self.TAU, E, covariance=cov)
+                self.assertEqual(self._plateau_rows(records), [])
+                self.assertEqual(len(records), len(self.TAU))
+
+    def test_every_row_has_the_same_keys(self):
+        for cov in (None, self._correlated_cov()):
+            with self.subTest(covariance=cov is not None):
+                records = _build_coef_records(self.TAU, self.E,
+                                              covariance=cov)
+                self.assertEqual(len(self._plateau_rows(records)), 1)
+                want = self.KEYS | (self.BOUND_KEYS if cov is not None
+                                    else set())
+                for rec in records:
+                    self.assertSetEqual(set(rec), want)
+
+    def test_plateau_row_is_plain_strict_json(self):
+        """Plain int / str / float values: json.dumps accepts the records
+        with allow_nan=False and json.loads gives them back unchanged."""
+        for cov in (None, self._correlated_cov()):
+            with self.subTest(covariance=cov is not None):
+                records = _build_coef_records(self.TAU, self.E,
+                                              covariance=cov)
+                self.assertEqual(len(self._plateau_rows(records)), 1)
+                last = records[-1]
+                self.assertIs(type(last['i']), int)
+                self.assertIs(type(last['tau_i']), str)
+                for key in set(last) - {'i', 'tau_i'}:
+                    self.assertIs(type(last[key]), float, key)
+                text = json.dumps(records, allow_nan=False)
+                self.assertEqual(json.loads(text), records)
 
 
 def _unresolved_equilibrium_curve(num_pts=200):

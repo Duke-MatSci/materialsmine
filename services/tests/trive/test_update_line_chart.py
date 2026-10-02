@@ -35,7 +35,7 @@ from app.trive.figures import (
 )
 from app.trive.chart import update_line_chart
 from app.trive.uncertainty import (
-    _SIGMA_DISPLAY_CAP, complex_modulus_sigma, relaxation_sigma,
+    _SIGMA_DISPLAY_CAP, complex_modulus_sigma,
     sigma_log_coefficients, spectrum_error_bars,
 )
 import app.trive.reduction as reduction
@@ -117,8 +117,11 @@ class TestUpdateLineChartFrequency(unittest.TestCase):
         # fig3 is the discrete relaxation spectrum: the Prony coefficients as
         # a marker trace at (tau_i, E_i), plus a horizontal dashed line at the
         # long-term (equilibrium) modulus. No Alfrey-style continuous spectrum.
+        # A +-1 sigma band around the long-term line is not a trace of its
+        # own kind; TestUpdateLineChartCredibleBands covers it.
         fig3 = self.result[3]
-        self.assertEqual(len(fig3.data), 2)
+        self.assertEqual(
+            sum(1 for t in fig3.data if t.name != '±1σ credible'), 2)
         names3 = [t.name for t in fig3.data]
         self.assertFalse(any('Basis' in n for n in names3))
         dots = next(t for t in fig3.data if 'Term Prony' in t.name)
@@ -653,9 +656,13 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
     """
     Every "N-Term Prony" label counts decaying terms only. The equilibrium
     coefficient is a separate parameter — no tau_i, exempt from the smoothness
-    penalty, split into its own trace on fig3, dropped from the coefficient
-    table — so it must not appear in any term count.
+    penalty, split into its own trace on fig3, its own 'inf' row of the
+    coefficient table — so it must not appear in any term count.
     """
+
+    @staticmethod
+    def _decaying_rows(coef_df):
+        return [row for row in coef_df if row['tau_i'] != 'inf']
 
     @staticmethod
     def _upload():
@@ -688,16 +695,17 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
         # report the grid size plus the equilibrium term — 24 terms for a
         # 23-point grid whose table listed 23 rows.
         fig1, fig11, fig2, fig3, _, _, coef_df, _, _, _ = self._run(23, 0.04)
-        self.assertEqual(len(coef_df), 23)
+        self.assertEqual(len(self._decaying_rows(coef_df)), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)), {23})
 
     def test_unsmoothed_labels_match_the_coefficient_table(self):
         # NNLS zeroes coefficients outright, so here the count is genuinely
         # below the grid size — and still must not pick up the equilibrium term.
         fig1, fig11, fig2, fig3, _, _, coef_df, _, _, _ = self._run(23, 0.0)
-        self.assertLess(len(coef_df), 23)
+        decaying = self._decaying_rows(coef_df)
+        self.assertLess(len(decaying), 23)
         self.assertEqual(self._label_counts((fig1, fig11, fig2, fig3)),
-                         {len(coef_df)})
+                         {len(decaying)})
 
     def test_basis_overlay_label_matches_too(self):
         # fig2's basis scatter is drawn over tau_i, which has no equilibrium
@@ -709,9 +717,10 @@ class TestUpdateLineChartTermLabels(unittest.TestCase):
 
 class TestUpdateLineChartCredibleBands(unittest.TestCase):
     """
-    A smoothed fit draws +-1 sigma credible ribbons under its curves and
-    error bars on its spectrum; without a covariance (unsmoothed, or a
-    Hessian that is not positive definite) the figures are unchanged.
+    A smoothed fit draws +-1 sigma credible ribbons under its curves, error
+    bars on its spectrum and a band around its long-term modulus; without a
+    covariance (unsmoothed, or a Hessian that is not positive definite) the
+    figures are unchanged.
     """
 
     BAND = '±1σ credible'
@@ -745,11 +754,35 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         cls.result_no_basis, cls.fit_no_basis = cls._run(0.3, False)
         # Weak smoothing: some log-sigmas exceed the display cap here.
         cls.weak, cls.weak_fit = cls._run(0.004)
-        cls.unsmoothed, _ = cls._run(0.0)
+        cls.unsmoothed, cls.unsmoothed_fit = cls._run(0.0)
         with patch('app.trive.quality._cholesky_or_none', return_value=None):
             cls.no_cov, cls.no_cov_fit = cls._run(0.3)
 
     # --- helpers ---------------------------------------------------------
+
+    @staticmethod
+    def _relaxation_curve_and_sigma(t, tau_i, E_i, cov):
+        """E(t) = E_eq + sum_j E_j exp(-t/tau_j) and its delta-method sigma:
+        g = [E_eq, E_j exp(-t/tau_j)] with an equilibrium row in cov, the
+        decaying columns alone without one."""
+        N = len(tau_i)
+        E_eq = E_i[0] if len(E_i) > N else 0.0
+        G = np.exp(-np.outer(t, 1 / tau_i)) * E_i[-N:]
+        curve = E_eq + G.sum(axis=1)
+        if cov.shape[0] == N + 1:
+            G = np.column_stack((np.full(len(t), E_eq), G))
+        sigma = np.sqrt(np.einsum('ij,jk,ik->i', G, cov, G))
+        return curve, sigma
+
+    @staticmethod
+    def _plateau_interval(E_eq, cov):
+        """[E_eq exp(-s), E_eq exp(s)], s = sqrt(cov[0, 0]) capped."""
+        s = min(np.sqrt(cov[0, 0]), _SIGMA_DISPLAY_CAP)
+        return E_eq * np.exp(-s), E_eq * np.exp(s)
+
+    @staticmethod
+    def _plateau_rows(table):
+        return [row for row in table if row['tau_i'] == 'inf']
 
     @classmethod
     def _bands(cls, fig):
@@ -834,8 +867,9 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         lower, upper = pairs[0]
         curve = self._prony(fig)
         x = np.asarray(curve.x, dtype=float)
-        sigma = relaxation_sigma(x, tau_i, E_i, cov)
-        want_lo, want_hi = self._expected_edges(curve.y, sigma, True)
+        want_y, sigma = self._relaxation_curve_and_sigma(x, tau_i, E_i, cov)
+        np.testing.assert_allclose(curve.y, want_y, rtol=1e-9)
+        want_lo, want_hi = self._expected_edges(want_y, sigma, True)
         for edge in (lower, upper):
             np.testing.assert_array_equal(edge.x, curve.x)
         np.testing.assert_allclose(lower.y, want_lo, rtol=1e-9)
@@ -897,14 +931,58 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
         self.assertTrue((minus < np.asarray(dots.y, dtype=float)).all())
         self.assertFalse(np.allclose(plus, minus))
 
-    def test_long_term_modulus_line_has_no_error_bars(self):
-        hline = next(t for t in self.result[3].data
-                     if t.name == 'Long-Term Modulus')
-        self.assertIsNone(hline.error_y.array)
-        self.assertIsNone(hline.error_y.arrayminus)
+    def test_long_term_modulus_line_carries_the_plateau_band(self):
+        # Construction is free; the band is whatever fig3 names
+        # _CREDIBLE_BAND, and its edges are the plateau row's interval.
+        for result, (tau_i, E_i, cov) in ((self.result, self.fit),
+                                          (self.weak, self.weak_fit)):
+            fig3 = result[3]
+            band = [t for t in fig3.data if t.name == figures._CREDIBLE_BAND]
+            self.assertGreater(len(band), 0, 'no band on the long-term line')
+            self.assertEqual(cov.shape[0], len(tau_i) + 1)
+            hline = next(t for t in fig3.data
+                         if t.name == 'Long-Term Modulus')
+            self.assertEqual(tuple(hline.y), (E_i[0], E_i[0]))
+            lower, upper = self._plateau_interval(E_i[0], cov)
+            plateau = self._plateau_rows(result[6])
+            self.assertEqual(len(plateau), 1)
+            np.testing.assert_allclose(
+                [plateau[0]['E_i_lower'], plateau[0]['E_i_upper']],
+                [lower, upper], rtol=1e-12)
+            x = np.concatenate([np.asarray(t.x, dtype=float) for t in band])
+            y = np.concatenate([np.asarray(t.y, dtype=float) for t in band])
+            np.testing.assert_allclose([x.min(), x.max()],
+                                       [min(hline.x), max(hline.x)],
+                                       rtol=1e-12)
+            np.testing.assert_allclose([y.min(), y.max()], [lower, upper],
+                                       rtol=1e-12)
+            on_an_edge = (np.isclose(y, lower, rtol=1e-12)
+                          | np.isclose(y, upper, rtol=1e-12))
+            self.assertTrue(on_an_edge.all(), y)
 
-    def test_error_bars_add_no_spectrum_traces(self):
-        self.assertEqual(len(self.result[3].data), len(self.no_cov[3].data))
+    def test_covariance_adds_only_the_plateau_band_to_the_spectrum(self):
+        self.assertEqual(
+            [t.name for t in self.result[3].data
+             if t.name != figures._CREDIBLE_BAND],
+            [t.name for t in self.no_cov[3].data])
+        self.assertGreater(len(self._bands(self.result[3])), 0)
+
+    def test_no_plateau_band_for_a_clamped_or_viscous_fit(self):
+        """An (N, N) covariance has no equilibrium row to draw from: the
+        clamped fit (E_eq = 0) draws no long-term line, and a viscous fit has
+        no plateau; fig2 keeps its ribbon either way."""
+        tau_i = np.logspace(-3.0, 3.0, 13)
+        cov = np.diag(np.linspace(0.1, 1.0, 13) ** 2)
+        for label, E_i in (
+                ('clamped', np.concatenate(([0.0], np.full(13, 1e6)))),
+                ('viscous', np.full(13, 1e6))):
+            with self.subTest(label):
+                fig2, fig3 = _build_relaxation_figures(tau_i, E_i, 13, True,
+                                                       covariance=cov)
+                self.assertGreater(len(self._bands(fig2)), 0)
+                self.assertEqual(self._bands(fig3), [])
+                self.assertNotIn('Long-Term Modulus',
+                                 [t.name for t in fig3.data])
 
     # --- (4) no covariance, no display -----------------------------------
 
@@ -933,13 +1011,16 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
                 self.assertSetEqual(set(row), {'i', 'tau_i', 'E_i'})
 
     def test_table_bounds_match_the_spectrum_error_bars(self):
-        # Row 'i' is the pre-filter term index, one dot per tau_i in fig3.
+        # Row 'i' is the pre-filter term index, one dot per tau_i in fig3;
+        # the plateau row has no dot (test_table_ends_with_the_plateau_row).
         for result in (self.result, self.weak):
             dots = self._spectrum_dots(result[3])
             plus = np.asarray(dots.error_y.array, dtype=float)
             minus = np.asarray(dots.error_y.arrayminus, dtype=float)
             self.assertGreater(len(result[6]), 0)
             for row in result[6]:
+                if row['tau_i'] == 'inf':
+                    continue
                 self.assertSetEqual(
                     set(row), {'i', 'tau_i', 'E_i', 'E_i_lower', 'E_i_upper'})
                 lower, upper = row['E_i_lower'], row['E_i_upper']
@@ -952,6 +1033,52 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
                                            rtol=1e-9)
                 np.testing.assert_allclose(E - lower, minus[row['i']],
                                            rtol=1e-9)
+
+    def test_table_ends_with_the_plateau_row(self):
+        """One row past the decaying terms, i = N and tau_i 'inf', carries
+        E_eq; with a covariance also its interval, and every row of a table
+        has the same keys."""
+        runs = ((self.result, self.fit), (self.weak, self.weak_fit),
+                (self.unsmoothed, self.unsmoothed_fit),
+                (self.no_cov, self.no_cov_fit))
+        for k, (result, (tau_i, E_i, cov)) in enumerate(runs):
+            with self.subTest(run=k):
+                table = result[6]
+                self.assertEqual(len(self._plateau_rows(table)), 1)
+                self.assertGreater(E_i[0], 0.0)
+                last = table[-1]
+                self.assertEqual(last['tau_i'], 'inf')
+                self.assertEqual(last['i'], len(tau_i))
+                np.testing.assert_allclose(last['E_i'], E_i[0], rtol=1e-12)
+                keys = {'i', 'tau_i', 'E_i'}
+                if cov is not None:
+                    keys |= {'E_i_lower', 'E_i_upper'}
+                    np.testing.assert_allclose(
+                        [last['E_i_lower'], last['E_i_upper']],
+                        self._plateau_interval(E_i[0], cov), rtol=1e-12)
+                for row in table:
+                    self.assertSetEqual(set(row), keys)
+                self.assertEqual(json.loads(json.dumps(table,
+                                                       allow_nan=False)),
+                                 table)
+
+    def test_relaxation_curve_levels_off_at_the_long_term_modulus(self):
+        """E(t) includes E_eq, so the drawn curve never falls below it and
+        sits on it once the terms have decayed, as E' does at low
+        frequency."""
+        for result, (tau_i, E_i, _) in ((self.result, self.fit),
+                                        (self.unsmoothed,
+                                         self.unsmoothed_fit)):
+            E_eq = E_i[0]
+            self.assertGreater(E_eq, 0.0)
+            relax = np.asarray(self._prony(result[2]).y, dtype=float)
+            storage = np.asarray(self._prony(result[0], 'x').y, dtype=float)
+            self.assertGreaterEqual(relax.min(), E_eq * (1 - 1e-12))
+            self.assertGreaterEqual(storage.min(), E_eq * (1 - 1e-12))
+            # One decade past max tau, what is left of the slowest term is
+            # exp(-10) of it at most.
+            np.testing.assert_allclose(
+                relax[-1], E_eq, atol=np.exp(-10) * E_i[1:].sum())
 
     # --- (5) serialization -----------------------------------------------
 
@@ -1408,7 +1535,7 @@ class TestExtendedPronyCurves(unittest.TestCase):
 
 class TestExtendedFigureAxisPin(unittest.TestCase):
     """
-    Past the window the model heads somewhere uninteresting (E(t) to zero,
+    Past the window the model heads somewhere uninteresting (E(t) to E_eq,
     E'' down a decade per decade, E' down on a liquid fit), so every axis
     carrying an extended Prony curve has its y range set from what lies
     inside the window: it brackets the in-window curve, data and ribbons
@@ -1549,16 +1676,21 @@ class TestExtendedFigureAxisPin(unittest.TestCase):
     # --- exclusion ---------------------------------------------------------
 
     def test_relaxation_range_ignores_the_decaying_tail(self):
-        """E(t) omits the equilibrium modulus and heads to zero past
-        max tau; the range bottom stays above where it ends up."""
-        for result, (tau_i, _, _) in self.runs:
-            fig2 = result[2]
-            drawn = np.asarray(_prony_curve(fig2).y, dtype=float)
-            inside = self._in_window(fig2, 'y', *_time_window(tau_i))
-            self.assertGreater(drawn.min(), 0.0)
-            self.assertLess(drawn.min(), inside.min() / 100)
-            r0, _ = self._pinned_range(fig2, 'y')
-            self.assertGreater(10 ** r0, drawn.min())
+        """With no equilibrium modulus (clamped to zero, or absent) E(t)
+        heads to zero past max tau; the range bottom stays above where it
+        ends up."""
+        tau_i = np.logspace(-3.0, 3.0, 13)
+        for label, E_i in (
+                ('clamped', np.concatenate(([0.0], np.full(13, 1e6)))),
+                ('liquid', np.full(13, 1e6))):
+            with self.subTest(label):
+                fig2, _ = _build_relaxation_figures(tau_i, E_i, 13, True)
+                drawn = np.asarray(_prony_curve(fig2).y, dtype=float)
+                inside = self._in_window(fig2, 'y', *_time_window(tau_i))
+                self.assertGreater(drawn.min(), 0.0)
+                self.assertLess(drawn.min(), inside.min() / 100)
+                r0, _ = self._pinned_range(fig2, 'y')
+                self.assertGreater(10 ** r0, drawn.min())
 
     def test_loss_range_ignores_the_high_frequency_tail(self):
         """PMMA, unsmoothed: the extended E'' falls below anything in the
@@ -2266,7 +2398,8 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             freq, es, el, E_stor_std=std, E_loss_std=std,
             N=10, smoothness=0.0, solid=True,
         )
-        coef = {row['i']: row['E_i'] for row in self.result[6]}
+        coef = {row['i']: row['E_i'] for row in self.result[6]
+                if row['tau_i'] != 'inf'}
         expected = {i: e for i, e in enumerate(E_i[1:]) if e != 0}
         self.assertEqual(set(coef), set(expected))
         for i in coef:

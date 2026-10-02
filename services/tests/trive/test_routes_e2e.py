@@ -355,6 +355,42 @@ class TestExtractRoute(unittest.TestCase):
             self.assertLessEqual(row['E_i_lower'], row['E_i'])
             self.assertLessEqual(row['E_i'], row['E_i_upper'])
 
+    @staticmethod
+    def _load_strict(body):
+        """json.loads that fails on a bare NaN / Infinity token, which
+        browsers' JSON.parse rejects. A substring search would also hit
+        those letters inside base64 figure data."""
+        def reject(token):
+            raise AssertionError(f'non-finite {token} in the response body')
+        return json.loads(body, parse_constant=reject)
+
+    def test_extract_table_ends_with_the_plateau_row(self):
+        """The equilibrium modulus is the last mytable row, i = N and
+        tau_i the string 'inf'; with a smoothed fit it carries its +-1 sigma
+        interval, and every row has the same keys. The body is strict
+        JSON."""
+        for N, smoothness, keys in (
+                (5, 0.0, {'i', 'tau_i', 'E_i'}),
+                (20, 0.3, {'i', 'tau_i', 'E_i', 'E_i_lower', 'E_i_upper'})):
+            with self.subTest(smoothness=smoothness):
+                resp = self._post(self._freq_body(number_of_prony=N,
+                                                  smoothness=smoothness))
+                self.assertEqual(resp.status_code, 200, resp.data[:400])
+                mytable = self._load_strict(resp.data)['response']['mytable']
+                plateau = [row for row in mytable if row['tau_i'] == 'inf']
+                self.assertEqual(len(plateau), 1)
+                self.assertIs(mytable[-1], plateau[0])
+                self.assertEqual(plateau[0]['i'], N)
+                self.assertGreater(plateau[0]['E_i'], 0.0)
+                for row in mytable:
+                    self.assertSetEqual(set(row), keys)
+                if 'E_i_lower' in keys:
+                    self.assertLess(0.0, plateau[0]['E_i_lower'])
+                    self.assertLess(plateau[0]['E_i_lower'],
+                                    plateau[0]['E_i'])
+                    self.assertLess(plateau[0]['E_i'],
+                                    plateau[0]['E_i_upper'])
+
     def test_request_above_max_prony_still_fits(self):
         """The cap is advisory: any N in the route's 1..100 range fits."""
         resp = self._post(self._freq_body())
