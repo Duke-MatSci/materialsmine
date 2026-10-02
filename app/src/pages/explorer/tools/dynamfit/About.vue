@@ -113,7 +113,7 @@
         </p>
         <p>
           When smoothing is on, the fitted curves carry a shaded ±1σ band in the fit line's
-          color, and the spectrum dots carry error bars. Both come from the second
+          color, the spectrum dots carry error bars, and the spectrum's long-term modulus line carries a band of its own. All come from the second
           derivative of V at its minimum. The band is a credible interval on the curve itself:
           it shows how tightly your error inputs and the <em>Smoothness</em> setting pin down
           the fit, not how far the fit may sit from the truth. Smoothing bias is not included,
@@ -130,14 +130,15 @@
           On a smoothed fit the coefficient table and its CSV download gain two columns,
           <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
           in Pa, the same range the error bars on the spectrum plot show. With smoothing off
-          these columns are absent.
+          these columns are absent. When the fit has a long-term modulus, the table ends with
+          one more row for it, with <code>tau_i</code> shown as <code>inf</code>; its range is the band on the spectrum's long-term modulus line.
         </p>
         <p>
           The fitted curves are drawn one decade past your measured window on each side, showing
           an extrapolation of the Prony series as it would be exported.
-          The plotted E(t) is the decaying part only (the
-          long-term modulus is left out), so past the last relaxation time it heads to zero
-          rather than to the plateau. The vertical axes are set from the measured window, so the
+          The plotted E(t) includes the
+          long-term modulus, so past the last relaxation time it levels off at that modulus
+          (or heads to zero when there is none). The vertical axes are set from the measured window, so the
           tails can run off the plot.
         </p>
       </section>
