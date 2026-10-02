@@ -190,10 +190,12 @@ def complex_modulus_noise(omega, tau_i, E_i, omega_data, rel_stor,
 
 def relaxation_sigma(t, tau_i, E_i, covariance) -> np.ndarray:
     """
-    1-sigma of the decaying part of E(t) = sum_i E_i exp(-t / tau_i).
+    1-sigma of E(t) = E_eq + sum_i E_i exp(-t / tau_i).
 
-    An equilibrium row in the covariance is dropped; marginalizing a Gaussian
-    is exactly that.
+    With an equilibrium row in the covariance, d E(t) / d log E_eq = E_eq
+    enters as a column constant in t; without one (E_eq clamped, or a
+    viscous fit) E_eq carries no uncertainty and only the decaying terms
+    count.
 
     Parameters:
         t (numpy.ndarray): Times.
@@ -209,4 +211,6 @@ def relaxation_sigma(t, tau_i, E_i, covariance) -> np.ndarray:
     _check_shapes(tau_i, E_i, covariance)
     N = len(tau_i)
     G = np.exp(-np.outer(t, 1 / tau_i)) * E_i[-N:]
-    return _sigma(G, covariance[-N:, -N:])
+    if len(covariance) == N + 1:
+        G = np.column_stack([np.full(len(t), E_i[0]), G])
+    return _sigma(G, covariance[-len(G[0]):, -len(G[0]):])

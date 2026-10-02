@@ -594,12 +594,13 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         color="Type", symbol="Type",
         labels={"Time": "Relaxation Time, 𝜏 (s)", "E": "Prony Coefficient, Eᵢ (Pa)"},
     )
-    if solid and E_i[0] > 0:
+    plateau = solid and E_i[0] > 0
+    if plateau:
         fig3.add_trace(go.Scatter(
             x=[tau_i.min(), tau_i.max()],
             y=[E_i[0], E_i[0]],
             mode="lines",
-            line=dict(dash="dash"),
+            line=dict(dash="dash", color=_PLATEAU_COLOR),
             name="Long-Term Modulus",
         ))
     fig3.update_layout(
@@ -620,12 +621,40 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
             error_y=dict(type='data', symmetric=False,
                          array=plus, arrayminus=minus),
             selector=dict(name=f"{N_nz}-Term Prony"))
+        if plateau and len(covariance) == len(tau_i) + 1:
+            _add_plateau_band(fig3, tau_i, E_i[0], covariance)
 
     _pin_y_ranges(fig2, np.min(tau_i), np.max(tau_i))
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
     return fig2, fig3
+
+
+# Long-term modulus line color (plotly's second default), so its band can
+# be filled in the same family.
+_PLATEAU_COLOR = '#EF553B'
+
+
+def _plateau_bounds(E_eq, covariance) -> tuple:
+    """The 1-sigma interval of E_eq from the equilibrium covariance row."""
+    lower, upper = coefficient_bounds(
+        [E_eq], [np.sqrt(covariance[0][0])])
+    return float(lower[0]), float(upper[0])
+
+
+def _add_plateau_band(fig, tau_i, E_eq, covariance) -> None:
+    """Draw the E_eq 1-sigma band under every trace of the spectrum."""
+    lower, upper = _plateau_bounds(E_eq, covariance)
+    common = dict(x=[tau_i.min(), tau_i.max()], mode='lines',
+                  line=dict(width=0), hoverinfo='skip',
+                  name=_CREDIBLE_BAND, legendgroup=_CREDIBLE_BAND)
+    fig.add_traces([
+        go.Scatter(y=[lower, lower], showlegend=False, **common),
+        go.Scatter(y=[upper, upper], fill='tonexty',
+                   fillcolor=_rgba(_PLATEAU_COLOR, _BAND_ALPHA),
+                   showlegend=True, **common)])
+    fig.data = fig.data[-2:] + fig.data[:-2]
 
 
 def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
@@ -644,7 +673,8 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
         list: List of dicts with keys 'i', 'tau_i', 'E_i' — one per nonzero
         coefficient, with 'i' the original (pre-filter) index. With a
         covariance, also 'E_i_lower' and 'E_i_upper': the 1-sigma interval
-        fig3 draws as error bars, in Pa.
+        fig3 draws as error bars, in Pa. A nonzero equilibrium modulus adds
+        a last row with 'i' = len(tau_i) and 'tau_i' the string 'inf'.
     """
     E_terms = np.asarray(E_i, dtype=float)[len(E_i) - len(tau_i):]
     coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_terms})
@@ -653,7 +683,17 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
             E_terms, sigma_log_coefficients(covariance)[-len(tau_i):])
     coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
     coef_df = coef_df.rename(columns={'index': 'i'})
-    return coef_df.to_dict("records")
+    records = coef_df.to_dict("records")
+    if len(E_i) == len(tau_i) + 1 and E_i[0] > 0:
+        row = {'i': len(tau_i), 'tau_i': 'inf', 'E_i': float(E_i[0])}
+        if covariance is not None:
+            if len(covariance) == len(tau_i) + 1:
+                bounds = _plateau_bounds(E_i[0], covariance)
+            else:
+                bounds = (float(E_i[0]), float(E_i[0]))
+            row['E_i_lower'], row['E_i_upper'] = bounds
+        records.append(row)
+    return records
 
 
 # Rows in the model-only shift table (no measured temperatures to anchor to,

@@ -181,9 +181,9 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
 
     Builds a time grid spanning min(tau_i) to max(tau_i),
     widened by extend_decades on each side, and evaluates the
-    decaying part of the Prony relaxation modulus from the coefficients in
-    E_i. When E_i has one more element than tau_i, the leading
-    equilibrium-modulus coefficient is excluded from the output.
+    Prony relaxation modulus from the coefficients in E_i. When E_i has one
+    more element than tau_i, the leading coefficient is the equilibrium
+    modulus and is added at every time.
 
     Parameters:
         tau_i (numpy.ndarray): 1-D array of relaxation times.
@@ -207,4 +207,6 @@ def compute_relaxation_modulus(tau_i: np.ndarray, E_i: np.ndarray,
     dt = np.outer(t, 1 / tau_i)
     solid = not (len(E_i) == len(tau_i))
     E = np.exp(-dt) @ E_i[solid:]
+    if solid:
+        E = E + E_i[0]
     return pd.DataFrame(data={"Time": t, "E": E})
