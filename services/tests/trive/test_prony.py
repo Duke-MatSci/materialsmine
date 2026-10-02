@@ -423,8 +423,8 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     production code avoids via a closed-form pseudo-determinant and banded
     in-place accumulation. Takes the same pre-weighted system and the same
     UNSCALED smoothness the production function does, and re-derives the
-    lam = smoothness**2 * dof * (npen - 1)**3 / log_range**4 normalization
-    independently rather than importing it.
+    lam = smoothness**2 * dof / ((npen - 2) * ell**4) normalization,
+    ell = log_range / (npen - 1), independently rather than importing it.
     Returns (chi2, neg_log_posterior, gamma) with the posterior None exactly
     when C is not positive definite, matching the contract. gamma is MacKay's
     npen - lam * tr(A inv(C)) when there is a penalty and C is positive
@@ -442,7 +442,8 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     m = len(logcoefs)
     npen = m - solid
     dof = n_resid - m
-    lam = smoothness ** 2 * max(dof, 1) * (npen - 1) ** 3 / log_range ** 4
+    ell = log_range / (npen - 1)
+    lam = smoothness ** 2 * max(dof, 1) / ((npen - 2) * ell ** 4)
     coefs = np.exp(logcoefs)
     resid = data - basis @ coefs
     L = np.zeros((npen - 2, m))
@@ -573,10 +574,11 @@ class TestPronyFitQuality(unittest.TestCase):
                 self.assertIsNotNone(quality.chi2_reduced)
 
     def test_curvature_is_the_mean_squared_second_derivative(self):
-        # Against an explicit dense L: ||L x||^2 / (h**3 * log_range), the mean
-        # squared d2(lnE)/d(ln tau)**2 of the fitted spectrum with the leading
-        # equilibrium term excluded. The h**3 is what separates this from the
-        # mean squared second DIFFERENCE — see _mean_sq_curvature.
+        # Against an explicit dense L: ||L x||^2 / ((npen - 2) * ell**4), the
+        # mean squared d2(lnE)/d(ln tau)**2 over the npen - 2 interior nodes
+        # with the leading equilibrium term excluded. The ell**4 is what
+        # separates this from the mean squared second DIFFERENCE — see
+        # _mean_sq_curvature.
         for N, solid in [(8, 1), (8, 0), (3, 1), (12, 0)]:
             with self.subTest(N=N, solid=solid):
                 basis, data, x = _random_fit_problem(self.rng, N, solid)
@@ -588,12 +590,13 @@ class TestPronyFitQuality(unittest.TestCase):
                 L[rows, solid + rows + 1] = -2.0
                 L[rows, solid + rows + 2] = 1.0
                 Lx = L @ x
-                h = LOG_RANGE / (npen - 1)
+                ell = LOG_RANGE / (npen - 1)
                 quality = _prony_fit_quality(
                     x, data, basis, 1.0, solid, n_resid=2 * len(data), log_range=LOG_RANGE,
                 )
                 self.assertAlmostEqual(
-                    quality.curvature, Lx @ Lx / (h ** 3 * LOG_RANGE), places=12,
+                    quality.curvature, Lx @ Lx / ((npen - 2) * ell ** 4),
+                    places=12,
                 )
 
     def test_curvature_is_reported_without_smoothing(self):
@@ -639,6 +642,42 @@ class TestPronyFitQuality(unittest.TestCase):
         # ...where the quantity it replaced moves by orders of magnitude over
         # the same 4x change in N, which is why it could not be compared.
         self.assertGreater(per_term[0] / per_term[-1], 100)
+
+    def test_curvature_is_exact_for_a_constant_second_derivative(self):
+        # H = c * x**2 / 2 + b * x + a has H'' = c at every node, so the mean
+        # of H''**2 over the npen - 2 interior nodes is c**2 on any grid; a
+        # mean over the node span would read (npen - 2) / (npen - 1) of it,
+        # half at npen = 3. Exactness is what makes the readout, and the
+        # weight normalized the same way, carry across a crop: the same
+        # spectrum on a sub-span at the same spacing, or on a finer grid over
+        # the same span, reports the same number.
+        c, b, a = 0.7, -1.3, 2.0
+
+        def curvature(x, solid):
+            logcoefs = c * x ** 2 / 2 + b * x + a
+            if solid:
+                logcoefs = np.concatenate([[0.5], logcoefs])
+            basis, data, _ = _random_fit_problem(self.rng, len(x), solid)
+            return _prony_fit_quality(
+                logcoefs, data, basis, 1.0, solid,
+                n_resid=2 * len(data), log_range=x[-1] - x[0],
+            ).curvature
+
+        for npen in (3, 4, 7, 20, 41):
+            for log_range in (np.log(10.0), LOG_RANGE, np.log(1e20)):
+                for solid in (0, 1):
+                    with self.subTest(npen=npen, log_range=log_range,
+                                      solid=solid):
+                        x = np.linspace(-0.3, 0.7, npen) * log_range
+                        full = curvature(x, solid)
+                        np.testing.assert_allclose(full, c ** 2, rtol=1e-9)
+                        fine = np.linspace(x[0], x[-1], 2 * npen - 1)
+                        np.testing.assert_allclose(
+                            curvature(fine, solid), full, rtol=1e-9)
+                        if npen > 3:
+                            crop = x[(npen - 1) // 2:]
+                            np.testing.assert_allclose(
+                                curvature(crop, solid), full, rtol=1e-9)
 
     def test_closed_form_pseudo_determinant_matches_eigendecomposition(self):
         # The production code never builds A; it uses
@@ -922,14 +961,16 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertEqual(_scaled_smoothness(0.4, 20, 100, 0.0), 0.4)
         # And the live branch is the smoothness-weight definition,
         # lam = smoothness**2 * dof
-        # * (npen - 1)**3 / log_range**4, with dof floored at 1.
+        # / ((npen - 2) * ell**4), ell = log_range / (npen - 1), with dof
+        # floored at 1.
+        ell = LOG_RANGE / 19
         self.assertAlmostEqual(
             _scaled_smoothness(0.4, 20, 100, LOG_RANGE) ** 2,
-            0.4 ** 2 * 100 * 19 ** 3 / LOG_RANGE ** 4, places=12,
+            0.4 ** 2 * 100 / (18 * ell ** 4), places=12,
         )
         self.assertAlmostEqual(
             _scaled_smoothness(0.4, 20, 0, LOG_RANGE) ** 2,
-            0.4 ** 2 * 19 ** 3 / LOG_RANGE ** 4, places=12,
+            0.4 ** 2 / (18 * ell ** 4), places=12,
         )
 
     def test_none_posterior_when_not_positive_definite(self):
@@ -2398,15 +2439,16 @@ class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
 
 
 def _integral_curvature_weight(smoothness, N, dof, log_range):
-    """smoothness * sqrt(dof / h**3), h = log_range / (N - 1).
+    """smoothness * sqrt(dof / ell**3), ell = log_range / (N - 1).
 
-    With this weight lam * |d2|**2 is smoothness**2 * dof times the INTEGRAL
-    of (d2 lnE / d(ln tau)**2)**2 over the span; _scaled_smoothness charges
-    its MEAN, so the two agree at a knob sqrt(log_range) apart. Built from h
+    With this weight lam * |d2|**2 is smoothness**2 * dof times the
+    rectangle-rule INTEGRAL of (d2 lnE / d(ln tau)**2)**2, ell per interior
+    node; _scaled_smoothness charges its MEAN over the N - 2 interior nodes,
+    so the two agree at a knob sqrt((N - 2) * ell) apart. Built from ell
     alone so the tests below never read _scaled_smoothness for it.
     """
-    h = log_range / (N - 1)
-    return smoothness * np.sqrt(dof / h ** 3)
+    ell = log_range / (N - 1)
+    return smoothness * np.sqrt(dof / ell ** 3)
 
 
 def _fit_at_weight(omega, E_stor, E_loss, std, N, weight, solid=True,
@@ -2451,11 +2493,11 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
     reproduces the full-span fit on a crop is close to lam_full itself (within
     0.84-1.19 lam_full in 23 of 28 bundled cases at smoothness <= 1), so a
     rule passes by carrying lam across the cut. The mean-curvature weight
-    smoothness**2 * nu / (h**3 * L) does, up to the change in points per
-    decade nu / L; the integral-curvature weight smoothness**2 * nu / h**3
+    smoothness**2 * nu / ((N - 2) * ell**4) does, up to the change in points per
+    decade nu / L; the integral-curvature weight smoothness**2 * nu / ell**3
     loses the span factor and lands a further factor 1/2 low. Only a
     synthetic curve has uniform points per decade; on the bundled files the
-    mean rule gives lam_crop / lam_full from 0.64 to 1.29.
+    mean rule gives lam_crop / lam_full from 0.65 to 1.34.
     """
 
     RELATIVE_ERROR = 0.01
@@ -2510,11 +2552,14 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     rtol=1e-10,
                 )
 
-    def test_knob_times_sqrt_log_range_is_the_integral_curvature_fit(self):
-        # Charging the mean curvature at smoothness * sqrt(L) is charging the
-        # integral at smoothness: the same weight, so the same optimum to
-        # solver precision, with the same chi2_reduced and curvature. The
-        # reference fit builds its weight from h alone.
+    def test_knob_times_sqrt_interior_length_is_the_integral_curvature_fit(
+            self):
+        # Charging the mean curvature at smoothness * sqrt((N - 2) * ell),
+        # (N - 2) * ell being the length the rectangle rule gives the
+        # interior nodes, is charging the integral at smoothness: the same
+        # weight, so the same optimum to solver precision, with the same
+        # chi2_reduced and curvature. The reference fit builds its weight
+        # from ell alone.
         sigma_cases = []
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         sigma_cases.append(('broadband', omega, E_stor, E_loss, std, 1.0, 30))
@@ -2526,10 +2571,11 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
         for label, omega, E_stor, E_loss, std, scale, N in sigma_cases:
             with self.subTest(label):
                 log_range = np.log(omega.max() / omega.min())
+                ell = log_range / (N - 1)
                 dof = 2 * len(omega) - (N + 1)
                 _, E_i, quality = smooth_prony_fit(
                     omega, E_stor, E_loss, std, std, N,
-                    smoothness * np.sqrt(log_range),
+                    smoothness * np.sqrt((N - 2) * ell),
                     return_fit_quality=True, std_scale=scale,
                 )
                 _, E_ref, R, z = _fit_at_weight(
@@ -2546,41 +2592,7 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     quality.chi2_reduced, resid @ resid / nu_eff, rtol=1e-9)
                 np.testing.assert_allclose(
                     quality.curvature,
-                    d2 @ d2 * (N - 1) ** 3 / log_range ** 4, rtol=1e-9)
-
-    def test_halving_the_span_carries_the_weight_across_the_cut(self):
-        # Uniform points per decade (601 samples, so one sits on the midpoint)
-        # and N_full = 2 * N_crop - 1, so both tau grids share the spacing h
-        # and L_crop / L_full = 1/2. The mean weight is then the integral
-        # weight over L, so its crop-to-full ratio is exactly twice the
-        # integral rule's for any nu. Here both the rows and the parameters
-        # go 2k - 1 to k, nu_full = 2 * nu_crop, and the counts put
-        # lam_crop / lam_full at 1: the mean rule carries one lam across the
-        # cut where the integral rule halves it.
-        omega, _, _, _ = _broadband_master_curve(601)
-        crop = omega[len(omega) // 2:]
-        N_crop = prony_terms_for_span(crop)
-        N_full = 2 * N_crop - 1
-        smoothness = 0.3
-        spans = {}
-        for span, o, N in (('full', omega, N_full), ('crop', crop, N_crop)):
-            log_range = np.log(o.max() / o.min())
-            nu = 2 * len(o) - (N + 1)
-            spans[span] = dict(
-                L=log_range, nu=nu, h=log_range / (N - 1),
-                mean=_scaled_smoothness(smoothness, N, nu, log_range) ** 2,
-                integral=_integral_curvature_weight(
-                    smoothness, N, nu, log_range) ** 2,
-            )
-        full, half = spans['full'], spans['crop']
-        np.testing.assert_allclose(half['h'], full['h'], rtol=1e-12)
-        np.testing.assert_allclose(half['L'] / full['L'], 0.5, rtol=1e-12)
-        mean_ratio = half['mean'] / full['mean']
-        integral_ratio = half['integral'] / full['integral']
-        np.testing.assert_allclose(mean_ratio, 2 * integral_ratio, rtol=1e-12)
-        np.testing.assert_allclose(
-            mean_ratio, half['nu'] * full['L'] / (full['nu'] * half['L']),
-            rtol=1e-12)
+                    d2 @ d2 / ((N - 2) * ell ** 4), rtol=1e-9)
 
     def test_halving_the_span_keeps_the_retained_spectrum_near_the_full_fit(
             self):
@@ -2593,25 +2605,31 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
         # whatever the prior.
         #
         # The comparison is against the integral-curvature weight at
-        # smoothness / sqrt(L_full), which gives the SAME full-span fit, so
-        # only the crop separates the two. The full-span equality pins the
-        # production weight to the mean rule: a weight off by a span factor
-        # fails there before any crop is compared. Measured gap ratios (mean
-        # over integral): Cavaille 0.48, PETMP 0.59, PMMA 0.40, VeroCyan
-        # 0.41, agilus 0.50, dgeba 0.85, fisher 0.22; pooled 0.44. Under a
+        # smoothness / sqrt((N_full - 2) * ell_full), which gives the SAME
+        # full-span fit, so only the crop separates the two. The full-span
+        # equality pins the production weight to the mean rule: a weight off
+        # by a span factor (N - 1) / (N - 2) moves E_i by 6e-3 to 3e-2 and
+        # fails there before any crop is compared, while the two solves stop
+        # up to 3e-9 apart (agilus), hence rtol 1e-7. Measured gap ratios (mean
+        # over integral): Cavaille 0.48, PETMP 0.57, PMMA 0.37, VeroCyan
+        # 0.40, agilus 0.49, dgeba 0.86, fisher 0.22; pooled 0.43. Under a
         # strong prior (effective smoothness >~ 10) or on the lower-half crop
         # both fits sit near the prior and the comparison does not
         # discriminate, so neither is asserted. That includes the synthetic
         # broadband curve at its own sigma = 0.2 |E*|, an effective knob
         # 20-60x this one; at 1% and smoothness 0.3-1 it agrees (gap ratios
-        # 0.35-0.51), and its weight ratio is checked exactly above.
+        # 0.40-0.51). That the weight carries across a crop at all follows
+        # from its sharing a normalization with the curvature readout, which
+        # TestPronyFitQuality checks is exact on any crop:
+        # test_curvature_is_exact_for_a_constant_second_derivative.
         smoothness = 0.3
         mean_gaps, integral_gaps = [], []
         for name, (omega, E_stor, E_loss, sigma) in self.curves.items():
             with self.subTest(file=name):
                 lo, hi = np.log10(omega.min()), np.log10(omega.max())
                 keep = np.log10(omega) >= (lo + hi) / 2
-                full_range = np.log(omega.max() / omega.min())
+                N_full = prony_terms_for_span(omega)
+                ell_full = np.log(omega.max() / omega.min()) / (N_full - 1)
                 spans = {
                     'full': (omega, E_stor, E_loss, sigma),
                     'half': (omega[keep], E_stor[keep], E_loss[keep],
@@ -2625,13 +2643,13 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                         std_scale=self.RELATIVE_ERROR,
                     )
                     weight = _integral_curvature_weight(
-                        smoothness / np.sqrt(full_range), N,
+                        smoothness / np.sqrt((N_full - 2) * ell_full), N,
                         2 * len(o) - (N + 1), np.log(o.max() / o.min()))
                     integral_fits[span] = _fit_at_weight(
                         o, Es, El, s, N, weight,
                         std_scale=self.RELATIVE_ERROR)[:2]
                 np.testing.assert_allclose(
-                    mean_fits['full'][1], integral_fits['full'][1], rtol=1e-9)
+                    mean_fits['full'][1], integral_fits['full'][1], rtol=1e-7)
 
                 def distance(fits):
                     tau_full, E_full = fits['full']
@@ -3306,11 +3324,14 @@ class TestNewtonRestart(unittest.TestCase):
     # (directory, file, N, smoothness) at 1% relative error: fits on which
     # scipy 1.10.1's trust-exact subproblem takes its damping factor below
     # zero and then to NaN, while N - 1 and N + 1 converge untouched. The
-    # second needs two restarts: the same radius fails again at once.
+    # second needs two restarts: the same radius fails again at once. A trip
+    # reproduces only while lam lands within a few ulps of where it was
+    # found, so these knobs are kept exactly as found, not rounded.
     NAN_DAMPING_CASES = (
-        (TRIVE_FILES_DIR, 'agilus30 (8) master curve 20C.txt', 48, 0.3),
+        (TRIVE_FILES_DIR, 'agilus30 (8) master curve 20C.txt', 48,
+         0.3 * np.sqrt(46 / 47)),
         (BUNDLED_DIR, 'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
-         40, 0.1),
+         40, 0.1 * np.sqrt(38 / 39)),
     )
 
     def _fit(self):
