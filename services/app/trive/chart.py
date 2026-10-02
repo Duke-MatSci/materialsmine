@@ -98,7 +98,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
             When the fit reports a covariance (smoothed fits), fig1, fig11
             and fig2 carry 1-sigma credible ribbons and fig3 error bars,
-            plus a band on its long-term-modulus line when E_eq has a row;
+            plus a band on its long-term-modulus line when the covariance
+            carries the equilibrium row;
             fig1 and fig11 also carry 1-sigma prediction ribbons. The Prony
             curves and ribbons on fig1, fig11 and fig2 run past the data
             window (see figures._DRAW_EXTENSION_DECADES). fig1 and fig11

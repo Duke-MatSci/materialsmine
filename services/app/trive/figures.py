@@ -281,6 +281,14 @@ def _prony_trace(fig, xaxis: str):
                 if 'Term Prony' in (t.name or '') and t.xaxis == xaxis)
 
 
+def _add_traces_underneath(fig, traces) -> None:
+    """Add traces drawn under every trace already on fig."""
+    # plotly takes new traces only by appending; rotate them to the front.
+    fig.add_traces(traces)
+    n = len(traces)
+    fig.data = fig.data[-n:] + fig.data[:-n]
+
+
 def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
     """
     Draw ribbons around the Prony curve, under every other trace.
@@ -302,14 +310,6 @@ def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
         traces.extend(_band_pair(curve.x, curve.y, sigma, log_y, xaxis, yaxis,
                                  name, fill, showlegend=k == 0))
     _add_traces_underneath(fig, traces)
-
-
-def _add_traces_underneath(fig, traces) -> None:
-    """Add traces drawn under every trace already on fig."""
-    # plotly takes new traces only by appending; rotate them to the front.
-    fig.add_traces(traces)
-    n = len(traces)
-    fig.data = fig.data[-n:] + fig.data[:-n]
 
 
 # Decades the drawn Prony curves run past the data window on each side.
