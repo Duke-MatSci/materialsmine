@@ -97,7 +97,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
             When the fit reports a covariance (smoothed fits), fig1, fig11
-            and fig2 carry 1-sigma credible ribbons and fig3 error bars;
+            and fig2 carry 1-sigma credible ribbons and fig3 error bars,
+            plus a band on its long-term-modulus line when E_eq has a row;
             fig1 and fig11 also carry 1-sigma prediction ribbons. The Prony
             curves and ribbons on fig1, fig11 and fig2 run past the data
             window (see figures._DRAW_EXTENSION_DECADES). fig1 and fig11
@@ -314,10 +315,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     )
     # Decaying terms only. The equilibrium coefficient is a separate parameter,
     # not a relaxation mode: it has no tau_i, it is excluded from the smoothness
-    # penalty, the coefficient table drops it, and fig3 draws it as its own
-    # long-term-modulus trace. Counting it inflated every "N-Term Prony" label by
-    # one on the smoothed path, where exp(logcoefs) is never exactly zero — so a
-    # 23-point grid was labelled 24 terms while the table below listed 23.
+    # penalty, the coefficient table gives it its own 'inf' row, and fig3 draws
+    # it as its own long-term-modulus trace. Counting it would label a 23-point
+    # grid 24 terms on the smoothed path, where exp(logcoefs) is never zero.
     N_nz = np.count_nonzero(E_i[len(E_i) - len(tau_i):])
 
     # Downstream figure builders assume df's first three columns are

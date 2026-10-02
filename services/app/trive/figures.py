@@ -234,6 +234,10 @@ _CREDIBLE_BAND = '±1σ credible'
 _PREDICTION_BAND = '±1σ prediction'
 _BAND_ALPHA = 0.25
 
+# Long-term modulus line color (plotly's second default), so its band can
+# be filled in the same family.
+_PLATEAU_COLOR = '#EF553B'
+
 
 def _rgba(color: str, alpha: float) -> str:
     """'#rrggbb' or 'rgb(r,g,b)' as an rgba() string with the given alpha."""
@@ -297,6 +301,11 @@ def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
         curve = _prony_trace(fig, xaxis)
         traces.extend(_band_pair(curve.x, curve.y, sigma, log_y, xaxis, yaxis,
                                  name, fill, showlegend=k == 0))
+    _add_traces_underneath(fig, traces)
+
+
+def _add_traces_underneath(fig, traces) -> None:
+    """Add traces drawn under every trace already on fig."""
     # plotly takes new traces only by appending; rotate them to the front.
     fig.add_traces(traces)
     n = len(traces)
@@ -421,8 +430,9 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
         N_nz (int): Number of nonzero DECAYING Prony coefficients, i.e. the
-            equilibrium term excluded; used in trace names. Matches the row
-            count of the coefficient table _build_coef_records returns.
+            equilibrium term excluded; used in trace names. Matches the count
+            of rows with a numeric tau_i in the table _build_coef_records
+            returns.
         covariance (numpy.ndarray): Covariance of the log-coefficients, or
             None; when given, both figures carry +-1 sigma credible ribbons.
         noise (tuple): (omega_data, rel_stor, rel_loss), the relative
@@ -532,7 +542,8 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
             relaxation-modulus figure; if False, return only its line trace.
         covariance (numpy.ndarray): Covariance of the log-coefficients, or
             None; when given, E(t) carries a +-1 sigma credible ribbon and
-            the spectrum dots carry error bars.
+            the spectrum dots carry error bars, and with an equilibrium row
+            the long-term-modulus line carries the band of E_eq.
 
     Returns:
         tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus
@@ -615,14 +626,15 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         sigma = relaxation_sigma(relax['Time'].to_numpy(), tau_i, E_i,
                                  covariance)
         _add_ribbons(fig2, [('x', 'y', sigma, True)])
+        sigma_log = sigma_log_coefficients(covariance)
         plus, minus = spectrum_error_bars(
-            E_i[solid:], sigma_log_coefficients(covariance)[-len(tau_i):])
+            E_i[solid:], sigma_log[-len(tau_i):])
         fig3.update_traces(
             error_y=dict(type='data', symmetric=False,
                          array=plus, arrayminus=minus),
             selector=dict(name=f"{N_nz}-Term Prony"))
-        if plateau and len(covariance) == len(tau_i) + 1:
-            _add_plateau_band(fig3, tau_i, E_i[0], covariance)
+        if plateau and len(sigma_log) == len(tau_i) + 1:
+            _add_plateau_band(fig3, tau_i, E_i[0], sigma_log[0])
 
     _pin_y_ranges(fig2, np.min(tau_i), np.max(tau_i))
     for fig in (fig2, fig3):
@@ -631,30 +643,23 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     return fig2, fig3
 
 
-# Long-term modulus line color (plotly's second default), so its band can
-# be filled in the same family.
-_PLATEAU_COLOR = '#EF553B'
-
-
-def _plateau_bounds(E_eq, covariance) -> tuple:
-    """The 1-sigma interval of E_eq from the equilibrium covariance row."""
-    lower, upper = coefficient_bounds(
-        [E_eq], [np.sqrt(covariance[0][0])])
+def _plateau_bounds(E_eq, sigma_log_eq) -> tuple:
+    """The 1-sigma interval of E_eq, as plain floats."""
+    lower, upper = coefficient_bounds([E_eq], [sigma_log_eq])
     return float(lower[0]), float(upper[0])
 
 
-def _add_plateau_band(fig, tau_i, E_eq, covariance) -> None:
+def _add_plateau_band(fig, tau_i, E_eq, sigma_log_eq) -> None:
     """Draw the E_eq 1-sigma band under every trace of the spectrum."""
-    lower, upper = _plateau_bounds(E_eq, covariance)
+    lower, upper = _plateau_bounds(E_eq, sigma_log_eq)
     common = dict(x=[tau_i.min(), tau_i.max()], mode='lines',
                   line=dict(width=0), hoverinfo='skip',
                   name=_CREDIBLE_BAND, legendgroup=_CREDIBLE_BAND)
-    fig.add_traces([
+    _add_traces_underneath(fig, [
         go.Scatter(y=[lower, lower], showlegend=False, **common),
         go.Scatter(y=[upper, upper], fill='tonexty',
                    fillcolor=_rgba(_PLATEAU_COLOR, _BAND_ALPHA),
                    showlegend=True, **common)])
-    fig.data = fig.data[-2:] + fig.data[:-2]
 
 
 def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
@@ -674,24 +679,27 @@ def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
         coefficient, with 'i' the original (pre-filter) index. With a
         covariance, also 'E_i_lower' and 'E_i_upper': the 1-sigma interval
         fig3 draws as error bars, in Pa. A nonzero equilibrium modulus adds
-        a last row with 'i' = len(tau_i) and 'tau_i' the string 'inf'.
+        a last row with 'i' = len(tau_i) and 'tau_i' the string 'inf'; its
+        bounds are fig3's long-term-modulus band, collapsed onto E_eq when
+        the covariance has no equilibrium row (E_eq then carries no
+        uncertainty, as in relaxation_sigma).
     """
-    E_terms = np.asarray(E_i, dtype=float)[len(E_i) - len(tau_i):]
+    N = len(tau_i)
+    E_terms = np.asarray(E_i, dtype=float)[len(E_i) - N:]
     coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_terms})
     if covariance is not None:
+        sigma_log = sigma_log_coefficients(covariance)
         coef_df["E_i_lower"], coef_df["E_i_upper"] = coefficient_bounds(
-            E_terms, sigma_log_coefficients(covariance)[-len(tau_i):])
+            E_terms, sigma_log[-N:])
     coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
     coef_df = coef_df.rename(columns={'index': 'i'})
     records = coef_df.to_dict("records")
-    if len(E_i) == len(tau_i) + 1 and E_i[0] > 0:
-        row = {'i': len(tau_i), 'tau_i': 'inf', 'E_i': float(E_i[0])}
+    if len(E_i) == N + 1 and E_i[0] > 0:
+        row = {'i': N, 'tau_i': 'inf', 'E_i': float(E_i[0])}
         if covariance is not None:
-            if len(covariance) == len(tau_i) + 1:
-                bounds = _plateau_bounds(E_i[0], covariance)
-            else:
-                bounds = (float(E_i[0]), float(E_i[0]))
-            row['E_i_lower'], row['E_i_upper'] = bounds
+            sigma_log_eq = sigma_log[0] if len(sigma_log) == N + 1 else 0.0
+            row['E_i_lower'], row['E_i_upper'] = _plateau_bounds(
+                E_i[0], sigma_log_eq)
         records.append(row)
     return records
 

@@ -213,4 +213,4 @@ def relaxation_sigma(t, tau_i, E_i, covariance) -> np.ndarray:
     G = np.exp(-np.outer(t, 1 / tau_i)) * E_i[-N:]
     if len(covariance) == N + 1:
         G = np.column_stack([np.full(len(t), E_i[0]), G])
-    return _sigma(G, covariance[-len(G[0]):, -len(G[0]):])
+    return _sigma(G, covariance)
