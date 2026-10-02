@@ -17,22 +17,19 @@ from .shift import hybrid_shift, UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2, wlf_log10_s
 
 def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
                      p0: list, bounds=(-np.inf, np.inf),
-                     log10_space: bool = False,
                      sigma: np.ndarray = None) -> np.ndarray:
     """
     Fit shift-model parameters to log10(a_T) data via curve_fit.
 
-    By default wraps model (which returns linear-scale a_T) in a log10
-    transform so the optimizer sees uniform weighting across many orders of
-    magnitude. When log10_space=True the model already returns log10(a_T)
-    directly (avoiding intermediate exponentiation and potential overflow).
+    The model returns log10(a_T) directly, so the optimizer sees uniform
+    weighting across many orders of magnitude and never exponentiates (which
+    would overflow for shift factors far from the reference).
     Only free parameters are passed; fixed parameters must already be closed
     over in the model callable.
 
     Parameters:
         model: Callable with signature model(T, *free_params) -> np.ndarray.
-            Returns linear-scale a_T when log10_space=False, or log10(a_T)
-            when log10_space=True. Fixed parameters must be captured in the
+            Returns log10(a_T). Fixed parameters must be captured in the
             closure.
         T (numpy.ndarray): 1-D array of temperatures in °C.
         log10_a_T (numpy.ndarray): 1-D array of log10(a_T) target values,
@@ -40,8 +37,6 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
         p0 (list): Initial guesses for the free parameters.
         bounds: Bounds for the free parameters forwarded to curve_fit
             (same format as scipy's bounds argument). Defaults to no bounds.
-        log10_space (bool): If True, model already returns log10(a_T) and no
-            np.log10 wrapping is applied. Defaults to False.
         sigma (numpy.ndarray): Per-point standard deviations of log10(a_T),
             forwarded to curve_fit with absolute_sigma=True. None (the
             default) is curve_fit's own implicit unit sigma, so passing an
@@ -61,14 +56,8 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
     # curve_fit with bounds, fixing a parameter via lb == ub. That would let the
     # callers (fit_wlf_coefficients / fit_hybrid_coefficients) drop their
     # per-parameter free/fixed branching in favor of one bounds vector.
-    if log10_space:
-        fit_model = model
-    else:
-        def fit_model(T_arg, *params):
-            return np.log10(model(T_arg, *params))
-
     try:
-        popt, _ = curve_fit(fit_model, T, log10_a_T, p0=p0, bounds=bounds,
+        popt, _ = curve_fit(model, T, log10_a_T, p0=p0, bounds=bounds,
                             sigma=sigma, absolute_sigma=sigma is not None)
     except RuntimeError as exc:
         raise ValueError(
@@ -174,7 +163,7 @@ def fit_wlf_coefficients(
 
     When C2 is free, a lower bound c2_min = (T_ref - min(T)) + 1.0 is enforced
     to keep the WLF denominator positive (1 °C margin). The fit uses
-    wlf_log10_shift directly (log10_space=True) to avoid the 10**exponent
+    wlf_log10_shift directly, never 10**exponent, to avoid the
     overflow that otherwise occurs for cold data (T well below T_ref).
 
     Fixing both C1 and C2 no longer leaves nothing to optimize — the offset is
@@ -239,8 +228,7 @@ def fit_wlf_coefficients(
 
     # Seed the offset at its conditional optimum given the starting C1/C2 — the
     # sigma-weighted mean residual, which is the exact least-squares solution for
-    # a lone additive term. Seeding at a_T == 1 (or at an interpolated point, as
-    # the hybrid fit must because of its kink at TC) is wrong by whole decades
+    # a lone additive term. Seeding at a_T == 1 is wrong by whole decades
     # for a file referenced away from T_ref, and costs iterations from the start.
     with np.errstate(divide='ignore', invalid='ignore'):
         resid_0 = log10_a_T - wlf_log10_shift(T, T_ref, C1_0, C2_start)
@@ -275,7 +263,7 @@ def fit_wlf_coefficients(
         ) + vals['log10_a_T_ref']
 
     fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub),
-                              log10_space=True, sigma=sigma)
+                              sigma=sigma)
     result = dict(zip(free_names, fitted))
     C1_fit = float(result.get('C1', C1_0))
     C2_fit = float(result.get('C2', C2_0))
@@ -318,7 +306,11 @@ def fit_hybrid_coefficients(
     Uses scipy.optimize.curve_fit in log10(a_T) space so that points spanning
     many decades of shift factor receive uniform weight. TC is required and is
     never optimized — it is produced upstream by the E-loss-peak logic in the
-    extract step and is a physical input, not a fit parameter.
+    extract step and is a physical input, not a fit parameter. The data's
+    shift factor at TC, a_T_ref, is always co-fitted as a vertical offset and,
+    as in fit_wlf_coefficients, carried through the optimizer as
+    log10(a_T_ref), so data referenced decades away from TC fits as well as
+    data referenced at it.
 
     Individual parameters can be fixed at their supplied values by setting the
     corresponding fix_* flag. A supplied-but-not-fixed value becomes the
@@ -402,41 +394,43 @@ def fit_hybrid_coefficients(
     # at TC. So a_T_ref (the data's shift factor at TC) is co-fitted as a vertical
     # offset rather than read off a single interpolated point: interpolating
     # across the WLF/Arrhenius kink at TC biases the estimate (and hence the whole
-    # fit) even when the data is referenced exactly to TC. The interp value only
-    # seeds the optimizer; np.interp needs ascending samples, so order them.
+    # fit) even when the data is referenced exactly to TC. The offset is fitted
+    # as log10(a_T_ref), so its gradient does not shrink with its size, and is
+    # seeded at the sigma-weighted mean residual against the unit-referenced
+    # model, its exact optimum when the coefficients are fixed.
     log10_a_T = np.log10(a_T)
-    T_asc = T if ascending else T[::-1]
-    log10_asc = log10_a_T if ascending else log10_a_T[::-1]
-    a_T_ref_0 = 10 ** float(np.interp(TC, T_asc, log10_asc))
+    resid_0 = log10_a_T - np.log10(hybrid_shift(
+        T, TC, C1_0, C2_0, Ea_0, 1.0, ascending,
+    ))
+    weights = 1.0 / sigma ** 2
+    log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
 
     # Build a model over only the free parameters; fixed ones are closed over.
     # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject. a_T_ref is always free (the co-fitted offset).
+    # scipy versions reject. The offset is always free.
     free_names = [n for n, fixed in
-                  [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea), ('a_T_ref', False)]
+                  [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea),
+                   ('log10_a_T_ref', False)]
                   if not fixed]
     p0 = [v for v, fixed in
-          [(C1_0, fix_C1), (C2_0, fix_C2), (Ea_0, fix_Ea), (a_T_ref_0, False)]
+          [(C1_0, fix_C1), (C2_0, fix_C2), (Ea_0, fix_Ea),
+           (log10_a_T_ref_0, False)]
           if not fixed]
 
-    # C2 floored at 1.0 to stay off the WLF pole; a_T_ref floored just above 0 so
-    # the log10 wrapper in _curve_fit_shift stays finite. Hybrid's WLF branch only
-    # sees T > TC (not cold data), so the 10**exponent overflow that afflicts
-    # fit_wlf_coefficients cannot occur here; log10_space=False is intentional.
-    _floor = {'C2': 1.0, 'a_T_ref': np.finfo(float).tiny}
-    lb = [_floor.get(n, -np.inf) for n in free_names]
+    # C2 floored at 1.0 to stay off the WLF pole.
+    lb = [1.0 if n == 'C2' else -np.inf for n in free_names]
     ub = [np.inf] * len(free_names)
 
     def model(T_arg, *free_vals):
         vals = dict(zip(free_names, free_vals))
-        return hybrid_shift(
+        return np.log10(hybrid_shift(
             T_arg, TC,
             vals.get('C1', C1_0),
             vals.get('C2', C2_0),
             vals.get('Ea', Ea_0),
-            vals.get('a_T_ref', a_T_ref_0),
+            1.0,
             ascending,
-        )
+        )) + vals['log10_a_T_ref']
 
     fitted = _curve_fit_shift(model, T, log10_a_T, p0=p0, bounds=(lb, ub),
                               sigma=sigma)
@@ -444,15 +438,14 @@ def fit_hybrid_coefficients(
     C1_fit = float(result.get('C1', C1_0))
     C2_fit = float(result.get('C2', C2_0))
     Ea_fit = float(result.get('Ea', Ea_0))
-    a_T_ref_fit = float(result.get('a_T_ref', a_T_ref_0))
+    a_T_ref_fit = 10.0 ** float(result['log10_a_T_ref'])
     if not return_quality:
         return C1_fit, C2_fit, Ea_fit, a_T_ref_fit
 
-    # Same failure modes as the fit itself: hybrid_shift raises ValueError at a
-    # pole or on overflow, which the route already maps to HTTP 400.
-    log10_model = np.log10(hybrid_shift(
-        T, TC, C1_fit, C2_fit, Ea_fit, a_T_ref_fit, ascending,
-    ))
+    # Score the model the optimizer saw, so the residual is the one it
+    # minimized. Same failure modes as the fit itself: hybrid_shift raises
+    # ValueError at a pole or on overflow, which the route maps to HTTP 400.
+    log10_model = model(T, *fitted)
     n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
     chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
     return C1_fit, C2_fit, Ea_fit, a_T_ref_fit, chi2

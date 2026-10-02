@@ -255,7 +255,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
 
     def test_descending_T_round_trip(self):
         # Reversed (descending) T/a_T must recover the same coefficients — checks
-        # the direction handling and the ascending-ordered a_T_ref interpolation.
+        # the direction handling of the model and its co-fitted a_T_ref.
         C1_fit, C2_fit, Ea_fit, a_T_ref = fit_hybrid_coefficients(
             self.T[::-1], self.a_T[::-1], self.TC,
             C1=self.C1_TRUE, C2=self.C2_TRUE, Ea=self.EA_TRUE,
@@ -264,6 +264,69 @@ class TestFitHybridCoefficients(unittest.TestCase):
         self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
         self.assertAlmostEqual(Ea_fit, self.EA_TRUE, places=4)
         self.assertAlmostEqual(a_T_ref, 1.0, places=4)
+
+
+class TestHybridOffsetFarFromTC(unittest.TestCase):
+    """fit_hybrid_coefficients finds a_T_ref in log space: data referenced
+    many decades away from TC fits as accurately as data referenced near it."""
+
+    TC = 25.0
+    # Coefficients the fit is seeded with (and pinned to when fixed). The data
+    # below is generated with different ones plus noise, so the optimum
+    # offset is not simply the data's value at TC.
+    C1 = 14.0
+    C2 = 45.0
+    EA = 80.0
+    FACTORS = (1e10, 1e-10)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.T = np.linspace(5.0, 70.0, 30)
+        noise = 0.05 * np.random.default_rng(0).standard_normal(cls.T.size)
+        cls.a_T = hybrid_shift(cls.T, cls.TC, 12.0, 50.0, 95.0) * 10 ** noise
+
+    def _fit(self, a_T, fixed, **kwargs):
+        return fit_hybrid_coefficients(
+            self.T, a_T, self.TC, C1=self.C1, C2=self.C2, Ea=self.EA,
+            fix_C1=fixed, fix_C2=fixed, fix_Ea=fixed, **kwargs,
+        )
+
+    def _assert_offset_equivariant(self, fixed):
+        # Rescaling a_T only moves the reference, so the offset must scale by
+        # the same factor and the shape coefficients must not move at all.
+        *coeffs_0, a_T_ref_0 = self._fit(self.a_T, fixed)
+        for factor in self.FACTORS:
+            with self.subTest(factor=factor):
+                *coeffs, a_T_ref = self._fit(factor * self.a_T, fixed)
+                np.testing.assert_allclose(
+                    a_T_ref, factor * a_T_ref_0, rtol=1e-6)
+                np.testing.assert_allclose(coeffs, coeffs_0, rtol=1e-6)
+
+    def test_offset_scales_with_data_when_all_coefficients_fixed(self):
+        # The offset is the only free parameter here, the reported failure.
+        self._assert_offset_equivariant(fixed=True)
+
+    def test_offset_scales_with_data_when_coefficients_free(self):
+        self._assert_offset_equivariant(fixed=False)
+
+    def test_all_fixed_offset_is_weighted_mean_log_residual_far_from_TC(self):
+        # With C1/C2/Ea pinned the model is linear in log10(a_T_ref), so the
+        # least-squares offset is the 1/sigma^2-weighted mean of the residual
+        # against the unit-referenced model. Unequal sigmas check the weights.
+        factor = 1e10
+        a_T = factor * self.a_T
+        sigma_log10 = np.linspace(0.02, 0.2, self.T.size)
+        sigma_a_T = sigma_log10 * a_T * np.log(10.0)
+        resid = np.log10(a_T) - np.log10(
+            hybrid_shift(self.T, self.TC, self.C1, self.C2, self.EA))
+        weights = sigma_log10 ** -2
+        expected = float(weights @ resid / weights.sum())
+        # Guard: the optimum is not simply the data's interpolated value at TC.
+        seed = np.interp(self.TC, self.T, np.log10(a_T))
+        self.assertGreater(abs(expected - seed), 0.1)
+
+        *_, a_T_ref = self._fit(a_T, fixed=True, sigma_a_T=sigma_a_T)
+        self.assertAlmostEqual(np.log10(a_T_ref), expected, places=6)
 
 
 class TestShiftFitQuality(unittest.TestCase):
