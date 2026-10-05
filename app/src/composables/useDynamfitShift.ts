@@ -20,6 +20,55 @@ export interface ShiftCoefficients {
   model?: ShiftFitModel | null;
 }
 
+/** A coefficient the WLF/hybrid shift models take, by its wire field name. */
+export type ShiftParameter = 'Tg' | 'TC' | 'C1' | 'C2' | 'Ea';
+
+/** A coefficient input as the settings panel holds it: typed, fitted or unset. */
+export type ShiftInputValue = string | number | null | undefined;
+
+/** The settings panel's coefficient inputs and their "Use Estimated" boxes. */
+export interface ShiftModelInputs {
+  Tg: ShiftInputValue;
+  C1: ShiftInputValue;
+  C2: ShiftInputValue;
+  Ea: ShiftInputValue;
+  TC: ShiftInputValue;
+  Tg_estimate: boolean;
+  C1_estimate: boolean;
+  C2_estimate: boolean;
+  Ea_estimate: boolean;
+  TC_estimate: boolean;
+}
+
+/**
+ * The coefficients a shift model takes, in display order with its anchor
+ * first. WLF is anchored at Tg; hybrid at its WLF/Arrhenius crossover TC,
+ * and Tg plays no part in it.
+ */
+export function shiftModelParameters(model: ShiftFitModel): ShiftParameter[] {
+  return model === 'hybrid' ? ['TC', 'C1', 'C2', 'Ea'] : ['Tg', 'C1', 'C2'];
+}
+
+/**
+ * The coefficient fields of a /tri-ve/extract/ payload for a WLF or hybrid
+ * transform. Only the model's own parameters are sent: a value when it is
+ * set (truthy), and its `<P>_estimate` flag only when checked.
+ */
+export function buildShiftModelPayload(
+  model: ShiftFitModel,
+  inputs: ShiftModelInputs
+): Record<string, string | number | boolean> {
+  const payload: Record<string, string | number | boolean> = {};
+  for (const param of shiftModelParameters(model)) {
+    const value = inputs[param];
+    if (value) payload[param] = value;
+    if (inputs[`${param}_estimate` as keyof ShiftModelInputs] === true) {
+      payload[`${param}_estimate`] = true;
+    }
+  }
+  return payload;
+}
+
 /**
  * Which model /fit-shift should fit, given the selected transform method and
  * the anchors on hand — or null when no fit is possible yet.

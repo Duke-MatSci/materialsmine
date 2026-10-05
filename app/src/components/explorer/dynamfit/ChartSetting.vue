@@ -506,14 +506,15 @@
             </span>
           </div>
 
-          <!-- Coefficient fields (WLF / Hybrid). The model's anchor leads the
-               list: TC is the hybrid crossover, Tg the WLF reference. In the
-               frequency domain neither anchor has an estimate checkbox — a
-               master curve's tan-δ and E″ peaks are frequencies, so there is
-               nothing to estimate a temperature from, and the server refuses
-               Tg_estimate/TC_estimate there. -->
+          <!-- Coefficient fields (WLF / Hybrid), one row per parameter of the
+               selected model (shiftModelParameters). The model's anchor leads
+               the list: TC is the hybrid crossover, Tg the WLF reference; Tg
+               has no row for hybrid. In the frequency domain neither anchor
+               has an estimate checkbox — a master curve's tan-δ and E″ peaks
+               are frequencies, so there is nothing to estimate a temperature
+               from, and the server refuses Tg_estimate/TC_estimate there. -->
           <template v-if="isWLF || isHybrid">
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('TC')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTCValue"
@@ -530,7 +531,7 @@
                 Use Estimated Tc
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('Tg')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTgValue"
@@ -579,7 +580,7 @@
                 Use Estimated C2
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('Ea')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspEAValue"
@@ -699,6 +700,10 @@ import {
 import {
   resolveShiftFitModel,
   resolveExtractTransformMethod,
+  shiftModelParameters,
+  buildShiftModelPayload,
+  ShiftFitModel,
+  ShiftParameter,
 } from '@/composables/useDynamfitShift';
 import Pagination from '@/components/explorer/Pagination.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
@@ -948,6 +953,16 @@ const isHybrid = computed(() => {
 const isManual = computed(() => {
   return ttsp.value && transformMethod.value === 'manual';
 });
+
+// The selected WLF/hybrid model's coefficients: which input rows render and
+// which fields updateChart sends. Empty for none/manual.
+const cShiftParameters = computed<ShiftParameter[]>(() =>
+  isWLF.value || isHybrid.value
+    ? shiftModelParameters(transformMethod.value as ShiftFitModel)
+    : []
+);
+const showsShiftParameter = (param: ShiftParameter): boolean =>
+  cShiftParameters.value.includes(param);
 
 // Everything the last successful /fit-shift returned, including which model it
 // ran. Kept in the store rather than in transformMethod: the radio says what
@@ -1323,19 +1338,21 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
 
   if (transformMethod.value && (isWLF.value || isHybrid.value)) {
     payload.transform_method = transformMethod.value;
-    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
-
-    if (isHybrid.value) {
-      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTCValue.value) payload.TC = ttspTCValue.value;
-      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tCEstimated.value) payload.TC_estimate = tCEstimated.value;
-    }
+    Object.assign(
+      payload,
+      buildShiftModelPayload(transformMethod.value as ShiftFitModel, {
+        Tg: ttspTgValue.value,
+        C1: ttspC1Value.value,
+        C2: ttspC2Value.value,
+        Ea: ttspEAValue.value,
+        TC: ttspTCValue.value,
+        Tg_estimate: tgEstimated.value,
+        C1_estimate: c1Estimated.value,
+        C2_estimate: c2Estimated.value,
+        Ea_estimate: eAEstimated.value,
+        TC_estimate: tCEstimated.value,
+      })
+    );
 
     // A previously uploaded shift file stays on the shift figure as the
     // Experiment markers for comparison against the model curve — display
@@ -1545,14 +1562,14 @@ watch(transformMethod, (newValue) => {
     // No Tg/TC estimate in the frequency domain: a master curve's tan-δ and
     // E″ peaks are frequencies, and the server 400s a frequency-domain
     // Tg_estimate/TC_estimate. The checkboxes are hidden there; the anchor
-    // must be typed.
-    if (!isFrequencyDomain.value) tgEstimated.value = true;
+    // must be typed. Only the picked model's own boxes are checked.
+    const params = shiftModelParameters(newValue);
+    const anchorEstimable = !isFrequencyDomain.value;
+    if (params.includes('Tg') && anchorEstimable) tgEstimated.value = true;
+    if (params.includes('TC') && anchorEstimable) tCEstimated.value = true;
     c1Estimated.value = true;
     c2Estimated.value = true;
-    if (newValue === 'hybrid') {
-      if (!isFrequencyDomain.value) tCEstimated.value = true;
-      eAEstimated.value = true;
-    }
+    if (params.includes('Ea')) eAEstimated.value = true;
   }
   // A user-picked model also orphans any fitted shift coefficients: leaving
   // them standing shows a stale a_T_ref/misfit readout (and a Shift Coeff
