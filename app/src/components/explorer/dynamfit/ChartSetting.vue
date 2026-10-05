@@ -954,15 +954,11 @@ const isManual = computed(() => {
   return ttsp.value && transformMethod.value === 'manual';
 });
 
-// The selected WLF/hybrid model's coefficients: which input rows render and
-// which fields updateChart sends. Empty for none/manual.
-const cShiftParameters = computed<ShiftParameter[]>(() =>
-  isWLF.value || isHybrid.value
-    ? shiftModelParameters(transformMethod.value as ShiftFitModel)
-    : []
-);
+// Whether the selected WLF/hybrid model takes this coefficient, i.e. whether
+// its input row renders. Never for none/manual.
 const showsShiftParameter = (param: ShiftParameter): boolean =>
-  cShiftParameters.value.includes(param);
+  (isWLF.value || isHybrid.value) &&
+  shiftModelParameters(transformMethod.value as ShiftFitModel).includes(param);
 
 // Everything the last successful /fit-shift returned, including which model it
 // ran. Kept in the store rather than in transformMethod: the radio says what
@@ -1564,9 +1560,10 @@ watch(transformMethod, (newValue) => {
     // Tg_estimate/TC_estimate. The checkboxes are hidden there; the anchor
     // must be typed. Only the picked model's own boxes are checked.
     const params = shiftModelParameters(newValue);
-    const anchorEstimable = !isFrequencyDomain.value;
-    if (params.includes('Tg') && anchorEstimable) tgEstimated.value = true;
-    if (params.includes('TC') && anchorEstimable) tCEstimated.value = true;
+    if (!isFrequencyDomain.value) {
+      if (params.includes('Tg')) tgEstimated.value = true;
+      if (params.includes('TC')) tCEstimated.value = true;
+    }
     c1Estimated.value = true;
     c2Estimated.value = true;
     if (params.includes('Ea')) eAEstimated.value = true;

@@ -27,18 +27,8 @@ export type ShiftParameter = 'Tg' | 'TC' | 'C1' | 'C2' | 'Ea';
 export type ShiftInputValue = string | number | null | undefined;
 
 /** The settings panel's coefficient inputs and their "Use Estimated" boxes. */
-export interface ShiftModelInputs {
-  Tg: ShiftInputValue;
-  C1: ShiftInputValue;
-  C2: ShiftInputValue;
-  Ea: ShiftInputValue;
-  TC: ShiftInputValue;
-  Tg_estimate: boolean;
-  C1_estimate: boolean;
-  C2_estimate: boolean;
-  Ea_estimate: boolean;
-  TC_estimate: boolean;
-}
+export type ShiftModelInputs = Record<ShiftParameter, ShiftInputValue> &
+  Record<`${ShiftParameter}_estimate`, boolean>;
 
 /**
  * The coefficients a shift model takes, in display order with its anchor
@@ -62,9 +52,8 @@ export function buildShiftModelPayload(
   for (const param of shiftModelParameters(model)) {
     const value = inputs[param];
     if (value) payload[param] = value;
-    if (inputs[`${param}_estimate` as keyof ShiftModelInputs] === true) {
-      payload[`${param}_estimate`] = true;
-    }
+    const estimateKey = `${param}_estimate` as const;
+    if (inputs[estimateKey] === true) payload[estimateKey] = true;
   }
   return payload;
 }
