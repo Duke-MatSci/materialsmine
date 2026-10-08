@@ -17,6 +17,7 @@ import json
 from unittest import mock
 import numpy as np
 import pandas as pd
+import scipy.linalg
 from scipy.optimize import minimize, minimize_scalar, nnls
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
@@ -112,6 +113,27 @@ class TestPronyBasis(unittest.TestCase):
         n = len(freq)
         np.testing.assert_allclose(result[:n, 1:], dt ** 2 / (1 + dt ** 2), rtol=1e-14)
         np.testing.assert_allclose(result[n:, 1:], dt / (1 + dt ** 2), rtol=1e-14)
+
+    def test_basis_is_fortran_ordered_with_unchanged_values(self):
+        """The basis comes back column-major, so each column's ufunc pass is
+        one contiguous run, and its values are bit-identical to the
+        reciprocal forms computed elementwise."""
+        freq = np.logspace(-4, 4, 37)
+        tau = np.logspace(-3, 3, 11)
+        dt = np.multiply.outer(freq, tau)
+        with np.errstate(over='ignore', divide='ignore'):
+            inv = 1.0 / dt
+            ep = 1.0 / (1.0 + inv * inv)
+            epp = 1.0 / (dt + inv)
+        relax = np.vstack((ep, epp))
+        n = len(freq)
+        eq = np.concatenate((np.ones(n), np.zeros(n)))[:, None]
+        for solid, expected in ((False, relax),
+                                (True, np.hstack((eq, relax)))):
+            with self.subTest(solid=solid):
+                result = prony_basis(freq, tau, solid=solid)
+                self.assertTrue(result.flags.f_contiguous)
+                np.testing.assert_array_equal(result, expected)
 
     def test_rejects_non_ndarray_freq(self):
         with self.assertRaises(AssertionError):
@@ -1326,6 +1348,39 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertEqual(quality.covariance.shape, (3, 3))
 
 
+def _row_pass_spy():
+    """Patch reduction's prony_basis with a counting wrapper: one call per
+    chunk of the O(rows) pass, none on a cache hit."""
+    return mock.patch.object(reduction, 'prony_basis', wraps=prony_basis)
+
+
+def _legacy_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i,
+                   solid, chunk_rows):
+    """The reduction as first written: np.linalg.qr on a fresh
+    concatenation of the running triangle and each weighted chunk."""
+    m = len(tau_i) + solid
+    Rz = np.empty((0, m + 1))
+    for start in range(0, len(omega), chunk_rows):
+        chunk = slice(start, start + chunk_rows)
+        basis = prony_basis(omega[chunk], tau_i, solid)
+        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
+        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
+        block = np.concatenate(
+            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
+        )
+        Rz = np.linalg.qr(
+            np.concatenate((Rz, block), axis=0), mode='r'
+        )[:m + 1]
+    return Rz[:, :m], Rz[:, m]
+
+
+def _owner_nbytes(arr):
+    """Bytes of the allocation that ultimately owns arr's memory."""
+    while isinstance(arr.base, np.ndarray):
+        arr = arr.base
+    return arr.nbytes
+
+
 class TestPronyReduce(unittest.TestCase):
     """The extracted QR reduction and its content-addressed LRU cache."""
 
@@ -1353,23 +1408,15 @@ class TestPronyReduce(unittest.TestCase):
         return _prony_reduce(**args)
 
     def test_identical_inputs_hit_the_cache(self):
-        # A smoothness sweep re-calls with the same arrays; the QR must run once.
-        calls = []
-        original = np.linalg.qr
-
-        def counting_qr(*args, **kwargs):
-            calls.append(1)
-            return original(*args, **kwargs)
-
-        np.linalg.qr = counting_qr
-        try:
+        # A smoothness sweep re-calls with the same arrays; the pass over the
+        # rows must run once.
+        with _row_pass_spy() as passes:
             first = self._reduce()
-            after_first = len(calls)
+            after_first = passes.call_count
             second = self._reduce()
-        finally:
-            np.linalg.qr = original
         self.assertGreater(after_first, 0)
-        self.assertEqual(len(calls), after_first, msg='cache miss on repeat')
+        self.assertEqual(passes.call_count, after_first,
+                         msg='cache miss on repeat')
         # Equal values, not the same object: every call divides by std_scale and
         # so hands back a fresh array (see test_returned_arrays_are_private).
         np.testing.assert_array_equal(first[0], second[0])
@@ -1438,22 +1485,13 @@ class TestPronyReduce(unittest.TestCase):
 
     def test_std_scale_is_not_part_of_the_cache_key(self):
         # Sweeping the relative-error widget must not re-run the O(rows) QR.
-        calls = []
-        original = np.linalg.qr
-
-        def counting_qr(*args, **kwargs):
-            calls.append(1)
-            return original(*args, **kwargs)
-
-        np.linalg.qr = counting_qr
-        try:
+        with _row_pass_spy() as passes:
             base = self._reduce(std_scale=1.0)
-            after_first = len(calls)
+            after_first = passes.call_count
             scaled = self._reduce(std_scale=8.0)
-        finally:
-            np.linalg.qr = original
         self.assertGreater(after_first, 0)
-        self.assertEqual(len(calls), after_first, msg='std_scale forced a re-reduce')
+        self.assertEqual(passes.call_count, after_first,
+                         msg='std_scale forced a re-reduce')
         # Cached, but still actually scaled — a hit that ignored std_scale would
         # silently fit the wrong weighting.
         np.testing.assert_allclose(scaled[0], base[0] / 8.0, rtol=1e-12)
@@ -1507,6 +1545,62 @@ class TestPronyReduce(unittest.TestCase):
         self.assertAlmostEqual(
             full @ full, reduced @ reduced, delta=1e-8 * (full @ full),
         )
+
+    def test_factors_each_chunk_with_scipy_qr_in_place(self):
+        """Every chunk is factored by reduction.qr (scipy.linalg.qr) in
+        R-only mode, overwriting its input and skipping the finiteness scan;
+        np.linalg.qr is not used."""
+        n_chunks = -(-len(self.omega) // 7)  # 28 full chunks + one of 4 rows
+        with mock.patch.object(reduction, '_QR_CHUNK_ROWS', 7), \
+                mock.patch.object(reduction, 'qr',
+                                  wraps=scipy.linalg.qr) as qr, \
+                mock.patch.object(np.linalg, 'qr',
+                                  wraps=np.linalg.qr) as legacy_qr:
+            self._reduce()
+        legacy_qr.assert_not_called()
+        self.assertEqual(qr.call_count, n_chunks)
+        for call in qr.call_args_list:
+            self.assertEqual(call.kwargs.get('mode'), 'r')
+            self.assertIs(call.kwargs.get('overwrite_a'), True)
+            self.assertIs(call.kwargs.get('check_finite'), False)
+
+    def test_reduce_matches_the_legacy_concatenated_qr_bitwise(self):
+        """(R, z) equal the concatenate-and-np.linalg.qr reduction exactly,
+        row signs included, over several chunks with a short last one, a
+        single chunk, and a short upload whose triangle is wide."""
+        # Bitwise because numpy and scipy run the same LAPACK geqrf here on
+        # the same stacked matrix.
+        short = slice(0, 3)  # 3 frequencies -> 6 rows < m
+        cases = (
+            ('many chunks', slice(None), 7),
+            ('one chunk', slice(None), 10 ** 9),
+            ('short upload, two chunks', short, 2),
+        )
+        for label, rows, chunk_rows in cases:
+            for solid in (True, False):
+                with self.subTest(label, solid=solid):
+                    reduction._REDUCE_CACHE.clear()
+                    args = (self.omega[rows], self.E_stor[rows],
+                            self.E_loss[rows], self.std[rows],
+                            self.std[rows], self.tau_i, solid)
+                    with mock.patch.object(
+                            reduction, '_QR_CHUNK_ROWS', chunk_rows):
+                        R, z = _prony_reduce(*args)
+                    R_ref, z_ref = _legacy_reduce(*args, chunk_rows)
+                    self.assertEqual(R.shape, R_ref.shape)
+                    np.testing.assert_array_equal(R, R_ref)
+                    np.testing.assert_array_equal(z, z_ref)
+
+    def test_cache_entry_owns_only_the_triangle(self):
+        """A cached (R, z) holds no more memory than the (m + 1) x (m + 1)
+        triangle, never the chunk-sized buffer it was factored in."""
+        m = len(self.tau_i) + 1
+        with mock.patch.object(reduction, '_QR_CHUNK_ROWS', 64):
+            self._reduce()
+        R, z = next(iter(reduction._REDUCE_CACHE.values()))
+        limit = (m + 1) ** 2 * R.itemsize
+        self.assertLessEqual(_owner_nbytes(R), limit)
+        self.assertLessEqual(_owner_nbytes(z), limit)
 
 
 def _debye_window(decades, n_per_decade=30):
@@ -1617,31 +1711,21 @@ class TestPronyRankLimit(unittest.TestCase):
         # pass of its own, and neither a repeat call nor a new std_scale
         # redoes the pass over the rows.
         omega, E_stor, E_loss, std = _debye_window(4)
-        calls = []
-        original = np.linalg.qr
-
-        def counting_qr(*args, **kwargs):
-            calls.append(1)
-            return original(*args, **kwargs)
-
-        np.linalg.qr = counting_qr
-        try:
+        with _row_pass_spy() as passes:
             first = reduction.prony_rank_limit(
                 omega, E_stor, E_loss, std, std)
-            after_probe = len(calls)
+            after_probe = passes.call_count
             smooth_prony_fit(omega, E_stor, E_loss, std, std,
                              N=8, smoothness=0.0)
-            after_fit = len(calls)
+            after_fit = passes.call_count
             second = reduction.prony_rank_limit(
                 omega, E_stor, E_loss, std, std)
             rescaled = reduction.prony_rank_limit(
                 omega, E_stor, E_loss, std, std, std_scale=0.05)
-        finally:
-            np.linalg.qr = original
         self.assertGreater(after_probe, 0)
         self.assertGreater(after_fit, after_probe,
                            msg='fit grid should not collide with the probe')
-        self.assertEqual(len(calls), after_fit, msg='probe cache miss')
+        self.assertEqual(passes.call_count, after_fit, msg='probe cache miss')
         self.assertEqual(first, second)
         self.assertEqual(first, rescaled)
 
