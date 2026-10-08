@@ -887,6 +887,39 @@ class TestPronyFitQuality(unittest.TestCase):
         _prony_hessian(x, data, basis, 0.5, True)
         np.testing.assert_array_equal(basis, before)
 
+    def test_prony_loss_builds_the_penalty_once(self):
+        """lam * L.T @ L is built once per loss, on the first Hessian, and
+        reused at every later point; a caller mutating a returned Hessian
+        must not poison it."""
+        # The single build goes through _add_penalty_inplace. allclose, not
+        # equality: adding one prebuilt matrix rounds differently from nine
+        # band passes.
+        basis, data, x1 = _random_fit_problem(self.rng, 9, 1)
+        points = (x1, x1 + 0.3, x1 - 0.2)
+        loss = _PronyLoss(data, basis, 0.6, True)
+        flat = _PronyLoss(data, basis, 0.0, True)
+        with mock.patch.object(objective, '_add_penalty_inplace',
+                               wraps=objective._add_penalty_inplace) as build:
+            loss.fun(x1)
+            loss.jac(x1)
+            self.assertEqual(build.call_count, 0)
+            got = []
+            for x in points:
+                H = loss.hess(x)
+                got.append(H.copy())
+                H += 1.0
+            self.assertEqual(build.call_count, 1)
+            got_flat = [flat.hess(x) for x in points[:2]]
+            self.assertEqual(build.call_count, 1)
+        for x, H in zip(points, got):
+            want = 2 * _dense_half_hessian(x, data, basis, 0.6, True)
+            np.testing.assert_allclose(H, want, rtol=1e-12,
+                                       atol=1e-12 * np.abs(want).max())
+        for x, H in zip(points, got_flat):
+            want = 2 * _dense_half_hessian(x, data, basis, 0.0, True)
+            np.testing.assert_allclose(H, want, rtol=1e-12,
+                                       atol=1e-12 * np.abs(want).max())
+
     def test_reduced_system_scores_on_the_full_problem_scale(self):
         # The reduction keeps its orthogonal-residual row, so chi2 taken from
         # (R, z) is ALREADY the full problem's misfit — nothing to add back.
@@ -2457,6 +2490,29 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
                                    atol=1e-12 * np.abs(schur).max())
         np.testing.assert_allclose(
             problem.coefficients(x), np.concatenate(([E_eq], np.exp(x))))
+
+    def test_plateau_projection_builds_one_shared_penalty(self):
+        """The clamped and free losses share one penalty matrix: Hessians on
+        both branches build it once in total."""
+        rng = np.random.default_rng(7)
+        m = 9
+        basis = np.abs(rng.normal(size=(m, m))) + 0.3
+        truth = np.exp(rng.normal(size=m))
+        data = basis @ truth
+        x_free = np.log(0.5 * truth[1:])
+        x_clamp = np.log(2.0 * truth[1:])
+        problem = _PlateauProjectedProblem(data, basis, 0.8)
+        self.assertGreater(problem.equilibrium(x_free), 0)
+        self.assertEqual(problem.equilibrium(x_clamp), 0.0)
+        with mock.patch.object(objective, '_add_penalty_inplace',
+                               wraps=objective._add_penalty_inplace) as build:
+            problem.hess(x_free)
+            H_clamp = problem.hess(x_clamp)
+            problem.hess(x_free + 0.1)
+            self.assertEqual(build.call_count, 1)
+        want = 2 * _dense_half_hessian(x_clamp, data, basis[:, 1:], 0.8, 0)
+        np.testing.assert_allclose(H_clamp, want, rtol=1e-12,
+                                   atol=1e-12 * np.abs(want).max())
 
     def test_prony_loss_guard_rejects_overflowing_proposals(self):
         # A proposal with any log-coefficient above the cap must read as +inf
