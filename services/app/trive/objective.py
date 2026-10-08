@@ -188,12 +188,12 @@ class _PronyLoss:
             to disable.
         solid (bool): Whether the leading coefficient is an equilibrium term
             to exclude from the smoothness penalty.
+        log_cap (float or None): Largest log-coefficient fun/jac will
+            evaluate; None disables the guard (one-shot scoring and tests).
         penalty_cache (list): One-slot holder for the dense penalty, filled
             lazily by the first hess call. Pass the same list to losses with
             equal smoothness, m and solid to build the penalty once between
             them; None gives this loss its own.
-        log_cap (float or None): Largest log-coefficient fun/jac will
-            evaluate; None disables the guard (one-shot scoring and tests).
     """
 
     def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
@@ -278,24 +278,16 @@ class _PronyLoss:
         coefs, _, rj = self._at(logcoefs)
         if self._gram is None:
             self._gram = self._basis.T @ self._basis
-        # The product allocates, so the in-place scaling below cannot touch
-        # the cached Gram (nor a read-only basis).
-        H = self._gram * coefs   # -> J.T @ J; J = -basis @ diag(coefs), so its
-        H *= coefs[:, None]      # two sign flips cancel in the Gram.
-        # np.einsum('ii->i', H) is a writable stride view even when H is not
-        # contiguous; H.ravel()[::m + 1] would silently write to a copy instead.
-        np.einsum('ii->i', H)[...] += rj
-
+        # J.T @ J; J = -basis @ diag(coefs), so its two sign flips cancel.
+        H = self._gram * coefs * coefs[:, None] + np.diag(rj)
         if self._smoothness:
             if self._penalty[0] is None:
                 penalty = np.zeros_like(H)
                 _add_penalty_inplace(
                     penalty, self._smoothness * self._smoothness, self._solid)
                 self._penalty[0] = penalty
-            H += self._penalty[0]
-
-        H *= 2  # squared errors, matching the factor jac returns
-        return H
+            H = H + self._penalty[0]
+        return 2 * H  # squared errors, matching the factor jac returns
 
 
 def _prony_objective(

@@ -552,8 +552,8 @@ def _random_fit_problem(rng, N, solid, n_rows=None):
 
 def _dense_half_hessian(x, data, basis, smoothness, solid):
     """C = 0.5 * Hess(V) built the obvious dense way: lam * L.T @ L + J.T @ J
-    + diag(r.T @ J). The reference _prony_hessian's banded accumulation and
-    in-place scalings are checked against."""
+    + diag(r.T @ J). The reference _prony_hessian's banded penalty build and
+    coefs scalings are checked against."""
     N = len(x) - solid
     m = len(x)
     coefs = np.exp(x)
@@ -757,7 +757,7 @@ class TestPronyFitQuality(unittest.TestCase):
                     )
 
     def test_matches_dense_reference(self):
-        # Guards the banded L.T @ L accumulation and the in-place coefs
+        # Guards the banded L.T @ L build and the coefs
         # scalings against a dense build. N=3 is included deliberately: there
         # the two boundary corrections of L.T @ L collide.
         for N in (3, 4, 8, 20, 40):
@@ -901,7 +901,7 @@ class TestPronyFitQuality(unittest.TestCase):
             loss.hess(x), _prony_hessian(x, data, basis, 0.4, True))
 
     def test_prony_hessian_leaves_the_basis_untouched(self):
-        # _prony_reduce hands out read-only cached arrays; the in-place
+        # _prony_reduce hands out read-only cached arrays; the coefs
         # scalings must land on the Gram product, never on the input.
         basis, data, x = _random_fit_problem(self.rng, 6, 1)
         basis.setflags(write=False)
