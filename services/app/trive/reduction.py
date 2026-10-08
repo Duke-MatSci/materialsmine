@@ -16,7 +16,7 @@ import hashlib
 from collections import OrderedDict
 
 import numpy as np
-from scipy.linalg import cho_solve
+from scipy.linalg import cho_solve, qr
 from scipy.optimize import nnls
 
 from .objective import (
@@ -26,8 +26,8 @@ from .quality import _cholesky_or_none
 
 
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
-# block materializes a (2 * chunk, N + 2) basis slab (plus prony_basis's single
-# reciprocal temporary), so peak memory is O(chunk * N) no matter how many
+# block is factored in one preallocated (N + 2 + 2 * chunk, N + 2) buffer
+# (plus prony_basis's slab and its reciprocal temporary), so peak memory is O(chunk * N) no matter how many
 # rows the upload has.
 _QR_CHUNK_ROWS = 8192
 
@@ -91,7 +91,7 @@ def _prony_reduce(
     basis block into it, so that EXACTLY
         ||(y - B c) / (std_scale * std)||^2 = ||R c - z||^2
     and the reduced system has at most len(tau_i) + solid + 1 rows regardless of
-    how many data rows the upload carries. Householder QR accumulates the residual
+    how many data rows the upload carries. Householder QR (scipy, in place in one buffer) accumulates the residual
     information backward-stably (no explicit sums of squares), memory stays
     O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
     independent of the input row count.
@@ -151,18 +151,26 @@ def _prony_reduce(
     # uploads with fewer than m rows the triangle is simply shorter (wide R) —
     # nnls and _prony_objective both accept that shape, and there is then no
     # unreachable residual to carry.
-    Rz = np.empty((0, m + 1))
+    # One F-ordered buffer holds the stacked [Rz; weighted chunk] system;
+    # scipy's qr factors it in place and the new triangle is written back to
+    # its top rows for the next chunk. r counts the triangle's rows.
+    n_chunk = min(_QR_CHUNK_ROWS, len(omega))
+    buf = np.empty((m + 1 + 2 * n_chunk, m + 1), order='F')
+    r = 0
     for start in range(0, len(omega), _QR_CHUNK_ROWS):
         chunk = slice(start, start + _QR_CHUNK_ROWS)
-        basis = prony_basis(omega[chunk], tau_i, solid)
-        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
+        n = len(omega[chunk])
+        rows = slice(r, r + 2 * n)
+        buf[rows, :m] = prony_basis(omega[chunk], tau_i, solid)
+        buf[r:r + n, m] = E_stor[chunk]
+        buf[r + n:r + 2 * n, m] = E_loss[chunk]
         y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
-        block = np.concatenate(
-            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
-        )
-        Rz = np.linalg.qr(
-            np.concatenate((Rz, block), axis=0), mode='r'
-        )[:m + 1]
+        buf[rows] /= y_std[:, None]
+        tri, = qr(buf[:r + 2 * n], mode='r', overwrite_a=True,
+                  check_finite=False)
+        r = min(r + 2 * n, m + 1)
+        buf[:r] = tri[:r]
+    Rz = buf[:r].copy()
     Rz.flags.writeable = False
     reduced = (Rz[:, :m], Rz[:, m])
 

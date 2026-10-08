@@ -61,9 +61,11 @@ def prony_basis(freq: np.ndarray, relaxations: np.ndarray, solid: bool) -> np.nd
     # This is the hot loop of the whole fit — profiled at ~45% of _prony_reduce
     # on a 41k-row upload — so the two blocks are written straight into the
     # output, one temporary, no np.where (which evaluates both branches over the
-    # full grid) and no concatenate. Measured 2-3.6x the previous form.
+    # full grid) and no concatenate. Measured 2-3.6x the previous form. The
+    # output is column-major so each column's ufunc pass is one contiguous run
+    # (measured 1.66x at 8192 x 100, CPU time).
     n, k = len(freq), len(relaxations)
-    basis = np.empty((2 * n, k + solid))
+    basis = np.empty((2 * n, k + solid), order='F')
     ep_basis = basis[:n, solid:]
     epp_basis = basis[n:, solid:]
     np.multiply.outer(freq, relaxations, out=ep_basis)  # ep_basis <- dt
