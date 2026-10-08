@@ -3401,22 +3401,15 @@ class TestPronyResolution(unittest.TestCase):
 
     def test_shares_the_probe_reduction_with_the_rank_limit(self):
         tau_i, E_i, _ = self._fit(12, 0.3)
-        calls = []
-        original = np.linalg.qr
-
-        def counting_qr(*args, **kwargs):
-            calls.append(1)
-            return original(*args, **kwargs)
-
         reduction.prony_rank_limit(
             self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
             std_scale=self.RELATIVE_ERROR)
-        with mock.patch.object(np.linalg, 'qr', counting_qr):
+        with _row_pass_spy() as passes:
             smoothed = self._resolution(tau_i, E_i, 0.3)
             unsmoothed = self._resolution(tau_i, E_i, 0.0)
         self.assertIsNotNone(smoothed)
         self.assertIsNotNone(unsmoothed)
-        self.assertEqual(calls, [], msg='probe cache miss')
+        self.assertEqual(passes.call_count, 0, msg='probe cache miss')
 
     def test_none_on_degenerate_fits(self):
         tau_i, E_i, _ = self._fit(12, 0.3)
@@ -3487,17 +3480,43 @@ class TestNewtonHessianShift(unittest.TestCase):
         off = ~np.eye(3, dtype=bool)
         np.testing.assert_array_equal(shifted[off], original[off])
 
-    def test_shift_does_not_mutate_the_wrapped_hessian(self):
-        # The wrapper must not rely on its callable returning a fresh array:
-        # a caching Hessian would otherwise be corrupted, with the shift
-        # compounding on every call at one point.
-        H = self._matrix()
-        original = H.copy()
-        wrapped = prony_fit._shifted_hessian(lambda _x: H, 64)
-        first = wrapped(np.zeros(3)).copy()
-        second = wrapped(np.zeros(3))
-        np.testing.assert_array_equal(H, original)
-        np.testing.assert_array_equal(second, first)
+    def test_shift_never_accumulates_on_the_production_hessians(self):
+        """The wrapper may shift its callable's array in place, so the
+        callables it wraps in production (_PronyLoss.hess and
+        _PlateauProjectedProblem.hess) must hand out a fresh array each
+        call: repeated shifted calls at one point, also after moving away
+        and back, give hess + shift * I with no compounding."""
+        rng = np.random.default_rng(11)
+        basis_v, data_v, x_v = _random_fit_problem(rng, 6, 0)
+        m = 9
+        basis_p = np.abs(rng.normal(size=(m, m))) + 0.3
+        truth = np.exp(rng.normal(size=m))
+        data_p = basis_p @ truth
+        cases = (
+            ('_PronyLoss, solid=False',
+             lambda: _PronyLoss(data_v, basis_v, 0.4, False), x_v),
+            ('_PlateauProjectedProblem, free plateau',
+             lambda: _PlateauProjectedProblem(data_p, basis_p, 0.8),
+             np.log(0.5 * truth[1:])),
+            ('_PlateauProjectedProblem, clamped plateau',
+             lambda: _PlateauProjectedProblem(data_p, basis_p, 0.8),
+             np.log(2.0 * truth[1:])),
+        )
+        multiple = prony_fit._NEWTON_HESSIAN_SHIFT_EPS
+        for label, make, x in cases:
+            with self.subTest(label):
+                H = make().hess(x)
+                shift = multiple * np.finfo(H.dtype).eps * np.abs(
+                    np.diag(H)).max()
+                expected = H + shift * np.eye(len(H))
+                wrapped = prony_fit._shifted_hessian(make().hess, multiple)
+                first = wrapped(x).copy()
+                again = wrapped(x).copy()
+                wrapped(x + 0.2)
+                back = wrapped(x)
+                np.testing.assert_array_equal(first, expected)
+                np.testing.assert_array_equal(again, first)
+                np.testing.assert_array_equal(back, first)
 
     def test_zero_multiple_is_a_passthrough(self):
         H = self._matrix()
