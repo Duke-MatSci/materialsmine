@@ -160,8 +160,10 @@ class _PronyLoss:
     The diag term is the exact second derivative, not a Gauss-Newton
     approximation; it is diagonal because each model term depends on a single
     log-coefficient through exp(). L is the second-difference stencil and
-    L.T @ L is accumulated onto its pentadiagonal bands directly, so neither L
-    nor J is ever materialized.
+    the dense penalty smoothness**2 * L.T @ L is built once, on the first
+    Hessian request like the cached Gram, and added on every later call, so
+    neither L nor J is ever materialized. Losses sharing smoothness, m and
+    solid may share that build through penalty_cache.
 
     Residuals are UNWEIGHTED here: the caller passes an already-weighted
     system. fit.smooth_prony_fit's _prony_reduce folds 1/std into R and z
@@ -186,18 +188,24 @@ class _PronyLoss:
             to disable.
         solid (bool): Whether the leading coefficient is an equilibrium term
             to exclude from the smoothness penalty.
+        penalty_cache (list): One-slot holder for the dense penalty, filled
+            lazily by the first hess call. Pass the same list to losses with
+            equal smoothness, m and solid to build the penalty once between
+            them; None gives this loss its own.
         log_cap (float or None): Largest log-coefficient fun/jac will
             evaluate; None disables the guard (one-shot scoring and tests).
     """
 
     def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
-                 solid: bool, log_cap: float = None):
+                 solid: bool, log_cap: float = None,
+                 penalty_cache: list = None):
         self._data = data
         self._basis = basis
         self._smoothness = smoothness
         self._solid = solid
         self._log_cap = log_cap
         self._gram = None
+        self._penalty = [None] if penalty_cache is None else penalty_cache
         self._x = None
 
     def _capped(self, logcoefs: np.ndarray) -> bool:
@@ -279,8 +287,12 @@ class _PronyLoss:
         np.einsum('ii->i', H)[...] += rj
 
         if self._smoothness:
-            _add_penalty_inplace(
-                H, self._smoothness * self._smoothness, self._solid)
+            if self._penalty[0] is None:
+                penalty = np.zeros_like(H)
+                _add_penalty_inplace(
+                    penalty, self._smoothness * self._smoothness, self._solid)
+                self._penalty[0] = penalty
+            H += self._penalty[0]
 
         H *= 2  # squared errors, matching the factor jac returns
         return H
