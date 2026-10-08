@@ -106,7 +106,9 @@ def _shifted_hessian(hess, eps_multiple: float):
     of H's dtype. An exactly-zero eigenvalue (a direction both the smoothness
     penalty and the data leave flat) sends scipy 1.10.1's subproblem loop
     into a cycle; a rounding-level shift gives it representable curvature.
-    The array `hess` returns is never mutated.
+    The shift is added in place to the array `hess` returns, so `hess` must
+    return a fresh array each call (_PronyLoss.hess and
+    _PlateauProjectedProblem.hess do).
 
     Parameters:
         hess (callable): logcoefs -> (m, m) Hessian array.
@@ -120,7 +122,6 @@ def _shifted_hessian(hess, eps_multiple: float):
         if not eps_multiple:
             return H
         shift = eps_multiple * np.finfo(H.dtype).eps * np.abs(np.diag(H)).max()
-        H = H.copy()
         H[np.diag_indices_from(H)] += shift
         return H
     return shifted

@@ -28,8 +28,7 @@ from .quality import _cholesky_or_none
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
 # block is factored in one preallocated (N + 2 + 2 * chunk, N + 2) buffer
 # (plus prony_basis's slab and its reciprocal temporary), so peak memory is
-# O(chunk * N) no matter how many
-# rows the upload has.
+# O(chunk * N) no matter how many rows the upload has.
 _QR_CHUNK_ROWS = 8192
 
 # Reduced systems retained by _prony_reduce's LRU cache. Each entry holds only
@@ -93,10 +92,10 @@ def _prony_reduce(
         ||(y - B c) / (std_scale * std)||^2 = ||R c - z||^2
     and the reduced system has at most len(tau_i) + solid + 1 rows regardless of
     how many data rows the upload carries. Householder QR (scipy, in place in
-    one buffer) accumulates the residual
-    information backward-stably (no explicit sums of squares), memory stays
-    O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
-    independent of the input row count.
+    one buffer) accumulates the residual information backward-stably (no
+    explicit sums of squares), memory stays O(_QR_CHUNK_ROWS * N), and every
+    subsequent solver operation costs O(N^2) independent of the input row
+    count.
 
     Memoized on input CONTENT in a size-_REDUCE_CACHE_SIZE LRU, because a
     smoothness sweep varies only `smoothness` — which this reduction does not
