@@ -1374,6 +1374,12 @@ def _legacy_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i,
     return Rz[:, :m], Rz[:, m]
 
 
+def _sign_normalized(Rz):
+    """Rz with each row flipped so its diagonal entry is non-negative."""
+    diag = np.diagonal(Rz)
+    return Rz * np.where(diag < 0, -1.0, 1.0)[:, None]
+
+
 def _owner_nbytes(arr):
     """Bytes of the allocation that ultimately owns arr's memory."""
     while isinstance(arr.base, np.ndarray):
@@ -1564,12 +1570,14 @@ class TestPronyReduce(unittest.TestCase):
             self.assertIs(call.kwargs.get('overwrite_a'), True)
             self.assertIs(call.kwargs.get('check_finite'), False)
 
-    def test_reduce_matches_the_legacy_concatenated_qr_bitwise(self):
-        """(R, z) equal the concatenate-and-np.linalg.qr reduction exactly,
-        row signs included, over several chunks with a short last one, a
-        single chunk, and a short upload whose triangle is wide."""
-        # Bitwise because numpy and scipy run the same LAPACK geqrf here on
-        # the same stacked matrix.
+    def test_reduce_matches_the_legacy_concatenated_qr(self):
+        """(R, z) match the concatenate-and-np.linalg.qr reduction to
+        rounding, up to each row's sign, over several chunks with a short
+        last one, a single chunk, and a short upload whose triangle is wide."""
+        # Not bitwise: pip wheels bundle separate OpenBLAS builds for numpy
+        # and scipy, which may round differently. Each row of [R | z] is
+        # flipped by the sign of its diagonal, so R's row and z's entry
+        # flip together, as Householder's sign freedom allows.
         short = slice(0, 3)  # 3 frequencies -> 6 rows < m
         cases = (
             ('many chunks', slice(None), 7),
@@ -1588,8 +1596,12 @@ class TestPronyReduce(unittest.TestCase):
                         R, z = _prony_reduce(*args)
                     R_ref, z_ref = _legacy_reduce(*args, chunk_rows)
                     self.assertEqual(R.shape, R_ref.shape)
-                    np.testing.assert_array_equal(R, R_ref)
-                    np.testing.assert_array_equal(z, z_ref)
+                    got = _sign_normalized(np.column_stack((R, z)))
+                    want = _sign_normalized(
+                        np.column_stack((R_ref, z_ref)))
+                    np.testing.assert_allclose(
+                        got, want, rtol=1e-12,
+                        atol=1e-12 * np.abs(want).max())
 
     def test_cache_entry_owns_only_the_triangle(self):
         """A cached (R, z) holds no more memory than the (m + 1) x (m + 1)
