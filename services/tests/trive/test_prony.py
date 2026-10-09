@@ -757,7 +757,7 @@ class TestPronyFitQuality(unittest.TestCase):
                     )
 
     def test_matches_dense_reference(self):
-        # Guards the banded L.T @ L build and the coefs
+        # Guards the _penalty_gram L.T @ L build and the coefs
         # scalings against a dense build. N=3 is included deliberately: there
         # the two boundary corrections of L.T @ L collide.
         for N in (3, 4, 8, 20, 40):

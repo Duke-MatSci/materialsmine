@@ -20,7 +20,7 @@ from scipy.linalg import cho_solve, qr
 from scipy.optimize import nnls
 
 from .objective import (
-    _add_penalty_inplace, _penalty_trace, _scaled_smoothness)
+    _penalty_gram, _penalty_trace, _scaled_smoothness)
 from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
 from .quality import _cholesky_or_none
 
@@ -336,8 +336,7 @@ def prony_resolution(
     lam = _scaled_smoothness(
         smoothness, n_probe, 2 * len(omega) - m_probe, log_range) ** 2
     # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
-    H = (R.T @ R) * c * c[:, None]
-    _add_penalty_inplace(H, lam, has_eq)
+    H = (R.T @ R) * c * c[:, None] + lam * _penalty_gram(len(c), has_eq)
     chol = _cholesky_or_none(H)
     if chol is None:
         return None

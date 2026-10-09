@@ -13,12 +13,14 @@ Depends on nothing else in the package — `quality` and `fit` both import from
 here, so keeping it a leaf is what keeps those two acyclic.
 """
 
+import functools
+
 import numpy as np
 
 
 # Second-difference stencil behind the smoothness penalty: the np.diff(..., n=2)
-# weights in _prony_objective, and the outer product that builds lam * L.T @ L
-# in _prony_fit_quality.
+# weights in _prony_objective, the rows of L in _penalty_gram, and the
+# outer product _penalty_trace sums over.
 _D2_STENCIL = (1.0, -2.0, 1.0)
 
 
@@ -27,31 +29,37 @@ def _penalty_band(m: int, solid: bool) -> np.ndarray:
     return solid + np.arange(max(m - solid - 2, 0))
 
 
-def _add_penalty_inplace(H: np.ndarray, lam: float, solid: bool) -> None:
+# cache size more than any realistic workload
+# but not unlimited to cap memory growth in case of bugs
+@functools.lru_cache(maxsize=500)
+def _penalty_gram(m: int, solid: bool) -> np.ndarray:
     """
-    H += lam * L.T @ L, in place, on the penalized block.
+    L.T @ L for an m-term log-coefficient vector, cached and read-only.
 
     L is the second-difference stencil over the penalized coordinates, so
-    L.T @ L is pentadiagonal; the nine stencil outer-product terms are
-    accumulated straight onto its bands. Index pairs are strictly increasing
-    within each (t, u) pass, so there is no fancy-index += aliasing. Correct
-    at npen == 3, where the boundary corrections collide, and a no-op at
-    npen < 3, where the band is empty.
+    the leading equilibrium row and column, when solid, stay zero, and the
+    whole matrix is zero when fewer than three terms are penalized.
 
     Parameters:
-        H (numpy.ndarray): (m, m) array to accumulate onto.
-        lam (float): Penalty weight (the scaled smoothness, squared).
+        m (int): Number of log-coefficients.
         solid (bool): Whether row/column 0 is an unpenalized equilibrium term.
+
+    Returns:
+        numpy.ndarray: (m, m) read-only array shared between callers.
     """
-    band = _penalty_band(len(H), solid)
+    band = _penalty_band(m, solid)
+    L = np.zeros((len(band), m))
+    rows = np.arange(len(band))
     for t, stencil_t in enumerate(_D2_STENCIL):
-        for u, stencil_u in enumerate(_D2_STENCIL):
-            H[band + t, band + u] += lam * stencil_t * stencil_u
+        L[rows, band + t] = stencil_t
+    gram = L.T @ L
+    gram.setflags(write=False)
+    return gram
 
 
 def _penalty_trace(sigma: np.ndarray, solid: bool) -> float:
     """
-    tr(L.T @ L @ sigma), read from the bands _add_penalty_inplace writes.
+    tr(L.T @ L @ sigma), summed over the bands where _penalty_gram is nonzero.
 
     Zero when npen < 3 (empty band).
 
@@ -160,10 +168,9 @@ class _PronyLoss:
     The diag term is the exact second derivative, not a Gauss-Newton
     approximation; it is diagonal because each model term depends on a single
     log-coefficient through exp(). L is the second-difference stencil and
-    the dense penalty smoothness**2 * L.T @ L is built once, on the first
-    Hessian request like the cached Gram, and added on every later call, so
-    neither L nor J is ever materialized. Losses sharing smoothness, m and
-    solid may share that build through penalty_cache.
+    the dense penalty smoothness**2 * L.T @ L is added from _penalty_gram,
+    which builds L.T @ L once per (m, solid) for every loss, so J is never
+    materialized.
 
     Residuals are UNWEIGHTED here: the caller passes an already-weighted
     system. fit.smooth_prony_fit's _prony_reduce folds 1/std into R and z
@@ -190,22 +197,16 @@ class _PronyLoss:
             to exclude from the smoothness penalty.
         log_cap (float or None): Largest log-coefficient fun/jac will
             evaluate; None disables the guard (one-shot scoring and tests).
-        penalty_cache (list): One-slot holder for the dense penalty, filled
-            lazily by the first hess call. Pass the same list to losses with
-            equal smoothness, m and solid to build the penalty once between
-            them; None gives this loss its own.
     """
 
     def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
-                 solid: bool, log_cap: float = None,
-                 penalty_cache: list = None):
+                 solid: bool, log_cap: float = None):
         self._data = data
         self._basis = basis
         self._smoothness = smoothness
         self._solid = solid
         self._log_cap = log_cap
         self._gram = None
-        self._penalty = [None] if penalty_cache is None else penalty_cache
         self._x = None
 
     def _capped(self, logcoefs: np.ndarray) -> bool:
@@ -281,13 +282,8 @@ class _PronyLoss:
         # J.T @ J; J = -basis @ diag(coefs), so its two sign flips cancel.
         H = self._gram * coefs * coefs[:, None] + np.diag(rj)
         if self._smoothness:
-            if self._penalty[0] is None:
-                penalty = np.zeros_like(H)
-                _add_penalty_inplace(
-                    penalty, self._smoothness * self._smoothness, self._solid)
-                self._penalty[0] = penalty
-            H = H + self._penalty[0]
-        return 2 * H  # squared errors, matching the factor jac returns
+            H += (self._smoothness ** 2 * _penalty_gram(len(H), self._solid))
+        return H * 2  # squared errors, matching the factor jac returns
 
 
 def _prony_objective(

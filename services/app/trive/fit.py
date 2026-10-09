@@ -218,14 +218,11 @@ class _PlateauProjectedProblem:
         # off r0, for E_eq > 0. The projector is applied once to each array
         # rather than materialized.
         rest = basis[:, 1:]
-        # Both share one lazily built penalty: same smoothness, m and solid.
-        penalty = [None]
-        self._clamped = _PronyLoss(data, rest, smoothness, False, log_cap,
-                                   penalty)
+        self._clamped = _PronyLoss(data, rest, smoothness, False, log_cap)
         self._free = _PronyLoss(
             data - r0 * ((r0 @ data) / self._r0_sq),
             rest - np.outer(r0, (r0 @ rest) / self._r0_sq),
-            smoothness, False, log_cap, penalty,
+            smoothness, False, log_cap,
         )
 
     def equilibrium(self, logcoefs: np.ndarray) -> float:
