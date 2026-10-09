@@ -333,13 +333,14 @@ def prony_resolution(
     elif solid:
         R = R[:, 1:]
     log_range = log_tau_probe[-1] - log_tau_probe[0]
-    lam = _scaled_smoothness(
-        smoothness, n_probe, 2 * len(omega) - m_probe, log_range) ** 2
+    scaled_smoothness = _scaled_smoothness(
+        smoothness, n_probe, 2 * len(omega) - m_probe, log_range)
     # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
-    H = (R.T @ R) * c * c[:, None] + lam * _penalty_gram(len(c), has_eq)
+    H = ((R.T @ R) * c * c[:, None]
+         + scaled_smoothness ** 2 * _penalty_gram(len(c), has_eq))
     chol = _cholesky_or_none(H)
     if chol is None:
         return None
     H_inv = cho_solve((chol, True), np.eye(len(c)))
-    gamma = n_probe - lam * _penalty_trace(H_inv, has_eq)
+    gamma = n_probe - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
     return float(gamma) if np.isfinite(gamma) else None
