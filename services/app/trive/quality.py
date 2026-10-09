@@ -152,7 +152,7 @@ def _prony_fit_quality(
         data (numpy.ndarray): 1-D array of target values, pre-weighted.
         basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
             basis @ exp(logcoefs) is the model.
-        smoothness (float): The user-facing knob, UNSCALED. The weight the
+        smoothness (float): The user-facing knob, UNSCALED. The factor the
             fit ran with is rebuilt here through _scaled_smoothness, whose other
             three inputs (npen, dof, log_range) are all already on hand — so
             lam * A matches the fitted V by construction rather than by the
@@ -167,7 +167,7 @@ def _prony_fit_quality(
             curvature normalization. Also unavailable from the reduced system.
         n_chi2 (int): Residual count the chi-squared is divided over, when it
             differs from n_resid (the clamped path, whose n_resid is lowered
-            only to keep the penalty weight the fit's own). Defaults to
+            only to keep the penalty factor the fit's own). Defaults to
             n_resid.
 
     Returns:
@@ -199,16 +199,16 @@ def _prony_fit_quality(
         n_chi2 = n_resid
     nu = n_chi2 - m
 
-    # The weight the fit was actually run with, so that V and its Hessian below
+    # The factor the fit was actually run with, so that V and its Hessian below
     # belong to the fit that ran. Falls back to the raw knob when the penalty
     # is empty (npen < 3), which is harmless: the penalty is then identically
     # zero and no posterior is computed.
-    scaled = _scaled_smoothness(smoothness, npen, dof, log_range)
+    scaled_smoothness = _scaled_smoothness(smoothness, npen, dof, log_range)
     # One _PronyLoss, one evaluation of the shared intermediates: the residual
     # for chi-squared, V, and the Hessian all come from it, so the misfit, the
     # mode and the curvature cannot drift apart from one another or from what
     # the Newton solver in fit converged on.
-    loss = _PronyLoss(data, basis, scaled, solid)
+    loss = _PronyLoss(data, basis, scaled_smoothness, solid)
     resid = loss.residual(logcoefs)
     chi2 = resid @ resid
 
@@ -232,8 +232,8 @@ def _prony_fit_quality(
         covariance = 0.5 * (covariance + covariance.T)
         # MacKay's count of well-determined penalized terms; the
         # equilibrium term, when present, is unpenalized and fully counted.
-        effective_terms = (
-            npen - scaled * scaled * _penalty_trace(covariance, solid))
+        effective_terms = npen - (scaled_smoothness * scaled_smoothness
+                                  * _penalty_trace(covariance, solid))
         nu = n_chi2 - (effective_terms + solid)
     if len(curve) and chol is not None:
         # Note V/2 is NOT a marginal likelihood: it is the unnormalized
@@ -245,9 +245,10 @@ def _prony_fit_quality(
             - np.log(12.0)
         )
         # abs(): the penalty is sign-agnostic in smoothness (it enters
-        # squared) and nothing upstream rejects a negative value. The
-        # scale factor is positive, so it carries that sign through.
-        loglam = 2 * np.log(abs(scaled))
+        # squared) and nothing upstream rejects a negative value.
+        # _scaled_smoothness multiplies the knob by a positive number, so
+        # scaled_smoothness carries that sign through.
+        loglam = 2 * np.log(abs(scaled_smoothness))
         # Negated so that lower is better. This is a log DENSITY, so
         # positivity is not guaranteed — it holds in practice because V/2
         # dominates for any real upload. Deliberately not clamped.

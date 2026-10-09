@@ -158,19 +158,20 @@ class _PronyLoss:
     optimizer sees an unconstrained problem while the physical coefficients
     remain positive. The loss is the sum of squared residuals between
     basis @ exp(logcoefs) and data, plus an optional second-difference penalty
-    on logcoefs[solid:] scaled by smoothness. With J = -basis @ diag(coefs),
-    the Jacobian of the residual in log-space,
+    on logcoefs[solid:] weighted by scaled_smoothness**2. With
+    J = -basis @ diag(coefs), the Jacobian of the residual in log-space,
 
-        V       = r.r + smoothness**2 * |L x|**2
-        grad V  = 2 * (r.T @ J + smoothness**2 * L.T L x)
-        Hess V  = 2 * (J.T @ J + diag(r.T @ J) + smoothness**2 * L.T @ L)
+        V       = r.r + scaled_smoothness**2 * |L x|**2
+        grad V  = 2 * (r.T @ J + scaled_smoothness**2 * L.T L x)
+        Hess V  = 2 * (J.T @ J + diag(r.T @ J)
+                       + scaled_smoothness**2 * L.T @ L)
 
     The diag term is the exact second derivative, not a Gauss-Newton
     approximation; it is diagonal because each model term depends on a single
     log-coefficient through exp(). L is the second-difference stencil and
-    the dense penalty smoothness**2 * L.T @ L is added from _penalty_gram,
-    which builds L.T @ L once per (m, solid) for every loss, so J is never
-    materialized.
+    the dense penalty scaled_smoothness**2 * L.T @ L is added from
+    _penalty_gram, which builds L.T @ L once per (m, solid) for every loss,
+    so J is never materialized.
 
     Residuals are UNWEIGHTED here: the caller passes an already-weighted
     system. fit.smooth_prony_fit's _prony_reduce folds 1/std into R and z
@@ -190,20 +191,22 @@ class _PronyLoss:
         basis (numpy.ndarray): 2-D basis matrix, pre-weighted to match data;
             basis @ exp(logcoefs) is the model. May be read-only: it is never
             written to.
-        smoothness (float): Weight of the second-difference penalty on
-            logcoefs[solid:] — the SCALED weight the fit is run with. Pass 0
-            to disable.
+        scaled_smoothness (float): Factor on the second differences of
+            logcoefs[solid:] before they are squared into the penalty, from
+            _scaled_smoothness — not the user-facing knob. Pass 0 to
+            disable.
         solid (bool): Whether the leading coefficient is an equilibrium term
             to exclude from the smoothness penalty.
         log_cap (float or None): Largest log-coefficient fun/jac will
             evaluate; None disables the guard (one-shot scoring and tests).
     """
 
-    def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
-                 solid: bool, log_cap: float = None):
+    def __init__(self, data: np.ndarray, basis: np.ndarray,
+                 scaled_smoothness: float, solid: bool,
+                 log_cap: float = None):
         self._data = data
         self._basis = basis
-        self._smoothness = smoothness
+        self._scaled_smoothness = scaled_smoothness
         self._solid = solid
         self._log_cap = log_cap
         self._gram = None
@@ -235,8 +238,9 @@ class _PronyLoss:
             return np.inf
         _, resid, _ = self._at(logcoefs)
         loss = resid @ resid
-        if self._smoothness:
-            curve = self._smoothness * _log_curvature(logcoefs, self._solid)
+        if self._scaled_smoothness:
+            curve = (self._scaled_smoothness
+                     * _log_curvature(logcoefs, self._solid))
             loss += curve @ curve
         return loss
 
@@ -251,9 +255,10 @@ class _PronyLoss:
             return np.zeros_like(logcoefs)
         _, _, rj = self._at(logcoefs)
         grad = rj.copy()
-        if self._smoothness:
-            # smoothness**2 * curvature, spread back onto the stencil.
-            diffs = self._smoothness ** 2 * _log_curvature(logcoefs, self._solid)
+        if self._scaled_smoothness:
+            # scaled_smoothness**2 * curvature, spread back onto the stencil.
+            diffs = (self._scaled_smoothness ** 2
+                     * _log_curvature(logcoefs, self._solid))
             grad_slice = grad[self._solid:]
             grad_slice[:-2] += diffs
             grad_slice[1:-1] -= 2 * diffs
@@ -281,8 +286,9 @@ class _PronyLoss:
             self._gram = self._basis.T @ self._basis
         # J.T @ J; J = -basis @ diag(coefs), so its two sign flips cancel.
         H = self._gram * coefs * coefs[:, None] + np.diag(rj)
-        if self._smoothness:
-            H += (self._smoothness ** 2 * _penalty_gram(len(H), self._solid))
+        if self._scaled_smoothness:
+            H += (self._scaled_smoothness ** 2
+                  * _penalty_gram(len(H), self._solid))
         return H * 2  # squared errors, matching the factor jac returns
 
 
@@ -290,7 +296,7 @@ def _prony_objective(
         logcoefs: np.ndarray,
         data: np.ndarray,
         basis: np.ndarray,
-        smoothness: float,
+        scaled_smoothness: float,
         solid: bool,
 ) -> tuple:
     """
@@ -300,14 +306,14 @@ def _prony_objective(
     (scoring, tests). The solver itself holds a _PronyLoss so the Hessian can
     share the evaluation; see that class for the definitions.
     """
-    return _PronyLoss(data, basis, smoothness, solid).fun_jac(logcoefs)
+    return _PronyLoss(data, basis, scaled_smoothness, solid).fun_jac(logcoefs)
 
 
 def _prony_hessian(
         logcoefs: np.ndarray,
         data: np.ndarray,
         basis: np.ndarray,
-        smoothness: float,
+        scaled_smoothness: float,
         solid: bool,
 ) -> np.ndarray:
     """
@@ -316,18 +322,21 @@ def _prony_hessian(
     Convenience form of _PronyLoss.hess; same argument list as
     _prony_objective. See _PronyLoss for the definition.
     """
-    return _PronyLoss(data, basis, smoothness, solid).hess(logcoefs)
+    return _PronyLoss(data, basis, scaled_smoothness, solid).hess(logcoefs)
 
 
 def _scaled_smoothness(smoothness: float, npen: int, dof: int,
                        log_range: float) -> float:
     """
-    Turn the user-facing smoothness knob into the penalty weight actually used.
+    Turn the user-facing smoothness knob into scaled_smoothness, the factor
+    the penalty actually applies to the log curvature.
 
-    Makes the knob mean the same thing on any upload. The weight is the
-    smoothness-weight definition of the manuscript,
+    Makes the knob mean the same thing on any upload. smoothness is the
+    manuscript's s, and scaled_smoothness the square root of its
+    smoothness weight lam,
 
-        lam = smoothness**2 * dof / ((npen - 2) * ell**4),
+        scaled_smoothness**2 = lam
+                             = smoothness**2 * dof / ((npen - 2) * ell**4),
 
     with dof floored at 1 and ell = log_range / (npen - 1) the log-tau grid
     spacing. The data term sums over n_resid residuals while the penalty sums
@@ -360,8 +369,8 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
     factor; it only does work when N is overridden independently of the span.
 
     Lives here rather than inline in smooth_prony_fit because _prony_fit_quality
-    has to charge the Laplace expansion the SAME weight the fit was run with,
-    and it can rebuild that weight from arguments it already takes. One formula,
+    has to score the Laplace expansion at the SAME factor the fit was run with,
+    and it can rebuild that factor from arguments it already takes. One formula,
     so a score cannot come to belong to a different fit than the one that ran.
 
     Parameters:
@@ -372,11 +381,11 @@ def _scaled_smoothness(smoothness: float, npen: int, dof: int,
         log_range (float): ln(tau_max / tau_min) of the fit grid.
 
     Returns:
-        float: The weight to hand _prony_objective. Falls back to smoothness
-        unchanged when fewer than 3 penalized terms leave np.diff(..., n=2)
-        empty, or when a degenerate span leaves ell undefined; the penalty term
-        is identically zero either way, so any finite weight does, and this
-        avoids a zero division.
+        float: scaled_smoothness, the factor to hand _PronyLoss. Falls back
+        to smoothness unchanged when fewer than 3 penalized terms leave
+        np.diff(..., n=2) empty, or when a degenerate span leaves ell
+        undefined; the penalty term is identically zero either way, so any
+        finite factor does, and this avoids a zero division.
     """
     if npen < 3 or log_range <= 0:
         return smoothness

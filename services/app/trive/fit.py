@@ -208,8 +208,8 @@ class _PlateauProjectedProblem:
     of this and uses a _PronyLoss directly.
     """
 
-    def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
-                 log_cap: float = None):
+    def __init__(self, data: np.ndarray, basis: np.ndarray,
+                 scaled_smoothness: float, log_cap: float = None):
         r0 = basis[:, 0]
         self._r0 = r0
         self._r0_sq = r0 @ r0
@@ -218,11 +218,12 @@ class _PlateauProjectedProblem:
         # off r0, for E_eq > 0. The projector is applied once to each array
         # rather than materialized.
         rest = basis[:, 1:]
-        self._clamped = _PronyLoss(data, rest, smoothness, False, log_cap)
+        self._clamped = _PronyLoss(
+            data, rest, scaled_smoothness, False, log_cap)
         self._free = _PronyLoss(
             data - r0 * ((r0 @ data) / self._r0_sq),
             rest - np.outer(r0, (r0 @ rest) / self._r0_sq),
-            smoothness, False, log_cap,
+            scaled_smoothness, False, log_cap,
         )
 
     def equilibrium(self, logcoefs: np.ndarray) -> float:
@@ -437,15 +438,15 @@ def smooth_prony_fit(
     # _scaled_smoothness, which _prony_fit_quality re-derives from the same
     # inputs so the reported score belongs to the fit that was actually run.
     log_range = np.log(tau_i[-1] / tau_i[0])
-    smoothness_scaled = _scaled_smoothness(smoothness, N, dof, log_range)
+    scaled_smoothness = _scaled_smoothness(smoothness, N, dof, log_range)
     # No single Prony term above ~1000x the data maximum: the overflow guard
     # in _PronyLoss, same physical cap the old L-BFGS-B upper bound encoded.
     log_cap = np.log(E_stor.max()) + np.log(1e3)
     if solid:
         problem = _PlateauProjectedProblem(
-            z_fit, R_fit, smoothness_scaled, log_cap)
+            z_fit, R_fit, scaled_smoothness, log_cap)
     else:
-        problem = _PronyLoss(z_fit, R_fit, smoothness_scaled, False, log_cap)
+        problem = _PronyLoss(z_fit, R_fit, scaled_smoothness, False, log_cap)
     # Flat seed, data-scaled: zero curvature, so the penalty contributes
     # nothing to the first step however large its weight.
     x0 = np.full(N, np.log(E_stor.max() / m))
@@ -488,7 +489,7 @@ def smooth_prony_fit(
         # and that problem's interior minimum IS this point — so score it as
         # that: the posterior given the active set, the same convention NNLS
         # uses for its exact zeros. n_resid is lowered by one so the dof
-        # _prony_fit_quality derives — and hence the penalty weight it rebuilds
+        # _prony_fit_quality derives — and hence the penalty factor it rebuilds
         # — stay exactly the fit's own: the pinned equilibrium term is still
         # one of the fit's m parameters. n_chi2 keeps the full count, since
         # the misfit charges only parameters the data determined and a

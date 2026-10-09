@@ -430,7 +430,7 @@ class TestPronyObjective(unittest.TestCase):
     def test_returns_scalar_loss_and_gradient_shape(self):
         loss, grad = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            smoothness=0.0, solid=False,
+            scaled_smoothness=0.0, solid=False,
         )
         self.assertTrue(np.isscalar(loss) or np.ndim(loss) == 0)
         self.assertEqual(grad.shape, self.logcoefs.shape)
@@ -438,7 +438,7 @@ class TestPronyObjective(unittest.TestCase):
     def test_exact_fit_zero_loss_and_zero_gradient(self):
         loss, grad = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            smoothness=0.0, solid=False,
+            scaled_smoothness=0.0, solid=False,
         )
         self.assertEqual(loss, 0.0)
         np.testing.assert_array_equal(grad, np.zeros_like(grad))
@@ -450,10 +450,10 @@ class TestPronyObjective(unittest.TestCase):
         basis = prony_basis(self.omega, tau_i, solid=False)
         data = np.zeros(basis.shape[0])
         loss_unsmoothed, _ = _prony_objective(
-            logcoefs, data, basis, smoothness=0.0, solid=False,
+            logcoefs, data, basis, scaled_smoothness=0.0, solid=False,
         )
         loss_smoothed, _ = _prony_objective(
-            logcoefs, data, basis, smoothness=1.0, solid=False,
+            logcoefs, data, basis, scaled_smoothness=1.0, solid=False,
         )
         self.assertGreater(loss_smoothed, loss_unsmoothed)
 
@@ -463,7 +463,7 @@ class TestPronyObjective(unittest.TestCase):
         # rather than unpack; pin the documented shape.
         result = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            smoothness=1.0, solid=False,
+            scaled_smoothness=1.0, solid=False,
         )
         self.assertEqual(len(result), 2)
 
@@ -550,7 +550,7 @@ def _random_fit_problem(rng, N, solid, n_rows=None):
     return basis / std[:, None], data / std, rng.normal(size=m) * 0.25
 
 
-def _dense_half_hessian(x, data, basis, smoothness, solid):
+def _dense_half_hessian(x, data, basis, scaled_smoothness, solid):
     """C = 0.5 * Hess(V) built the obvious dense way: lam * L.T @ L + J.T @ J
     + diag(r.T @ J). The reference _prony_hessian's banded penalty build and
     coefs scalings are checked against."""
@@ -564,7 +564,8 @@ def _dense_half_hessian(x, data, basis, smoothness, solid):
     L[rows, solid + rows + 1] = -2.0
     L[rows, solid + rows + 2] = 1.0
     J = -(basis * coefs)
-    return smoothness * smoothness * (L.T @ L) + J.T @ J + np.diag(resid @ J)
+    return (scaled_smoothness * scaled_smoothness * (L.T @ L)
+            + J.T @ J + np.diag(resid @ J))
 
 
 def _converged_fit_problem(rng, N=10, smoothness=1.0):
@@ -577,7 +578,7 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     form the scoring functions take.
 
     smoothness is the user-facing knob, and the minimize call is given the
-    SCALED weight, exactly as smooth_prony_fit does — otherwise the point would
+    SCALED factor, exactly as smooth_prony_fit does — otherwise the point would
     be stationary for a different V than the one _prony_fit_quality rebuilds
     from the same knob, and the posterior it returned would be meaningless.
     Callers must score with n_resid=2*len(data) and log_range=LOG_RANGE to match.
@@ -590,10 +591,11 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     std = np.abs(clean) * 0.02
     data = clean + std * rng.normal(size=len(clean))
     basis, data = basis / std[:, None], data / std
-    scaled = _scaled_smoothness(smoothness, N, 2 * len(data) - (N + 1), LOG_RANGE)
+    scaled_smoothness = _scaled_smoothness(
+        smoothness, N, 2 * len(data) - (N + 1), LOG_RANGE)
     result = minimize(
         _prony_objective, np.log(truth),
-        args=(data, basis, scaled, True),
+        args=(data, basis, scaled_smoothness, True),
         jac=True, method='L-BFGS-B',
     )
     return basis, data, result.x
@@ -793,7 +795,8 @@ class TestPronyFitQuality(unittest.TestCase):
         # Validates the reference that test_matches_dense_reference trusts:
         # C must be 0.5 * Hess(V). The second-derivative term diag(r.T @ J) is
         # exact (not Gauss-Newton) because the coefficients are exp(logcoefs).
-        for N, solid, smoothness in [(7, 1, 0.9), (12, 0, 2.5), (3, 1, 0.4)]:
+        for N, solid, scaled_smoothness in [
+                (7, 1, 0.9), (12, 0, 2.5), (3, 1, 0.4)]:
             with self.subTest(N=N, solid=solid):
                 m = N + solid
                 basis, data, x = _random_fit_problem(
@@ -802,7 +805,7 @@ class TestPronyFitQuality(unittest.TestCase):
 
                 def loss_at(point):
                     return _prony_objective(
-                        point, data, basis, smoothness, solid,
+                        point, data, basis, scaled_smoothness, solid,
                     )[0]
 
                 h = 1e-5
@@ -816,7 +819,8 @@ class TestPronyFitQuality(unittest.TestCase):
                             loss_at(x + e_i + e_j) - loss_at(x + e_i - e_j)
                             - loss_at(x - e_i + e_j) + loss_at(x - e_i - e_j)
                         ) / (4 * h * h)
-                C = _dense_half_hessian(x, data, basis, smoothness, solid)
+                C = _dense_half_hessian(
+                    x, data, basis, scaled_smoothness, solid)
                 np.testing.assert_allclose(
                     C, 0.5 * hessian, rtol=1e-3, atol=1e-4 * np.abs(C).max(),
                 )
@@ -827,14 +831,16 @@ class TestPronyFitQuality(unittest.TestCase):
         # N=2 with solid leaves no second difference at all (empty band).
         for N in (2, 3, 4, 8, 20, 40):
             for solid in (0, 1):
-                for smoothness in (0.0, 0.7, 11.0):
-                    with self.subTest(N=N, solid=solid, smoothness=smoothness):
+                for scaled_smoothness in (0.0, 0.7, 11.0):
+                    with self.subTest(N=N, solid=solid,
+                                      scaled_smoothness=scaled_smoothness):
                         basis, data, x = _random_fit_problem(
                             self.rng, N, solid,
                         )
-                        got = _prony_hessian(x, data, basis, smoothness, solid)
+                        got = _prony_hessian(
+                            x, data, basis, scaled_smoothness, solid)
                         want = 2 * _dense_half_hessian(
-                            x, data, basis, smoothness, solid,
+                            x, data, basis, scaled_smoothness, solid,
                         )
                         np.testing.assert_allclose(got, want, rtol=1e-12,
                                                    atol=1e-12 * np.abs(want).max())
@@ -978,9 +984,10 @@ class TestPronyFitQuality(unittest.TestCase):
         basis, data, x = _converged_fit_problem(self.rng, smoothness=smoothness)
         m = basis.shape[1]
         n_resid = 2 * len(data)
-        scaled = _scaled_smoothness(smoothness, m - 1, n_resid - m, LOG_RANGE)
+        scaled_smoothness = _scaled_smoothness(
+            smoothness, m - 1, n_resid - m, LOG_RANGE)
         # The test is only meaningful while the two candidates are far apart.
-        self.assertGreater(scaled, 2 * smoothness)
+        self.assertGreater(scaled_smoothness, 2 * smoothness)
 
         kwargs = dict(n_resid=n_resid, log_range=LOG_RANGE)
         got = _prony_fit_quality(x, data, basis, smoothness, True, **kwargs)
@@ -990,11 +997,12 @@ class TestPronyFitQuality(unittest.TestCase):
             prior_lam=smoothness ** 2, **kwargs)
         _, on_weight, _ = _dense_fit_quality(
             x, data, basis, smoothness, True,
-            prior_lam=scaled ** 2, **kwargs)
+            prior_lam=scaled_smoothness ** 2, **kwargs)
         self.assertAlmostEqual(got.neg_log_posterior, on_knob,
                                delta=1e-9 * abs(on_knob))
-        self.assertAlmostEqual(on_weight - on_knob,
-                               scaled ** 2 - smoothness ** 2, places=6)
+        self.assertAlmostEqual(
+            on_weight - on_knob,
+            scaled_smoothness ** 2 - smoothness ** 2, places=6)
 
     def test_surprisal_is_the_laplace_evidence_of_exp_minus_half_V(self):
         # The stated errors are standard deviations, so the likelihood is
@@ -1295,8 +1303,9 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertEqual(cov.shape, (m, m))
         np.testing.assert_array_equal(cov, cov.T)
         np.linalg.cholesky(cov)  # raises unless positive definite
-        scaled = _scaled_smoothness(smoothness, m - 1, n_resid - m, LOG_RANGE)
-        H = _PronyLoss(data, basis, scaled, True).hess(x)
+        scaled_smoothness = _scaled_smoothness(
+            smoothness, m - 1, n_resid - m, LOG_RANGE)
+        H = _PronyLoss(data, basis, scaled_smoothness, True).hess(x)
         err = np.abs(cov @ H - 2 * np.eye(m)).max()
         self.assertLess(err, 1e-10 * np.linalg.norm(H) * np.linalg.norm(cov))
 
@@ -2382,13 +2391,14 @@ def _unresolved_equilibrium_curve(num_pts=200):
 def _penalized_gradient(omega, E_stor, E_loss, std, tau_i, E_i, smoothness, solid):
     """max |dV/dlogE| of the penalized objective smooth_prony_fit minimizes, at
     the coefficients it returned — rebuilt from the same reduction and the same
-    normalized weight, so zero here means a genuine stationary point."""
+    normalized factor, so zero here means a genuine stationary point."""
     N = len(tau_i)
     m = N + solid
     R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
-    scaled = _scaled_smoothness(
+    scaled_smoothness = _scaled_smoothness(
         smoothness, N, 2 * len(omega) - m, np.log(tau_i[-1] / tau_i[0]))
-    _, grad = _prony_objective(np.log(E_i), z[:m], R[:m], scaled, solid)
+    _, grad = _prony_objective(
+        np.log(E_i), z[:m], R[:m], scaled_smoothness, solid)
     return np.abs(grad).max()
 
 
@@ -2507,9 +2517,9 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         m = len(tau_i) + solid
         R, z = _prony_reduce(
             omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
-        scaled = _scaled_smoothness(
+        scaled_smoothness = _scaled_smoothness(
             smoothness, len(tau_i), dof, np.log(tau_i[-1] / tau_i[0]))
-        return _PronyLoss(z[:m], R[:m], scaled, solid).hess(x)
+        return _PronyLoss(z[:m], R[:m], scaled_smoothness, solid).hess(x)
 
     def _assert_two_inverse_hessians(self, cov, H):
         m = len(H)
@@ -2543,10 +2553,11 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         self.assertEqual(q.covariance.shape, (N, N))
         R, z = _prony_reduce(
             omega, E_stor, E_loss, std, std, tau_i, True, 1.0)
-        scaled = _scaled_smoothness(
+        scaled_smoothness = _scaled_smoothness(
             4.3, N, n_res - (N + 1), np.log(tau_i[-1] / tau_i[0]))
-        H = _PronyLoss(z[:N + 1], R[:N + 1, 1:], scaled, False).hess(
-            np.log(E_i[1:]))
+        H = _PronyLoss(
+            z[:N + 1], R[:N + 1, 1:], scaled_smoothness, False,
+        ).hess(np.log(E_i[1:]))
         self._assert_two_inverse_hessians(q.covariance, H)
 
         tau_i, E_i, q = smooth_prony_fit(
@@ -2761,42 +2772,6 @@ class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
                 )
 
 
-def _integral_curvature_weight(smoothness, N, dof, log_range):
-    """smoothness * sqrt(dof / ell**3), ell = log_range / (N - 1).
-
-    With this weight lam * |d2|**2 is smoothness**2 * dof times the
-    rectangle-rule INTEGRAL of (d2 lnE / d(ln tau)**2)**2, ell per interior
-    node; _scaled_smoothness charges its MEAN over the N - 2 interior nodes,
-    so the two agree at a knob sqrt((N - 2) * ell) apart. Built from ell
-    alone so the tests below never read _scaled_smoothness for it.
-    """
-    ell = log_range / (N - 1)
-    return smoothness * np.sqrt(dof / ell ** 3)
-
-
-def _fit_at_weight(omega, E_stor, E_loss, std, N, weight, solid=True,
-                   std_scale=1.0):
-    """A smoothed fit at an explicit penalty weight, solved the way
-    smooth_prony_fit solves it: the same reduction, the same projected
-    problem, the same flat seed and the same trust-exact Newton. Returns
-    (tau_i, E_i, R, z)."""
-    tau_i = prony_relaxation_space(1 / omega.max(), 1 / omega.min(), N)
-    m = N + solid
-    R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, solid,
-                         std_scale)
-    log_cap = np.log(E_stor.max()) + np.log(1e3)
-    if solid:
-        problem = _PlateauProjectedProblem(z[:m], R[:m], weight, log_cap)
-    else:
-        problem = _PronyLoss(z[:m], R[:m], weight, False, log_cap)
-    x0 = np.full(N, np.log(E_stor.max() / m))
-    with np.errstate(over='ignore', invalid='ignore'):
-        result = minimize(problem.fun, x0, jac=problem.jac, hess=problem.hess,
-                          method='trust-exact')
-    E_i = problem.coefficients(result.x) if solid else np.exp(result.x)
-    return tau_i, E_i, R, z
-
-
 def _bundled_master_curve(name):
     """(omega, E_stor, E_loss, sigma) of a bundled file, sigma = |E*|."""
     with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
@@ -2810,25 +2785,9 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
     """The knob weighs misfit per degree of freedom against the mean curvature
     over the interior nodes (the smoothness-weight definition of the
     manuscript), so one setting means the same thing on master curves of any
-    span.
-
-    Tested by cropping: a curve fitted on half its span at one setting should
-    keep the spectrum the full-span fit gives there. The weight that best
-    reproduces the full-span fit on a crop is close to lam_full itself (within
-    0.84-1.19 lam_full in 23 of 28 bundled cases at smoothness <= 1), so a
-    rule passes by carrying lam across the cut. The mean-curvature weight
-    smoothness**2 * nu / ((N - 2) * ell**4) does, up to the change in data
-    per interior node nu / (N - 2): lam_crop / lam_full is 0.65 to 1.34 on
-    the bundled files. The integral-curvature weight smoothness**2 * nu /
-    ell**3 drops the node count and lands a further factor of about 1/2 low.
+    span. The end-to-end span and term-count checks are in
+    TestSmoothPronyFitReducedSolver.
     """
-
-    RELATIVE_ERROR = 0.01
-
-    @classmethod
-    def setUpClass(cls):
-        cls.curves = {name: _bundled_master_curve(name)
-                      for name in BUNDLED_MASTER_CURVES}
 
     def test_objective_per_dof_is_misfit_plus_smoothness_squared_curvature(
             self):
@@ -2866,141 +2825,15 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     x, basis, pen_solid = np.log(E_i), R, solid
                 nu_eff = n_resid - (quality.effective_terms + pen_solid)
                 log_range = np.log(tau_i[-1] / tau_i[0])
-                weight = _scaled_smoothness(smoothness, N, nu, log_range)
-                V = _PronyLoss(z, basis, weight, pen_solid).fun(x)
+                scaled_smoothness = _scaled_smoothness(
+                    smoothness, N, nu, log_range)
+                V = _PronyLoss(z, basis, scaled_smoothness, pen_solid).fun(x)
                 np.testing.assert_allclose(
                     V / nu,
                     quality.chi2_reduced * nu_eff / nu
                     + smoothness ** 2 * quality.curvature,
                     rtol=1e-10,
                 )
-
-    def test_knob_times_sqrt_interior_length_is_the_integral_curvature_fit(
-            self):
-        # Charging the mean curvature at smoothness * sqrt((N - 2) * ell),
-        # (N - 2) * ell being the length the rectangle rule gives the
-        # interior nodes, is charging the integral at smoothness: the same
-        # weight, so the same optimum to solver precision, with the same
-        # chi2_reduced and curvature. The reference fit builds its weight
-        # from ell alone.
-        sigma_cases = []
-        omega, E_stor, E_loss, std = _broadband_master_curve(600)
-        sigma_cases.append(('broadband', omega, E_stor, E_loss, std, 1.0, 30))
-        omega, E_stor, E_loss, sigma = _bundled_master_curve(
-            'PMMA-R09-master-clean-148C.csv')
-        sigma_cases.append(('PMMA', omega, E_stor, E_loss, sigma,
-                            self.RELATIVE_ERROR, prony_terms_for_span(omega)))
-        smoothness = 0.05
-        for label, omega, E_stor, E_loss, std, scale, N in sigma_cases:
-            with self.subTest(label):
-                log_range = np.log(omega.max() / omega.min())
-                ell = log_range / (N - 1)
-                dof = 2 * len(omega) - (N + 1)
-                _, E_i, quality = smooth_prony_fit(
-                    omega, E_stor, E_loss, std, std, N,
-                    smoothness * np.sqrt((N - 2) * ell),
-                    return_fit_quality=True, std_scale=scale,
-                )
-                _, E_ref, R, z = _fit_at_weight(
-                    omega, E_stor, E_loss, std, N,
-                    _integral_curvature_weight(smoothness, N, dof, log_range),
-                    std_scale=scale,
-                )
-                np.testing.assert_allclose(E_i, E_ref, rtol=1e-9)
-                self.assertGreater(E_i[0], 0)
-                resid = z - R @ E_ref
-                d2 = np.diff(np.log(E_ref[1:]), n=2)
-                nu_eff = 2 * len(omega) - (quality.effective_terms + 1)
-                np.testing.assert_allclose(
-                    quality.chi2_reduced, resid @ resid / nu_eff, rtol=1e-9)
-                np.testing.assert_allclose(
-                    quality.curvature,
-                    d2 @ d2 / ((N - 2) * ell ** 4), rtol=1e-9)
-
-    def test_halving_the_span_keeps_the_retained_spectrum_near_the_full_fit(
-            self):
-        # One knob setting on each bundled master curve and on its upper half
-        # in log10(omega), 3 terms per decade on each (prony_terms_for_span),
-        # at 1% relative error and smoothness 0.3, the app's default. The
-        # distance is the RMS gap in ln E_i between the half-span fit and the
-        # full-span fit interpolated onto its tau grid, leaving out the decade
-        # next to the cut, where the half fit has no data beyond its edge
-        # whatever the prior.
-        #
-        # The comparison is against the integral-curvature weight at
-        # smoothness / sqrt((N_full - 2) * ell_full), which gives the SAME
-        # full-span fit, so only the crop separates the two. The full-span
-        # equality pins the production weight to the mean rule: a weight off
-        # by a span factor (N - 1) / (N - 2) moves E_i by 6e-3 to 3e-2 and
-        # fails there before any crop is compared, while the two solves stop
-        # up to 3e-9 apart (agilus), hence rtol 1e-7. Measured gap ratios (mean
-        # over integral): Cavaille 0.48, PETMP 0.57, PMMA 0.37, VeroCyan
-        # 0.40, agilus 0.49, dgeba 0.86, fisher 0.22; pooled 0.43. Under a
-        # strong prior (effective smoothness >~ 10) or on the lower-half crop
-        # both fits sit near the prior and the comparison does not
-        # discriminate, so neither is asserted. That includes the synthetic
-        # broadband curve at its own sigma = 0.2 |E*|, an effective knob
-        # 20-60x this one; at 1% and smoothness 0.3-1 it agrees (gap ratios
-        # 0.40-0.51). That the weight carries across a crop at all follows
-        # from its sharing a normalization with the curvature readout, which
-        # TestPronyFitQuality checks is exact on any crop:
-        # test_curvature_is_exact_for_a_constant_second_derivative.
-        smoothness = 0.3
-        mean_gaps, integral_gaps = [], []
-        for name, (omega, E_stor, E_loss, sigma) in self.curves.items():
-            with self.subTest(file=name):
-                lo, hi = np.log10(omega.min()), np.log10(omega.max())
-                keep = np.log10(omega) >= (lo + hi) / 2
-                N_full = prony_terms_for_span(omega)
-                ell_full = np.log(omega.max() / omega.min()) / (N_full - 1)
-                spans = {
-                    'full': (omega, E_stor, E_loss, sigma),
-                    'half': (omega[keep], E_stor[keep], E_loss[keep],
-                             sigma[keep]),
-                }
-                mean_fits, integral_fits = {}, {}
-                for span, (o, Es, El, s) in spans.items():
-                    N = prony_terms_for_span(o)
-                    mean_fits[span] = smooth_prony_fit(
-                        o, Es, El, s, s, N, smoothness,
-                        std_scale=self.RELATIVE_ERROR,
-                    )
-                    weight = _integral_curvature_weight(
-                        smoothness / np.sqrt((N_full - 2) * ell_full), N,
-                        2 * len(o) - (N + 1), np.log(o.max() / o.min()))
-                    integral_fits[span] = _fit_at_weight(
-                        o, Es, El, s, N, weight,
-                        std_scale=self.RELATIVE_ERROR)[:2]
-                np.testing.assert_allclose(
-                    mean_fits['full'][1], integral_fits['full'][1], rtol=1e-7)
-
-                def distance(fits):
-                    tau_full, E_full = fits['full']
-                    tau_half, E_half = fits['half']
-                    inner = np.log10(tau_half) <= np.log10(tau_half[-1]) - 1
-                    on_half = np.interp(np.log(tau_half[inner]),
-                                        np.log(tau_full), np.log(E_full[1:]))
-                    gap = np.log(E_half[1:][inner]) - on_half
-                    return np.sqrt(np.mean(gap ** 2))
-
-                mean_gap = distance(mean_fits)
-                integral_gap = distance(integral_fits)
-                mean_gaps.append(mean_gap)
-                integral_gaps.append(integral_gap)
-                self.assertLess(
-                    mean_gap, integral_gap,
-                    msg=f'RMS gap in ln E_i: {mean_gap:.3f} (mean curvature)'
-                        f' vs {integral_gap:.3f} (integral curvature)',
-                )
-        self.assertEqual(len(mean_gaps), len(self.curves),
-                         msg='a file failed before its gaps were measured')
-        pooled = np.sqrt(np.mean(np.square(mean_gaps))
-                         / np.mean(np.square(integral_gaps)))
-        self.assertLess(
-            pooled, 0.6,
-            msg=f'pooled RMS gap ratio (mean / integral curvature): '
-                f'{pooled:.3f}',
-        )
 
 
 TRIVE_FILES_DIR = os.path.abspath(os.path.join(
@@ -3174,9 +3007,9 @@ class TestMisfitPerEffectiveDegreeOfFreedom(unittest.TestCase):
         self.assertEqual(E_i[0], 0.0)
         R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
         x = np.log(E_i[1:])
-        weight = _scaled_smoothness(
+        scaled_smoothness = _scaled_smoothness(
             smoothness, N, n_resid - (N + 1), np.log(tau_i[-1] / tau_i[0]))
-        loss = _PronyLoss(z, R[:, 1:], weight, False)
+        loss = _PronyLoss(z, R[:, 1:], scaled_smoothness, False)
         self.assertLess(np.abs(loss.jac(x)).max(), 1e-6)
         H = loss.hess(x)
         err = np.abs(quality.covariance @ H - 2 * np.eye(N)).max()
