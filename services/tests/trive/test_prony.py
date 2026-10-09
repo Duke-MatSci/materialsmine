@@ -910,29 +910,28 @@ class TestPronyFitQuality(unittest.TestCase):
         np.testing.assert_array_equal(basis, before)
 
     def test_prony_loss_builds_the_penalty_once(self):
-        """lam * L.T @ L is built once per loss, on the first Hessian, and
+        """L.T @ L is built once per (m, solid), on the first Hessian, and
         reused at every later point; a caller mutating a returned Hessian
         must not poison it."""
-        # The single build goes through _add_penalty_inplace. allclose, not
-        # equality: adding one prebuilt matrix rounds differently from nine
-        # band passes.
+        # The single build is the one _penalty_gram cache miss. allclose,
+        # not equality: the Hessian is assembled differently from the dense
+        # reference.
         basis, data, x1 = _random_fit_problem(self.rng, 9, 1)
         points = (x1, x1 + 0.3, x1 - 0.2)
         loss = _PronyLoss(data, basis, 0.6, True)
         flat = _PronyLoss(data, basis, 0.0, True)
-        with mock.patch.object(objective, '_add_penalty_inplace',
-                               wraps=objective._add_penalty_inplace) as build:
-            loss.fun(x1)
-            loss.jac(x1)
-            self.assertEqual(build.call_count, 0)
-            got = []
-            for x in points:
-                H = loss.hess(x)
-                got.append(H.copy())
-                H += 1.0
-            self.assertEqual(build.call_count, 1)
-            got_flat = [flat.hess(x) for x in points[:2]]
-            self.assertEqual(build.call_count, 1)
+        objective._penalty_gram.cache_clear()
+        loss.fun(x1)
+        loss.jac(x1)
+        self.assertEqual(objective._penalty_gram.cache_info().misses, 0)
+        got = []
+        for x in points:
+            H = loss.hess(x)
+            got.append(H.copy())
+            H += 1.0
+        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
+        got_flat = [flat.hess(x) for x in points[:2]]
+        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
         for x, H in zip(points, got):
             want = 2 * _dense_half_hessian(x, data, basis, 0.6, True)
             np.testing.assert_allclose(H, want, rtol=1e-12,
@@ -1090,9 +1089,11 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertIsNone(quality.chi2_reduced)
 
     def test_penalty_helpers_match_the_dense_operator(self):
-        # _add_penalty_inplace and _penalty_trace are the banded forms of
-        # lam * L.T @ L and tr(L.T @ L @ sigma). npen == 3 collides the two
-        # boundary corrections; npen == 2 leaves the band empty.
+        """_penalty_gram(m, solid) is L.T @ L, read-only and cached, and
+        _penalty_trace is tr(L.T @ L @ sigma); the equilibrium term, when
+        solid, is unpenalized."""
+        # npen == 3 collides the two boundary corrections; npen == 2 leaves
+        # the band empty.
         for solid in (True, False):
             for npen in (2, 3, 4, 10):
                 with self.subTest(solid=solid, npen=npen):
@@ -1109,15 +1110,17 @@ class TestPronyFitQuality(unittest.TestCase):
                     self.assertAlmostEqual(
                         objective._penalty_trace(sigma, solid), dense,
                         delta=1e-12 * (1 + abs(dense)))
-                    base = self.rng.normal(size=(m, m))
-                    H = base.copy()
-                    objective._add_penalty_inplace(H, 0.7, solid)
-                    np.testing.assert_allclose(H, base + 0.7 * A,
-                                               rtol=0, atol=1e-12)
+                    gram = objective._penalty_gram(m, solid)
+                    self.assertEqual(gram.shape, (m, m))
+                    np.testing.assert_array_equal(gram, A)
+                    self.assertFalse(gram.flags.writeable)
+                    with self.assertRaises(ValueError):
+                        gram[0, 0] = 1.0
+                    self.assertIs(objective._penalty_gram(m, solid), gram)
                     if npen < 3:
                         self.assertEqual(
                             objective._penalty_trace(sigma, solid), 0.0)
-                        np.testing.assert_array_equal(H, base)
+                        np.testing.assert_array_equal(gram, 0.0)
 
     def test_chi2_is_per_effective_degree_of_freedom(self):
         # chi2_reduced divides by n_resid - (gamma + 1): the decaying terms
@@ -2588,7 +2591,7 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
             problem.coefficients(x), np.concatenate(([E_eq], np.exp(x))))
 
     def test_plateau_projection_builds_one_shared_penalty(self):
-        """The clamped and free losses share one penalty matrix: Hessians on
+        """The clamped and free losses share one penalty Gram: Hessians on
         both branches build it once in total."""
         rng = np.random.default_rng(7)
         m = 9
@@ -2600,12 +2603,11 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         problem = _PlateauProjectedProblem(data, basis, 0.8)
         self.assertGreater(problem.equilibrium(x_free), 0)
         self.assertEqual(problem.equilibrium(x_clamp), 0.0)
-        with mock.patch.object(objective, '_add_penalty_inplace',
-                               wraps=objective._add_penalty_inplace) as build:
-            problem.hess(x_free)
-            H_clamp = problem.hess(x_clamp)
-            problem.hess(x_free + 0.1)
-            self.assertEqual(build.call_count, 1)
+        objective._penalty_gram.cache_clear()
+        problem.hess(x_free)
+        H_clamp = problem.hess(x_clamp)
+        problem.hess(x_free + 0.1)
+        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
         want = 2 * _dense_half_hessian(x_clamp, data, basis[:, 1:], 0.8, 0)
         np.testing.assert_allclose(H_clamp, want, rtol=1e-12,
                                    atol=1e-12 * np.abs(want).max())
