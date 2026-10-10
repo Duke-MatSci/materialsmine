@@ -22,7 +22,7 @@
           The Prony series is a compact, portable description of a material's viscoelastic
           response, which makes it a convenient hand-off to finite-element solvers, to
           property-prediction pipelines, and to AI-driven materials design workflows. Tri-VE runs
-          inside MaterialsMine so that fits sit next to the curated data they came from.
+          inside MaterialsMine so that curated DMA data can be analyzed directly. (Coming soon!)
         </p>
       </section>
 
@@ -44,21 +44,6 @@
           where indicated otherwise.
         </p>
         <p>
-          The weights are found by a non-negative least-squares fit in log-coefficient space,
-          regularized with a curvature (second-difference) penalty on the spectrum — a nonlinear
-          Tikhonov approach following Shanbhag (2020). The <em>Smoothness</em> control sets the
-          strength of that penalty: larger values give a smoother, better-conditioned spectrum,
-          and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
-        </p>
-        <p>
-          Each data point is weighted by its uncertainty. If your file supplies error columns
-          those values set the point-to-point weighting, and an <em>Error Scale</em> setting
-          multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
-          fit if your instrument understates its uncertainty. Otherwise the
-          <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
-          that each point is weighted by σ = (relative error ÷ 100) × |E*|.
-        </p>
-        <p>
           Time–temperature superposition (TTSP) provides the temperature axis. Tri-VE supports
           three shift-factor models: <strong>WLF</strong> (with T<sub>g</sub> in °C,
           C<sub>1</sub>, and C<sub>2</sub> either entered or estimated from your data),
@@ -74,15 +59,97 @@
           T<sub>g</sub> somewhat, but we lack an anchor to choose it automatically for you, so
           you may have to try a few options to get a good fit.
         </p>
+        <p>
+          Each data point is weighted by its uncertainty. If your file supplies error columns
+          those values set the point-to-point weighting, and an <em>Error Scale</em> setting
+          multiplies them uniformly — 1.0 uses them exactly as supplied, larger values relax the
+          fit if your instrument understates its uncertainty. Otherwise the
+          <em>Relative Error</em> setting supplies an assumed uncertainty as a percentage, so
+          that each point is weighted by
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">σ = (relative error ÷ 100) × |E*|.</span>
+          </span>
+          Either way the errors are read as standard deviations, and χ<sup>2</sup> is the sum
+          of the squared, error-weighted residuals.
+        </p>
+        <p>
+          The roughness of the fitted spectrum is measured by its <em>curvature</em>, the mean
+          squared second derivative of <span class="tri-ve-about__eq">H = ln E<sub>i</sub></span> with respect to
+          <span class="tri-ve-about__eq">ln τ</span>, built from the second differences Δ<sup>2</sup> along the relaxation grid:
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">⟨H″<sup>2</sup>⟩ = Σ(Δ<sup>2</sup> ln E<sub>i</sub>)<sup>2</sup>/((n−2)·ℓ<sup>4</sup>),</span>
+          </span>
+          where n is the number of Prony terms and
+          <span class="tri-ve-about__eq">ℓ = L/(n−1)</span> the spacing of the relaxation grid in <span class="tri-ve-about__eq">ln τ</span>, with
+          <span class="tri-ve-about__eq">L = ln(τ<sub>max</sub>/τ<sub>min</sub>)</span> its span. The
+          Prony weights E<sub>i</sub> are found by a regularized least-squares fit in
+          log-coefficient space, which keeps them positive. It minimizes
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">V = χ<sup>2</sup> + s<sup>2</sup>·dof·⟨H″<sup>2</sup>⟩,</span>
+          </span>
+          a nonlinear Tikhonov approach adapted from Shanbhag (2020). Here s is the
+          <em>Smoothness</em> setting and dof the degrees of freedom (data values fitted minus
+          parameters fitted). Larger values of s give a smoother, better-conditioned spectrum,
+          and zero disables the penalty entirely, leaving a plain non-negative least-squares fit.
+          Because ⟨H″<sup>2</sup>⟩ is an average along the grid and dof scales the penalty with
+          the amount of data, <em>Smoothness</em> has a consistent meaning across datasets with
+          different spans, data densities, and numbers of Prony terms.
+        </p>
+        <p>
+          Reading the errors as standard deviations makes the coefficient posterior
+          <span class="tri-ve-about__eq-display">
+            <span class="tri-ve-about__eq">π&thinsp;(E<sub>i</sub> | s<sup>2</sup>, data) ∝ exp(−V/2).</span>
+          </span>
+          On a smoothed fit the readout reports three numbers. <em>Misfit</em> is
+          <span class="tri-ve-about__eq">χ<sup>2</sup>/ν</span>, where ν is the effective degrees of freedom: data values fitted
+          minus the number of well-determined parameters of MacKay (1992).
+          <em>Curvature</em> is ⟨H″<sup>2</sup>⟩ defined above. <em>Surprisal</em> is
+          <span class="tri-ve-about__eq">−log π&thinsp;(s<sup>2</sup> | data)</span>, the negative log posterior of s<sup>2</sup> with
+          the coefficients integrated out, under an exponential prior on s<sup>2</sup>. You can
+          choose a good error scaling or relative error by, at zero smoothing, finding the value
+          that sets misfit to 1.0, or directly multiply the current setting by √misfit.
+          You can choose a good smoothing by finding the value that minimizes surprisal given
+          a constant error setting.
+        </p>
+        <p>
+          When smoothing is on, the fitted curves carry a shaded ±1σ band in the fit line's
+          color, the spectrum dots carry error bars, and the spectrum's long-term modulus line carries a band of its own. All come from the second
+          derivative of V at its minimum. The band is a credible interval on the curve itself:
+          it shows how tightly your error inputs and the <em>Smoothness</em> setting pin down
+          the fit, not how far the fit may sit from the truth. Smoothing bias is not included,
+          so at strong smoothing the true curve can fall outside the band more often than the
+          label suggests. With <span class="tri-ve-about__eq"><em>Smoothness</em> = 0</span> there are no bands.
+        </p>
+        <p>
+          The frequency-domain plots also carry a second, wider ±1σ band in the data's color.
+          This is a prediction interval: where a new measurement would be expected to land. It
+          combines the curve's uncertainty with your stated measurement error. It is not drawn
+          on E(t) or the discrete spectrum, which are not measured directly.
+        </p>
+        <p>
+          On a smoothed fit the coefficient table and its CSV download gain two columns,
+          <code>E_i_lower</code> and <code>E_i_upper</code>: the ±1σ range of each coefficient
+          in Pa, the same range the error bars on the spectrum plot show. With smoothing off
+          these columns are absent. When the fit has a long-term modulus, the table ends with
+          one more row for it, with <code>tau_i</code> shown as <code>inf</code>; its range is the band on the spectrum's long-term modulus line.
+        </p>
+        <p>
+          The fitted curves are drawn one decade past your measured window on each side, showing
+          an extrapolation of the Prony series as it would be exported.
+          The plotted E(t) includes the
+          long-term modulus, so past the last relaxation time it levels off at that modulus
+          (or heads to zero when there is none). The vertical axes are set from the measured window, so the
+          tails can run off the plot.
+        </p>
       </section>
 
       <section class="tri-ve-about__section">
         <h2 class="visualize_header-h1">Data format</h2>
         <p>
           Upload a CSV, TSV, or TXT file. Columns are read by position and count; a header row is
-          optional and is ignored entirely. The first column is frequency in Hz (or temperature
+          optional and is ignored entirely. The first column is frequency (or temperature
           in °C, if you are starting in the temperature domain), followed by the storage and loss
-          moduli in pascals. Three column layouts are accepted:
+          moduli. Three column layouts are accepted:
         </p>
         <ul class="tri-ve-about__list">
           <li>Frequency · E' · E"</li>
@@ -90,11 +157,20 @@
           <li>Frequency · E' · E" · E' Error · E" Error</li>
         </ul>
         <p>
+          Tri-VE does not inspect the units of your data. Frequency is assumed to be angular
+          frequency in rad/s: the values are used as given, so a file in Hz yields relaxation
+          times, and an E(t) time axis, 2π times too long. Multiply by 2π before uploading if
+          your instrument reports Hz. A temperature sweep is treated as measured at 1 rad/s. The
+          moduli are passed through unchanged: plots and tables label them E and Pa, but they
+          keep whatever units, and whatever kind of modulus, you supply.
+        </p>
+        <p>
           Error is an <strong>absolute standard deviation in Pa</strong> — the same units as the
           moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5% uncertainty is
           <strong>5e7</strong>, not 0.05. Every error value must be greater than zero. Error
-          columns set the fit weights (1/σ), and the Relative Error setting becomes an Error
-          Scale that multiplies them; they are not drawn as error bars.
+          columns set the fit weights <span class="tri-ve-about__eq">(1/σ)</span>, and the Relative Error setting becomes an Error
+          Scale that multiplies them. They are not drawn as error bars on the experimental
+          points, but they feed the ±1σ bands drawn around the fit.
         </p>
         <p>
           A manual shift-factor file, if you use one, is two columns: temperature in °C and
@@ -127,6 +203,13 @@
             Bayesian Criterion," <em>Rheologica Acta</em>, 59(8), pp. 509–520.
             <a href="https://doi.org/10.1007/s00397-020-01212-w" target="_blank" rel="noopener">
               https://doi.org/10.1007/s00397-020-01212-w
+            </a>
+          </li>
+          <li>
+            MacKay, D. J. C. (1992) "Bayesian Interpolation," <em>Neural Computation</em>, 4(3),
+            pp. 415–447.
+            <a href="https://doi.org/10.1162/neco.1992.4.3.415" target="_blank" rel="noopener">
+              https://doi.org/10.1162/neco.1992.4.3.415
             </a>
           </li>
           <li>
@@ -171,6 +254,19 @@ onBeforeUnmount(() => {
 
 .tri-ve-about__section p {
   margin-bottom: 0.75rem;
+}
+
+/* Inline equations break as a unit, never mid-expression. */
+.tri-ve-about__eq {
+  white-space: nowrap;
+}
+
+/* Lengthy equations get a centered line of their own. A span, since a block
+   element cannot sit inside the paragraph the sentence continues in. */
+.tri-ve-about__eq-display {
+  display: block;
+  margin: 0.5rem 0;
+  text-align: center;
 }
 
 .tri-ve-about__list,

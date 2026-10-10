@@ -21,8 +21,9 @@ MAX_ABS_LOG10_SHIFT = 15.0
 
 # Reference frequency / temperature for the frequency-domain visualization's
 # inverse-WLF scatter; arbitrary but stable so the temperature axis stays
-# comparable across uploads.
-VIS_REF_FREQUENCY_HZ = 1.0
+# comparable across uploads. In the upload's own frequency units, which are
+# not inspected and are taken as rad/s.
+VIS_REF_FREQUENCY = 1.0
 
 
 def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
@@ -42,7 +43,8 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         temp_sweep_data (pd.DataFrame): Input data with columns
             ['Temperature', "E'", "E''"], optionally including 'Frequency'
             for the per-row measurement frequency. If 'Frequency' is absent,
-            1.0 Hz is assumed (typical for a fixed-frequency DMA temperature sweep).
+            a frequency of 1.0 is assigned (a fixed-frequency DMA temperature
+            sweep); like every frequency here it is taken as rad/s.
         shift_model (str): Which shift function to apply. 'WLF' uses
             wlf_shift across all temperatures; 'hybrid' uses hybrid_shift
             (Arrhenius at or below TC, WLF above); 'manual' requires
@@ -315,7 +317,7 @@ def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
 def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, *,
                                     Tg=None, TC=None, C1=None, C2=None, Ea=None,
                                     shiftData=None,
-                                    omega_ref: float = VIS_REF_FREQUENCY_HZ) -> pd.DataFrame:
+                                    omega_ref: float = VIS_REF_FREQUENCY) -> pd.DataFrame:
     """
     Convert a frequency master curve to a temperature sweep via inverse TTS.
 

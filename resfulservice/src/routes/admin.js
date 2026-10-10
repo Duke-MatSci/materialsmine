@@ -6,12 +6,6 @@ const isAuth = require('../middlewares/isAuth');
 const { latencyTimer } = require('../middlewares/latencyTimer');
 
 router
-  .route('/es/bulk')
-  .post(AdminController.bulkElasticSearchImport)
-  .put(AdminController.dataDump)
-  .delete(AdminController.dataDump);
-
-router
   .route('/populate-datasets-properties')
   .get(AdminController.getDatasetProperties)
   .post(isAuth, AdminController.populateDatasetProperties);

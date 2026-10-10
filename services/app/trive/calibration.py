@@ -48,14 +48,14 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
     Raises:
         ValueError: If curve_fit fails to converge.
     """
-    # TODO(scipy>=1.11): fixed parameters are currently held constant by
-    # closure reparametrization (excluded from the fit vector and captured in
-    # `model`) because scipy 1.10.1 rejects equal bounds with "Each lower bound
-    # must be strictly less than each upper bound". Once the services env is
-    # bumped to scipy >= 1.11, this can be revised to pass ALL parameters to
-    # curve_fit with bounds, fixing a parameter via lb == ub. That would let the
-    # callers (fit_wlf_coefficients / fit_hybrid_coefficients) drop their
-    # per-parameter free/fixed branching in favor of one bounds vector.
+    # Fixed parameters are held constant by closure reparametrization
+    # (excluded from the fit vector and captured in `model`) because
+    # curve_fit rejects equal bounds with "Each lower bound must be strictly
+    # less than each upper bound". This is not a version gap: minimize
+    # already factors out lb == ub variables in the pinned scipy 1.10.1,
+    # but least_squares (which curve_fit wraps) rejects them there and
+    # still does on current scipy. A scipy bump does not let the callers
+    # drop their per-parameter free/fixed branching.
     try:
         popt, _ = curve_fit(model, T, log10_a_T, p0=p0, bounds=bounds,
                             sigma=sigma, absolute_sigma=sigma is not None)
@@ -243,8 +243,8 @@ def fit_wlf_coefficients(
     log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
 
     # Build a model over only the free parameters; fixed ones are closed over.
-    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject. The offset is always free.
+    # This avoids passing degenerate lb==ub bounds to curve_fit, which
+    # rejects them. The offset is always free.
     free_names = [n for n, fixed in
                   [('C1', fix_C1), ('C2', fix_C2), ('log10_a_T_ref', False)]
                   if not fixed]
@@ -406,8 +406,8 @@ def fit_hybrid_coefficients(
     log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
 
     # Build a model over only the free parameters; fixed ones are closed over.
-    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject. The offset is always free.
+    # This avoids passing degenerate lb==ub bounds to curve_fit, which
+    # rejects them. The offset is always free.
     free_names = [n for n, fixed in
                   [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea),
                    ('log10_a_T_ref', False)]

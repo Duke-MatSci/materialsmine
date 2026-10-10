@@ -1,5 +1,4 @@
 const elasticSearch = require('../utils/elasticSearch');
-const { outboundRequest } = require('../controllers/kgWrapperController');
 const DatasetId = require('../models/datasetId');
 const URI = require('../../config/uri');
 const DatasetProperty = require('../models/datasetProperty');
@@ -43,74 +42,6 @@ exports.loadObjectStore = async (req, res, next) => {
   log.info('loadObjectStore(): Function entry');
 
   return res.redirect(`http://localhost:${req.env.MINIO_CONSOLE_PORT}`);
-};
-
-/**
- * Bulk Load Elastic Search
- * @param {*} req
- * @param {*} res
- * @param {*} next
- * @returns {*} response
- */
-const _loadBulkElasticSearch = async (req, res, next) => {
-  const log = req.logger;
-  log.info('_loadBulkElasticSearch(): Function entry');
-  const body = JSON.parse(req?.body);
-  const type = body?.type;
-  const data = body?.data;
-
-  if (!type || !data.length) {
-    return next(
-      errorWriter(
-        req,
-        'Category type or doc array is missing',
-        '_loadBulkElasticSearch',
-        422
-      )
-    );
-  }
-
-  try {
-    const total = data.length ?? 0;
-    let rejected = 0;
-
-    // Delete existing docs in this index type
-    log.info(`_loadBulkElasticSearch(): Deleting existing ${type} indices`);
-
-    /** Users will always pass limit & offset, if submitting multi bulk entries.
-     * If it's missing in request header delete existing docs
-     * Only clear if it is a one time bulk entry.
-     */
-    if ((!req.query.offset || +req.query.offset === 0) && !!total) {
-      await elasticSearch.deleteIndexDocs(req, type);
-      log.info(
-        `_loadBulkElasticSearch(): Successfully deleted ${type} indices`
-      );
-    } else {
-      log.info(`_loadBulkElasticSearch(): Skipped deleting ${type} indexes`);
-    }
-
-    for (const item of data) {
-      const response = await elasticSearch.indexDocument(req, type, item);
-
-      if (!response) {
-        log.debug(
-          `_loadBulkElasticSearch()::error: rejected - ${response.statusText}`
-        );
-        rejected = rejected + 1;
-      }
-    }
-
-    await elasticSearch.refreshIndices(req, type);
-    successWriter(req, 'success', '_loadBulkElasticSearch');
-
-    return res.status(200).json({
-      total,
-      rejected
-    });
-  } catch (err) {
-    next(errorWriter(req, err, '_loadBulkElasticSearch', 500));
-  }
 };
 
 /**
@@ -189,45 +120,6 @@ exports.pingElasticSearch = async (req, res, next) => {
   } catch (err) {
     next(errorWriter(req, err, 'pingElasticSearch', 500));
   }
-};
-
-/**
- * Fetch data from knowledge graph and dump into ES
- * NOTE: It overwrites the index
- * @param {*} req
- * @param {*} res
- * @param {*} next
- * @returns {*} response
- */
-exports.dataDump = async (req, res, next) => {
-  const log = req.logger;
-  log.info('dataDump(): Function entry');
-
-  try {
-    if (req.method === 'DELETE') {
-      const type = req.query.type;
-      await elasticSearch.deleteIndexDocs(req, type);
-      return res.status(200);
-    }
-
-    const { type, data } = await outboundRequest(req, next);
-    req.body = JSON.stringify({ type, data });
-
-    return _loadBulkElasticSearch(req, res, next);
-  } catch (err) {
-    next(errorWriter(req, err, 'dataDump', 500));
-  }
-};
-
-/** This function allows for upload already fetched data
- * into ES. It will NOT call the knowledge graph as it assumes
- * user already have the data. NOTE: It overwrites the index
- */
-exports.bulkElasticSearchImport = (req, res, next) => {
-  const log = req.logger;
-  log.info('bulkElasticSearchImport(): Function entry');
-
-  return _loadBulkElasticSearch(req, res, next);
 };
 
 /**

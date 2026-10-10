@@ -12,18 +12,26 @@ bottom-up:
                  curvature its smoothness penalty is built from, and the
                  scaling that makes `smoothness` mesh-independent
     reduction    the chunked QR that compresses the weighted least-squares
-                 problem to O(N) rows, and its content-addressed LRU cache
-    quality      scoring a converged fit: reduced chi-squared, the Laplace
+                 problem to O(N) rows, and its content-addressed LRU cache;
+                 also the probe-basis rank behind the term-count limit and
+                 the probe resolution behind the grid-size suggestion
+    quality      scoring a converged fit: chi-squared per effective degree of
+                 freedom, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness
     fit          smooth_prony_fit — composes the four above into the single
-                 call that turns data into (tau_i, E_i)
+                 call that turns data into (tau_i, E_i), failing fast with
+                 a remedy when the Newton solve stalls
+    uncertainty  delta-method 1-sigma bands: the reported covariance carried
+                 to the spectrum, the complex moduli and E(t), and the
+                 measurement noise a prediction band adds to the moduli
 
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift
                  data, and the peak finder that estimates Tg and TC
     tts          applying a shift model to a data frame, both directions
 
-    figures      plotly figures, their captions, plot-trace thinning, the
+    figures      plotly figures, their captions, the uncertainty ribbons and
+                 error bars, plot-trace thinning, the
                  shift-factor figure, and the coefficient table
     chart        update_line_chart — the whole pipeline, called by the route
 
@@ -56,6 +64,11 @@ from .prony import (  # noqa: E402
     prony_relaxation_space,
     prony_terms_for_span,
 )
+from .reduction import (  # noqa: E402
+    prony_noise_ceiling,
+    prony_rank_limit,
+    prony_resolution,
+)
 from .shift import (  # noqa: E402
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
@@ -67,7 +80,7 @@ from .shift import (  # noqa: E402
 )
 from .tts import (  # noqa: E402
     MAX_ABS_LOG10_SHIFT,
-    VIS_REF_FREQUENCY_HZ,
+    VIS_REF_FREQUENCY,
     tts_frequency_to_temperature,
     tts_frequency_to_temperature_V2,
     tts_frequency_to_temperature_hybrid,
@@ -82,7 +95,7 @@ __all__ = [
     'PRONY_TERMS_PER_DECADE',
     'UNIVERSAL_WLF_C1',
     'UNIVERSAL_WLF_C2',
-    'VIS_REF_FREQUENCY_HZ',
+    'VIS_REF_FREQUENCY',
     'argmax_peak',
     'compute_complex',
     'compute_relaxation_modulus',
@@ -93,6 +106,9 @@ __all__ = [
     'inverse_wlf_shift',
     'peak_edge_warning',
     'prony_basis',
+    'prony_noise_ceiling',
+    'prony_rank_limit',
+    'prony_resolution',
     'prony_relaxation_space',
     'prony_terms_for_span',
     'smooth_prony_fit',

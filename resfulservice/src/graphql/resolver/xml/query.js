@@ -22,7 +22,7 @@ const xmlFinderQuery = {
 
   xmlViewer: async (_, { input }, { req }) => {
     req.logger?.info('[xmlViewer] Function Entry');
-    const { id, isNewCuration } = input;
+    const { id, isNewCuration, requireApproval } = input;
     try {
       if (isNewCuration) {
         const curationSample = await CuratedSamples.findOne(
@@ -33,6 +33,10 @@ const xmlFinderQuery = {
 
         if (!curationSample) {
           return errorFormater('curationSample not found', 404);
+        }
+
+        if (requireApproval && curationSample.entityState !== 'Approved') {
+          return errorFormater('Curation must be approved before publishing', 403);
         }
 
         let xml = XlsxFileManager.xmlGenerator(
@@ -62,6 +66,11 @@ const xmlFinderQuery = {
         );
 
         if (!xmlData) return errorFormater('XmlData not found', 404);
+
+        if (requireApproval && xmlData.entityState !== 'IngestSuccess') {
+          return errorFormater('Curation must be approved before publishing', 403);
+        }
+
         const xmlString = await xmlFormatter(xmlData.xml_str, {
           collapseContent: true
         });
