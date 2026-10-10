@@ -7,13 +7,7 @@ the exact QR compression, `objective` for the penalized loss, `quality` for the
 score — and owns the two decisions that need all four in view: how the
 user-facing smoothness knob is normalized, and how the equilibrium modulus is
 kept out of the Newton solver's search (`_PlateauProjectedProblem`).
-It also bounds that search: a stalled or diverging solve becomes a ValueError
-naming the remedy (`SmoothPronyFitTimeout`, `SmoothPronyFitDiverged`).
 """
-
-import contextlib
-import ctypes
-import threading
 
 import numpy as np
 from scipy.optimize import minimize, nnls
@@ -22,153 +16,6 @@ from .prony import prony_relaxation_space
 from .objective import _PronyLoss, _scaled_smoothness
 from .reduction import _prony_reduce
 from .quality import _FitQuality, _prony_fit_quality
-
-
-# Wall-clock budget for the Newton solve, in seconds; read at call time.
-# Policy, not only a hang guard: a fit slower than this is rejected with a
-# remedy rather than left to finish, even if it would have converged.
-_NEWTON_TIME_BUDGET = 1.0
-
-# Shift added to the diagonal of the SOLVER's Hessian, in ulps of its largest
-# absolute diagonal entry; read at call time. Only the Newton step sees it.
-_NEWTON_HESSIAN_SHIFT_EPS = 64
-
-# How many times a solve that scipy aborts with a ValueError is restarted
-# from its last accepted iterate before the failure is reported; read at
-# call time. See _restarting_minimize.
-_NEWTON_MAX_RESTARTS = 6
-
-# scipy's default initial trust radius, and the factor by which it shrinks
-# a rejected step's radius; each restart applies the factor once more.
-_TRUST_RADIUS_INITIAL = 1.0
-_TRUST_RADIUS_SHRINK = 0.25
-
-
-class SmoothPronyFitTimeout(ValueError):
-    """The Newton solve exceeded _NEWTON_TIME_BUDGET.
-
-    A ValueError so the routes answer 400 with the message and its remedy.
-    """
-
-
-class SmoothPronyFitDiverged(ValueError):
-    """scipy raised a ValueError inside the Newton solve, and restarting
-    from the last accepted iterate did not get past it.
-
-    A ValueError so the routes answer 400 with the message and its remedy.
-    """
-
-
-class _NewtonBudgetExceeded(BaseException):
-    """Injected by _newton_watchdog; BaseException so nothing swallows it."""
-
-
-@contextlib.contextmanager
-def _newton_watchdog(budget: float):
-    """
-    Raise _NewtonBudgetExceeded in the calling thread after `budget` seconds.
-
-    scipy 1.10.1's trust-exact subproblem is an unbounded loop that maxiter
-    cannot cap; an exactly-zero Hessian eigenvalue can make it cycle forever.
-    A daemon timer injects the exception with PyThreadState_SetAsyncExc, which
-    interrupts pure-Python execution only, not a blocked C call. On exit the
-    timer is cancelled and any undelivered injection is cleared.
-
-    scipy >= 1.17 bounds each subproblem (the trust-exact option
-    subproblem_maxiter, default 25), which lets minimize's own maxiter cap
-    the whole solve. Once the stack moves past Python 3.8 (the reason for
-    the 1.10.1 pin) that can replace this thread injection.
-
-    Parameters:
-        budget (float): Seconds before the body is interrupted.
-    """
-    tid = ctypes.c_ulong(threading.get_ident())
-
-    def expire():
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            tid, ctypes.py_object(_NewtonBudgetExceeded))
-
-    timer = threading.Timer(budget, expire)
-    timer.daemon = True
-    timer.start()
-    try:
-        yield
-    finally:
-        timer.cancel()
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
-
-
-def _shifted_hessian(hess, eps_multiple: float):
-    """
-    Wrap a Hessian callable so the solver sees H + shift * I.
-
-    shift = eps_multiple * eps * max|diag H|, eps being the machine epsilon
-    of H's dtype. An exactly-zero eigenvalue (a direction both the smoothness
-    penalty and the data leave flat) sends scipy 1.10.1's subproblem loop
-    into a cycle; a rounding-level shift gives it representable curvature.
-    The shift is added in place to the array `hess` returns, so `hess` must
-    return a fresh array each call (_PronyLoss.hess and
-    _PlateauProjectedProblem.hess do).
-
-    Parameters:
-        hess (callable): logcoefs -> (m, m) Hessian array.
-        eps_multiple (float): Shift in units of the array's machine epsilon.
-
-    Returns:
-        callable: logcoefs -> the shifted Hessian, for minimize's hess=.
-    """
-    def shifted(logcoefs: np.ndarray) -> np.ndarray:
-        H = hess(logcoefs)
-        if not eps_multiple:
-            return H
-        shift = eps_multiple * np.finfo(H.dtype).eps * np.abs(np.diag(H)).max()
-        H[np.diag_indices_from(H)] += shift
-        return H
-    return shifted
-
-
-def _restarting_minimize(x0, **kwargs):
-    """
-    scipy.optimize.minimize, restarted from its last accepted iterate with a
-    smaller trust region when scipy aborts with a ValueError.
-
-    scipy 1.10.1's trust-exact subproblem breaks when the trust radius has
-    just shrunk at a positive definite Hessian: it reuses the previous
-    solve's lower bound on the damping factor, starts above the answer,
-    lets its Newton update carry the damping factor below zero, and takes
-    the square root of a negative product. A solve that STARTS at the
-    smaller radius has no previous bound to reuse, so each restart quarters
-    the initial radius (scipy's own shrink factor). The objective is
-    untouched and the progress made is kept. At most _NEWTON_MAX_RESTARTS
-    restarts are made; the caller's time budget covers all attempts
-    together.
-
-    Parameters:
-        x0 (numpy.ndarray): Seed of the first attempt.
-        **kwargs: Passed to minimize unchanged (fun, jac, hess, method).
-
-    Returns:
-        scipy.optimize.OptimizeResult: The result of the attempt that
-        finished.
-
-    Raises:
-        ValueError: scipy's own, once the restarts are used up.
-    """
-    last = [np.asarray(x0)]
-
-    def record(xk):
-        last[0] = np.array(xk, copy=True)
-
-    radius = _TRUST_RADIUS_INITIAL
-    for restarts_left in range(_NEWTON_MAX_RESTARTS, -1, -1):
-        try:
-            return minimize(x0=last[0], callback=record,
-                            options={'initial_trust_radius': radius},
-                            **kwargs)
-        except ValueError:
-            if not restarts_left:
-                raise
-            radius *= _TRUST_RADIUS_SHRINK
 
 
 class _PlateauProjectedProblem:
@@ -208,8 +55,8 @@ class _PlateauProjectedProblem:
     of this and uses a _PronyLoss directly.
     """
 
-    def __init__(self, data: np.ndarray, basis: np.ndarray,
-                 scaled_smoothness: float, log_cap: float = None):
+    def __init__(self, data: np.ndarray, basis: np.ndarray, smoothness: float,
+                 log_cap: float = None):
         r0 = basis[:, 0]
         self._r0 = r0
         self._r0_sq = r0 @ r0
@@ -218,12 +65,11 @@ class _PlateauProjectedProblem:
         # off r0, for E_eq > 0. The projector is applied once to each array
         # rather than materialized.
         rest = basis[:, 1:]
-        self._clamped = _PronyLoss(
-            data, rest, scaled_smoothness, False, log_cap)
+        self._clamped = _PronyLoss(data, rest, smoothness, False, log_cap)
         self._free = _PronyLoss(
             data - r0 * ((r0 @ data) / self._r0_sq),
             rest - np.outer(r0, (r0 @ rest) / self._r0_sq),
-            scaled_smoothness, False, log_cap,
+            smoothness, False, log_cap,
         )
 
     def equilibrium(self, logcoefs: np.ndarray) -> float:
@@ -312,18 +158,6 @@ def smooth_prony_fit(
     (an unbounded `while True` in scipy that maxiter cannot cap) while BFGS
     overflowed to NaN. Do not reintroduce it.
 
-    The flat seed does not make that loop unreachable: an exactly-zero
-    Hessian eigenvalue still cycles it. So the solver's Hessian (not the
-    scored one) carries a rounding-level diagonal shift (_shifted_hessian),
-    and the solve runs under _newton_watchdog with _NEWTON_TIME_BUDGET.
-
-    scipy 1.10.1's subproblem can also drive its own damping factor negative
-    and then to NaN, which surfaces as a ValueError from a finite, positive
-    definite Hessian (bundled agilus curve, N = 48, smoothness 0.3, 1%
-    error). The loss is not at fault, so the solve is restarted from its
-    last accepted iterate with a smaller trust region, which takes a
-    different path to the same optimum. See _restarting_minimize.
-
     Parameters:
         omega (numpy.ndarray): 1-D array of angular frequencies.
         E_stor (numpy.ndarray): 1-D array of storage-modulus values, same
@@ -337,12 +171,10 @@ def smooth_prony_fit(
         N (int): Number of relaxation times in the fit grid.
         smoothness (float): Strength of the smoothing prior on the
             log-coefficients. Pass 0 to disable. Normalized internally by
-            _scaled_smoothness, which makes it the exchange rate
-            between the two numbers
-            the fit-quality readout reports: V/dof = chi2/dof +
-            smoothness**2 * curvature, dof being the classical n_resid - m
-            (the readout's chi2_reduced divides chi2 by the smaller effective
-            count instead; see _prony_fit_quality). A given value therefore
+            sqrt(dof / h**3) (see _scaled_smoothness), h being the log-tau grid
+            spacing, which makes it the exchange rate between the two numbers
+            the fit-quality readout reports: V/dof = chi2_reduced +
+            smoothness**2 * (log_range * curvature). A given value therefore
             produces comparable smoothing whether the file has 400 rows or
             40,000, whether it is fit with 20 terms or 100, and whether it
             covers 4 decades or 20.
@@ -366,18 +198,7 @@ def smooth_prony_fit(
         score is that of the N-term solid=False problem the solver actually
         converged on), and quality.curvature is None on the unsmoothed path,
         where the NNLS active set makes log-coefficients (and so their
-        roughness) undefined. quality.covariance, the Laplace covariance of
-        the log-coefficients, is None there too and wherever Hess V is not
-        positive definite; its rows follow E_i (equilibrium first when
-        solid) except on the clamped path, which covers the N decaying
-        terms only.
-
-    Raises:
-        SmoothPronyFitTimeout: the Newton solve outran _NEWTON_TIME_BUDGET.
-        SmoothPronyFitDiverged: scipy raised a ValueError inside the solve
-            and _NEWTON_MAX_RESTARTS restarts did not get past it.
-        Both are ValueErrors whose message names the grid size N and the
-        remedy, so the routes answer them with a 400.
+        roughness) undefined.
     """
     assert isinstance(omega, np.ndarray) and omega.ndim == 1, \
         "omega must be a 1-D numpy.ndarray"
@@ -421,15 +242,13 @@ def smooth_prony_fit(
         E_nnls, rnorm = nnls(R, z)
         if not return_fit_quality:
             return tau_i, E_nnls
-        # NNLS's exact zeros are not parameters the data determined.
-        nu = n_res - np.count_nonzero(E_nnls)
-        # No penalty means no posterior over smoothness**2, but the misfit is
+        # No penalty means no posterior over lam to report, but the misfit is
         # still meaningful — and nnls already handed us ||R c - z||, which the
         # reduction's residual row makes a full-problem quantity. Curvature is
         # genuinely undefined here, not merely unavailable: NNLS's active set
         # leaves coefficients EXACTLY zero, whose logs are -inf.
         return tau_i, E_nnls, _FitQuality(
-            rnorm ** 2 / nu if nu > 0 else None, None, None,
+            rnorm ** 2 / dof if dof > 0 else None, None, None,
         )
 
     # smoothness > 0: the second-difference penalty acts on log-coefficients,
@@ -438,40 +257,26 @@ def smooth_prony_fit(
     # _scaled_smoothness, which _prony_fit_quality re-derives from the same
     # inputs so the reported score belongs to the fit that was actually run.
     log_range = np.log(tau_i[-1] / tau_i[0])
-    scaled_smoothness = _scaled_smoothness(smoothness, N, dof, log_range)
+    smoothness_scaled = _scaled_smoothness(smoothness, N, dof, log_range)
     # No single Prony term above ~1000x the data maximum: the overflow guard
     # in _PronyLoss, same physical cap the old L-BFGS-B upper bound encoded.
     log_cap = np.log(E_stor.max()) + np.log(1e3)
     if solid:
         problem = _PlateauProjectedProblem(
-            z_fit, R_fit, scaled_smoothness, log_cap)
+            z_fit, R_fit, smoothness_scaled, log_cap)
     else:
-        problem = _PronyLoss(z_fit, R_fit, scaled_smoothness, False, log_cap)
+        problem = _PronyLoss(z_fit, R_fit, smoothness_scaled, False, log_cap)
     # Flat seed, data-scaled: zero curvature, so the penalty contributes
     # nothing to the first step however large its weight.
     x0 = np.full(N, np.log(E_stor.max() / m))
-    remedy = ('Lower the relaxation grid size, or raise the smoothness or '
-              'the assumed error.')
-    budget = _NEWTON_TIME_BUDGET
-    try:
-        with _newton_watchdog(budget), \
-                np.errstate(over='ignore', invalid='ignore'):
-            result = _restarting_minimize(
-                fun=problem.fun,
-                x0=x0,
-                jac=problem.jac,
-                hess=_shifted_hessian(problem.hess, _NEWTON_HESSIAN_SHIFT_EPS),
-                method='trust-exact',
-            )
-    except _NewtonBudgetExceeded:
-        unit = 'second' if budget == 1 else 'seconds'
-        raise SmoothPronyFitTimeout(
-            f'The smoothed fit did not converge within {budget:g} {unit} at '
-            f'a relaxation grid size of {N}. {remedy}') from None
-    except ValueError as exc:
-        raise SmoothPronyFitDiverged(
-            f'The smoothed fit diverged at a relaxation grid size of {N}. '
-            f'{remedy}') from exc
+    with np.errstate(over='ignore', invalid='ignore'):
+        result = minimize(
+            fun=problem.fun,
+            x0=x0,
+            jac=problem.jac,
+            hess=problem.hess,
+            method='trust-exact',
+        )
     # result.success is deliberately not consulted: near the optimum the
     # trust radius can collapse on a precision-limited reduction ratio and
     # scipy reports "bad approximation" with the gradient already ~1e-5.
@@ -489,16 +294,13 @@ def smooth_prony_fit(
         # and that problem's interior minimum IS this point — so score it as
         # that: the posterior given the active set, the same convention NNLS
         # uses for its exact zeros. n_resid is lowered by one so the dof
-        # _prony_fit_quality derives — and hence the penalty factor it rebuilds
+        # _prony_fit_quality derives — and hence the penalty weight it rebuilds
         # — stay exactly the fit's own: the pinned equilibrium term is still
-        # one of the fit's m parameters. n_chi2 keeps the full count, since
-        # the misfit charges only parameters the data determined and a
-        # pinned zero is not one.
+        # one of the fit's m parameters.
         quality = _prony_fit_quality(
             result.x, z, R[:, 1:], smoothness, False,
             n_resid=n_res - 1,
             log_range=log_range,
-            n_chi2=n_res,
         )
         return tau_i, E_i, quality
 
