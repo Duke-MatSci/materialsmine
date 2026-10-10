@@ -7,43 +7,28 @@ O(rows) x O(N) weighted least-squares problem into an (N + 2) x (N + 1)
 triangle, exactly. See `_prony_reduce` for why the residual row is kept, and the
 project README/CLAUDE notes for the benchmark that says not to "simplify" it
 away.
-
-`prony_rank_limit` reuses the reduction on a fixed probe grid to count the
-relaxation terms the data's window can resolve.
 """
 
 import hashlib
 from collections import OrderedDict
 
 import numpy as np
-from scipy.linalg import cho_solve, qr
-from scipy.optimize import nnls
 
-from .objective import (
-    _penalty_gram, _penalty_trace, _scaled_smoothness)
-from .prony import PRONY_TERMS_MAX, prony_basis, prony_relaxation_space
-from .quality import _cholesky_or_none
+from .prony import prony_basis
 
 
 # Frequency points per block in smooth_prony_fit's chunked QR reduction. Each
-# block is factored in one preallocated (N + 2 + 2 * chunk, N + 2) buffer
-# (plus prony_basis's slab and its reciprocal temporary), so peak memory is
-# O(chunk * N) no matter how many rows the upload has.
+# block materializes a (2 * chunk, N + 2) basis slab (plus prony_basis's single
+# reciprocal temporary), so peak memory is O(chunk * N) no matter how many
+# rows the upload has.
 _QR_CHUNK_ROWS = 8192
 
 # Reduced systems retained by _prony_reduce's LRU cache. Each entry holds only
-# the (m + 1) x (m + 1) triangle — at most ~102 x 102 for a fit, since the route
-# caps N at 100, and 110 x 110 for prony_rank_limit's probe — so the cache
-# stays tiny no matter how large the uploads that produced it.
+# the (m + 1) x (m + 1) triangle — at most ~102 x 102, since the route caps N at
+# 100 — so the cache stays tiny no matter how large the uploads that produced it.
 # Sized for a smoothness sweep, which varies only `smoothness` and can reuse one
-# reduction throughout; each dataset occupies two slots, its fit grid and the
-# rank probe.
+# reduction throughout.
 _REDUCE_CACHE_SIZE = 4
-
-
-# Relaxation times on prony_rank_limit's probe grid: a few more than the route
-# accepts, so a rank at the route maximum is measured rather than imposed.
-_RANK_PROBE_TERMS = PRONY_TERMS_MAX + 8
 
 
 # digest -> (R, z), least-recently-used first. See _prony_reduce.
@@ -91,11 +76,10 @@ def _prony_reduce(
     basis block into it, so that EXACTLY
         ||(y - B c) / (std_scale * std)||^2 = ||R c - z||^2
     and the reduced system has at most len(tau_i) + solid + 1 rows regardless of
-    how many data rows the upload carries. Householder QR (scipy, in place in
-    one buffer) accumulates the residual information backward-stably (no
-    explicit sums of squares), memory stays O(_QR_CHUNK_ROWS * N), and every
-    subsequent solver operation costs O(N^2) independent of the input row
-    count.
+    how many data rows the upload carries. Householder QR accumulates the residual
+    information backward-stably (no explicit sums of squares), memory stays
+    O(_QR_CHUNK_ROWS * N), and every subsequent solver operation costs O(N^2)
+    independent of the input row count.
 
     Memoized on input CONTENT in a size-_REDUCE_CACHE_SIZE LRU, because a
     smoothness sweep varies only `smoothness` — which this reduction does not
@@ -152,26 +136,18 @@ def _prony_reduce(
     # uploads with fewer than m rows the triangle is simply shorter (wide R) —
     # nnls and _prony_objective both accept that shape, and there is then no
     # unreachable residual to carry.
-    # One F-ordered buffer holds the stacked [Rz; weighted chunk] system;
-    # scipy's qr factors it in place and the new triangle is written back to
-    # its top rows for the next chunk. r counts the triangle's rows.
-    n_chunk = min(_QR_CHUNK_ROWS, len(omega))
-    buf = np.empty((m + 1 + 2 * n_chunk, m + 1), order='F')
-    r = 0
+    Rz = np.empty((0, m + 1))
     for start in range(0, len(omega), _QR_CHUNK_ROWS):
         chunk = slice(start, start + _QR_CHUNK_ROWS)
-        n = len(omega[chunk])
-        rows = slice(r, r + 2 * n)
-        buf[rows, :m] = prony_basis(omega[chunk], tau_i, solid)
-        buf[r:r + n, m] = E_stor[chunk]
-        buf[r + n:r + 2 * n, m] = E_loss[chunk]
+        basis = prony_basis(omega[chunk], tau_i, solid)
+        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
         y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
-        buf[rows] /= y_std[:, None]
-        tri, = qr(buf[:r + 2 * n], mode='r', overwrite_a=True,
-                  check_finite=False)
-        r = min(r + 2 * n, m + 1)
-        buf[:r] = tri[:r]
-    Rz = buf[:r].copy()
+        block = np.concatenate(
+            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
+        )
+        Rz = np.linalg.qr(
+            np.concatenate((Rz, block), axis=0), mode='r'
+        )[:m + 1]
     Rz.flags.writeable = False
     reduced = (Rz[:, :m], Rz[:, m])
 
@@ -179,168 +155,3 @@ def _prony_reduce(
     if len(_REDUCE_CACHE) > _REDUCE_CACHE_SIZE:
         _REDUCE_CACHE.popitem(last=False)
     return reduced[0] / std_scale, reduced[1] / std_scale
-
-
-def _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, solid,
-                  std_scale):
-    """
-    The probe grid (_RANK_PROBE_TERMS log-spaced tau over the data window)
-    and its reduction. Shared so every probe consumer hits one cache entry.
-
-    Returns:
-        tuple: (tau_probe, R, z) as _prony_reduce returns R and z.
-    """
-    tau = prony_relaxation_space(
-        1 / np.max(omega), 1 / np.min(omega), _RANK_PROBE_TERMS)
-    R, z = _prony_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                         tau, solid, std_scale)
-    return tau, R, z
-
-
-def _probe_singular_values(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                           solid, std_scale):
-    """Singular values of the reduced probe basis, descending."""
-    _, R, _ = _probe_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
-                            solid, std_scale)
-    return np.linalg.svd(R, compute_uv=False)
-
-
-def prony_rank_limit(
-        omega: np.ndarray,
-        E_stor: np.ndarray,
-        E_loss: np.ndarray,
-        E_stor_std: np.ndarray,
-        E_loss_std: np.ndarray,
-        solid: bool = True,
-        std_scale: float = 1.0,
-) -> int:
-    """
-    The number of relaxation terms this dataset's Prony basis can carry.
-
-    Counts the singular values of the reduced probe basis (a fixed grid of
-    _RANK_PROBE_TERMS times over the data's window) above sqrt(eps) of the
-    largest. The fit factors the Gram, whose eigenvalues are the squared
-    singular values, so sqrt(eps) on the basis is eps on the Gram: terms past
-    this rank are redundant columns only the smoothing fills. Advisory only.
-
-    Parameters:
-        omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
-            data and per-point standard deviations, as the fit receives them.
-        solid (bool): Whether an equilibrium term is included; its column is
-            not a relaxation term and is not counted.
-        std_scale (float): Uniform multiplier on both std arrays; it scales
-            every singular value alike, so it cannot change the count.
-
-    Returns:
-        int: the rank, clipped to [1, PRONY_TERMS_MAX].
-    """
-    sigma = _probe_singular_values(omega, E_stor, E_loss, E_stor_std,
-                                   E_loss_std, solid, std_scale)
-    eps = np.finfo(np.result_type(E_stor, E_loss)).eps
-    rank = int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])) - bool(solid)
-    return min(max(rank, 1), PRONY_TERMS_MAX)
-
-
-def prony_noise_ceiling(
-        omega: np.ndarray,
-        E_stor: np.ndarray,
-        E_loss: np.ndarray,
-        E_stor_std: np.ndarray,
-        E_loss_std: np.ndarray,
-        solid: bool = True,
-        std_scale: float = 1.0,
-) -> int:
-    """
-    Probe singular directions the stated error determines to better than the
-    modulus scale: sigma_k * max(E_stor) > 1. A smoothness-free ceiling on
-    what any smoothed fit can leave to the data.
-
-    Not sent to the client. Its one use is as an empirical consistency bound:
-    the tests assert that prony_resolution and the fit's effective_terms
-    never exceed it on the bundled curves. That is observed, not a theorem.
-
-    Parameters:
-        As prony_rank_limit.
-
-    Returns:
-        int: the count, unclipped, equilibrium column included.
-    """
-    sigma = _probe_singular_values(omega, E_stor, E_loss, E_stor_std,
-                                   E_loss_std, solid, std_scale)
-    return int(np.count_nonzero(sigma * np.max(E_stor) > 1.0))
-
-
-def prony_resolution(
-        omega: np.ndarray,
-        E_stor: np.ndarray,
-        E_loss: np.ndarray,
-        E_stor_std: np.ndarray,
-        E_loss_std: np.ndarray,
-        tau_i: np.ndarray,
-        E_i: np.ndarray,
-        smoothness: float,
-        solid: bool = True,
-        std_scale: float = 1.0,
-):
-    """
-    How many relaxation terms a dense grid would resolve at this smoothing.
-
-    With smoothness 0 this is the NNLS active-set size on the probe grid.
-    Otherwise it is the effective parameter count
-    gamma = N_probe - lam * tr(L.T L inv(H)) of the smoothed problem
-    linearized at the given fit, its spectrum resampled onto the probe grid.
-    The fit's own effective count is bounded by its term count; this one is
-    not, so it can say when the data supports more terms than were asked for.
-
-    Parameters:
-        omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
-            data and per-point standard deviations, as the fit receives them.
-        tau_i (numpy.ndarray): The fit's relaxation grid, ascending.
-        E_i (numpy.ndarray): The fitted coefficients, equilibrium first when
-            solid.
-        smoothness (float): The knob the fit ran with.
-        solid (bool): Whether the fit carried an equilibrium term.
-        std_scale (float): As passed to smooth_prony_fit.
-
-    Returns:
-        float or None: the resolution in terms; None when it is undefined
-        (fewer than two fit nodes, non-positive coefficients, or a probe
-        Hessian that is not positive definite).
-    """
-    tau_probe, R, z = _probe_reduce(omega, E_stor, E_loss, E_stor_std,
-                                    E_loss_std, solid, std_scale)
-    n_probe = len(tau_probe)
-    if not smoothness:
-        coefs, _ = nnls(R, z)
-        return float(np.count_nonzero(coefs[int(solid):] > 0))
-
-    if len(tau_i) < 2:
-        return None
-    E_dec = np.asarray(E_i)[len(E_i) - len(tau_i):]
-    if not (np.all(np.isfinite(E_dec)) and np.all(E_dec > 0)):
-        return None
-    m_probe = n_probe + solid
-    R = R[:m_probe]
-    log_tau_fit, log_tau_probe = np.log(tau_i), np.log(tau_probe)
-    h_fit = (log_tau_fit[-1] - log_tau_fit[0]) / (len(tau_i) - 1)
-    h_probe = (log_tau_probe[-1] - log_tau_probe[0]) / (n_probe - 1)
-    # Coefficient per node tracks node spacing, preserving the summed modulus.
-    c = np.exp(np.interp(log_tau_probe, log_tau_fit, np.log(E_dec))
-               + np.log(h_probe / h_fit))
-    has_eq = bool(solid and len(E_i) == len(tau_i) + 1 and E_i[0] > 0)
-    if has_eq:
-        c = np.concatenate(([E_i[0]], c))
-    elif solid:
-        R = R[:, 1:]
-    log_range = log_tau_probe[-1] - log_tau_probe[0]
-    scaled_smoothness = _scaled_smoothness(
-        smoothness, n_probe, 2 * len(omega) - m_probe, log_range)
-    # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
-    H = ((R.T @ R) * c * c[:, None]
-         + scaled_smoothness ** 2 * _penalty_gram(len(c), has_eq))
-    chol = _cholesky_or_none(H)
-    if chol is None:
-        return None
-    H_inv = cho_solve((chol, True), np.eye(len(c)))
-    gamma = n_probe - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
-    return float(gamma) if np.isfinite(gamma) else None

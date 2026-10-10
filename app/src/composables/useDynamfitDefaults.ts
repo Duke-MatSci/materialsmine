@@ -11,42 +11,28 @@
 export const PRONY_TERMS_PER_DECADE = 3;
 
 /**
- * Relative error is entered as a percentage and sent as a fraction. It was
- * measured against the six bundled master curves at PRONY_TERMS_PER_DECADE
- * terms per decade.
+ * Smoothness and relative error are entered as percentages and sent as
+ * fractions. Both were measured against the six bundled master curves at
+ * PRONY_TERMS_PER_DECADE terms per decade.
  *
  * 1% relative error is the geometric mean of the per-file values that put the
  * unsmoothed fit at chi-squared/dof = 1. The old 20% default sat three decades
  * below that, so the readout was uninterpretable. No single number suits every
  * file — the per-file ideals span 0.11% to 4.2% — but a file supplying its own
  * error columns ignores this entirely.
+ *
+ * 4% smoothness then minimises both the worst-case and the total posterior
+ * loss across those files, whose individual optima run 2.2% to 16%. That
+ * spread is only 7x once the error scale is right; at the old 20% error it was
+ * 48x, because the posterior trades misfit against roughness using the sigma
+ * it is given.
  */
+export const SMOOTHNESS_DEFAULT_PERCENT = 4;
 export const RELATIVE_ERROR_DEFAULT_PERCENT = 1;
 
-// Step of the relative-error input, in percent. A tenth of a percent resolves
-// the useful range of the knob without making the stepper useless.
+// Step of both inputs, in percent. A tenth of a percent resolves the useful
+// range of either knob without making the steppers useless.
 export const PERCENT_INPUT_STEP = 0.1;
-
-/**
- * Smoothness is the raw knob s, entered and sent as a plain number; 0
- * disables the curvature penalty. The default was measured on the seven
- * bundled master curves (Cavaille PS, PETMP, PMMA-R09, VeroCyan, agilus30,
- * dgeba, fisher polycarbonate) at the 1% relative-error default, with
- * PRONY_TERMS_PER_DECADE terms per decade and a solid fit. The posterior loss
- * of a file at s is its surprisal -log pi(s^2) minus that file's minimum.
- *
- * s = 0.3 sits within 0.06 nats of the minimum total loss (minimizer 0.313;
- * the worst-case minimizer is 0.332), while the per-file optima run 0.079 to
- * 1.78. The knob is not a percentage because, with the error set so the
- * unsmoothed fit reaches chi-squared/dof = 1, the per-file optima cluster near
- * s = 1 (0.46 to 2.0; minimizers about 0.9 to 0.95), the mean of the
- * unit-rate exponential prior on s^2, so "100%" would misleadingly read as
- * complete smoothing.
- */
-export const SMOOTHNESS_DEFAULT = 0.3;
-export const SMOOTHNESS_MIN = 0;
-export const SMOOTHNESS_MAX = 10;
-export const SMOOTHNESS_STEP = 0.1;
 
 /**
  * When the upload supplies its own error column(s), the error widget switches
@@ -100,28 +86,4 @@ export function computeDefaultPronyTerms(
   if (!Number.isFinite(decades) || decades <= 0) return null;
 
   return Math.min(PRONY_TERMS_MAX, Math.max(PRONY_TERMS_MIN, Math.round(k * decades)));
-}
-
-/**
- * Maximum for the grid-size slider: the server's term cap for the extracted
- * data, limited to PRONY_TERMS_MAX. The cap never falls below the current
- * value, because a range input whose max drops under its value clamps the
- * thumb without firing input and leaves v-model out of step with the store.
- */
-export function effectivePronyMax(
-  serverMax: number | null | undefined,
-  currentValue: number
-): number {
-  if (typeof serverMax !== 'number' || !Number.isInteger(serverMax) || serverMax < 1) {
-    return PRONY_TERMS_MAX;
-  }
-  const cap = Math.min(PRONY_TERMS_MAX, serverMax);
-  return Number.isFinite(currentValue) ? Math.max(cap, currentValue) : cap;
-}
-
-/** Tooltip position, in percent, of a value on a 1..max range track. */
-export function pronyTooltipLeft(value: number, max: number): number {
-  if (max <= 1) return 0;
-  const left = ((value - 1) / (max - 1)) * 100;
-  return Math.min(100, Math.max(0, left));
 }

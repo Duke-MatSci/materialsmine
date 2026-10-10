@@ -3,8 +3,7 @@ Prony-series core math: basis construction, the relaxation grid, the forward
 transforms (complex modulus / relaxation modulus / relaxation spectrum), the
 fit objective, the smooth Prony fit, and the argmax peak helper.
 
-Pure functions — no Flask app, and no disk access beyond the bundled master
-curves TestSurprisalOnBundledMasterCurves reads — so this is the fastest subset
+Pure functions — no Flask app, no disk access — so this is the fastest subset
 and the one to run while iterating on the Prony math.
 
     python -m unittest tests.trive.test_prony
@@ -13,19 +12,15 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
-import json
 from unittest import mock
 import numpy as np
 import pandas as pd
-import scipy.linalg
-from scipy.optimize import minimize, minimize_scalar, nnls
+from scipy.optimize import minimize
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 import app.trive.reduction as reduction
-import app.trive.objective as objective
-import app.trive.fit as prony_fit
 from app.trive.prony import (
     prony_basis,
     prony_relaxation_space,
@@ -42,13 +37,10 @@ from app.trive.objective import (
     _scaled_smoothness,
 )
 from app.trive.reduction import _prony_reduce
-from app.trive.quality import _FitQuality, _prony_fit_quality
+from app.trive.quality import _prony_fit_quality
 from app.trive.fit import smooth_prony_fit, _PlateauProjectedProblem
 from app.trive.calibration import argmax_peak
 from app.trive.figures import _build_coef_records
-from app.trive.uncertainty import _SIGMA_DISPLAY_CAP
-from app.config import Config
-from app.utils.util import upload_init
 
 
 # Arbitrary positive log-tau span for the algebraic _prony_fit_quality tests,
@@ -113,27 +105,6 @@ class TestPronyBasis(unittest.TestCase):
         n = len(freq)
         np.testing.assert_allclose(result[:n, 1:], dt ** 2 / (1 + dt ** 2), rtol=1e-14)
         np.testing.assert_allclose(result[n:, 1:], dt / (1 + dt ** 2), rtol=1e-14)
-
-    def test_basis_is_fortran_ordered_with_unchanged_values(self):
-        """The basis comes back column-major, so each column's ufunc pass is
-        one contiguous run, and its values are bit-identical to the
-        reciprocal forms computed elementwise."""
-        freq = np.logspace(-4, 4, 37)
-        tau = np.logspace(-3, 3, 11)
-        dt = np.multiply.outer(freq, tau)
-        with np.errstate(over='ignore', divide='ignore'):
-            inv = 1.0 / dt
-            ep = 1.0 / (1.0 + inv * inv)
-            epp = 1.0 / (dt + inv)
-        relax = np.vstack((ep, epp))
-        n = len(freq)
-        eq = np.concatenate((np.ones(n), np.zeros(n)))[:, None]
-        for solid, expected in ((False, relax),
-                                (True, np.hstack((eq, relax)))):
-            with self.subTest(solid=solid):
-                result = prony_basis(freq, tau, solid=solid)
-                self.assertTrue(result.flags.f_contiguous)
-                np.testing.assert_array_equal(result, expected)
 
     def test_rejects_non_ndarray_freq(self):
         with self.assertRaises(AssertionError):
@@ -277,43 +248,6 @@ class TestComputeComplex(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_complex(TAU, VISCOUS_E.reshape(1, -1))
 
-    def test_default_extension_is_the_classic_window_bit_for_bit(self):
-        """extend_decades=0 (the default) evaluates on exactly the grid
-        1/max(tau) .. 1/min(tau) it always has."""
-        for E_i in (VISCOUS_E, SOLID_E):
-            omega = np.logspace(-np.log10(np.max(TAU)),
-                                -np.log10(np.min(TAU)), 1000)
-            solid = len(E_i) != len(TAU)
-            real, imag = (prony_basis(omega, TAU, solid) @ E_i).reshape(2, -1)
-            for result in (compute_complex(TAU, E_i),
-                           compute_complex(TAU, E_i, extend_decades=0.0)):
-                np.testing.assert_array_equal(result['Frequency'], omega)
-                np.testing.assert_array_equal(result['E Storage'], real)
-                np.testing.assert_array_equal(result['E Loss'], imag)
-
-    def test_extend_decades_widens_the_grid_on_both_sides(self):
-        """omega spans 10^-d / max(tau) .. 10^d / min(tau), num_pts in all,
-        and the moduli are the same series evaluated there."""
-        for d in (1.0, 2.5):
-            for E_i in (VISCOUS_E, SOLID_E):
-                result = compute_complex(TAU, E_i, num_pts=300,
-                                         extend_decades=d)
-                omega = result['Frequency'].to_numpy()
-                self.assertEqual(len(omega), 300)
-                np.testing.assert_allclose(
-                    omega[[0, -1]],
-                    [10 ** -d / np.max(TAU), 10 ** d / np.min(TAU)],
-                    rtol=1e-12)
-                steps = np.diff(np.log10(omega))
-                np.testing.assert_allclose(steps, steps[0], rtol=1e-9)
-                solid = len(E_i) != len(TAU)
-                real, imag = (prony_basis(omega, TAU, solid) @ E_i
-                              ).reshape(2, -1)
-                np.testing.assert_allclose(result['E Storage'], real,
-                                           rtol=1e-12)
-                np.testing.assert_allclose(result['E Loss'], imag,
-                                           rtol=1e-12)
-
 
 class TestComputeRelaxationModulus(unittest.TestCase):
     def test_shape_and_columns_viscous(self):
@@ -332,7 +266,7 @@ class TestComputeRelaxationModulus(unittest.TestCase):
         self.assertEqual(len(result), 50)
 
     def test_modulus_decreasing_in_time(self):
-        # Positive E_i, no equilibrium term → E(t) is non-increasing in t.
+        # Positive E_i, equilibrium term excluded → E(t) is non-increasing in t.
         result = compute_relaxation_modulus(TAU, VISCOUS_E)
         self.assertTrue(np.all(np.diff(result['E'].values) <= 1e-12))
 
@@ -352,70 +286,6 @@ class TestComputeRelaxationModulus(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_relaxation_modulus(TAU, VISCOUS_E.reshape(1, -1))
 
-    def test_default_extension_is_the_classic_window_bit_for_bit(self):
-        """extend_decades=0 (the default) evaluates on exactly the grid
-        min(tau) .. max(tau) it always has."""
-        for E_i in (VISCOUS_E, SOLID_E):
-            t = np.logspace(np.log10(np.min(TAU)), np.log10(np.max(TAU)),
-                            1000)
-            solid = len(E_i) != len(TAU)
-            E_eq = E_i[0] if solid else 0.0
-            E = E_eq + np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:]
-            for result in (compute_relaxation_modulus(TAU, E_i),
-                           compute_relaxation_modulus(TAU, E_i,
-                                                      extend_decades=0.0)):
-                np.testing.assert_array_equal(result['Time'], t)
-                np.testing.assert_allclose(result['E'], E, rtol=1e-12)
-
-    def test_extend_decades_widens_the_grid_on_both_sides(self):
-        """t spans min(tau) 10^-d .. max(tau) 10^d, num_pts in all, and E is
-        the same series evaluated there."""
-        for d in (1.0, 2.5):
-            for E_i in (VISCOUS_E, SOLID_E):
-                result = compute_relaxation_modulus(TAU, E_i, num_pts=300,
-                                                    extend_decades=d)
-                t = result['Time'].to_numpy()
-                self.assertEqual(len(t), 300)
-                np.testing.assert_allclose(
-                    t[[0, -1]],
-                    [np.min(TAU) * 10 ** -d, np.max(TAU) * 10 ** d],
-                    rtol=1e-12)
-                steps = np.diff(np.log10(t))
-                np.testing.assert_allclose(steps, steps[0], rtol=1e-9)
-                solid = len(E_i) != len(TAU)
-                E_eq = E_i[0] if solid else 0.0
-                np.testing.assert_allclose(
-                    result['E'],
-                    E_eq + np.exp(-np.outer(t, 1 / TAU)) @ E_i[solid:],
-                    rtol=1e-12)
-
-    def test_equilibrium_modulus_is_the_long_time_plateau(self):
-        """E(t) = E_eq + sum_i E_i exp(-t / tau_i): far past max(tau) every
-        term has decayed and E is E_eq; far before min(tau) none has, and E
-        is E_eq + sum(E_i)."""
-        result = compute_relaxation_modulus(TAU, SOLID_E, num_pts=200,
-                                            extend_decades=6.0)
-        E = result['E'].to_numpy()
-        E_eq, E_terms = SOLID_E[0], SOLID_E[1:]
-        self.assertAlmostEqual(E[-1], E_eq, delta=1e-12 * E_eq)
-        # exp(-1e-6) misses 1 by 1e-6 at the first point.
-        self.assertAlmostEqual(E[0], E_eq + E_terms.sum(),
-                               delta=1e-5 * (E_eq + E_terms.sum()))
-
-    def test_equilibrium_modulus_shifts_the_whole_curve_by_a_constant(self):
-        """Prepending E_eq adds exactly E_eq at every t; a clamped E_eq = 0
-        gives the curve of the decaying terms alone."""
-        viscous = compute_relaxation_modulus(TAU, VISCOUS_E, extend_decades=1.0)
-        for E_eq in (0.0, 500.0, 7e4):
-            with self.subTest(E_eq=E_eq):
-                solid = compute_relaxation_modulus(
-                    TAU, np.concatenate(([E_eq], VISCOUS_E)),
-                    extend_decades=1.0)
-                np.testing.assert_array_equal(solid['Time'], viscous['Time'])
-                np.testing.assert_allclose(
-                    solid['E'] - viscous['E'], E_eq,
-                    atol=1e-12 * (E_eq + VISCOUS_E.sum()))
-
 
 class TestPronyObjective(unittest.TestCase):
     def setUp(self):
@@ -430,7 +300,7 @@ class TestPronyObjective(unittest.TestCase):
     def test_returns_scalar_loss_and_gradient_shape(self):
         loss, grad = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            scaled_smoothness=0.0, solid=False,
+            smoothness=0.0, solid=False,
         )
         self.assertTrue(np.isscalar(loss) or np.ndim(loss) == 0)
         self.assertEqual(grad.shape, self.logcoefs.shape)
@@ -438,7 +308,7 @@ class TestPronyObjective(unittest.TestCase):
     def test_exact_fit_zero_loss_and_zero_gradient(self):
         loss, grad = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            scaled_smoothness=0.0, solid=False,
+            smoothness=0.0, solid=False,
         )
         self.assertEqual(loss, 0.0)
         np.testing.assert_array_equal(grad, np.zeros_like(grad))
@@ -450,10 +320,10 @@ class TestPronyObjective(unittest.TestCase):
         basis = prony_basis(self.omega, tau_i, solid=False)
         data = np.zeros(basis.shape[0])
         loss_unsmoothed, _ = _prony_objective(
-            logcoefs, data, basis, scaled_smoothness=0.0, solid=False,
+            logcoefs, data, basis, smoothness=0.0, solid=False,
         )
         loss_smoothed, _ = _prony_objective(
-            logcoefs, data, basis, scaled_smoothness=1.0, solid=False,
+            logcoefs, data, basis, smoothness=1.0, solid=False,
         )
         self.assertGreater(loss_smoothed, loss_unsmoothed)
 
@@ -463,7 +333,7 @@ class TestPronyObjective(unittest.TestCase):
         # rather than unpack; pin the documented shape.
         result = _prony_objective(
             self.logcoefs, self.data, self.basis,
-            scaled_smoothness=1.0, solid=False,
+            smoothness=1.0, solid=False,
         )
         self.assertEqual(len(result), 2)
 
@@ -476,17 +346,9 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     production code avoids via a closed-form pseudo-determinant and banded
     in-place accumulation. Takes the same pre-weighted system and the same
     UNSCALED smoothness the production function does, and re-derives the
-    lam = smoothness**2 * dof / ((npen - 2) * ell**4) normalization,
-    ell = log_range / (npen - 1), independently rather than importing it.
-    Returns (chi2, neg_log_posterior, gamma) with the posterior None exactly
-    when C is not positive definite, matching the contract. gamma is MacKay's
-    npen - lam * tr(A inv(C)) when there is a penalty and C is positive
-    definite, else None; chi2 is then per n_resid - (gamma + solid), and per
-    the classical n_resid - m otherwise. The likelihood is exp(-V/2),
-    so the weighted residuals are unit-variance and the stated errors are
-    standard deviations; with C = Hess(V/2) the Laplace prefactor and the
-    Gaussian prior's normalizer leave only the (2 + solid) null directions'
-    log(2 pi) behind.
+    sqrt(dof / h**3) normalization independently rather than importing it.
+    Returns (chi2, neg_log_posterior) with the posterior None exactly when C is
+    not positive definite, matching the contract.
 
     prior_lam exists only here, so one test can show that production charges the
     exponential prior at the unscaled knob rather than at the scaled weight; the
@@ -495,8 +357,9 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     m = len(logcoefs)
     npen = m - solid
     dof = n_resid - m
-    ell = log_range / (npen - 1)
-    lam = smoothness ** 2 * max(dof, 1) / ((npen - 2) * ell ** 4)
+    h = log_range / (npen - 1)
+    scaled = smoothness * np.sqrt(max(dof, 1) / h ** 3)
+    lam = scaled * scaled
     coefs = np.exp(logcoefs)
     resid = data - basis @ coefs
     L = np.zeros((npen - 2, m))
@@ -508,27 +371,20 @@ def _dense_fit_quality(logcoefs, data, basis, smoothness, solid,
     V = resid @ resid + lam * (logcoefs @ A @ logcoefs)
     J = -(basis * coefs)
     C = lam * A + J.T @ J + np.diag(resid @ J)
+    chi2 = (resid @ resid) / dof if dof > 0 else None
     if np.linalg.eigvalsh(C).min() <= 0:
-        chi2 = (resid @ resid) / dof if dof > 0 else None
-        return chi2, None, None
-    gamma = None
-    nu = dof
-    if smoothness:
-        # inv(C) is the covariance 2 * inv(Hess V), C being Hess V / 2.
-        gamma = npen - lam * np.trace(A @ np.linalg.inv(C))
-        nu = n_resid - (gamma + solid)
-    chi2 = (resid @ resid) / nu if nu > 0 else None
+        return chi2, None
     eigs = np.linalg.eigvalsh(A)
     nonzero = eigs > eigs.max() * 1e-10
     neg_log_posterior = (
-        0.5 * V
+        V
         - 0.5 * (np.log(eigs[nonzero]).sum()
                  + nonzero.sum() * np.log(lam)
                  - np.linalg.slogdet(C)[1])
-        - 0.5 * (2 + solid) * np.log(2 * np.pi)
+        - 0.5 * (2 + solid) * np.log(np.pi)
         + (smoothness * smoothness if prior_lam is None else prior_lam)
     )
-    return chi2, neg_log_posterior, gamma
+    return chi2, neg_log_posterior
 
 
 def _random_fit_problem(rng, N, solid, n_rows=None):
@@ -550,10 +406,10 @@ def _random_fit_problem(rng, N, solid, n_rows=None):
     return basis / std[:, None], data / std, rng.normal(size=m) * 0.25
 
 
-def _dense_half_hessian(x, data, basis, scaled_smoothness, solid):
+def _dense_half_hessian(x, data, basis, smoothness, solid):
     """C = 0.5 * Hess(V) built the obvious dense way: lam * L.T @ L + J.T @ J
-    + diag(r.T @ J). The reference _prony_hessian's banded penalty build and
-    coefs scalings are checked against."""
+    + diag(r.T @ J). The reference _prony_hessian's banded accumulation and
+    in-place scalings are checked against."""
     N = len(x) - solid
     m = len(x)
     coefs = np.exp(x)
@@ -564,8 +420,7 @@ def _dense_half_hessian(x, data, basis, scaled_smoothness, solid):
     L[rows, solid + rows + 1] = -2.0
     L[rows, solid + rows + 2] = 1.0
     J = -(basis * coefs)
-    return (scaled_smoothness * scaled_smoothness * (L.T @ L)
-            + J.T @ J + np.diag(resid @ J))
+    return smoothness * smoothness * (L.T @ L) + J.T @ J + np.diag(resid @ J)
 
 
 def _converged_fit_problem(rng, N=10, smoothness=1.0):
@@ -578,7 +433,7 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     form the scoring functions take.
 
     smoothness is the user-facing knob, and the minimize call is given the
-    SCALED factor, exactly as smooth_prony_fit does — otherwise the point would
+    SCALED weight, exactly as smooth_prony_fit does — otherwise the point would
     be stationary for a different V than the one _prony_fit_quality rebuilds
     from the same knob, and the posterior it returned would be meaningless.
     Callers must score with n_resid=2*len(data) and log_range=LOG_RANGE to match.
@@ -591,11 +446,10 @@ def _converged_fit_problem(rng, N=10, smoothness=1.0):
     std = np.abs(clean) * 0.02
     data = clean + std * rng.normal(size=len(clean))
     basis, data = basis / std[:, None], data / std
-    scaled_smoothness = _scaled_smoothness(
-        smoothness, N, 2 * len(data) - (N + 1), LOG_RANGE)
+    scaled = _scaled_smoothness(smoothness, N, 2 * len(data) - (N + 1), LOG_RANGE)
     result = minimize(
         _prony_objective, np.log(truth),
-        args=(data, basis, scaled_smoothness, True),
+        args=(data, basis, scaled, True),
         jac=True, method='L-BFGS-B',
     )
     return basis, data, result.x
@@ -629,11 +483,10 @@ class TestPronyFitQuality(unittest.TestCase):
                 self.assertIsNotNone(quality.chi2_reduced)
 
     def test_curvature_is_the_mean_squared_second_derivative(self):
-        # Against an explicit dense L: ||L x||^2 / ((npen - 2) * ell**4), the
-        # mean squared d2(lnE)/d(ln tau)**2 over the npen - 2 interior nodes
-        # with the leading equilibrium term excluded. The ell**4 is what
-        # separates this from the mean squared second DIFFERENCE — see
-        # _mean_sq_curvature.
+        # Against an explicit dense L: ||L x||^2 / (h**3 * log_range), the mean
+        # squared d2(lnE)/d(ln tau)**2 of the fitted spectrum with the leading
+        # equilibrium term excluded. The h**3 is what separates this from the
+        # mean squared second DIFFERENCE — see _mean_sq_curvature.
         for N, solid in [(8, 1), (8, 0), (3, 1), (12, 0)]:
             with self.subTest(N=N, solid=solid):
                 basis, data, x = _random_fit_problem(self.rng, N, solid)
@@ -645,13 +498,12 @@ class TestPronyFitQuality(unittest.TestCase):
                 L[rows, solid + rows + 1] = -2.0
                 L[rows, solid + rows + 2] = 1.0
                 Lx = L @ x
-                ell = LOG_RANGE / (npen - 1)
+                h = LOG_RANGE / (npen - 1)
                 quality = _prony_fit_quality(
                     x, data, basis, 1.0, solid, n_resid=2 * len(data), log_range=LOG_RANGE,
                 )
                 self.assertAlmostEqual(
-                    quality.curvature, Lx @ Lx / ((npen - 2) * ell ** 4),
-                    places=12,
+                    quality.curvature, Lx @ Lx / (h ** 3 * LOG_RANGE), places=12,
                 )
 
     def test_curvature_is_reported_without_smoothing(self):
@@ -667,11 +519,11 @@ class TestPronyFitQuality(unittest.TestCase):
         self.assertIsNotNone(quality.curvature)
 
     def test_curvature_is_mesh_independent(self):
-        # The whole point of the ell**4 in the normalization: sample ONE fixed
-        # log-spectrum at several N over the same span and the
+        # The whole point of dividing by h**3 rather than by the term count:
+        # sample ONE fixed log-spectrum at several N over the same span and the
         # reported curvature must not move. A per-term mean fails this badly,
         # because sampling a fixed curve more finely shrinks every second
-        # difference (d2 ~ ell**2), so it decays like N**-4.
+        # difference (d2 ~ h**2), so it decays like N**-4.
         def spectrum(N):
             x = np.linspace(0.0, LOG_RANGE, N)
             return 3.0 * np.exp(-((x - LOG_RANGE / 2) / (LOG_RANGE / 6)) ** 2)
@@ -687,9 +539,9 @@ class TestPronyFitQuality(unittest.TestCase):
             reported.append(quality.curvature)
             curve = np.diff(logcoefs, n=2)
             per_term.append(curve @ curve / len(curve))
-        # Mesh-independent to within discretization error: measured 0.195,
-        # 0.202, 0.202 against a continuum mean over the span of 0.201, i.e.
-        # 2.8% low at N=20 and within 1% from N=40 on.
+        # Mesh-independent to within discretization error, which is O(h**2) and
+        # so falls ~4x per doubling: measured 0.185, 0.197, 0.200 against a
+        # continuum limit of 0.200, i.e. 7.5% low at N=20 and 0.2% at N=80.
         self.assertLess(max(reported) / min(reported), 1.10,
                         msg=f'curvature moved with N: {reported}')
         self.assertLess(reported[-1] / reported[-2], 1.02,
@@ -697,42 +549,6 @@ class TestPronyFitQuality(unittest.TestCase):
         # ...where the quantity it replaced moves by orders of magnitude over
         # the same 4x change in N, which is why it could not be compared.
         self.assertGreater(per_term[0] / per_term[-1], 100)
-
-    def test_curvature_is_exact_for_a_constant_second_derivative(self):
-        # H = c * x**2 / 2 + b * x + a has H'' = c at every node, so the mean
-        # of H''**2 over the npen - 2 interior nodes is c**2 on any grid; a
-        # mean over the node span would read (npen - 2) / (npen - 1) of it,
-        # half at npen = 3. Exactness is what makes the readout, and the
-        # weight normalized the same way, carry across a crop: the same
-        # spectrum on a sub-span at the same spacing, or on a finer grid over
-        # the same span, reports the same number.
-        c, b, a = 0.7, -1.3, 2.0
-
-        def curvature(x, solid):
-            logcoefs = c * x ** 2 / 2 + b * x + a
-            if solid:
-                logcoefs = np.concatenate([[0.5], logcoefs])
-            basis, data, _ = _random_fit_problem(self.rng, len(x), solid)
-            return _prony_fit_quality(
-                logcoefs, data, basis, 1.0, solid,
-                n_resid=2 * len(data), log_range=x[-1] - x[0],
-            ).curvature
-
-        for npen in (3, 4, 7, 20, 41):
-            for log_range in (np.log(10.0), LOG_RANGE, np.log(1e20)):
-                for solid in (0, 1):
-                    with self.subTest(npen=npen, log_range=log_range,
-                                      solid=solid):
-                        x = np.linspace(-0.3, 0.7, npen) * log_range
-                        full = curvature(x, solid)
-                        np.testing.assert_allclose(full, c ** 2, rtol=1e-9)
-                        fine = np.linspace(x[0], x[-1], 2 * npen - 1)
-                        np.testing.assert_allclose(
-                            curvature(fine, solid), full, rtol=1e-9)
-                        if npen > 3:
-                            crop = x[(npen - 1) // 2:]
-                            np.testing.assert_allclose(
-                                curvature(crop, solid), full, rtol=1e-9)
 
     def test_closed_form_pseudo_determinant_matches_eigendecomposition(self):
         # The production code never builds A; it uses
@@ -759,7 +575,7 @@ class TestPronyFitQuality(unittest.TestCase):
                     )
 
     def test_matches_dense_reference(self):
-        # Guards the _penalty_gram L.T @ L build and the coefs
+        # Guards the banded L.T @ L accumulation and the in-place coefs
         # scalings against a dense build. N=3 is included deliberately: there
         # the two boundary corrections of L.T @ L collide.
         for N in (3, 4, 8, 20, 40):
@@ -774,15 +590,10 @@ class TestPronyFitQuality(unittest.TestCase):
                         got = _prony_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
-                        chi2, nlp, gamma = _dense_fit_quality(
+                        chi2, nlp = _dense_fit_quality(
                             x, data, basis, smoothness, solid, **kwargs,
                         )
                         self.assertAlmostEqual(got.chi2_reduced, chi2, places=9)
-                        if gamma is None:
-                            self.assertIsNone(got.effective_terms)
-                        else:
-                            self.assertAlmostEqual(
-                                got.effective_terms, gamma, places=9)
                         if nlp is None:
                             self.assertIsNone(got.neg_log_posterior)
                         else:
@@ -795,8 +606,7 @@ class TestPronyFitQuality(unittest.TestCase):
         # Validates the reference that test_matches_dense_reference trusts:
         # C must be 0.5 * Hess(V). The second-derivative term diag(r.T @ J) is
         # exact (not Gauss-Newton) because the coefficients are exp(logcoefs).
-        for N, solid, scaled_smoothness in [
-                (7, 1, 0.9), (12, 0, 2.5), (3, 1, 0.4)]:
+        for N, solid, smoothness in [(7, 1, 0.9), (12, 0, 2.5), (3, 1, 0.4)]:
             with self.subTest(N=N, solid=solid):
                 m = N + solid
                 basis, data, x = _random_fit_problem(
@@ -805,7 +615,7 @@ class TestPronyFitQuality(unittest.TestCase):
 
                 def loss_at(point):
                     return _prony_objective(
-                        point, data, basis, scaled_smoothness, solid,
+                        point, data, basis, smoothness, solid,
                     )[0]
 
                 h = 1e-5
@@ -819,8 +629,7 @@ class TestPronyFitQuality(unittest.TestCase):
                             loss_at(x + e_i + e_j) - loss_at(x + e_i - e_j)
                             - loss_at(x - e_i + e_j) + loss_at(x - e_i - e_j)
                         ) / (4 * h * h)
-                C = _dense_half_hessian(
-                    x, data, basis, scaled_smoothness, solid)
+                C = _dense_half_hessian(x, data, basis, smoothness, solid)
                 np.testing.assert_allclose(
                     C, 0.5 * hessian, rtol=1e-3, atol=1e-4 * np.abs(C).max(),
                 )
@@ -831,16 +640,14 @@ class TestPronyFitQuality(unittest.TestCase):
         # N=2 with solid leaves no second difference at all (empty band).
         for N in (2, 3, 4, 8, 20, 40):
             for solid in (0, 1):
-                for scaled_smoothness in (0.0, 0.7, 11.0):
-                    with self.subTest(N=N, solid=solid,
-                                      scaled_smoothness=scaled_smoothness):
+                for smoothness in (0.0, 0.7, 11.0):
+                    with self.subTest(N=N, solid=solid, smoothness=smoothness):
                         basis, data, x = _random_fit_problem(
                             self.rng, N, solid,
                         )
-                        got = _prony_hessian(
-                            x, data, basis, scaled_smoothness, solid)
+                        got = _prony_hessian(x, data, basis, smoothness, solid)
                         want = 2 * _dense_half_hessian(
-                            x, data, basis, scaled_smoothness, solid,
+                            x, data, basis, smoothness, solid,
                         )
                         np.testing.assert_allclose(got, want, rtol=1e-12,
                                                    atol=1e-12 * np.abs(want).max())
@@ -907,45 +714,13 @@ class TestPronyFitQuality(unittest.TestCase):
             loss.hess(x), _prony_hessian(x, data, basis, 0.4, True))
 
     def test_prony_hessian_leaves_the_basis_untouched(self):
-        # _prony_reduce hands out read-only cached arrays; the coefs
+        # _prony_reduce hands out read-only cached arrays; the in-place
         # scalings must land on the Gram product, never on the input.
         basis, data, x = _random_fit_problem(self.rng, 6, 1)
         basis.setflags(write=False)
         before = basis.copy()
         _prony_hessian(x, data, basis, 0.5, True)
         np.testing.assert_array_equal(basis, before)
-
-    def test_prony_loss_builds_the_penalty_once(self):
-        """L.T @ L is built once per (m, solid), on the first Hessian, and
-        reused at every later point; a caller mutating a returned Hessian
-        must not poison it."""
-        # The single build is the one _penalty_gram cache miss. allclose,
-        # not equality: the Hessian is assembled differently from the dense
-        # reference.
-        basis, data, x1 = _random_fit_problem(self.rng, 9, 1)
-        points = (x1, x1 + 0.3, x1 - 0.2)
-        loss = _PronyLoss(data, basis, 0.6, True)
-        flat = _PronyLoss(data, basis, 0.0, True)
-        objective._penalty_gram.cache_clear()
-        loss.fun(x1)
-        loss.jac(x1)
-        self.assertEqual(objective._penalty_gram.cache_info().misses, 0)
-        got = []
-        for x in points:
-            H = loss.hess(x)
-            got.append(H.copy())
-            H += 1.0
-        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
-        got_flat = [flat.hess(x) for x in points[:2]]
-        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
-        for x, H in zip(points, got):
-            want = 2 * _dense_half_hessian(x, data, basis, 0.6, True)
-            np.testing.assert_allclose(H, want, rtol=1e-12,
-                                       atol=1e-12 * np.abs(want).max())
-        for x, H in zip(points, got_flat):
-            want = 2 * _dense_half_hessian(x, data, basis, 0.0, True)
-            np.testing.assert_allclose(H, want, rtol=1e-12,
-                                       atol=1e-12 * np.abs(want).max())
 
     def test_reduced_system_scores_on_the_full_problem_scale(self):
         # The reduction keeps its orthogonal-residual row, so chi2 taken from
@@ -967,9 +742,7 @@ class TestPronyFitQuality(unittest.TestCase):
             np.log(truth), z, R, 1.0, True, n_resid=n_resid, log_range=LOG_RANGE,
         )
         resid = (y - clean) / std
-        # Per effective degree of freedom (gamma plus the free equilibrium
-        # term); the numerator is what this test is about.
-        expected = resid @ resid / (n_resid - (quality.effective_terms + 1))
+        expected = resid @ resid / (n_resid - len(truth))
         self.assertAlmostEqual(
             quality.chi2_reduced, expected, delta=1e-9 * expected,
         )
@@ -984,86 +757,33 @@ class TestPronyFitQuality(unittest.TestCase):
         basis, data, x = _converged_fit_problem(self.rng, smoothness=smoothness)
         m = basis.shape[1]
         n_resid = 2 * len(data)
-        scaled_smoothness = _scaled_smoothness(
-            smoothness, m - 1, n_resid - m, LOG_RANGE)
+        scaled = _scaled_smoothness(smoothness, m - 1, n_resid - m, LOG_RANGE)
         # The test is only meaningful while the two candidates are far apart.
-        self.assertGreater(scaled_smoothness, 2 * smoothness)
+        self.assertGreater(scaled, 3 * smoothness)
 
         kwargs = dict(n_resid=n_resid, log_range=LOG_RANGE)
         got = _prony_fit_quality(x, data, basis, smoothness, True, **kwargs)
         self.assertIsNotNone(got.neg_log_posterior)
-        _, on_knob, _ = _dense_fit_quality(
-            x, data, basis, smoothness, True,
-            prior_lam=smoothness ** 2, **kwargs)
-        _, on_weight, _ = _dense_fit_quality(
-            x, data, basis, smoothness, True,
-            prior_lam=scaled_smoothness ** 2, **kwargs)
+        _, on_knob = _dense_fit_quality(x, data, basis, smoothness, True,
+                                        prior_lam=smoothness ** 2, **kwargs)
+        _, on_weight = _dense_fit_quality(x, data, basis, smoothness, True,
+                                          prior_lam=scaled ** 2, **kwargs)
         self.assertAlmostEqual(got.neg_log_posterior, on_knob,
                                delta=1e-9 * abs(on_knob))
-        self.assertAlmostEqual(
-            on_weight - on_knob,
-            scaled_smoothness ** 2 - smoothness ** 2, places=6)
-
-    def test_surprisal_is_the_laplace_evidence_of_exp_minus_half_V(self):
-        # The stated errors are standard deviations, so the likelihood is
-        # exp(-rho**2 / 2) and the posterior exp(-V / 2): the same noise level
-        # chi2_reduced is judged against. Laplace over exp(-V/2) gives
-        # (4 pi)**(m/2) * det(Hess V)**-0.5, and the Gaussian prior's
-        # normalizer (lam / 2 pi)**(r/2) * pdet(A)**0.5 cancels all but the
-        # (2 + solid) null directions' 2 pi. Rebuilt here from the fit's own
-        # reduced system, for both values of solid, since that count differs.
-        omega, E_stor, E_loss, std = _broadband_master_curve(600)
-        N, smoothness = 20, 0.1
-        for solid in (True, False):
-            with self.subTest(solid=solid):
-                tau_i, E_i, quality = smooth_prony_fit(
-                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-                    N=N, smoothness=smoothness, solid=solid,
-                    return_fit_quality=True,
-                )
-                # Interior optimum, so the full system is the one scored.
-                self.assertTrue(np.all(E_i > 0))
-                R, z = _prony_reduce(
-                    omega, E_stor, E_loss, std, std, tau_i, solid)
-                x = np.log(E_i)
-                m = N + solid
-                r = N - 2
-                dof = 2 * len(omega) - m
-                lam = _scaled_smoothness(
-                    smoothness, N, dof, np.log(tau_i[-1] / tau_i[0])) ** 2
-                loss = _PronyLoss(z, R, np.sqrt(lam), solid)
-                V = loss.fun(x)
-                sign, logdet_hess = np.linalg.slogdet(loss.hess(x))
-                self.assertEqual(sign, 1.0)
-                logpdetA = np.log(N ** 2 * (N ** 2 - 1) / 12)
-                expected = (
-                    V / 2
-                    - 0.5 * (logpdetA + r * np.log(lam) - logdet_hess)
-                    - 0.5 * (m * np.log(2) + (2 + solid) * np.log(2 * np.pi))
-                    + smoothness ** 2
-                )
-                self.assertIsNotNone(quality.neg_log_posterior)
-                np.testing.assert_allclose(
-                    quality.neg_log_posterior, expected, rtol=1e-9)
+        self.assertAlmostEqual(on_weight - on_knob,
+                               scaled ** 2 - smoothness ** 2, places=6)
 
     def test_scaled_smoothness_falls_back_when_the_penalty_is_empty(self):
         # Fewer than 3 penalized terms leaves np.diff(..., n=2) empty and a
-        # degenerate span leaves ell undefined; the penalty is identically zero
+        # degenerate span leaves h undefined; the penalty is identically zero
         # either way, so the knob passes through rather than dividing by zero.
         self.assertEqual(_scaled_smoothness(0.4, 2, 100, LOG_RANGE), 0.4)
         self.assertEqual(_scaled_smoothness(0.4, 20, 100, 0.0), 0.4)
-        # And the live branch is the smoothness-weight definition,
-        # lam = smoothness**2 * dof
-        # / ((npen - 2) * ell**4), ell = log_range / (npen - 1), with dof
-        # floored at 1.
-        ell = LOG_RANGE / 19
+        # And the live branch is the documented sqrt(dof / h**3).
+        h = LOG_RANGE / 19
         self.assertAlmostEqual(
-            _scaled_smoothness(0.4, 20, 100, LOG_RANGE) ** 2,
-            0.4 ** 2 * 100 / (18 * ell ** 4), places=12,
-        )
-        self.assertAlmostEqual(
-            _scaled_smoothness(0.4, 20, 0, LOG_RANGE) ** 2,
-            0.4 ** 2 / (18 * ell ** 4), places=12,
+            _scaled_smoothness(0.4, 20, 100, LOG_RANGE),
+            0.4 * np.sqrt(100 / h ** 3), places=12,
         )
 
     def test_none_posterior_when_not_positive_definite(self):
@@ -1096,100 +816,6 @@ class TestPronyFitQuality(unittest.TestCase):
         quality = _prony_fit_quality(x, data, basis, 1.0, True, n_resid=6, log_range=LOG_RANGE)
         self.assertIsNone(quality.chi2_reduced)
 
-    def test_penalty_helpers_match_the_dense_operator(self):
-        """_penalty_gram(m, solid) is L.T @ L, read-only and cached, and
-        _penalty_trace is tr(L.T @ L @ sigma); the equilibrium term, when
-        solid, is unpenalized."""
-        # npen == 3 collides the two boundary corrections; npen == 2 leaves
-        # the band empty.
-        for solid in (True, False):
-            for npen in (2, 3, 4, 10):
-                with self.subTest(solid=solid, npen=npen):
-                    m = npen + solid
-                    L = np.zeros((max(npen - 2, 0), m))
-                    rows = np.arange(max(npen - 2, 0))
-                    L[rows, solid + rows] = 1.0
-                    L[rows, solid + rows + 1] = -2.0
-                    L[rows, solid + rows + 2] = 1.0
-                    A = L.T @ L
-                    G = self.rng.normal(size=(m, m))
-                    sigma = G @ G.T + np.eye(m)
-                    dense = np.trace(A @ sigma)
-                    self.assertAlmostEqual(
-                        objective._penalty_trace(sigma, solid), dense,
-                        delta=1e-12 * (1 + abs(dense)))
-                    gram = objective._penalty_gram(m, solid)
-                    self.assertEqual(gram.shape, (m, m))
-                    np.testing.assert_array_equal(gram, A)
-                    self.assertFalse(gram.flags.writeable)
-                    with self.assertRaises(ValueError):
-                        gram[0, 0] = 1.0
-                    self.assertIs(objective._penalty_gram(m, solid), gram)
-                    if npen < 3:
-                        self.assertEqual(
-                            objective._penalty_trace(sigma, solid), 0.0)
-                        np.testing.assert_array_equal(gram, 0.0)
-
-    def test_chi2_is_per_effective_degree_of_freedom(self):
-        # chi2_reduced divides by n_resid - (gamma + 1): the decaying terms
-        # count for what the data determined of them (MacKay's gamma =
-        # npen - lam * tr(L.T @ L @ Sigma)), the free equilibrium term for
-        # one. lam is the weight the fit ran with, which keeps the classical
-        # n_resid - m in _scaled_smoothness.
-        smoothness, N = 1.0, 10
-        basis, data, x = _converged_fit_problem(
-            self.rng, N=N, smoothness=smoothness)
-        m = N + 1
-        n_resid = 2 * len(data)
-        quality = _prony_fit_quality(
-            x, data, basis, smoothness, True,
-            n_resid=n_resid, log_range=LOG_RANGE,
-        )
-        lam = _scaled_smoothness(smoothness, N, n_resid - m, LOG_RANGE) ** 2
-        L = np.zeros((N - 2, m))
-        rows = np.arange(N - 2)
-        L[rows, 1 + rows] = 1.0
-        L[rows, 2 + rows] = -2.0
-        L[rows, 3 + rows] = 1.0
-        gamma = N - lam * np.trace(L.T @ L @ quality.covariance)
-        self.assertAlmostEqual(quality.effective_terms, gamma,
-                               delta=1e-9 * N)
-        self.assertGreater(quality.effective_terms, 0.0)
-        self.assertLess(quality.effective_terms, N)
-        resid = data - basis @ np.exp(x)
-        rr = resid @ resid
-        self.assertAlmostEqual(
-            quality.chi2_reduced * (n_resid - (gamma + 1)), rr,
-            delta=1e-9 * rr)
-        # Below the classical quotient, which charges every grid node.
-        self.assertLess(quality.chi2_reduced, rr / (n_resid - m))
-
-    def test_effective_terms_none_without_covariance(self):
-        # Same availability as the covariance it is read from; the misfit
-        # then falls back to the classical n_resid - m.
-        basis, data, x = _random_fit_problem(self.rng, 8, True)
-        n_resid = 2 * len(data)
-        quality = _prony_fit_quality(
-            x, data, basis, 0.0, True, n_resid=n_resid, log_range=LOG_RANGE,
-        )
-        self.assertIsNone(quality.effective_terms)
-        resid = data - basis @ np.exp(x)
-        self.assertAlmostEqual(quality.chi2_reduced,
-                               resid @ resid / (n_resid - 9),
-                               delta=1e-12 * quality.chi2_reduced)
-        basis, data, _ = _converged_fit_problem(self.rng)
-        x = np.full(basis.shape[1], -10.0)
-        n_resid = 2 * len(data)
-        quality = _prony_fit_quality(
-            x, data, basis, 0.5, True, n_resid=n_resid, log_range=LOG_RANGE,
-        )
-        self.assertIsNone(quality.covariance)
-        self.assertIsNone(quality.effective_terms)
-        resid = data - basis @ np.exp(x)
-        self.assertAlmostEqual(quality.chi2_reduced,
-                               resid @ resid / (n_resid - len(x)),
-                               delta=1e-12 * quality.chi2_reduced)
-
     def test_scan_has_interior_minimum(self):
         # The payoff: -log posterior should trade misfit against roughness and
         # land on an interior smoothness, not run to either end of the scan.
@@ -1208,7 +834,7 @@ class TestPronyFitQuality(unittest.TestCase):
         E_loss = E_loss + std * rng.normal(size=len(omega))
 
         # Decade-spaced around the corner this fixture actually has. The useful
-        # range moved down ~30x when the penalty picked up its 1/ell**3 factor;
+        # range moved down ~30x when the penalty picked up its 1/h**3 factor;
         # the scan grid is calibration, not physics, so it moves with it.
         grid = [3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 0.01, 0.03, 0.1]
         scores = []
@@ -1255,148 +881,18 @@ class TestPronyFitQuality(unittest.TestCase):
     def test_nnls_path_chi2_matches_explicit_residual(self):
         # The smoothness == 0 branch takes chi2 straight from nnls's returned
         # residual norm, never touching the full basis. Check that shortcut
-        # against the residual computed the long way. The denominator counts
-        # the active set only: a coefficient NNLS pinned at zero is not a
-        # parameter the data determined.
+        # against the residual computed the long way.
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         tau_i, E_i, quality = smooth_prony_fit(
             omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
             N=12, smoothness=0.0, solid=True, return_fit_quality=True,
         )
-        active = np.count_nonzero(E_i)
-        self.assertLess(active, len(E_i))  # the active set is a real subset
-        self.assertIsNone(quality.effective_terms)
         expected = _chi2_per_point(
             omega, E_stor, E_loss, std, tau_i, E_i,
-        ) * (2 * len(omega)) / (2 * len(omega) - active)
+        ) * (2 * len(omega)) / (2 * len(omega) - len(E_i))
         self.assertAlmostEqual(
             quality.chi2_reduced, expected, delta=1e-6 * expected,
         )
-
-    def test_covariance_and_effective_terms_fields_default_to_none(self):
-        """_FitQuality carries covariance and effective_terms after the three
-        scores, both defaulting to None so three- and four-positional
-        construction keeps working."""
-        self.assertEqual(
-            _FitQuality._fields,
-            ('chi2_reduced', 'neg_log_posterior', 'curvature', 'covariance',
-             'effective_terms'),
-        )
-        self.assertIsNone(_FitQuality(1.0, None, None).covariance)
-        self.assertIsNone(_FitQuality(1.0, None, None).effective_terms)
-        self.assertIsNone(
-            _FitQuality(1.0, None, None, np.eye(2)).effective_terms)
-
-    def test_covariance_is_two_inverse_hessians(self):
-        """Sigma = 2 inv(Hess V) at the optimum, for the V the solver
-        minimizes: exactly symmetric and positive definite."""
-        smoothness = 1.0
-        basis, data, x = _converged_fit_problem(self.rng, smoothness=smoothness)
-        m = len(x)
-        n_resid = 2 * len(data)
-        quality = _prony_fit_quality(
-            x, data, basis, smoothness, True,
-            n_resid=n_resid, log_range=LOG_RANGE,
-        )
-        cov = quality.covariance
-        self.assertIsNotNone(cov)
-        self.assertEqual(cov.shape, (m, m))
-        np.testing.assert_array_equal(cov, cov.T)
-        np.linalg.cholesky(cov)  # raises unless positive definite
-        scaled_smoothness = _scaled_smoothness(
-            smoothness, m - 1, n_resid - m, LOG_RANGE)
-        H = _PronyLoss(data, basis, scaled_smoothness, True).hess(x)
-        err = np.abs(cov @ H - 2 * np.eye(m)).max()
-        self.assertLess(err, 1e-10 * np.linalg.norm(H) * np.linalg.norm(cov))
-
-    def test_covariance_approaches_classical_least_squares(self):
-        """As smoothness -> 0+ at an exact fit, Sigma -> inv(J.T @ J) with
-        J = basis * coefs, the weighted least-squares covariance of the
-        log-parameters."""
-        basis = np.abs(self.rng.normal(size=(30, 9))) + 0.3
-        truth = np.exp(self.rng.normal(size=9))
-        data = basis @ truth
-        quality = _prony_fit_quality(
-            np.log(truth), data, basis, 1e-8, True,
-            n_resid=len(data), log_range=LOG_RANGE,
-        )
-        J = basis * truth
-        np.testing.assert_allclose(
-            quality.covariance, np.linalg.inv(J.T @ J), rtol=1e-3,
-        )
-
-    def test_covariance_none_when_smoothness_zero(self):
-        """No penalty, no log-space posterior: covariance is None."""
-        basis, data, x = _random_fit_problem(self.rng, 8, True)
-        quality = _prony_fit_quality(
-            x, data, basis, 0.0, True, n_resid=2 * len(data),
-            log_range=LOG_RANGE,
-        )
-        self.assertIsNone(quality.covariance)
-
-    def test_covariance_none_when_hessian_not_positive_definite(self):
-        """Away from a local minimum there is no Laplace posterior."""
-        basis, data, _ = _converged_fit_problem(self.rng)
-        x = np.full(basis.shape[1], -10.0)
-        quality = _prony_fit_quality(
-            x, data, basis, 0.5, True, n_resid=2 * len(data),
-            log_range=LOG_RANGE,
-        )
-        self.assertIsNone(quality.neg_log_posterior)
-        self.assertIsNone(quality.covariance)
-
-    def test_covariance_present_with_fewer_than_three_penalized_terms(self):
-        """Not gated on a second difference existing: a 2-term smoothed fit
-        has a covariance even though neg_log_posterior is None."""
-        basis = np.abs(self.rng.normal(size=(10, 3))) + 0.3
-        truth = np.exp(self.rng.normal(size=3))
-        data = basis @ truth
-        quality = _prony_fit_quality(
-            np.log(truth), data, basis, 1.5, True,
-            n_resid=len(data), log_range=LOG_RANGE,
-        )
-        self.assertIsNone(quality.neg_log_posterior)
-        self.assertIsNotNone(quality.covariance)
-        self.assertEqual(quality.covariance.shape, (3, 3))
-
-
-def _row_pass_spy():
-    """Patch reduction's prony_basis with a counting wrapper: one call per
-    chunk of the O(rows) pass, none on a cache hit."""
-    return mock.patch.object(reduction, 'prony_basis', wraps=prony_basis)
-
-
-def _legacy_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std, tau_i,
-                   solid, chunk_rows):
-    """The reduction as first written: np.linalg.qr on a fresh
-    concatenation of the running triangle and each weighted chunk."""
-    m = len(tau_i) + solid
-    Rz = np.empty((0, m + 1))
-    for start in range(0, len(omega), chunk_rows):
-        chunk = slice(start, start + chunk_rows)
-        basis = prony_basis(omega[chunk], tau_i, solid)
-        y = np.concatenate((E_stor[chunk], E_loss[chunk]))
-        y_std = np.concatenate((E_stor_std[chunk], E_loss_std[chunk]))
-        block = np.concatenate(
-            (basis / y_std[:, None], (y / y_std)[:, None]), axis=1
-        )
-        Rz = np.linalg.qr(
-            np.concatenate((Rz, block), axis=0), mode='r'
-        )[:m + 1]
-    return Rz[:, :m], Rz[:, m]
-
-
-def _sign_normalized(Rz):
-    """Rz with each row flipped so its diagonal entry is non-negative."""
-    diag = np.diagonal(Rz)
-    return Rz * np.where(diag < 0, -1.0, 1.0)[:, None]
-
-
-def _owner_nbytes(arr):
-    """Bytes of the allocation that ultimately owns arr's memory."""
-    while isinstance(arr.base, np.ndarray):
-        arr = arr.base
-    return arr.nbytes
 
 
 class TestPronyReduce(unittest.TestCase):
@@ -1426,15 +922,23 @@ class TestPronyReduce(unittest.TestCase):
         return _prony_reduce(**args)
 
     def test_identical_inputs_hit_the_cache(self):
-        # A smoothness sweep re-calls with the same arrays; the pass over the
-        # rows must run once.
-        with _row_pass_spy() as passes:
+        # A smoothness sweep re-calls with the same arrays; the QR must run once.
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        np.linalg.qr = counting_qr
+        try:
             first = self._reduce()
-            after_first = passes.call_count
+            after_first = len(calls)
             second = self._reduce()
+        finally:
+            np.linalg.qr = original
         self.assertGreater(after_first, 0)
-        self.assertEqual(passes.call_count, after_first,
-                         msg='cache miss on repeat')
+        self.assertEqual(len(calls), after_first, msg='cache miss on repeat')
         # Equal values, not the same object: every call divides by std_scale and
         # so hands back a fresh array (see test_returned_arrays_are_private).
         np.testing.assert_array_equal(first[0], second[0])
@@ -1503,13 +1007,22 @@ class TestPronyReduce(unittest.TestCase):
 
     def test_std_scale_is_not_part_of_the_cache_key(self):
         # Sweeping the relative-error widget must not re-run the O(rows) QR.
-        with _row_pass_spy() as passes:
+        calls = []
+        original = np.linalg.qr
+
+        def counting_qr(*args, **kwargs):
+            calls.append(1)
+            return original(*args, **kwargs)
+
+        np.linalg.qr = counting_qr
+        try:
             base = self._reduce(std_scale=1.0)
-            after_first = passes.call_count
+            after_first = len(calls)
             scaled = self._reduce(std_scale=8.0)
+        finally:
+            np.linalg.qr = original
         self.assertGreater(after_first, 0)
-        self.assertEqual(passes.call_count, after_first,
-                         msg='std_scale forced a re-reduce')
+        self.assertEqual(len(calls), after_first, msg='std_scale forced a re-reduce')
         # Cached, but still actually scaled — a hit that ignored std_scale would
         # silently fit the wrong weighting.
         np.testing.assert_allclose(scaled[0], base[0] / 8.0, rtol=1e-12)
@@ -1563,195 +1076,6 @@ class TestPronyReduce(unittest.TestCase):
         self.assertAlmostEqual(
             full @ full, reduced @ reduced, delta=1e-8 * (full @ full),
         )
-
-    def test_factors_each_chunk_with_scipy_qr_in_place(self):
-        """Every chunk is factored by reduction.qr (scipy.linalg.qr) in
-        R-only mode, overwriting its input and skipping the finiteness scan;
-        np.linalg.qr is not used."""
-        n_chunks = -(-len(self.omega) // 7)  # 28 full chunks + one of 4 rows
-        with mock.patch.object(reduction, '_QR_CHUNK_ROWS', 7), \
-                mock.patch.object(reduction, 'qr',
-                                  wraps=scipy.linalg.qr) as qr, \
-                mock.patch.object(np.linalg, 'qr',
-                                  wraps=np.linalg.qr) as legacy_qr:
-            self._reduce()
-        legacy_qr.assert_not_called()
-        self.assertEqual(qr.call_count, n_chunks)
-        for call in qr.call_args_list:
-            self.assertEqual(call.kwargs.get('mode'), 'r')
-            self.assertIs(call.kwargs.get('overwrite_a'), True)
-            self.assertIs(call.kwargs.get('check_finite'), False)
-
-    def test_reduce_matches_the_legacy_concatenated_qr(self):
-        """(R, z) match the concatenate-and-np.linalg.qr reduction to
-        rounding, up to each row's sign, over several chunks with a short
-        last one, a single chunk, and a short upload whose triangle is wide."""
-        # Not bitwise: pip wheels bundle separate OpenBLAS builds for numpy
-        # and scipy, which may round differently. Each row of [R | z] is
-        # flipped by the sign of its diagonal, so R's row and z's entry
-        # flip together, as Householder's sign freedom allows.
-        short = slice(0, 3)  # 3 frequencies -> 6 rows < m
-        cases = (
-            ('many chunks', slice(None), 7),
-            ('one chunk', slice(None), 10 ** 9),
-            ('short upload, two chunks', short, 2),
-        )
-        for label, rows, chunk_rows in cases:
-            for solid in (True, False):
-                with self.subTest(label, solid=solid):
-                    reduction._REDUCE_CACHE.clear()
-                    args = (self.omega[rows], self.E_stor[rows],
-                            self.E_loss[rows], self.std[rows],
-                            self.std[rows], self.tau_i, solid)
-                    with mock.patch.object(
-                            reduction, '_QR_CHUNK_ROWS', chunk_rows):
-                        R, z = _prony_reduce(*args)
-                    R_ref, z_ref = _legacy_reduce(*args, chunk_rows)
-                    self.assertEqual(R.shape, R_ref.shape)
-                    got = _sign_normalized(np.column_stack((R, z)))
-                    want = _sign_normalized(
-                        np.column_stack((R_ref, z_ref)))
-                    np.testing.assert_allclose(
-                        got, want, rtol=1e-12,
-                        atol=1e-12 * np.abs(want).max())
-
-    def test_cache_entry_owns_only_the_triangle(self):
-        """A cached (R, z) holds no more memory than the (m + 1) x (m + 1)
-        triangle, never the chunk-sized buffer it was factored in."""
-        m = len(self.tau_i) + 1
-        with mock.patch.object(reduction, '_QR_CHUNK_ROWS', 64):
-            self._reduce()
-        R, z = next(iter(reduction._REDUCE_CACHE.values()))
-        limit = (m + 1) ** 2 * R.itemsize
-        self.assertLessEqual(_owner_nbytes(R), limit)
-        self.assertLessEqual(_owner_nbytes(z), limit)
-
-
-def _debye_window(decades, n_per_decade=30):
-    """(omega, E_stor, E_loss, std) of a noise-free single Debye relaxation
-    over `decades` of frequency from omega = 1, with a small plateau."""
-    omega = np.logspace(0.0, decades, max(60, int(n_per_decade * decades)))
-    E_stor = 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2)
-    E_loss = 1e6 * omega / (1 + omega ** 2) + 1e2
-    return omega, E_stor, E_loss, np.abs(E_stor + 1.0j * E_loss)
-
-
-class TestPronyRankLimit(unittest.TestCase):
-    """reduction.prony_rank_limit: the number of relaxation terms the data
-    can carry, the sqrt(eps) numerical rank of a fixed probe basis."""
-
-    def setUp(self):
-        reduction._REDUCE_CACHE.clear()
-
-    @staticmethod
-    def _limit(decades=4, **overrides):
-        omega, E_stor, E_loss, std = _debye_window(decades)
-        args = dict(omega=omega, E_stor=E_stor, E_loss=E_loss,
-                    E_stor_std=std, E_loss_std=std)
-        args.update(overrides)
-        return reduction.prony_rank_limit(**args)
-
-    @staticmethod
-    def _probe_counts(omega, E_stor, E_loss, std, solid):
-        """Singular-value counts above sqrt(eps) and eps on the probe grid,
-        rebuilt here from its definition."""
-        tau = prony_relaxation_space(
-            1 / omega.max(), 1 / omega.min(), PRONY_TERMS_MAX + 8)
-        R, _ = _prony_reduce(omega, E_stor, E_loss, std, std, tau, solid)
-        sigma = np.linalg.svd(R, compute_uv=False)
-        eps = np.finfo(np.result_type(E_stor, E_loss)).eps
-        return (int(np.count_nonzero(sigma > np.sqrt(eps) * sigma[0])),
-                int(np.count_nonzero(sigma > eps * sigma[0])))
-
-    def test_returns_a_plain_int_within_the_route_range(self):
-        # The extract route serializes with stdlib json, which rejects numpy
-        # integer scalars.
-        max_prony = self._limit()
-        self.assertIs(type(max_prony), int)
-        self.assertGreaterEqual(max_prony, 1)
-        self.assertLessEqual(max_prony, PRONY_TERMS_MAX)
-
-    def test_uniform_std_scale_does_not_move_the_count(self):
-        counts = {self._limit(std_scale=s) for s in (0.01, 1.0, 100.0)}
-        self.assertEqual(len(counts), 1)
-
-    def test_wider_span_supports_more_terms(self):
-        narrow = self._limit(decades=2)
-        wide = self._limit(decades=4)
-        self.assertLess(wide, PRONY_TERMS_MAX)  # compare counts, not clips
-        self.assertLess(narrow, wide)
-
-    def test_very_wide_span_is_clipped_to_the_route_limit(self):
-        omega, E_stor, E_loss, std = _debye_window(16)
-        sqrt_count, _ = self._probe_counts(
-            omega, E_stor, E_loss, std, solid=True)
-        self.assertGreater(sqrt_count - 1, PRONY_TERMS_MAX)  # precondition
-        max_prony = reduction.prony_rank_limit(
-            omega, E_stor, E_loss, std, std)
-        self.assertEqual(max_prony, PRONY_TERMS_MAX)
-
-    def test_float32_moduli_lower_the_count(self):
-        omega, E_stor, E_loss, std = _debye_window(4)
-        full = reduction.prony_rank_limit(omega, E_stor, E_loss, std, std)
-        low = reduction.prony_rank_limit(
-            omega, E_stor.astype(np.float32), E_loss.astype(np.float32),
-            std, std)
-        self.assertLess(low, full)
-
-    def test_threshold_is_sqrt_eps_not_eps(self):
-        # On a noise-free 2-decade window the sqrt(eps) rank is about half
-        # the eps rank; the equilibrium column is not a relaxation term.
-        omega, E_stor, E_loss, std = _debye_window(2)
-        max_prony = reduction.prony_rank_limit(
-            omega, E_stor, E_loss, std, std, solid=True)
-        sqrt_count, eps_count = self._probe_counts(
-            omega, E_stor, E_loss, std, solid=True)
-        self.assertEqual(max_prony, sqrt_count - 1)
-        self.assertLess(max_prony, eps_count - 1)
-
-    def test_viscous_count_drops_no_equilibrium_column(self):
-        omega, E_stor, E_loss, std = _debye_window(2)
-        max_prony = reduction.prony_rank_limit(
-            omega, E_stor, E_loss, std, std, solid=False)
-        sqrt_count, _ = self._probe_counts(
-            omega, E_stor, E_loss, std, solid=False)
-        self.assertEqual(max_prony, sqrt_count)
-
-    def test_tiny_upload_is_limited_by_its_row_count(self):
-        # Two frequencies give four weighted rows, one of them spent on the
-        # equilibrium column.
-        omega = np.array([1.0, 10.0])
-        E_stor = np.array([2e5, 8e5])
-        E_loss = np.array([1e5, 2e5])
-        std = np.abs(E_stor + 1.0j * E_loss)
-        max_prony = reduction.prony_rank_limit(
-            omega, E_stor, E_loss, std, std, std_scale=0.01)
-        self.assertIs(type(max_prony), int)
-        self.assertGreaterEqual(max_prony, 1)
-        self.assertLessEqual(max_prony, 2 * len(omega) - 1)
-
-    def test_repeat_call_reuses_its_own_cached_reduction(self):
-        # The probe has its own cache entry: a fit on the same data needs a
-        # pass of its own, and neither a repeat call nor a new std_scale
-        # redoes the pass over the rows.
-        omega, E_stor, E_loss, std = _debye_window(4)
-        with _row_pass_spy() as passes:
-            first = reduction.prony_rank_limit(
-                omega, E_stor, E_loss, std, std)
-            after_probe = passes.call_count
-            smooth_prony_fit(omega, E_stor, E_loss, std, std,
-                             N=8, smoothness=0.0)
-            after_fit = passes.call_count
-            second = reduction.prony_rank_limit(
-                omega, E_stor, E_loss, std, std)
-            rescaled = reduction.prony_rank_limit(
-                omega, E_stor, E_loss, std, std, std_scale=0.05)
-        self.assertGreater(after_probe, 0)
-        self.assertGreater(after_fit, after_probe,
-                           msg='fit grid should not collide with the probe')
-        self.assertEqual(passes.call_count, after_fit, msg='probe cache miss')
-        self.assertEqual(first, second)
-        self.assertEqual(first, rescaled)
 
 
 class TestSmoothPronyFit(unittest.TestCase):
@@ -2066,7 +1390,7 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         self.assertLess(chi2_smooth, chi2_exact + 0.1)
 
     def test_smoothness_effect_is_term_count_invariant(self):
-        # The 1/ell**4 in the penalty normalization, end to end. One dataset, one
+        # The 1/h**3 in the penalty normalization, end to end. One dataset, one
         # smoothness, four term counts: the RECOVERED SPECTRUM must come out
         # equally rough, because there is only one true spectrum and N chooses
         # resolution, not smoothness.
@@ -2075,18 +1399,18 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         # the same sweep was measured to leave the spectrum 18x rougher at
         # N=100 than at N=23, i.e. raising N silently released the prior.
         #
-        # N starts at 40 because this fixture spans 16 decades: N=23 puts ell at
+        # N starts at 40 because this fixture spans 16 decades: N=23 puts h at
         # 1.7 in ln(tau), far too coarse for a second difference to approximate
         # a second derivative, and the fit is then limited by resolution rather
         # than by the prior. The correction is a continuum argument and needs a
-        # mesh that resolves the spectrum (ell below ~1) before it applies.
+        # mesh that resolves the spectrum (h below ~1) before it applies.
         omega, E_stor, E_loss, std = _broadband_master_curve(600)
         reported = []
         for N in (40, 60, 80, 100):
             _, _, quality = smooth_prony_fit(
                 omega, E_stor, E_loss,
                 E_stor_std=std, E_loss_std=std,
-                N=N, smoothness=0.018, solid=True, return_fit_quality=True,
+                N=N, smoothness=0.003, solid=True, return_fit_quality=True,
             )
             reported.append(quality.curvature)
         lo, hi = min(reported), max(reported)
@@ -2106,11 +1430,11 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         # same thing. Measured as fidelity cost rather than roughness, because
         # different windows are intrinsically rough to different degrees.
         #
-        # N tracks the span at 3 terms per decade, holding ell fixed — the policy
+        # N tracks the span at 3 terms per decade, holding h fixed — the policy
         # the tool itself uses. Pinning N while cropping does NOT hold here and
         # cannot: that changes the mesh as well as the window, so a 16-decade
-        # fit at N=23 (ell=1.7, chi2/nu 0.0025) and a 6-decade one at the same N
-        # (ell=0.63, chi2/nu 0.0003) are not the same fit to begin with, and the
+        # fit at N=23 (h=1.7, chi2/nu 0.0025) and a 6-decade one at the same N
+        # (h=0.63, chi2/nu 0.0003) are not the same fit to begin with, and the
         # cost then ranges over 15x. That is resolution moving, not the knob.
         omega, E_stor, E_loss, std = _broadband_master_curve(2000)
         lo10, hi10 = np.log10(omega.min()), np.log10(omega.max())
@@ -2131,8 +1455,7 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
 
     def test_zero_coefficients_flow_through_coef_records(self):
         # NNLS returns exact zeros (active set); the coefficient table filters
-        # them and keeps the original grid index in 'i'. A nonzero E_eq adds
-        # its own plateau row, which has no tau_i to look up.
+        # them and keeps the original grid index in 'i'.
         omega, E_stor, E_loss, std = _broadband_master_curve(500)
         tau_i, E_i = smooth_prony_fit(
             omega, E_stor, E_loss,
@@ -2141,236 +1464,10 @@ class TestSmoothPronyFitReducedSolver(unittest.TestCase):
         )
         self.assertGreater(np.sum(E_i == 0), 0)  # sparsity actually occurs
         records = _build_coef_records(tau_i, E_i)
-        self.assertEqual(len(records),
-                         np.count_nonzero(E_i[1:]) + int(E_i[0] != 0))
+        self.assertEqual(len(records), np.count_nonzero(E_i[1:]))
         for rec in records:
             self.assertNotEqual(rec['E_i'], 0)
-            if rec['tau_i'] != 'inf':
-                np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
-
-
-class TestCoefRecordsBounds(unittest.TestCase):
-    """
-    With a covariance, each table row carries the +-1 sigma interval of its
-    coefficient, [E exp(-s), E exp(s)] in Pa with s capped at six decades;
-    without one the table keeps exactly 'i', 'tau_i' and 'E_i'.
-    """
-
-    TAU = np.logspace(-2, 1, 4)
-    E = np.array([1e6, 3e5, 2e7, 4e4])
-    # Distinct per term, so a row that reads its neighbour's sigma shows.
-    SIGMA = np.array([0.1, 0.4, 0.9, 1.6])
-    BOUND_KEYS = {'E_i_lower', 'E_i_upper'}
-
-    def _check_bounds(self, records, E, sigma):
-        """Row k is term records[k]['i'], with 1-sigma of ln E sigma[i]."""
-        for rec in records:
-            i = rec['i']
-            s = min(sigma[i], _SIGMA_DISPLAY_CAP)
-            self.assertAlmostEqual(rec['E_i'], E[i])
-            np.testing.assert_allclose(
-                [rec['E_i_lower'], rec['E_i_upper']],
-                [E[i] * np.exp(-s), E[i] * np.exp(s)], rtol=1e-12)
-
-    def test_no_covariance_keeps_three_keys(self):
-        for records in (_build_coef_records(self.TAU, self.E),
-                        _build_coef_records(self.TAU, self.E,
-                                            covariance=None)):
-            for rec in records:
-                self.assertSetEqual(set(rec), {'i', 'tau_i', 'E_i'})
-
-    def test_bounds_are_the_log_normal_interval(self):
-        cov = np.diag(self.SIGMA ** 2)
-        records = _build_coef_records(self.TAU, self.E, covariance=cov)
-        self.assertEqual(len(records), len(self.TAU))
-        for rec in records:
-            self.assertSetEqual(set(rec), {'i', 'tau_i', 'E_i'} |
-                                self.BOUND_KEYS)
-        self._check_bounds(records, self.E, self.SIGMA)
-
-    def test_equilibrium_row_does_not_shift_the_alignment(self):
-        # The equilibrium sigma differs from every decaying one, so reading
-        # row k + 1 as row k would put the wrong interval on every term.
-        # The plateau row comes last (TestCoefRecordsPlateauRow).
-        E = np.concatenate(([5e3], self.E))
-        cov = np.diag(np.concatenate(([3.0], self.SIGMA)) ** 2)
-        records = _build_coef_records(self.TAU, E, covariance=cov)
-        self.assertEqual(len(records), len(self.TAU) + 1)
-        self._check_bounds(records[:-1], self.E, self.SIGMA)
-
-    def test_clamped_equilibrium_uses_the_decaying_covariance(self):
-        # E_i carries the equilibrium term but the covariance does not.
-        E = np.concatenate(([0.0], self.E))
-        cov = np.diag(self.SIGMA ** 2)
-        records = _build_coef_records(self.TAU, E, covariance=cov)
-        self.assertEqual(len(records), len(self.TAU))
-        self._check_bounds(records, self.E, self.SIGMA)
-
-    def test_bounds_are_built_before_the_zero_filter(self):
-        E = self.E.copy()
-        E[1] = 0.0
-        cov = np.diag(self.SIGMA ** 2)
-        records = _build_coef_records(self.TAU, E, covariance=cov)
-        self.assertEqual([rec['i'] for rec in records], [0, 2, 3])
-        self._check_bounds(records, E, self.SIGMA)
-
-    def test_sigma_above_the_cap_is_capped(self):
-        sigma = np.array([0.5, 20.0, 1e3, _SIGMA_DISPLAY_CAP])
-        records = _build_coef_records(self.TAU, self.E,
-                                      covariance=np.diag(sigma ** 2))
-        for rec in records:
-            lower, E, upper = rec['E_i_lower'], rec['E_i'], rec['E_i_upper']
-            self.assertTrue(np.isfinite([lower, upper]).all())
-            self.assertGreater(lower, 0.0)
-            self.assertLessEqual(lower, E)
-            self.assertLessEqual(E, upper)
-        for rec in records[1:]:
-            self.assertAlmostEqual(rec['E_i_upper'] / rec['E_i'], 1e6,
-                                   delta=1e-6)
-            self.assertAlmostEqual(rec['E_i_lower'] / rec['E_i'], 1e-6,
-                                   delta=1e-18)
-        self._check_bounds(records, self.E, sigma)
-
-    def test_bounds_are_plain_floats(self):
-        records = _build_coef_records(
-            self.TAU, self.E, covariance=np.diag(self.SIGMA ** 2))
-        for rec in records:
-            for key in self.BOUND_KEYS:
-                self.assertIs(type(rec[key]), float, key)
-
-
-class TestCoefRecordsPlateauRow(unittest.TestCase):
-    """
-    A nonzero equilibrium modulus E_eq gets one table row of its own, last,
-    as {'i': N, 'tau_i': 'inf', 'E_i': E_eq}: 'i' is the next index after the
-    N decaying terms, so a sort by 'i' keeps it last, and 'inf' is a string
-    because stdlib json writes a float inf as Infinity, which JSON.parse
-    rejects. With an equilibrium row in the covariance it also carries
-    [E_eq exp(-s), E_eq exp(s)], s = sqrt(cov[0, 0]) capped like every row.
-    """
-
-    TAU = np.logspace(-2, 1, 4)
-    E_TERMS = np.array([1e6, 3e5, 2e7, 4e4])
-    E_EQ = 5e3
-    E = np.concatenate(([E_EQ], E_TERMS))
-    SIGMA = np.array([0.1, 0.4, 0.9, 1.6])
-    SIGMA_EQ = 0.7
-    KEYS = {'i', 'tau_i', 'E_i'}
-    BOUND_KEYS = {'E_i_lower', 'E_i_upper'}
-
-    def _correlated_cov(self, sigma_eq=SIGMA_EQ):
-        """(N + 1) covariance, equilibrium first, with nonzero cross terms
-        between E_eq and the decaying terms."""
-        sigma = np.concatenate(([sigma_eq], self.SIGMA))
-        corr = np.full((5, 5), 0.3)
-        np.fill_diagonal(corr, 1.0)
-        return corr * np.outer(sigma, sigma)
-
-    def _plateau_rows(self, records):
-        return [rec for rec in records if rec['tau_i'] == 'inf']
-
-    def test_plateau_row_comes_last_with_the_next_index(self):
-        for cov in (None, self._correlated_cov()):
-            with self.subTest(covariance=cov is not None):
-                records = _build_coef_records(self.TAU, self.E,
-                                              covariance=cov)
-                self.assertEqual(len(self._plateau_rows(records)), 1)
-                self.assertEqual(len(records), len(self.TAU) + 1)
-                last = records[-1]
-                self.assertEqual(last['tau_i'], 'inf')
-                self.assertEqual(last['i'], len(self.TAU))
-                self.assertEqual(last['E_i'], self.E_EQ)
-                self.assertEqual([rec['i'] for rec in records],
-                                 sorted(rec['i'] for rec in records))
-
-    def test_plateau_row_without_a_covariance_has_three_keys(self):
-        records = _build_coef_records(self.TAU, self.E)
-        self.assertEqual(len(self._plateau_rows(records)), 1)
-        self.assertEqual(records[-1],
-                         {'i': len(self.TAU), 'tau_i': 'inf',
-                          'E_i': self.E_EQ})
-
-    def test_plateau_bounds_are_the_log_normal_interval_of_E_eq(self):
-        """Only cov[0, 0] sets the interval; the cross terms do not."""
-        records = _build_coef_records(self.TAU, self.E,
-                                      covariance=self._correlated_cov())
-        self.assertEqual(len(self._plateau_rows(records)), 1)
-        last = records[-1]
-        self.assertSetEqual(set(last), self.KEYS | self.BOUND_KEYS)
-        s = self.SIGMA_EQ
-        np.testing.assert_allclose(
-            [last['E_i_lower'], last['E_i_upper']],
-            [self.E_EQ * np.exp(-s), self.E_EQ * np.exp(s)], rtol=1e-12)
-
-    def test_plateau_sigma_above_the_cap_is_capped(self):
-        for sigma_eq in (_SIGMA_DISPLAY_CAP, 20.0, 1e3):
-            with self.subTest(sigma_eq=sigma_eq):
-                records = _build_coef_records(
-                    self.TAU, self.E,
-                    covariance=self._correlated_cov(sigma_eq))
-                self.assertEqual(len(self._plateau_rows(records)), 1)
-                last = records[-1]
-                self.assertTrue(
-                    np.isfinite([last['E_i_lower'], last['E_i_upper']]).all())
-                np.testing.assert_allclose(
-                    [last['E_i_lower'], last['E_i_upper']],
-                    [self.E_EQ * 1e-6, self.E_EQ * 1e6], rtol=1e-12)
-
-    def test_decaying_rows_are_unchanged_by_the_plateau_row(self):
-        """With no correlation the decaying rows equal the viscous table of
-        the same terms, bounds included."""
-        cov = np.diag(np.concatenate(([self.SIGMA_EQ], self.SIGMA)) ** 2)
-        records = _build_coef_records(self.TAU, self.E, covariance=cov)
-        self.assertEqual(len(records), len(self.TAU) + 1)
-        self.assertEqual(
-            records[:-1],
-            _build_coef_records(self.TAU, self.E_TERMS,
-                                covariance=np.diag(self.SIGMA ** 2)))
-
-    def test_no_plateau_row_for_a_viscous_fit(self):
-        for cov in (None, np.diag(self.SIGMA ** 2)):
-            with self.subTest(covariance=cov is not None):
-                records = _build_coef_records(self.TAU, self.E_TERMS,
-                                              covariance=cov)
-                self.assertEqual(self._plateau_rows(records), [])
-                self.assertEqual(len(records), len(self.TAU))
-
-    def test_no_plateau_row_when_the_equilibrium_modulus_is_zero(self):
-        # Clamped smoothed fit: E_eq == 0 with an (N, N) covariance; an
-        # unsmoothed NNLS zero: E_eq == 0 with no covariance.
-        E = np.concatenate(([0.0], self.E_TERMS))
-        for cov in (None, np.diag(self.SIGMA ** 2)):
-            with self.subTest(covariance=cov is not None):
-                records = _build_coef_records(self.TAU, E, covariance=cov)
-                self.assertEqual(self._plateau_rows(records), [])
-                self.assertEqual(len(records), len(self.TAU))
-
-    def test_every_row_has_the_same_keys(self):
-        for cov in (None, self._correlated_cov()):
-            with self.subTest(covariance=cov is not None):
-                records = _build_coef_records(self.TAU, self.E,
-                                              covariance=cov)
-                self.assertEqual(len(self._plateau_rows(records)), 1)
-                want = self.KEYS | (self.BOUND_KEYS if cov is not None
-                                    else set())
-                for rec in records:
-                    self.assertSetEqual(set(rec), want)
-
-    def test_plateau_row_is_plain_strict_json(self):
-        """Plain int / str / float values: json.dumps accepts the records
-        with allow_nan=False and json.loads gives them back unchanged."""
-        for cov in (None, self._correlated_cov()):
-            with self.subTest(covariance=cov is not None):
-                records = _build_coef_records(self.TAU, self.E,
-                                              covariance=cov)
-                self.assertEqual(len(self._plateau_rows(records)), 1)
-                last = records[-1]
-                self.assertIs(type(last['i']), int)
-                self.assertIs(type(last['tau_i']), str)
-                for key in set(last) - {'i', 'tau_i'}:
-                    self.assertIs(type(last[key]), float, key)
-                text = json.dumps(records, allow_nan=False)
-                self.assertEqual(json.loads(text), records)
+            np.testing.assert_allclose(rec['tau_i'], tau_i[rec['i']])
 
 
 def _unresolved_equilibrium_curve(num_pts=200):
@@ -2391,14 +1488,13 @@ def _unresolved_equilibrium_curve(num_pts=200):
 def _penalized_gradient(omega, E_stor, E_loss, std, tau_i, E_i, smoothness, solid):
     """max |dV/dlogE| of the penalized objective smooth_prony_fit minimizes, at
     the coefficients it returned — rebuilt from the same reduction and the same
-    normalized factor, so zero here means a genuine stationary point."""
+    normalized weight, so zero here means a genuine stationary point."""
     N = len(tau_i)
     m = N + solid
     R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
-    scaled_smoothness = _scaled_smoothness(
+    scaled = _scaled_smoothness(
         smoothness, N, 2 * len(omega) - m, np.log(tau_i[-1] / tau_i[0]))
-    _, grad = _prony_objective(
-        np.log(E_i), z[:m], R[:m], scaled_smoothness, solid)
+    _, grad = _prony_objective(np.log(E_i), z[:m], R[:m], scaled, solid)
     return np.abs(grad).max()
 
 
@@ -2491,7 +1587,7 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         # readout must say so with finite numbers rather than go blank: the
         # posterior is the one of the N-term problem the solver converged on.
         omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
-        kwargs = dict(E_stor_std=std, E_loss_std=std, N=10, smoothness=4.3,
+        kwargs = dict(E_stor_std=std, E_loss_std=std, N=10, smoothness=1.0,
                       return_fit_quality=True)
         _, E_solid, q_solid = smooth_prony_fit(
             omega, E_stor, E_loss, solid=True, **kwargs)
@@ -2499,8 +1595,7 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
             omega, E_stor, E_loss, solid=False, **kwargs)
         self.assertEqual(E_solid[0], 0.0)
         self.assertEqual(len(E_solid), 11)
-        for field in ('chi2_reduced', 'neg_log_posterior', 'curvature'):
-            value = getattr(q_solid, field)
+        for value in q_solid:
             self.assertIsNotNone(value)
             self.assertTrue(np.isfinite(value))
         # Same optimum to within the one-parameter difference in dof that
@@ -2510,66 +1605,6 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
                                delta=5e-3 * q_visc.chi2_reduced)
         self.assertAlmostEqual(q_solid.neg_log_posterior,
                                q_visc.neg_log_posterior, delta=0.5)
-
-    def _reduced_hessian(self, omega, E_stor, E_loss, std, tau_i, x,
-                         smoothness, solid, dof):
-        """Hess V of the reduced system smooth_prony_fit minimizes, at x."""
-        m = len(tau_i) + solid
-        R, z = _prony_reduce(
-            omega, E_stor, E_loss, std, std, tau_i, solid, 1.0)
-        scaled_smoothness = _scaled_smoothness(
-            smoothness, len(tau_i), dof, np.log(tau_i[-1] / tau_i[0]))
-        return _PronyLoss(z[:m], R[:m], scaled_smoothness, solid).hess(x)
-
-    def _assert_two_inverse_hessians(self, cov, H):
-        m = len(H)
-        np.testing.assert_array_equal(cov, cov.T)
-        np.linalg.cholesky(cov)  # raises unless positive definite
-        err = np.abs(cov @ H - 2 * np.eye(m)).max()
-        self.assertLess(err, 1e-8 * np.linalg.norm(H) * np.linalg.norm(cov))
-
-    def test_covariance_rows_follow_the_solver_parameterization(self):
-        """Interior solid fit: (N+1, N+1), log E_eq first. Clamped E_eq = 0
-        and solid=False: (N, N), decaying terms only. Each is 2 inv(Hess V)
-        of the reduced problem the solver had; the NNLS path has none."""
-        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
-        N = 10
-        n_res = 2 * len(omega)
-        kwargs = dict(E_stor_std=std, E_loss_std=std, N=N,
-                      return_fit_quality=True)
-        args = (omega, E_stor, E_loss, std)
-
-        tau_i, E_i, q = smooth_prony_fit(
-            omega, E_stor, E_loss, smoothness=0.1, solid=True, **kwargs)
-        self.assertGreater(E_i[0], 0)
-        self.assertEqual(q.covariance.shape, (N + 1, N + 1))
-        H = self._reduced_hessian(
-            *args, tau_i, np.log(E_i), 0.1, True, n_res - (N + 1))
-        self._assert_two_inverse_hessians(q.covariance, H)
-
-        tau_i, E_i, q = smooth_prony_fit(
-            omega, E_stor, E_loss, smoothness=4.3, solid=True, **kwargs)
-        self.assertEqual(E_i[0], 0.0)
-        self.assertEqual(q.covariance.shape, (N, N))
-        R, z = _prony_reduce(
-            omega, E_stor, E_loss, std, std, tau_i, True, 1.0)
-        scaled_smoothness = _scaled_smoothness(
-            4.3, N, n_res - (N + 1), np.log(tau_i[-1] / tau_i[0]))
-        H = _PronyLoss(
-            z[:N + 1], R[:N + 1, 1:], scaled_smoothness, False,
-        ).hess(np.log(E_i[1:]))
-        self._assert_two_inverse_hessians(q.covariance, H)
-
-        tau_i, E_i, q = smooth_prony_fit(
-            omega, E_stor, E_loss, smoothness=0.1, solid=False, **kwargs)
-        self.assertEqual(q.covariance.shape, (N, N))
-        H = self._reduced_hessian(
-            *args, tau_i, np.log(E_i), 0.1, False, n_res - N)
-        self._assert_two_inverse_hessians(q.covariance, H)
-
-        _, _, q = smooth_prony_fit(
-            omega, E_stor, E_loss, smoothness=0.0, solid=True, **kwargs)
-        self.assertIsNone(q.covariance)
 
     def test_plateau_projection_is_exact(self):
         # With E_eq > 0 the projected loss, gradient and Hessian must equal the
@@ -2601,28 +1636,6 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         np.testing.assert_allclose(
             problem.coefficients(x), np.concatenate(([E_eq], np.exp(x))))
 
-    def test_plateau_projection_builds_one_shared_penalty(self):
-        """The clamped and free losses share one penalty Gram: Hessians on
-        both branches build it once in total."""
-        rng = np.random.default_rng(7)
-        m = 9
-        basis = np.abs(rng.normal(size=(m, m))) + 0.3
-        truth = np.exp(rng.normal(size=m))
-        data = basis @ truth
-        x_free = np.log(0.5 * truth[1:])
-        x_clamp = np.log(2.0 * truth[1:])
-        problem = _PlateauProjectedProblem(data, basis, 0.8)
-        self.assertGreater(problem.equilibrium(x_free), 0)
-        self.assertEqual(problem.equilibrium(x_clamp), 0.0)
-        objective._penalty_gram.cache_clear()
-        problem.hess(x_free)
-        H_clamp = problem.hess(x_clamp)
-        problem.hess(x_free + 0.1)
-        self.assertEqual(objective._penalty_gram.cache_info().misses, 1)
-        want = 2 * _dense_half_hessian(x_clamp, data, basis[:, 1:], 0.8, 0)
-        np.testing.assert_allclose(H_clamp, want, rtol=1e-12,
-                                   atol=1e-12 * np.abs(want).max())
-
     def test_prony_loss_guard_rejects_overflowing_proposals(self):
         # A proposal with any log-coefficient above the cap must read as +inf
         # so the trust region shrinks instead of feeding exp() overflow into
@@ -2645,961 +1658,6 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         projected = _PlateauProjectedProblem(data, basis, 0.3, log_cap=20.0)
         self.assertEqual(projected.fun(over[1:]), np.inf)
         self.assertTrue(np.all(np.isfinite(projected.jac(over[1:]))))
-
-
-BUNDLED_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'app', 'public', 'docs',
-    'dynamfit',
-))
-
-BUNDLED_MASTER_CURVES = (
-    'Cavaille-PS-98k-master-93C.csv',
-    'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
-    'PMMA-R09-master-clean-148C.csv',
-    'VeroCyan-80C_mastercurve.tsv',
-    'agilus30-20C_mastercurve.tsv',
-    'dgeba-ipd-wide-bar-170C_mastercurve.tsv',
-    'fisher-polycarbonate-150C_mastercurve.csv',
-)
-
-
-def _exp_minus_v_surprisal(omega, E_stor, E_loss, sigma, std_scale, tau_i,
-                           E_i, smoothness):
-    """The exp(-V) convention's surprisal at a fit smooth_prony_fit returned.
-
-    The score as it reads when the posterior is taken to be exp(-V), i.e. as
-    if the noise were the stated error divided by sqrt(2): V in place of V/2,
-    and pi in place of 2 pi. The penalty weight lam is read off the fit itself
-    through stationarity, 0 = r.T @ J + lam * A x, rather than rebuilt from
-    the knob, so this reference does not depend on how the knob is scaled.
-    A clamped equilibrium term is scored as the solid=False problem in the
-    decaying terms, as smooth_prony_fit scores it.
-    """
-    R, z = _prony_reduce(omega, E_stor, E_loss, sigma, sigma, tau_i, True,
-                         std_scale)
-    if E_i[0] > 0:
-        x, basis, solid = np.log(E_i), R, True
-    else:
-        x, basis, solid = np.log(E_i[1:]), R[:, 1:], False
-    m = len(x)
-    npen = m - solid
-    rj = _PronyLoss(z, basis, 0.0, solid).jac(x) / 2
-    d2 = np.diff(x[solid:], n=2)
-    Ax = np.zeros(m)
-    Ax_pen = Ax[solid:]
-    Ax_pen[:-2] += d2
-    Ax_pen[1:-1] -= 2 * d2
-    Ax_pen[2:] += d2
-    lam = -(rj @ Ax) / (Ax @ Ax)
-    loss = _PronyLoss(z, basis, np.sqrt(lam), solid)
-    logpdetA = np.log(npen ** 2 * (npen ** 2 - 1) / 12)
-    return (
-        loss.fun(x)
-        - 0.5 * (logpdetA + (npen - 2) * np.log(lam)
-                 - np.linalg.slogdet(loss.hess(x))[1])
-        - 0.5 * (m * np.log(2) + (2 + solid) * np.log(np.pi))
-        + smoothness ** 2
-    )
-
-
-class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
-    """Minimizing the surprisal on the bundled master curves, fitted the way
-    the app fits them: sigma = 1% of |E*|, N from prony_terms_for_span."""
-
-    RELATIVE_ERROR = 0.01
-
-    @classmethod
-    def setUpClass(cls):
-        cls.curves = {}
-        with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
-            for name in BUNDLED_MASTER_CURVES:
-                upload = upload_init(name, 'frequency')
-                cls.curves[name] = (
-                    upload['Frequency'], upload['E Storage'], upload['E Loss'],
-                )
-
-    def test_surprisal_prefers_more_smoothing_than_the_exp_minus_v_convention(
-            self):
-        # Halving V halves the misfit's pull against the prior, so the
-        # evidence-preferred smoothness rises: the user measured 1.5x to 4.4x
-        # across these files. Each fit is scored both ways, a third-decade
-        # grid in log10(smoothness) brackets each argmin, and a bounded
-        # scalar search refines it to 0.01 decade; the 1.1x margin is several
-        # times that resolution. The grid's 0.75-decade offset keeps every
-        # point off log10(smoothness) = -1.35 on VeroCyan, where trust-exact
-        # meets a NaN Cholesky factor and scipy raises.
-        coarse = np.arange(-8, 7) / 3 + 0.75
-        for name, (omega, E_stor, E_loss) in self.curves.items():
-            with self.subTest(file=name):
-                sigma = np.abs(E_stor + 1.0j * E_loss)
-                N = prony_terms_for_span(omega)
-                scores = {}
-
-                def scored(log_s):
-                    if log_s not in scores:
-                        s = 10.0 ** log_s
-                        tau_i, E_i, quality = smooth_prony_fit(
-                            omega, E_stor, E_loss, sigma, sigma, N, s,
-                            return_fit_quality=True,
-                            std_scale=self.RELATIVE_ERROR,
-                        )
-                        self.assertIsNotNone(quality.neg_log_posterior)
-                        scores[log_s] = (
-                            quality.neg_log_posterior,
-                            _exp_minus_v_surprisal(
-                                omega, E_stor, E_loss, sigma,
-                                self.RELATIVE_ERROR, tau_i, E_i, s),
-                        )
-                    return scores[log_s]
-
-                grid = [scored(float(log_s)) for log_s in coarse]
-                argmin = []
-                for k in (0, 1):
-                    i = int(np.argmin([pair[k] for pair in grid]))
-                    self.assertTrue(0 < i < len(coarse) - 1,
-                                    msg=f'argmin at grid edge: {i}')
-                    best = minimize_scalar(
-                        lambda log_s: scored(log_s)[k],
-                        bounds=(coarse[i - 1], coarse[i + 1]),
-                        method='bounded', options=dict(xatol=0.01),
-                    )
-                    argmin.append(best.x)
-                reported, exp_minus_v = argmin
-                self.assertGreater(
-                    10 ** (reported - exp_minus_v), 1.1,
-                    msg=f'smoothness {10 ** reported:.4g} (reported) vs '
-                        f'{10 ** exp_minus_v:.4g} (exp(-V))',
-                )
-
-
-def _bundled_master_curve(name):
-    """(omega, E_stor, E_loss, sigma) of a bundled file, sigma = |E*|."""
-    with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
-        upload = upload_init(name, 'frequency')
-    omega = upload['Frequency']
-    E_stor, E_loss = upload['E Storage'], upload['E Loss']
-    return omega, E_stor, E_loss, np.abs(E_stor + 1.0j * E_loss)
-
-
-class TestSmoothnessPerUnitLogTau(unittest.TestCase):
-    """The knob weighs misfit per degree of freedom against the mean curvature
-    over the interior nodes (the smoothness-weight definition of the
-    manuscript), so one setting means the same thing on master curves of any
-    span. The end-to-end span and term-count checks are in
-    TestSmoothPronyFitReducedSolver.
-    """
-
-    def test_objective_per_dof_is_misfit_plus_smoothness_squared_curvature(
-            self):
-        # V / nu = misfit / nu + smoothness**2 * curvature, nu being the
-        # classical n_resid - m the penalty weight is normalized by: the
-        # readout's two numbers and the knob are the whole objective, with
-        # no span factor left over. chi2_reduced is the misfit per EFFECTIVE
-        # degree of freedom, so the misfit is chi2_reduced * nu_eff. The
-        # clamped-equilibrium fit is scored as the solid=False problem in N
-        # terms; its weight keeps the pinned term in m, while nu_eff charges
-        # only gamma for it.
-        broadband = _broadband_master_curve(600)
-        unresolved = _unresolved_equilibrium_curve()
-        cases = [
-            ('interior, solid', broadband, 30, 0.1, True),
-            ('interior, viscous', broadband, 30, 0.1, False),
-            ('clamped equilibrium', unresolved, 10, 4.3, True),
-        ]
-        for label, (omega, E_stor, E_loss, std), N, smoothness, solid in cases:
-            with self.subTest(label):
-                tau_i, E_i, quality = smooth_prony_fit(
-                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-                    N=N, smoothness=smoothness, solid=solid,
-                    return_fit_quality=True,
-                )
-                R, z = _prony_reduce(
-                    omega, E_stor, E_loss, std, std, tau_i, solid)
-                n_resid = 2 * len(omega)
-                nu = n_resid - (N + solid)
-                if label == 'clamped equilibrium':
-                    self.assertEqual(E_i[0], 0.0)
-                    x, basis, pen_solid = np.log(E_i[1:]), R[:, 1:], False
-                else:
-                    self.assertTrue(np.all(E_i > 0))
-                    x, basis, pen_solid = np.log(E_i), R, solid
-                nu_eff = n_resid - (quality.effective_terms + pen_solid)
-                log_range = np.log(tau_i[-1] / tau_i[0])
-                scaled_smoothness = _scaled_smoothness(
-                    smoothness, N, nu, log_range)
-                V = _PronyLoss(z, basis, scaled_smoothness, pen_solid).fun(x)
-                np.testing.assert_allclose(
-                    V / nu,
-                    quality.chi2_reduced * nu_eff / nu
-                    + smoothness ** 2 * quality.curvature,
-                    rtol=1e-10,
-                )
-
-
-TRIVE_FILES_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files'))
-
-
-def _dense_effective_terms(covariance, lam, solid):
-    """MacKay's gamma = npen - lam * tr(L.T @ L @ Sigma), with the
-    second-difference operator L over the penalized terms built densely."""
-    m = len(covariance)
-    npen = m - solid
-    L = np.zeros((max(npen - 2, 0), m))
-    rows = np.arange(max(npen - 2, 0))
-    L[rows, solid + rows] = 1.0
-    L[rows, solid + rows + 1] = -2.0
-    L[rows, solid + rows + 2] = 1.0
-    return npen - lam * np.trace(L.T @ L @ covariance)
-
-
-class TestMisfitPerEffectiveDegreeOfFreedom(unittest.TestCase):
-    """chi2_reduced is the misfit per effective degree of freedom,
-    n_resid - (gamma + e): gamma counts the decaying terms the data
-    determined, e is 1 for a free (nonzero) equilibrium term. Without a
-    covariance the classical n_resid - m stands; the NNLS path counts its
-    active set. The penalty weight keeps the classical count throughout."""
-
-    FILE = 'agilus30 (8) master curve 20C.txt'
-    RELATIVE_ERROR = 0.01
-
-    @classmethod
-    def setUpClass(cls):
-        with mock.patch.object(Config, 'FILES_DIRECTORY', TRIVE_FILES_DIR):
-            upload = upload_init(cls.FILE, 'frequency')
-        cls.omega = upload['Frequency']
-        cls.E_stor, cls.E_loss = upload['E Storage'], upload['E Loss']
-        cls.sigma = np.abs(cls.E_stor + 1.0j * cls.E_loss)
-        cls._fits = {}
-
-    @classmethod
-    def _agilus(cls, N, smoothness):
-        """(tau_i, E_i, quality) of the file at 1% error, solid, cached."""
-        key = (N, smoothness)
-        if key not in cls._fits:
-            cls._fits[key] = smooth_prony_fit(
-                cls.omega, cls.E_stor, cls.E_loss, cls.sigma, cls.sigma, N,
-                smoothness, solid=True, return_fit_quality=True,
-                std_scale=cls.RELATIVE_ERROR,
-            )
-        return cls._fits[key]
-
-    def test_effective_terms_are_bounded_and_fall_as_smoothness_rises(self):
-        # At most one per decaying term (a little slack: the Hessian is the
-        # full one, not Gauss-Newton), and more smoothing hands more of them
-        # to the prior.
-        N = 32
-        n_resid = 2 * len(self.omega)
-        counts = []
-        for smoothness in (0.1, 0.3, 1.0, 3.0):
-            with self.subTest(smoothness=smoothness):
-                tau_i, E_i, quality = self._agilus(N, smoothness)
-                self.assertGreater(E_i[0], 0)
-                lam = _scaled_smoothness(
-                    smoothness, N, n_resid - (N + 1),
-                    np.log(tau_i[-1] / tau_i[0])) ** 2
-                gamma = quality.effective_terms
-                self.assertAlmostEqual(
-                    gamma,
-                    _dense_effective_terms(quality.covariance, lam, True),
-                    delta=1e-6 * N)
-                self.assertGreater(gamma, 0.0)
-                self.assertLessEqual(gamma, N + 1e-6)
-                counts.append(gamma)
-        self.assertEqual(len(counts), 4)
-        for weaker, stronger in zip(counts, counts[1:]):
-            self.assertGreaterEqual(weaker, stronger, msg=f'{counts}')
-        self.assertGreater(counts[0], counts[-1])
-
-    def test_chi2_reduced_is_invariant_to_grid_size_once_data_is_resolved(
-            self):
-        # Past what the data resolves, gamma saturates and the fit stops
-        # changing, so the score must stop moving with N. The classical
-        # n_resid - m charges every grid node and drifts several percent
-        # over the same range: the regression this pins.
-        smoothness = 1.0
-        n_resid = 2 * len(self.omega)
-        cap = reduction.prony_rank_limit(
-            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
-            solid=True, std_scale=self.RELATIVE_ERROR)
-        self.assertGreaterEqual(cap, 64)
-        sizes = (32, 48, cap)
-        scores, classical = {}, {}
-        for N in sizes:
-            _, E_i, quality = self._agilus(N, smoothness)
-            self.assertGreater(E_i[0], 0)
-            self.assertIsNotNone(quality.effective_terms)
-            scores[N] = quality.chi2_reduced
-            misfit = quality.chi2_reduced * (
-                n_resid - (quality.effective_terms + 1))
-            classical[N] = misfit / (n_resid - (N + 1))
-        for N in sizes[:-1]:
-            with self.subTest(N=N):
-                self.assertAlmostEqual(scores[N] / scores[cap], 1.0,
-                                       delta=0.01)
-                self.assertGreater(
-                    abs(classical[N] / classical[cap] - 1.0), 0.02)
-
-    def test_interior_fit_charges_gamma_plus_the_free_equilibrium_term(self):
-        # Liquid: n_resid - gamma. Interior solid: n_resid - (gamma + 1).
-        # gamma is read from the reported covariance at the fit's own
-        # weight, whose dof is the classical n_resid - m.
-        omega, E_stor, E_loss, std = _broadband_master_curve(600)
-        N, smoothness = 30, 0.1
-        n_resid = 2 * len(omega)
-        for solid in (True, False):
-            with self.subTest(solid=solid):
-                tau_i, E_i, quality = smooth_prony_fit(
-                    omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-                    N=N, smoothness=smoothness, solid=solid,
-                    return_fit_quality=True,
-                )
-                self.assertTrue(np.all(E_i > 0))
-                R, z = _prony_reduce(
-                    omega, E_stor, E_loss, std, std, tau_i, solid)
-                resid = z - R @ E_i
-                rr = resid @ resid
-                lam = _scaled_smoothness(
-                    smoothness, N, n_resid - (N + solid),
-                    np.log(tau_i[-1] / tau_i[0])) ** 2
-                gamma = _dense_effective_terms(quality.covariance, lam, solid)
-                self.assertAlmostEqual(quality.effective_terms, gamma,
-                                       delta=1e-6 * N)
-                self.assertAlmostEqual(
-                    quality.chi2_reduced * (n_resid - (gamma + solid)), rr,
-                    delta=1e-8 * rr)
-
-    def test_clamped_equilibrium_term_is_not_charged(self):
-        # E_eq clamped to exactly 0 is not a parameter the data determined:
-        # the denominator is n_resid - gamma, n_resid the full 2 * len(omega).
-        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
-        N, smoothness = 10, 4.3
-        n_resid = 2 * len(omega)
-        tau_i, E_i, quality = smooth_prony_fit(
-            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-            N=N, smoothness=smoothness, solid=True, return_fit_quality=True,
-        )
-        self.assertEqual(E_i[0], 0.0)
-        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
-        resid = z - R[:, 1:] @ E_i[1:]
-        rr = resid @ resid
-        lam = _scaled_smoothness(
-            smoothness, N, n_resid - (N + 1),
-            np.log(tau_i[-1] / tau_i[0])) ** 2
-        gamma = _dense_effective_terms(quality.covariance, lam, False)
-        self.assertAlmostEqual(quality.effective_terms, gamma,
-                               delta=1e-6 * N)
-        self.assertAlmostEqual(quality.chi2_reduced * (n_resid - gamma), rr,
-                               delta=1e-8 * rr)
-
-    def test_clamped_score_keeps_the_fits_own_penalty_weight(self):
-        # Only the chi2 denominator moves: the clamped fit's weight counts
-        # the pinned term in m = N + 1, and the reported covariance is
-        # 2 inv(Hess V) at THAT weight. The weight at n_resid - N leaves a
-        # gradient ~1e6 times larger at the returned coefficients.
-        omega, E_stor, E_loss, std = _unresolved_equilibrium_curve()
-        N, smoothness = 10, 4.3
-        n_resid = 2 * len(omega)
-        tau_i, E_i, quality = smooth_prony_fit(
-            omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-            N=N, smoothness=smoothness, solid=True, return_fit_quality=True,
-        )
-        self.assertEqual(E_i[0], 0.0)
-        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
-        x = np.log(E_i[1:])
-        scaled_smoothness = _scaled_smoothness(
-            smoothness, N, n_resid - (N + 1), np.log(tau_i[-1] / tau_i[0]))
-        loss = _PronyLoss(z, R[:, 1:], scaled_smoothness, False)
-        self.assertLess(np.abs(loss.jac(x)).max(), 1e-6)
-        H = loss.hess(x)
-        err = np.abs(quality.covariance @ H - 2 * np.eye(N)).max()
-        self.assertLess(
-            err, 1e-8 * np.linalg.norm(H) * np.linalg.norm(quality.covariance))
-
-    def test_no_covariance_falls_back_to_the_classical_count(self):
-        # Hess V not positive definite: no covariance, no gamma, and the
-        # misfit is per n_resid - m as before.
-        omega, E_stor, E_loss, std = _broadband_master_curve(600)
-        N = 30
-        n_resid = 2 * len(omega)
-        with mock.patch('app.trive.quality._cholesky_or_none',
-                        return_value=None):
-            tau_i, E_i, quality = smooth_prony_fit(
-                omega, E_stor, E_loss, E_stor_std=std, E_loss_std=std,
-                N=N, smoothness=0.1, solid=True, return_fit_quality=True,
-            )
-        self.assertIsNone(quality.covariance)
-        self.assertIsNone(quality.effective_terms)
-        R, z = _prony_reduce(omega, E_stor, E_loss, std, std, tau_i, True)
-        resid = z - R @ E_i
-        rr = resid @ resid
-        self.assertAlmostEqual(quality.chi2_reduced * (n_resid - (N + 1)),
-                               rr, delta=1e-8 * rr)
-
-
-def _probe_tau(omega):
-    """The rank probe's relaxation grid, rebuilt from its definition."""
-    return prony_relaxation_space(
-        1 / omega.max(), 1 / omega.min(), reduction._RANK_PROBE_TERMS)
-
-
-def _dense_probe_gamma(omega, E_stor, E_loss, std, std_scale, tau_i, E_i,
-                       smoothness, solid):
-    """prony_resolution's smoothed definition, built densely from the basis:
-    the fit resampled onto the probe (log-linear in log tau, times
-    h_probe / h_fit), Gauss-Newton Hessian plus lam' L.T L, and
-    gamma = N_probe - lam' tr(L.T L inv(H)). The equilibrium column is kept
-    only when E_i[0] > 0."""
-    tau_p = _probe_tau(omega)
-    n_probe = len(tau_p)
-    weights = std_scale * np.concatenate((std, std))
-    basis = prony_basis(omega, tau_p, solid) / weights[:, None]
-    log_fit, log_probe = np.log(tau_i), np.log(tau_p)
-    h_fit = (log_fit[-1] - log_fit[0]) / (len(tau_i) - 1)
-    h_probe = (log_probe[-1] - log_probe[0]) / (n_probe - 1)
-    E_dec = E_i[len(E_i) - len(tau_i):]
-    c = np.exp(np.interp(log_probe, log_fit, np.log(E_dec))) * h_probe / h_fit
-    keep_eq = bool(solid and E_i[0] > 0)
-    if keep_eq:
-        c = np.concatenate(([E_i[0]], c))
-    elif solid:
-        basis = basis[:, 1:]
-    J = basis * c
-    L = np.zeros((n_probe - 2, len(c)))
-    for k in range(n_probe - 2):
-        L[k, keep_eq + k:keep_eq + k + 3] = (1.0, -2.0, 1.0)
-    lam = _scaled_smoothness(
-        smoothness, n_probe, 2 * len(omega) - (n_probe + solid),
-        log_probe[-1] - log_probe[0]) ** 2
-    H = J.T @ J + lam * L.T @ L
-    return n_probe - lam * np.trace(L.T @ L @ np.linalg.inv(H))
-
-
-class TestPronyNoiseCeiling(unittest.TestCase):
-    """reduction.prony_noise_ceiling: the number of probe singular values
-    sigma_k with sigma_k * max(E_stor) > 1. Server-side only; it bounds the
-    resolution counts the grid suggestion is built on."""
-
-    def setUp(self):
-        reduction._REDUCE_CACHE.clear()
-
-    def test_counts_probe_singular_values_above_one_over_the_peak_storage(
-            self):
-        omega, E_stor, E_loss, sigma = _bundled_master_curve(
-            'agilus30-20C_mastercurve.tsv')
-        for std_scale in (0.01, 0.05):
-            with self.subTest(std_scale=std_scale):
-                ceiling = reduction.prony_noise_ceiling(
-                    omega, E_stor, E_loss, sigma, sigma,
-                    std_scale=std_scale)
-                R, _ = _prony_reduce(omega, E_stor, E_loss, sigma, sigma,
-                                     _probe_tau(omega), True, std_scale)
-                singular = np.linalg.svd(R, compute_uv=False)
-                self.assertIs(type(ceiling), int)
-                self.assertEqual(
-                    ceiling,
-                    int(np.count_nonzero(singular * E_stor.max() > 1)))
-
-    def test_moves_with_the_error_level_unlike_the_rank_cap(self):
-        omega, E_stor, E_loss, sigma = _bundled_master_curve(
-            'agilus30-20C_mastercurve.tsv')
-        tight, loose = (
-            reduction.prony_noise_ceiling(
-                omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
-            for rel in (0.01, 0.05))
-        self.assertGreater(tight, loose)
-
-    def test_bounds_resolution_and_effective_terms_on_bundled_curves(self):
-        """An empirical consistency bound, not a theorem: on every bundled
-        master curve, prony_resolution and the fit's effective_terms stay at
-        or below the ceiling, at the default grid and at the rank cap."""
-        # The ceiling is the count under an isotropic prior at the scale of
-        # max(E_stor); the smoothing prior and NNLS positivity are the more
-        # informative ones on these files.
-        for name in BUNDLED_MASTER_CURVES:
-            omega, E_stor, E_loss, sigma = _bundled_master_curve(name)
-            for rel in (0.01, 0.05):
-                ceiling = reduction.prony_noise_ceiling(
-                    omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
-                cap = reduction.prony_rank_limit(
-                    omega, E_stor, E_loss, sigma, sigma, std_scale=rel)
-                for smoothness in (0.0, 0.1, 0.3, 1.0):
-                    for N in (prony_terms_for_span(omega), cap):
-                        with self.subTest(file=name, rel=rel,
-                                          smoothness=smoothness, N=N):
-                            tau_i, E_i, quality = smooth_prony_fit(
-                                omega, E_stor, E_loss, sigma, sigma, N,
-                                smoothness, return_fit_quality=True,
-                                std_scale=rel)
-                            resolution = reduction.prony_resolution(
-                                omega, E_stor, E_loss, sigma, sigma,
-                                tau_i, E_i, smoothness, std_scale=rel)
-                            self.assertIsNotNone(resolution)
-                            self.assertLessEqual(resolution, ceiling)
-                            if quality.effective_terms is not None:
-                                self.assertLessEqual(
-                                    quality.effective_terms, ceiling)
-
-    def test_exported_from_the_package(self):
-        import app.trive as trive
-        self.assertIs(trive.prony_noise_ceiling,
-                      reduction.prony_noise_ceiling)
-        self.assertIs(trive.prony_resolution, reduction.prony_resolution)
-
-
-class TestPronyResolution(unittest.TestCase):
-    """reduction.prony_resolution: how many relaxation terms a dense grid
-    would resolve from the data. Unsmoothed, the probe grid's NNLS active
-    set; smoothed, MacKay's gamma for the fit linearized onto the probe."""
-
-    FILE = 'agilus30 (8) master curve 20C.txt'
-    RELATIVE_ERROR = 0.01
-
-    @classmethod
-    def setUpClass(cls):
-        with mock.patch.object(Config, 'FILES_DIRECTORY', TRIVE_FILES_DIR):
-            upload = upload_init(cls.FILE, 'frequency')
-        cls.omega = upload['Frequency']
-        cls.E_stor, cls.E_loss = upload['E Storage'], upload['E Loss']
-        cls.sigma = np.abs(cls.E_stor + 1.0j * cls.E_loss)
-        cls._fits = {}
-
-    def setUp(self):
-        reduction._REDUCE_CACHE.clear()
-
-    def _fit(self, N, smoothness, solid=True):
-        """(tau_i, E_i, quality) of the file at 1% error, cached."""
-        key = (N, smoothness, solid)
-        if key not in self._fits:
-            self._fits[key] = smooth_prony_fit(
-                self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
-                N, smoothness, solid=solid, return_fit_quality=True,
-                std_scale=self.RELATIVE_ERROR,
-            )
-        return self._fits[key]
-
-    def _resolution(self, tau_i, E_i, smoothness, solid=True):
-        return reduction.prony_resolution(
-            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
-            tau_i, E_i, smoothness, solid=solid,
-            std_scale=self.RELATIVE_ERROR)
-
-    def test_unsmoothed_is_the_probe_nnls_active_set(self):
-        # Decaying terms only: the equilibrium column is not counted.
-        tau_i, E_i, _ = self._fit(6, 0.0)
-        resolution = self._resolution(tau_i, E_i, 0.0)
-        R, z = _prony_reduce(self.omega, self.E_stor, self.E_loss,
-                             self.sigma, self.sigma, _probe_tau(self.omega),
-                             True, self.RELATIVE_ERROR)
-        self.assertIs(type(resolution), float)
-        self.assertEqual(resolution,
-                         float(np.count_nonzero(nnls(R, z)[0][1:])))
-
-    def test_smoothed_is_the_linearized_probe_gamma(self):
-        # Interior equilibrium, the same fit with E_eq set to exactly zero
-        # (synthetic: no bundled fit clamps it here; the column is dropped),
-        # and a solid=False fit.
-        cases = []
-        tau_i, E_i, _ = self._fit(12, 0.3)
-        self.assertGreater(E_i[0], 0)
-        cases.append(('interior', tau_i, E_i, True))
-        clamped = E_i.copy()
-        clamped[0] = 0.0
-        cases.append(('clamped', tau_i, clamped, True))
-        tau_v, E_v, _ = self._fit(12, 0.3, solid=False)
-        cases.append(('viscous', tau_v, E_v, False))
-        for label, tau, E, solid in cases:
-            with self.subTest(case=label):
-                resolution = self._resolution(tau, E, 0.3, solid=solid)
-                expected = _dense_probe_gamma(
-                    self.omega, self.E_stor, self.E_loss, self.sigma,
-                    self.RELATIVE_ERROR, tau, E, 0.3, solid)
-                self.assertIs(type(resolution), float)
-                self.assertAlmostEqual(resolution, expected,
-                                       delta=1e-8 * expected)
-
-    def test_coarse_and_fine_fits_track_the_converged_effective_terms(self):
-        # The point of linearizing on a dense probe: a coarse fit, whose own
-        # gamma is capped by its N, still sees what the rank-cap fit
-        # resolves.
-        cap = reduction.prony_rank_limit(
-            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
-            std_scale=self.RELATIVE_ERROR)
-        for smoothness in (1.0, 0.1):
-            target = self._fit(cap, smoothness)[2].effective_terms
-            for N in (12, 32):
-                with self.subTest(smoothness=smoothness, N=N):
-                    tau_i, E_i, _ = self._fit(N, smoothness)
-                    resolution = self._resolution(tau_i, E_i, smoothness)
-                    self.assertLessEqual(abs(resolution - target),
-                                         0.25 * target)
-
-    def test_shares_the_probe_reduction_with_the_rank_limit(self):
-        tau_i, E_i, _ = self._fit(12, 0.3)
-        reduction.prony_rank_limit(
-            self.omega, self.E_stor, self.E_loss, self.sigma, self.sigma,
-            std_scale=self.RELATIVE_ERROR)
-        with _row_pass_spy() as passes:
-            smoothed = self._resolution(tau_i, E_i, 0.3)
-            unsmoothed = self._resolution(tau_i, E_i, 0.0)
-        self.assertIsNotNone(smoothed)
-        self.assertIsNotNone(unsmoothed)
-        self.assertEqual(passes.call_count, 0, msg='probe cache miss')
-
-    def test_none_on_degenerate_fits(self):
-        tau_i, E_i, _ = self._fit(12, 0.3)
-        zeroed, nonfinite = E_i.copy(), E_i.copy()
-        zeroed[4] = 0.0
-        nonfinite[4] = np.nan
-        for label, tau, E in (('one node', tau_i[:1], E_i[:2]),
-                              ('zero term', tau_i, zeroed),
-                              ('nan term', tau_i, nonfinite)):
-            with self.subTest(case=label):
-                self.assertIsNone(self._resolution(tau, E, 0.3))
-
-
-def _spin(seconds):
-    """Busy-wait in Python for at most `seconds`.
-
-    A stand-in for scipy's unbounded subproblem loop that a watchdog can
-    interrupt (it runs bytecode, unlike time.sleep), and bounded so that a
-    broken watchdog fails the test instead of hanging the suite.
-    """
-    import time
-    deadline = time.monotonic() + seconds
-    while time.monotonic() < deadline:
-        pass
-
-
-def _single_debye_master():
-    """(omega, E_stor, E_loss, sigma) of a noise-free single Debye relaxation.
-
-    tau = 1 over the two decades omega = 1..100, so the only spectral mass
-    sits at the long-tau end of the fit window, on a small plateau. The
-    smoothed fit then has an exactly-zero Hessian eigenvalue (a log-linear
-    ramp that neither data nor penalty sees), on which scipy's trust-exact
-    subproblem loops forever without a shift: at std_scale=0.01 this happens
-    for the (N, smoothness) pairs in HANG_CASES, and not at nearby settings.
-    """
-    omega = np.logspace(0.0, 2.0, 60)
-    E_stor = 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2)
-    E_loss = 1e6 * omega / (1 + omega ** 2) + 1e2
-    return omega, E_stor, E_loss, np.abs(E_stor + 1.0j * E_loss)
-
-
-class TestNewtonHessianShift(unittest.TestCase):
-    """The solver's Hessian carries a diagonal shift of
-    _NEWTON_HESSIAN_SHIFT_EPS ulps of its largest diagonal entry; it changes
-    the Newton step only, never the objective or the optimum."""
-
-    HANG_CASES = ((14, 1.0), (18, 0.7), (20, 0.3))
-
-    @staticmethod
-    def _matrix(dtype=np.float64):
-        # Negative diagonal entry largest in magnitude, so max|diag| differs
-        # from max(diag).
-        return np.array([[2.0, 0.5, 0.0],
-                         [0.5, -7.0, 1.0],
-                         [0.0, 1.0, 3.0]], dtype=dtype)
-
-    def test_shift_multiple_is_64(self):
-        self.assertEqual(prony_fit._NEWTON_HESSIAN_SHIFT_EPS, 64)
-
-    def test_shift_adds_scaled_identity_and_nothing_elsewhere(self):
-        H = self._matrix()
-        original = H.copy()
-        shifted = prony_fit._shifted_hessian(lambda _x: H, 64)(np.zeros(3))
-        expected = 64 * np.finfo(np.float64).eps * 7.0
-        np.testing.assert_array_equal(np.diag(shifted),
-                                      np.diag(original) + expected)
-        off = ~np.eye(3, dtype=bool)
-        np.testing.assert_array_equal(shifted[off], original[off])
-
-    def test_shift_never_accumulates_on_the_production_hessians(self):
-        """The wrapper may shift its callable's array in place, so the
-        callables it wraps in production (_PronyLoss.hess and
-        _PlateauProjectedProblem.hess) must hand out a fresh array each
-        call: repeated shifted calls at one point, also after moving away
-        and back, give hess + shift * I with no compounding."""
-        rng = np.random.default_rng(11)
-        basis_v, data_v, x_v = _random_fit_problem(rng, 6, 0)
-        m = 9
-        basis_p = np.abs(rng.normal(size=(m, m))) + 0.3
-        truth = np.exp(rng.normal(size=m))
-        data_p = basis_p @ truth
-        cases = (
-            ('_PronyLoss, solid=False',
-             lambda: _PronyLoss(data_v, basis_v, 0.4, False), x_v),
-            ('_PlateauProjectedProblem, free plateau',
-             lambda: _PlateauProjectedProblem(data_p, basis_p, 0.8),
-             np.log(0.5 * truth[1:])),
-            ('_PlateauProjectedProblem, clamped plateau',
-             lambda: _PlateauProjectedProblem(data_p, basis_p, 0.8),
-             np.log(2.0 * truth[1:])),
-        )
-        multiple = prony_fit._NEWTON_HESSIAN_SHIFT_EPS
-        for label, make, x in cases:
-            with self.subTest(label):
-                H = make().hess(x)
-                shift = multiple * np.finfo(H.dtype).eps * np.abs(
-                    np.diag(H)).max()
-                expected = H + shift * np.eye(len(H))
-                wrapped = prony_fit._shifted_hessian(make().hess, multiple)
-                first = wrapped(x).copy()
-                again = wrapped(x).copy()
-                wrapped(x + 0.2)
-                back = wrapped(x)
-                np.testing.assert_array_equal(first, expected)
-                np.testing.assert_array_equal(again, first)
-                np.testing.assert_array_equal(back, first)
-
-    def test_zero_multiple_is_a_passthrough(self):
-        H = self._matrix()
-        out = prony_fit._shifted_hessian(lambda _x: H, 0)(np.zeros(3))
-        np.testing.assert_array_equal(out, self._matrix())
-
-    def test_shift_follows_the_array_dtype(self):
-        H = self._matrix(np.float32)
-        out = prony_fit._shifted_hessian(lambda _x: H, 64)(np.zeros(3))
-        self.assertEqual(out.dtype, np.float32)
-        expected = np.float32(64 * np.finfo(np.float32).eps * 7.0)
-        np.testing.assert_allclose(np.diag(out) - np.diag(self._matrix(
-            np.float32)), expected, rtol=1e-3)
-
-    def test_zero_eigenvalue_fit_completes(self):
-        # Without the shift each of these cycles forever inside scipy.
-        omega, E_stor, E_loss, sigma = _single_debye_master()
-        for N, smoothness in self.HANG_CASES:
-            with self.subTest(N=N, smoothness=smoothness):
-                tau_i, E_i = smooth_prony_fit(
-                    omega, E_stor, E_loss, sigma, sigma, N=N,
-                    smoothness=smoothness, solid=True, std_scale=0.01)
-                self.assertEqual(len(tau_i), N)
-                self.assertEqual(len(E_i), N + 1)
-                self.assertTrue(np.all(np.isfinite(E_i)))
-                self.assertTrue(np.all(E_i > 0))
-
-    def test_shift_leaves_bundled_fits_at_the_same_optimum(self):
-        for name in BUNDLED_MASTER_CURVES:
-            with self.subTest(file=name):
-                omega, E_stor, E_loss, sigma = _bundled_master_curve(name)
-                kwargs = dict(N=prony_terms_for_span(omega), smoothness=0.3,
-                              solid=True, std_scale=0.01)
-                _, shifted = smooth_prony_fit(
-                    omega, E_stor, E_loss, sigma, sigma, **kwargs)
-                with mock.patch.object(
-                        prony_fit, '_NEWTON_HESSIAN_SHIFT_EPS', 0):
-                    _, exact = smooth_prony_fit(
-                        omega, E_stor, E_loss, sigma, sigma, **kwargs)
-                np.testing.assert_allclose(shifted[0], exact[0], rtol=1e-6)
-                self.assertLess(
-                    np.abs(np.log(shifted[1:]) - np.log(exact[1:])).max(),
-                    1e-6)
-
-
-class TestNewtonWatchdog(unittest.TestCase):
-    """The Newton solve runs under a wall-clock budget, and a solver failure
-    surfaces as a ValueError naming the grid size and the remedy."""
-
-    N = 13
-
-    def _fit(self):
-        omega, E_stor, E_loss, sigma = _single_debye_master()
-        return smooth_prony_fit(omega, E_stor, E_loss, sigma, sigma,
-                                N=self.N, smoothness=0.3, std_scale=0.01)
-
-    def _assert_actionable(self, message):
-        lowered = message.lower()
-        self.assertIn('relaxation grid size', lowered)
-        self.assertRegex(message, rf'\b{self.N}\b')
-        self.assertIn('lower', lowered)
-        self.assertIn('smoothness', lowered)
-        self.assertIn('error', lowered)
-
-    def test_budget_is_one_second(self):
-        self.assertEqual(prony_fit._NEWTON_TIME_BUDGET, 1.0)
-
-    def test_watchdog_interrupts_a_pure_python_loop(self):
-        # Built outside the try so a missing or broken watchdog cannot pass
-        # as the interruption.
-        watchdog = prony_fit._newton_watchdog(0.1)
-        entered = False
-        interrupted = None
-        try:
-            with watchdog:
-                entered = True
-                _spin(5.0)
-                self.fail('watchdog never fired')
-        except (AssertionError, KeyboardInterrupt, SystemExit):
-            raise
-        except BaseException as exc:
-            interrupted = exc
-        self.assertTrue(entered)
-        self.assertIsNotNone(interrupted)
-
-    def test_watchdog_exits_cleanly_when_the_body_is_prompt(self):
-        # Nothing may stay armed: run Python well past the budget afterwards
-        # and reach the end without an injected exception.
-        import time
-        with prony_fit._newton_watchdog(0.05):
-            pass
-        time.sleep(0.2)
-        _spin(0.1)
-
-    def test_hanging_solve_raises_timeout_naming_the_remedy(self):
-        def hanging_minimize(*args, **kwargs):
-            _spin(10.0)
-            raise AssertionError('watchdog never fired')
-
-        with mock.patch.object(prony_fit, 'minimize', hanging_minimize):
-            with self.assertRaises(prony_fit.SmoothPronyFitTimeout) as caught:
-                self._fit()
-        message = str(caught.exception)
-        self.assertIn('did not converge', message.lower())
-        self.assertIn('1 second', message)
-        self._assert_actionable(message)
-
-    def test_budget_is_read_at_call_time(self):
-        import time
-
-        def hanging_minimize(*args, **kwargs):
-            _spin(10.0)
-            raise AssertionError('watchdog never fired')
-
-        start = time.monotonic()
-        with mock.patch.object(prony_fit, 'minimize', hanging_minimize), \
-                mock.patch.object(prony_fit, '_NEWTON_TIME_BUDGET', 0.1):
-            with self.assertRaises(prony_fit.SmoothPronyFitTimeout):
-                self._fit()
-        self.assertLess(time.monotonic() - start, 0.9)
-
-    def test_timeout_is_a_value_error(self):
-        # The routes turn ValueError into a 400 carrying the message.
-        self.assertTrue(issubclass(prony_fit.SmoothPronyFitTimeout,
-                                   ValueError))
-
-    def test_scipy_value_error_becomes_diverged(self):
-        boom = ValueError('array must not contain infs or NaNs')
-        with mock.patch.object(prony_fit, 'minimize', side_effect=boom):
-            with self.assertRaises(prony_fit.SmoothPronyFitDiverged) as caught:
-                self._fit()
-        self.assertTrue(issubclass(prony_fit.SmoothPronyFitDiverged,
-                                   ValueError))
-        self._assert_actionable(str(caught.exception))
-
-
-class TestNewtonRestart(unittest.TestCase):
-    """A ValueError from inside scipy's solve restarts Newton from the last
-    accepted iterate with a quartered initial trust radius, a bounded number
-    of times, before it is reported."""
-
-    N = 13
-    BOOM = 'array must not contain infs or NaNs'
-
-    # (directory, file, N, smoothness) at 1% relative error: fits on which
-    # scipy 1.10.1's trust-exact subproblem takes its damping factor below
-    # zero and then to NaN, while N - 1 and N + 1 converge untouched. The
-    # second needs two restarts: the same radius fails again at once. A trip
-    # reproduces only while lam lands within a few ulps of where it was
-    # found, so these knobs are kept exactly as found, not rounded.
-    NAN_DAMPING_CASES = (
-        (TRIVE_FILES_DIR, 'agilus30 (8) master curve 20C.txt', 48,
-         0.3 * np.sqrt(46 / 47)),
-        (BUNDLED_DIR, 'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
-         40, 0.1 * np.sqrt(38 / 39)),
-    )
-
-    def _fit(self):
-        omega, E_stor, E_loss, sigma = _single_debye_master()
-        return smooth_prony_fit(omega, E_stor, E_loss, sigma, sigma,
-                                N=self.N, smoothness=0.3, std_scale=0.01)
-
-    @staticmethod
-    def _radius(kwargs):
-        return kwargs['options']['initial_trust_radius']
-
-    def test_fits_that_trip_scipys_nan_damping_converge(self):
-        for directory, name, N, smoothness in self.NAN_DAMPING_CASES:
-            with mock.patch.object(Config, 'FILES_DIRECTORY', directory):
-                upload = upload_init(name, 'frequency')
-            omega = upload['Frequency']
-            E_stor, E_loss = upload['E Storage'], upload['E Loss']
-            sigma = np.abs(E_stor + 1.0j * E_loss)
-
-            def fit(n):
-                return smooth_prony_fit(
-                    omega, E_stor, E_loss, sigma, sigma, N=n,
-                    smoothness=smoothness, std_scale=0.01,
-                    return_fit_quality=True)
-
-            with self.subTest(file=name):
-                # Precondition: without restarts this fit is the failure.
-                with mock.patch.object(prony_fit, '_NEWTON_MAX_RESTARTS', 0):
-                    with self.assertRaises(prony_fit.SmoothPronyFitDiverged):
-                        fit(N)
-                _, E_i, quality = fit(N)
-                self.assertTrue(np.all(np.isfinite(E_i)))
-                self.assertIsNotNone(quality.covariance)
-                for neighbour in (N - 1, N + 1):
-                    self.assertAlmostEqual(
-                        quality.chi2_reduced / fit(neighbour)[2].chi2_reduced,
-                        1.0, delta=1e-3)
-
-    def test_restart_resumes_from_the_last_accepted_iterate(self):
-        seeds, radii = [], []
-
-        def flaky(*args, **kwargs):
-            x0 = np.array(kwargs['x0'], copy=True)
-            seeds.append(x0)
-            radii.append(self._radius(kwargs))
-            if len(seeds) == 1:
-                kwargs['callback'](x0 + 0.5)
-                kwargs['callback'](x0 + 1.0)
-                raise ValueError(self.BOOM)
-            return minimize(*args, **kwargs)
-
-        with mock.patch.object(prony_fit, 'minimize', flaky):
-            _, E_i = self._fit()
-        self.assertEqual(len(seeds), 2)
-        np.testing.assert_array_equal(seeds[1], seeds[0] + 1.0)
-        self.assertEqual(radii, [1.0, 0.25])
-        self.assertTrue(np.all(np.isfinite(E_i)))
-
-    def test_restarts_are_bounded_and_each_quarters_the_trust_radius(self):
-        # No step is ever accepted here, so every attempt has the same seed:
-        # only the smaller radius makes a retry different from the last.
-        seeds, radii = [], []
-
-        def always_fails(*args, **kwargs):
-            seeds.append(np.array(kwargs['x0'], copy=True))
-            radii.append(self._radius(kwargs))
-            raise ValueError(self.BOOM)
-
-        with mock.patch.object(prony_fit, 'minimize', always_fails):
-            with self.assertRaises(prony_fit.SmoothPronyFitDiverged):
-                self._fit()
-        attempts = prony_fit._NEWTON_MAX_RESTARTS + 1
-        self.assertEqual(len(radii), attempts)
-        self.assertGreaterEqual(attempts, 3)
-        np.testing.assert_allclose(radii, 0.25 ** np.arange(attempts))
-        for seed in seeds[1:]:
-            np.testing.assert_array_equal(seed, seeds[0])
-
-    def test_restarts_share_the_one_time_budget(self):
-        import time
-
-        def slow_then_fails(*args, **kwargs):
-            kwargs['callback'](np.asarray(kwargs['x0']) + 0.5)
-            _spin(0.08)
-            raise ValueError(self.BOOM)
-
-        start = time.monotonic()
-        with mock.patch.object(prony_fit, 'minimize', slow_then_fails), \
-                mock.patch.object(prony_fit, '_NEWTON_TIME_BUDGET', 0.1), \
-                mock.patch.object(prony_fit, '_NEWTON_MAX_RESTARTS', 50):
-            with self.assertRaises(prony_fit.SmoothPronyFitTimeout):
-                self._fit()
-        self.assertLess(time.monotonic() - start, 0.9)
 
 
 class TestArgmaxPeak(unittest.TestCase):
