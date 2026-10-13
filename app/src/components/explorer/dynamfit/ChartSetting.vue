@@ -844,7 +844,7 @@ const allPolymerFiles = [
     domain: 'temperature',
   },
   {
-    path: '/docs/dynamfit/PMMA-R09-temp-sweep-clean.csv',
+    path: '/docs/dynamfit/PMMA-R09-1Hz_temp-sweep-clean.csv',
     label: 'PMMA R09 (1Hz)',
     domain: 'temperature',
   },
