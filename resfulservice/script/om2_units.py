@@ -11,8 +11,9 @@ dceffeccdcfae55af2738ec92c0a66c976e68059/om-2.0.rdf
 The output maps each OM-2 unit local name to its om:symbol and
 om:alternativeSymbol values. The script also checks the hand-kept
 config/om2-unit-overrides.json and exits non-zero, naming offenders, when
-an exact key belongs to several units without a tie-break, or when an
-override targets something that is not an OM-2 unit.
+an exact key belongs to several units without a tie-break, when an
+override targets something that is not an OM-2 unit, or when an alias
+key is itself an exact OM-2 key.
 """
 import hashlib
 import json
@@ -70,6 +71,10 @@ def check_overrides(keys, overrides):
             if target not in keys:
                 problems.append('%s[%r] -> %r is not an OM-2 unit'
                                 % (table, code, target))
+    for code in sorted(overrides.get('aliases', {})):
+        if code in owners:
+            problems.append('aliases[%r] is an exact OM-2 key (units: %s)'
+                            % (code, ', '.join(sorted(owners[code]))))
     return collisions, problems
 
 

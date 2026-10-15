@@ -178,41 +178,5 @@ module.exports = {
   MM_BASE: 'http://materialsmine.org/resource/',
   NP_BASE: 'http://materialsmine.org/np/',
   OM2: 'http://www.ontology-of-units-of-measure.org/resource/om-2',
-  UNIT_IRI: {
-    '%': 'http://www.ontology-of-units-of-measure.org/resource/om-2/percent',
-    '1/s':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/reciprocalSecond-Time',
-    'a/m^2':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/amperePerSquareMetre',
-    c: 'http://www.ontology-of-units-of-measure.org/resource/om-2/coulomb',
-    celcius:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
-    celsius:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
-    '°c':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
-    'celsius/min':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsiusPerMinute-Time',
-    'celsius/minute':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsiusPerMinute-Time',
-    days: 'http://www.ontology-of-units-of-measure.org/resource/om-2/day',
-    nm: 'http://www.ontology-of-units-of-measure.org/resource/om-2/nanometre',
-    hours: 'http://www.ontology-of-units-of-measure.org/resource/om-2/hour',
-    hour: 'http://www.ontology-of-units-of-measure.org/resource/om-2/hour',
-    hr: 'http://www.ontology-of-units-of-measure.org/resource/om-2/hour',
-    minutes:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/minute-Time',
-    minute:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/minute-Time',
-    min:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/minute-Time',
-    kv: 'http://www.ontology-of-units-of-measure.org/resource/om-2/kilovolt',
-    'g/cm^3':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/gramPerCubicCentimetre',
-    um: 'http://www.ontology-of-units-of-measure.org/resource/om-2/micrometre',
-    hz: 'http://www.ontology-of-units-of-measure.org/resource/om-2/hertz',
-    'cm-1': 'http://www.ontology-of-units-of-measure.org/resource/om-2/kayser',
-    pa: 'http://www.ontology-of-units-of-measure.org/resource/om-2/pascal'
-  },
   FILE_FORMATS: ['file', 'url']
 };
