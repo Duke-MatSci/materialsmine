@@ -9,7 +9,9 @@ dceffeccdcfae55af2738ec92c0a66c976e68059/om-2.0.rdf
     python -I script/om2_units.py "$rdf"
 
 The output maps each OM-2 unit local name to its om:symbol and
-om:alternativeSymbol values. The script also checks the hand-kept
+om:alternativeSymbol values, plus names generated from its English
+rdfs:label: the label, its US spelling (-meter, -liter), and each of those
+with its first word pluralised. The script also checks the hand-kept
 config/om2-unit-overrides.json and exits non-zero, naming offenders, when
 an exact key belongs to several units without a tie-break, when an
 override targets something that is not an OM-2 unit, or when an alias
@@ -36,6 +38,24 @@ OUT_PATH = os.path.join(CONFIG, 'om2-units.json')
 OVERRIDES_PATH = os.path.join(CONFIG, 'om2-unit-overrides.json')
 
 
+def plural_first_word(name):
+    """Return name with the text before its first space pluralised."""
+    first, sep, rest = name.partition(' ')
+    if first.endswith(('s', 'x', 'z')):
+        pass
+    elif first.endswith(('ch', 'sh')):
+        first += 'es'
+    else:
+        first += 's'
+    return first + sep + rest
+
+
+def label_names(label):
+    """Return the names generated from one English unit label."""
+    us = label.replace('metre', 'meter').replace('litre', 'liter')
+    return {label, us, plural_first_word(label), plural_first_word(us)}
+
+
 def unit_keys(graph):
     """Return {local name: sorted keys} for every OM-2 unit."""
     classes = set(graph.transitive_subjects(RDFS.subClassOf, OM.Unit))
@@ -49,6 +69,9 @@ def unit_keys(graph):
         found = set()
         for pred in (OM.symbol, OM.alternativeSymbol):
             found.update(str(v) for v in graph.objects(unit, pred))
+        for label in graph.objects(unit, RDFS.label):
+            if getattr(label, 'language', None) == 'en':
+                found.update(label_names(str(label)))
         keys[str(unit)[len(str(OM)):]] = sorted(found)
     return keys
 
