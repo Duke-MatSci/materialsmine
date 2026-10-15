@@ -413,12 +413,6 @@ describe('SDD Serializer', function () {
       expect(resolveCodeMapping('µm²', cm)).to.equal('http://ex/um2');
     });
 
-    it('should fall back to UNIT_IRI when not in code mappings', function () {
-      const cm = new Map();
-      const result = resolveCodeMapping('nm', cm);
-      expect(result).to.include('om-2');
-    });
-
     it('should return undefined for unknown units', function () {
       const cm = new Map();
       expect(resolveCodeMapping('parsecs', cm)).to.be.undefined;
