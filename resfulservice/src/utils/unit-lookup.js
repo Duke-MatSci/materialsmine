@@ -11,22 +11,17 @@ const {
 const exact = new Map();
 // Case-folded keys: every unit any exact key folding to it can mean.
 const folded = new Map();
-const addFolded = (key, name) => {
+const addKey = (key, name) => {
+  exact.set(key, name);
   const fold = key.toLowerCase();
   if (!folded.has(fold)) folded.set(fold, new Set());
   folded.get(fold).add(name);
 };
 Object.entries(units).forEach(([name, keys]) => {
-  keys.forEach((key) => {
-    exact.set(key, name);
-    addFolded(key, name);
-  });
+  keys.forEach((key) => addKey(key, name));
 });
 [tieBreaks, aliases].forEach((table) => {
-  Object.entries(table).forEach(([key, name]) => {
-    exact.set(key, name);
-    addFolded(key, name);
-  });
+  Object.entries(table).forEach(([key, name]) => addKey(key, name));
 });
 
 /**

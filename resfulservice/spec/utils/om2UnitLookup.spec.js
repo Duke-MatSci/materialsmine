@@ -34,7 +34,7 @@ const TIE_BREAKS = [
   ['c', 'coulomb']
 ];
 
-// The exact tier is case-sensitive and beats the case-insensitive table.
+// The exact tier is case-sensitive and beats the case-folded match.
 const CASE_SENSITIVE = [
   ['pA', 'picoampere'],
   ['nM', 'nanomolar']
