@@ -1,0 +1,33 @@
+{
+  "tieBreaks": {
+    "AU": "astronomicalUnit",
+    "B": "byte",
+    "Btu": "BritishThermalUnit-Mean",
+    "CFU/ml": "colonyFormingUnitPerMillilitre",
+    "F": "farad",
+    "Fr": "franklin",
+    "G": "gauss",
+    "GA": "gigaampere",
+    "Gs": "gauss",
+    "M": "molar",
+    "PS": "horsepower-Metric",
+    "a": "year",
+    "ac": "acre-International",
+    "c": "coulomb",
+    "fl oz": "fluidOunce-US",
+    "fm s-1": "femtometrePerSecond-Time",
+    "fm·s-1": "femtometrePerSecond-Time",
+    "ft": "foot-International",
+    "gal": "gallon-US",
+    "gi": "gill-US",
+    "h": "hour",
+    "lb": "poundAvoirdupois",
+    "m": "metre",
+    "nm": "nanometre",
+    "pt": "point-Postscript",
+    "rad": "radian",
+    "s": "second-Time",
+    "u": "unifiedAtomicMassUnit",
+    "°R": "degreeRankine"
+  }
+}
