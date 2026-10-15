@@ -618,7 +618,7 @@ describe('SDD Serializer', function () {
         expect(attr['sio:hasUnit']).to.deep.equal([
           {
             '@type':
-              'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
+              'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
             '@value': 'celsius'
           }
         ]);
