@@ -4,9 +4,9 @@ const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const minioClient = require('./minio');
 const FileManager = require('./fileManager');
+const { lookupUnit } = require('./unit-lookup');
 const {
   MinioBucket,
-  UNIT_IRI,
   FILE_FORMATS: FILE_FORMATS_ARR,
   SupportedFileResponseHeaders
 } = require('../../config/constant');
@@ -65,9 +65,6 @@ function streamToBuffer(stream) {
     stream.on('error', reject);
   });
 }
-
-/* ────────────────────────── Unit Map ────────────────────────── */
-const unitMap = UNIT_IRI;
 
 /* ────────────────── File reference handling ────────────────── */
 
@@ -402,7 +399,7 @@ function parseCodeMappingsSheet(workbook) {
 }
 
 /**
- * Resolve a shorthand code to a URI using code mappings, then the hardcoded unitMap.
+ * Resolve a shorthand code to a URI using code mappings, then the OM-2 unit lookup.
  * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
  * @param {Map} codeMappings - Parsed code mappings from the SDD
  * @returns {string|undefined} The resolved URI, or undefined
@@ -412,7 +409,7 @@ function resolveCodeMapping(code, codeMappings) {
   const key = code.trim().toLowerCase();
   const mapped = codeMappings.get(key);
   if (mapped) return mapped.uri;
-  return unitMap[key] || unitMap[code] || undefined;
+  return lookupUnit(code);
 }
 
 /**
