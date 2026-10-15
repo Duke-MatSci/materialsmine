@@ -12,7 +12,8 @@ Object.entries(units).forEach(([name, keys]) => {
 Object.entries(tieBreaks).forEach(([key, name]) => exact.set(key, name));
 
 /**
- * Resolve a unit code to an OM-2 unit IRI.
+ * Resolve a unit code to an OM-2 unit IRI: the trimmed code's exact,
+ * case-sensitive match first, else the case-insensitive UNIT_IRI table.
  * @param {string} code - The unit code as typed
  * @returns {string|undefined} The IRI, or undefined when nothing matches
  */

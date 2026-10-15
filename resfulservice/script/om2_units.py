@@ -1,10 +1,12 @@
 """Generate config/om2-units.json from a pinned OM-2 snapshot.
 
-Fetch the pinned file and rerun from resfulservice/:
+Fetch the pinned file outside the repository (never commit it, it is
+2 MB) and rerun from resfulservice/:
 
-    curl -LO https://raw.githubusercontent.com/HajoRijgersberg/OM/\
+    rdf="$(mktemp -d)/om-2.0.rdf"
+    curl -L -o "$rdf" https://raw.githubusercontent.com/HajoRijgersberg/OM/\
 dceffeccdcfae55af2738ec92c0a66c976e68059/om-2.0.rdf
-    python -I script/om2_units.py om-2.0.rdf
+    python -I script/om2_units.py "$rdf"
 
 The output maps each OM-2 unit local name to its om:symbol and
 om:alternativeSymbol values. The script also checks the hand-kept
@@ -51,7 +53,7 @@ def unit_keys(graph):
 
 
 def check_overrides(keys, overrides):
-    """Return a list of problem lines for the overrides file."""
+    """Return (keys owned by several units, problem lines for overrides)."""
     owners = defaultdict(set)
     for name, unit_codes in keys.items():
         for code in unit_codes:
@@ -93,14 +95,12 @@ def main(argv):
                  'repository': 'HajoRijgersberg/OM', 'commit': OM_COMMIT,
                  'file': 'om-2.0.rdf', 'version': OM_VERSION,
                  'url': OM_URL, 'sha256': OM_SHA256}, sort_keys=True) + ',',
-             '  "units": {']
-    names = sorted(keys)
-    for i, name in enumerate(names):
-        sep = ',' if i < len(names) - 1 else ''
-        lines.append('    %s: %s%s' % (
-            json.dumps(name, ensure_ascii=False),
-            json.dumps(keys[name], ensure_ascii=False), sep))
-    lines += ['  }', '}']
+             '  "units": {',
+             ',\n'.join('    %s: %s' % (
+                 json.dumps(name, ensure_ascii=False),
+                 json.dumps(keys[name], ensure_ascii=False))
+                 for name in sorted(keys)),
+             '  }', '}']
     with open(OUT_PATH, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(lines) + '\n')
     print('%d units, %d colliding keys -> %s'

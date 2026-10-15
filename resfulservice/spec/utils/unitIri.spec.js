@@ -33,8 +33,8 @@ const EXPECTED = [
   ['Pa', 'pascal']
 ];
 
-describe('Built-in unit table (UNIT_IRI)', function () {
-  // The SDD path falls back to the built-in table when the SDD's own
+describe('Built-in unit codes', function () {
+  // The SDD path falls back to the shared unit lookup when the SDD's own
   // code mappings are empty.
   describe('resolveCodeMapping with no code mappings', function () {
     EXPECTED.forEach(([code, localName]) => {
@@ -44,7 +44,7 @@ describe('Built-in unit table (UNIT_IRI)', function () {
     });
   });
 
-  // The XML curation path maps units through the same table.
+  // The XML curation path maps units through the same lookup.
   describe('mapUnit', function () {
     EXPECTED.forEach(([code, localName]) => {
       it(`should map '${code}' to om-2/${localName}`, function () {
