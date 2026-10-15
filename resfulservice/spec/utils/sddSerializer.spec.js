@@ -415,7 +415,7 @@ describe('SDD Serializer', function () {
 
     it('should return undefined for unknown units', function () {
       const cm = new Map();
-      expect(resolveCodeMapping('parsecs', cm)).to.be.undefined;
+      expect(resolveCodeMapping('zorkmids', cm)).to.be.undefined;
     });
 
     it('should return undefined for empty input', function () {
