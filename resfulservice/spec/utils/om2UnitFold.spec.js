@@ -21,14 +21,10 @@ const ONE_UNIT_FOLDS = [
   ['a/m^2', 'amperePerSquareMetre']
 ];
 
-// Hand-kept aliases supply common spellings OM-2 lacks.
+// Hand-kept aliases supply common spellings that are neither OM-2 symbols
+// nor names generated from OM-2 labels.
 const ALIASES = [
   ['hr', 'hour'],
-  ['hour', 'hour'],
-  ['hours', 'hour'],
-  ['minute', 'minute-Time'],
-  ['minutes', 'minute-Time'],
-  ['days', 'day'],
   ['celsius', 'degreeCelsius'],
   ['celcius', 'degreeCelsius'],
   ['celsius/min', 'degreeCelsiusPerMinute-Time'],

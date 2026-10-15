@@ -41,11 +41,9 @@ OVERRIDES_PATH = os.path.join(CONFIG, 'om2-unit-overrides.json')
 def plural_first_word(name):
     """Return name with the text before its first space pluralised."""
     first, sep, rest = name.partition(' ')
-    if first.endswith(('s', 'x', 'z')):
-        pass
-    elif first.endswith(('ch', 'sh')):
+    if first.endswith(('ch', 'sh')):
         first += 'es'
-    else:
+    elif not first.endswith(('s', 'x', 'z')):
         first += 's'
     return first + sep + rest
 
@@ -57,7 +55,7 @@ def label_names(label):
 
 
 def unit_keys(graph):
-    """Return {local name: sorted keys} for every OM-2 unit."""
+    """Return {local name: sorted symbols and names} for every OM-2 unit."""
     classes = set(graph.transitive_subjects(RDFS.subClassOf, OM.Unit))
     units = set()
     for cls in classes:

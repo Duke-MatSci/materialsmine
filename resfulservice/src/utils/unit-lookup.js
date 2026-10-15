@@ -7,7 +7,8 @@ const {
   aliases
 } = require('../../config/om2-unit-overrides.json');
 
-// Exact, case-sensitive keys: OM-2 symbols, then hand-kept entries over them.
+// Exact, case-sensitive keys: OM-2 symbols and label-generated names, then
+// hand-kept entries over them.
 const exact = new Map();
 // Case-folded keys: every unit any exact key folding to it can mean.
 const folded = new Map();
