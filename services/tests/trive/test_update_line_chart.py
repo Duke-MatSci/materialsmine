@@ -47,6 +47,7 @@ from app.utils.util import upload_init
 from ._figure_lines import (
     facet_axes, figure_json, names_number, notices, trace_x, vertical_lines,
 )
+from ._resolution_oracle import exact_probe_terms, fires, run_chart
 
 
 DATA_DIR = os.path.abspath(os.path.join(
@@ -2725,8 +2726,8 @@ class TestAnnotateGridSuggestion(unittest.TestCase):
 
 class TestUpdateLineChartGridSuggestion(unittest.TestCase):
     """update_line_chart stamps the grid suggestion on fig1 and fig11 when
-    the grid the fit ran with is coarser than reduction.prony_resolution,
-    computed from that fit with the fit's own arrays and std_scale."""
+    the grid the fit ran with is coarser than the data supports, stating
+    a size above that grid and no larger than max_prony."""
 
     FILE = 'agilus30 (8) master curve 20C.txt'
     RELATIVE_ERROR = 0.01
@@ -2737,7 +2738,7 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
         cls.uploadData = upload_init(cls.FILE, 'frequency')
 
     def _run(self, N, smoothness, **kwargs):
-        """(result, the size the caption should suggest) for one call."""
+        """(result, the grid size the fit ran with) for one call."""
         fits = []
 
         def recording_fit(*args, **fit_kwargs):
@@ -2752,24 +2753,20 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
                 fit_settings=False, domain='frequency',
                 relative_error=self.RELATIVE_ERROR, **kwargs,
             )
-        (fit, (tau_i, E_i, _)), = fits
-        resolution = reduction.prony_resolution(
-            fit['omega'], fit['E_stor'], fit['E_loss'],
-            fit['E_stor_std'], fit['E_loss_std'], tau_i, E_i, smoothness,
-            std_scale=fit['std_scale'])
-        size = min(result[9], int(np.ceil(1.5 * round(resolution))))
-        return result, size
+        (fit, (tau_i, _, _)), = fits
+        return result, len(tau_i)
 
     def test_coarse_grid_suggests_a_finer_one_on_both_complex_figures(self):
         for N in (4, 6):
             for smoothness in (0.3, 0.0):
                 with self.subTest(N=N, smoothness=smoothness):
-                    result, size = self._run(N, smoothness)
-                    self.assertGreater(size, N)
+                    result, n_fit = self._run(N, smoothness)
+                    caption = _suggestions(result[0])
+                    self.assertEqual(len(caption), 1)
+                    self.assertEqual(_suggestions(result[1]), caption)
+                    size = int(caption[0][len(_SUGGESTION):])
+                    self.assertGreater(size, n_fit)
                     self.assertLessEqual(size, result[9])
-                    for fig in (result[0], result[1]):
-                        self.assertEqual(_suggestions(fig),
-                                         [f'{_SUGGESTION}{size}'])
 
     def test_generous_grid_has_no_suggestion(self):
         cap = self._run(6, 0.0)[0][9]
@@ -2842,6 +2839,52 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
         self.assertIs(figs[1], result[1])
         self.assertEqual(args['requested_n'], N)
         self.assertEqual(args['max_prony'], result[9])
+
+
+class TestUpdateLineChartLowSmoothnessGridSuggestion(unittest.TestCase):
+    """At low smoothness the grid suggestion fires when the exact 108-term
+    effective count (the test-only oracle) exceeds the grid the fit ran
+    with, and stays silent when that count is well below it."""
+
+    # (file, relative_error, smoothness, N), all frequency-domain uploads.
+    SUPPORTED = (
+        ('PETMP-TATATO master curve 55C clean.txt', 0.05, 1e-4, 40),
+        ('VeroCyan (5) master curve 80C.txt', 0.2, 1e-4, 60),
+    )
+    UNSUPPORTED = (
+        ('PETMP-TATATO master curve 55C clean.txt', 0.05, 1e-4, 80),
+        ('PMMA_shifted_R10_data.txt', 0.2, 1e-3, 80),
+    )
+    MARGIN = 3
+
+    @classmethod
+    def setUpClass(cls):
+        Config.FILES_DIRECTORY = DATA_DIR
+        cls.uploads = {
+            name: upload_init(name, 'frequency')
+            for name, *_ in cls.SUPPORTED + cls.UNSUPPORTED}
+
+    def _cell(self, name, relative_error, smoothness, N):
+        """(result, grid size the fit ran with, oracle count)."""
+        result, fit, n_fit = run_chart(
+            self.uploads[name], N, smoothness, relative_error)
+        return result, n_fit, exact_probe_terms(fit, smoothness)
+
+    def test_supported_low_smoothness_grid_is_told_to_grow(self):
+        for cell in self.SUPPORTED:
+            with self.subTest(cell=cell):
+                result, n_fit, exact = self._cell(*cell)
+                self.assertGreater(exact, n_fit + self.MARGIN)
+                self.assertTrue(fires(result), f'exact_108 {exact:.2f} > N '
+                                f'{n_fit}, but no suggestion')
+
+    def test_unsupported_low_smoothness_grid_stays_silent(self):
+        for cell in self.UNSUPPORTED:
+            with self.subTest(cell=cell):
+                result, n_fit, exact = self._cell(*cell)
+                self.assertLess(exact, n_fit - self.MARGIN)
+                for fig in (result[0], result[1]):
+                    self.assertEqual(_suggestions(fig), [])
 
 
 if __name__ == '__main__':
