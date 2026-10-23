@@ -16,7 +16,8 @@ from app.utils.util import log_errors
 
 from .prony import prony_terms_for_span
 from .fit import smooth_prony_fit
-from .reduction import prony_rank_limit, prony_resolution
+from .reduction import (
+    _fit_grid_gauss_newton_terms, prony_rank_limit, prony_resolution)
 from .tts import (MAX_ABS_LOG10_SHIFT, tts_frequency_to_temperature_V2,
                   tts_temperature_to_frequency_V2, wlf_window)
 from .figures import (
@@ -343,6 +344,15 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     resolution = prony_resolution(
         omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
         tau_i, E_i, smoothness, std_scale=std_scale)
+    # The probe count is Gauss-Newton, which undercounts at low smoothness;
+    # correct it by the fit's own exact-to-Gauss-Newton ratio.
+    effective_terms = getattr(fit_quality, 'effective_terms', None)
+    if resolution is not None and effective_terms is not None:
+        gn_fit = _fit_grid_gauss_newton_terms(
+            omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
+            tau_i, E_i, smoothness, std_scale=std_scale)
+        if gn_fit is not None:
+            resolution *= effective_terms / gn_fit
     # Order sets the rows: the readout takes the one nearest the plot, the
     # decimation notice stacks above it and the grid suggestion above both.
     # See _stamp_notice.

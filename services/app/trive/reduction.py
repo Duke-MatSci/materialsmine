@@ -344,3 +344,53 @@ def prony_resolution(
     H_inv = cho_solve((chol, True), np.eye(len(c)))
     gamma = n_probe - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
     return float(gamma) if np.isfinite(gamma) else None
+
+
+def _fit_grid_gauss_newton_terms(
+        omega: np.ndarray,
+        E_stor: np.ndarray,
+        E_loss: np.ndarray,
+        E_stor_std: np.ndarray,
+        E_loss_std: np.ndarray,
+        tau_i: np.ndarray,
+        E_i: np.ndarray,
+        smoothness: float,
+        solid: bool = True,
+        std_scale: float = 1.0,
+):
+    """
+    The Gauss-Newton effective count on the fit's own grid and system.
+
+    The same gamma as prony_resolution, but at the fit itself, with no probe
+    and no resampling. Its ratio to the fit's exact effective_terms measures
+    how far Gauss-Newton undercounts on this upload, which prony_resolution's
+    probe count shares.
+
+    Returns:
+        float or None: the count; None without smoothing, with non-positive
+        coefficients, or when the Hessian is not positive definite.
+    """
+    n = len(tau_i)
+    if not smoothness or n < 2:
+        return None
+    E_dec = np.asarray(E_i)[len(E_i) - n:]
+    if not (np.all(np.isfinite(E_dec)) and np.all(E_dec > 0)):
+        return None
+    R, _ = _prony_reduce(omega, E_stor, E_loss, E_stor_std, E_loss_std,
+                         tau_i, solid, std_scale)
+    m = n + solid
+    R = R[:m]
+    has_eq = bool(solid and len(E_i) == n + 1 and E_i[0] > 0)
+    c = np.concatenate(([E_i[0]], E_dec)) if has_eq else E_dec
+    if solid and not has_eq:
+        R = R[:, 1:]
+    scaled_smoothness = _scaled_smoothness(
+        smoothness, n, 2 * len(omega) - m, np.log(tau_i[-1] / tau_i[0]))
+    H = ((R.T @ R) * c * c[:, None]
+         + scaled_smoothness ** 2 * _penalty_gram(len(c), has_eq))
+    chol = _cholesky_or_none(H)
+    if chol is None:
+        return None
+    H_inv = cho_solve((chol, True), np.eye(len(c)))
+    gamma = n - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
+    return float(gamma) if np.isfinite(gamma) and gamma > 0 else None
