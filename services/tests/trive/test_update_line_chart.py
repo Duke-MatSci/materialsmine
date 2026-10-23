@@ -2887,5 +2887,38 @@ class TestUpdateLineChartLowSmoothnessGridSuggestion(unittest.TestCase):
                     self.assertEqual(_suggestions(fig), [])
 
 
+class TestUpdateLineChartLowSmoothnessDynamfitSilence(unittest.TestCase):
+    """At low smoothness the grid suggestion stays silent on a dynamfit
+    master curve whose exact 108-term count is well below the grid the fit
+    ran with."""
+
+    # (file, relative_error, smoothness, N), frequency-domain uploads from
+    # app/public/docs/dynamfit.
+    UNSUPPORTED = (
+        ('PMMA-R09-master-clean-148C.csv', 0.01, 1e-4, 68),
+        ('PMMA-R09-master-clean-148C.csv', 0.05, 1e-4, 72),
+    )
+    MARGIN = 3
+
+    @classmethod
+    def setUpClass(cls):
+        directory = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), '..', '..', '..', 'app', 'public',
+            'docs', 'dynamfit'))
+        with patch.object(Config, 'FILES_DIRECTORY', directory):
+            cls.uploads = {name: upload_init(name, 'frequency')
+                           for name, *_ in cls.UNSUPPORTED}
+
+    def test_unsupported_low_smoothness_grid_stays_silent(self):
+        for name, relative_error, smoothness, N in self.UNSUPPORTED:
+            with self.subTest(cell=(name, relative_error, smoothness, N)):
+                result, fit, n_fit = run_chart(
+                    self.uploads[name], N, smoothness, relative_error)
+                exact = exact_probe_terms(fit, smoothness)
+                self.assertLess(exact, n_fit - self.MARGIN)
+                for fig in (result[0], result[1]):
+                    self.assertEqual(_suggestions(fig), [])
+
+
 if __name__ == '__main__':
     unittest.main()

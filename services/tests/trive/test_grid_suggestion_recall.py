@@ -1,7 +1,8 @@
 """
 Slow tier: the Tri-VE grid suggestion scored against the exact 108-term
-effective count on every bundled dataset. About 3 minutes, so it is skipped
-unless TRIVE_SLOW=1.
+effective count on every bundled dataset, and at low smoothness on four more
+master curves from app/public/docs/dynamfit. About 11 minutes, so it is
+skipped unless TRIVE_SLOW=1.
 
     TRIVE_SLOW=1 python -m unittest tests.trive.test_grid_suggestion_recall
 """
@@ -9,6 +10,7 @@ import unittest
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import sys
+from unittest import mock
 
 import numpy as np
 
@@ -40,30 +42,48 @@ DATASETS = {
                       'temperature',
                       'agilus30 (8) shift factors 20C clean.txt'),
 }
+# The frontend's example master curves that are not copies or re-shifts of
+# the bundled sets above.
+DYNAMFIT_DIR = os.path.abspath(os.path.join(
+    os.path.dirname(__file__), '..', '..', '..', 'app', 'public', 'docs',
+    'dynamfit',
+))
+DYNAMFIT_DATASETS = {
+    'Cavaille PS (dynamfit)': ('Cavaille-PS-98k-master-93C.csv',
+                               'frequency', None),
+    'PMMA R09 (dynamfit)': ('PMMA-R09-master-clean-148C.csv',
+                            'frequency', None),
+    'dgeba-ipd (dynamfit)': ('dgeba-ipd-wide-bar-170C_mastercurve.tsv',
+                             'frequency', None),
+    'fisher PC (dynamfit)': ('fisher-polycarbonate-150C_mastercurve.csv',
+                             'frequency', None),
+}
 RELATIVE_ERRORS = (0.2, 0.05, 0.01)
 SMOOTHNESS = np.geomspace(1e-4, 10, 16)
 LOW_SMOOTHNESS = set(map(float, SMOOTHNESS[:4]))  # 1e-4 .. 1e-3
 REQUESTS = (20, 40, 60, 80)
+FINE_REQUESTS = tuple(range(20, 101, 4))
 MIN_RECALL = 0.90
 MAX_FALSE_FIRE_RATE = 0.01
 
 
-def _sweep():
+def _sweep(directory, datasets, requests, smoothness):
     """
     Scored rows (name, rel, s, n_fit, exact, fired), one per distinct fit,
     plus the cells dropped because the app or the oracle gave no answer.
     """
     rows, dropped, seen, oracle = [], [], set(), {}
-    for name, (upload_file, domain, shift_file) in DATASETS.items():
-        upload = upload_init(upload_file, domain)
-        kwargs = {}
-        if shift_file:
-            kwargs = dict(shift_model='manual',
-                          shiftData=upload_init(shift_file, 'shift'))
+    for name, (upload_file, domain, shift_file) in datasets.items():
+        with mock.patch.object(Config, 'FILES_DIRECTORY', directory):
+            upload = upload_init(upload_file, domain)
+            kwargs = {}
+            if shift_file:
+                kwargs = dict(shift_model='manual',
+                              shiftData=upload_init(shift_file, 'shift'))
         # N outermost keeps the fit and probe reductions warm in the cache.
-        for N in REQUESTS:
+        for N in requests:
             for rel in RELATIVE_ERRORS:
-                for s in map(float, SMOOTHNESS):
+                for s in map(float, smoothness):
                     try:
                         result, fit, n_fit = run_chart(
                             upload, N, s, rel, domain=domain, **kwargs)
@@ -89,6 +109,12 @@ def _describe(rows):
         for name, rel, s, n_fit, exact, _ in rows)
 
 
+def _describe_dropped(dropped):
+    return '\n'.join(
+        f'  {name}, rel {rel:g}, s {s:.3g}, N {N}: {why}'
+        for name, rel, s, N, why in dropped)
+
+
 @unittest.skipUnless(os.environ.get('TRIVE_SLOW') == '1',
                      'slow tier; set TRIVE_SLOW=1 to run')
 class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
@@ -97,8 +123,7 @@ class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
     s <= 1e-3, and on at most 1% of unsupported fits (exact_108 < N - 1)."""
 
     def test_low_smoothness_recall_and_false_fires(self):
-        Config.FILES_DIRECTORY = DATA_DIR
-        rows, dropped = _sweep()
+        rows, dropped = _sweep(DATA_DIR, DATASETS, REQUESTS, SMOOTHNESS)
         supported = [r for r in rows
                      if r[2] in LOW_SMOOTHNESS and r[4] > r[3] + 1]
         unsupported = [r for r in rows if r[4] < r[3] - 1]
@@ -115,6 +140,33 @@ class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
             f'falsely fired:\n{_describe(false_fires)}')
         self.assertTrue(recall >= MIN_RECALL
                         and false_rate <= MAX_FALSE_FIRE_RATE, message)
+
+    def test_low_smoothness_fine_grids_on_more_master_curves(self):
+        """At s <= 1e-3, over the bundled sets plus four dynamfit master
+        curves and N = 20, 24, ..., 100, pooled: recall >= 90% on
+        supported fits and false fires <= 1% on unsupported fits."""
+        low = SMOOTHNESS[:4]
+        rows, dropped = _sweep(DATA_DIR, DATASETS, FINE_REQUESTS, low)
+        more_rows, more_dropped = _sweep(
+            DYNAMFIT_DIR, DYNAMFIT_DATASETS, FINE_REQUESTS, low)
+        rows, dropped = rows + more_rows, dropped + more_dropped
+        supported = [r for r in rows if r[4] > r[3] + 1]
+        unsupported = [r for r in rows if r[4] < r[3] - 1]
+        missed = [r for r in supported if not r[5]]
+        false_fires = [r for r in unsupported if r[5]]
+        recall = 1 - len(missed) / len(supported)
+        false_rate = len(false_fires) / len(unsupported)
+        message = (
+            f'recall {recall:.1%} ({len(supported) - len(missed)} of '
+            f'{len(supported)} supported low-s fits; need >= '
+            f'{MIN_RECALL:.0%}); false fires {false_rate:.2%} '
+            f'({len(false_fires)} of {len(unsupported)} unsupported low-s '
+            f'fits; need <= {MAX_FALSE_FIRE_RATE:.0%})\n'
+            f'missed:\n{_describe(missed)}\n'
+            f'falsely fired:\n{_describe(false_fires)}\n'
+            f'dropped:\n{_describe_dropped(dropped)}')
+        self.assertGreaterEqual(recall, MIN_RECALL, message)
+        self.assertLessEqual(false_rate, MAX_FALSE_FIRE_RATE, message)
 
 
 if __name__ == '__main__':
