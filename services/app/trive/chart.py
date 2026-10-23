@@ -346,7 +346,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         tau_i, E_i, smoothness, std_scale=std_scale)
     # The probe count is Gauss-Newton, which undercounts at low smoothness;
     # correct it by the fit's own exact-to-Gauss-Newton ratio.
-    effective_terms = getattr(fit_quality, 'effective_terms', None)
+    effective_terms = fit_quality.effective_terms
     if resolution is not None and effective_terms is not None:
         gn_fit = _fit_grid_gauss_newton_terms(
             omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,

@@ -169,8 +169,9 @@ def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
     Parameters:
         figs: Iterable of plotly Figures to annotate.
         requested_n (int): The Prony term count the fit ran with.
-        resolution (float or None): reduction.prony_resolution; rounded to
-            whole terms before it is compared or scaled.
+        resolution (float or None): The terms the data resolves, as
+            update_line_chart derives it from reduction.prony_resolution;
+            rounded to whole terms before it is compared or scaled.
         max_prony (int or None): The numerical-rank cap on the grid size.
     """
     if resolution is None or max_prony is None:

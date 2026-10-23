@@ -291,6 +291,7 @@ def prony_resolution(
     linearized at the given fit, its spectrum resampled onto the probe grid.
     The fit's own effective count is bounded by its term count; this one is
     not, so it can say when the data supports more terms than were asked for.
+    The grid-size suggestion corrects it first; see update_line_chart.
 
     Parameters:
         omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
@@ -335,14 +336,25 @@ def prony_resolution(
     log_range = log_tau_probe[-1] - log_tau_probe[0]
     scaled_smoothness = _scaled_smoothness(
         smoothness, n_probe, 2 * len(omega) - m_probe, log_range)
-    # Gauss-Newton block of the log-parameterized Hessian, J = R diag(c).
+    return _gauss_newton_gamma(R, c, has_eq, n_probe, scaled_smoothness)
+
+
+def _gauss_newton_gamma(R, c, has_eq, n_terms, scaled_smoothness):
+    """
+    gamma = n_terms - lam * tr(L.T L inv(H)) with H the Gauss-Newton block
+    of the log-parameterized Hessian, J = R diag(c), plus the penalty.
+
+    Returns:
+        float or None: gamma; None when H is not positive definite or gamma
+        is not finite.
+    """
     H = ((R.T @ R) * c * c[:, None]
          + scaled_smoothness ** 2 * _penalty_gram(len(c), has_eq))
     chol = _cholesky_or_none(H)
     if chol is None:
         return None
     H_inv = cho_solve((chol, True), np.eye(len(c)))
-    gamma = n_probe - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
+    gamma = n_terms - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
     return float(gamma) if np.isfinite(gamma) else None
 
 
@@ -367,8 +379,9 @@ def _fit_grid_gauss_newton_terms(
     probe count shares.
 
     Returns:
-        float or None: the count; None without smoothing, with non-positive
-        coefficients, or when the Hessian is not positive definite.
+        float or None: the count; None without smoothing, with fewer than
+        two nodes or non-positive coefficients, when the Hessian is not
+        positive definite, or when the count is not finite and positive.
     """
     n = len(tau_i)
     if not smoothness or n < 2:
@@ -386,11 +399,5 @@ def _fit_grid_gauss_newton_terms(
         R = R[:, 1:]
     scaled_smoothness = _scaled_smoothness(
         smoothness, n, 2 * len(omega) - m, np.log(tau_i[-1] / tau_i[0]))
-    H = ((R.T @ R) * c * c[:, None]
-         + scaled_smoothness ** 2 * _penalty_gram(len(c), has_eq))
-    chol = _cholesky_or_none(H)
-    if chol is None:
-        return None
-    H_inv = cho_solve((chol, True), np.eye(len(c)))
-    gamma = n - scaled_smoothness ** 2 * _penalty_trace(H_inv, has_eq)
-    return float(gamma) if np.isfinite(gamma) and gamma > 0 else None
+    gamma = _gauss_newton_gamma(R, c, has_eq, n, scaled_smoothness)
+    return gamma if gamma is not None and gamma > 0 else None
