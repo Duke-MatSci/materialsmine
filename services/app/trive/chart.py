@@ -40,6 +40,10 @@ EXPECTED_DOMAIN_COLUMNS = {
     'temperature': ('Temperature', 'E Storage', 'E Loss'),
 }
 
+# Largest factor by which the fit's exact-to-Gauss-Newton ratio may raise the
+# probe grid's Gauss-Newton count in the grid suggestion.
+_MAX_GAUSS_NEWTON_CORRECTION = 1.5
+
 
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
@@ -345,14 +349,16 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
         tau_i, E_i, smoothness, std_scale=std_scale)
     # The probe count is Gauss-Newton, which undercounts at low smoothness;
-    # correct it by the fit's own exact-to-Gauss-Newton ratio.
+    # correct it by the fit's own exact-to-Gauss-Newton ratio, capped
+    # because past the cap the ratio overstates the probe grid's count.
     effective_terms = fit_quality.effective_terms
     if resolution is not None and effective_terms is not None:
         gn_fit = _fit_grid_gauss_newton_terms(
             omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
             tau_i, E_i, smoothness, std_scale=std_scale)
         if gn_fit is not None:
-            resolution *= effective_terms / gn_fit
+            resolution *= min(_MAX_GAUSS_NEWTON_CORRECTION,
+                              effective_terms / gn_fit)
     # Order sets the rows: the readout takes the one nearest the plot, the
     # decimation notice stacks above it and the grid suggestion above both.
     # See _stamp_notice.
