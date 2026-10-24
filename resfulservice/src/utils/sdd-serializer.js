@@ -84,13 +84,6 @@ function buildFileUrl(objectName) {
   return `/api/files/${encodeURIComponent(objectName)}?isStore=true`;
 }
 
-function objectExists(objectName) {
-  return minioClient
-    .statObject(bucketName, objectName)
-    .then(() => true)
-    .catch(() => false);
-}
-
 async function fetchAndStoreRemoteFile(url, logger) {
   const https = require('https');
   const http = require('http');
