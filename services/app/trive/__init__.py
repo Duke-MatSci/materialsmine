@@ -35,7 +35,8 @@ bottom-up:
     figures      plotly figures, their captions, the uncertainty ribbons and
                  error bars, plot-trace thinning, the
                  shift-factor figure, and the coefficient table
-    chart        update_line_chart — the whole pipeline, called by the route
+    chart        update_line_chart — the whole pipeline, called by the route;
+                 its grid-suggestion comment sets out that rule in full
 
 Public names are re-exported below. Private helpers (anything underscored) stay
 in their own modules: import them from there, and note that monkeypatching one

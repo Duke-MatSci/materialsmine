@@ -2,7 +2,9 @@
 Slow tier: the Tri-VE grid suggestion scored against the exact 108-term
 effective count on every bundled dataset, and at low smoothness on four more
 master curves from app/public/docs/dynamfit. About 11 minutes, so it is
-skipped unless TRIVE_SLOW=1.
+skipped unless TRIVE_SLOW=1. These sweeps also chose
+chart._MAX_GAUSS_NEWTON_CORRECTION; the grid-suggestion comment in
+app.trive.chart.update_line_chart sets out the rule they score.
 
     TRIVE_SLOW=1 python -m unittest tests.trive.test_grid_suggestion_recall
 """

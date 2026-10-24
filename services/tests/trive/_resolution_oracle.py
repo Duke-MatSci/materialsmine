@@ -5,6 +5,8 @@ test_grid_suggestion_recall). Underscore-prefixed so it is never collected.
 The oracle, exact_probe_terms, is what the suggestion is scored against: the
 exact-Hessian MacKay effective-terms count of a flat-seed smoothed fit on the
 probe grid reduction.prony_resolution uses. Live code never computes it.
+The rule it scores is set out in the grid-suggestion comment in
+app.trive.chart.update_line_chart.
 """
 import os
 os.environ['OPENBLAS_NUM_THREADS'] = '1'

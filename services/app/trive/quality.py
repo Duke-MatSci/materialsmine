@@ -46,7 +46,9 @@ from .objective import (
 # is no penalty or Hess V is not positive definite.
 #
 # effective_terms is the number of decaying terms the data determined,
-# npen - lam * tr(L.T @ L @ covariance); None without a covariance.
+# npen - lam * tr(L.T @ L @ covariance); None without a covariance. The
+# grid-size suggestion also reads it (step 2 of the rule set out in the
+# grid-suggestion comment in chart.update_line_chart).
 # chi2_reduced divides by the residual count less those terms (and less a
 # nonzero equilibrium modulus) rather than the classical n - m.
 _FitQuality = namedtuple(

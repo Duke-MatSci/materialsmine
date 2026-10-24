@@ -160,6 +160,9 @@ def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
     Suggest a finer relaxation grid when the data resolves more terms than
     were requested.
 
+    Steps 3 and 4 of the grid-size suggestion; the grid-suggestion comment
+    in chart.update_line_chart sets out the whole rule.
+
     Suggests min(max_prony, ceil(1.5 * resolution)): a grid needs nodes
     around each resolved direction to place it, and past the numerical rank
     extra nodes are redundant. No-op when either count is None, when the
@@ -169,8 +172,8 @@ def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
     Parameters:
         figs: Iterable of plotly Figures to annotate.
         requested_n (int): The Prony term count the fit ran with.
-        resolution (float or None): The terms the data resolves, as
-            update_line_chart derives it from reduction.prony_resolution;
+        resolution (float or None): The terms the data resolves: the
+            corrected probe count from steps 1 and 2 in update_line_chart;
             rounded to whole terms before it is compared or scaled.
         max_prony (int or None): The numerical-rank cap on the grid size.
     """

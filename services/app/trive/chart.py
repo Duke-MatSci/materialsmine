@@ -41,7 +41,11 @@ EXPECTED_DOMAIN_COLUMNS = {
 }
 
 # Largest factor by which the fit's exact-to-Gauss-Newton ratio may raise the
-# probe grid's Gauss-Newton count in the grid suggestion.
+# probe grid's Gauss-Newton count in the grid suggestion: step 2 of the rule
+# set out in the grid-suggestion comment in update_line_chart. Empirical,
+# chosen on the sweeps in tests/trive/test_grid_suggestion_recall.py, where
+# 1.4 cost about two points of recall and 1.6 raised the low-smoothness false
+# fires from 1 to 8 of 1092.
 _MAX_GAUSS_NEWTON_CORRECTION = 1.5
 
 
@@ -345,12 +349,35 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
              E_loss_std * std_scale / mag)
     fig1, fig11 = _build_complex_figures(
         plot_df, tau_i, E_i, N_nz, fit_quality.covariance, noise)
+    # The grid-size suggestion, in four steps; the other code involved points
+    # back here.
+    # 1. Probe count: reduction.prony_resolution, the Gauss-Newton effective
+    #    terms on the probe grid (reduction._RANK_PROBE_TERMS nodes) at the
+    #    fit resampled onto that grid; with no smoothing, the probe NNLS
+    #    active-set size. Unlike the fit's own count it is not bounded by the
+    #    grid the fit ran with, which is what lets it ask for more terms.
+    # 2. Correction: Gauss-Newton drops the residual-curvature part of the
+    #    exact Hessian and so undercounts, most at low smoothness. The fit's
+    #    exact quality.effective_terms over the Gauss-Newton count on the
+    #    same grid (reduction._fit_grid_gauss_newton_terms) measures the
+    #    undercount on this upload; the probe count is scaled by that ratio,
+    #    capped at _MAX_GAUSS_NEWTON_CORRECTION, past which the ratio
+    #    overstates the probe count. When either count is None (no smoothing,
+    #    a Hessian that is not positive definite) the probe count stands.
+    # 3. Fire (figures._annotate_grid_suggestion): rounded, the corrected
+    #    count is compared with len(tau_i), the grid the fit ran with, which
+    #    a temperature upload may have capped below the request; a grid that
+    #    meets it gets no suggestion.
+    # 4. Size (same function): min(max_prony, ceil(1.5 * count)), and none
+    #    when that leaves nothing to raise. This 1.5 allows nodes around each
+    #    resolved term and is unrelated to the correction's cap.
+    # Nothing here computes an exact Hessian on the probe grid. The exact
+    # probe count the suggestion is scored against is test-only:
+    # tests/trive/_resolution_oracle.py, swept by
+    # tests/trive/test_grid_suggestion_recall.py.
     resolution = prony_resolution(
         omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
         tau_i, E_i, smoothness, std_scale=std_scale)
-    # The probe count is Gauss-Newton, which undercounts at low smoothness;
-    # correct it by the fit's own exact-to-Gauss-Newton ratio, capped
-    # because past the cap the ratio overstates the probe grid's count.
     effective_terms = fit_quality.effective_terms
     if resolution is not None and effective_terms is not None:
         gn_fit = _fit_grid_gauss_newton_terms(

@@ -291,7 +291,8 @@ def prony_resolution(
     linearized at the given fit, its spectrum resampled onto the probe grid.
     The fit's own effective count is bounded by its term count; this one is
     not, so it can say when the data supports more terms than were asked for.
-    The grid-size suggestion corrects it first; see update_line_chart.
+    It is step 1 of the grid-size suggestion, which corrects it before use;
+    the grid-suggestion comment in chart.update_line_chart sets out the rule.
 
     Parameters:
         omega, E_stor, E_loss, E_stor_std, E_loss_std (numpy.ndarray): the
@@ -376,7 +377,8 @@ def _fit_grid_gauss_newton_terms(
     The same gamma as prony_resolution, but at the fit itself, with no probe
     and no resampling. Its ratio to the fit's exact effective_terms measures
     how far Gauss-Newton undercounts on this upload, which prony_resolution's
-    probe count shares.
+    probe count shares. It is step 2 of the grid-size suggestion; see the
+    grid-suggestion comment in chart.update_line_chart.
 
     Returns:
         float or None: the count; None without smoothing, with fewer than
