@@ -50,6 +50,8 @@ from app.trive.uncertainty import _SIGMA_DISPLAY_CAP
 from app.config import Config
 from app.utils.util import upload_init
 
+from ._paths import DYNAMFIT_DIR, TRIVE_FILES_DIR
+
 
 # Arbitrary positive log-tau span for the algebraic _prony_fit_quality tests,
 # which build random bases rather than real relaxation grids. Both the curvature
@@ -2647,11 +2649,7 @@ class TestSmoothPronyFitNewton(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(projected.jac(over[1:]))))
 
 
-BUNDLED_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'app', 'public', 'docs',
-    'dynamfit',
-))
-
+# The frontend's example master curves, in DYNAMFIT_DIR.
 BUNDLED_MASTER_CURVES = (
     'Cavaille-PS-98k-master-93C.csv',
     'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
@@ -2711,7 +2709,7 @@ class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.curves = {}
-        with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
+        with mock.patch.object(Config, 'FILES_DIRECTORY', DYNAMFIT_DIR):
             for name in BUNDLED_MASTER_CURVES:
                 upload = upload_init(name, 'frequency')
                 cls.curves[name] = (
@@ -2774,7 +2772,7 @@ class TestSurprisalOnBundledMasterCurves(unittest.TestCase):
 
 def _bundled_master_curve(name):
     """(omega, E_stor, E_loss, sigma) of a bundled file, sigma = |E*|."""
-    with mock.patch.object(Config, 'FILES_DIRECTORY', BUNDLED_DIR):
+    with mock.patch.object(Config, 'FILES_DIRECTORY', DYNAMFIT_DIR):
         upload = upload_init(name, 'frequency')
     omega = upload['Frequency']
     E_stor, E_loss = upload['E Storage'], upload['E Loss']
@@ -2834,10 +2832,6 @@ class TestSmoothnessPerUnitLogTau(unittest.TestCase):
                     + smoothness ** 2 * quality.curvature,
                     rtol=1e-10,
                 )
-
-
-TRIVE_FILES_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files'))
 
 
 def _dense_effective_terms(covariance, lam, solid):
@@ -3505,7 +3499,7 @@ class TestNewtonRestart(unittest.TestCase):
     NAN_DAMPING_CASES = (
         (TRIVE_FILES_DIR, 'agilus30 (8) master curve 20C.txt', 48,
          0.3 * np.sqrt(46 / 47)),
-        (BUNDLED_DIR, 'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
+        (DYNAMFIT_DIR, 'PETMP-TATATO-OLD-wide-bar-55C_mastercurve.tsv',
          40, 0.1 * np.sqrt(38 / 39)),
     )
 

@@ -21,12 +21,9 @@ from app.config import Config
 from app.trive.fit import SmoothPronyFitDiverged, SmoothPronyFitTimeout
 from app.utils.util import upload_init
 
+from ._paths import DYNAMFIT_DIR, TRIVE_FILES_DIR
 from ._resolution_oracle import exact_probe_terms, fires, run_chart
 
-
-DATA_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files',
-))
 
 # name -> (upload file, domain, shift file or None)
 DATASETS = {
@@ -42,12 +39,8 @@ DATASETS = {
                       'temperature',
                       'agilus30 (8) shift factors 20C clean.txt'),
 }
-# The frontend's example master curves that are not copies or re-shifts of
-# the bundled sets above.
-DYNAMFIT_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'app', 'public', 'docs',
-    'dynamfit',
-))
+# The frontend's example master curves (in DYNAMFIT_DIR) that are not copies
+# or re-shifts of the bundled sets above.
 DYNAMFIT_DATASETS = {
     'Cavaille PS (dynamfit)': ('Cavaille-PS-98k-master-93C.csv',
                                'frequency', None),
@@ -115,6 +108,35 @@ def _describe_dropped(dropped):
         for name, rel, s, N, why in dropped)
 
 
+def _score(rows, dropped):
+    """
+    The class's two bars on scored rows: recall over the supported fits
+    (exact_108 > N + 1) at s in LOW_SMOOTHNESS, and the false-fire rate over
+    the unsupported fits (exact_108 < N - 1) at every s in rows.
+
+    Returns:
+        tuple: (recall, false-fire rate, failure message listing the counts,
+        the missed fits, the false fires and the dropped cells).
+    """
+    supported = [r for r in rows
+                 if r[2] in LOW_SMOOTHNESS and r[4] > r[3] + 1]
+    unsupported = [r for r in rows if r[4] < r[3] - 1]
+    missed = [r for r in supported if not r[5]]
+    false_fires = [r for r in unsupported if r[5]]
+    recall = 1 - len(missed) / len(supported)
+    false_rate = len(false_fires) / len(unsupported)
+    message = (
+        f'recall {recall:.1%} ({len(supported) - len(missed)} of '
+        f'{len(supported)} supported low-s fits; need >= '
+        f'{MIN_RECALL:.0%}); false fires {false_rate:.2%} '
+        f'({len(false_fires)} of {len(unsupported)} unsupported fits; '
+        f'need <= {MAX_FALSE_FIRE_RATE:.0%}); {len(dropped)} cells dropped\n'
+        f'missed:\n{_describe(missed)}\n'
+        f'falsely fired:\n{_describe(false_fires)}\n'
+        f'dropped:\n{_describe_dropped(dropped)}')
+    return recall, false_rate, message
+
+
 @unittest.skipUnless(os.environ.get('TRIVE_SLOW') == '1',
                      'slow tier; set TRIVE_SLOW=1 to run')
 class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
@@ -123,21 +145,9 @@ class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
     s <= 1e-3, and on at most 1% of unsupported fits (exact_108 < N - 1)."""
 
     def test_low_smoothness_recall_and_false_fires(self):
-        rows, dropped = _sweep(DATA_DIR, DATASETS, REQUESTS, SMOOTHNESS)
-        supported = [r for r in rows
-                     if r[2] in LOW_SMOOTHNESS and r[4] > r[3] + 1]
-        unsupported = [r for r in rows if r[4] < r[3] - 1]
-        missed = [r for r in supported if not r[5]]
-        false_fires = [r for r in unsupported if r[5]]
-        recall = 1 - len(missed) / len(supported)
-        false_rate = len(false_fires) / len(unsupported)
-        message = (
-            f'recall {recall:.1%} over {len(supported)} supported low-s '
-            f'fits (need >= {MIN_RECALL:.0%}); false fires {false_rate:.2%} '
-            f'over {len(unsupported)} unsupported fits (need <= '
-            f'{MAX_FALSE_FIRE_RATE:.0%}); {len(dropped)} cells dropped\n'
-            f'missed:\n{_describe(missed)}\n'
-            f'falsely fired:\n{_describe(false_fires)}')
+        rows, dropped = _sweep(
+            TRIVE_FILES_DIR, DATASETS, REQUESTS, SMOOTHNESS)
+        recall, false_rate, message = _score(rows, dropped)
         self.assertTrue(recall >= MIN_RECALL
                         and false_rate <= MAX_FALSE_FIRE_RATE, message)
 
@@ -146,25 +156,13 @@ class TestGridSuggestionAgainstExactProbeCount(unittest.TestCase):
         curves and N = 20, 24, ..., 100, pooled: recall >= 90% on
         supported fits and false fires <= 1% on unsupported fits."""
         low = SMOOTHNESS[:4]
-        rows, dropped = _sweep(DATA_DIR, DATASETS, FINE_REQUESTS, low)
+        rows, dropped = _sweep(TRIVE_FILES_DIR, DATASETS, FINE_REQUESTS, low)
         more_rows, more_dropped = _sweep(
             DYNAMFIT_DIR, DYNAMFIT_DATASETS, FINE_REQUESTS, low)
-        rows, dropped = rows + more_rows, dropped + more_dropped
-        supported = [r for r in rows if r[4] > r[3] + 1]
-        unsupported = [r for r in rows if r[4] < r[3] - 1]
-        missed = [r for r in supported if not r[5]]
-        false_fires = [r for r in unsupported if r[5]]
-        recall = 1 - len(missed) / len(supported)
-        false_rate = len(false_fires) / len(unsupported)
-        message = (
-            f'recall {recall:.1%} ({len(supported) - len(missed)} of '
-            f'{len(supported)} supported low-s fits; need >= '
-            f'{MIN_RECALL:.0%}); false fires {false_rate:.2%} '
-            f'({len(false_fires)} of {len(unsupported)} unsupported low-s '
-            f'fits; need <= {MAX_FALSE_FIRE_RATE:.0%})\n'
-            f'missed:\n{_describe(missed)}\n'
-            f'falsely fired:\n{_describe(false_fires)}\n'
-            f'dropped:\n{_describe_dropped(dropped)}')
+        # Every swept s is in LOW_SMOOTHNESS, so _score's recall bar covers
+        # all the supported fits here.
+        recall, false_rate, message = _score(
+            rows + more_rows, dropped + more_dropped)
         self.assertGreaterEqual(recall, MIN_RECALL, message)
         self.assertLessEqual(false_rate, MAX_FALSE_FIRE_RATE, message)
 
