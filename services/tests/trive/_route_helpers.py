@@ -20,12 +20,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 from app.trive.routes import trive
 
 
-# Real fixture data shipped in the repo, used by the end-to-end route tests.
-REAL_FILES_DIR = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '..', '..', 'app', 'trive', 'files',
-))
-
-
 def make_app():
     """
     Build a minimal Flask test app that registers only the Tri-VE blueprint,

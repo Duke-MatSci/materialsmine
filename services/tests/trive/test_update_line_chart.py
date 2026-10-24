@@ -48,7 +48,9 @@ from ._figure_lines import (
     facet_axes, figure_json, names_number, notices, trace_x, vertical_lines,
 )
 from ._paths import DYNAMFIT_DIR, TRIVE_FILES_DIR
-from ._resolution_oracle import exact_probe_terms, fires, run_chart
+from ._resolution_oracle import (
+    SUGGESTION, exact_probe_terms, fires, run_chart, suggestions,
+)
 
 
 class TestUpdateLineChartFrequency(unittest.TestCase):
@@ -2672,16 +2674,6 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
             self.assertEqual(len(self._decimation_notices(fig)), 1)
 
 
-_SUGGESTION = ('if the error profile is accurate, the data can support more '
-               'terms; try a relaxation grid size of ')
-
-
-def _suggestions(fig):
-    """Grid-suggestion captions stamped on fig."""
-    return [a.text for a in fig.layout.annotations
-            if a.text and a.text.startswith(_SUGGESTION)]
-
-
 class TestAnnotateGridSuggestion(unittest.TestCase):
     """figures._annotate_grid_suggestion(figs, requested_n, resolution,
     max_prony): caption S = min(max_prony, ceil(1.5 * resolution)) only when
@@ -2701,11 +2693,11 @@ class TestAnnotateGridSuggestion(unittest.TestCase):
                 for fig in self._stamp(requested_n, resolution, max_prony):
                     self.assertEqual(
                         [(a.name, a.text) for a in fig.layout.annotations],
-                        [('figure-notice', f'{_SUGGESTION}{size}')])
+                        [('figure-notice', f'{SUGGESTION}{size}')])
 
     def test_cap_limits_the_suggested_size(self):
         for fig in self._stamp(10, 20, 25):
-            self.assertEqual(_suggestions(fig), [f'{_SUGGESTION}25'])
+            self.assertEqual(suggestions(fig), [f'{SUGGESTION}25'])
 
     def test_silent_when_there_is_nothing_to_suggest(self):
         for label, args in (
@@ -2757,10 +2749,10 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
             for smoothness in (0.3, 0.0):
                 with self.subTest(N=N, smoothness=smoothness):
                     result, n_fit = self._run(N, smoothness)
-                    caption = _suggestions(result[0])
+                    caption = suggestions(result[0])
                     self.assertEqual(len(caption), 1)
-                    self.assertEqual(_suggestions(result[1]), caption)
-                    size = int(caption[0][len(_SUGGESTION):])
+                    self.assertEqual(suggestions(result[1]), caption)
+                    size = int(caption[0][len(SUGGESTION):])
                     self.assertGreater(size, n_fit)
                     self.assertLessEqual(size, result[9])
 
@@ -2771,15 +2763,15 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
                 with self.subTest(N=N, smoothness=smoothness):
                     result, _ = self._run(N, smoothness)
                     for fig in (result[0], result[1]):
-                        self.assertEqual(_suggestions(fig), [])
+                        self.assertEqual(suggestions(fig), [])
 
     def test_only_the_complex_figures_carry_it(self):
         result, _ = self._run(4, 0.3, shift_model='WLF', Tg=30.0,
                               C1=17.44, C2=51.6)
-        self.assertTrue(_suggestions(result[0]))
+        self.assertTrue(suggestions(result[0]))
         for index in (2, 3, 4, 5, 7):
             with self.subTest(figure=index):
-                self.assertEqual(_suggestions(result[index]), [])
+                self.assertEqual(suggestions(result[index]), [])
 
     def test_stacks_above_the_fit_quality_readout(self):
         # It reads the same on every slider move, so like the decimation
@@ -2788,7 +2780,7 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
         notices = [a for a in fig1.layout.annotations
                    if a.name == 'figure-notice']
         readout = [a for a in notices if 'lower is better' in a.text]
-        suggestion = [a for a in notices if a.text.startswith(_SUGGESTION)]
+        suggestion = [a for a in notices if a.text.startswith(SUGGESTION)]
         self.assertEqual((len(readout), len(suggestion)), (1, 1))
         self.assertGreater(suggestion[0].y, readout[0].y)
 
@@ -2807,7 +2799,7 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
             fit_settings=False, domain='temperature',
         )
         for fig in result[:6]:
-            self.assertEqual(_suggestions(fig), [])
+            self.assertEqual(suggestions(fig), [])
 
     def test_measures_the_grid_the_fit_ran_with(self):
         # A temperature upload caps the request at the transformed span, so
@@ -2880,7 +2872,7 @@ class TestUpdateLineChartLowSmoothnessGridSuggestion(unittest.TestCase):
                 result, n_fit, exact = self._cell(*cell)
                 self.assertLess(exact, n_fit - self.MARGIN)
                 for fig in (result[0], result[1]):
-                    self.assertEqual(_suggestions(fig), [])
+                    self.assertEqual(suggestions(fig), [])
 
 
 class TestUpdateLineChartLowSmoothnessDynamfitSilence(unittest.TestCase):
@@ -2910,7 +2902,7 @@ class TestUpdateLineChartLowSmoothnessDynamfitSilence(unittest.TestCase):
                 exact = exact_probe_terms(fit, smoothness)
                 self.assertLess(exact, n_fit - self.MARGIN)
                 for fig in (result[0], result[1]):
-                    self.assertEqual(_suggestions(fig), [])
+                    self.assertEqual(suggestions(fig), [])
 
 
 if __name__ == '__main__':
