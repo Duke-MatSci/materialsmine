@@ -3065,11 +3065,23 @@ async function transformXmlToNanopub(xmlObj, logger) {
   const hasProcessing = buildProcessing(pnc, baseId);
   const hasProperties = buildProperties(pnc, baseId);
 
+  // Control sample linkage
+  const controlSampleRef =
+    pick(pnc, 'PolymerNanocomposite.Control_Sample_Ref');
+  let controlSampleUri;
+  if (controlSampleRef) {
+    const ref = String(controlSampleRef).replace(/\.xml$/i, '');
+    controlSampleUri = `${MM_BASE}pnc/${encodeURIComponent(ref)}`;
+  }
+
   // Assertion: sample with nested materials & microstructure only
   const sample = {
     '@id': baseId,
     '@type': 'mm:MaterialSample',
     'schema:name': String(id),
+    ...(controlSampleUri
+      ? { 'mm:hasControlSample': { '@id': controlSampleUri } }
+      : {}),
     ...(hasMaterials ? { 'mm:hasMaterials': hasMaterials } : {}),
     ...(hasProcessing ? { 'mm:hasProcessing': hasProcessing } : {}),
     ...(hasProperties ? { 'mm:hasProperties': hasProperties } : {}),
