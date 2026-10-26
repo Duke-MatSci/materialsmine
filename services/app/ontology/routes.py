@@ -105,8 +105,8 @@ def validate_ontology(request_id):
 
     Body (JSON):
     {
-      "ontology_link": "https://.../raw/.../%40mm.ttl",   # optional, defaults to DEFAULT_ONTOLOGY_LINK
-      "ontology_text": "<ttl string>",                    # optional alternative to link
+      "ontology_link": "https://.../raw/.../%40mm.ttl",   # dev only; ignored in production
+      "ontology_text": "<ttl string>",                    # dev only; ignored in production
       "ontology_format": "turtle|xml|n3|nquads",          # optional (default: turtle)
 
       "data_link": "https://.../data.ttl",                # optional (for ontology+data)
@@ -125,8 +125,10 @@ def validate_ontology(request_id):
     try:
         payload = request.get_json(silent=True) or {}
 
-        ontology_link = payload.get("ontology_link") or DEFAULT_ONTOLOGY_LINK
-        ontology_text = payload.get("ontology_text")
+        is_dev = app.config.get("MM_RUNTIME_ENV") == "dev"
+        ontology_link = payload.get("ontology_link") if is_dev else None
+        ontology_link = ontology_link or DEFAULT_ONTOLOGY_LINK
+        ontology_text = payload.get("ontology_text") if is_dev else None
         ontology_format = payload.get("ontology_format") or "turtle"
 
         data_link = payload.get("data_link")
