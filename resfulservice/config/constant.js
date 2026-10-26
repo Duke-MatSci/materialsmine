@@ -96,6 +96,12 @@ module.exports = {
     '.tsv': 'text/tab-separated-values',
     '.npy': 'application/octet-stream'
   },
+  AdditionalMimeTypes: {
+    '.txt': 'text/plain',
+    '.webp': 'image/webp',
+    '.xml': 'application/xml',
+    '.xls': 'application/vnd.ms-excel'
+  },
   colorAssignment: [
     '#FFB347',
     '#8A8BD0',

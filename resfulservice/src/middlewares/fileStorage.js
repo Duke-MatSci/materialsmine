@@ -10,7 +10,7 @@ const {
 } = require('unique-names-generator');
 const minioClient = require('../utils/minio');
 const { deleteFile } = require('../utils/fileManager');
-const { MinioBucket, MetamineBucket } = require('../../config/constant');
+const { MinioBucket, MetamineBucket, SupportedFileResponseHeaders, AdditionalMimeTypes } = require('../../config/constant');
 
 const nameGenConfig = {
   dictionaries: [adjectives, animals, names],
@@ -20,20 +20,7 @@ const nameGenConfig = {
 
 const shortName = uniqueNamesGenerator(nameGenConfig);
 
-const MIME_MAP = {
-  '.csv': 'text/csv',
-  '.tsv': 'text/tab-separated-values',
-  '.txt': 'text/plain',
-  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  '.xls': 'application/vnd.ms-excel',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.tif': 'image/tiff',
-  '.tiff': 'image/tiff',
-  '.webp': 'image/webp',
-  '.xml': 'application/xml'
-};
+const MIME_MAP = { ...SupportedFileResponseHeaders, ...AdditionalMimeTypes };
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
