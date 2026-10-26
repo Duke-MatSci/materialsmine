@@ -597,6 +597,7 @@ function generateAttributes(
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
 const SDD_BATCH_SIZE = 500;
+const SDD_MATCH_THRESHOLD = 50;
 
 /**
  * Build the sio:hasAttribute array for an SDD nanopub assertion.
@@ -660,10 +661,14 @@ async function buildSddAttributes(distributionLd, npId, logger) {
 
     const csvHeaders = Object.keys(csvRows[0]);
     const { matched, unmatched } = matchDictToHeaders(dictRows, csvHeaders);
+    const totalDictColumns = matched + unmatched.length;
+    const matchPercent = totalDictColumns > 0
+      ? (matched / totalDictColumns) * 100
+      : 0;
 
-    if (matched === 0) {
+    if (matchPercent < SDD_MATCH_THRESHOLD) {
       logger.info(
-        `[sdd-serializer] Skipping ${csvLabel}: no headers match the SDD Dictionary`
+        `[sdd-serializer] Skipping ${csvLabel}: only ${matched}/${totalDictColumns} dict columns matched (${matchPercent.toFixed(1)}%, threshold ${SDD_MATCH_THRESHOLD}%)`
       );
       continue;
     }
@@ -675,7 +680,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     }
 
     logger.info(
-      `[sdd-serializer] Parsed ${csvRows.length} rows from ${csvLabel} (${matched} columns matched)`
+      `[sdd-serializer] Parsed ${csvRows.length} rows from ${csvLabel} (${matched}/${totalDictColumns} columns matched, ${matchPercent.toFixed(1)}%)`
     );
 
     for (let i = 0; i < csvRows.length; i++) allCsvRows.push(csvRows[i]);
@@ -683,7 +688,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
 
   if (!allCsvRows.length) {
     throw new Error(
-      'No CSV files match the SDD Dictionary columns. Check that CSV headers match the Column or Label values in the Dictionary Mapping.'
+      `No CSV files match the SDD Dictionary columns (at least ${SDD_MATCH_THRESHOLD}% of dict columns must match CSV headers). Check that CSV headers match the Column or Label values in the Dictionary Mapping.`
     );
   }
 
@@ -739,6 +744,7 @@ module.exports = {
   buildSddAttributes,
   generateBatches,
   SDD_BATCH_SIZE,
+  SDD_MATCH_THRESHOLD,
   // Exported for testing
   classifyDistributionFiles,
   parseDictSheet,
