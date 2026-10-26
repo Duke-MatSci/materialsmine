@@ -159,17 +159,20 @@
 
             <div class="section_md-header u_display-flex image-detail-page__relatedImg">
               <md-card
-                v-for="(item, index) in distributions"
+                v-for="(item, index) in visibleDistributions"
                 class="md-card-class u--margin-none"
-                :class="`charts-${index + 1} charts-${index + 1}-narrow`"
-                :key="`card_${index}`"
+                :key="`card_${startIndex + index}`"
               >
-                <a :href="optionalChaining(() => item.downloadLink)">
+                <a
+                  :href="optionalChaining(() => item.downloadLink)"
+                  :target="item.isExternal ? '_blank' : '_self'"
+                  :rel="item.isExternal ? 'noopener noreferrer' : undefined"
+                >
                   <md-card-media-cover md-solid>
                     <md-card-media md-ratio="4:3">
-                      <md-icon class="explorer_page-nav-card_icon u_margin-top-small"
-                        >description</md-icon
-                      >
+                      <md-icon class="explorer_page-nav-card_icon u_margin-top-small">
+                        {{ item.isExternal ? 'open_in_new' : 'description' }}
+                      </md-icon>
                     </md-card-media>
 
                     <md-card-area class="u_gridbg">
@@ -179,7 +182,9 @@
                             optionalChaining(() => item.label) || 'Dataset File'
                           }}</strong>
                         </span>
-                        <span class="md-body-1">Click to download</span>
+                        <span class="md-body-1">{{
+                          item.isExternal ? 'Opens in new tab' : 'Click to download'
+                        }}</span>
                       </md-card-header>
                     </md-card-area>
                   </md-card-media-cover>
@@ -189,7 +194,10 @@
 
             <md-button
               id="shareChartBtn"
-              :class="{ 'md-icon-button': true }"
+              :class="{
+                'md-icon-button': true,
+                'u--layout-hide': hideAssetNavRight,
+              }"
               @click.prevent="reduceAsset('next')"
             >
               <md-tooltip> Show Right </md-tooltip>
@@ -328,6 +336,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
+
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import spinner from '@/components/Spinner.vue';
@@ -335,6 +344,7 @@ import TableComponent from '@/components/explorer/TableComponent.vue';
 import Dialog from '@/components/Dialog.vue';
 import { parseFileName } from '@/modules/whyis-dataset';
 import { useDataDictionary } from '@/composables/useDataDictionary';
+import { useFilePagination } from '@/composables/useFilePagination';
 
 defineOptions({
   name: 'DatasetDetailView',
@@ -365,6 +375,7 @@ interface DatasetFields {
 interface Distribution {
   downloadLink?: string;
   label?: string;
+  isExternal?: boolean;
 }
 
 interface RorOrganization {
@@ -381,13 +392,6 @@ const { copyDataDictionary } = useDataDictionary();
 const isAuth = computed(() => store.getters['auth/isAuthenticated']);
 const isAdmin = computed(() => store.getters['auth/isAdmin']);
 const dialogBoxActive = computed(() => store.getters.dialogBox);
-
-// Data from reducer mixin
-const hideAssetNavLeft = ref<boolean>(false);
-const hideAssetNavRight = ref<boolean>(false);
-const screen = ref<number>(0);
-const assetItems = ref<any[]>([]);
-const pushedAssetItem = ref<any[]>([]);
 
 // Component data
 const shareToolTip = ref<string>('Share Dataset');
@@ -410,17 +414,26 @@ const datasetFields = reactive<DatasetFields>({
 });
 
 const distributions = ref<Record<string, Distribution>>({});
+const allDistributions = computed(() => Object.values(distributions.value));
+const {
+  startIndex,
+  visibleItems: visibleDistributions,
+  hideNavLeft: hideAssetNavLeft,
+  hideNavRight: hideAssetNavRight,
+  navigate: reduceAsset,
+  updateNavVisibility,
+} = useFilePagination(allDistributions);
 const organizations = ref<RorOrganization[][]>([]);
 const loading = ref<boolean>(true);
 const dialogLoading = ref<boolean>(false);
-const showDeleteConfirm = ref<boolean>(false);
+// const showDeleteConfirm = ref<boolean>(false);
 const submittingToKG = ref<boolean>(false);
 
 // Computed properties
 const dataset = computed(() => store.getters['explorer/getCurrentDataset']);
 const thumbnail = computed(() => store.getters['explorer/getDatasetThumbnail']);
 const changeLogs = computed(() => store.getters['explorer/curation/getChangeLogs']);
-const routeInfo = computed(() => store.getters.getRouteInfo);
+// const routeInfo = computed(() => store.getters.getRouteInfo);
 
 const doi = computed(() => {
   if (dataset.value?.doi) {
@@ -435,48 +448,11 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T,>(fn: () => T): T | undefined => {
+const optionalChaining = <T>(fn: () => T): T | undefined => {
   try {
     return fn();
   } catch (e) {
     return undefined;
-  }
-};
-
-const reduceAsset = (args: 'prev' | 'next'): boolean | void => {
-  let movedAsset: any;
-
-  if (window.matchMedia('(max-width: 40.5em)').matches) {
-    screen.value = 1;
-  } else if (window.matchMedia('(max-width: 56.25em)').matches) {
-    screen.value = 2;
-  } else {
-    screen.value = 3;
-  }
-
-  if (args === 'prev') {
-    if (!pushedAssetItem.value.length) {
-      hideAssetNavLeft.value = true;
-      return false;
-    } else {
-      hideAssetNavLeft.value = false;
-      movedAsset = pushedAssetItem.value[pushedAssetItem.value.length - 1];
-      assetItems.value.unshift(movedAsset);
-      pushedAssetItem.value.pop();
-    }
-  } else {
-    if (!assetItems.value.length) {
-      hideAssetNavRight.value = true;
-      return false;
-    } else if (assetItems.value.length <= screen.value) {
-      hideAssetNavRight.value = true;
-      return false;
-    } else {
-      hideAssetNavRight.value = false;
-      movedAsset = assetItems.value[0];
-      pushedAssetItem.value.push(movedAsset);
-      assetItems.value.shift();
-    }
   }
 };
 
@@ -537,7 +513,9 @@ const deleteDataset = async (): Promise<void> => {
   try {
     await store.dispatch('explorer/curation/deleteEntityNanopub', dataset.value.identifier);
     const dist = dataset.value.distribution
-      ? Array.isArray(dataset.value.distribution) ? dataset.value.distribution : [dataset.value.distribution]
+      ? Array.isArray(dataset.value.distribution)
+        ? dataset.value.distribution
+        : [dataset.value.distribution]
       : [];
     if (dist.length) {
       await store.dispatch('explorer/curation/deleteEntityFiles', {
@@ -605,11 +583,14 @@ watch(dataset, (newValues, oldValues) => {
   if (newValues?.distribution) {
     for (const index in newValues.distribution) {
       const downloadLink = newValues.distribution[index];
+      const isExternal = !!downloadLink && !downloadLink.includes('/api/files/');
       distributions.value[index] = {
         downloadLink,
         label: parseFileName(downloadLink),
+        isExternal,
       };
     }
+    updateNavVisibility();
   }
 });
 
@@ -621,7 +602,7 @@ onMounted(() => {
 
   if (isAuth.value) {
     store.commit('setSnackbar', {
-      message: 'ℹ️ Click the recycle icon to copy and reuse this dataset\'s SDD link',
+      message: "ℹ️ Click the recycle icon to copy and reuse this dataset's SDD link",
       duration: 15000,
     });
   }
