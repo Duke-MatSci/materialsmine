@@ -159,6 +159,7 @@ module.exports = {
     loadxml: 'loadxml',
     ontology: '/ontology/extract/',
     'validate-ontology': '/ontology/validate/',
+    'inference-status': '/ontology/inference/status/',
     'delete-nanopub': '/ontology/nanopub/',
     'yaml-loader': '/yaml_converter/'
   },
