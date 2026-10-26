@@ -9,6 +9,7 @@ from app.ontology.helpers.extract import details_from_turtle
 from app.ontology.cache_service import check_cache, save_to_cache
 from app.ontology.helpers.validation import DEFAULT_ONTOLOGY_LINK, FREQ_UNITS, _build_shapes_graph, _load_graph_from_text_or_link, _detect_mm_base_iri, _serialize_shacl_results, _collect_resolvable_urls, _head_check
 from app.ontology.helpers.crud import push_to_fuseki, list_named_graphs, upsert_np_graphs_strict_transaction, delete_np_graphs
+from app.ontology.helpers.materialize import materialize_all_types, materialize_nanopub_types, get_materialize_status
 
 ontology = Blueprint("ontology", __name__, url_prefix="/ontology")
 
@@ -161,6 +162,7 @@ def validate_ontology(request_id):
             update_ontology = bool(payload.get("update_ontology", False))
 
             fuseki_update = None
+            materialize_report = None
             if update_ontology:
                 ok, info = push_to_fuseki(ontology_graph, ontology_format, graph_uri=graph_uri, replace=True)
                 fuseki_update = {"ok": ok, **info}
@@ -172,12 +174,17 @@ def validate_ontology(request_id):
                         "ontology_report": ontology_report,
                     }), 502
 
+                if ok:
+                    mat_ok, mat_info = materialize_all_types(logger=app.logger)
+                    materialize_report = {"ok": mat_ok, **mat_info}
+
             response_body = {
                 "multi": False,
                 "response": {
                     "mode": "ontology-only",
                     "ontology_report": ontology_report,
                     "fuseki_update": fuseki_update,
+                    "materialize": materialize_report,
                 },
             }
             end_time = datetime.datetime.now()
@@ -279,6 +286,9 @@ def validate_ontology(request_id):
                 "result": strict_report,
             }
 
+            mat_ok, mat_info = materialize_nanopub_types(data_text or "", logger=app.logger)
+            persistence_report["materialize"] = {"ok": mat_ok, **mat_info}
+
         # --- Build response
         response_body = {
             "multi": True,
@@ -354,3 +364,18 @@ def delete_nanopub(request_id):
 
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+
+
+@ontology.route("/inference/status/", methods=["GET"])
+@log_errors
+@request_logger
+@token_required
+def inference_status(request_id):
+    """
+    GET /ontology/inference/status/
+
+    Returns the current state of the background type materialization job.
+    States: idle, running, completed, failed.
+    """
+    status = get_materialize_status()
+    return jsonify(status), 200
