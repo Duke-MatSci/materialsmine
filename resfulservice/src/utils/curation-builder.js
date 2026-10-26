@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 /* eslint-disable space-before-function-paren */
 const CH = require('./curation-utility'); // Curation Helper
-const { MM_BASE, NP_BASE } = require('../../config/constant');
+const { MM_BASE, NP_BASE, OUTPUT_CONTEXT } = require('../../config/constant');
 const jsonld = require('jsonld');
 const {
   manageServiceRequest
@@ -28,22 +28,6 @@ const {
  * - We emit sio:hasAttribute/hasValue/hasUnit explicitly.
  * - All nodes use @id / @type.
  */
-const OUTPUT_CONTEXT = {
-  mm: MM_BASE,
-  schema: 'http://schema.org/',
-  sio: 'http://semanticscience.org/resource/',
-  prov: 'http://www.w3.org/ns/prov#',
-  dct: 'http://purl.org/dc/terms/',
-  dcat: 'http://www.w3.org/ns/dcat#',
-  np: 'http://www.nanopub.org/nschema#',
-  unit: 'http://qudt.org/vocab/unit/',
-  pav: 'http://purl.org/pav/',
-  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-  xsd: 'http://www.w3.org/2001/XMLSchema#',
-  purl: 'http://purl.org/net/provenance/ns#',
-  foaf: 'http://xmlns.com/foaf/0.1/',
-  skos: 'http://www.w3.org/2004/02/skos/core#'
-};
 
 /* ------------------------ Article/meta extraction (for prov/pubinfo) ------------------------ */
 async function buildArticle(common, logger) {
@@ -3178,7 +3162,8 @@ async function transformXmlToNanopub(xmlObj, logger) {
 
 /* ------------------------ Serialize ------------------------ */
 async function toJsonLd(nanopub) {
-  const compact = await jsonld.compact(nanopub, OUTPUT_CONTEXT, {
+  const ctx = nanopub['@context'] || OUTPUT_CONTEXT;
+  const compact = await jsonld.compact(nanopub, ctx, {
     compactArrays: true
   });
   return JSON.stringify(compact, null, 2);
@@ -3186,21 +3171,8 @@ async function toJsonLd(nanopub) {
 
 async function toTurtleAssertionOnly(nanopub, assertionId) {
   const nquads = await jsonld.toRDF(nanopub, { format: 'application/n-quads' });
-  const writer = new Writer({
-    prefixes: {
-      mm: MM_BASE,
-      schema: 'http://schema.org/',
-      sio: 'http://semanticscience.org/resource/',
-      prov: 'http://www.w3.org/ns/prov#',
-      dct: 'http://purl.org/dc/terms/',
-      dcat: 'http://www.w3.org/ns/dcat#',
-      pav: 'http://purl.org/pav/',
-      unit: 'http://qudt.org/vocab/unit/',
-      np: 'http://www.nanopub.org/nschema#',
-      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-      xsd: 'http://www.w3.org/2001/XMLSchema#'
-    }
-  });
+  const prefixes = nanopub['@context'] || OUTPUT_CONTEXT;
+  const writer = new Writer({ prefixes });
   const lines = nquads.split('\n').filter(Boolean);
   for (const line of lines) {
     const m = line.match(/^(<[^>]+>)\s+(<[^>]+>)\s+(.+?)\s+(<[^>]+>)\s*\.\s*$/);
@@ -3230,22 +3202,8 @@ async function toTurtleAssertionOnly(nanopub, assertionId) {
 
 async function toTriG(nanopub) {
   const nquads = await jsonld.toRDF(nanopub, { format: 'application/n-quads' });
-  const writer = new Writer({
-    format: 'application/trig',
-    prefixes: {
-      mm: MM_BASE,
-      schema: 'http://schema.org/',
-      sio: 'http://semanticscience.org/resource/',
-      prov: 'http://www.w3.org/ns/prov#',
-      dct: 'http://purl.org/dc/terms/',
-      dcat: 'http://www.w3.org/ns/dcat#',
-      pav: 'http://purl.org/pav/',
-      unit: 'http://qudt.org/vocab/unit/',
-      np: 'http://www.nanopub.org/nschema#',
-      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-      xsd: 'http://www.w3.org/2001/XMLSchema#'
-    }
-  });
+  const prefixes = nanopub['@context'] || OUTPUT_CONTEXT;
+  const writer = new Writer({ format: 'application/trig', prefixes });
 
   const lines = nquads.split('\n').filter(Boolean);
   for (const line of lines) {
@@ -3436,7 +3394,12 @@ async function transformSddToNanopub(skeleton, logger) {
   // Parse SDD + CSV files (does NOT generate attributes yet — that happens per batch)
   const sddParsed = distribution
     ? await buildSddAttributes(distribution, npId, logger)
-    : { allCsvRows: [], dictRows: [], codeMappings: new Map() };
+    : { allCsvRows: [], dictRows: [], codeMappings: new Map(), prefixes: {} };
+
+  // Merge SDD Prefixes sheet into the JSON-LD context so prefixed IRIs expand correctly
+  const sddContext = Object.keys(sddParsed.prefixes || {}).length
+    ? { ...OUTPUT_CONTEXT, ...sddParsed.prefixes }
+    : OUTPUT_CONTEXT;
 
   // Generate batches of sample nodes
   const batches = generateBatches(sddParsed.allCsvRows, sddParsed.dictRows, npId, undefined, sddParsed.codeMappings);
@@ -3518,7 +3481,7 @@ async function transformSddToNanopub(skeleton, logger) {
 
   // Final document
   const doc = {
-    '@context': OUTPUT_CONTEXT,
+    '@context': sddContext,
     '@graph': [
       {
         '@id': `${canonicalNpId}#head`,
@@ -3560,7 +3523,7 @@ async function transformSddToNanopub(skeleton, logger) {
     remainingBatches,
     totalBatches: batches.length,
     // Metadata needed to build batch nanopubs
-    _batchMeta: { baseId, distribution, depiction, npId, assertionId }
+    _batchMeta: { baseId, distribution, depiction, npId, assertionId, sddContext }
   };
 }
 
@@ -3570,7 +3533,7 @@ async function transformSddToNanopub(skeleton, logger) {
  * The other graphs (head, provenance, pubinfo) are omitted — they were persisted with batch 1.
  */
 function buildBatchNanopub(batchSamples, batchMeta) {
-  const { baseId, distribution, depiction, npId, assertionId } = batchMeta;
+  const { baseId, distribution, depiction, npId, assertionId, sddContext = OUTPUT_CONTEXT } = batchMeta;
 
   const sample = {
     '@id': baseId,
@@ -3581,7 +3544,7 @@ function buildBatchNanopub(batchSamples, batchMeta) {
   };
 
   return {
-    '@context': OUTPUT_CONTEXT,
+    '@context': sddContext,
     '@graph': [
       {
         '@id': assertionId,

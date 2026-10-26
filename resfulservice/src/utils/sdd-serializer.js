@@ -8,7 +8,11 @@ const {
   MinioBucket,
   UNIT_IRI,
   FILE_FORMATS: FILE_FORMATS_ARR,
-  SupportedFileResponseHeaders
+  SupportedFileResponseHeaders,
+  SDD_SHEET_NAMES,
+  SDD_DICT_COLUMNS,
+  SDD_BATCH_SIZE,
+  SDD_MATCH_THRESHOLD
 } = require('../../config/constant');
 const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
 
@@ -345,27 +349,32 @@ function getExtension(filename) {
 
 /* ────────────────────── XLSX parsing ────────────────────────── */
 
-const DICT_SHEET_NAME = 'Dictionary Mapping';
-const DICT_COLUMNS = [
-  'column',
-  'label',
-  'comment',
-  'definition',
-  'attribute',
-  'attributeOf',
-  'unit',
-  'format',
-  'time',
-  'entity',
-  'role',
-  'relation',
-  'inRelationTo',
-  'wasDerivedFrom',
-  'wasGeneratedBy',
-  'template'
-];
+const { DICTIONARY: DICT_SHEET_NAME, CODE_MAPPINGS: CODE_MAPPINGS_SHEET_NAME, PREFIXES: PREFIXES_SHEET_NAME } = SDD_SHEET_NAMES;
 
-const CODE_MAPPINGS_SHEET_NAME = 'Code Mappings';
+/**
+ * Parse the Prefixes sheet from an XLSX workbook.
+ * Returns a plain object mapping prefix → namespace URI,
+ * e.g. { obo: 'http://purl.obolibrary.org/obo/' }.
+ * @param {Object} workbook - Parsed XLSX workbook
+ * @returns {Object<string, string>}
+ */
+function parsePrefixesSheet(workbook) {
+  const prefixes = {};
+  const sheet = workbook.Sheets[PREFIXES_SHEET_NAME];
+  if (!sheet) return prefixes;
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!Array.isArray(row)) continue;
+    const prefix = row[0] != null ? String(row[0]).trim() : '';
+    const url = row[1] != null ? String(row[1]).trim() : '';
+    if (prefix && url) {
+      prefixes[prefix] = url;
+    }
+  }
+  return prefixes;
+}
 
 /**
  * Parse the Code Mappings sheet from an XLSX workbook.
@@ -429,7 +438,7 @@ function parseDictSheet(buffer) {
     if (!Array.isArray(row)) continue;
 
     const entry = {};
-    DICT_COLUMNS.forEach((col, idx) => {
+    SDD_DICT_COLUMNS.forEach((col, idx) => {
       entry[col] = row[idx] != null ? String(row[idx]).trim() : '';
     });
 
@@ -440,8 +449,9 @@ function parseDictSheet(buffer) {
   }
 
   const codeMappings = parseCodeMappingsSheet(workbook);
+  const prefixes = parsePrefixesSheet(workbook);
 
-  return { dictRows, codeMappings };
+  return { dictRows, codeMappings, prefixes };
 }
 
 /* ────────────────────── Attribute generation ────────────────── */
@@ -596,9 +606,6 @@ function generateAttributes(
 
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
-const SDD_BATCH_SIZE = 500;
-const SDD_MATCH_THRESHOLD = 50;
-
 /**
  * Build the sio:hasAttribute array for an SDD nanopub assertion.
  *
@@ -632,9 +639,9 @@ async function buildSddAttributes(distributionLd, npId, logger) {
   logger.info(`[sdd-serializer] Fetching SDD file: ${sddUrl}`);
   const sddStream = await fetchFileStream(sddUrl);
   const sddBuffer = await streamToBuffer(sddStream);
-  const { dictRows, codeMappings } = parseDictSheet(sddBuffer);
+  const { dictRows, codeMappings, prefixes } = parseDictSheet(sddBuffer);
   logger.info(
-    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows, ${codeMappings.size} code mappings from SDD`
+    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows, ${codeMappings.size} code mappings, ${Object.keys(prefixes).length} prefixes from SDD`
   );
 
   if (!dictRows.length) {
@@ -707,7 +714,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     logger
   );
 
-  return { allCsvRows: resolvedCsvRows, dictRows, codeMappings };
+  return { allCsvRows: resolvedCsvRows, dictRows, codeMappings, prefixes };
 }
 
 /**
@@ -749,6 +756,7 @@ module.exports = {
   classifyDistributionFiles,
   parseDictSheet,
   parseCodeMappingsSheet,
+  parsePrefixesSheet,
   resolveCodeMapping,
   generateAttributes,
   generateAttributeId,
