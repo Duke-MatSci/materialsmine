@@ -181,3 +181,27 @@ def materialize_nanopub_types(jsonld_text: str, logger=None) -> Tuple[bool, Dict
             logger.error(f"[materialize] Failed to materialize nanopub types: {info}")
 
     return ok, {**info, "instances_processed": len(instance_types)}
+
+
+def cleanup_inferred_types(entity_uri: str, logger=None) -> Tuple[bool, Dict[str, Any]]:
+    """
+    After a nanopub is deleted, remove its inferred rdf:type triples
+    from the inferred graph. Matches any subject that starts with the
+    nanopub's entity URI (covers the base ID and all fragment paths).
+    """
+    sparql = f"""
+    DELETE WHERE {{
+        GRAPH <{INFERRED_GRAPH}> {{
+            ?x a ?type .
+            FILTER (STRSTARTS(STR(?x), "{entity_uri}"))
+        }}
+    }}
+    """
+    ok, info = _fuseki_update(sparql)
+    if logger:
+        if ok:
+            logger.info(f"[materialize] Cleaned up inferred types for {entity_uri}")
+        else:
+            logger.error(f"[materialize] Failed to clean up inferred types: {info}")
+
+    return ok, {**info, "entity_uri": entity_uri}
