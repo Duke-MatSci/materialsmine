@@ -1892,6 +1892,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Server-Error'
+  /mn/inference-status:
+    get:
+      security:
+        - BearerAuth: []
+      summary: Get RDFS type inference status
+      description: Returns the current state of the background RDFS type materialization job. After an ontology update triggers materialization, poll this endpoint to check progress. States are idle (no job has run), running (job in progress), completed (finished successfully with triple count), or failed (finished with error).
+      tags:
+        - Managed Services
+      responses:
+        '200':
+          description: Current inference status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  state:
+                    type: string
+                    enum: [idle, running, completed, failed]
+                    description: Current state of the materialization job
+                  started_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: UTC timestamp when the job started
+                  completed_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: UTC timestamp when the job finished
+                  inferred_triples:
+                    type: integer
+                    nullable: true
+                    description: Number of inferred triples in the graph (available on completion)
+                  error:
+                    type: string
+                    nullable: true
+                    description: Error message if the job failed
+              example:
+                state: completed
+                started_at: "2026-10-26T14:30:00Z"
+                completed_at: "2026-10-26T14:30:45Z"
+                inferred_triples: 1842
+                error: null
+        '401':
+          description: Unauthorized access to this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized-Error'
   /mn/validate-ontology:
     post:
       security:

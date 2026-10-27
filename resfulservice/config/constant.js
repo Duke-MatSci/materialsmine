@@ -96,6 +96,12 @@ module.exports = {
     '.tsv': 'text/tab-separated-values',
     '.npy': 'application/octet-stream'
   },
+  AdditionalMimeTypes: {
+    '.txt': 'text/plain',
+    '.webp': 'image/webp',
+    '.xml': 'application/xml',
+    '.xls': 'application/vnd.ms-excel'
+  },
   colorAssignment: [
     '#FFB347',
     '#8A8BD0',
@@ -159,6 +165,7 @@ module.exports = {
     loadxml: 'loadxml',
     ontology: '/ontology/extract/',
     'validate-ontology': '/ontology/validate/',
+    'inference-status': '/ontology/inference/status/',
     'delete-nanopub': '/ontology/nanopub/',
     'yaml-loader': '/yaml_converter/'
   },
@@ -213,5 +220,49 @@ module.exports = {
     um: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Micrometre',
     hz: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Hertz'
   },
-  FILE_FORMATS: ['file', 'url']
+  FILE_FORMATS: ['file', 'url'],
+
+  OUTPUT_CONTEXT: {
+    mm: 'http://materialsmine.org/resource/',
+    schema: 'http://schema.org/',
+    sio: 'http://semanticscience.org/resource/',
+    obo: 'http://purl.obolibrary.org/obo/',
+    prov: 'http://www.w3.org/ns/prov#',
+    dct: 'http://purl.org/dc/terms/',
+    dcat: 'http://www.w3.org/ns/dcat#',
+    np: 'http://www.nanopub.org/nschema#',
+    unit: 'http://qudt.org/vocab/unit/',
+    pav: 'http://purl.org/pav/',
+    rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+    xsd: 'http://www.w3.org/2001/XMLSchema#',
+    purl: 'http://purl.org/net/provenance/ns#',
+    foaf: 'http://xmlns.com/foaf/0.1/',
+    skos: 'http://www.w3.org/2004/02/skos/core#'
+  },
+
+  SDD_SHEET_NAMES: {
+    DICTIONARY: 'Dictionary Mapping',
+    CODE_MAPPINGS: 'Code Mappings',
+    PREFIXES: 'Prefixes'
+  },
+  SDD_DICT_COLUMNS: [
+    'column',
+    'label',
+    'comment',
+    'definition',
+    'attribute',
+    'attributeOf',
+    'unit',
+    'format',
+    'time',
+    'entity',
+    'role',
+    'relation',
+    'inRelationTo',
+    'wasDerivedFrom',
+    'wasGeneratedBy',
+    'template'
+  ],
+  SDD_BATCH_SIZE: 500,
+  SDD_MATCH_THRESHOLD: 50
 };
