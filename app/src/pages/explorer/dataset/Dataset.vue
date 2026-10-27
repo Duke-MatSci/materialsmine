@@ -448,13 +448,13 @@ const fullDatasetUri = computed(() => {
 });
 
 // Methods from optional-chaining-util mixin
-const optionalChaining = <T>(fn: () => T): T | undefined => {
+function optionalChaining(fn: () => any): any {
   try {
     return fn();
   } catch (e) {
     return undefined;
   }
-};
+}
 
 // Component methods
 const loadDataset = async (): Promise<void> => {
