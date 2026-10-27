@@ -2033,8 +2033,9 @@ exports.curationETL = async (req, res, next) => {
         const defaultId = `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2)}`;
-        const { rawXml, id = defaultId } = await CH.getText(src);
+        const { rawXml, id = defaultId } = await CH.getText(src, { requireApproval: true });
         idForFailure = id;
+
         const xml = CH.normalizeXml(rawXml);
 
         // XSD validation
@@ -2569,8 +2570,13 @@ const createBaseSchema = (baseObject, storedObject, logger) => {
 };
 
 exports.deleteDataset = async (req, res, next) => {
-  const { logger } = req;
+  const { logger, user } = req;
   logger.info('deleteDataset(): Function Entry');
+
+  if (user?.roles !== userRoles.isAdmin) {
+    return next(errorWriter(req, 'Admin access required', 'deleteDataset', 403));
+  }
+
   const { id } = req.params;
 
   if (!id) {

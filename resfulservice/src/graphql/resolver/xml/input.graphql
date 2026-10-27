@@ -60,4 +60,9 @@ input xmlViewerInput {
   A Boolean value to specify it is new curation
   """
   isNewCuration: Boolean
+
+  """
+  When true, the resolver will reject curations that have not been approved
+  """
+  requireApproval: Boolean
 }

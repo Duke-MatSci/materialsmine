@@ -16,10 +16,12 @@ from app.utils.util import log_errors
 
 from .prony import prony_terms_for_span
 from .fit import smooth_prony_fit
+from .reduction import prony_rank_limit, prony_resolution
 from .tts import tts_frequency_to_temperature_V2, tts_temperature_to_frequency_V2
 from .figures import (
     _annotate_decimation,
     _annotate_fit_quality,
+    _annotate_grid_suggestion,
     _build_coef_records,
     _build_complex_figures,
     _build_relaxation_figures,
@@ -94,16 +96,31 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         fig11 (plotly.graph_objects.Figure): The updated line chart.
         fig2 (plotly.graph_objects.Figure): The scatter plot.
         fig3 (plotly.graph_objects.Figure): The updated scatter plot.
+            When the fit reports a covariance (smoothed fits), fig1, fig11
+            and fig2 carry 1-sigma credible ribbons and fig3 error bars,
+            plus a band on its long-term-modulus line when the covariance
+            carries the equilibrium row;
+            fig1 and fig11 also carry 1-sigma prediction ribbons. The Prony
+            curves and ribbons on fig1, fig11 and fig2 run past the data
+            window (see figures._DRAW_EXTENSION_DECADES). fig1 and fig11
+            are captioned with the fit-quality readout, a decimation notice
+            when the traces were thinned, and a suggested relaxation grid
+            size when the data resolves more terms than the grid the fit ran
+            with (figures._annotate_grid_suggestion).
         fig4 (plotly.graph_objects.Figure): The temperature line chart. Empty in
             the frequency domain when no transform was requested (see shift_model).
         fig41 (plotly.graph_objects.Figure): The tandelta temperature updated line chart.
             Empty under the same condition as fig4.
-        coef_df (List[Dict[str, Union[float, int]]]): The coefficients.
+        coef_df (List[Dict[str, Union[float, int]]]): The coefficients
+            (see _build_coef_records); with a covariance each row also
+            carries its 1-sigma bounds, 'E_i_lower' and 'E_i_upper'.
         fig5 (plotly.graph_objects.Figure): The shift-factor figure (a_T vs
             Temperature): uploaded shift factors as markers and/or the
             WLF/hybrid model curve. Empty when no transform was requested or
             nothing is drawable (see _build_shift_figure).
         shift_records (list): The table behind fig5; [] when fig5 is empty.
+        max_prony (int or None): reduction.prony_rank_limit on the master
+            curve the fit consumed; None on the temperature preview.
 
     Raises:
         ValueError: If the uploaded data is empty, contains non-finite values,
@@ -225,7 +242,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             return (
                 empty, empty, empty, empty, fig4, fig41,
                 pd.DataFrame(columns=["tau_i", "E_i"]).to_dict("records"),
-                shift_fig, shift_records,
+                shift_fig, shift_records, None,
             )
 
         freq_sweep_data = tts_temperature_to_frequency_V2(
@@ -267,6 +284,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
 
     E_stor_arr = df['E Storage'].to_numpy()
     E_loss_arr = df['E Loss'].to_numpy()
+    mag = np.abs(E_stor_arr + 1.0j * E_loss_arr)
     # std_scale carries relative_error/error_scale INSTEAD of baking either
     # into the array. The sigma array is then identical on every move of the
     # error widget, so all of them share one cached reduction; folding the
@@ -281,11 +299,14 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         E_loss_std = E_stor_std
         std_scale = error_scale
     else:
-        E_stor_std = np.abs(E_stor_arr + 1.0j * E_loss_arr)
+        E_stor_std = mag
         E_loss_std = E_stor_std
         std_scale = relative_error
+    omega_arr = df['Frequency'].to_numpy()
+    max_prony = prony_rank_limit(omega_arr, E_stor_arr, E_loss_arr,
+                                 E_stor_std, E_loss_std, std_scale=std_scale)
     tau_i, E_i, fit_quality = smooth_prony_fit(
-        omega=df['Frequency'].to_numpy(),
+        omega=omega_arr,
         E_stor=E_stor_arr,
         E_loss=E_loss_arr,
         E_stor_std=E_stor_std,
@@ -295,10 +316,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     )
     # Decaying terms only. The equilibrium coefficient is a separate parameter,
     # not a relaxation mode: it has no tau_i, it is excluded from the smoothness
-    # penalty, the coefficient table drops it, and fig3 draws it as its own
-    # long-term-modulus trace. Counting it inflated every "N-Term Prony" label by
-    # one on the smoothed path, where exp(logcoefs) is never exactly zero — so a
-    # 23-point grid was labelled 24 terms while the table below listed 23.
+    # penalty, the coefficient table gives it its own 'inf' row, and fig3 draws
+    # it as its own long-term-modulus trace. Counting it would label a 23-point
+    # grid 24 terms on the smoothed path, where exp(logcoefs) is never zero.
     N_nz = np.count_nonzero(E_i[len(E_i) - len(tau_i):])
 
     # Downstream figure builders assume df's first three columns are
@@ -307,13 +327,23 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     # (figures only — the fit above already consumed every row).
     df = df[['Frequency', 'E Storage', 'E Loss']]
     plot_df, freq_decimation = _decimate_for_plot(df)
-    fig1, fig11 = _build_complex_figures(plot_df, tau_i, E_i, N_nz)
-    # Order sets the rows: the readout takes the one nearest the plot and the
-    # decimation notice stacks above it. See _stamp_notice.
+    noise = (omega_arr, E_stor_std * std_scale / mag,
+             E_loss_std * std_scale / mag)
+    fig1, fig11 = _build_complex_figures(
+        plot_df, tau_i, E_i, N_nz, fit_quality.covariance, noise)
+    resolution = prony_resolution(
+        omega_arr, E_stor_arr, E_loss_arr, E_stor_std, E_loss_std,
+        tau_i, E_i, smoothness, std_scale=std_scale)
+    # Order sets the rows: the readout takes the one nearest the plot, the
+    # decimation notice stacks above it and the grid suggestion above both.
+    # See _stamp_notice.
     _annotate_fit_quality((fig1, fig11), fit_quality)
     _annotate_decimation((fig1, fig11), freq_decimation)
-    fig2, fig3 = _build_relaxation_figures(tau_i, E_i, N_nz, fit_settings)
-    coef_records = _build_coef_records(tau_i, E_i)
+    _annotate_grid_suggestion((fig1, fig11), len(tau_i), resolution,
+                              max_prony)
+    fig2, fig3 = _build_relaxation_figures(
+        tau_i, E_i, N_nz, fit_settings, fit_quality.covariance)
+    coef_records = _build_coef_records(tau_i, E_i, fit_quality.covariance)
 
     return (fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
-            shift_fig, shift_records)
+            shift_fig, shift_records, max_prony)

@@ -40,7 +40,7 @@ services:
     networks: [mm-net]
   minio:
     container_name: minio
-    image: minio/minio
+    image: pgsty/silo
     command: server --console-address ":9001" /data
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}

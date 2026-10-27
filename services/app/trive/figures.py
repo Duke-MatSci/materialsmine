@@ -1,12 +1,14 @@
 """
 Everything that turns fit results into the payload the browser renders: the
-plotly figures, the captions stamped on them, the thinning that keeps a
+plotly figures, the captions stamped on them, the 1-sigma credible and prediction ribbons and spectrum error bars a smoothed fit's covariance adds, the thinning that keeps a
 41k-row upload from bloating the response, and the coefficient table that
 accompanies the figures.
 
 Presentation only — nothing here changes a number the fit produced. `chart`
 orchestrates the calls; the figures go out as JSON via the route.
 """
+
+import math
 
 import numpy as np
 import pandas as pd
@@ -16,6 +18,11 @@ import plotly.graph_objects as go
 from .prony import compute_complex, compute_relaxation_modulus
 from .shift import hybrid_shift, wlf_log10_shift
 from .tts import MAX_ABS_LOG10_SHIFT
+from .uncertainty import (
+    _SIGMA_DISPLAY_CAP, coefficient_bounds, complex_modulus_noise,
+    complex_modulus_sigma, relaxation_sigma, sigma_log_coefficients,
+    spectrum_error_bars,
+)
 
 
 # Experiment traces with more rows than this are thinned before plotting —
@@ -25,7 +32,8 @@ from .tts import MAX_ABS_LOG10_SHIFT
 # ~2000 points per trace is far denser than any screen resolves.
 _PLOT_MAX_POINTS = 2000
 
-# Figure notices — the decimation warning and the fit-quality readout — are gray
+# Figure notices — the fit-quality readout, the decimation warning and the
+# grid-size suggestion — are gray
 # right-aligned captions in paper coordinates above the plot, one per row. They
 # cannot share a row: each runs 85-100 characters, so even anchored to opposite
 # edges they collided in the middle at every width the frontend renders at. Row
@@ -112,7 +120,7 @@ def _annotate_decimation(figs, percent) -> None:
     Stamp a decimation notice onto each figure when plot thinning occurred.
 
     No-op when percent is None. Stamped after the fit-quality readout, so on
-    the figures that carry both this one takes the upper row: it says the same
+    the figures that carry both this one takes the row above it: it says the same
     thing on every slider move, where the readout is the number being watched.
 
     Parameters:
@@ -124,6 +132,38 @@ def _annotate_decimation(figs, percent) -> None:
     _stamp_notice(figs, (
         f"too many data points, plot traces decimated by {percent}% for speed"
         " (the fit uses all points)"
+    ))
+
+
+def _annotate_grid_suggestion(figs, requested_n, resolution, max_prony) -> None:
+    """
+    Suggest a finer relaxation grid when the data resolves more terms than
+    were requested.
+
+    Suggests min(max_prony, ceil(1.5 * resolution)): a grid needs nodes
+    around each resolved direction to place it, and past the numerical rank
+    extra nodes are redundant. No-op when either count is None, when the
+    request already meets the resolution, or when the cap leaves nothing to
+    raise. Stamped last, so it takes the top row.
+
+    Parameters:
+        figs: Iterable of plotly Figures to annotate.
+        requested_n (int): The Prony term count the fit ran with.
+        resolution (float or None): reduction.prony_resolution; rounded to
+            whole terms before it is compared or scaled.
+        max_prony (int or None): The numerical-rank cap on the grid size.
+    """
+    if resolution is None or max_prony is None:
+        return
+    resolution = int(round(resolution))
+    if requested_n >= resolution:
+        return
+    n_suggest = min(int(max_prony), int(math.ceil(1.5 * resolution)))
+    if n_suggest <= requested_n:
+        return
+    _stamp_notice(figs, (
+        "if the error profile is accurate, the data can support more terms;"
+        f" try a relaxation grid size of {n_suggest}"
     ))
 
 
@@ -154,7 +194,7 @@ def _annotate_fit_quality(figs, quality) -> None:
         parts.append(f"curvature (⟨H″²⟩) = {quality.curvature:.3g}")
     if quality.neg_log_posterior is not None:
         parts.append(
-            f"surprisal (−log π(λ)) = {quality.neg_log_posterior:.4g}"
+            f"surprisal (−log π(s²)) = {quality.neg_log_posterior:.4g}"
         )
     if not parts:
         return
@@ -186,6 +226,138 @@ def _place_tan_delta_axis(fig) -> None:
     """
     fig.update_yaxes(side='right', col=2)
     fig.update_layout(legend_x=1.10)
+
+
+# Legend names of the +-1 sigma credible and prediction ribbons, and their
+# shared fill opacity.
+_CREDIBLE_BAND = '±1σ credible'
+_PREDICTION_BAND = '±1σ prediction'
+_BAND_ALPHA = 0.25
+
+# Long-term modulus line color (plotly's second default), so its band can
+# be filled in the same family.
+_PLATEAU_COLOR = '#EF553B'
+
+
+def _rgba(color: str, alpha: float) -> str:
+    """'#rrggbb' or 'rgb(r,g,b)' as an rgba() string with the given alpha."""
+    color = color.strip()
+    if color.startswith('#') and len(color) == 7:
+        r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+        return f'rgba({r},{g},{b},{alpha})'
+    if color.startswith('rgb(') and color.endswith(')'):
+        return f'rgba({color[4:-1]},{alpha})'
+    return color
+
+
+def _band_pair(x, y, sigma, log_y: bool, xaxis: str, yaxis: str,
+               name: str, fillcolor: str, showlegend: bool) -> tuple:
+    """
+    The (lower, upper) go.Scatter edges of a +-1 sigma ribbon around y.
+
+    sigma is capped at y (e^cap - 1) so a poorly constrained tail cannot
+    blow up a log axis. On log panels the lower edge y^2 / (y + capped sigma)
+    is positive and log-symmetric with the upper; linear panels use
+    max(y - sigma, 0).
+
+    Returns:
+        tuple: (lower, upper); upper fills to the trace before it.
+    """
+    y = np.asarray(y, dtype=float)
+    sigma = np.asarray(sigma, dtype=float)
+    capped = np.minimum(sigma, y * np.expm1(_SIGMA_DISPLAY_CAP))
+    upper = y + capped
+    lower = y * y / (y + capped) if log_y else np.maximum(y - sigma, 0.0)
+    common = dict(x=x, mode='lines', line=dict(width=0), hoverinfo='skip',
+                  name=name, legendgroup=name, xaxis=xaxis, yaxis=yaxis)
+    return (go.Scatter(y=lower, showlegend=False, **common),
+            go.Scatter(y=upper, fill='tonexty', fillcolor=fillcolor,
+                       showlegend=showlegend, **common))
+
+
+def _prony_trace(fig, xaxis: str):
+    """The Prony overlay trace on the given x axis."""
+    return next(t for t in fig.data
+                if 'Term Prony' in (t.name or '') and t.xaxis == xaxis)
+
+
+def _add_traces_underneath(fig, traces) -> None:
+    """Add traces drawn under every trace already on fig."""
+    # plotly takes new traces only by appending; rotate them to the front.
+    fig.add_traces(traces)
+    n = len(traces)
+    fig.data = fig.data[-n:] + fig.data[:-n]
+
+
+def _add_ribbons(fig, facets, name=_CREDIBLE_BAND, color=None) -> None:
+    """
+    Draw ribbons around the Prony curve, under every other trace.
+
+    Parameters:
+        fig: Figure carrying the Prony overlay.
+        facets: (xaxis, yaxis, sigma, log_y) per ribbon, sigma evaluated at
+            the x of that facet's Prony trace. One legend entry covers all.
+        name (str): Legend name of the ribbons.
+        color (str): Line color the fill is made from; None takes the
+            Prony overlay's.
+    """
+    if color is None:
+        color = _prony_trace(fig, 'x').line.color
+    fill = _rgba(color, _BAND_ALPHA)
+    traces = []
+    for k, (xaxis, yaxis, sigma, log_y) in enumerate(facets):
+        curve = _prony_trace(fig, xaxis)
+        traces.extend(_band_pair(curve.x, curve.y, sigma, log_y, xaxis, yaxis,
+                                 name, fill, showlegend=k == 0))
+    _add_traces_underneath(fig, traces)
+
+
+# Decades the drawn Prony curves run past the data window on each side.
+# Display only: the series has no terms out there.
+_DRAW_EXTENSION_DECADES = 1.0
+
+# Margin added to each end of a pinned y range, as a fraction of its span.
+_PIN_MARGIN = 0.05
+
+# Window edges come from 1/omega of the data extremes, so an edge point can
+# miss a strict comparison by an ulp.
+_WINDOW_RTOL = 1e-9
+
+
+def _pin_y_ranges(fig, lo: float, hi: float) -> None:
+    """
+    Set each y axis's range from its traces' points inside the window.
+
+    The Prony curve is drawn past the window, where its tails would rescale
+    the plot; the range instead brackets every trace's points at
+    lo <= x <= hi (each edge loosened by _WINDOW_RTOL), plus a small margin.
+    Matched axes
+    share their governing axis's range. An axis with no usable values stays
+    on autorange.
+
+    Parameters:
+        fig: Figure carrying the extended Prony overlay.
+        lo (float): Lower x edge of the data window.
+        hi (float): Upper x edge of the data window.
+    """
+    groups = {}
+    lo, hi = lo * (1 - _WINDOW_RTOL), hi * (1 + _WINDOW_RTOL)
+    for t in fig.data:
+        axis = fig.layout['yaxis' + (t.yaxis or 'y')[1:]]
+        key = axis.matches or t.yaxis or 'y'
+        x = np.asarray(t.x, dtype=float)
+        y = np.asarray(t.y, dtype=float)
+        keep = (x >= lo) & (x <= hi) & np.isfinite(y)
+        groups.setdefault(key, []).append(y[keep])
+    for key, values in groups.items():
+        axis = fig.layout['yaxis' + key[1:]]
+        y = np.concatenate(values)
+        if axis.type == 'log':
+            y = np.log10(y[y > 0])
+        if y.size == 0 or y.min() == y.max():
+            continue
+        pad = _PIN_MARGIN * (y.max() - y.min())
+        axis.range = [y.min() - pad, y.max() + pad]
 
 
 def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
@@ -244,9 +416,13 @@ def _build_temperature_figures(temp_sweep_data: pd.DataFrame) -> tuple:
 
 
 def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
-                           N_nz: int) -> tuple:
+                           N_nz: int, covariance=None, noise=None) -> tuple:
     """
     Build E vs frequency and tan-delta vs frequency figures with Prony overlay.
+
+    The overlay and its ribbons run _DRAW_EXTENSION_DECADES past
+    1/max(tau_i)..1/min(tau_i) on each side; the y ranges are pinned to
+    that window (_pin_y_ranges).
 
     Parameters:
         df (pd.DataFrame): Experimental data with columns
@@ -254,14 +430,24 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
         N_nz (int): Number of nonzero DECAYING Prony coefficients, i.e. the
-            equilibrium term excluded; used in trace names. Matches the row
-            count of the coefficient table _build_coef_records returns.
+            equilibrium term excluded; used in trace names. Matches the count
+            of rows with a numeric tau_i in the table _build_coef_records
+            returns.
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; when given, both figures carry +-1 sigma credible ribbons.
+        noise (tuple): (omega_data, rel_stor, rel_loss), the relative
+            measurement error the fit ran with, or None; with a covariance,
+            both figures also carry +-1 sigma prediction ribbons.
 
     Returns:
         tuple: (fig1, fig11) where fig1 is E' / E'' vs Frequency and fig11 is
         E' / tan-delta vs Frequency.
     """
-    complex_df = compute_complex(tau_i, E_i)
+    complex_df = compute_complex(tau_i, E_i,
+                                 extend_decades=_DRAW_EXTENSION_DECADES)
+    # Units are not inspected: the fit takes the frequency column as angular
+    # frequency, so the axes say rad/s; the moduli keep the units and the
+    # kind of modulus supplied, labelled E and Pa regardless.
     x_col, y_col, z_col = df.columns[0], df.columns[1], df.columns[2]
     df_melt = pd.melt(
         df, id_vars=[x_col], value_vars=[y_col, z_col],
@@ -284,7 +470,7 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         facet_col='Modulus',
         color="Type", line_dash="Type",
         line_dash_map={"Experiment": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Frequency": "Frequency (Hz)"},
+        labels={"Frequency": "Frequency (rad/s)"},
     )
 
     df11_concat = df_concat.copy()
@@ -305,21 +491,45 @@ def _build_complex_figures(df: pd.DataFrame, tau_i: np.ndarray, E_i: np.ndarray,
         facet_col='Modulus',
         color="Type", line_dash="Type",
         line_dash_map={"Experiment": "solid", f"{N_nz}-Term Prony": "dash"},
-        labels={"Frequency": "Frequency (Hz)"},
+        labels={"Frequency": "Frequency (rad/s)"},
     )
     fig11.update_yaxes(matches=None, showticklabels=True)
     fig11.update_yaxes(type="log", col=1)
     _place_tan_delta_axis(fig11)
+    if covariance is not None:
+        omega = complex_df['Frequency'].to_numpy()
+        sigma = complex_modulus_sigma(omega, tau_i, E_i, covariance)
+        bands = [(sigma, _CREDIBLE_BAND, None)]
+        if noise is not None:
+            spread = complex_modulus_noise(omega, tau_i, E_i, *noise)
+            combined = {k: np.hypot(sigma[k], spread[k]) for k in sigma}
+            data_color = next(t for t in fig1.data
+                              if t.name == 'Experiment').line.color
+            bands.append((combined, _PREDICTION_BAND, data_color))
+        # Each call goes to the front, so the last drawn ends up first.
+        for sig, name, color in bands:
+            storage = ('x', 'y', sig['E Storage'], True)
+            _add_ribbons(
+                fig1, [storage, ('x2', 'y2', sig['E Loss'], True)],
+                name, color)
+            _add_ribbons(
+                fig11, [storage, ('x2', 'y2', sig['tan delta'], False)],
+                name, color)
     for fig in (fig1, fig11):
+        _pin_y_ranges(fig, 1 / np.max(tau_i), 1 / np.min(tau_i))
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
     return fig1, fig11
 
 
 def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
-                              fit_settings: bool) -> tuple:
+                              fit_settings: bool, covariance=None) -> tuple:
     """
     Build relaxation-modulus and discrete-spectrum figures.
+
+    E(t) and its ribbon run _DRAW_EXTENSION_DECADES past
+    min(tau_i)..max(tau_i) on each side, with fig2's y range pinned to
+    that window (_pin_y_ranges); fig3 is not extended.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
@@ -330,6 +540,10 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
             both figures.
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation-modulus figure; if False, return only its line trace.
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; when given, E(t) carries a +-1 sigma credible ribbon and
+            the spectrum dots carry error bars, and with an equilibrium row
+            the long-term-modulus line carries the band of E_eq.
 
     Returns:
         tuple: (fig2, fig3) where fig2 is the time-domain relaxation modulus
@@ -337,7 +551,8 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         coefficients as dots at (tau_i, E_i) with a horizontal reference line
         at the long-term (equilibrium) modulus when one is present.
     """
-    relax = compute_relaxation_modulus(tau_i, E_i)
+    relax = compute_relaxation_modulus(
+        tau_i, E_i, extend_decades=_DRAW_EXTENSION_DECADES)
     relax["Type"] = f"{N_nz}-Term Prony"
     fig2a = px.line(
         relax, x="Time", y="E",
@@ -390,12 +605,13 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
         color="Type", symbol="Type",
         labels={"Time": "Relaxation Time, 𝜏 (s)", "E": "Prony Coefficient, Eᵢ (Pa)"},
     )
-    if solid and E_i[0] > 0:
+    plateau = solid and E_i[0] > 0
+    if plateau:
         fig3.add_trace(go.Scatter(
             x=[tau_i.min(), tau_i.max()],
             y=[E_i[0], E_i[0]],
             mode="lines",
-            line=dict(dash="dash"),
+            line=dict(dash="dash", color=_PLATEAU_COLOR),
             name="Long-Term Modulus",
         ))
     fig3.update_layout(
@@ -406,28 +622,86 @@ def _build_relaxation_figures(tau_i: np.ndarray, E_i: np.ndarray, N_nz: int,
     if not fit_settings:
         fig2 = fig2a
 
+    if covariance is not None:
+        sigma = relaxation_sigma(relax['Time'].to_numpy(), tau_i, E_i,
+                                 covariance)
+        _add_ribbons(fig2, [('x', 'y', sigma, True)])
+        sigma_log = sigma_log_coefficients(covariance)
+        plus, minus = spectrum_error_bars(
+            E_i[solid:], sigma_log[-len(tau_i):])
+        fig3.update_traces(
+            error_y=dict(type='data', symmetric=False,
+                         array=plus, arrayminus=minus),
+            selector=dict(name=f"{N_nz}-Term Prony"))
+        if plateau and len(sigma_log) == len(tau_i) + 1:
+            _add_plateau_band(fig3, tau_i, E_i[0], sigma_log[0])
+
+    _pin_y_ranges(fig2, np.min(tau_i), np.max(tau_i))
     for fig in (fig2, fig3):
         fig.update_xaxes(exponentformat='power')
         fig.update_yaxes(exponentformat='power')
     return fig2, fig3
 
 
-def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray) -> list:
+def _plateau_bounds(E_eq, sigma_log_eq) -> tuple:
+    """The 1-sigma interval of E_eq, as plain floats."""
+    lower, upper = coefficient_bounds([E_eq], [sigma_log_eq])
+    return float(lower[0]), float(upper[0])
+
+
+def _add_plateau_band(fig, tau_i, E_eq, sigma_log_eq) -> None:
+    """Draw the E_eq 1-sigma band under every trace of the spectrum."""
+    lower, upper = _plateau_bounds(E_eq, sigma_log_eq)
+    common = dict(x=[tau_i.min(), tau_i.max()], mode='lines',
+                  line=dict(width=0), hoverinfo='skip',
+                  name=_CREDIBLE_BAND, legendgroup=_CREDIBLE_BAND)
+    _add_traces_underneath(fig, [
+        go.Scatter(y=[lower, lower], showlegend=False, **common),
+        go.Scatter(y=[upper, upper], fill='tonexty',
+                   fillcolor=_rgba(_PLATEAU_COLOR, _BAND_ALPHA),
+                   showlegend=True, **common)])
+
+
+def _build_coef_records(tau_i: np.ndarray, E_i: np.ndarray,
+                        covariance=None) -> list:
     """
     Build the Prony coefficient table as a list of records.
 
     Parameters:
         tau_i (numpy.ndarray): Prony relaxation times.
         E_i (numpy.ndarray): Prony coefficients (length tau_i or tau_i + 1).
+        covariance (numpy.ndarray): Covariance of the log-coefficients, or
+            None; with len(tau_i) rows, or one more with the equilibrium
+            row first.
 
     Returns:
         list: List of dicts with keys 'i', 'tau_i', 'E_i' — one per nonzero
-        coefficient, with 'i' the original (pre-filter) index.
+        coefficient, with 'i' the original (pre-filter) index. With a
+        covariance, also 'E_i_lower' and 'E_i_upper': the 1-sigma interval
+        fig3 draws as error bars, in Pa. A nonzero equilibrium modulus adds
+        a last row with 'i' = len(tau_i) and 'tau_i' the string 'inf'; its
+        bounds are fig3's long-term-modulus band, collapsed onto E_eq when
+        the covariance has no equilibrium row (E_eq then carries no
+        uncertainty, as in relaxation_sigma).
     """
-    coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_i[len(E_i) - len(tau_i):]})
+    N = len(tau_i)
+    E_terms = np.asarray(E_i, dtype=float)[len(E_i) - N:]
+    coef_df = pd.DataFrame({"tau_i": tau_i, "E_i": E_terms})
+    if covariance is not None:
+        sigma_log = sigma_log_coefficients(covariance)
+        coef_df["E_i_lower"], coef_df["E_i_upper"] = coefficient_bounds(
+            E_terms, sigma_log[-N:])
     coef_df = coef_df[coef_df.E_i != 0].reset_index(drop=False)
     coef_df = coef_df.rename(columns={'index': 'i'})
-    return coef_df.to_dict("records")
+    records = coef_df.to_dict("records")
+    if len(E_i) == N + 1 and E_i[0] > 0:
+        row = {'i': N, 'tau_i': 'inf', 'E_i': float(E_i[0])}
+        if covariance is not None:
+            sigma_log_eq = sigma_log[0] if len(sigma_log) == N + 1 else 0.0
+            row['E_i_lower'], row['E_i_upper'] = _plateau_bounds(
+                E_i[0], sigma_log_eq)
+        records.append(row)
+    return records
 
 
 # Rows in the model-only shift table (no measured temperatures to anchor to,

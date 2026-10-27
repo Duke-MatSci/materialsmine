@@ -246,6 +246,7 @@ def extract_data_from_file(request_id):
             'mytable_placeholder': result[6],
             'shift_chart_placeholder': result[7],
             'shift_table_placeholder': result[8],
+            'max_prony': result[9],
         }
         
         # Constructing the data dictionary
@@ -261,6 +262,7 @@ def extract_data_from_file(request_id):
                 "shift-chart": json.loads(chart_data['shift_chart_placeholder'].to_json()),
                 "shift-table": chart_data['shift_table_placeholder'],
                 "mytable": chart_data['mytable_placeholder'],
+                "max_prony": chart_data['max_prony'],
                 # Emit upload-data as row-objects (one dict per row), matching
                 # mytable's shape and the frontend "Uploaded Data" tab, whose
                 # TableComponent derives columns from Object.keys(rows[0]).

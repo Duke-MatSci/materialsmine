@@ -3436,10 +3436,10 @@ async function transformSddToNanopub(skeleton, logger) {
   // Parse SDD + CSV files (does NOT generate attributes yet — that happens per batch)
   const sddParsed = distribution
     ? await buildSddAttributes(distribution, npId, logger)
-    : { allCsvRows: [], dictRows: [] };
+    : { allCsvRows: [], dictRows: [], codeMappings: new Map() };
 
   // Generate batches of sample nodes
-  const batches = generateBatches(sddParsed.allCsvRows, sddParsed.dictRows, npId);
+  const batches = generateBatches(sddParsed.allCsvRows, sddParsed.dictRows, npId, undefined, sddParsed.codeMappings);
 
   // Build assertion sample node (first batch included; remaining batches handled by caller)
   const firstBatchSamples = batches.length ? batches[0] : [];
