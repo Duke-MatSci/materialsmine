@@ -237,6 +237,16 @@
                       >Enter the DOI of related publication if exists (e.g., 10.1000/000)</span
                     >
                   </md-field>
+                  <md-field style="max-width: 80%; margin: 1rem">
+                    <label>Control Sample ID</label>
+                    <md-input v-model="controlSampleRef"></md-input>
+                    <span v-if="!controlSampleRef" class="md-helper-text"
+                      >Leave blank to treat this sample as the control sample for a new dataset group. Or enter an existing Control ID (e.g., L1_S1_Author_2023) to add to its group.</span
+                    >
+                    <span v-else class="md-helper-text"
+                      >This sample will be added to the dataset group of {{ controlSampleRef }}.</span
+                    >
+                  </md-field>
                   <div class="md-layout u--margin-toplg">
                     <md-button
                       type="submit"
@@ -256,7 +266,10 @@
                 </md-step>
                 <md-step id="fifth" md-label="Verify data" v-model:md-done="fifth">
                   <h3>DOI:</h3>
-                  {{ doi }}
+                  {{ doi || 'N/A' }}
+                  <div>&nbsp;</div>
+                  <h3>Control Sample ID:</h3>
+                  {{ controlSampleRef || 'None (this is a new control sample)' }}
                   <div>&nbsp;</div>
                   <h3>Uploaded files:</h3>
 
@@ -503,6 +516,7 @@ const renameXlsx = ref(false);
 const spreadsheetFiles = spreadsheetFn.files;
 const suppFiles = suppFn.files;
 const doi = ref<string | null>(null);
+const controlSampleRef = ref<string>('');
 const active = ref('first');
 const first = ref(false);
 const second = ref(false);
@@ -659,6 +673,9 @@ const createSample = async () => {
   const files = processFiles();
   files.forEach((file) => formData.append('uploadfile', file));
   formData.append('doi', doi.value || '');
+  if (controlSampleRef.value) {
+    formData.append('controlSampleRef', controlSampleRef.value.trim());
+  }
   const response = await fetch(url, {
     method: 'POST',
     body: formData,

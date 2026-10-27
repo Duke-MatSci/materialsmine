@@ -151,24 +151,26 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       }
     }
     const requiredFields = getCurationUniqueFields(result);
-    result.Control_ID = await generateControlId(
+    const controlSampleRef = req.body?.controlSampleRef || null;
+    const generated = await generateControlId(
       requiredFields,
       user,
-      query?.dataset
+      query?.dataset,
+      controlSampleRef
     );
+    result.Control_ID = generated.controlId;
+    if (generated.controlSampleRef) {
+      result.Control_Sample_Ref = generated.controlSampleRef;
+    }
 
     let datasets;
     if (query.dataset) {
-      // TODO: Deprecate, as dataset will no longer be available in query
       datasets = await DatasetId.findOne({ _id: query.dataset });
     } else {
-      // If Dataset not provide in req, search existing samples
-      // Control_ID Example = L1_S1_Hareesh_2023.xml
       const citationPrefix = result.Control_ID?.charAt(0);
       const pubYear = result.Control_ID.match(/_(\d{4})\.xml/)?.[1];
       const authorName = result.Control_ID?.match(/S\d+_(.*?)_\d{4}\.xml/)?.[1];
 
-      // Find curations for datasetIndex
       const regex = new RegExp(
         `^${citationPrefix}\\d*_S\\d*_${authorName}_${pubYear}`,
         'i'
@@ -239,7 +241,9 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       user: curatedObject.user,
       groupId: curatedObject.dataset,
       isApproved: curatedObject.entityState !== CurationEntityStateDefault,
-      status: curatedObject.curationState
+      status: curatedObject.curationState,
+      isControlSample: generated.isControlSample,
+      controlSampleRef: generated.controlSampleRef
     };
 
     if (req?.isParentFunction) return { curatedSample, processedFiles };
@@ -335,51 +339,53 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   };
 };
 
-async function generateControlId(requiredFields, user, datasetId) {
+async function generateControlId(requiredFields, user, datasetId, controlSampleRef) {
   try {
-    // TODO: Remove dataset index as it doesn't seem it is been used
-    // Find or create userDataset from MongoDB
-    // let userDataset = await DatasetId.findOne({
-    //   user: user._id,
-    //   _id: datasetId
-    // });
-
-    // if (!userDataset) {
-    //   // If userDataset does not exist, create one
-    //   userDataset = await DatasetId.create({ user });
-    // }
-
     let { citationType, publicationYear, author, title } = requiredFields;
 
-    // Determine citationPrefix
     const citationPrefix = citationType === 'lab-generated' ? 'E' : 'L';
-    // Determine publicationYear
     publicationYear = publicationYear ?? new Date().getFullYear();
-    // Determine author
     const authorName = author?.length
       ? author[0].split(/[,\s]+/)[0]
       : 'unknown';
 
-    // Find curations for datasetIndex
-    const regex = new RegExp(
-      `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
-      'i'
-    );
+    let curations;
 
-    let curations = await CuratedSamples.find({
-      user: user._id,
-      'object.Control_ID': { $regex: regex },
-      'object.DATA_SOURCE.Citation.CommonFields.Title': title
-    });
+    if (controlSampleRef) {
+      const refNormalized = controlSampleRef.replace(/\.xml$/i, '');
+      curations = await CuratedSamples.find({
+        user: user._id,
+        'object.Control_ID': new RegExp(`^${refNormalized}(\\.xml)?$`, 'i')
+      });
 
-    // Determine datasetIndex
+      if (!curations.length) {
+        curations = await CuratedSamples.find({
+          user: user._id,
+          'object.Control_ID': { $regex: new RegExp(`^${refNormalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') },
+          'object.DATA_SOURCE.Citation.CommonFields.Title': title
+        });
+      }
+    }
+
+    if (!curations?.length) {
+      const regex = new RegExp(
+        `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
+        'i'
+      );
+      curations = await CuratedSamples.find({
+        user: user._id,
+        'object.Control_ID': { $regex: regex },
+        'object.DATA_SOURCE.Citation.CommonFields.Title': title
+      });
+    }
+
     let datasetIndex, sampleIndex;
     if (curations.length === 0) {
-      curations = await CuratedSamples.find({ user: user._id });
-      if (curations.length) {
+      const allCurations = await CuratedSamples.find({ user: user._id });
+      if (allCurations.length) {
         let highestIndex = 0;
-        curations.forEach((curation) => {
-          if (curation.object.Control_ID.startsWith(citationPrefix)) {
+        allCurations.forEach((curation) => {
+          if (curation.object.Control_ID?.startsWith(citationPrefix)) {
             const match = curation.object.Control_ID.match(/\d+/);
             if (match) {
               const num = parseInt(match[0], 10);
@@ -401,8 +407,9 @@ async function generateControlId(requiredFields, user, datasetId) {
       sampleIndex = curations.length + 1;
     }
 
-    // Construct controlId & return
-    return `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
+    const controlId = `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
+    const isControlSample = !controlSampleRef;
+    return { controlId, isControlSample, controlSampleRef: controlSampleRef || null };
   } catch (error) {
     const err = new Error(error);
     err.functionName = 'generateControlId';
@@ -446,10 +453,14 @@ exports.getControlSampleId = async (req, res, next) => {
   try {
     logger.info('getControlSampleId Function Entry:');
 
-    const controlID = await generateControlId(body, user, body?.datasetId);
+    const generated = await generateControlId(body, user, body?.datasetId, body?.controlSampleRef);
 
     latency.latencyCalculator(res);
-    return res.status(201).json({ controlID });
+    return res.status(201).json({
+      controlID: generated.controlId,
+      isControlSample: generated.isControlSample,
+      controlSampleRef: generated.controlSampleRef
+    });
   } catch (error) {
     next(errorWriter(req, error, 'getControlSampleId', 500));
   }
