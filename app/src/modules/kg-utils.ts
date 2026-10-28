@@ -29,7 +29,7 @@ async function saveSDDDataset(
   if (imgToDelete) imgDeleteId = parseFileName(imgToDelete, true);
 
   const [distrRes, imgRes] = await Promise.all([
-    saveDatasetFiles(fileList.filter((file) => file.status === 'incomplete')),
+    saveDatasetFiles(fileList.filter((file) => file.status === 'incomplete'), { extractZip: true }),
     saveDatasetFiles(imageList.filter((file) => file.status === 'incomplete')),
     deleteFile(imgDeleteId),
   ]);

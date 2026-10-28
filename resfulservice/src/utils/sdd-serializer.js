@@ -8,7 +8,11 @@ const { lookupUnit } = require('./unit-lookup');
 const {
   MinioBucket,
   FILE_FORMATS: FILE_FORMATS_ARR,
-  SupportedFileResponseHeaders
+  SupportedFileResponseHeaders,
+  SDD_SHEET_NAMES,
+  SDD_DICT_COLUMNS,
+  SDD_BATCH_SIZE,
+  SDD_MATCH_THRESHOLD
 } = require('../../config/constant');
 const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
 
@@ -79,13 +83,6 @@ function fileSchemaType(filename) {
 
 function buildFileUrl(objectName) {
   return `/api/files/${encodeURIComponent(objectName)}?isStore=true`;
-}
-
-function objectExists(objectName) {
-  return minioClient
-    .statObject(bucketName, objectName)
-    .then(() => true)
-    .catch(() => false);
 }
 
 async function fetchAndStoreRemoteFile(url, logger) {
@@ -349,27 +346,32 @@ function getExtension(filename) {
 
 /* ────────────────────── XLSX parsing ────────────────────────── */
 
-const DICT_SHEET_NAME = 'Dictionary Mapping';
-const DICT_COLUMNS = [
-  'column',
-  'label',
-  'comment',
-  'definition',
-  'attribute',
-  'attributeOf',
-  'unit',
-  'format',
-  'time',
-  'entity',
-  'role',
-  'relation',
-  'inRelationTo',
-  'wasDerivedFrom',
-  'wasGeneratedBy',
-  'template'
-];
+const { DICTIONARY: DICT_SHEET_NAME, CODE_MAPPINGS: CODE_MAPPINGS_SHEET_NAME, PREFIXES: PREFIXES_SHEET_NAME } = SDD_SHEET_NAMES;
 
-const CODE_MAPPINGS_SHEET_NAME = 'Code Mappings';
+/**
+ * Parse the Prefixes sheet from an XLSX workbook.
+ * Returns a plain object mapping prefix → namespace URI,
+ * e.g. { obo: 'http://purl.obolibrary.org/obo/' }.
+ * @param {Object} workbook - Parsed XLSX workbook
+ * @returns {Object<string, string>}
+ */
+function parsePrefixesSheet(workbook) {
+  const prefixes = {};
+  const sheet = workbook.Sheets[PREFIXES_SHEET_NAME];
+  if (!sheet) return prefixes;
+
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!Array.isArray(row)) continue;
+    const prefix = row[0] != null ? String(row[0]).trim() : '';
+    const url = row[1] != null ? String(row[1]).trim() : '';
+    if (prefix && url) {
+      prefixes[prefix] = url;
+    }
+  }
+  return prefixes;
+}
 
 /**
  * Parse the Code Mappings sheet from an XLSX workbook.
@@ -433,7 +435,7 @@ function parseDictSheet(buffer) {
     if (!Array.isArray(row)) continue;
 
     const entry = {};
-    DICT_COLUMNS.forEach((col, idx) => {
+    SDD_DICT_COLUMNS.forEach((col, idx) => {
       entry[col] = row[idx] != null ? String(row[idx]).trim() : '';
     });
 
@@ -444,8 +446,9 @@ function parseDictSheet(buffer) {
   }
 
   const codeMappings = parseCodeMappingsSheet(workbook);
+  const prefixes = parsePrefixesSheet(workbook);
 
-  return { dictRows, codeMappings };
+  return { dictRows, codeMappings, prefixes };
 }
 
 /* ────────────────────── Attribute generation ────────────────── */
@@ -600,8 +603,6 @@ function generateAttributes(
 
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
-const SDD_BATCH_SIZE = 500;
-
 /**
  * Build the sio:hasAttribute array for an SDD nanopub assertion.
  *
@@ -635,9 +636,9 @@ async function buildSddAttributes(distributionLd, npId, logger) {
   logger.info(`[sdd-serializer] Fetching SDD file: ${sddUrl}`);
   const sddStream = await fetchFileStream(sddUrl);
   const sddBuffer = await streamToBuffer(sddStream);
-  const { dictRows, codeMappings } = parseDictSheet(sddBuffer);
+  const { dictRows, codeMappings, prefixes } = parseDictSheet(sddBuffer);
   logger.info(
-    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows, ${codeMappings.size} code mappings from SDD`
+    `[sdd-serializer] Parsed ${dictRows.length} dictionary rows, ${codeMappings.size} code mappings, ${Object.keys(prefixes).length} prefixes from SDD`
   );
 
   if (!dictRows.length) {
@@ -664,10 +665,14 @@ async function buildSddAttributes(distributionLd, npId, logger) {
 
     const csvHeaders = Object.keys(csvRows[0]);
     const { matched, unmatched } = matchDictToHeaders(dictRows, csvHeaders);
+    const totalDictColumns = matched + unmatched.length;
+    const matchPercent = totalDictColumns > 0
+      ? (matched / totalDictColumns) * 100
+      : 0;
 
-    if (matched === 0) {
+    if (matchPercent < SDD_MATCH_THRESHOLD) {
       logger.info(
-        `[sdd-serializer] Skipping ${csvLabel}: no headers match the SDD Dictionary`
+        `[sdd-serializer] Skipping ${csvLabel}: only ${matched}/${totalDictColumns} dict columns matched (${matchPercent.toFixed(1)}%, threshold ${SDD_MATCH_THRESHOLD}%)`
       );
       continue;
     }
@@ -679,7 +684,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     }
 
     logger.info(
-      `[sdd-serializer] Parsed ${csvRows.length} rows from ${csvLabel} (${matched} columns matched)`
+      `[sdd-serializer] Parsed ${csvRows.length} rows from ${csvLabel} (${matched}/${totalDictColumns} columns matched, ${matchPercent.toFixed(1)}%)`
     );
 
     for (let i = 0; i < csvRows.length; i++) allCsvRows.push(csvRows[i]);
@@ -687,7 +692,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
 
   if (!allCsvRows.length) {
     throw new Error(
-      'No CSV files match the SDD Dictionary columns. Check that CSV headers match the Column or Label values in the Dictionary Mapping.'
+      `No CSV files match the SDD Dictionary columns (at least ${SDD_MATCH_THRESHOLD}% of dict columns must match CSV headers). Check that CSV headers match the Column or Label values in the Dictionary Mapping.`
     );
   }
 
@@ -706,7 +711,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     logger
   );
 
-  return { allCsvRows: resolvedCsvRows, dictRows, codeMappings };
+  return { allCsvRows: resolvedCsvRows, dictRows, codeMappings, prefixes };
 }
 
 /**
@@ -743,10 +748,12 @@ module.exports = {
   buildSddAttributes,
   generateBatches,
   SDD_BATCH_SIZE,
+  SDD_MATCH_THRESHOLD,
   // Exported for testing
   classifyDistributionFiles,
   parseDictSheet,
   parseCodeMappingsSheet,
+  parsePrefixesSheet,
   resolveCodeMapping,
   generateAttributes,
   generateAttributeId,

@@ -51,6 +51,12 @@
                               <span class="md-error" style="margin-left: 40px"
                                 >At least one distribution is required</span
                               >
+                              <span class="md-helper-text form__helper-text">
+                                Helpful hint: Upload your SDD (.xlsx) and main data CSV directly. If
+                                you have more than 15 additional files (extra CSVs, images,
+                                supplementary data), zip them into a single .zip file and upload the
+                                zip along with your SDD and main CSV.
+                              </span>
                             </div>
                           </div>
                         </label>
@@ -576,7 +582,12 @@
             </div>
             <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden">
               <div
-                :style="{ width: Math.round((sddProgress.batch / sddProgress.total) * 100) + '%', height: '100%', background: '#0e5f76', transition: 'width 0.3s ease' }"
+                :style="{
+                  width: Math.round((sddProgress.batch / sddProgress.total) * 100) + '%',
+                  height: '100%',
+                  background: '#0e5f76',
+                  transition: 'width 0.3s ease',
+                }"
               ></div>
             </div>
           </div>
