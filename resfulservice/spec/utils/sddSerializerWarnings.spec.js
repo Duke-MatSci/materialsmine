@@ -87,7 +87,7 @@ describe('buildSddAttributes recoverable problems', function () {
   let warningSpy;
 
   beforeEach(function () {
-    warningSpy = sinon.spy(logger, 'warning');
+    warningSpy = sinon.spy(logger, 'warn');
   });
 
   afterEach(function () {

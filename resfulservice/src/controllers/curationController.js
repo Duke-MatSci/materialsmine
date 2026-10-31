@@ -2064,7 +2064,7 @@ exports.curationETL = async (req, res, next) => {
               });
               continue;
             }
-            logger.warning('CurationETL: [XSD warn]', v.errors.join(' | '));
+            logger.warn('CurationETL: [XSD warn]', v.errors.join(' | '));
           }
         }
 

@@ -196,7 +196,7 @@ async function resolveFileReferences(csvRows, dict, distEntries, logger) {
         if (fmt === 'file') {
           const entry = findDistributionEntry(raw, distEntries);
           if (!entry) {
-            logger.warning(
+            logger.warn(
               `[sdd-serializer] File "${raw}" not found in distribution entries`
             );
             continue;
@@ -661,7 +661,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     const csvRows = await parseCsvStream(csvStream);
 
     if (!csvRows.length) {
-      logger.warning(`[sdd-serializer] Empty CSV, skipping: ${csvLabel}`);
+      logger.warn(`[sdd-serializer] Empty CSV, skipping: ${csvLabel}`);
       continue;
     }
 
@@ -676,7 +676,7 @@ async function buildSddAttributes(distributionLd, npId, logger) {
     }
 
     if (unmatched.length) {
-      logger.warning(
+      logger.warn(
         `[sdd-serializer] ${csvLabel}: ${unmatched.length} SDD column(s) not found in CSV headers: ${unmatched.join(', ')}`
       );
     }
