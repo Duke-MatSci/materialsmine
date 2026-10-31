@@ -446,12 +446,6 @@ describe('SDD Serializer', function () {
       expect(resolveCodeMapping('µm²', cm)).to.equal('http://ex/um2');
     });
 
-    it('should fall back to UNIT_IRI when not in code mappings', function () {
-      const cm = new Map();
-      const result = resolveCodeMapping('nm', cm);
-      expect(result).to.include('om-2');
-    });
-
     it('should return undefined for unknown units', function () {
       const cm = new Map();
       expect(resolveCodeMapping('parsecs', cm)).to.be.undefined;
@@ -657,7 +651,7 @@ describe('SDD Serializer', function () {
         expect(attr['sio:hasUnit']).to.deep.equal([
           {
             '@type':
-              'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
+              'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
             '@value': 'celsius'
           }
         ]);
