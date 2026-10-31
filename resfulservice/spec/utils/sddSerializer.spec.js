@@ -17,7 +17,8 @@ const {
   matchDictToHeaders,
   resolveFileReferences,
   findDistributionEntry,
-  generateBatches
+  generateBatches,
+  SDD_MATCH_THRESHOLD
 } = require('../../src/utils/sdd-serializer');
 
 /* Helpers */
@@ -183,6 +184,38 @@ describe('SDD Serializer', function () {
       const dict = [makeDictRow({ column: 'grain size' })];
       const { matched } = matchDictToHeaders(dict, headers);
       expect(matched).to.equal(1);
+    });
+
+    it('should allow percentage threshold calculation from matched/unmatched', function () {
+      const dict = [
+        makeDictRow({ column: 'Grain Size' }),
+        makeDictRow({ column: 'Temperature' }),
+        makeDictRow({ column: 'Missing1' }),
+        makeDictRow({ column: 'Missing2' })
+      ];
+      const { matched, unmatched } = matchDictToHeaders(dict, headers);
+      const total = matched + unmatched.length;
+      const percent = (matched / total) * 100;
+      expect(matched).to.equal(2);
+      expect(unmatched).to.have.lengthOf(2);
+      expect(percent).to.equal(50);
+      expect(percent).to.be.at.least(SDD_MATCH_THRESHOLD);
+    });
+
+    it('should fall below threshold when too few columns match', function () {
+      const dict = [
+        makeDictRow({ column: 'Grain Size' }),
+        makeDictRow({ column: 'Missing1' }),
+        makeDictRow({ column: 'Missing2' })
+      ];
+      const { matched, unmatched } = matchDictToHeaders(dict, headers);
+      const total = matched + unmatched.length;
+      const percent = (matched / total) * 100;
+      expect(percent).to.be.below(SDD_MATCH_THRESHOLD);
+    });
+
+    it('should export SDD_MATCH_THRESHOLD as 50', function () {
+      expect(SDD_MATCH_THRESHOLD).to.equal(50);
     });
   });
 
