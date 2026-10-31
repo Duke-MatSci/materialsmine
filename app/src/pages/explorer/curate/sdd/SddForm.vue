@@ -56,7 +56,7 @@
                                 you have more than 15 additional files (extra CSVs, images,
                                 supplementary data), zip them into a single .zip file and upload the
                                 zip along with your SDD and main CSV.
-                                <br/>
+                                <br />
                                 Note: Your main data CSV must match at least 50% of the SDD
                                 dictionary columns to be recognized as a data file. Files that fall
                                 below this threshold will be skipped.
@@ -134,7 +134,7 @@
 
                       <FileInput @files-dropped="previewFile()">
                         <label for="file-depict-input">
-                          <div class="form__file-input">
+                          <div class="form__file-input u--margin-toplg">
                             <div class="md-field md-theme-default md-has-file">
                               <md-icon>attach_file</md-icon>
                               <label for="file-depict-input"
