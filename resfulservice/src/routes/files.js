@@ -3,7 +3,7 @@ const router = express.Router();
 const fileController = require('../controllers/fileController');
 const isAuth = require('../middlewares/isAuth');
 const { latencyTimer } = require('../middlewares/latencyTimer');
-const { minioUpload } = require('../middlewares/fileStorage');
+const { minioUpload, extractZipFiles } = require('../middlewares/fileStorage');
 const {
   validateImageType,
   validateFileDownload
@@ -15,7 +15,7 @@ router
 
 router
   .route('/upload')
-  .post(isAuth, latencyTimer, minioUpload, fileController.uploadFile);
+  .post(isAuth, latencyTimer, extractZipFiles, minioUpload, fileController.uploadFile);
 
 router.route('/metamine').get(fileController.getMetamineFileNames);
 
