@@ -256,7 +256,7 @@ def validate_ontology(request_id):
         append_only = payload.get("append_only", False)
 
         persistence_report = None
-        if payload.get("persist", True):
+        if payload.get("persist", True) and conforms:
             # Previewing what we'll write
             try:
                 graphs_preview = list_named_graphs(data_text or "")

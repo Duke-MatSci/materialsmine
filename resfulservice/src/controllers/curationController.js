@@ -33,6 +33,7 @@ const JobsController = require('./jobs');
 const FileStorage = require('../middlewares/fileStorage');
 const FileController = require('./fileController');
 const { loadViscoelasticPropPipeline } = require('../pipelines/xml-pipeline');
+const elasticSearch = require('../utils/elasticSearch');
 
 exports.curateXlsxSpreadsheet = async (req, res, next) => {
   const { user, logger, query } = req;
@@ -339,7 +340,12 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   };
 };
 
-async function generateControlId(requiredFields, user, datasetId, controlSampleRef) {
+async function generateControlId(
+  requiredFields,
+  user,
+  datasetId,
+  controlSampleRef
+) {
   try {
     let { citationType, publicationYear, author, title } = requiredFields;
 
@@ -361,7 +367,12 @@ async function generateControlId(requiredFields, user, datasetId, controlSampleR
       if (!curations.length) {
         curations = await CuratedSamples.find({
           user: user._id,
-          'object.Control_ID': { $regex: new RegExp(`^${refNormalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i') },
+          'object.Control_ID': {
+            $regex: new RegExp(
+              `^${refNormalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+              'i'
+            )
+          },
           'object.DATA_SOURCE.Citation.CommonFields.Title': title
         });
       }
@@ -409,7 +420,11 @@ async function generateControlId(requiredFields, user, datasetId, controlSampleR
 
     const controlId = `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
     const isControlSample = !controlSampleRef;
-    return { controlId, isControlSample, controlSampleRef: controlSampleRef || null };
+    return {
+      controlId,
+      isControlSample,
+      controlSampleRef: controlSampleRef || null
+    };
   } catch (error) {
     const err = new Error(error);
     err.functionName = 'generateControlId';
@@ -453,7 +468,12 @@ exports.getControlSampleId = async (req, res, next) => {
   try {
     logger.info('getControlSampleId Function Entry:');
 
-    const generated = await generateControlId(body, user, body?.datasetId, body?.controlSampleRef);
+    const generated = await generateControlId(
+      body,
+      user,
+      body?.datasetId,
+      body?.controlSampleRef
+    );
 
     latency.latencyCalculator(res);
     return res.status(201).json({
@@ -2044,7 +2064,9 @@ exports.curationETL = async (req, res, next) => {
         const defaultId = `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2)}`;
-        const { rawXml, id = defaultId } = await CH.getText(src, { requireApproval: true });
+        const { rawXml, id = defaultId } = await CH.getText(src, {
+          requireApproval: true
+        });
         idForFailure = id;
 
         const xml = CH.normalizeXml(rawXml);
@@ -2233,7 +2255,10 @@ exports.sddCurationETL = async (req, res, next) => {
       send: () => mockRes
     };
     const mockNext = (err) => {
-      if (err) throw typeof err === 'object' && err.message ? err : new Error(String(err));
+      if (err)
+        throw typeof err === 'object' && err.message
+          ? err
+          : new Error(String(err));
     };
     const batchRes = isMultiBatch ? mockRes : res;
     const batchNext = isMultiBatch ? mockNext : next;
@@ -2340,7 +2365,9 @@ exports.sddCurationETL = async (req, res, next) => {
         ...req,
         method: 'POST',
         body: {
-          change: [`SDD curation published (${totalBatches} batch${totalBatches > 1 ? 'es' : ''})`],
+          change: [
+            `SDD curation published (${totalBatches} batch${totalBatches > 1 ? 'es' : ''})`
+          ],
           resourceId: id,
           published: true
         },
@@ -2351,14 +2378,18 @@ exports.sddCurationETL = async (req, res, next) => {
       logger.error('sddCurationETL(): Changelog failed (non-fatal)', clErr);
     }
 
+    // Index into Elasticsearch (non-fatal)
+    const finalPayload = buildFinalPayload();
+    await elasticSearch.indexDataset(req, finalPayload);
+
     // --- Final response ---
     if (isMultiBatch) {
-      sendSSE({ done: true, ...buildFinalPayload() });
+      sendSSE({ done: true, ...finalPayload });
       return res.end();
     }
 
     latency.latencyCalculator(res);
-    return res.status(200).json(buildFinalPayload());
+    return res.status(200).json(finalPayload);
   } catch (err) {
     if (res.headersSent) {
       try {
@@ -2585,13 +2616,17 @@ exports.deleteDataset = async (req, res, next) => {
   logger.info('deleteDataset(): Function Entry');
 
   if (user?.roles !== userRoles.isAdmin) {
-    return next(errorWriter(req, 'Admin access required', 'deleteDataset', 403));
+    return next(
+      errorWriter(req, 'Admin access required', 'deleteDataset', 403)
+    );
   }
 
   const { id } = req.params;
 
   if (!id) {
-    return next(errorWriter(req, 'Dataset id is required', 'deleteDataset', 400));
+    return next(
+      errorWriter(req, 'Dataset id is required', 'deleteDataset', 400)
+    );
   }
 
   try {
@@ -2612,7 +2647,9 @@ exports.deleteDataset = async (req, res, next) => {
         id,
         failed: [],
         sampleIdForFailure: null,
-        change: ['Dataset files removed from file store and triples deleted from knowledge graph']
+        change: [
+          'Dataset files removed from file store and triples deleted from knowledge graph'
+        ]
       },
       req,
       res,
@@ -2624,7 +2661,14 @@ exports.deleteDataset = async (req, res, next) => {
     latency.latencyCalculator(res);
     return res.status(200).json(result?.data ?? { message: 'ok' });
   } catch (error) {
-    next(errorWriter(req, error?.message ?? 'Failed to delete dataset', 'deleteDataset', 500));
+    next(
+      errorWriter(
+        req,
+        error?.message ?? 'Failed to delete dataset',
+        'deleteDataset',
+        500
+      )
+    );
   }
 };
 
@@ -2634,22 +2678,36 @@ exports.submitDatasetToKG = async (req, res, next) => {
   const { id } = req.params;
 
   if (!id) {
-    return next(errorWriter(req, 'Dataset id is required', 'submitDatasetToKG', 400));
+    return next(
+      errorWriter(req, 'Dataset id is required', 'submitDatasetToKG', 400)
+    );
   }
 
-  const { label, description, doi, organization, distribution, thumbnail } = body || {};
+  const { label, description, doi, organization, distribution, thumbnail } =
+    body || {};
 
   if (!distribution || !distribution.length) {
-    return next(errorWriter(req, 'Dataset must have at least one distribution file', 'submitDatasetToKG', 400));
+    return next(
+      errorWriter(
+        req,
+        'Dataset must have at least one distribution file',
+        'submitDatasetToKG',
+        400
+      )
+    );
   }
 
   try {
     const npId = `${NP_BASE}${id}`;
     const resId = `${MM_BASE}pnc/${id}`;
 
-    const distrLDs = (Array.isArray(distribution) ? distribution : [distribution]).map((url) => {
+    const distrLDs = (
+      Array.isArray(distribution) ? distribution : [distribution]
+    ).map((url) => {
       const urlObj = new URL(url, 'http://localhost');
-      const fileName = decodeURIComponent(urlObj.pathname.split('/').pop() || url);
+      const fileName = decodeURIComponent(
+        urlObj.pathname.split('/').pop() || url
+      );
       return { '@id': url, 'rdfs:label': fileName };
     });
 
@@ -2662,23 +2720,31 @@ exports.submitDatasetToKG = async (req, res, next) => {
 
     let depictionLd = null;
     if (thumbnail) {
-      const thumbName = decodeURIComponent(new URL(thumbnail, 'http://localhost').pathname.split('/').pop() || '');
+      const thumbName = decodeURIComponent(
+        new URL(thumbnail, 'http://localhost').pathname.split('/').pop() || ''
+      );
       depictionLd = {
         'mm:hasDepiction': {
           '@id': `${resId}/attr/depiction`,
-          'foaf:depiction': [{
-            '@id': `${resId}/attr/depiction/file`,
-            '@type': 'purl:File',
-            'rdfs:label': thumbName,
-            'dcat:accessURL': thumbnail
-          }]
+          'foaf:depiction': [
+            {
+              '@id': `${resId}/attr/depiction/file`,
+              '@type': 'purl:File',
+              'rdfs:label': thumbName,
+              'dcat:accessURL': thumbnail
+            }
+          ]
         }
       };
     }
 
     const orgs = (organization || []).map((name) => ({ name }));
     const contactPoint = req.user
-      ? { firstName: req.user.givenName || '', lastName: req.user.surName || '', cpEmail: req.user.email || '' }
+      ? {
+          firstName: req.user.givenName || '',
+          lastName: req.user.surName || '',
+          cpEmail: req.user.email || ''
+        }
       : {};
 
     const nanopubSkeleton = {
@@ -2715,10 +2781,31 @@ exports.submitDatasetToKG = async (req, res, next) => {
       return res.status(400).json({ ok: false, failed: [failure] });
     }
 
-    successWriter(req, { message: 'Dataset submitted to knowledge graph' }, 'submitDatasetToKG');
+    await elasticSearch.indexDataset(req, {
+      description: description || '',
+      identifier: npId,
+      label: label || '',
+      thumbnail: thumbnail || '',
+      doi: doi || '',
+      organization: organization || [],
+      distribution: distribution || []
+    });
+
+    successWriter(
+      req,
+      { message: 'Dataset submitted to knowledge graph' },
+      'submitDatasetToKG'
+    );
     latency.latencyCalculator(res);
     return res.status(200).json({ ok: true, result });
   } catch (error) {
-    next(errorWriter(req, error?.message ?? 'Failed to submit dataset to knowledge graph', 'submitDatasetToKG', 500));
+    next(
+      errorWriter(
+        req,
+        error?.message ?? 'Failed to submit dataset to knowledge graph',
+        'submitDatasetToKG',
+        500
+      )
+    );
   }
 };

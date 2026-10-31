@@ -434,6 +434,21 @@ class ElasticSearch {
       throw err;
     }
   }
+
+  async indexDataset (req, doc) {
+    const log = req.logger;
+    log.info('elasticsearch.indexDataset(): Function entry');
+    const { identifier } = doc;
+    try {
+      if (identifier) {
+        await this.deleteSingleDoc(req, 'datasets', identifier);
+      }
+      await this.indexDocument(req, 'datasets', doc);
+      await this.refreshIndices(req, 'datasets');
+    } catch (err) {
+      log.error(`elasticsearch.indexDataset(): non-fatal - ${stringifyError(err)}`);
+    }
+  }
 }
 
 module.exports = new ElasticSearch();
