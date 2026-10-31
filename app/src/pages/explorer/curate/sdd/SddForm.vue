@@ -1146,12 +1146,7 @@ const submitForm = async () => {
     const processedImg = processDepictions();
 
     try {
-      const datasetNanopub = await saveSDDDataset(processedFiles, processedImg, metadata);
-      await store.dispatch('explorer/curation/cacheNewEntityResponse', {
-        identifier: datasetNanopub.identifier,
-        resourceNanopub: datasetNanopub,
-        type: 'datasets',
-      });
+      await saveSDDDataset(processedFiles, processedImg, metadata);
       dialog.value.title = 'Upload successful';
       dialog.value.type = 'success';
     } catch (err: any) {
