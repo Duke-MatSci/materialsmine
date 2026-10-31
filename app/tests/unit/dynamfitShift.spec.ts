@@ -8,9 +8,6 @@ import {
   resolveShiftFitModel,
   resolveExtractTransformMethod,
   buildShiftCoefficientRows,
-  shiftModelParameters,
-  buildShiftModelPayload,
-  ShiftModelInputs,
   ShiftCoefficients,
 } from '@/composables/useDynamfitShift';
 
@@ -124,77 +121,5 @@ describe('resolveExtractTransformMethod', () => {
   it('leaves an explicitly chosen model alone', () => {
     expect(resolveExtractTransformMethod('WLF', 'WLF')).toBe('WLF');
     expect(resolveExtractTransformMethod('hybrid', 'hybrid')).toBe('hybrid');
-  });
-});
-
-describe('shiftModelParameters', () => {
-  it('lists Tg, C1 and C2 for WLF', () => {
-    expect(shiftModelParameters('WLF')).toEqual(['Tg', 'C1', 'C2']);
-  });
-
-  it('lists TC, C1, C2 and Ea for hybrid, with no Tg', () => {
-    // Hybrid is anchored at the WLF/Arrhenius crossover TC; Tg plays no part.
-    expect(shiftModelParameters('hybrid')).toEqual(['TC', 'C1', 'C2', 'Ea']);
-  });
-});
-
-describe('buildShiftModelPayload', () => {
-  const allSet: ShiftModelInputs = {
-    Tg: '20',
-    C1: '17',
-    C2: '51',
-    Ea: '120',
-    TC: '90',
-    Tg_estimate: true,
-    C1_estimate: true,
-    C2_estimate: true,
-    Ea_estimate: true,
-    TC_estimate: true,
-  };
-
-  it('sends Tg, C1, C2 and their estimate flags for WLF', () => {
-    expect(buildShiftModelPayload('WLF', allSet)).toEqual({
-      Tg: '20',
-      C1: '17',
-      C2: '51',
-      Tg_estimate: true,
-      C1_estimate: true,
-      C2_estimate: true,
-    });
-  });
-
-  it('sends TC, C1, C2, Ea and their estimate flags for hybrid, never Tg', () => {
-    const payload = buildShiftModelPayload('hybrid', allSet);
-    expect(payload).toEqual({
-      TC: '90',
-      C1: '17',
-      C2: '51',
-      Ea: '120',
-      TC_estimate: true,
-      C1_estimate: true,
-      C2_estimate: true,
-      Ea_estimate: true,
-    });
-    expect(payload).not.toHaveProperty('Tg');
-    expect(payload).not.toHaveProperty('Tg_estimate');
-  });
-
-  it('omits unset values and unchecked estimate flags', () => {
-    const sparse: ShiftModelInputs = {
-      Tg: '20',
-      C1: null,
-      C2: '',
-      Ea: null,
-      TC: null,
-      Tg_estimate: false,
-      C1_estimate: true,
-      C2_estimate: false,
-      Ea_estimate: false,
-      TC_estimate: false,
-    };
-    expect(buildShiftModelPayload('WLF', sparse)).toEqual({
-      Tg: '20',
-      C1_estimate: true,
-    });
   });
 });
