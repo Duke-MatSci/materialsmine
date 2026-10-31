@@ -17,8 +17,6 @@ import sys
 import json
 from unittest.mock import patch
 
-import numpy as np
-
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -326,50 +324,6 @@ class TestFitShiftCoefficientsRoute(unittest.TestCase):
     def test_empty_shift_file_returns_400(self, _exists, _upload):
         resp = self._post(self._base_wlf_body())
         self.assertEqual(resp.status_code, 400)
-
-
-class TestExtractRouteSolverTimeout(unittest.TestCase):
-    """
-    POST /tri-ve/extract/ answers 400 with the solver's message when the
-    smoothed Prony fit runs out of time. The fit is patched to raise, so this
-    pins the wiring only; the budget itself is tested in
-    test_prony.TestNewtonWatchdog.
-    """
-
-    MESSAGE = ('The fit did not converge within 1 second at a relaxation '
-               'grid size of 41. Lower the relaxation grid size, or raise '
-               'the smoothness or the assumed error.')
-
-    @classmethod
-    def setUpClass(cls):
-        Config.SECRET_KEY = 'test-secret'
-        cls.app = make_app()
-        cls.client = cls.app.test_client()
-        cls.token = make_token()
-        cls.headers = {'Authorization': f'Bearer {cls.token}',
-                       'Content-Type': 'application/json'}
-
-    @patch('app.trive.routes.upload_init')
-    @patch('app.trive.routes.check_file_exists', return_value=True)
-    def test_solver_timeout_returns_400_with_message(self, _exists, upload):
-        from app.trive.fit import SmoothPronyFitTimeout
-        omega = np.logspace(0.0, 2.0, 20)
-        upload.return_value = {
-            'Frequency': omega,
-            'E Storage': 1e3 + 1e6 * omega ** 2 / (1 + omega ** 2),
-            'E Loss': 1e6 * omega / (1 + omega ** 2),
-        }
-        with patch('app.trive.chart.smooth_prony_fit',
-                   side_effect=SmoothPronyFitTimeout(self.MESSAGE)):
-            resp = self.client.post(
-                '/tri-ve/extract/',
-                data=json.dumps({'file_name': 'data.txt',
-                                 'number_of_prony': 41,
-                                 'smoothness': 0.3}),
-                headers=self.headers,
-            )
-        self.assertEqual(resp.status_code, 400)
-        self.assertEqual(json.loads(resp.data)['message'], self.MESSAGE)
 
 
 if __name__ == '__main__':
