@@ -6,6 +6,10 @@ skipped unless TRIVE_SLOW=1. These sweeps also chose
 chart._MAX_GAUSS_NEWTON_CORRECTION; the grid-suggestion comment in
 app.trive.chart.update_line_chart sets out the rule they score.
 
+Run it only when choosing or changing that calibration (the suggestion rule
+or the constant). It is not a regression check: do not run it after a rebase,
+for other Tri-VE changes, or as part of any gate.
+
     TRIVE_SLOW=1 python -m unittest tests.trive.test_grid_suggestion_recall
 """
 import unittest
