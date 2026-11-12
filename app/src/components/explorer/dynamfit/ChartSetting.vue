@@ -674,7 +674,6 @@ import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
 import {
-  computeDefaultPronyTerms,
   fractionToPercent,
   percentToFraction,
   ERROR_SCALE_DEFAULT,
@@ -687,6 +686,7 @@ import {
   SMOOTHNESS_STEP,
   effectivePronyMax,
   pronyTooltipLeft,
+  pronyTermsForLoadedFile,
 } from '@/composables/useDynamfitDefaults';
 import {
   resolveShiftFitModel,
@@ -1022,14 +1022,11 @@ const downloadTitle = (): string => {
 // deep watcher on `dynamfit` triggers the fit, and Vue batches watcher
 // callbacks per flush, so two writes in one tick cost exactly one request.
 const applyDefaultPronyTerms = (fileText: string): void => {
-  // Only the frequency domain has a span worth measuring — a temperature file
-  // has no frequency axis until the ω-T transform has run. The store default
-  // (100) is sent there and the server applies the same per-decade rule to the
-  // master curve the transform produces, treating what we send as a ceiling
-  // (see prony_terms_for_span in dynamfit2.py). Turning the input down still
-  // reaches the fit; turning it up past what the span supports does not.
-  if (selectedProperty.value !== 'frequency') return;
-  const terms = computeDefaultPronyTerms(fileText);
+  // A temperature file has no frequency axis until the ω-T transform has run,
+  // so it starts at the default (100), which the server treats as a ceiling;
+  // the first fit's term cap then lowers it (setDynamfitData). A frequency file
+  // gets 3 terms per decade of its span.
+  const terms = pronyTermsForLoadedFile(fileText, selectedProperty.value);
   if (terms !== null) dynamfit.value.range = terms;
 };
 

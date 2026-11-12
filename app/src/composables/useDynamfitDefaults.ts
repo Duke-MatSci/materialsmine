@@ -103,6 +103,27 @@ export function computeDefaultPronyTerms(
 }
 
 /**
+ * Grid size for a newly loaded file: 3 per decade of its first column in the
+ * frequency domain (null leaves the current value alone), and PRONY_TERMS_MAX
+ * in the temperature domain, so the previous file's term cap does not carry over.
+ */
+export function pronyTermsForLoadedFile(fileText: string, domain: string): number | null {
+  if (domain === 'temperature') return PRONY_TERMS_MAX;
+  return computeDefaultPronyTerms(fileText);
+}
+
+/**
+ * The server's term cap when it is usable (an integer of at least one),
+ * limited to PRONY_TERMS_MAX; null otherwise.
+ */
+export function usablePronyCap(serverMax: unknown): number | null {
+  if (typeof serverMax !== 'number' || !Number.isInteger(serverMax) || serverMax < 1) {
+    return null;
+  }
+  return Math.min(PRONY_TERMS_MAX, serverMax);
+}
+
+/**
  * Maximum for the grid-size slider: the server's term cap for the extracted
  * data, limited to PRONY_TERMS_MAX. The cap never falls below the current
  * value, because a range input whose max drops under its value clamps the
@@ -112,10 +133,8 @@ export function effectivePronyMax(
   serverMax: number | null | undefined,
   currentValue: number
 ): number {
-  if (typeof serverMax !== 'number' || !Number.isInteger(serverMax) || serverMax < 1) {
-    return PRONY_TERMS_MAX;
-  }
-  const cap = Math.min(PRONY_TERMS_MAX, serverMax);
+  const cap = usablePronyCap(serverMax);
+  if (cap === null) return PRONY_TERMS_MAX;
   return Number.isFinite(currentValue) ? Math.max(cap, currentValue) : cap;
 }
 
