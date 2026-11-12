@@ -37,10 +37,13 @@ import sys
 import json
 import tempfile
 import numpy as np
+from unittest.mock import patch
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from app.trive.fit import smooth_prony_fit
+from app.trive.prony import prony_terms_for_span
 from app.trive.shift import wlf_shift, hybrid_shift
 from app.trive.calibration import peak_edge_warning
 from app.config import Config
@@ -838,6 +841,129 @@ class TestExtractRouteWlfPoleDrop(unittest.TestCase):
                     got = [v for a, v in lines if a == axis]
                     self.assertEqual(len(got), 1, lines)
                     np.testing.assert_allclose(got, [x], **tol)
+
+
+class TestExtractRouteGridSize(unittest.TestCase):
+    """
+    E2E: the response's number_of_prony is the grid size the fit ran with,
+    len(tau_i). A request without number_of_prony (key absent or null) has
+    the server size the grid from the fitted curve's span; one that carries
+    it fits the size it was sent.
+    """
+
+    _orig_files_dir = None
+    FILE = 'VeroCyan (5) Temperature Ramp clean.txt'
+    WLF = {'transform_method': 'WLF', 'Tg': 78.22, 'C1': 17.44, 'C2': 51.6}
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        Config.FILES_DIRECTORY = TRIVE_FILES_DIR
+        Config.SECRET_KEY = 'test-secret'
+        cls.client = make_app().test_client()
+        cls.headers = {
+            'Authorization': f'Bearer {make_token()}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+
+    def _post(self, body):
+        """(status, response dict or None, [(N, len(tau_i), omega)] for
+        each fit the request ran)."""
+        fits = []
+
+        def fit(**kwargs):
+            out = smooth_prony_fit(**kwargs)
+            fits.append((kwargs['N'], len(out[0]), kwargs['omega']))
+            return out
+
+        with patch('app.trive.chart.smooth_prony_fit', side_effect=fit):
+            resp = self.client.post('/tri-ve/extract/',
+                                    data=json.dumps(body),
+                                    headers=self.headers)
+        response = None
+        if resp.status_code == 200:
+            response = json.loads(resp.data)['response']
+        return resp.status_code, response, fits
+
+    def _temperature(self, **overrides):
+        body = {'file_name': self.FILE, 'domain': 'temperature',
+                'smoothness': 0.0, **self.WLF}
+        body.update(overrides)
+        return body
+
+    def test_temperature_fit_without_a_size_reports_the_span_sized_grid(self):
+        """A temperature fit sent no grid size fits the span-sized grid of
+        the master curve and reports that size as a JSON integer."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post(
+                    self._temperature(**extra))
+                self.assertEqual(status, 200)
+                self.assertEqual(len(fits), 1)
+                N, n_tau, omega = fits[0]
+                self.assertLess(N, 100)
+                self.assertEqual(N, prony_terms_for_span(omega))
+                self.assertIs(type(response['number_of_prony']), int)
+                self.assertEqual(response['number_of_prony'], n_tau)
+                self.assertEqual(response['number_of_prony'], N)
+
+    def test_temperature_fit_uses_the_size_sent(self):
+        """A temperature fit sent a grid size runs it, above the span-sized
+        count, and reports it."""
+        status, _, first = self._post(self._temperature())
+        self.assertEqual(status, 200)
+        sent = first[0][0] + 10
+        self.assertLessEqual(sent, 100)
+        status, response, fits = self._post(self._temperature(
+            number_of_prony=sent))
+        self.assertEqual(status, 200)
+        self.assertEqual([N for N, _, _ in fits], [sent])
+        self.assertEqual(response['number_of_prony'], sent)
+
+    def test_frequency_fit_without_a_size_reports_the_span_sized_grid(self):
+        """A frequency fit sent no grid size fits the span-sized grid of
+        the file's own frequencies and reports that size."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post({
+                    'file_name': 'agilus30 (8) master curve 20C.txt',
+                    'domain': 'frequency', 'smoothness': 0.0, **extra,
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(len(fits), 1)
+                N, n_tau, omega = fits[0]
+                self.assertNotEqual(N, 100)
+                self.assertEqual(N, prony_terms_for_span(omega))
+                self.assertIs(type(response['number_of_prony']), int)
+                self.assertEqual(response['number_of_prony'], n_tau)
+                self.assertEqual(response['number_of_prony'], N)
+
+    def test_frequency_fit_reports_the_size_sent(self):
+        status, response, fits = self._post({
+            'file_name': 'agilus30 (8) master curve 20C.txt',
+            'domain': 'frequency', 'number_of_prony': 5,
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual([n_tau for _, n_tau, _ in fits], [5])
+        self.assertIs(type(response['number_of_prony']), int)
+        self.assertEqual(response['number_of_prony'], 5)
+
+    def test_temperature_preview_reports_null(self):
+        """No transform means no fit, so there is no grid size to report."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post({
+                    'file_name': self.FILE, 'domain': 'temperature',
+                    **extra,
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(fits, [])
+                self.assertIn('number_of_prony', sorted(response))
+                self.assertIsNone(response['number_of_prony'])
 
 
 class TestExtractRouteErrorColumns(unittest.TestCase):

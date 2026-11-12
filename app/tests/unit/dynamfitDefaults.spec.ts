@@ -7,12 +7,14 @@
 import * as defaults from '@/composables/useDynamfitDefaults';
 import {
   computeDefaultPronyTerms,
+  displayedPronyTerms,
   effectivePronyMax,
   fractionToPercent,
   percentToFraction,
   PERCENT_INPUT_STEP,
   PRONY_TERMS_MAX,
   PRONY_TERMS_PER_DECADE,
+  pronyRequestFields,
   pronyTermsForLoadedFile,
   pronyTooltipLeft,
   RELATIVE_ERROR_DEFAULT_PERCENT,
@@ -85,18 +87,56 @@ describe('pronyTermsForLoadedFile', () => {
   const temperatureRamp = Array.from({ length: 15 }, (_, i) => `${10 + 10 * i}\t1e9\t1e7`)
     .join('\n');
 
-  it('puts a temperature-domain file back at the default of 100 terms', () => {
-    // A cap left by the previous file must not carry over to the next one.
-    expect(pronyTermsForLoadedFile(temperatureRamp, 'temperature')).toBe(PRONY_TERMS_MAX);
-    expect(pronyTermsForLoadedFile('', 'temperature')).toBe(PRONY_TERMS_MAX);
+  it('leaves the grid size of a temperature-domain file unset for the server to size', () => {
+    // A size left by the previous file must not carry over to the next one.
+    expect(pronyTermsForLoadedFile(temperatureRamp, 'temperature')).toBeNull();
+    expect(pronyTermsForLoadedFile('', 'temperature')).toBeNull();
   });
 
   it('keeps three terms per decade for a frequency-domain file', () => {
     expect(pronyTermsForLoadedFile(rowsSpanning(7).join('\n'), 'frequency')).toBe(21);
   });
 
-  it('leaves a frequency-domain value alone when the file has no usable span', () => {
+  it('leaves a frequency-domain file with no usable span unset', () => {
     expect(pronyTermsForLoadedFile('', 'frequency')).toBeNull();
+  });
+});
+
+describe('pronyRequestFields', () => {
+  it('sends a grid size that is set, to be fitted as given', () => {
+    expect(pronyRequestFields(80)).toStrictEqual({ number_of_prony: 80 });
+    expect(pronyRequestFields(21)).toStrictEqual({ number_of_prony: 21 });
+  });
+
+  it('omits the key when the grid size is unset, so the server sizes the grid', () => {
+    // An undefined-valued key would pass toEqual({}); the key must be absent.
+    expect(pronyRequestFields(null)).toStrictEqual({});
+    expect(Object.keys(pronyRequestFields(null))).toEqual([]);
+  });
+});
+
+describe('displayedPronyTerms', () => {
+  it('shows the grid size the user set, whatever the server reported', () => {
+    expect(displayedPronyTerms(80, 55)).toBe(80);
+    expect(displayedPronyTerms(80, null)).toBe(80);
+    expect(displayedPronyTerms(5, undefined)).toBe(5);
+  });
+
+  it('shows the size the server reported while the grid size is unset', () => {
+    expect(displayedPronyTerms(null, 55)).toBe(55);
+    expect(displayedPronyTerms(null, 1)).toBe(1);
+  });
+
+  it('caps a reported size above the static maximum to it', () => {
+    expect(displayedPronyTerms(null, 250)).toBe(PRONY_TERMS_MAX);
+  });
+
+  it('falls back to the static maximum when unset with no usable reported size', () => {
+    // null on the temperature preview, undefined before the first response;
+    // a non-integer or a count below one term is no size at all.
+    for (const reported of [null, undefined, NaN, 12.5, 0, -3]) {
+      expect(displayedPronyTerms(null, reported)).toBe(PRONY_TERMS_MAX);
+    }
   });
 });
 

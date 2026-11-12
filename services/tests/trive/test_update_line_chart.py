@@ -1972,10 +1972,10 @@ class TestExtendedFigureAxisPin(unittest.TestCase):
 
 class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
     """
-    A temperature upload has no frequency axis for the client to measure, so it
-    sends the store default of PRONY_TERMS_MAX terms however short the ramp.
-    update_line_chart sizes the series against the master curve the ω-T
-    transform produces and treats the request as a ceiling.
+    A request without a grid size (number_of_prony None) has the server
+    size the grid from the span of the curve the fit sees: the master curve
+    the ω-T transform produces, or the file's own frequencies. A request
+    that carries a size is fitted at that size as given.
     """
 
     T_REF = 25.0
@@ -2012,9 +2012,9 @@ class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
         return [a.text for a in fig.layout.annotations
                 if a.text and 'lower is better' in a.text]
 
-    def test_request_is_capped_by_the_transformed_span(self):
+    def test_omitted_size_is_sized_from_the_transformed_span(self):
         with self._spy() as spy:
-            self._run(100)
+            self._run(None)
         N = spy.call_args.kwargs['N']
         omega = spy.call_args.kwargs['omega']
         self.assertLess(N, 100)
@@ -2032,11 +2032,40 @@ class TestUpdateLineChartTemperaturePronyTerms(unittest.TestCase):
         # 13-row ramp has residuals, so chi-squared had no degrees of freedom,
         # _prony_fit_quality returned None for it, and _annotate_fit_quality
         # dropped it — the readout showed curvature and surprisal only.
-        fig1, fig11 = self._run(100)[:2]
+        fig1, fig11 = self._run(None)[:2]
         for fig in (fig1, fig11):
             readouts = self._quality_readouts(fig)
             self.assertEqual(len(readouts), 1)
             self.assertIn('χ²/ν', readouts[0])
+
+    def test_size_sent_is_fitted_as_given(self):
+        """A temperature fit sent a grid size runs with it, even above the
+        span-sized count."""
+        with self._spy() as spy:
+            self._run(50)
+        omega = spy.call_args.kwargs['omega']
+        self.assertGreater(50, prony_terms_for_span(omega))
+        self.assertEqual(spy.call_args.kwargs['N'], 50)
+
+    def test_frequency_domain_omitted_size_is_sized_from_the_span(self):
+        """Without a grid size the frequency domain sizes the grid from the
+        span of the file's own frequencies, as in the temperature domain."""
+        # 4 decades on 30 rows: the span count (12) sits below the row
+        # ceiling (29), so the span rule is what decides it.
+        freq_data = {
+            'Frequency': np.logspace(-2, 2, 30),
+            'E Storage': np.linspace(1000.0, 10.0, 30),
+            'E Loss': np.full(30, 50.0),
+        }
+        with self._spy() as spy:
+            update_line_chart(
+                freq_data, number_of_prony=None, smoothness=0.1,
+                fit_settings=False, domain='frequency',
+            )
+        N = spy.call_args.kwargs['N']
+        omega = spy.call_args.kwargs['omega']
+        self.assertEqual(N, prony_terms_for_span(omega))
+        self.assertEqual(N, 12)
 
     def test_frequency_domain_request_is_untouched(self):
         # The client already sizes the series from the file itself there, so an
@@ -2802,9 +2831,8 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
             self.assertEqual(suggestions(fig), [])
 
     def test_measures_the_grid_the_fit_ran_with(self):
-        # A temperature upload caps the request at the transformed span, so
-        # the suggestion compares against the fit's len(tau_i), not the
-        # number the client sent.
+        # A temperature fit sent no grid size is sized from the transformed
+        # span, so the suggestion compares against the fit's len(tau_i).
         T = np.linspace(0.0, 80.0, 13)
         with patch('app.trive.chart.smooth_prony_fit',
                    wraps=smooth_prony_fit) as fit, \
@@ -2813,7 +2841,7 @@ class TestUpdateLineChartGridSuggestion(unittest.TestCase):
                 {'Temperature': T,
                  'E Storage': np.linspace(1000.0, 10.0, len(T)),
                  'E Loss': np.full(len(T), 50.0)},
-                number_of_prony=100, smoothness=0.1,
+                number_of_prony=None, smoothness=0.1,
                 fit_settings=False, domain='temperature',
                 Tg=25.0, C1=17.44, C2=51.6, shift_model='WLF',
             )
