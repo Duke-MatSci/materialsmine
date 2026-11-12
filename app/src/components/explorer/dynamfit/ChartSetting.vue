@@ -329,7 +329,7 @@
       class="viz-u-mgbottom-sm"
     >
       <label for="prony" class="md-body-2">
-        Relaxation Grid Size <span>[{{ cPronyTerms }}]</span>
+        Relaxation Grid Size <span>[{{ cPronyShown }}]</span>
         <HelpPopover label="Relaxation grid size">
           How many log-spaced relaxation times the fit may choose from; the default is about
           3 per decade. It is an upper bound: the fit keeps only the terms it needs.
@@ -341,7 +341,8 @@
           @mouseenter="showToolTip = true"
           @mouseleave="showToolTip = false"
           name="prony"
-          :value="cPronyTerms"
+          :value="cPronyShown"
+          @input="onPronyTermsInput"
           @change="onPronyTermsChange"
           type="range"
           min="1"
@@ -351,11 +352,11 @@
         />
         <div
           :style="{ left: `${cPronyTooltipLeft}%` }"
-          v-if="showToolTip"
+          v-if="showToolTip || pronyDrag !== null"
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
         >
-          {{ cPronyTerms }}
+          {{ cPronyShown }}
         </div>
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
@@ -882,10 +883,30 @@ const cPronyTerms = computed(() =>
   displayedPronyTerms(dynamfit.value.range, dynamfitData.value?.number_of_prony)
 );
 const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, cPronyTerms.value));
-const cPronyTooltipLeft = computed(() => pronyTooltipLeft(cPronyTerms.value, cPronyMax.value));
+// The value under the thumb while it is being dragged, null otherwise. It is
+// local, so the label and tooltip follow the drag without a write into
+// dynamfit, which would refit on every step.
+const pronyDrag = ref<number | null>(null);
+const cPronyShown = computed(() => pronyDrag.value ?? cPronyTerms.value);
+const cPronyTooltipLeft = computed(() => pronyTooltipLeft(cPronyShown.value, cPronyMax.value));
+// A release that ends where the drag began fires no change event, so the drag
+// also ends on the pointer's release, wherever that lands. Deferred a task so
+// the change event of the same release still reads the dragged value.
+const endPronyDrag = (): void => {
+  setTimeout(() => {
+    pronyDrag.value = null;
+  }, 0);
+};
+const onPronyTermsInput = (event: Event): void => {
+  if (pronyDrag.value === null) {
+    window.addEventListener('pointerup', endPronyDrag, { once: true });
+  }
+  pronyDrag.value = Number((event.target as HTMLInputElement).value);
+};
 // The user's move of the slider sets the grid size, one write on change.
 const onPronyTermsChange = (event: Event): void => {
   dynamfit.value.range = Number((event.target as HTMLInputElement).value);
+  pronyDrag.value = null;
 };
 
 const cAxisLabel = computed(() =>
