@@ -451,7 +451,7 @@ def _wlf_drop(temp_sweep_data, Tg, C1, C2):
             f"pole at {Tg - C2:.1f} °C (Tg − C2)."
         ),
         'notice': (f"{n_dropped} of {len(T)} rows dropped {cut} "
-                   "(outside the WLF shift window)"),
+                   f"(vertical dashed line{'s' if len(phrases) > 1 else ''})"),
         'temperatures': temperatures,
         'frequencies': frequencies,
     }
