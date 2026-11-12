@@ -13,6 +13,7 @@ import {
   PERCENT_INPUT_STEP,
   PRONY_TERMS_MAX,
   PRONY_TERMS_PER_DECADE,
+  pronyTermsForLoadedFile,
   pronyTooltipLeft,
   RELATIVE_ERROR_DEFAULT_PERCENT,
   SMOOTHNESS_DEFAULT,
@@ -75,6 +76,27 @@ describe('computeDefaultPronyTerms', () => {
 
   it('skips non-positive values that log10 cannot use', () => {
     expect(computeDefaultPronyTerms('0\t1e9\n-1\t1e9\n1\t1e9')).toBeNull();
+  });
+});
+
+describe('pronyTermsForLoadedFile', () => {
+  // Positive temperatures (10 to 150 °C): read as a frequency span they would
+  // give the 5-term floor, so only the domain can tell this file apart.
+  const temperatureRamp = Array.from({ length: 15 }, (_, i) => `${10 + 10 * i}\t1e9\t1e7`)
+    .join('\n');
+
+  it('puts a temperature-domain file back at the default of 100 terms', () => {
+    // A cap left by the previous file must not carry over to the next one.
+    expect(pronyTermsForLoadedFile(temperatureRamp, 'temperature')).toBe(PRONY_TERMS_MAX);
+    expect(pronyTermsForLoadedFile('', 'temperature')).toBe(PRONY_TERMS_MAX);
+  });
+
+  it('keeps three terms per decade for a frequency-domain file', () => {
+    expect(pronyTermsForLoadedFile(rowsSpanning(7).join('\n'), 'frequency')).toBe(21);
+  });
+
+  it('leaves a frequency-domain value alone when the file has no usable span', () => {
+    expect(pronyTermsForLoadedFile('', 'frequency')).toBeNull();
   });
 });
 

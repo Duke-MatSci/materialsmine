@@ -4,6 +4,7 @@
  *
  * @jest-environment node
  */
+import { effectivePronyMax } from '@/composables/useDynamfitDefaults';
 import mutations from '@/store/modules/explorer/mutations';
 import { ExplorerState } from '@/store/modules/explorer/types';
 
@@ -91,5 +92,65 @@ describe('explorer mutations — dynamfit shift coefficients', () => {
       chi2_reduced: null,
       model: null,
     });
+  });
+});
+
+describe('explorer mutations — grid size follows the term cap in a fit response', () => {
+  const withRange = (range: number): ExplorerState =>
+    makeState({
+      dynamfit: { range, fitSettings: true, model: 'WLF', fileUpload: 'ramp.tsv' },
+    });
+
+  it('setDynamfitData drops a value above the cap to exactly the cap', () => {
+    for (const range of [100, 58]) {
+      const state = withRange(range);
+      mutations.setDynamfitData(state, { max_prony: 23 });
+      expect(state.dynamfit.range).toBe(23);
+      // The slider's maximum and its value read the same number.
+      expect(effectivePronyMax(23, state.dynamfit.range)).toBe(23);
+      expect(state.dynamfit).toEqual({
+        range: 23,
+        fitSettings: true,
+        model: 'WLF',
+        fileUpload: 'ramp.tsv',
+      });
+    }
+  });
+
+  it('setDynamfitData leaves a value at or below the cap alone', () => {
+    const above = withRange(58);
+    mutations.setDynamfitData(above, { max_prony: 23 });
+    expect(above.dynamfit.range).toBe(23);
+
+    for (const range of [20, 23]) {
+      const state = withRange(range);
+      mutations.setDynamfitData(state, { max_prony: 23 });
+      expect(state.dynamfit.range).toBe(range);
+    }
+  });
+
+  it('setDynamfitData leaves the value alone when the response has no usable cap', () => {
+    const capped = withRange(100);
+    mutations.setDynamfitData(capped, { max_prony: 23 });
+    expect(capped.dynamfit.range).toBe(23);
+
+    // null on the temperature preview; absent from an empty response body; a
+    // non-integer or a count below one term is no cap at all.
+    const noCap = [
+      { max_prony: null },
+      {},
+      { max_prony: 12.5 },
+      { max_prony: 0 },
+      { max_prony: -3 },
+    ];
+    for (const payload of noCap) {
+      const state = withRange(100);
+      mutations.setDynamfitData(state, payload);
+      expect(state.dynamfit.range).toBe(100);
+    }
+    // A cap above the static maximum behaves as the maximum itself.
+    const wide = withRange(100);
+    mutations.setDynamfitData(wide, { max_prony: 250 });
+    expect(wide.dynamfit.range).toBe(100);
   });
 });
