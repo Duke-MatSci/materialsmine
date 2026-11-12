@@ -128,6 +128,7 @@ export function usablePronyCap(serverMax: unknown): number | null {
  * data, limited to PRONY_TERMS_MAX. The cap never falls below the current
  * value, because a range input whose max drops under its value clamps the
  * thumb without firing input and leaves v-model out of step with the store.
+ * A fit response lowers a value above the cap to the cap (setDynamfitData).
  */
 export function effectivePronyMax(
   serverMax: number | null | undefined,

@@ -687,6 +687,7 @@ import {
   effectivePronyMax,
   pronyTooltipLeft,
   pronyTermsForLoadedFile,
+  usablePronyCap,
 } from '@/composables/useDynamfitDefaults';
 import {
   resolveShiftFitModel,
@@ -873,10 +874,7 @@ const dynamfitData = computed(() => {
 
 // The server's term cap for the extracted data; null on the temperature
 // preview or before the first response.
-const cServerMaxProny = computed<number | null>(() => {
-  const cap = dynamfitData.value?.max_prony;
-  return Number.isInteger(cap) && cap >= 1 ? cap : null;
-});
+const cServerMaxProny = computed(() => usablePronyCap(dynamfitData.value?.max_prony));
 const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, dynamfit.value.range));
 const cPronyTooltipLeft = computed(() => pronyTooltipLeft(dynamfit.value.range, cPronyMax.value));
 
