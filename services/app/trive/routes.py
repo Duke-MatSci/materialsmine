@@ -81,7 +81,8 @@ def extract_data_from_file(request_id):
         start_time = datetime.datetime.now()
         data = request.get_json()
         file_name = data.get('file_name')
-        number_of_prony = data.get('number_of_prony', 100)
+        # Absent or null: the server sizes the grid from the fitted span.
+        number_of_prony = data.get('number_of_prony')
         smoothness = as_float(data.get('smoothness', 0), 'smoothness')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
@@ -134,7 +135,9 @@ def extract_data_from_file(request_id):
         if not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
 
-        if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
+        if number_of_prony is not None and (
+                number_of_prony not in range(1, 101)
+                or not isinstance(number_of_prony, int)):
             # Named for the widget the value comes from, not for the wire field:
             # this string is shown to the user in a snackbar.
             return jsonify({'message': 'The relaxation grid size must be between 1 and 100'}), 400
@@ -263,6 +266,8 @@ def extract_data_from_file(request_id):
                 "shift-table": chart_data['shift_table_placeholder'],
                 "mytable": chart_data['mytable_placeholder'],
                 "max_prony": chart_data['max_prony'],
+                # The grid size the fit ran with; None on the preview.
+                "number_of_prony": result.number_of_prony,
                 # Emit upload-data as row-objects (one dict per row), matching
                 # mytable's shape and the frontend "Uploaded Data" tab, whose
                 # TableComponent derives columns from Object.keys(rows[0]).

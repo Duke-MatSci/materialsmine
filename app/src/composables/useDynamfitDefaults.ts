@@ -82,8 +82,8 @@ export const PRONY_TERMS_MAX = 100;
  *
  * Column separators may be whitespace, comma or semicolon; a header row is
  * skipped implicitly because `parseFloat` yields NaN for it. Returns null when
- * the file has too few usable rows to say anything, in which case the caller
- * should leave the existing default alone.
+ * the file has too few usable rows to say anything, in which case the grid size
+ * is left unset and the server sizes it.
  */
 export function computeDefaultPronyTerms(
   fileText: string,
@@ -104,12 +104,29 @@ export function computeDefaultPronyTerms(
 
 /**
  * Grid size for a newly loaded file: 3 per decade of its first column in the
- * frequency domain (null leaves the current value alone), and PRONY_TERMS_MAX
- * in the temperature domain, so the previous file's term cap does not carry over.
+ * frequency domain, and null (unset: the server sizes the fit from the span)
+ * in the temperature domain or for a file with no readable span.
  */
 export function pronyTermsForLoadedFile(fileText: string, domain: string): number | null {
-  if (domain === 'temperature') return PRONY_TERMS_MAX;
+  if (domain === 'temperature') return null;
   return computeDefaultPronyTerms(fileText);
+}
+
+/**
+ * Grid-size fields of an extract request: the slider's value when the user
+ * has set one, and no key at all while it is unset, so the server sizes it.
+ */
+export function pronyRequestFields(range: number | null): { number_of_prony?: number } {
+  return range === null ? {} : { number_of_prony: range };
+}
+
+/**
+ * Grid size the slider shows: the value set, else the size the last fit
+ * reported, else PRONY_TERMS_MAX.
+ */
+export function displayedPronyTerms(range: number | null, reported: unknown): number {
+  if (range !== null) return range;
+  return usablePronyCap(reported) ?? PRONY_TERMS_MAX;
 }
 
 /**
@@ -125,18 +142,20 @@ export function usablePronyCap(serverMax: unknown): number | null {
 
 /**
  * Maximum for the grid-size slider: the server's term cap for the extracted
- * data, limited to PRONY_TERMS_MAX. The cap never falls below the current
- * value, because a range input whose max drops under its value clamps the
- * thumb without firing input and leaves v-model out of step with the store.
- * A fit response lowers a value above the cap to the cap (setDynamfitData).
+ * data, limited to PRONY_TERMS_MAX. The cap never falls below the value shown,
+ * because a range input whose max drops under its value clamps the
+ * thumb without firing input and leaves the slider out of step with the value shown.
+ * A fit response lowers a value the user set above the cap to the cap (setDynamfitData).
  */
 export function effectivePronyMax(
   serverMax: number | null | undefined,
-  currentValue: number
+  currentValue: number | null
 ): number {
   const cap = usablePronyCap(serverMax);
   if (cap === null) return PRONY_TERMS_MAX;
-  return Number.isFinite(currentValue) ? Math.max(cap, currentValue) : cap;
+  return typeof currentValue === 'number' && Number.isFinite(currentValue)
+    ? Math.max(cap, currentValue)
+    : cap;
 }
 
 /** Tooltip position, in percent, of a value on a 1..max range track. */

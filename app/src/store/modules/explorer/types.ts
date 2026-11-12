@@ -43,7 +43,8 @@ export interface ExplorerState {
   // Bumped on every dynamfit reset so in-flight fits can tell they are stale.
   dynamfitResetCount: number;
   dynamfit: {
-    range: number;
+    // null until the user sets it: requests omit it and the server sizes the grid.
+    range: number | null;
     fitSettings: boolean;
     model: string;
     fileUpload: string;

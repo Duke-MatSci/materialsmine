@@ -14,7 +14,7 @@ import pandas as pd
 # Sizing rule for an auto-chosen Prony series, mirroring the frontend's
 # useDynamfitDefaults (PRONY_TERMS_PER_DECADE / PRONY_TERMS_MIN / _MAX), which
 # applies it to the first column of a frequency-domain upload. The two copies
-# run on different inputs — the raw column there, the transformed master curve
+# run on different inputs — the raw column there, the fitted curve
 # here — and neither can import the other, so they are kept in step by eye.
 PRONY_TERMS_PER_DECADE = 3
 PRONY_TERMS_MIN = 5

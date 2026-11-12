@@ -49,6 +49,16 @@ EXPECTED_DOMAIN_COLUMNS = {
 _MAX_GAUSS_NEWTON_CORRECTION = 1.5
 
 
+class _ChartResult(tuple):
+    """update_line_chart's result tuple, carrying the grid size the fit ran
+    with as number_of_prony (None when no fit ran)."""
+
+    def __new__(cls, items, number_of_prony):
+        result = super().__new__(cls, items)
+        result.number_of_prony = number_of_prony
+        return result
+
+
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
                       Tg=None, C1=None, C2=None, Ea=None, TC=None, shift_model=None, shiftData=None,
@@ -62,11 +72,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             chosen domain. Keys must be ('Frequency', 'E Storage', 'E Loss')
             for frequency domain or ('Temperature', 'E Storage', 'E Loss') for
             temperature domain.
-        number_of_prony (int): Number of terms in the Prony series. In the
-            temperature domain this is an upper bound: the master curve does
-            not exist until the transform has run, so the term count is sized
-            against the resulting span by prony_terms_for_span and this value
-            only caps it. The frequency domain uses it as given.
+        number_of_prony (int or None): Number of terms in the Prony series,
+            used as given. None sizes the grid from the span of the curve
+            the fit sees (prony_terms_for_span), in either domain.
         smoothness (float): Smoothing regularization for the fit.
         fit_settings (bool): If True, overlay the basis scatter on the
             relaxation modulus and spectrum figures.
@@ -135,6 +143,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         warnings (list of str): Notices for the user from the transform;
             empty unless a temperature-domain WLF transform dropped rows,
             in which case every figure also marks each cutoff (_wlf_drop).
+        The tuple also carries number_of_prony as an attribute: the grid
+        size the fit ran with, len(tau_i); None on the temperature preview.
 
     Raises:
         ValueError: If the uploaded data is empty, contains non-finite values,
@@ -255,11 +265,11 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             # frequency-domain figures and coefficient table are not produced
             # (and there is no shift model to draw).
             empty = go.Figure()
-            return (
+            return _ChartResult((
                 empty, empty, empty, empty, fig4, fig41,
                 pd.DataFrame(columns=["tau_i", "E_i"]).to_dict("records"),
                 shift_fig, shift_records, None, [],
-            )
+            ), None)
 
         freq_sweep_data = tts_temperature_to_frequency_V2(
             temp_sweep_data, shift_model,
@@ -287,18 +297,6 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         df = freq_sweep_data.rename(
             columns={"E'": 'E Storage', "E''": 'E Loss'},
         )
-        # The client cannot size the Prony series for a temperature upload: the
-        # frequency span does not exist until the transform above has run, so
-        # its per-decade rule has nothing to measure and it sends the store
-        # default of PRONY_TERMS_MAX however short the ramp. Size it here, where
-        # the master curve finally exists. Taken as a ceiling rather than a
-        # replacement so the term-count input still works in this domain —
-        # lowering it is honored, raising it past what the span and the row
-        # count support is not.
-        number_of_prony = min(
-            number_of_prony,
-            prony_terms_for_span(df['Frequency'].to_numpy()),
-        )
 
     E_stor_arr = df['E Storage'].to_numpy()
     E_loss_arr = df['E Loss'].to_numpy()
@@ -321,6 +319,10 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
         E_loss_std = E_stor_std
         std_scale = relative_error
     omega_arr = df['Frequency'].to_numpy()
+    # An omitted size is sized here, where the curve the fit sees exists;
+    # for a temperature upload that is the master curve after the transform.
+    if number_of_prony is None:
+        number_of_prony = prony_terms_for_span(omega_arr)
     max_prony = prony_rank_limit(omega_arr, E_stor_arr, E_loss_arr,
                                  E_stor_std, E_loss_std, std_scale=std_scale)
     tau_i, E_i, fit_quality = smooth_prony_fit(
@@ -366,7 +368,7 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
     #    a Hessian that is not positive definite) the probe count stands.
     # 3. Fire (figures._annotate_grid_suggestion): rounded, the corrected
     #    count is compared with len(tau_i), the grid the fit ran with, which
-    #    a temperature upload may have capped below the request; a grid that
+    #    the server sized from the span if the request sent none; a grid that
     #    meets it gets no suggestion.
     # 4. Size (same function): min(max_prony, ceil(1.5 * count)), and none
     #    when that leaves nothing to raise. This 1.5 allows nodes around each
@@ -408,8 +410,9 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
                       wlf_drop['notice'])
         warnings.append(wlf_drop['warning'])
 
-    return (fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
-            shift_fig, shift_records, max_prony, warnings)
+    return _ChartResult((fig1, fig11, fig2, fig3, fig4, fig41, coef_records,
+                         shift_fig, shift_records, max_prony, warnings),
+                        len(tau_i))
 
 
 def _wlf_drop(temp_sweep_data, Tg, C1, C2):

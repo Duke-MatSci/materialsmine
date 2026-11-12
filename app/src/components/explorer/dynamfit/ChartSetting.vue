@@ -329,7 +329,7 @@
       class="viz-u-mgbottom-sm"
     >
       <label for="prony" class="md-body-2">
-        Relaxation Grid Size <span>[{{ dynamfit.range }}]</span>
+        Relaxation Grid Size <span>[{{ cPronyTerms }}]</span>
         <HelpPopover label="Relaxation grid size">
           How many log-spaced relaxation times the fit may choose from; the default is about
           3 per decade. It is an upper bound: the fit keeps only the terms it needs.
@@ -341,7 +341,8 @@
           @mouseenter="showToolTip = true"
           @mouseleave="showToolTip = false"
           name="prony"
-          v-model.lazy.number="dynamfit.range"
+          :value="cPronyTerms"
+          @change="onPronyTermsChange"
           type="range"
           min="1"
           :max="cPronyMax"
@@ -354,7 +355,7 @@
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
         >
-          {{ dynamfit.range }}
+          {{ cPronyTerms }}
         </div>
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
@@ -684,7 +685,9 @@ import {
   SMOOTHNESS_MAX,
   SMOOTHNESS_MIN,
   SMOOTHNESS_STEP,
+  displayedPronyTerms,
   effectivePronyMax,
+  pronyRequestFields,
   pronyTooltipLeft,
   pronyTermsForLoadedFile,
   usablePronyCap,
@@ -875,8 +878,15 @@ const dynamfitData = computed(() => {
 // The server's term cap for the extracted data; null on the temperature
 // preview or before the first response.
 const cServerMaxProny = computed(() => usablePronyCap(dynamfitData.value?.max_prony));
-const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, dynamfit.value.range));
-const cPronyTooltipLeft = computed(() => pronyTooltipLeft(dynamfit.value.range, cPronyMax.value));
+const cPronyTerms = computed(() =>
+  displayedPronyTerms(dynamfit.value.range, dynamfitData.value?.number_of_prony)
+);
+const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, cPronyTerms.value));
+const cPronyTooltipLeft = computed(() => pronyTooltipLeft(cPronyTerms.value, cPronyMax.value));
+// The user's move of the slider sets the grid size, one write on change.
+const onPronyTermsChange = (event: Event): void => {
+  dynamfit.value.range = Number((event.target as HTMLInputElement).value);
+};
 
 const cAxisLabel = computed(() =>
   selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (rad/s)'
@@ -1021,11 +1031,10 @@ const downloadTitle = (): string => {
 // callbacks per flush, so two writes in one tick cost exactly one request.
 const applyDefaultPronyTerms = (fileText: string): void => {
   // A temperature file has no frequency axis until the ω-T transform has run,
-  // so it starts at the default (100), which the server treats as a ceiling;
-  // the first fit's term cap then lowers it (setDynamfitData). A frequency file
-  // gets 3 terms per decade of its span.
-  const terms = pronyTermsForLoadedFile(fileText, selectedProperty.value);
-  if (terms !== null) dynamfit.value.range = terms;
+  // so its grid size starts unset: the server sizes each fit from the span
+  // and the slider shows the size reported. A frequency file gets 3 terms per
+  // decade of its span (unset when it has no readable span).
+  dynamfit.value.range = pronyTermsForLoadedFile(fileText, selectedProperty.value);
 };
 
 // Clear everything inside the ω-T segment — model, coefficients, estimate
@@ -1286,7 +1295,7 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
   const payload: Record<string, unknown> = {
     useSample: useSample.value,
     file_name: dynamfit.value.fileUpload,
-    number_of_prony: dynamfit.value.range,
+    ...pronyRequestFields(dynamfit.value.range),
     model: dynamfit.value.model,
     domain: selectedProperty.value,
     smoothness: orDefault(smoothness.value, SMOOTHNESS_DEFAULT),
@@ -1454,7 +1463,7 @@ const handleSelect = async (): Promise<void> => {
       id: currentItem.value?.id,
       domain: selectedProperty.value,
       index: selectedItemProperty.value.index,
-      numberOfProny: dynamfit.value.range,
+      numberOfProny: cPronyTerms.value,
       model: dynamfit.value.model,
     };
 
