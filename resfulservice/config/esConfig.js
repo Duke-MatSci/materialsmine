@@ -125,7 +125,7 @@ exports.datasets = {
         }
       }
     },
-    distributions: {
+    distribution: {
       type: 'text'
     }
   }

@@ -274,9 +274,10 @@ async function saveDataset(
   }
 }
 
-async function saveDatasetFiles(fileList: FileItem[]): Promise<any> {
+async function saveDatasetFiles(fileList: FileItem[], options?: { extractZip?: boolean }): Promise<any> {
   if (fileList.length) {
-    const url = `${window.location.origin}/api/files/upload`;
+    let url = `${window.location.origin}/api/files/upload`;
+    if (options?.extractZip) url += '?extractZip=true';
     const formData = new FormData();
     fileList.forEach((file) => formData.append('uploadfile', file?.file ?? (file as any)));
     const result = await fetch(url, {

@@ -59,6 +59,7 @@ const { logger } = require('../common/utils');
 const latency = require('../../src/middlewares/latencyTimer');
 const FileStorage = require('../../src/middlewares/fileStorage');
 const curatedSamples = require('../../src/models/curatedSamples');
+const elasticSearch = require('../../src/utils/elasticSearch');
 
 const { expect } = chai;
 
@@ -1343,6 +1344,7 @@ describe('Curation Controller', function () {
         success: true,
         result: { id: '5e907660-8942-4cdd-91a0-746734bfa21a' }
       });
+      sinon.stub(elasticSearch, 'indexDataset').resolves();
 
       await XlsxController.submitDatasetToKG(submitReq, res, next);
       expect(res.status.calledWith(200)).to.equal(true);

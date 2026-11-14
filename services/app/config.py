@@ -24,3 +24,4 @@ class Config:
     FUSEKI_DATASET = os.environ.get('FUSEKI_DATASET', 'materialsmine')
     FUSEKI_USER = os.environ.get('FUSEKI_USER', 'admin')
     FUSEKI_PWD = os.environ.get('FUSEKI_PWD', 'test123')
+    MM_RUNTIME_ENV = os.environ.get('MM_RUNTIME_ENV', 'production')

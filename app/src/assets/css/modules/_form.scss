@@ -229,6 +229,14 @@
         }
     }
 
+    &__helper-text {
+        display: block;
+        margin-top: 4px;
+        margin-left: 40px;
+        font-size: 1.2rem;
+        color: $secondary-grey;
+    }
+
     &__drop-area {
         max-width: 80%;
         margin: 2.5rem;

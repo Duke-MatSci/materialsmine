@@ -4,7 +4,7 @@ const { decodeToken } = require('../../utils/jwtService');
 async function getHttpContext ({ req }) {
   const logger = req.logger;
   if (!req.headers.authorization) {
-    logger.warning('[getHttpContext]: No header authorization key provided');
+    logger.warn('[getHttpContext]: No header authorization key provided');
     return { undefined, req };
   }
   logger.info('[getHttpContext]: Setting up req http ctx');

@@ -1,10 +1,13 @@
 import re
+from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
 import requests
 from rdflib import Graph, URIRef
 from rdflib.namespace import RDF, RDFS
 from rdflib.util import guess_format
+
+_BUNDLED_ONTOLOGY_PATH = Path(__file__).resolve().parent.parent / "data" / "mm.ttl"
 
 DEFAULT_ONTOLOGY_LINK = (
     "https://raw.githubusercontent.com/Duke-MatSci/mm-apps/refs/heads/main/ontology/%40mm.ttl"
@@ -37,7 +40,9 @@ def _load_graph_from_text_or_link(
         g.parse(data=text, format=default_format)
         return g
     if link and link.strip():
-        # Let rdflib guess by URL suffix; fall back to provided default_format
+        if link == DEFAULT_ONTOLOGY_LINK and _BUNDLED_ONTOLOGY_PATH.exists():
+            g.parse(str(_BUNDLED_ONTOLOGY_PATH), format="turtle")
+            return g
         fmt = guess_format(link) or default_format
         g.parse(link, format=fmt)
         return g

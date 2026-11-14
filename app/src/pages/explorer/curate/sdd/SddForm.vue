@@ -51,6 +51,16 @@
                               <span class="md-error" style="margin-left: 40px"
                                 >At least one distribution is required</span
                               >
+                              <span class="md-helper-text form__helper-text">
+                                Helpful hint: Upload your SDD (.xlsx) and main data CSV directly. If
+                                you have more than 15 additional files (extra CSVs, images,
+                                supplementary data), zip them into a single .zip file and upload the
+                                zip along with your SDD and main CSV.
+                                <br />
+                                Note: Your main data CSV must match at least 50% of the SDD
+                                dictionary columns to be recognized as a data file. Files that fall
+                                below this threshold will be skipped.
+                              </span>
                             </div>
                           </div>
                         </label>
@@ -124,7 +134,7 @@
 
                       <FileInput @files-dropped="previewFile()">
                         <label for="file-depict-input">
-                          <div class="form__file-input">
+                          <div class="form__file-input u--margin-toplg">
                             <div class="md-field md-theme-default md-has-file">
                               <md-icon>attach_file</md-icon>
                               <label for="file-depict-input"
@@ -576,7 +586,12 @@
             </div>
             <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden">
               <div
-                :style="{ width: Math.round((sddProgress.batch / sddProgress.total) * 100) + '%', height: '100%', background: '#0e5f76', transition: 'width 0.3s ease' }"
+                :style="{
+                  width: Math.round((sddProgress.batch / sddProgress.total) * 100) + '%',
+                  height: '100%',
+                  background: '#0e5f76',
+                  transition: 'width 0.3s ease',
+                }"
               ></div>
             </div>
           </div>
@@ -1135,12 +1150,7 @@ const submitForm = async () => {
     const processedImg = processDepictions();
 
     try {
-      const datasetNanopub = await saveSDDDataset(processedFiles, processedImg, metadata);
-      await store.dispatch('explorer/curation/cacheNewEntityResponse', {
-        identifier: datasetNanopub.identifier,
-        resourceNanopub: datasetNanopub,
-        type: 'datasets',
-      });
+      await saveSDDDataset(processedFiles, processedImg, metadata);
       dialog.value.title = 'Upload successful';
       dialog.value.type = 'success';
     } catch (err: any) {
