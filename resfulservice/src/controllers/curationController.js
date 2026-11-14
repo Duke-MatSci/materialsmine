@@ -152,17 +152,11 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       }
     }
     const requiredFields = getCurationUniqueFields(result);
-    const controlSampleRef = req.body?.controlSampleRef || null;
-    const generated = await generateControlId(
+    result.Control_ID = await generateControlId(
       requiredFields,
       user,
-      query?.dataset,
-      controlSampleRef
+      query?.dataset
     );
-    result.Control_ID = generated.controlId;
-    if (generated.controlSampleRef) {
-      result.Control_Sample_Ref = generated.controlSampleRef;
-    }
 
     let datasets;
     if (query.dataset) {
@@ -242,9 +236,7 @@ exports.curateXlsxSpreadsheet = async (req, res, next) => {
       user: curatedObject.user,
       groupId: curatedObject.dataset,
       isApproved: curatedObject.entityState !== CurationEntityStateDefault,
-      status: curatedObject.curationState,
-      isControlSample: generated.isControlSample,
-      controlSampleRef: generated.controlSampleRef
+      status: curatedObject.curationState
     };
 
     if (req?.isParentFunction) return { curatedSample, processedFiles };
@@ -340,12 +332,7 @@ const getCurationUniqueFields = (BaseSchemaObject) => {
   };
 };
 
-async function generateControlId(
-  requiredFields,
-  user,
-  datasetId,
-  controlSampleRef
-) {
+async function generateControlId(requiredFields, user, datasetId) {
   try {
     let { citationType, publicationYear, author, title } = requiredFields;
 
@@ -355,47 +342,23 @@ async function generateControlId(
       ? author[0].split(/[,\s]+/)[0]
       : 'unknown';
 
-    let curations;
+    const regex = new RegExp(
+      `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
+      'i'
+    );
 
-    if (controlSampleRef) {
-      const refNormalized = controlSampleRef.replace(/\.xml$/i, '');
-      curations = await CuratedSamples.find({
-        user: user._id,
-        'object.Control_ID': new RegExp(`^${refNormalized}(\\.xml)?$`, 'i')
-      });
-
-      if (!curations.length) {
-        curations = await CuratedSamples.find({
-          user: user._id,
-          'object.Control_ID': {
-            $regex: new RegExp(
-              `^${refNormalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
-              'i'
-            )
-          },
-          'object.DATA_SOURCE.Citation.CommonFields.Title': title
-        });
-      }
-    }
-
-    if (!curations?.length) {
-      const regex = new RegExp(
-        `^${citationPrefix}\\d*_S\\d*_${authorName}_${publicationYear}`,
-        'i'
-      );
-      curations = await CuratedSamples.find({
-        user: user._id,
-        'object.Control_ID': { $regex: regex },
-        'object.DATA_SOURCE.Citation.CommonFields.Title': title
-      });
-    }
+    let curations = await CuratedSamples.find({
+      user: user._id,
+      'object.Control_ID': { $regex: regex },
+      'object.DATA_SOURCE.Citation.CommonFields.Title': title
+    });
 
     let datasetIndex, sampleIndex;
     if (curations.length === 0) {
-      const allCurations = await CuratedSamples.find({ user: user._id });
-      if (allCurations.length) {
+      curations = await CuratedSamples.find({ user: user._id });
+      if (curations.length) {
         let highestIndex = 0;
-        allCurations.forEach((curation) => {
+        curations.forEach((curation) => {
           if (curation.object.Control_ID?.startsWith(citationPrefix)) {
             const match = curation.object.Control_ID.match(/\d+/);
             if (match) {
@@ -418,13 +381,7 @@ async function generateControlId(
       sampleIndex = curations.length + 1;
     }
 
-    const controlId = `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
-    const isControlSample = !controlSampleRef;
-    return {
-      controlId,
-      isControlSample,
-      controlSampleRef: controlSampleRef || null
-    };
+    return `${citationPrefix}${datasetIndex}_S${sampleIndex}_${authorName}_${publicationYear}.xml`;
   } catch (error) {
     const err = new Error(error);
     err.functionName = 'generateControlId';
@@ -468,19 +425,10 @@ exports.getControlSampleId = async (req, res, next) => {
   try {
     logger.info('getControlSampleId Function Entry:');
 
-    const generated = await generateControlId(
-      body,
-      user,
-      body?.datasetId,
-      body?.controlSampleRef
-    );
+    const controlID = await generateControlId(body, user, body?.datasetId);
 
     latency.latencyCalculator(res);
-    return res.status(201).json({
-      controlID: generated.controlId,
-      isControlSample: generated.isControlSample,
-      controlSampleRef: generated.controlSampleRef
-    });
+    return res.status(201).json({ controlID });
   } catch (error) {
     next(errorWriter(req, error, 'getControlSampleId', 500));
   }
