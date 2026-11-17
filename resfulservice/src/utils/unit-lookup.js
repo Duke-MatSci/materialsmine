@@ -19,8 +19,8 @@ function readUnitOverrides () {
 const { aliases, tieBreaks, notUnits: notUnitList } = readUnitOverrides();
 const notUnits = new Set(notUnitList);
 
-const own = (table, key) =>
-  Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
+const has = (table, key) => Object.prototype.hasOwnProperty.call(table, key);
+const own = (table, key) => (has(table, key) ? table[key] : undefined);
 
 const addOwner = (map, key, name) => {
   if (!map.has(key)) map.set(key, new Set());
@@ -34,7 +34,7 @@ const folded = new Map();
 Object.entries(units).forEach(([name, { keys = [], codes = [] }]) => {
   keys.forEach((key) => {
     addOwner(exact, key, name);
-    if (own(tieBreaks, key) || notUnits.has(key)) return;
+    if (has(tieBreaks, key) || notUnits.has(key)) return;
     addOwner(folded, key.toLowerCase(), name);
   });
   codes.forEach((code) => addOwner(exact, code, name));
@@ -108,11 +108,9 @@ const fromDeprecated = (name, text) => {
 function lookupAddress (text) {
   const name = localName(String(text).trim());
   if (!name) return notQudt(text);
-  if (own(units, name)) return { iri: QUDT_UNIT + name };
-  // own() cannot tell a null replacement from a missing name.
-  if (Object.prototype.hasOwnProperty.call(deprecated, name)) {
-    return fromDeprecated(name, text);
-  }
+  if (has(units, name)) return { iri: QUDT_UNIT + name };
+  // A deprecated name may map to null: QUDT gives it no replacement.
+  if (has(deprecated, name)) return fromDeprecated(name, text);
   const caseMatch = foldedNames.get(name.toLowerCase());
   if (caseMatch) return { iri: QUDT_UNIT + caseMatch };
   return notQudt(text);
