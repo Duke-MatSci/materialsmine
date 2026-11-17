@@ -7,11 +7,14 @@ const {
   manageServiceRequest
 } = require('../controllers/managedServiceController');
 const { Writer, namedNode, literal, quad } = require('n3');
-const { buildSddAttributes, generateBatches } = require('./sdd-serializer');
-const { writeUnit } = require('./unit-lookup');
+const {
+  buildSddAttributes,
+  generateBatches,
+  resolveUnit
+} = require('./sdd-serializer');
+const { writeUnit, lookupUnit } = require('./unit-lookup');
 
 const {
-  mapUnit,
   toArray,
   pick,
   slug,
@@ -24,6 +27,77 @@ const {
   fetchPaperDetails,
   prepareForValidation
 } = CH;
+
+/* ------------------------ XML unit issues ------------------------ */
+// Where each object of a parsed XML record sits: its keys from the parsed
+// root, with a 1-based index after the key of each array item, and the
+// record whose issues it reports to.
+const xmlLocations = new WeakMap();
+
+const SCALAR_UNIT_PATHS = ['value.unit', 'Value.unit', 'unit', 'Unit'];
+const MICRO_LENGTH_UNIT = 'PolymerNanocomposite.MICROSTRUCTURE.LengthUnit';
+
+function indexXmlRecord(node, keys, record) {
+  if (node === null || typeof node !== 'object') return;
+  xmlLocations.set(node, { keys, record });
+  if (Array.isArray(node)) {
+    const last = keys[keys.length - 1];
+    node.forEach((item, i) =>
+      indexXmlRecord(item, [...keys.slice(0, -1), `${last}[${i + 1}]`], record)
+    );
+    return;
+  }
+  Object.keys(node).forEach((k) =>
+    indexXmlRecord(node[k], [...keys, k], record)
+  );
+}
+
+// The keys, spelled as the input spells them, of the first relative path
+// that holds a value under obj, the same choice pick(...) ?? pick(...) makes.
+function presentKeys(obj, relPaths) {
+  for (const relPath of relPaths) {
+    const keys = [];
+    let o = obj;
+    for (const k of relPath.split('.')) {
+      if (o == null || typeof o !== 'object') {
+        o = undefined;
+        break;
+      }
+      const key = Object.keys(o).find(
+        (c) => c.toLowerCase() === k.toLowerCase()
+      );
+      if (key === undefined) {
+        o = undefined;
+        break;
+      }
+      keys.push(key);
+      o = o[key];
+    }
+    if (o != null) return keys;
+  }
+  return null;
+}
+
+// The QUDT IRI for a unit read from holder at one of relPaths, or null.
+// A lookup issue is recorded once per input path on the holder's record.
+function xmlUnitIri(text, holder, ...relPaths) {
+  const { iri, issue } = lookupUnit(text);
+  const loc = issue && xmlLocations.get(holder);
+  const keys = loc && presentKeys(holder, relPaths);
+  if (keys) {
+    // Paths start below the PolymerNanocomposite root.
+    const path = [...loc.keys, ...keys].slice(1).join('.');
+    if (!loc.record.issues.has(path)) {
+      loc.record.issues.set(path, {
+        severity: 'warning',
+        ...issue,
+        record: loc.record.id,
+        path
+      });
+    }
+  }
+  return iri || null;
+}
 
 /** ---------- Output context ----------
  * - We emit sio:hasAttribute/hasValue explicitly; units go through writeUnit
@@ -174,7 +248,7 @@ function buildMatrixComponent(mc, componentId) {
       const vLit = litNum(v);
       if (!vLit) return;
 
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, mw, 'value.unit', 'unit');
       const sub = {
         '@id': `${componentId}/MolecularWeight/${i + 1}`,
         '@type': typeIri,
@@ -201,7 +275,7 @@ function buildMatrixComponent(mc, componentId) {
     const u = pick(mcd, 'unit');
     const dLit = litNum(v);
     if (dLit || hasText(desc)) {
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, mcd, 'unit');
       const node = {
         '@id': `${componentId}/Density`,
         '@type': 'mm:Density',
@@ -228,7 +302,7 @@ function buildMatrixComponent(mc, componentId) {
     const vLit = litNum(v);
 
     if (vLit || hasText(desc)) {
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, mcv, 'FixedValue.value.unit', 'value.unit', 'unit');
       const node = {
         '@id': `${componentId}/Viscosity`,
         '@type': 'mm:Viscosity',
@@ -263,7 +337,7 @@ function buildMatrixComponent(mc, componentId) {
           ...(hasText(desc) && { 'rdfs:label': desc }),
           'sio:hasValue': aLit
         };
-        const unitIri = mapUnit(u);
+        const unitIri = xmlUnitIri(u, mca, 'Amount.unit', 'unit');
         writeUnit(amt, u, unitIri);
         additiveNode['sio:hasAttribute'] = [amt];
       }
@@ -291,7 +365,7 @@ function buildCuringLike(kindType, kindKey, obj, baseId) {
       const desc = pick(obj, `${key}.description`);
       const vLit = litNum(vVal);
       if (vLit) {
-        const unitIri = mapUnit(u);
+        const unitIri = xmlUnitIri(u, obj, `${key}.unit`);
         const node = {
           '@id': `${baseId}/${kindKey}/${key.toLowerCase()}`,
           '@type': typeIri,
@@ -351,7 +425,7 @@ function buildAdditiveParam(add, baseId) {
       ...(hasText(label) && { 'rdfs:label': label }),
       'sio:hasValue': vLit
     };
-    const unitIri = mapUnit(u);
+    const unitIri = xmlUnitIri(u, add, 'Amount.unit', 'unit');
     writeUnit(amt, u, unitIri);
     node['sio:hasAttribute'] = [amt];
   }
@@ -380,7 +454,7 @@ function buildSolventParam(sol, baseId) {
     const sAmtDesc = pick(sol, 'SolventAmount.description');
     const sAmtLit = litNum(sAmtVal);
     if (sAmtLit) {
-      const unitIri = mapUnit(sAmtUnit);
+      const unitIri = xmlUnitIri(sAmtUnit, sol, 'SolventAmount.unit');
       const node = {
         '@id': `${baseId}/solvent/SolventAmount`,
         '@type': 'mm:SolventAmount',
@@ -446,7 +520,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     const rpmDesc = pick(mix, 'RPM.description');
     const rpmLit = litNum(rpmVal);
     if (rpmLit) {
-      const unitIri = mapUnit(rpmUnit);
+      const unitIri = xmlUnitIri(rpmUnit, mix, 'RPM.unit');
       const node = {
         '@id': `${rootBaseId}/${scope}/Mixing/RPM`,
         '@type': 'mm:RotationSpeed',
@@ -464,7 +538,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     const timeDesc = pick(mix, 'Time.description');
     const tLit = litNum(timeVal);
     if (tLit) {
-      const unitIri = mapUnit(timeUnit);
+      const unitIri = xmlUnitIri(timeUnit, mix, 'Time.unit');
       const node = {
         '@id': `${rootBaseId}/${scope}/Mixing/time`,
         '@type': 'mm:ExposureTime',
@@ -482,7 +556,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     const tempDesc = pick(mix, 'Temperature.description');
     const tLit = litNum(tempVal);
     if (tLit) {
-      const unitIri = mapUnit(tempUnit);
+      const unitIri = xmlUnitIri(tempUnit, mix, 'Temperature.unit');
       const node = {
         '@id': `${rootBaseId}/${scope}/Mixing/Temperature`,
         '@type': 'mm:Temperature',
@@ -554,7 +628,7 @@ function buildExtrusionParam(
       ...(hasText(dVal) && { 'rdfs:label': dVal }),
       'sio:hasValue': valLit
     };
-    const unitIri = mapUnit(uVal);
+    const unitIri = xmlUnitIri(uVal, obj, `${key}.unit`);
     writeUnit(node, uVal, unitIri);
     attrs.push(node);
   };
@@ -667,7 +741,7 @@ function buildExtrusionParam(
           ...(hasText(d) && { 'rdfs:label': d }),
           'sio:hasValue': vLit
         };
-        const unitIri = mapUnit(u);
+        const unitIri = xmlUnitIri(u, hz, 'barrelTemperature.unit');
         writeUnit(node, u, unitIri);
         hzAttrs.push(node);
       }
@@ -687,7 +761,7 @@ function buildExtrusionParam(
           ...(hasText(d) && { 'rdfs:label': d }),
           'sio:hasValue': vLit
         };
-        const unitIri = mapUnit(u);
+        const unitIri = xmlUnitIri(u, hz, 'lengthOfHeatingZone.unit');
         writeUnit(node, u, unitIri);
         hzAttrs.push(node);
       }
@@ -737,7 +811,7 @@ function buildExtrusionParam(
         ...(hasText(d) && { 'rdfs:label': d }),
         'sio:hasValue': vLit
       };
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, out, `${field}.unit`);
       writeUnit(node, u, unitIri);
       outAttrs.push(node);
     };
@@ -1173,7 +1247,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(hasText(desc) && { 'rdfs:label': desc }),
         ...(vLit && { 'sio:hasValue': vLit })
       };
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, dens, 'unit');
       writeUnit(node, u, unitIri);
 
       const ut = pick(dens, 'uncertainty.type');
@@ -1215,7 +1289,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(vLit && { 'sio:hasValue': vLit })
       };
 
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, spdItem, 'unit');
       writeUnit(node, u, unitIri);
 
       if (hasText(ut) || hasText(uv)) {
@@ -1246,7 +1320,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(hasText(specDesc) && { 'rdfs:label': specDesc }),
         ...(specLit && { 'sio:hasValue': specLit })
       };
-      const unitIri = mapUnit(specUnit);
+      const unitIri = xmlUnitIri(specUnit, sa, 'specific.unit');
       writeUnit(obj, specUnit, unitIri);
       saNode['mm:hasSpecific'] = obj;
     }
@@ -1260,7 +1334,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(hasText(totDesc) && { 'rdfs:label': totDesc }),
         ...(totLit && { 'sio:hasValue': totLit })
       };
-      const unitIri = mapUnit(totUnit);
+      const unitIri = xmlUnitIri(totUnit, sa, 'total.unit');
       writeUnit(obj, totUnit, unitIri);
       saNode['mm:hasTotal'] = obj;
     }
@@ -1286,7 +1360,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         '@type': 'mm:AspectRatio',
         ...(vLit && { 'sio:hasValue': vLit })
       };
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, par, 'unit');
       writeUnit(node, u, unitIri);
 
       const ut = pick(par, 'uncertainty.type');
@@ -1320,7 +1394,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       const obj = {
         ...(vLit && { 'sio:hasValue': vLit })
       };
-      const unitIri = mapUnit(u);
+      const unitIri = xmlUnitIri(u, nss, `${key}.unit`);
       writeUnit(obj, u, unitIri);
 
       if (hasText(ut) || hasText(uv)) {
@@ -1461,7 +1535,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(hasText(desc) && { 'rdfs:label': desc }),
             ...(vLit && { 'sio:hasValue': vLit })
           };
-          const unitIri = mapUnit(u);
+          const unitIri = xmlUnitIri(u, pd, 'unit');
           writeUnit(node, u, unitIri);
 
           const ut = pick(pd, 'uncertainty.type');
@@ -1496,7 +1570,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(hasText(desc) && { 'rdfs:label': desc }),
             ...(vLit && { 'sio:hasValue': vLit })
           };
-          const unitIri = mapUnit(u);
+          const unitIri = xmlUnitIri(u, gd, 'unit');
           writeUnit(node, u, unitIri);
 
           const ut = pick(gd, 'uncertainty.type');
@@ -1531,7 +1605,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(hasText(desc) && { 'rdfs:label': desc }),
             ...(vLit && { 'sio:hasValue': vLit })
           };
-          const unitIri = mapUnit(u);
+          const unitIri = xmlUnitIri(u, pmw, 'unit');
           writeUnit(node, u, unitIri);
 
           const ut = pick(pmw, 'uncertainty.type');
@@ -1790,7 +1864,7 @@ function buildThermalProperty(propertiesObj, baseId) {
         ...(vLit ? { 'sio:hasValue': vLit } : {})
       };
 
-      const unitIri = mapUnit(unit);
+      const unitIri = xmlUnitIri(unit, nodeObj, ...SCALAR_UNIT_PATHS);
       writeUnit(n, unit, unitIri);
 
       // optional uncertainty (same pattern as GTT)
@@ -1868,7 +1942,7 @@ function buildThermalProperty(propertiesObj, baseId) {
             ...(vLit ? { 'sio:hasValue': vLit } : {})
           };
 
-          const unitIri = mapUnit(unit);
+          const unitIri = xmlUnitIri(unit, x, ...SCALAR_UNIT_PATHS);
           writeUnit(sub, unit, unitIri);
 
           const uv = pick(x, 'uncertainty.value');
@@ -1985,7 +2059,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
           ...(vLit ? { 'sio:hasValue': vLit } : {})
         };
 
-        const unitIri = mapUnit(unit);
+        const unitIri = xmlUnitIri(unit, nodeObj, ...SCALAR_UNIT_PATHS);
         writeUnit(n, unit, unitIri);
 
         const uv = pick(nodeObj, 'uncertainty.value');
@@ -2040,7 +2114,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         if (hasText(label === 'X-Axis Label' ? xName : yName)) {
           a['sio:hasValue'] = litStr(label === 'X-Axis Label' ? xName : yName);
         }
-        const unitIri = mapUnit(unitVal);
+        const unitIri = xmlUnitIri(unitVal, lp, `AxisLabel.${axis}Unit`);
         writeUnit(a, unitVal, unitIri);
         return a;
       };
@@ -2747,7 +2821,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
             '@type': 'sio:SIO_000042',
             'sio:hasValue': widthLit
           };
-          const unitIri = mapUnit(microLengthUnit);
+          const unitIri = xmlUnitIri(microLengthUnit, pnc, MICRO_LENGTH_UNIT);
           writeUnit(wAttr, microLengthUnit, unitIri);
           dimSubAttrs.push(wAttr);
         }
@@ -2757,7 +2831,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
             '@type': 'sio:SIO_000040',
             'sio:hasValue': heightLit
           };
-          const unitIri = mapUnit(microLengthUnit);
+          const unitIri = xmlUnitIri(microLengthUnit, pnc, MICRO_LENGTH_UNIT);
           writeUnit(hAttr, microLengthUnit, unitIri);
           dimSubAttrs.push(hAttr);
         }
@@ -3009,6 +3083,8 @@ async function transformXmlToNanopub(xmlObj, logger) {
     pick(pnc, 'PolymerNanocomposite.control_id') ||
     pick(pnc, 'PolymerNanocomposite.Control_Id');
   if (!id) throw new Error('Missing required <ID> element in XML.');
+  const unitRecord = { id, issues: new Map() };
+  indexXmlRecord(pnc, [], unitRecord);
 
   const npId = `${NP_BASE}${encodeURIComponent(String(id))}`;
   const baseId = `${MM_BASE}pnc/${encodeURIComponent(String(id))}`;
@@ -3120,7 +3196,13 @@ async function transformXmlToNanopub(xmlObj, logger) {
     ]
   };
 
-  return { nanopubId: id, nanopub: doc, assertionId };
+  const issues = [...unitRecord.issues.values()];
+  issues.forEach((i) =>
+    logger?.warn(
+      `[curation-builder] ${i.code} unit "${i.value}" in record ${i.record} at ${i.path}: ${i.message}`
+    )
+  );
+  return { nanopubId: id, nanopub: doc, assertionId, issues };
 }
 
 /* ------------------------ Serialize ------------------------ */
@@ -3479,6 +3561,17 @@ async function transformSddToNanopub(skeleton, logger) {
   // Remaining batches (index 1+) for the caller to process
   const remainingBatches = batches.slice(1);
 
+  // One issue per dictionary row whose unit lookup has one.
+  const issues = [];
+  sddParsed.dictRows.forEach((d) => {
+    const { issue } = resolveUnit(d.unit, sddParsed.codeMappings);
+    if (!issue) return;
+    issues.push({ severity: 'warning', ...issue, column: d.column });
+    logger?.warn(
+      `[sdd-serializer] ${issue.code} unit "${issue.value}" in dictionary column ${d.column}: ${issue.message}`
+    );
+  });
+
   return {
     nanopubId: npSlug,
     nanopub: doc,
@@ -3486,7 +3579,8 @@ async function transformSddToNanopub(skeleton, logger) {
     remainingBatches,
     totalBatches: batches.length,
     // Metadata needed to build batch nanopubs
-    _batchMeta: { baseId, distribution, depiction, npId, assertionId, sddContext }
+    _batchMeta: { baseId, distribution, depiction, npId, assertionId, sddContext },
+    issues
   };
 }
 
