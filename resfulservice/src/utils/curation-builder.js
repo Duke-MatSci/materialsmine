@@ -8,6 +8,7 @@ const {
 } = require('../controllers/managedServiceController');
 const { Writer, namedNode, literal, quad } = require('n3');
 const { buildSddAttributes, generateBatches } = require('./sdd-serializer');
+const { writeUnit } = require('./unit-lookup');
 
 const {
   mapUnit,
@@ -178,8 +179,7 @@ function buildMatrixComponent(mc, componentId) {
         '@type': typeIri,
         'sio:hasValue': vLit
       };
-      if (unitIri) sub['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) sub['sio:hasUnit'] = String(u);
+      writeUnit(sub, u, unitIri);
       mwSubAttrs.push(sub);
     });
 
@@ -207,8 +207,7 @@ function buildMatrixComponent(mc, componentId) {
         ...(hasText(desc) && { 'rdfs:comment': desc }),
         ...(dLit && { 'sio:hasValue': dLit })
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
       componentAttrs.push(node);
     }
   }
@@ -235,8 +234,7 @@ function buildMatrixComponent(mc, componentId) {
         ...(hasText(desc) && { 'rdfs:label': desc }),
         ...(vLit && { 'sio:hasValue': vLit })
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
       componentAttrs.push(node);
     }
   }
@@ -265,8 +263,7 @@ function buildMatrixComponent(mc, componentId) {
           ...(hasText(desc) && { 'rdfs:label': desc }),
           'sio:hasValue': aLit
         };
-        if (unitIri) amt['sio:hasUnit'] = unitIri;
-        else if (hasText(u)) amt['sio:hasUnit'] = String(u);
+        writeUnit(amt, u, unitIri);
         additiveNode['sio:hasAttribute'] = [amt];
       }
       componentAttrs.push(additiveNode);
@@ -300,8 +297,7 @@ function buildCuringLike(kindType, kindKey, obj, baseId) {
           ...(hasText(desc) && { 'rdfs:comment': desc }),
           'sio:hasValue': vLit
         };
-        if (unitIri) node['sio:hasUnit'] = unitIri;
-        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+        writeUnit(node, u, unitIri);
         subAttrs.push(node);
       }
     }
@@ -355,8 +351,7 @@ function buildAdditiveParam(add, baseId) {
       ...(hasText(label) && { 'rdfs:label': label }),
       'sio:hasValue': vLit
     };
-    if (unitIri) amt['sio:hasUnit'] = unitIri;
-    else if (hasText(u)) amt['sio:hasUnit'] = String(u);
+    writeUnit(amt, u, unitIri);
     node['sio:hasAttribute'] = [amt];
   }
   if (!hasText(text) && !vLit) return hasText(label) ? node : null;
@@ -391,8 +386,7 @@ function buildSolventParam(sol, baseId) {
         ...(hasText(sAmtDesc) && { 'rdfs:label': sAmtDesc }),
         'sio:hasValue': sAmtLit
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(sAmtUnit)) node['sio:hasUnit'] = String(sAmtUnit);
+      writeUnit(node, sAmtUnit, unitIri);
       subAttrs.push(node);
     }
   }
@@ -458,8 +452,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         ...(hasText(rpmDesc) && { 'rdfs:label': rpmDesc }),
         'sio:hasValue': rpmLit
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(rpmUnit)) node['sio:hasUnit'] = String(rpmUnit);
+      writeUnit(node, rpmUnit, unitIri);
       subAttrs.push(node);
     }
   }
@@ -477,8 +470,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         ...(hasText(timeDesc) && { 'rdfs:label': timeDesc }),
         'sio:hasValue': tLit
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(timeUnit)) node['sio:hasUnit'] = String(timeUnit);
+      writeUnit(node, timeUnit, unitIri);
       subAttrs.push(node);
     }
   }
@@ -496,8 +488,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         ...(hasText(tempDesc) && { 'rdfs:label': tempDesc }),
         'sio:hasValue': tLit
       };
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(tempUnit)) node['sio:hasUnit'] = String(tempUnit);
+      writeUnit(node, tempUnit, unitIri);
       subAttrs.push(node);
     }
   }
@@ -563,8 +554,7 @@ function buildExtrusionParam(
       'sio:hasValue': valLit
     };
     const unitIri = mapUnit(uVal);
-    if (unitIri) node['sio:hasUnit'] = unitIri;
-    else if (hasText(uVal)) node['sio:hasUnit'] = String(uVal);
+    writeUnit(node, uVal, unitIri);
     attrs.push(node);
   };
 
@@ -677,8 +667,7 @@ function buildExtrusionParam(
           'sio:hasValue': vLit
         };
         const unitIri = mapUnit(u);
-        if (unitIri) node['sio:hasUnit'] = unitIri;
-        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+        writeUnit(node, u, unitIri);
         hzAttrs.push(node);
       }
     }
@@ -698,8 +687,7 @@ function buildExtrusionParam(
           'sio:hasValue': vLit
         };
         const unitIri = mapUnit(u);
-        if (unitIri) node['sio:hasUnit'] = unitIri;
-        else if (hasText(u)) node['sio:hasUnit'] = String(u);
+        writeUnit(node, u, unitIri);
         hzAttrs.push(node);
       }
     }
@@ -749,8 +737,7 @@ function buildExtrusionParam(
         'sio:hasValue': vLit
       };
       const unitIri = mapUnit(u);
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
       outAttrs.push(node);
     };
 
@@ -1186,8 +1173,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(vLit && { 'sio:hasValue': vLit })
       };
       const unitIri = mapUnit(u);
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
 
       const ut = pick(dens, 'uncertainty.type');
       const uv = pick(dens, 'uncertainty.value');
@@ -1229,8 +1215,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       };
 
       const unitIri = mapUnit(u);
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
 
       if (hasText(ut) || hasText(uv)) {
         node['mm:hasUncertainty'] = {
@@ -1261,8 +1246,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(specLit && { 'sio:hasValue': specLit })
       };
       const unitIri = mapUnit(specUnit);
-      if (unitIri) obj['sio:hasUnit'] = unitIri;
-      else if (hasText(specUnit)) obj['sio:hasUnit'] = String(specUnit);
+      writeUnit(obj, specUnit, unitIri);
       saNode['mm:hasSpecific'] = obj;
     }
 
@@ -1276,8 +1260,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(totLit && { 'sio:hasValue': totLit })
       };
       const unitIri = mapUnit(totUnit);
-      if (unitIri) obj['sio:hasUnit'] = unitIri;
-      else if (hasText(totUnit)) obj['sio:hasUnit'] = String(totUnit);
+      writeUnit(obj, totUnit, unitIri);
       saNode['mm:hasTotal'] = obj;
     }
 
@@ -1303,8 +1286,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(vLit && { 'sio:hasValue': vLit })
       };
       const unitIri = mapUnit(u);
-      if (unitIri) node['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) node['sio:hasUnit'] = String(u);
+      writeUnit(node, u, unitIri);
 
       const ut = pick(par, 'uncertainty.type');
       const uv = pick(par, 'uncertainty.value');
@@ -1338,8 +1320,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         ...(vLit && { 'sio:hasValue': vLit })
       };
       const unitIri = mapUnit(u);
-      if (unitIri) obj['sio:hasUnit'] = unitIri;
-      else if (hasText(u)) obj['sio:hasUnit'] = String(u);
+      writeUnit(obj, u, unitIri);
 
       if (hasText(ut) || hasText(uv)) {
         obj['mm:hasUncertainty'] = {
@@ -1480,8 +1461,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(vLit && { 'sio:hasValue': vLit })
           };
           const unitIri = mapUnit(u);
-          if (unitIri) node['sio:hasUnit'] = unitIri;
-          else if (hasText(u)) node['sio:hasUnit'] = String(u);
+          writeUnit(node, u, unitIri);
 
           const ut = pick(pd, 'uncertainty.type');
           const uv = pick(pd, 'uncertainty.value');
@@ -1516,8 +1496,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(vLit && { 'sio:hasValue': vLit })
           };
           const unitIri = mapUnit(u);
-          if (unitIri) node['sio:hasUnit'] = unitIri;
-          else if (hasText(u)) node['sio:hasUnit'] = String(u);
+          writeUnit(node, u, unitIri);
 
           const ut = pick(gd, 'uncertainty.type');
           const uv = pick(gd, 'uncertainty.value');
@@ -1552,8 +1531,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             ...(vLit && { 'sio:hasValue': vLit })
           };
           const unitIri = mapUnit(u);
-          if (unitIri) node['sio:hasUnit'] = unitIri;
-          else if (hasText(u)) node['sio:hasUnit'] = String(u);
+          writeUnit(node, u, unitIri);
 
           const ut = pick(pmw, 'uncertainty.type');
           const uv = pick(pmw, 'uncertainty.value');
@@ -1813,8 +1791,7 @@ function buildThermalProperty(propertiesObj, baseId) {
 
       if (unit != null) {
         const unitIri = mapUnit(unit);
-        if (unitIri) n['sio:hasUnit'] = unitIri;
-        else if (hasText(unit)) n['sio:hasUnit'] = String(unit);
+        writeUnit(n, unit, unitIri);
       }
 
       // optional uncertainty (same pattern as GTT)
@@ -1894,8 +1871,7 @@ function buildThermalProperty(propertiesObj, baseId) {
 
           if (unit != null) {
             const unitIri = mapUnit(unit);
-            if (unitIri) sub['sio:hasUnit'] = unitIri;
-            else if (hasText(unit)) sub['sio:hasUnit'] = String(unit);
+            writeUnit(sub, unit, unitIri);
           }
 
           const uv = pick(x, 'uncertainty.value');
@@ -2014,8 +1990,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
 
         if (unit != null) {
           const unitIri = mapUnit(unit);
-          if (unitIri) n['sio:hasUnit'] = unitIri;
-          else if (hasText(unit)) n['sio:hasUnit'] = String(unit);
+          writeUnit(n, unit, unitIri);
         }
 
         const uv = pick(nodeObj, 'uncertainty.value');
@@ -2071,8 +2046,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
           a['sio:hasValue'] = litStr(label === 'X-Axis Label' ? xName : yName);
         }
         const ui = mapUnit(unitVal);
-        if (ui) a['sio:hasUnit'] = ui;
-        else if (hasText(unitVal)) a['sio:hasUnit'] = String(unitVal);
+        writeUnit(a, unitVal, ui);
         return a;
       };
 
@@ -2779,10 +2753,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
             'sio:hasValue': widthLit
           };
           const unitIri = mapUnit(microLengthUnit);
-          if (unitIri) wAttr['sio:hasUnit'] = unitIri;
-          else if (hasText(microLengthUnit)) {
-            wAttr['sio:hasUnit'] = String(microLengthUnit);
-          }
+          writeUnit(wAttr, microLengthUnit, unitIri);
           dimSubAttrs.push(wAttr);
         }
         if (heightLit) {
@@ -2792,10 +2763,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
             'sio:hasValue': heightLit
           };
           const unitIri = mapUnit(microLengthUnit);
-          if (unitIri) hAttr['sio:hasUnit'] = unitIri;
-          else if (hasText(microLengthUnit)) {
-            hAttr['sio:hasUnit'] = String(microLengthUnit);
-          }
+          writeUnit(hAttr, microLengthUnit, unitIri);
           dimSubAttrs.push(hAttr);
         }
         if (dimSubAttrs.length) {

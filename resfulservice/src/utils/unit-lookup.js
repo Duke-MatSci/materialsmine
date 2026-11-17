@@ -137,4 +137,15 @@ function lookupUnit (text) {
   return issue('UNIT_UNRESOLVED', `Unit "${text}" matches no QUDT unit`, text);
 }
 
-module.exports = { lookupUnit, lookupAddress };
+/**
+ * Writes a unit onto an attribute node: `sio:hasUnit` links `iri` when it is
+ * given, and `mm:hasUnitText` holds the trimmed text. Blank text writes
+ * nothing.
+ */
+const writeUnit = (node, text, iri) => {
+  if (text == null || String(text).trim() === '') return;
+  if (iri) node['sio:hasUnit'] = { '@id': iri };
+  node['mm:hasUnitText'] = String(text).trim();
+};
+
+module.exports = { lookupUnit, lookupAddress, writeUnit };

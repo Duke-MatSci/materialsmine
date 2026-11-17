@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const minioClient = require('./minio');
 const FileManager = require('./fileManager');
-const { lookupUnit, lookupAddress } = require('./unit-lookup');
+const { lookupUnit, lookupAddress, writeUnit } = require('./unit-lookup');
 const {
   MinioBucket,
   FILE_FORMATS: FILE_FORMATS_ARR,
@@ -477,10 +477,7 @@ function applyDictPredicates(node, d, sampleId, codeMappings) {
     node['sio:isAttributeOf'] = getInferredValues(sampleId, d.attributeOf);
   }
   if (d.unit) {
-    const unitUri = resolveCodeMapping(d.unit, codeMappings);
-    node['sio:hasUnit'] = [
-      { ...(unitUri ? { '@type': unitUri } : {}), '@value': d.unit }
-    ];
+    writeUnit(node, d.unit, resolveCodeMapping(d.unit, codeMappings));
   }
   if (d.comment) node['rdfs:comment'] = d.comment;
   if (d.definition) node['skos:definition'] = d.definition;
