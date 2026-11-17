@@ -2958,11 +2958,22 @@ components:
             - UNIT_AMBIGUOUS
             - UNIT_NOT_QUDT
             - UNIT_DEPRECATED
+            - UNIT_REPEATED
+          description: >
+            UNIT_REPEATED is XML only: a unit element repeated with
+            different texts, so no unit is written.
         message:
           type: string
         value:
-          type: string
-          description: The unit text or address as written in the input.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: >
+            The unit text or address as written in the input; for
+            UNIT_REPEATED, an array of the repeated elements' non-blank
+            texts in document order.
         column:
           type: string
           description: SDD dictionary column whose unit has the issue.

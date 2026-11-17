@@ -96,30 +96,37 @@ function xmlUnitText(value) {
   return { items };
 }
 
+// The text, or each text of a list, in double quotes.
+const quoteEach = (texts) =>
+  [].concat(texts).map((t) => `"${t}"`).join(', ');
+
 // Whether a parsed XML unit value holds a unit, usable or repeated.
 const hasXmlUnit = (value) => {
   const { text, items } = xmlUnitText(value);
   return Boolean(items) || hasText(text);
 };
 
-// Writes onto node the unit read from holder at one of relPaths.
-// A lookup issue is recorded once per input path on the holder's record.
+// The issue for repeated unit elements whose texts differ: the message
+// quotes each distinct trimmed text, and value holds the item texts.
+function repeatedUnitIssue(items) {
+  const distinct = [...new Set(items.map((t) => t.trim()))];
+  return {
+    code: 'UNIT_REPEATED',
+    message: `Unit is repeated with different texts ${quoteEach(distinct)}`,
+    value: items
+  };
+}
+
+// Writes onto node the unit of value, the parsed unit value read from
+// holder at one of relPaths. Repeated elements with different texts write
+// nothing and give a UNIT_REPEATED issue; any other unit text is looked up.
+// The issue is recorded once per input path on the holder's record.
 // holder must be an object of the parsed input itself: a copy or a merged
 // object has no location, and its issue is dropped.
 function writeXmlUnit(node, value, holder, ...relPaths) {
   const { text, items } = xmlUnitText(value);
   const { iri, issue } = items
-    ? {
-        issue: {
-          code: 'UNIT_REPEATED',
-          message: `Unit is repeated with different texts ${[
-            ...new Set(items.map((t) => t.trim()))
-          ]
-            .map((t) => `"${t}"`)
-            .join(', ')}`,
-          value: items
-        }
-      }
+    ? { issue: repeatedUnitIssue(items) }
     : lookupUnit(text);
   if (!items) writeUnit(node, text, iri);
   const loc = issue && xmlLocations.get(holder);
@@ -138,7 +145,7 @@ function writeXmlUnit(node, value, holder, ...relPaths) {
 
 // The log line for a unit issue found at where in the input.
 const unitIssueLine = (source, i, where) =>
-  `[${source}] ${i.code} unit "${i.value}" in ${where}: ${i.message}`;
+  `[${source}] ${i.code} unit ${quoteEach(i.value)} in ${where}: ${i.message}`;
 
 /** ---------- Output context ----------
  * - SIO links are written under their numbered IRIs:
@@ -3074,7 +3081,8 @@ function buildProperties(pnc, baseId) {
 /**
  * Transform one parsed PolymerNanocomposite record into a nanopub document.
  * `issues` holds one warning per unit field the record writes whose lookup
- * has an issue, located by `record` and `path`; each is logged on logger.
+ * has an issue or whose element is repeated with different texts, located
+ * by `record` and `path`; each is logged on logger.
  * @returns {{ nanopubId: string, nanopub: Object, assertionId: string,
  *   issues: Object[] }}
  */
