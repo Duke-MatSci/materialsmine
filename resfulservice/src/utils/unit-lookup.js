@@ -64,10 +64,9 @@ const foldedNames = new Map(
 
 const SHORT_PREFIX = 'unit:';
 
+// A QUDT unit IRI is one kind of http address.
 const isAddress = (text) =>
-  text.startsWith(QUDT_UNIT) ||
-  text.startsWith(SHORT_PREFIX) ||
-  /^https?:\/\//.test(text);
+  text.startsWith(SHORT_PREFIX) || /^https?:\/\//.test(text);
 
 const localName = (text) => {
   if (text.startsWith(QUDT_UNIT)) return text.slice(QUDT_UNIT.length);
@@ -75,50 +74,56 @@ const localName = (text) => {
   return null;
 };
 
+const notQudt = (text) =>
+  issue('UNIT_NOT_QUDT', `Unit address "${text}" is not a QUDT unit`, text);
+
+const fromDeprecated = (name, text) => {
+  const replacement = deprecated[name];
+  if (!replacement) {
+    return issue(
+      'UNIT_DEPRECATED',
+      `Unit "${name}" is deprecated in QUDT, which gives no replacement`,
+      text
+    );
+  }
+  return {
+    iri: QUDT_UNIT + replacement,
+    ...issue(
+      'UNIT_DEPRECATED',
+      `Unit "${name}" is deprecated in QUDT; linked to ${replacement}`,
+      text
+    )
+  };
+};
+
 /**
  * Link a unit address to a QUDT unit. Only a full QUDT unit IRI or a
- * `unit:` short form naming a pinned unit links; a deprecated name links
- * to its replacement with a UNIT_DEPRECATED issue, and anything else gives
- * a UNIT_NOT_QUDT issue.
+ * `unit:` short form links. Its local name matches a pinned unit name
+ * exactly, then a deprecated name, which links to its replacement with a
+ * UNIT_DEPRECATED issue, then a pinned unit name case-folded. Anything
+ * else gives a UNIT_NOT_QUDT issue.
  * @param {string} text - The address as written
  * @returns {Object} { iri }, { iri, issue }, or { issue }
  */
 function lookupAddress (text) {
   const name = localName(String(text).trim());
-  if (name && own(units, name)) return { iri: QUDT_UNIT + name };
-  if (name && Object.prototype.hasOwnProperty.call(deprecated, name)) {
-    const replacement = deprecated[name];
-    if (!replacement) {
-      return issue(
-        'UNIT_DEPRECATED',
-        `Unit "${name}" is deprecated in QUDT, which gives no replacement`,
-        text
-      );
-    }
-    return {
-      iri: QUDT_UNIT + replacement,
-      ...issue(
-        'UNIT_DEPRECATED',
-        `Unit "${name}" is deprecated in QUDT; linked to ${replacement}`,
-        text
-      )
-    };
+  if (!name) return notQudt(text);
+  if (own(units, name)) return { iri: QUDT_UNIT + name };
+  // own() cannot tell a null replacement from a missing name.
+  if (Object.prototype.hasOwnProperty.call(deprecated, name)) {
+    return fromDeprecated(name, text);
   }
-  const folded = name && foldedNames.get(name.toLowerCase());
-  if (folded) return { iri: QUDT_UNIT + folded };
-  return issue(
-    'UNIT_NOT_QUDT',
-    `Unit address "${text}" is not a QUDT unit`,
-    text
-  );
+  const caseMatch = foldedNames.get(name.toLowerCase());
+  if (caseMatch) return { iri: QUDT_UNIT + caseMatch };
+  return notQudt(text);
 }
 
 /**
  * Link unit text to a QUDT unit. An address goes to lookupAddress; other
- * text takes its exact match first: the trimmed text's exact match first,
- * then its case-folded match.
+ * text takes the trimmed text's exact match first, then its case-folded match.
  * @param {string} text - The unit text as typed
- * @returns {Object} { iri }, { issue: { code, message, value } }, or {}
+ * @returns {Object} { iri }, { iri, issue }, { issue: { code, message, value } },
+ *   or {}
  */
 function lookupUnit (text) {
   if (text == null) return {};
