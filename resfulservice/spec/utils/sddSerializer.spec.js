@@ -446,15 +446,15 @@ describe('SDD Serializer', function () {
       expect(resolveCodeMapping('µm²', cm)).to.equal('http://ex/um2');
     });
 
-    it('should fall back to UNIT_IRI when not in code mappings', function () {
+    it('should fall back to the QUDT unit when not in code mappings', function () {
       const cm = new Map();
       const result = resolveCodeMapping('nm', cm);
-      expect(result).to.include('om-2');
+      expect(result).to.equal('http://qudt.org/vocab/unit/NanoM');
     });
 
     it('should return undefined for unknown units', function () {
       const cm = new Map();
-      expect(resolveCodeMapping('parsecs', cm)).to.be.undefined;
+      expect(resolveCodeMapping('zorkmids', cm)).to.be.undefined;
     });
 
     it('should return undefined for empty input', function () {
@@ -656,8 +656,7 @@ describe('SDD Serializer', function () {
         const attr = result[0]['sio:hasAttribute'][0];
         expect(attr['sio:hasUnit']).to.deep.equal([
           {
-            '@type':
-              'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
+            '@type': 'http://qudt.org/vocab/unit/DEG_C',
             '@value': 'celsius'
           }
         ]);
