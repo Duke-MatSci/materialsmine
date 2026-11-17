@@ -212,9 +212,8 @@ describe('QUDT exact unit lookup', function () {
       const npId = 'http://materialsmine.org/np/test123';
       const result = generateAttributes(csvRows, dict, npId, 0);
       const attr = result[0]['sio:hasAttribute'][0];
-      expect(attr['sio:hasUnit']).to.deep.equal([
-        { '@type': QUDT + 'GigaPA', '@value': 'GPa' }
-      ]);
+      expect(attr['sio:hasUnit']).to.deep.equal({ '@id': QUDT + 'GigaPA' });
+      expect(attr['mm:hasUnitText']).to.equal('GPa');
     });
   });
 });

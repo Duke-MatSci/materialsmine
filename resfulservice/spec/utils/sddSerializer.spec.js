@@ -658,12 +658,10 @@ describe('SDD Serializer', function () {
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
         const attr = result[0]['sio:hasAttribute'][0];
-        expect(attr['sio:hasUnit']).to.deep.equal([
-          {
-            '@type': 'http://qudt.org/vocab/unit/DEG_C',
-            '@value': 'celsius'
-          }
-        ]);
+        expect(attr['sio:hasUnit']).to.deep.equal({
+          '@id': 'http://qudt.org/vocab/unit/DEG_C'
+        });
+        expect(attr['mm:hasUnitText']).to.equal('celsius');
       });
 
       it('should apply comment and definition', function () {
@@ -990,7 +988,8 @@ describe('SDD Serializer', function () {
       });
       expect(gs['rdfs:label']).to.equal('GS');
       expect(gs['rdfs:comment']).to.equal('grain diameter');
-      expect(gs['sio:hasUnit']).to.deep.equal([{ '@value': 'nm' }]);
+      expect(gs).to.not.have.property('sio:hasUnit');
+      expect(gs['mm:hasUnitText']).to.equal('nm');
 
       const solvent = entity1['sio:hasAttribute'].find(
         (a) => a['@type'] === 'sio:Descriptor'
