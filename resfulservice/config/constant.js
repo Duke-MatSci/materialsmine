@@ -184,7 +184,6 @@ module.exports = {
     'https://raw.githubusercontent.com/Duke-MatSci/nanomine-schema/refs/heads/master/xml/PNC_schema_031822.xsd',
   MM_BASE: 'http://materialsmine.org/resource/',
   NP_BASE: 'http://materialsmine.org/np/',
-  OM2: 'http://www.ontology-of-units-of-measure.org/resource/om-2',
   FILE_FORMATS: ['file', 'url'],
 
   OUTPUT_CONTEXT: {
