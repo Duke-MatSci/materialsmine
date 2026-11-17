@@ -82,13 +82,46 @@ function presentKeys(obj, relPaths) {
   return null;
 }
 
+// The unit text of a parsed XML unit value. An element's text content is
+// read and its attributes ignored. Repeated elements give their one text
+// when every non-blank item agrees; otherwise items lists the non-blank
+// item texts in document order.
+function xmlUnitText(value) {
+  const one = (v) =>
+    v != null && typeof v === 'object' ? (v._ == null ? '' : String(v._)) : v;
+  if (!Array.isArray(value)) return { text: one(value) };
+  const items = value.map(one).filter(hasText).map(String);
+  const texts = new Set(items.map((t) => t.trim()));
+  if (texts.size <= 1) return { text: items[0] };
+  return { items };
+}
+
+// Whether a parsed XML unit value holds a unit, usable or repeated.
+const hasXmlUnit = (value) => {
+  const { text, items } = xmlUnitText(value);
+  return Boolean(items) || hasText(text);
+};
+
 // Writes onto node the unit read from holder at one of relPaths.
 // A lookup issue is recorded once per input path on the holder's record.
 // holder must be an object of the parsed input itself: a copy or a merged
 // object has no location, and its issue is dropped.
-function writeXmlUnit(node, text, holder, ...relPaths) {
-  const { iri, issue } = lookupUnit(text);
-  writeUnit(node, text, iri);
+function writeXmlUnit(node, value, holder, ...relPaths) {
+  const { text, items } = xmlUnitText(value);
+  const { iri, issue } = items
+    ? {
+        issue: {
+          code: 'UNIT_REPEATED',
+          message: `Unit is repeated with different texts ${[
+            ...new Set(items.map((t) => t.trim()))
+          ]
+            .map((t) => `"${t}"`)
+            .join(', ')}`,
+          value: items
+        }
+      }
+    : lookupUnit(text);
+  if (!items) writeUnit(node, text, iri);
   const loc = issue && xmlLocations.get(holder);
   const keys = loc && presentKeys(holder, relPaths);
   if (!keys) return;
@@ -1307,7 +1340,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
     const specVal = pick(sa, 'specific.value');
     const specUnit = pick(sa, 'specific.unit');
     const specLit = litNum(specVal) || litStr(specVal);
-    if (specLit || hasText(specDesc) || hasText(specUnit)) {
+    if (specLit || hasText(specDesc) || hasXmlUnit(specUnit)) {
       const obj = {
         ...(hasText(specDesc) && { 'rdfs:label': specDesc }),
         ...(specLit && { 'sio:SIO_000300': specLit })
@@ -1320,7 +1353,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
     const totVal = pick(sa, 'total.value');
     const totUnit = pick(sa, 'total.unit');
     const totLit = litNum(totVal) || litStr(totVal);
-    if (totLit || hasText(totDesc) || hasText(totUnit)) {
+    if (totLit || hasText(totDesc) || hasXmlUnit(totUnit)) {
       const obj = {
         ...(hasText(totDesc) && { 'rdfs:label': totDesc }),
         ...(totLit && { 'sio:SIO_000300': totLit })
@@ -1378,7 +1411,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       const ut = pick(nss, `${key}.uncertainty.type`);
       const uv = pick(nss, `${key}.uncertainty.value`);
       const vLit = litNum(v) || litStr(v);
-      if (!vLit && !hasText(u) && !hasText(ut) && !hasText(uv)) return;
+      if (!vLit && !hasXmlUnit(u) && !hasText(ut) && !hasText(uv)) return;
 
       const obj = {
         ...(vLit && { 'sio:SIO_000300': vLit })
@@ -2088,10 +2121,10 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         return a;
       };
 
-      if (hasText(xName) || hasText(xUnit)) {
+      if (hasText(xName) || hasXmlUnit(xUnit)) {
         axisArr.push(makeAxis('x', 'X-Axis Label', xUnit));
       }
-      if (hasText(yName) || hasText(yUnit)) {
+      if (hasText(yName) || hasXmlUnit(yUnit)) {
         axisArr.push(makeAxis('y', 'Y-Axis Label', yUnit));
       }
       if (axisArr.length) node['mm:hasAxisLabel'] = axisArr;
