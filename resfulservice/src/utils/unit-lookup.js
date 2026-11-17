@@ -142,10 +142,11 @@ function lookupUnit (text) {
  * given, and `mm:hasUnitText` holds the trimmed text. Blank text writes
  * nothing.
  */
-const writeUnit = (node, text, iri) => {
-  if (text == null || String(text).trim() === '') return;
+function writeUnit (node, text, iri) {
+  const typed = text == null ? '' : String(text).trim();
+  if (!typed) return;
   if (iri) node['sio:hasUnit'] = { '@id': iri };
-  node['mm:hasUnitText'] = String(text).trim();
-};
+  node['mm:hasUnitText'] = typed;
+}
 
 module.exports = { lookupUnit, lookupAddress, writeUnit };

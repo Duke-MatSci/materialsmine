@@ -26,7 +26,8 @@ const {
 } = CH;
 
 /** ---------- Output context ----------
- * - We emit sio:hasAttribute/hasValue/hasUnit explicitly.
+ * - We emit sio:hasAttribute/hasValue explicitly; units go through writeUnit
+ *   (unit-lookup.js).
  * - All nodes use @id / @type.
  */
 
@@ -247,7 +248,6 @@ function buildMatrixComponent(mc, componentId) {
     const v = pick(mca, 'Amount.value') ?? pick(mca, 'value');
     const u = pick(mca, 'Amount.unit') ?? pick(mca, 'unit');
     const aLit = litNum(v);
-    const unitIri = mapUnit(u);
 
     if (hasText(additiveText) || aLit) {
       const additiveNode = {
@@ -263,6 +263,7 @@ function buildMatrixComponent(mc, componentId) {
           ...(hasText(desc) && { 'rdfs:label': desc }),
           'sio:hasValue': aLit
         };
+        const unitIri = mapUnit(u);
         writeUnit(amt, u, unitIri);
         additiveNode['sio:hasAttribute'] = [amt];
       }
@@ -336,7 +337,6 @@ function buildAdditiveParam(add, baseId) {
   const v = pick(add, 'Amount.value') ?? pick(add, 'value');
   const u = pick(add, 'Amount.unit') ?? pick(add, 'unit');
   const vLit = litNum(v);
-  const unitIri = mapUnit(u);
 
   const node = {
     '@id': baseId,
@@ -351,6 +351,7 @@ function buildAdditiveParam(add, baseId) {
       ...(hasText(label) && { 'rdfs:label': label }),
       'sio:hasValue': vLit
     };
+    const unitIri = mapUnit(u);
     writeUnit(amt, u, unitIri);
     node['sio:hasAttribute'] = [amt];
   }
@@ -1789,10 +1790,8 @@ function buildThermalProperty(propertiesObj, baseId) {
         ...(vLit ? { 'sio:hasValue': vLit } : {})
       };
 
-      if (unit != null) {
-        const unitIri = mapUnit(unit);
-        writeUnit(n, unit, unitIri);
-      }
+      const unitIri = mapUnit(unit);
+      writeUnit(n, unit, unitIri);
 
       // optional uncertainty (same pattern as GTT)
       const uv = pick(nodeObj, 'uncertainty.value');
@@ -1869,10 +1868,8 @@ function buildThermalProperty(propertiesObj, baseId) {
             ...(vLit ? { 'sio:hasValue': vLit } : {})
           };
 
-          if (unit != null) {
-            const unitIri = mapUnit(unit);
-            writeUnit(sub, unit, unitIri);
-          }
+          const unitIri = mapUnit(unit);
+          writeUnit(sub, unit, unitIri);
 
           const uv = pick(x, 'uncertainty.value');
           const ut = pick(x, 'uncertainty.type');
@@ -1988,10 +1985,8 @@ function buildMechanicalProperty(propertiesObj, baseId) {
           ...(vLit ? { 'sio:hasValue': vLit } : {})
         };
 
-        if (unit != null) {
-          const unitIri = mapUnit(unit);
-          writeUnit(n, unit, unitIri);
-        }
+        const unitIri = mapUnit(unit);
+        writeUnit(n, unit, unitIri);
 
         const uv = pick(nodeObj, 'uncertainty.value');
         const ut = pick(nodeObj, 'uncertainty.type');
@@ -2045,8 +2040,8 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         if (hasText(label === 'X-Axis Label' ? xName : yName)) {
           a['sio:hasValue'] = litStr(label === 'X-Axis Label' ? xName : yName);
         }
-        const ui = mapUnit(unitVal);
-        writeUnit(a, unitVal, ui);
+        const unitIri = mapUnit(unitVal);
+        writeUnit(a, unitVal, unitIri);
         return a;
       };
 
