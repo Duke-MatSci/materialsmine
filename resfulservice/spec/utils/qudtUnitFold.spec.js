@@ -11,7 +11,7 @@ const lookupUnit = (text) =>
 const QUDT = 'http://qudt.org/vocab/unit/';
 
 // No exact match, but ignoring case exactly one unit has a key, alias or
-// tie-break that folds to the text: link to that unit.
+// tie-break that folds to the text, and no not-a-unit value does: link to that unit.
 const ONE_UNIT_FOLDS = [
   ['hz', 'HZ'],
   ['kv', 'KiloV'],

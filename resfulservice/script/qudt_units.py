@@ -28,10 +28,19 @@ the key is kept for one of them only: the one whose own symbol it is, else
 the first by local name. A key still shared by several units is a
 collision. Collisions are printed for review and are not errors; the
 lookup leaves such a key unlinked unless config/qudt-unit-overrides.json
-gives it a tie-break. The script exits non-zero, naming offenders, when an
-override targets something that is not a current QUDT unit, when an alias
-is itself an exact key, when a tie-break names a key that is not a
-collision, or when a not-a-unit entry is also an alias or a tie-break.
+gives it a tie-break.
+
+The overrides file holds four tables, which src/utils/unit-lookup.js
+applies: aliases, unit text QUDT lacks, each linking one unit; tieBreaks,
+the unit a collision links; notUnits, text that is not a unit and links
+nothing; and caseClashes, exact keys or codes that differ only in case from
+an alias or tie-break naming another unit, which the lookup reports as
+ambiguous instead of linking. The script exits non-zero, naming offenders,
+when an override targets something that is not a current QUDT unit, when an
+alias is itself an exact key, when a tie-break names a key that is not a
+collision, when a not-a-unit entry is also an alias or a tie-break, or when
+a case clash is not an exact key or code or has no alias or tie-break
+differing from it only in case that names a unit outside its own.
 """
 import hashlib
 import json
@@ -180,6 +189,7 @@ def check_overrides(units, owners, overrides):
     tie_breaks = overrides.get('tieBreaks', {})
     aliases = overrides.get('aliases', {})
     not_units = overrides.get('notUnits', [])
+    case_clashes = overrides.get('caseClashes', [])
     collisions = sorted(k for k, o in owners.items()
                         if len(o) > 1 and k not in tie_breaks)
     problems = []
@@ -199,6 +209,19 @@ def check_overrides(units, owners, overrides):
     for key in not_units:
         if key in aliases or key in tie_breaks:
             problems.append('notUnits %r is also an alias or a tie-break'
+                            % key)
+    twins = {**aliases, **tie_breaks}
+    for key in case_clashes:
+        own = owners.get(key, set())
+        if not own:
+            problems.append('caseClashes %r is not an exact QUDT key or code'
+                            % key)
+        elsewhere = [k for k, target in twins.items()
+                     if k != key and k.lower() == key.lower()
+                     and target not in own]
+        if not elsewhere:
+            problems.append('caseClashes %r has no alias or tie-break '
+                            'differing only in case that names another unit'
                             % key)
     return collisions, problems
 

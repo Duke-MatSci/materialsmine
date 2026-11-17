@@ -13,7 +13,7 @@ const lookupUnit = (text) =>
 
 const QUDT = 'http://qudt.org/vocab/unit/';
 
-// Text that is a key of exactly one QUDT unit links to it, on both routes.
+// Text that is a key of exactly one QUDT unit, and not a caseClashes spelling, links to it, on both routes.
 const EXACT_KEYS = [
   ['\u00b0C', 'DEG_C'],
   ['MPa', 'MegaPA'],
@@ -42,7 +42,8 @@ const EXACT_KEYS = [
   ['Kelvin', 'K']
 ];
 
-// The exact tier is case-sensitive and beats any case-folded match.
+// The exact tier is case-sensitive and beats any case-folded match, except
+// for the caseClashes spellings (qudtUnitCaseClash.spec.js).
 const CASE_SENSITIVE = [
   ['pA', 'PicoA'],
   ['nA', 'NanoA'],
@@ -58,7 +59,8 @@ const CODES = [
   ['Cel', 'DEG_C']
 ];
 
-// An exact key wins over units whose keys only fold to the text.
+// An exact key wins over units whose keys only fold to the text, unless the
+// text is a caseClashes spelling (qudtUnitCaseClash.spec.js).
 const EXACT_WINS = [
   ['C', 'C'],
   ['ML', 'MegaL'],
