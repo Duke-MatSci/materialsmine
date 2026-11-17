@@ -13,7 +13,7 @@ const { jsonSchema2xsd } = require('xsdlibrary');
 const csv = require('csv-parser');
 const { spawn } = require('child_process');
 const { deleteFile, deleteFolder } = require('../utils/fileManager');
-const { UNIT_IRI } = require('../../config/constant');
+const { lookupUnit } = require('./unit-lookup');
 
 exports.xlsxFileReader = async (path, sheetName) => {
   try {
@@ -359,8 +359,7 @@ function pick(obj, path, fallback = undefined) {
 const toArray = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const asDecimal = (v) =>
   v == null || v === '' ? undefined : Number.isFinite(+v) ? +v : undefined;
-const mapUnit = (u) =>
-  u ? UNIT_IRI[String(u).trim().toLowerCase()] || null : null;
+const mapUnit = (u) => lookupUnit(u).iri || null;
 
 /* ------------------------ Value helpers ------------------------ */
 const litStr = (v) =>

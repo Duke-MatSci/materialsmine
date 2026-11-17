@@ -185,41 +185,6 @@ module.exports = {
   MM_BASE: 'http://materialsmine.org/resource/',
   NP_BASE: 'http://materialsmine.org/np/',
   OM2: 'http://www.ontology-of-units-of-measure.org/resource/om-2',
-  UNIT_IRI: {
-    '%': 'http://www.ontology-of-units-of-measure.org/resource/om-2/Percent',
-    '1/s':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/PerSecond',
-    'a/m^2':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/AmperePerSquareMetre',
-    c: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Coulomb',
-    'c/min':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/CoulombPerMinute',
-    celcius:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
-    celsius:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsius',
-    'celsius/min':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsiusPerMinute',
-    'celsius/minute':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/DegreeCelsiusPerMinute',
-    days: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Day',
-    nm: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Nanometre',
-    'mg/ml':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/MilligramPerMillilitre',
-    hours: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Hour',
-    hour: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Hour',
-    minutes:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/Minute-Time',
-    minute:
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/Minute-Time',
-    kv: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Kilovolt',
-    'g/cm^3':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/GramPerCubicCentimetre',
-    'mv/cm':
-      'http://www.ontology-of-units-of-measure.org/resource/om-2/MegavoltPerCentimetre',
-    um: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Micrometre',
-    hz: 'http://www.ontology-of-units-of-measure.org/resource/om-2/Hertz'
-  },
   FILE_FORMATS: ['file', 'url'],
 
   OUTPUT_CONTEXT: {
