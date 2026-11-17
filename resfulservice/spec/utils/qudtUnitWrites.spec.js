@@ -13,7 +13,7 @@ const {
 const { deprecated } = require('../../config/qudt-units.json');
 
 const QUDT = 'http://qudt.org/vocab/unit/';
-const HAS_UNIT = 'http://semanticscience.org/resource/hasUnit';
+const HAS_UNIT = 'http://semanticscience.org/resource/SIO_000221';
 const HAS_UNIT_TEXT = 'http://materialsmine.org/resource/hasUnitText';
 const XSD_STRING = 'http://www.w3.org/2001/XMLSchema#string';
 const OM2_DEGREE_CELSIUS =
@@ -210,14 +210,14 @@ describe('QUDT unit writes', function () {
       it(`links a resolved unit and writes its text at the ${site}`, async function () {
         const node = locate(await xmlNanopub(richXml('nm')));
         expect(node, site).to.exist;
-        expect(node['sio:hasUnit']).to.deep.equal({ '@id': QUDT + 'NanoM' });
+        expect(node['sio:SIO_000221']).to.deep.equal({ '@id': QUDT + 'NanoM' });
         expect(node['mm:hasUnitText']).to.equal('nm');
       });
 
       it(`keeps only the text of an unresolved unit at the ${site}`, async function () {
         const node = locate(await xmlNanopub(richXml('zorkmids')));
         expect(node, site).to.exist;
-        expect(node).to.not.have.property('sio:hasUnit');
+        expect(node).to.not.have.property('sio:SIO_000221');
         expect(node['mm:hasUnitText']).to.equal('zorkmids');
       });
     });
@@ -225,10 +225,10 @@ describe('QUDT unit writes', function () {
     it('writes every resolved unit as a link next to its text', async function () {
       const nodes = [];
       walk(await xmlNanopub(richXml('nm')), (n) => {
-        if ('sio:hasUnit' in n) nodes.push(n);
+        if ('sio:SIO_000221' in n) nodes.push(n);
       });
       expect(
-        nodes.map((n) => [typeof n['sio:hasUnit'], n['mm:hasUnitText']])
+        nodes.map((n) => [typeof n['sio:SIO_000221'], n['mm:hasUnitText']])
       ).to.deep.equal(XML_SITES.map(() => ['object', 'nm']));
     });
 
@@ -236,7 +236,7 @@ describe('QUDT unit writes', function () {
       const linked = [];
       const texts = [];
       walk(await xmlNanopub(richXml('zorkmids')), (n) => {
-        if ('sio:hasUnit' in n) linked.push(n['sio:hasUnit']);
+        if ('sio:SIO_000221' in n) linked.push(n['sio:SIO_000221']);
         if ('mm:hasUnitText' in n) texts.push(n['mm:hasUnitText']);
       });
       expect(linked).to.deep.equal([]);
@@ -247,24 +247,24 @@ describe('QUDT unit writes', function () {
   describe('SDD route', function () {
     const attrFor = (unit) =>
       generateAttributes(CSV_ROWS, oneUnitDict(unit), NP_ID, 0)[0][
-        'sio:hasAttribute'
+        'sio:SIO_000008'
       ][0];
 
     it('links a resolved unit as one @id object and writes its text', function () {
       const attr = attrFor('nm');
-      expect(attr['sio:hasUnit']).to.deep.equal({ '@id': QUDT + 'NanoM' });
+      expect(attr['sio:SIO_000221']).to.deep.equal({ '@id': QUDT + 'NanoM' });
       expect(attr['mm:hasUnitText']).to.equal('nm');
     });
 
     it('leaves out the link and writes the text of an unresolved unit', function () {
       const attr = attrFor('zorkmids');
-      expect(attr).to.not.have.property('sio:hasUnit');
+      expect(attr).to.not.have.property('sio:SIO_000221');
       expect(attr['mm:hasUnitText']).to.equal('zorkmids');
     });
 
     it('writes neither key for whitespace-only unit text', function () {
       const attr = attrFor('   ');
-      expect(attr).to.not.have.property('sio:hasUnit');
+      expect(attr).to.not.have.property('sio:SIO_000221');
       expect(attr).to.not.have.property('mm:hasUnitText');
     });
   });

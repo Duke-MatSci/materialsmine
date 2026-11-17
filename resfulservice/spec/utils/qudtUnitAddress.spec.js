@@ -251,19 +251,19 @@ describe('QUDT unit addresses', function () {
     const csvRows = [{ Width: '50' }];
     const unitAttr = (unit, codeMappings) =>
       generateAttributes(csvRows, dict(unit), npId, 0, codeMappings)[0][
-        'sio:hasAttribute'
+        'sio:SIO_000008'
       ][0];
 
     it('links a unit: address cell to the full IRI and keeps the typed text', function () {
       const attr = unitAttr('unit:NanoM', new Map());
-      expect(attr['sio:hasUnit']).to.deep.equal({ '@id': QUDT + 'NanoM' });
+      expect(attr['sio:SIO_000221']).to.deep.equal({ '@id': QUDT + 'NanoM' });
       expect(attr['mm:hasUnitText']).to.equal('unit:NanoM');
     });
 
     it('links a sheet row unit: address as the full IRI', function () {
       const cm = new Map([['nm', { uri: 'unit:NanoM', label: '' }]]);
       const attr = unitAttr('nm', cm);
-      expect(attr['sio:hasUnit']).to.deep.equal({ '@id': QUDT + 'NanoM' });
+      expect(attr['sio:SIO_000221']).to.deep.equal({ '@id': QUDT + 'NanoM' });
       expect(attr['mm:hasUnitText']).to.equal('nm');
     });
   });

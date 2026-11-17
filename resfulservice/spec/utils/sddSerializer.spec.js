@@ -482,30 +482,30 @@ describe('SDD Serializer', function () {
         const result = generateAttributes(csvRows, dict, npId, 0);
         expect(result).to.have.length(1);
         expect(result[0]['@type']).to.equal('sio:SIO_001050');
-        expect(result[0]['sio:hasAttribute']).to.have.length(2);
+        expect(result[0]['sio:SIO_000008']).to.have.length(2);
       });
 
-      it('should set sio:hasValue as number for numeric values', function () {
+      it('should set sio:SIO_000300 as number for numeric values', function () {
         const dict = [
           makeDictRow({ column: 'Temp', attribute: 'sio:Temperature' })
         ];
         const csvRows = [{ Temp: '25.5' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
-        expect(attr['sio:hasValue']).to.deep.equal({
+        const attr = result[0]['sio:SIO_000008'][0];
+        expect(attr['sio:SIO_000300']).to.deep.equal({
           '@value': 25.5,
           '@type': 'xsd:double'
         });
       });
 
-      it('should set sio:hasValue as string for non-numeric values', function () {
+      it('should set sio:SIO_000300 as string for non-numeric values', function () {
         const dict = [
           makeDictRow({ column: 'Solvent', attribute: 'sio:Descriptor' })
         ];
         const csvRows = [{ Solvent: 'Water' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
-        expect(attr['sio:hasValue']).to.equal('Water');
+        const attr = result[0]['sio:SIO_000008'][0];
+        expect(attr['sio:SIO_000300']).to.equal('Water');
       });
 
       it('should skip attributes with empty cell values', function () {
@@ -515,8 +515,8 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25', Pressure: '' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        expect(result[0]['sio:hasAttribute']).to.have.length(1);
-        expect(result[0]['sio:hasAttribute'][0]['@type']).to.equal(
+        expect(result[0]['sio:SIO_000008']).to.have.length(1);
+        expect(result[0]['sio:SIO_000008'][0]['@type']).to.equal(
           'sio:Temperature'
         );
       });
@@ -528,7 +528,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        expect(result[0]['sio:hasAttribute']).to.have.length(1);
+        expect(result[0]['sio:SIO_000008']).to.have.length(1);
       });
     });
 
@@ -552,11 +552,11 @@ describe('SDD Serializer', function () {
         const result = generateAttributes(csvRows, dict, npId, 0);
         const entity = result.find((n) => n['@type'] === 'sio:Measurement');
         expect(entity).to.exist;
-        expect(entity['sio:hasAttribute']).to.have.length(2);
-        expect(entity).to.not.have.property('sio:hasValue');
+        expect(entity['sio:SIO_000008']).to.have.length(2);
+        expect(entity).to.not.have.property('sio:SIO_000300');
       });
 
-      it('should set sio:isAttributeOf on child nodes', function () {
+      it('should set sio:SIO_000011 on child nodes', function () {
         const dict = [
           makeDictRow({ column: '??Parent', entity: 'sio:Entity' }),
           makeDictRow({
@@ -568,8 +568,8 @@ describe('SDD Serializer', function () {
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
         const entity = result.find((n) => n['@type'] === 'sio:Entity');
-        const child = entity['sio:hasAttribute'][0];
-        expect(child['sio:isAttributeOf']).to.deep.equal([
+        const child = entity['sio:SIO_000008'][0];
+        expect(child['sio:SIO_000011']).to.deep.equal([
           { '@id': generateAttributeId(`${npId}/sample-1`, '??Parent') }
         ]);
       });
@@ -588,7 +588,7 @@ describe('SDD Serializer', function () {
         expect(result).to.have.length(2);
         const orphan = result.find((n) => n['@type'] === 'sio:Temperature');
         expect(orphan).to.exist;
-        expect(orphan['sio:hasValue']).to.deep.equal({
+        expect(orphan['sio:SIO_000300']).to.deep.equal({
           '@value': 25,
           '@type': 'xsd:double'
         });
@@ -629,7 +629,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['rdfs:label']).to.equal('Temperature');
       });
 
@@ -643,7 +643,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temperature: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr).to.not.have.property('rdfs:label');
       });
 
@@ -657,8 +657,8 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
-        expect(attr['sio:hasUnit']).to.deep.equal({
+        const attr = result[0]['sio:SIO_000008'][0];
+        expect(attr['sio:SIO_000221']).to.deep.equal({
           '@id': 'http://qudt.org/vocab/unit/DEG_C'
         });
         expect(attr['mm:hasUnitText']).to.equal('celsius');
@@ -675,7 +675,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['rdfs:comment']).to.equal('Measured in lab');
         expect(attr['skos:definition']).to.equal('Ambient temperature');
       });
@@ -690,7 +690,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['sio:hasRole']).to.deep.equal({
           '@id': 'sio:IndependentVariable'
         });
@@ -707,7 +707,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['sio:measurementOf']).to.equal('sio:Sample');
       });
 
@@ -721,7 +721,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['sio:inRelationTo']).to.equal('sio:Sample');
       });
 
@@ -736,7 +736,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['prov:wasDerivedFrom']).to.be.an('array');
         expect(attr['prov:wasGeneratedBy']).to.be.an('array');
       });
@@ -751,7 +751,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['sio:hasFormat']).to.equal('xsd:float');
       });
 
@@ -765,7 +765,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Datafile: 'test.png' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr).to.not.have.property('sio:hasFormat');
       });
 
@@ -779,7 +779,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['sio:hasTimepoint']).to.be.an('array');
       });
     });
@@ -808,10 +808,10 @@ describe('SDD Serializer', function () {
           }
         ];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['@type']).to.equal('schema:ImageObject');
         expect(attr['schema:contentUrl']).to.equal('http://ex/file/abc');
-        expect(attr).to.not.have.property('sio:hasValue');
+        expect(attr).to.not.have.property('sio:SIO_000300');
       });
 
       it('should nest multiple file refs as child nodes', function () {
@@ -842,12 +842,12 @@ describe('SDD Serializer', function () {
           }
         ];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
-        expect(attr['sio:hasAttribute']).to.have.length(2);
-        expect(attr['sio:hasAttribute'][0]['@type']).to.equal(
+        const attr = result[0]['sio:SIO_000008'][0];
+        expect(attr['sio:SIO_000008']).to.have.length(2);
+        expect(attr['sio:SIO_000008'][0]['@type']).to.equal(
           'schema:ImageObject'
         );
-        expect(attr['sio:hasAttribute'][1]['@type']).to.equal('schema:Dataset');
+        expect(attr['sio:SIO_000008'][1]['@type']).to.equal('schema:Dataset');
       });
     });
 
@@ -862,7 +862,7 @@ describe('SDD Serializer', function () {
         ];
         const csvRows = [{ SampleName: 'ABC-123' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
-        const attr = result[0]['sio:hasAttribute'][0];
+        const attr = result[0]['sio:SIO_000008'][0];
         expect(attr['@id']).to.equal('http://ex.org/sample/ABC-123');
       });
     });
@@ -977,32 +977,32 @@ describe('SDD Serializer', function () {
         (n) => n['@type'] === 'sio:Measurement' && n['@id'].includes('sample-1')
       );
       expect(entity1).to.exist;
-      expect(entity1['sio:hasAttribute']).to.have.length(3);
+      expect(entity1['sio:SIO_000008']).to.have.length(3);
 
-      const gs = entity1['sio:hasAttribute'].find(
+      const gs = entity1['sio:SIO_000008'].find(
         (a) => a['@type'] === 'sio:Width'
       );
-      expect(gs['sio:hasValue']).to.deep.equal({
+      expect(gs['sio:SIO_000300']).to.deep.equal({
         '@value': 50,
         '@type': 'xsd:double'
       });
       expect(gs['rdfs:label']).to.equal('GS');
       expect(gs['rdfs:comment']).to.equal('grain diameter');
-      expect(gs).to.not.have.property('sio:hasUnit');
+      expect(gs).to.not.have.property('sio:SIO_000221');
       expect(gs['mm:hasUnitText']).to.equal('nm');
 
-      const solvent = entity1['sio:hasAttribute'].find(
+      const solvent = entity1['sio:SIO_000008'].find(
         (a) => a['@type'] === 'sio:Descriptor'
       );
-      expect(solvent['sio:hasValue']).to.equal('Water');
+      expect(solvent['sio:SIO_000300']).to.equal('Water');
 
       // Row 2: entity with 2 attributes (Solvent empty → skipped)
       const entity2 = result.find(
         (n) => n['@type'] === 'sio:Measurement' && n['@id'].includes('sample-2')
       );
       expect(entity2).to.exist;
-      expect(entity2['sio:hasAttribute']).to.have.length(2);
-      const types2 = entity2['sio:hasAttribute'].map((a) => a['@type']);
+      expect(entity2['sio:SIO_000008']).to.have.length(2);
+      const types2 = entity2['sio:SIO_000008'].map((a) => a['@type']);
       expect(types2).to.include('sio:Width');
       expect(types2).to.include('sio:Temperature');
       expect(types2).to.not.include('sio:Descriptor');
