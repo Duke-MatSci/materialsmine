@@ -35,6 +35,10 @@ const {
 const xmlLocations = new WeakMap();
 
 const SCALAR_UNIT_PATHS = ['value.unit', 'Value.unit', 'unit', 'Unit'];
+
+// The value at the first of paths that holds one under obj.
+const pickFirst = (obj, paths) =>
+  paths.map((p) => pick(obj, p)).find((v) => v != null);
 const MICRO_LENGTH_UNIT = 'PolymerNanocomposite.MICROSTRUCTURE.LengthUnit';
 
 function indexXmlRecord(node, keys, record) {
@@ -80,6 +84,8 @@ function presentKeys(obj, relPaths) {
 
 // The QUDT IRI for a unit read from holder at one of relPaths, or null.
 // A lookup issue is recorded once per input path on the holder's record.
+// holder must be an object of the parsed input itself: a copy or a merged
+// object has no location, and its issue is dropped.
 function xmlUnitIri(text, holder, ...relPaths) {
   const { iri, issue } = lookupUnit(text);
   const loc = issue && xmlLocations.get(holder);
@@ -98,6 +104,10 @@ function xmlUnitIri(text, holder, ...relPaths) {
   }
   return iri || null;
 }
+
+// The log line for a unit issue found at where in the input.
+const unitIssueLine = (source, i, where) =>
+  `[${source}] ${i.code} unit "${i.value}" in ${where}: ${i.message}`;
 
 /** ---------- Output context ----------
  * - We emit sio:hasAttribute/hasValue explicitly; units go through writeUnit
@@ -302,7 +312,13 @@ function buildMatrixComponent(mc, componentId) {
     const vLit = litNum(v);
 
     if (vLit || hasText(desc)) {
-      const unitIri = xmlUnitIri(u, mcv, 'FixedValue.value.unit', 'value.unit', 'unit');
+      const unitIri = xmlUnitIri(
+        u,
+        mcv,
+        'FixedValue.value.unit',
+        'value.unit',
+        'unit'
+      );
       const node = {
         '@id': `${componentId}/Viscosity`,
         '@type': 'mm:Viscosity',
@@ -1838,11 +1854,7 @@ function buildThermalProperty(propertiesObj, baseId) {
         pick(nodeObj, 'Value.value') ??
         pick(nodeObj, 'value') ??
         pick(nodeObj, 'Value');
-      const unit =
-        pick(nodeObj, 'value.unit') ??
-        pick(nodeObj, 'Value.unit') ??
-        pick(nodeObj, 'unit') ??
-        pick(nodeObj, 'Unit');
+      const unit = pickFirst(nodeObj, SCALAR_UNIT_PATHS);
       const vLit = litNum(val) || litStr(val);
 
       // optional dataset under .../data or .../data.data
@@ -1918,11 +1930,7 @@ function buildThermalProperty(propertiesObj, baseId) {
             pick(x, 'Value.value') ??
             pick(x, 'value') ??
             pick(x, 'Value');
-          const unit =
-            pick(x, 'value.unit') ??
-            pick(x, 'Value.unit') ??
-            pick(x, 'unit') ??
-            pick(x, 'Unit');
+          const unit = pickFirst(x, SCALAR_UNIT_PATHS);
           const vLit = litNum(val) || litStr(val);
 
           const table = pick(x, 'data.data') ?? pick(x, 'data');
@@ -2034,11 +2042,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
           pick(nodeObj, 'Value.value') ??
           pick(nodeObj, 'value') ??
           pick(nodeObj, 'Value');
-        const unit =
-          pick(nodeObj, 'value.unit') ??
-          pick(nodeObj, 'Value.unit') ??
-          pick(nodeObj, 'unit') ??
-          pick(nodeObj, 'Unit');
+        const unit = pickFirst(nodeObj, SCALAR_UNIT_PATHS);
 
         const vLit = litNum(val) || litStr(val);
 
@@ -3071,6 +3075,14 @@ function buildProperties(pnc, baseId) {
 }
 
 /* ------------------------ Transform: XML(JS) → Nanopub JSON-LD ------------------------ */
+
+/**
+ * Transform one parsed PolymerNanocomposite record into a nanopub document.
+ * `issues` holds one warning per unit field the record writes whose lookup
+ * has an issue, located by `record` and `path`; each is logged on logger.
+ * @returns {{ nanopubId: string, nanopub: Object, assertionId: string,
+ *   issues: Object[] }}
+ */
 async function transformXmlToNanopub(xmlObj, logger) {
   const pnc = xmlObj;
   const id =
@@ -3197,7 +3209,7 @@ async function transformXmlToNanopub(xmlObj, logger) {
   const issues = [...unitRecord.issues.values()];
   issues.forEach((i) =>
     logger?.warn(
-      `[curation-builder] ${i.code} unit "${i.value}" in record ${i.record} at ${i.path}: ${i.message}`
+      unitIssueLine('curation-builder', i, `record ${i.record} at ${i.path}`)
     )
   );
   return { nanopubId: id, nanopub: doc, assertionId, issues };
@@ -3365,11 +3377,15 @@ async function publishToChangeLog(
 
 /**
  * Transform a frontend-built SDD nanopub skeleton into a full nanopub document.
- * Returns the same shape as transformXmlToNanopub: { nanopubId, nanopub, assertionId }
+ * Returns the shape of transformXmlToNanopub, with the batch keys added.
+ * `issues` holds one warning per dictionary row whose unit lookup has an
+ * issue, located by `column`; each is logged on logger.
  *
  * @param {Object} skeleton - The nanopubSkeleton from the frontend
  * @param {Object} logger - Request logger
- * @returns {{ nanopubId: string, nanopub: Object, assertionId: string }}
+ * @returns {{ nanopubId: string, nanopub: Object, assertionId: string,
+ *   remainingBatches: Array, totalBatches: number, _batchMeta: Object,
+ *   issues: Object[] }}
  */
 async function transformSddToNanopub(skeleton, logger) {
   const {
@@ -3566,7 +3582,7 @@ async function transformSddToNanopub(skeleton, logger) {
     if (!issue) return;
     issues.push({ severity: 'warning', ...issue, column: d.column });
     logger?.warn(
-      `[sdd-serializer] ${issue.code} unit "${issue.value}" in dictionary column ${d.column}: ${issue.message}`
+      unitIssueLine('sdd-serializer', issue, `dictionary column ${d.column}`)
     );
   });
 
