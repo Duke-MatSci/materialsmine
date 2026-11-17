@@ -145,7 +145,7 @@ function lookupUnit (text) {
 function writeUnit (node, text, iri) {
   const typed = text == null ? '' : String(text).trim();
   if (!typed) return;
-  if (iri) node['sio:hasUnit'] = { '@id': iri };
+  if (iri) node['sio:SIO_000221'] = { '@id': iri };
   node['mm:hasUnitText'] = typed;
 }
 

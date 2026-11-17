@@ -182,7 +182,7 @@ function buildMatrixComponent(mc, componentId) {
       componentAttrs.push({
         '@id': `${componentId}/${key}`,
         '@type': typeIri,
-        'sio:hasValue': litStr(v)
+        'sio:SIO_000300': litStr(v)
       });
     }
   };
@@ -203,7 +203,7 @@ function buildMatrixComponent(mc, componentId) {
     componentAttrs.push({
       '@id': `${componentId}/PolymerType`,
       'rdfs:label': 'Type of polymer based on monomer characteristics',
-      'sio:hasValue': litStr(pick(mc, 'PolymerType'))
+      'sio:SIO_000300': litStr(pick(mc, 'PolymerType'))
     });
   }
 
@@ -225,12 +225,12 @@ function buildMatrixComponent(mc, componentId) {
             ? `${componentId}/MatrixComponentComposition/Constituent`
             : `${componentId}/MatrixComponentComposition/Constituent/${i + 1}`,
         '@type': 'mm:Constituent',
-        'sio:hasValue': litStr(c)
+        'sio:SIO_000300': litStr(c)
       }));
       componentAttrs.push({
         '@id': `${componentId}/MatrixComponentComposition`,
         '@type': 'mm:MatrixComponentComposition',
-        'sio:hasAttribute': subAttrs
+        'sio:SIO_000008': subAttrs
       });
     }
   }
@@ -262,7 +262,7 @@ function buildMatrixComponent(mc, componentId) {
       const sub = {
         '@id': `${componentId}/MolecularWeight/${i + 1}`,
         '@type': typeIri,
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       };
       writeUnit(sub, u, unitIri);
       mwSubAttrs.push(sub);
@@ -272,7 +272,7 @@ function buildMatrixComponent(mc, componentId) {
       componentAttrs.push({
         '@id': `${componentId}/MolecularWeight`,
         '@type': 'mm:MolecularWeight',
-        'sio:hasAttribute': mwSubAttrs
+        'sio:SIO_000008': mwSubAttrs
       });
     }
   }
@@ -290,7 +290,7 @@ function buildMatrixComponent(mc, componentId) {
         '@id': `${componentId}/Density`,
         '@type': 'mm:Density',
         ...(hasText(desc) && { 'rdfs:comment': desc }),
-        ...(dLit && { 'sio:hasValue': dLit })
+        ...(dLit && { 'sio:SIO_000300': dLit })
       };
       writeUnit(node, u, unitIri);
       componentAttrs.push(node);
@@ -323,7 +323,7 @@ function buildMatrixComponent(mc, componentId) {
         '@id': `${componentId}/Viscosity`,
         '@type': 'mm:Viscosity',
         ...(hasText(desc) && { 'rdfs:label': desc }),
-        ...(vLit && { 'sio:hasValue': vLit })
+        ...(vLit && { 'sio:SIO_000300': vLit })
       };
       writeUnit(node, u, unitIri);
       componentAttrs.push(node);
@@ -344,18 +344,18 @@ function buildMatrixComponent(mc, componentId) {
         '@id': `${componentId}/Additive`,
         '@type': 'mm:Additive',
         ...(hasText(desc) && { 'rdfs:label': desc }),
-        ...(hasText(additiveText) && { 'sio:hasValue': litStr(additiveText) })
+        ...(hasText(additiveText) && { 'sio:SIO_000300': litStr(additiveText) })
       };
       if (aLit) {
         const amt = {
           '@id': `${componentId}/Additive/Amount`,
           '@type': 'mm:AdditiveAmount',
           ...(hasText(desc) && { 'rdfs:label': desc }),
-          'sio:hasValue': aLit
+          'sio:SIO_000300': aLit
         };
         const unitIri = xmlUnitIri(u, mca, 'Amount.unit', 'unit');
         writeUnit(amt, u, unitIri);
-        additiveNode['sio:hasAttribute'] = [amt];
+        additiveNode['sio:SIO_000008'] = [amt];
       }
       componentAttrs.push(additiveNode);
     }
@@ -364,7 +364,7 @@ function buildMatrixComponent(mc, componentId) {
   return {
     '@id': componentId,
     '@type': 'mm:MatrixComponent',
-    ...(componentAttrs.length ? { 'sio:hasAttribute': componentAttrs } : {})
+    ...(componentAttrs.length ? { 'sio:SIO_000008': componentAttrs } : {})
   };
 }
 
@@ -386,7 +386,7 @@ function buildCuringLike(kindType, kindKey, obj, baseId) {
           '@id': `${baseId}/${kindKey}/${key.toLowerCase()}`,
           '@type': typeIri,
           ...(hasText(desc) && { 'rdfs:comment': desc }),
-          'sio:hasValue': vLit
+          'sio:SIO_000300': vLit
         };
         writeUnit(node, u, unitIri);
         subAttrs.push(node);
@@ -406,7 +406,7 @@ function buildCuringLike(kindType, kindKey, obj, baseId) {
     subAttrs.push({
       '@id': `${baseId}/${kindKey}/AmbientCondition`,
       '@type': 'mm:AmbientCondition',
-      'sio:hasValue': litStr(ambient)
+      'sio:SIO_000300': litStr(ambient)
     });
   }
 
@@ -415,7 +415,7 @@ function buildCuringLike(kindType, kindKey, obj, baseId) {
     '@id': baseId,
     '@type': kindType,
     ...(hasText(label) && { 'rdfs:label': label }),
-    ...(subAttrs.length ? { 'sio:hasAttribute': subAttrs } : {})
+    ...(subAttrs.length ? { 'sio:SIO_000008': subAttrs } : {})
   };
 }
 
@@ -432,18 +432,18 @@ function buildAdditiveParam(add, baseId) {
     '@id': baseId,
     '@type': 'mm:Additive',
     ...(hasText(label) && { 'rdfs:label': label }),
-    ...(hasText(text) && { 'sio:hasValue': litStr(text) })
+    ...(hasText(text) && { 'sio:SIO_000300': litStr(text) })
   };
   if (vLit) {
     const amt = {
       '@id': `${baseId}/Amount`,
       '@type': 'mm:AdditiveAmount',
       ...(hasText(label) && { 'rdfs:label': label }),
-      'sio:hasValue': vLit
+      'sio:SIO_000300': vLit
     };
     const unitIri = xmlUnitIri(u, add, 'Amount.unit', 'unit');
     writeUnit(amt, u, unitIri);
-    node['sio:hasAttribute'] = [amt];
+    node['sio:SIO_000008'] = [amt];
   }
   if (!hasText(text) && !vLit) return hasText(label) ? node : null;
   return node;
@@ -460,7 +460,7 @@ function buildSolventParam(sol, baseId) {
     subAttrs.push({
       '@id': `${baseId}/solvent/SolventName`,
       '@type': 'mm:SolventName',
-      'sio:hasValue': litStr(sName)
+      'sio:SIO_000300': litStr(sName)
     });
   }
 
@@ -475,7 +475,7 @@ function buildSolventParam(sol, baseId) {
         '@id': `${baseId}/solvent/SolventAmount`,
         '@type': 'mm:SolventAmount',
         ...(hasText(sAmtDesc) && { 'rdfs:label': sAmtDesc }),
-        'sio:hasValue': sAmtLit
+        'sio:SIO_000300': sAmtLit
       };
       writeUnit(node, sAmtUnit, unitIri);
       subAttrs.push(node);
@@ -487,7 +487,7 @@ function buildSolventParam(sol, baseId) {
     '@id': baseId,
     '@type': 'mm:Solvent',
     ...(hasText(label) && { 'rdfs:label': label }),
-    ...(subAttrs.length ? { 'sio:hasAttribute': subAttrs } : {})
+    ...(subAttrs.length ? { 'sio:SIO_000008': subAttrs } : {})
   };
 }
 
@@ -502,7 +502,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     subAttrs.push({
       '@id': `${rootBaseId}/${scope}/Mixing/Mixer`,
       '@type': 'mm:Mixer',
-      'sio:hasValue': litStr(mixer)
+      'sio:SIO_000300': litStr(mixer)
     });
   }
 
@@ -511,7 +511,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     subAttrs.push({
       '@id': `${rootBaseId}/${scope}/Mixing/MixingMethod`,
       '@type': 'mm:MixingMethod',
-      'sio:hasValue': litStr(method)
+      'sio:SIO_000300': litStr(method)
     });
   }
 
@@ -526,7 +526,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
           ? `${rootBaseId}/${scope}/Mixing/ChemicalUsed`
           : `${rootBaseId}/${scope}/Mixing/ChemicalUsed/${i + 1}`,
       '@type': 'mm:ChemicalUsed',
-      'sio:hasValue': litStr(ch)
+      'sio:SIO_000300': litStr(ch)
     });
   });
 
@@ -541,7 +541,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         '@id': `${rootBaseId}/${scope}/Mixing/RPM`,
         '@type': 'mm:RotationSpeed',
         ...(hasText(rpmDesc) && { 'rdfs:label': rpmDesc }),
-        'sio:hasValue': rpmLit
+        'sio:SIO_000300': rpmLit
       };
       writeUnit(node, rpmUnit, unitIri);
       subAttrs.push(node);
@@ -559,7 +559,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         '@id': `${rootBaseId}/${scope}/Mixing/time`,
         '@type': 'mm:ExposureTime',
         ...(hasText(timeDesc) && { 'rdfs:label': timeDesc }),
-        'sio:hasValue': tLit
+        'sio:SIO_000300': tLit
       };
       writeUnit(node, timeUnit, unitIri);
       subAttrs.push(node);
@@ -577,7 +577,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
         '@id': `${rootBaseId}/${scope}/Mixing/Temperature`,
         '@type': 'mm:Temperature',
         ...(hasText(tempDesc) && { 'rdfs:label': tempDesc }),
-        'sio:hasValue': tLit
+        'sio:SIO_000300': tLit
       };
       writeUnit(node, tempUnit, unitIri);
       subAttrs.push(node);
@@ -589,7 +589,7 @@ function buildMixingParam(mix, baseId, rootBaseId, scope = 'MatrixProcessing') {
     '@id': baseId,
     '@type': 'mm:Mixing',
     ...(hasText(label) && { 'rdfs:label': label }),
-    ...(subAttrs.length ? { 'sio:hasAttribute': subAttrs } : {})
+    ...(subAttrs.length ? { 'sio:SIO_000008': subAttrs } : {})
   };
 }
 
@@ -642,7 +642,7 @@ function buildExtrusionParam(
       '@id': idBase,
       '@type': typeIri,
       ...(hasText(dVal) && { 'rdfs:label': dVal }),
-      'sio:hasValue': valLit
+      'sio:SIO_000300': valLit
     };
     const unitIri = xmlUnitIri(uVal, obj, `${key}.unit`);
     writeUnit(node, uVal, unitIri);
@@ -692,7 +692,7 @@ function buildExtrusionParam(
       attrs.push({
         '@id': `${rootBaseId}/${scope}/extrusion/RotationMode`,
         '@type': 'mm:RotationMode',
-        'sio:hasValue': litStr(rotationMode)
+        'sio:SIO_000300': litStr(rotationMode)
       });
     }
   }
@@ -753,7 +753,7 @@ function buildExtrusionParam(
           '@id': `${hzBase}/BarrelTemperature`,
           '@type': 'mm:BarrelTemperature',
           ...(hasText(d) && { 'rdfs:label': d }),
-          'sio:hasValue': vLit
+          'sio:SIO_000300': vLit
         };
         const unitIri = xmlUnitIri(u, hz, 'barrelTemperature.unit');
         writeUnit(node, u, unitIri);
@@ -773,7 +773,7 @@ function buildExtrusionParam(
           '@id': `${hzBase}/LengthOfHeatingZone`,
           '@type': 'mm:LengthOfHeatingZone',
           ...(hasText(d) && { 'rdfs:label': d }),
-          'sio:hasValue': vLit
+          'sio:SIO_000300': vLit
         };
         const unitIri = xmlUnitIri(u, hz, 'lengthOfHeatingZone.unit');
         writeUnit(node, u, unitIri);
@@ -791,7 +791,7 @@ function buildExtrusionParam(
           '@id': `${hzBase}/HeatingZoneNumber`,
           '@type': 'mm:HeatingZoneNumber',
           ...(hasText(d) && { 'rdfs:label': d }),
-          'sio:hasValue': vLit
+          'sio:SIO_000300': vLit
         });
       }
     }
@@ -800,7 +800,7 @@ function buildExtrusionParam(
       attrs.push({
         '@id': hzBase,
         '@type': 'mm:HeatingZone',
-        'sio:hasAttribute': hzAttrs
+        'sio:SIO_000008': hzAttrs
       });
     }
   });
@@ -823,7 +823,7 @@ function buildExtrusionParam(
         '@id': `${outBase}/${local}`,
         '@type': typeIri,
         ...(hasText(d) && { 'rdfs:label': d }),
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       };
       const unitIri = xmlUnitIri(u, out, `${field}.unit`);
       writeUnit(node, u, unitIri);
@@ -843,7 +843,7 @@ function buildExtrusionParam(
       attrs.push({
         '@id': outBase,
         '@type': 'mm:Output',
-        'sio:hasAttribute': outAttrs
+        'sio:SIO_000008': outAttrs
       });
     }
   });
@@ -851,9 +851,9 @@ function buildExtrusionParam(
   const node = {
     '@id': baseId,
     '@type': 'mm:Extrusion',
-    'sio:hasValue': litStr(variant),
+    'sio:SIO_000300': litStr(variant),
     ...(hasText(label) && { 'rdfs:label': label }),
-    ...(attrs.length ? { 'sio:hasAttribute': attrs } : {})
+    ...(attrs.length ? { 'sio:SIO_000008': attrs } : {})
   };
 
   return node;
@@ -920,7 +920,7 @@ function buildMatrixProcessing(pnc, baseId) {
         return {
           '@id': paramId,
           '@type': 'mm:Centrifugation',
-          'sio:hasValue': litStr(centrif)
+          'sio:SIO_000300': litStr(centrif)
         };
       }
 
@@ -941,7 +941,7 @@ function buildMatrixProcessing(pnc, baseId) {
           subAttrs.push({
             '@id': `${baseId}/MatrixProcessing/Molding/MoldingMode`,
             '@type': typeIri,
-            'sio:hasValue': litStr(mode)
+            'sio:SIO_000300': litStr(mode)
           });
         }
         const info = pick(molding, 'MoldingInfo');
@@ -958,7 +958,7 @@ function buildMatrixProcessing(pnc, baseId) {
           ? {
               '@id': paramId,
               '@type': 'mm:Molding',
-              'sio:hasAttribute': subAttrs
+              'sio:SIO_000008': subAttrs
             }
           : null;
       }
@@ -973,7 +973,7 @@ function buildMatrixProcessing(pnc, baseId) {
         return {
           '@id': paramId,
           '@type': 'mm:Other',
-          'sio:hasValue': litStr(other)
+          'sio:SIO_000300': litStr(other)
         };
       }
 
@@ -986,7 +986,7 @@ function buildMatrixProcessing(pnc, baseId) {
   return {
     '@id': `${baseId}/MatrixProcessing`,
     '@type': 'mm:MatrixProcessing',
-    'sio:hasAttribute': paramNodes
+    'sio:SIO_000008': paramNodes
   };
 }
 
@@ -1051,7 +1051,7 @@ function buildFillerProcessing(pnc, baseId) {
         return {
           '@id': paramId,
           '@type': 'mm:Centrifugation',
-          'sio:hasValue': litStr(centrif)
+          'sio:SIO_000300': litStr(centrif)
         };
       }
 
@@ -1072,7 +1072,7 @@ function buildFillerProcessing(pnc, baseId) {
           subAttrs.push({
             '@id': `${baseId}/FillerProcessing/Molding/MoldingMode`,
             '@type': typeIri,
-            'sio:hasValue': litStr(mode)
+            'sio:SIO_000300': litStr(mode)
           });
         }
         const info = pick(molding, 'MoldingInfo');
@@ -1089,7 +1089,7 @@ function buildFillerProcessing(pnc, baseId) {
           ? {
               '@id': paramId,
               '@type': 'mm:Molding',
-              'sio:hasAttribute': subAttrs
+              'sio:SIO_000008': subAttrs
             }
           : null;
       }
@@ -1104,7 +1104,7 @@ function buildFillerProcessing(pnc, baseId) {
         return {
           '@id': paramId,
           '@type': 'mm:Other',
-          'sio:hasValue': litStr(other)
+          'sio:SIO_000300': litStr(other)
         };
       }
 
@@ -1117,7 +1117,7 @@ function buildFillerProcessing(pnc, baseId) {
   return {
     '@id': `${baseId}/FillerProcessing`,
     '@type': 'mm:FillerProcessing',
-    'sio:hasAttribute': paramNodes
+    'sio:SIO_000008': paramNodes
   };
 }
 
@@ -1145,7 +1145,7 @@ function buildFillerComposition(pnc, baseId) {
     attrs.push({
       '@id': `${baseId}/Filler/FillerComposition/Constituent`,
       '@type': 'mm:Constituent',
-      'sio:hasValue': litStr(constituent)
+      'sio:SIO_000300': litStr(constituent)
     });
   }
 
@@ -1174,7 +1174,7 @@ function buildFillerComposition(pnc, baseId) {
     attrs.push({
       '@id': uniqId(idBase),
       '@type': typeIri,
-      'sio:hasValue': vLit,
+      'sio:SIO_000300': vLit,
       ...(vsourceLit && { 'prov:hadPrimarySource': vsourceLit })
     });
   };
@@ -1208,7 +1208,7 @@ function buildFillerComposition(pnc, baseId) {
   return {
     '@id': `${baseId}/FillerComposition`,
     '@type': 'mm:FillerComposition',
-    'sio:hasAttribute': attrs
+    'sio:SIO_000008': attrs
   };
 }
 
@@ -1221,7 +1221,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       attrbs.push({
         '@id': `${fcId}/${localId}`,
         '@type': typeIri,
-        'sio:hasValue': litStr(v)
+        'sio:SIO_000300': litStr(v)
       });
     }
   };
@@ -1259,7 +1259,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         '@id': `${fcId}/Density`,
         '@type': 'mm:Density',
         ...(hasText(desc) && { 'rdfs:label': desc }),
-        ...(vLit && { 'sio:hasValue': vLit })
+        ...(vLit && { 'sio:SIO_000300': vLit })
       };
       const unitIri = xmlUnitIri(u, dens, 'unit');
       writeUnit(node, u, unitIri);
@@ -1269,7 +1269,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       if (hasText(ut) || hasText(uv)) {
         node['mm:hasUncertainty'] = {
           '@type': 'mm:Type',
-          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
           ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
         };
       }
@@ -1300,7 +1300,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         '@id': `${fcId}/SphericalParticleDiameter${idSuffix}`,
         '@type': 'mm:SphericalParticleDiameter',
         ...(hasText(desc) && { 'rdfs:comment': String(desc) }),
-        ...(vLit && { 'sio:hasValue': vLit })
+        ...(vLit && { 'sio:SIO_000300': vLit })
       };
 
       const unitIri = xmlUnitIri(u, spdItem, 'unit');
@@ -1309,7 +1309,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       if (hasText(ut) || hasText(uv)) {
         node['mm:hasUncertainty'] = {
           '@type': 'mm:Type',
-          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
           ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
         };
       }
@@ -1332,7 +1332,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
     if (specLit || hasText(specDesc) || hasText(specUnit)) {
       const obj = {
         ...(hasText(specDesc) && { 'rdfs:label': specDesc }),
-        ...(specLit && { 'sio:hasValue': specLit })
+        ...(specLit && { 'sio:SIO_000300': specLit })
       };
       const unitIri = xmlUnitIri(specUnit, sa, 'specific.unit');
       writeUnit(obj, specUnit, unitIri);
@@ -1346,7 +1346,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
     if (totLit || hasText(totDesc) || hasText(totUnit)) {
       const obj = {
         ...(hasText(totDesc) && { 'rdfs:label': totDesc }),
-        ...(totLit && { 'sio:hasValue': totLit })
+        ...(totLit && { 'sio:SIO_000300': totLit })
       };
       const unitIri = xmlUnitIri(totUnit, sa, 'total.unit');
       writeUnit(obj, totUnit, unitIri);
@@ -1372,7 +1372,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       const node = {
         '@id': `${fcId}/ParticleAspectRatio`,
         '@type': 'mm:AspectRatio',
-        ...(vLit && { 'sio:hasValue': vLit })
+        ...(vLit && { 'sio:SIO_000300': vLit })
       };
       const unitIri = xmlUnitIri(u, par, 'unit');
       writeUnit(node, u, unitIri);
@@ -1382,7 +1382,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       if (hasText(ut) || hasText(uv)) {
         node['mm:hasUncertainty'] = {
           '@type': 'mm:Type',
-          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
           ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
         };
       }
@@ -1406,7 +1406,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       if (!vLit && !hasText(u) && !hasText(ut) && !hasText(uv)) return;
 
       const obj = {
-        ...(vLit && { 'sio:hasValue': vLit })
+        ...(vLit && { 'sio:SIO_000300': vLit })
       };
       const unitIri = xmlUnitIri(u, nss, `${key}.unit`);
       writeUnit(obj, u, unitIri);
@@ -1414,7 +1414,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       if (hasText(ut) || hasText(uv)) {
         obj['mm:hasUncertainty'] = {
           '@type': 'mm:Type',
-          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
           ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
         };
       }
@@ -1443,7 +1443,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       sub.push({
         '@id': `${fcId}/FillerComponent/FillerComponentComposition/Mass`,
         '@type': 'mm:MassFraction',
-        'sio:hasValue': mLit
+        'sio:SIO_000300': mLit
       });
     }
     const vv = pick(fcc, 'Volume');
@@ -1452,14 +1452,14 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       sub.push({
         '@id': `${fcId}/FillerComponent/FillerComponentComposition/Volume`,
         '@type': 'mm:VolumeFraction',
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       });
     }
     if (sub.length) {
       attrs.push({
         '@id': `${fcId}/FillerComponent/FillerComponentComposition`,
         '@type': 'mm:FillerComponentComposition',
-        'sio:hasAttribute': sub
+        'sio:SIO_000008': sub
       });
     }
   }
@@ -1474,7 +1474,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       sub.push({
         '@id': `${fcId}/FillerComponent/FillerComponentInComposite/Mass`,
         '@type': 'mm:MassFraction',
-        'sio:hasValue': mLit
+        'sio:SIO_000300': mLit
       });
     }
     const vv = pick(fcic, 'Volume');
@@ -1483,14 +1483,14 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
       sub.push({
         '@id': `${fcId}/FillerComponent/FillerComponentInComposite/Volume`,
         '@type': 'mm:VolumeFraction',
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       });
     }
     if (sub.length) {
       attrs.push({
         '@id': `${fcId}/FillerComponent/FillerComponentInComposite`,
         '@type': 'mm:FillerComponentInComposite',
-        'sio:hasAttribute': sub
+        'sio:SIO_000008': sub
       });
     }
   }
@@ -1510,7 +1510,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           pstAttrs.push({
             '@id': `${pstBase}/${name}`,
             '@type': typeIri,
-            'sio:hasValue': litStr(value)
+            'sio:SIO_000300': litStr(value)
           });
         }
       };
@@ -1547,7 +1547,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             '@id': `${pstBase}/Density`,
             '@type': 'mm:Density',
             ...(hasText(desc) && { 'rdfs:label': desc }),
-            ...(vLit && { 'sio:hasValue': vLit })
+            ...(vLit && { 'sio:SIO_000300': vLit })
           };
           const unitIri = xmlUnitIri(u, pd, 'unit');
           writeUnit(node, u, unitIri);
@@ -1557,7 +1557,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           if (hasText(ut) || hasText(uv)) {
             node['mm:hasUncertainty'] = {
               '@type': 'mm:Type',
-              ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+              ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
               ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
             };
           }
@@ -1582,7 +1582,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             '@id': `${pstBase}/GraftDensity`,
             '@type': 'mm:GraftDensity',
             ...(hasText(desc) && { 'rdfs:label': desc }),
-            ...(vLit && { 'sio:hasValue': vLit })
+            ...(vLit && { 'sio:SIO_000300': vLit })
           };
           const unitIri = xmlUnitIri(u, gd, 'unit');
           writeUnit(node, u, unitIri);
@@ -1592,7 +1592,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           if (hasText(ut) || hasText(uv)) {
             node['mm:hasUncertainty'] = {
               '@type': 'mm:Type',
-              ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+              ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
               ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
             };
           }
@@ -1617,7 +1617,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
             '@id': `${pstBase}/MolecularWeight`,
             '@type': 'mm:MolecularWeight',
             ...(hasText(desc) && { 'rdfs:label': desc }),
-            ...(vLit && { 'sio:hasValue': vLit })
+            ...(vLit && { 'sio:SIO_000300': vLit })
           };
           const unitIri = xmlUnitIri(u, pmw, 'unit');
           writeUnit(node, u, unitIri);
@@ -1627,7 +1627,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           if (hasText(ut) || hasText(uv)) {
             node['mm:hasUncertainty'] = {
               '@type': 'mm:Type',
-              ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+              ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
               ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
             };
           }
@@ -1645,7 +1645,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           compAttrs.push({
             '@id': `${pstBase}/PST_Composition/Constituent`,
             '@type': 'mm:ConstitutionalUnit',
-            'sio:hasValue': litStr(cst)
+            'sio:SIO_000300': litStr(cst)
           });
         }
 
@@ -1657,7 +1657,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           frAttrs.push({
             '@id': `${pstBase}/PST_Composition/Fraction/Mass`,
             '@type': 'mm:MassFraction',
-            'sio:hasValue': mLit
+            'sio:SIO_000300': mLit
           });
         }
         const vLit2 = litNum(frVol);
@@ -1665,14 +1665,14 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           frAttrs.push({
             '@id': `${pstBase}/PST_Composition/Fraction/Volume`,
             '@type': 'mm:VolumeFraction',
-            'sio:hasValue': vLit2
+            'sio:SIO_000300': vLit2
           });
         }
         if (frAttrs.length) {
           compAttrs.push({
             '@id': `${pstBase}/PST_Composition/Fraction`,
             '@type': 'mm:ConstitutionalUnit',
-            'sio:hasAttribute': frAttrs
+            'sio:SIO_000008': frAttrs
           });
         }
 
@@ -1680,7 +1680,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           pstAttrs.push({
             '@id': `${pstBase}/PST_Composition`,
             '@type': 'mm:ParticleSurfaceTreatmentComposition',
-            'sio:hasAttribute': compAttrs
+            'sio:SIO_000008': compAttrs
           });
         }
       }
@@ -1742,7 +1742,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
               return {
                 '@id': paramId,
                 '@type': 'mm:Centrifugation',
-                'sio:hasValue': litStr(centrif)
+                'sio:SIO_000300': litStr(centrif)
               };
             }
 
@@ -1762,7 +1762,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
                 subAttrs.push({
                   '@id': `${pstBase}/SurfaceChemistryProcessing/Molding/MoldingMode`,
                   '@type': typeIri,
-                  'sio:hasValue': litStr(mode)
+                  'sio:SIO_000300': litStr(mode)
                 });
               }
               const info = pick(molding, 'MoldingInfo');
@@ -1779,7 +1779,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
                 ? {
                     '@id': paramId,
                     '@type': 'mm:Molding',
-                    'sio:hasAttribute': subAttrs
+                    'sio:SIO_000008': subAttrs
                   }
                 : null;
             }
@@ -1799,7 +1799,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
               return {
                 '@id': paramId,
                 '@type': 'mm:Other',
-                'sio:hasValue': litStr(other)
+                'sio:SIO_000300': litStr(other)
               };
             }
 
@@ -1811,7 +1811,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
           pstAttrs.push({
             '@id': `${pstBase}/SurfaceChemistryProcessing`,
             '@type': 'mm:SurfaceChemistryProcessing',
-            'sio:hasAttribute': paramNodes
+            'sio:SIO_000008': paramNodes
           });
         }
       }
@@ -1820,7 +1820,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
         attrs.push({
           '@id': pstBase,
           '@type': 'mm:ParticleSurfaceTreatment',
-          'sio:hasAttribute': pstAttrs
+          'sio:SIO_000008': pstAttrs
         });
       }
     });
@@ -1829,7 +1829,7 @@ function buildFillerComponent(fc, fcId, rootBaseId) {
   return {
     '@id': fcId,
     '@type': 'mm:FillerComponent',
-    ...(attrs.length ? { 'sio:hasAttribute': attrs } : {})
+    ...(attrs.length ? { 'sio:SIO_000008': attrs } : {})
   };
 }
 
@@ -1871,7 +1871,7 @@ function buildThermalProperty(propertiesObj, baseId) {
       const n = {
         '@id': nodeId,
         '@type': ['mm:ThermalProperty', typeIri],
-        ...(vLit ? { 'sio:hasValue': vLit } : {})
+        ...(vLit ? { 'sio:SIO_000300': vLit } : {})
       };
 
       const unitIri = xmlUnitIri(unit, nodeObj, ...SCALAR_UNIT_PATHS);
@@ -1883,7 +1883,7 @@ function buildThermalProperty(propertiesObj, baseId) {
       if (hasText(ut) || hasText(uv)) {
         n['mm:hasUncertainty'] = {
           '@type': 'mm:Type',
-          ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+          ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
           ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
         };
       }
@@ -1945,7 +1945,7 @@ function buildThermalProperty(propertiesObj, baseId) {
           const sub = {
             '@id': subId,
             '@type': ['mm:Crystallinity', tIri],
-            ...(vLit ? { 'sio:hasValue': vLit } : {})
+            ...(vLit ? { 'sio:SIO_000300': vLit } : {})
           };
 
           const unitIri = xmlUnitIri(unit, x, ...SCALAR_UNIT_PATHS);
@@ -1956,7 +1956,7 @@ function buildThermalProperty(propertiesObj, baseId) {
           if (hasText(ut) || hasText(uv)) {
             sub['mm:hasUncertainty'] = {
               '@type': 'mm:Type',
-              ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+              ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
               ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
             };
           }
@@ -1971,7 +1971,7 @@ function buildThermalProperty(propertiesObj, baseId) {
         out.push({
           '@id': cId,
           '@type': ['mm:ThermalProperty', 'mm:Crystallinity'],
-          'sio:hasAttribute': subNodes
+          'sio:SIO_000008': subNodes
         });
       }
     });
@@ -1988,7 +1988,7 @@ function buildThermalProperty(propertiesObj, baseId) {
     out.push({
       '@id': `${baseId}/attr/properties/Thermal/MeasurementMethod`,
       '@type': ['mm:ThermalProperty', 'mm:MeasurementMethod'],
-      'sio:hasValue': litStr(mmVal)
+      'sio:SIO_000300': litStr(mmVal)
     });
   }
 
@@ -2058,7 +2058,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         const n = {
           '@id': nodeId,
           '@type': typePair,
-          ...(vLit ? { 'sio:hasValue': vLit } : {})
+          ...(vLit ? { 'sio:SIO_000300': vLit } : {})
         };
 
         const unitIri = xmlUnitIri(unit, nodeObj, ...SCALAR_UNIT_PATHS);
@@ -2069,7 +2069,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         if (hasText(ut) || hasText(uv)) {
           n['mm:hasUncertainty'] = {
             '@type': 'mm:Type',
-            ...(hasText(ut) && { 'sio:hasValue': litStr(ut) }),
+            ...(hasText(ut) && { 'sio:SIO_000300': litStr(ut) }),
             ...(hasText(uv) && { 'mm:hasTypeValue': String(uv) })
           };
         }
@@ -2114,7 +2114,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
           'mm:axis': axis
         };
         if (hasText(label === 'X-Axis Label' ? xName : yName)) {
-          a['sio:hasValue'] = litStr(label === 'X-Axis Label' ? xName : yName);
+          a['sio:SIO_000300'] = litStr(label === 'X-Axis Label' ? xName : yName);
         }
         const unitIri = xmlUnitIri(unitVal, lp, `AxisLabel.${axis}Unit`);
         writeUnit(a, unitVal, unitIri);
@@ -2169,7 +2169,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         outSub.push({
           '@id': condId,
           '@type': [parentType, 'mm:Condition'],
-          'sio:hasAttribute': condAttrs
+          'sio:SIO_000008': condAttrs
         });
       }
     });
@@ -2229,7 +2229,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
               sub.push({
                 '@id': nid,
                 '@type': [groupTypeIri, tIri],
-                'sio:hasValue': litStr(text)
+                'sio:SIO_000300': litStr(text)
               });
             });
           });
@@ -2245,7 +2245,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         return {
           '@id': rootId,
           '@type': ['mm:MechanicalProperty', `${groupTypeIri}`],
-          'sio:hasAttribute': sub
+          'sio:SIO_000008': sub
         };
       })
       .filter(Boolean);
@@ -2276,7 +2276,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             eSub.push({
               '@id': `${eId}/PreCrackingProcess`,
               '@type': ['mm:EssentialWorkOfFracture', 'mm:PreCrackingProcess'],
-              'sio:hasValue': litStr(preCrack)
+              'sio:SIO_000300': litStr(preCrack)
             });
           }
 
@@ -2316,7 +2316,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
                 'mm:FractureToughnessProperty',
                 'mm:EssentialWorkOfFracture'
               ],
-              'sio:hasAttribute': eSub
+              'sio:SIO_000008': eSub
             });
           }
         });
@@ -2334,7 +2334,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             lSub.push({
               '@id': `${lId}/sampleShape`,
               '@type': ['mm:LinearElastic', 'mm:SampleShape'],
-              'sio:hasValue': litStr(sampleShape)
+              'sio:SIO_000300': litStr(sampleShape)
             });
           }
           const preCrack = pick(le, 'preCrackingProcess');
@@ -2342,7 +2342,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             lSub.push({
               '@id': `${lId}/preCrackingProcess`,
               '@type': ['mm:LinearElastic', 'mm:PreCrackingProcess'],
-              'sio:hasValue': litStr(preCrack)
+              'sio:SIO_000300': litStr(preCrack)
             });
           }
           const kFactor = pick(le, 'K-factor');
@@ -2350,7 +2350,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             lSub.push({
               '@id': `${lId}/K-factor`,
               '@type': ['mm:LinearElastic', 'mm:KFactor'],
-              'sio:hasValue': litStr(kFactor)
+              'sio:SIO_000300': litStr(kFactor)
             });
           }
 
@@ -2387,7 +2387,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             sub.push({
               '@id': lId,
               '@type': ['mm:FractureToughnessProperty', 'mm:LinearElastic'],
-              'sio:hasAttribute': lSub
+              'sio:SIO_000008': lSub
             });
           }
         });
@@ -2405,7 +2405,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             pSub.push({
               '@id': `${pId}/sampleShape`,
               '@type': ['mm:PlasticElastic', 'mm:SampleShape'],
-              'sio:hasValue': litStr(sampleShape)
+              'sio:SIO_000300': litStr(sampleShape)
             });
           }
           const preCrack = pick(pe, 'preCrackingProcess');
@@ -2413,7 +2413,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             pSub.push({
               '@id': `${pId}/preCrackingProcess`,
               '@type': ['mm:PlasticElastic', 'mm:PreCrackingProcess'],
-              'sio:hasValue': litStr(preCrack)
+              'sio:SIO_000300': litStr(preCrack)
             });
           }
           const jIntegral = pick(pe, 'J-integral');
@@ -2421,7 +2421,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             pSub.push({
               '@id': `${pId}/J-integral`,
               '@type': ['mm:PlasticElastic', 'mm:JIntegral'],
-              'sio:hasValue': litStr(jIntegral)
+              'sio:SIO_000300': litStr(jIntegral)
             });
           }
 
@@ -2458,7 +2458,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
             sub.push({
               '@id': pId,
               '@type': ['mm:FractureToughnessProperty', 'mm:PlasticElastic'],
-              'sio:hasAttribute': pSub
+              'sio:SIO_000008': pSub
             });
           }
         });
@@ -2467,7 +2467,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         return {
           '@id': rootId,
           '@type': ['mm:MechanicalProperty', 'mm:FractureToughnessProperty'],
-          'sio:hasAttribute': sub
+          'sio:SIO_000008': sub
         };
       })
       .filter(Boolean);
@@ -2571,7 +2571,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         sub.push({
           '@id': nid,
           '@type': ['mm:Impact', 'mm:Notched'],
-          'sio:hasValue': litStr(text)
+          'sio:SIO_000300': litStr(text)
         });
       });
 
@@ -2591,7 +2591,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         out.push({
           '@id': rootId,
           '@type': ['mm:MechanicalProperty', 'mm:Impact'],
-          'sio:hasAttribute': sub
+          'sio:SIO_000008': sub
         });
       }
     });
@@ -2617,7 +2617,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         sub.push({
           '@id': nid,
           '@type': ['mm:HardnessProperty', 'mm:HardnessTestStandard'],
-          'sio:hasValue': litStr(text)
+          'sio:SIO_000300': litStr(text)
         });
       });
 
@@ -2630,7 +2630,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         sub.push({
           '@id': nid,
           '@type': ['mm:HardnessProperty', 'mm:HardnessScale'],
-          'sio:hasValue': litStr(text)
+          'sio:SIO_000300': litStr(text)
         });
       });
 
@@ -2648,7 +2648,7 @@ function buildMechanicalProperty(propertiesObj, baseId) {
         out.push({
           '@id': rootId,
           '@type': ['mm:MechanicalProperty', 'mm:HardnessProperty'],
-          'sio:hasAttribute': sub
+          'sio:SIO_000008': sub
         });
       }
     });
@@ -2786,7 +2786,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           const fileAttr = {
             '@id': `${imgId}/file`,
             '@type': 'sio:SIO_000396',
-            'sio:hasValue': litStr(fileIdOnly)
+            'sio:SIO_000300': litStr(fileIdOnly)
           };
           const fileDesc = pick(img, 'Description');
           if (hasText(fileDesc)) fileAttr['rdfs:label'] = String(fileDesc);
@@ -2798,7 +2798,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           iAttrs.push({
             '@id': `${imgId}/microscopytype`,
             '@type': 'mm:MicroscopyType',
-            'sio:hasValue': litStr(microscopyType)
+            'sio:SIO_000300': litStr(microscopyType)
           });
         }
 
@@ -2807,7 +2807,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           iAttrs.push({
             '@id': `${imgId}/type`,
             '@type': 'mm:Type',
-            'sio:hasValue': litStr(typeText)
+            'sio:SIO_000300': litStr(typeText)
           });
         }
 
@@ -2821,7 +2821,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           const wAttr = {
             '@id': `${imgId}/dimension/width`,
             '@type': 'sio:SIO_000042',
-            'sio:hasValue': widthLit
+            'sio:SIO_000300': widthLit
           };
           const unitIri = xmlUnitIri(microLengthUnit, pnc, MICRO_LENGTH_UNIT);
           writeUnit(wAttr, microLengthUnit, unitIri);
@@ -2831,7 +2831,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           const hAttr = {
             '@id': `${imgId}/dimension/height`,
             '@type': 'sio:SIO_000040',
-            'sio:hasValue': heightLit
+            'sio:SIO_000300': heightLit
           };
           const unitIri = xmlUnitIri(microLengthUnit, pnc, MICRO_LENGTH_UNIT);
           writeUnit(hAttr, microLengthUnit, unitIri);
@@ -2841,7 +2841,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
           iAttrs.push({
             '@id': `${imgId}/dimension`,
             '@type': 'mm:AspectRatio',
-            'sio:hasAttribute': dimSubAttrs
+            'sio:SIO_000008': dimSubAttrs
           });
         }
 
@@ -2849,7 +2849,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
         return {
           '@id': imgId,
           '@type': 'mm:ImageFile',
-          'sio:hasAttribute': iAttrs
+          'sio:SIO_000008': iAttrs
         };
       })
       .filter(Boolean);
@@ -2858,7 +2858,7 @@ function buildMaterialsAndMicrostructure(pnc, baseId) {
       hasMicrostructure = {
         '@id': `${baseId}/attr/microstructure`,
         '@type': 'mm:Microstructure',
-        'sio:hasAttribute': imageNodes
+        'sio:SIO_000008': imageNodes
       };
     }
   }
@@ -2913,7 +2913,7 @@ function buildProcessingParam(cp, paramId, baseId, scopePath) {
     return {
       '@id': paramId,
       '@type': 'mm:Centrifugation',
-      'sio:hasValue': litStr(centrif)
+      'sio:SIO_000300': litStr(centrif)
     };
   }
 
@@ -2933,7 +2933,7 @@ function buildProcessingParam(cp, paramId, baseId, scopePath) {
       subAttrs.push({
         '@id': `${baseId}/processing/${scopePath}/Molding/MoldingMode`,
         '@type': typeIri,
-        'sio:hasValue': litStr(mode)
+        'sio:SIO_000300': litStr(mode)
       });
     }
     const info = pick(molding, 'MoldingInfo');
@@ -2947,7 +2947,7 @@ function buildProcessingParam(cp, paramId, baseId, scopePath) {
       if (infoNode) subAttrs.push(infoNode);
     }
     return subAttrs.length
-      ? { '@id': paramId, '@type': 'mm:Molding', 'sio:hasAttribute': subAttrs }
+      ? { '@id': paramId, '@type': 'mm:Molding', 'sio:SIO_000008': subAttrs }
       : null;
   }
 
@@ -2961,7 +2961,7 @@ function buildProcessingParam(cp, paramId, baseId, scopePath) {
     return {
       '@id': paramId,
       '@type': 'mm:Other',
-      'sio:hasValue': litStr(other)
+      'sio:SIO_000300': litStr(other)
     };
   }
 
@@ -2987,7 +2987,7 @@ function buildProcessingSection(sectionObj, baseId, scopePath, typeIri) {
   return {
     '@id': `${baseId}/processing/${scopePath}`,
     '@type': typeIri,
-    'sio:hasAttribute': paramNodes
+    'sio:SIO_000008': paramNodes
   };
 }
 
@@ -3002,7 +3002,7 @@ function buildProcessing(pnc, baseId) {
     ? {
         '@id': `${baseId}/processing/ExperimentalProcedure`,
         '@type': 'mm:ExperimentalProcedure',
-        'sio:hasValue': litStr(expText)
+        'sio:SIO_000300': litStr(expText)
       }
     : null;
 
@@ -3470,7 +3470,7 @@ async function transformSddToNanopub(skeleton, logger) {
     '@type': 'dcat:Dataset',
     ...(distribution || {}),
     ...(depiction || {}),
-    'sio:hasAttribute': firstBatchSamples
+    'sio:SIO_000008': firstBatchSamples
   };
 
   const now = new Date().toISOString();
@@ -3611,7 +3611,7 @@ function buildBatchNanopub(batchSamples, batchMeta) {
     '@type': 'dcat:Dataset',
     ...(distribution || {}),
     ...(depiction || {}),
-    'sio:hasAttribute': batchSamples
+    'sio:SIO_000008': batchSamples
   };
 
   return {

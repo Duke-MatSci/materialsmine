@@ -474,7 +474,7 @@ function applyDictPredicates(node, d, sampleId, codeMappings) {
     node[predicate] = getInferredValues(sampleId, d.inRelationTo);
   }
   if (d.attributeOf) {
-    node['sio:isAttributeOf'] = getInferredValues(sampleId, d.attributeOf);
+    node['sio:SIO_000011'] = getInferredValues(sampleId, d.attributeOf);
   }
   if (d.unit) {
     writeUnit(node, d.unit, resolveCodeMapping(d.unit, codeMappings));
@@ -560,10 +560,10 @@ function generateAttributes(
             node['@type'] = fileNodes[0]['@type'];
             node['schema:contentUrl'] = fileNodes[0]['schema:contentUrl'];
           } else {
-            node['sio:hasAttribute'] = fileNodes;
+            node['sio:SIO_000008'] = fileNodes;
           }
         } else {
-          node['sio:hasValue'] = isNaN(Number(value))
+          node['sio:SIO_000300'] = isNaN(Number(value))
             ? String(value)
             : { '@value': Number(value), '@type': 'xsd:double' };
         }
@@ -588,7 +588,7 @@ function generateAttributes(
       for (const [parentKey, children] of childrenOf) {
         const parent = nodeMap.get(parentKey);
         if (parent) {
-          parent['sio:hasAttribute'] = children;
+          parent['sio:SIO_000008'] = children;
         } else {
           rootNodes.push(...children);
         }
@@ -600,7 +600,7 @@ function generateAttributes(
       samples.push({
         '@id': sampleId,
         '@type': 'sio:SIO_001050',
-        'sio:hasAttribute': allNodes
+        'sio:SIO_000008': allNodes
       });
     }
   });

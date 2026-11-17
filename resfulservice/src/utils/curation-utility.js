@@ -446,14 +446,14 @@ function buildSioDatasetFromTable(table, datasetId, desc = null) {
       attrs.push({
         '@type': 'sio:attribute',
         'rdfs:label': label,
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       });
     });
 
     if (attrs.length) {
       parts.push({
         '@type': 'sio:row',
-        'sio:hasAttribute': attrs
+        'sio:SIO_000008': attrs
       });
     }
   });
