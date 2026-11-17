@@ -385,6 +385,7 @@ def inference_status(request_id):
     status = get_materialize_status()
     return jsonify(status), 200
 
+
 @ontology.route("/units/", methods=["POST"])
 @log_errors
 @request_logger

@@ -1,13 +1,15 @@
 """Generate config/qudt-units.json from a pinned QUDT unit vocabulary.
 
-Fetch the pinned file outside the repository (never commit it, it is
-3 MB) and rerun from resfulservice/:
+The pinned file is bundled, byte-identical, at
+services/app/ontology/data/qudt-units-v3.5.3.ttl; the managed service
+loads the same copy into Fuseki. Rerun from resfulservice/:
 
-    ttl="$(mktemp -d)/VOCAB_QUDT-UNITS-ALL.ttl"
-    curl -L -o "$ttl" https://raw.githubusercontent.com/qudt/\
-qudt-public-repo/07acd3f9ee2c7189341f322c85154ca63c9198f2/src/main/rdf/\
-vocab/unit/VOCAB_QUDT-UNITS-ALL.ttl
-    python -I script/qudt_units.py "$ttl"
+    python -I script/qudt_units.py \
+../services/app/ontology/data/qudt-units-v3.5.3.ttl
+
+It is upstream's VOCAB_QUDT-UNITS-ALL.ttl at the tag and commit pinned
+below (QUDT_URL), and the script refuses a file whose SHA-256 is not
+QUDT_SHA256.
 
 The output maps each current QUDT unit's local name to its keys, the
 spellings the lookup matches exactly and, case-folded, when they name one

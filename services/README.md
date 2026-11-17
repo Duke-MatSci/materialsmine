@@ -149,6 +149,28 @@ Below are the API endpoints to initialize Tri-VE and Chemprops via Swagger:
 - **GET /mn/chemprops/init**: Initialize the Chemprops service.
 - **POST /mn/chemprops**: Calls the nmChemPropsAPI with provided parameters.
 
+### Ontology API Endpoints
+
+Called directly on the managed service (`http://localhost:5050`), not through
+`/api/mn`. It needs `Authorization: Bearer <token>`, an HS256 JWT signed with
+the managed service's `SECRET_KEY` and carrying a `reqId` claim; without one it
+answers 401.
+
+- **POST /ontology/units/**: Loads the bundled QUDT unit vocabulary
+  (`app/ontology/data/qudt-units-v3.5.3.ttl`, checked against its pinned
+  SHA-256, with `$$QUDT_VERSION$$` filled in as `3.5.3`) into Fuseki as the
+  named graph `http://qudt.org/3.5.3/vocab/unit`, replacing that graph. It then
+  drops every other versioned unit graph (`http://qudt.org/<version>/vocab/unit`);
+  the unversioned graph and other QUDT vocabularies are left alone. The request
+  body is ignored.
+  - **200**: `{graph, version, triples, fuseki: {ok, status, error}, dropped}`,
+    where `dropped` lists the graphs removed. If listing or dropping graphs
+    fails, the load still stands and `drop_errors` lists the failures.
+  - **500**: `{message}`: the bundled file is missing or fails its checksum.
+    Nothing is sent to Fuseki.
+  - **502**: `{message, fuseki}`: Fuseki rejected the load or could not be
+    reached. No graphs are dropped.
+
 ## Onboarding Your Own Python Application
 
 Follow the detailed steps below to onboard a new application into managed

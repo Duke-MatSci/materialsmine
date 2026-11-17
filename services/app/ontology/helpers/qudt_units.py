@@ -27,15 +27,14 @@ class UnitFileError(Exception):
     """The bundled unit file is missing or does not match its pin."""
 
 
-def _base_and_auth() -> Tuple[str, Any]:
-    base = Config.FUSEKI_BASE_URL or 'http://host.docker.internal:3032'
-    auth = (Config.FUSEKI_USER, Config.FUSEKI_PWD) if Config.FUSEKI_USER else None
-    return f'{base}/{Config.FUSEKI_DATASET}/data', auth
+def _auth() -> Any:
+    return (Config.FUSEKI_USER, Config.FUSEKI_PWD) if Config.FUSEKI_USER else None
 
 
 def _graph_url(graph: str) -> str:
-    endpoint, _ = _base_and_auth()
-    return f"{endpoint}?graph={quote(graph, safe='')}"
+    """Graph Store Protocol address of one named graph."""
+    base = Config.FUSEKI_BASE_URL or 'http://host.docker.internal:3032'
+    return f"{base}/{Config.FUSEKI_DATASET}/data?graph={quote(graph, safe='')}"
 
 
 def read_pinned_units() -> str:
@@ -54,13 +53,12 @@ def read_pinned_units() -> str:
 
 def put_units_graph(text: str, timeout: int = 300) -> Dict[str, Any]:
     """Replace the versioned unit graph in Fuseki with the given Turtle."""
-    _, auth = _base_and_auth()
     try:
         r = requests.put(
             _graph_url(QUDT_UNITS_GRAPH),
             data=text.encode('utf-8'),
             headers={'Content-Type': 'text/turtle; charset=utf-8'},
-            auth=auth,
+            auth=_auth(),
             timeout=timeout,
         )
         ok = 200 <= r.status_code < 300
@@ -77,7 +75,7 @@ def drop_other_unit_graphs() -> Tuple[List[str], List[Dict[str, Any]]]:
         return [], [{'graph': None, 'error': str(result)}]
     graphs = [b['g']['value'] for b in result.get('results', {}).get('bindings', []) if 'g' in b]
     dropped, errors = [], []
-    _, auth = _base_and_auth()
+    auth = _auth()
     for g in graphs:
         if g == QUDT_UNITS_GRAPH or not UNIT_GRAPH_PATTERN.match(g):
             continue
