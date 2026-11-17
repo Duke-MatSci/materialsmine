@@ -441,9 +441,13 @@ describe('SDD Serializer', function () {
 
   // resolveCodeMapping
   describe('resolveCodeMapping', function () {
-    it('should resolve from code mappings first', function () {
+    it('should leave a code unlinked when its mapping is not a QUDT address', function () {
       const cm = new Map([['µm²', { uri: 'http://ex/um2', label: '' }]]);
-      expect(resolveCodeMapping('µm²', cm)).to.equal('http://ex/um2');
+      expect(resolveCodeMapping('\u00b5m\u00b2', cm)).to.be.undefined;
+      const { resolveUnit } = require('../../src/utils/sdd-serializer');
+      const result = resolveUnit('\u00b5m\u00b2', cm);
+      expect(result.issue.code).to.equal('UNIT_NOT_QUDT');
+      expect(result.issue.value).to.equal('http://ex/um2');
     });
 
     it('should fall back to the QUDT unit when not in code mappings', function () {
@@ -986,7 +990,7 @@ describe('SDD Serializer', function () {
       });
       expect(gs['rdfs:label']).to.equal('GS');
       expect(gs['rdfs:comment']).to.equal('grain diameter');
-      expect(gs['sio:hasUnit'][0]['@type']).to.include('Nanometre');
+      expect(gs['sio:hasUnit']).to.deep.equal([{ '@value': 'nm' }]);
 
       const solvent = entity1['sio:hasAttribute'].find(
         (a) => a['@type'] === 'sio:Descriptor'

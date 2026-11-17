@@ -156,13 +156,33 @@ describe('QUDT exact unit lookup', function () {
   });
 
   describe('Code Mappings sheet', function () {
+    const resolveUnit = (code, codeMappings) =>
+      require('../../src/utils/sdd-serializer').resolveUnit(
+        code,
+        codeMappings
+      );
+
     it('takes precedence over a QUDT match', function () {
+      const codeMappings = new Map([
+        ['gpa', { uri: 'unit:MegaPA', label: '' }]
+      ]);
+      expect(resolveUnit('GPa', codeMappings)).to.deep.equal({
+        iri: QUDT + 'MegaPA'
+      });
+      expect(resolveCodeMapping('GPa', codeMappings)).to.equal(
+        QUDT + 'MegaPA'
+      );
+    });
+
+    it('leaves a non-QUDT row address unlinked over a QUDT match', function () {
       const codeMappings = new Map([
         ['gpa', { uri: 'http://example.org/my-gpa', label: '' }]
       ]);
-      expect(resolveCodeMapping('GPa', codeMappings)).to.equal(
-        'http://example.org/my-gpa'
-      );
+      const result = resolveUnit('GPa', codeMappings);
+      expect(result).to.not.have.property('iri');
+      expect(result.issue.code).to.equal('UNIT_NOT_QUDT');
+      expect(result.issue.value).to.equal('http://example.org/my-gpa');
+      expect(resolveCodeMapping('GPa', codeMappings)).to.equal(undefined);
     });
   });
 
