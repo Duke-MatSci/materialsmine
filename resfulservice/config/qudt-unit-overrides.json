@@ -22,6 +22,10 @@
     "µm": "MicroM",
     "μM": "MicroMOL-PER-L"
   },
+  "caseClashes": [
+    "V/V",
+    "ph"
+  ],
   "notUnits": [
     "-",
     "N/A",

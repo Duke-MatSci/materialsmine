@@ -16,7 +16,12 @@ function readUnitOverrides () {
   return require('../../config/qudt-unit-overrides.json');
 }
 
-const { aliases, tieBreaks, notUnits: notUnitList } = readUnitOverrides();
+const {
+  aliases,
+  tieBreaks,
+  notUnits: notUnitList,
+  caseClashes = []
+} = readUnitOverrides();
 const notUnits = new Set(notUnitList);
 
 const has = (table, key) => Object.prototype.hasOwnProperty.call(table, key);
@@ -45,14 +50,35 @@ Object.entries(units).forEach(([name, { keys = [], codes = [] }]) => {
   });
 });
 
+// Not-a-unit values by their lowercased spelling.
+const foldedNotUnits = new Map();
+notUnitList.forEach((value) => addOwner(foldedNotUnits, value.toLowerCase(), value));
+
+// Listed spellings to the units they and their override case-twins name.
+const clashes = new Map();
+caseClashes.forEach((spelling) => {
+  const owners = new Set(exact.get(spelling) || []);
+  [aliases, tieBreaks].forEach((table) => {
+    Object.entries(table).forEach(([key, name]) => {
+      if (key.toLowerCase() === spelling.toLowerCase()) owners.add(name);
+    });
+  });
+  clashes.set(spelling, owners);
+});
+
 const issue = (code, message, value) => ({ issue: { code, message, value } });
 
-const fromOwners = (owners, value) => {
-  if (owners.size === 1) return { iri: QUDT_UNIT + [...owners][0] };
+const fromOwners = (owners, value, others = []) => {
+  if (owners.size === 1 && !others.length) {
+    return { iri: QUDT_UNIT + [...owners][0] };
+  }
   const names = [...owners].sort().join(', ');
+  const notUnitText = others.length
+    ? ` and the not-a-unit text ${others.map((v) => `"${v}"`).join(', ')}`
+    : '';
   return issue(
     'UNIT_AMBIGUOUS',
-    `Unit "${value}" matches several QUDT units: ${names}`,
+    `Unit "${value}" matches several QUDT units: ${names}${notUnitText}`,
     value
   );
 };
@@ -131,8 +157,13 @@ function lookupUnit (text) {
   if (isAddress(trimmed)) return lookupAddress(text);
   const target = own(aliases, trimmed) || own(tieBreaks, trimmed);
   if (target) return { iri: QUDT_UNIT + target };
-  const owners = exact.get(trimmed) || folded.get(trimmed.toLowerCase());
-  if (owners) return fromOwners(owners, text);
+  if (clashes.has(trimmed)) return fromOwners(clashes.get(trimmed), text, []);
+  const exactOwners = exact.get(trimmed);
+  if (exactOwners) return fromOwners(exactOwners, text);
+  const lower = trimmed.toLowerCase();
+  const owners = folded.get(lower);
+  const others = [...(foldedNotUnits.get(lower) || [])].sort();
+  if (owners) return fromOwners(owners, text, others);
   return issue('UNIT_UNRESOLVED', `Unit "${text}" matches no QUDT unit`, text);
 }
 
