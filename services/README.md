@@ -199,9 +199,7 @@ answers 401.
   and these IRIs as subject or object are left alone.
   The rewrite is one SPARQL Update, so it applies whole or not at all, and it
   is sent only when something needs migrating. Running it again finds nothing
-  and changes nothing. The request body is ignored. It has been checked live
-  against the stack's `kgraph`: the dataset's triple count was unchanged, and
-  a migrated nanopub matched the same record written fresh.
+  and changes nothing. The request body is ignored.
   - **200**: `{migrated, remaining, skipped}`, each keyed by local name
     (`hasAttribute`, `hasValue`, `hasUnit`, `isAttributeOf`): the triples
     in nanopub graphs found before the rewrite and those left after it, all
