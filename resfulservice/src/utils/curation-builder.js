@@ -652,11 +652,9 @@ function buildExtrusionParam(
   const rfc = pick(nodeObj, 'RadialFlightClearance');
   const fc = pick(nodeObj, 'FlightClearance');
   if (rfc != null || fc != null) {
-    const obj =
-      rfc != null ? { RadialFlightClearance: rfc } : { FlightClearance: fc };
     addVTU(
-      obj,
-      Object.keys(obj)[0],
+      nodeObj,
+      rfc != null ? 'RadialFlightClearance' : 'FlightClearance',
       'mm:FlightClearance',
       'RadialFlightClearance',
       false
