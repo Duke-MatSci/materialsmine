@@ -15,6 +15,8 @@ PREFIX schema: <http://schema.org/>
 PREFIX sio:    <http://semanticscience.org/resource/>
 PREFIX prov:   <http://www.w3.org/ns/prov#>
 PREFIX xsd:    <http://www.w3.org/2001/XMLSchema#>
+PREFIX qudt:   <http://qudt.org/schema/qudt/>
+PREFIX unit:   <http://qudt.org/vocab/unit/>
 SELECT DISTINCT
   (STR(?sampleName)              AS ?Sample)
   (LCASE(STR(?fillerName))       AS ?Filler)
@@ -98,7 +100,20 @@ WHERE {
   }
   ?propNode a ?PropertyType ;
             sio:hasValue ?AttributeValue .
-  OPTIONAL { ?propNode sio:hasUnit ?unitOfMeasure }
+  # --------------------
+  # Unit: the QUDT symbol of the linked unit, else the unit as the curator
+  # wrote it, else the linked unit's address. UNITLESS's QUDT symbol is not
+  # a display string, so a unitless value shows the curator's text.
+  # --------------------
+  OPTIONAL { ?propNode mm:hasUnitText ?unitText }
+  OPTIONAL {
+    ?propNode sio:hasUnit ?unitIri .
+    OPTIONAL {
+      ?unitIri qudt:symbol ?unitSymbol .
+      FILTER(?unitIri != unit:UNITLESS)
+    }
+  }
+  BIND(COALESCE(?unitSymbol, ?unitText, STR(?unitIri)) AS ?unitOfMeasure)
 }
 ORDER BY ?sampleName
 """;
