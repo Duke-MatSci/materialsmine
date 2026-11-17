@@ -171,6 +171,13 @@ answers 401.
   - **502**: `{message, fuseki}`: Fuseki rejected the load or could not be
     reached. No graphs are dropped.
 
+  To load the units without a token, run the same code inside the running
+  container. It prints the body and status the route would return:
+
+  ```bash
+  docker exec managedservices python -c "from app.ontology.helpers.qudt_units import load_units; print(load_units())"
+  ```
+
 ## Onboarding Your Own Python Application
 
 Follow the detailed steps below to onboard a new application into managed
