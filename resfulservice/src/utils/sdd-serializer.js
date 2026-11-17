@@ -16,6 +16,14 @@ const {
 } = require('../../config/constant');
 const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
 
+/*
+ * SIO links are written under their numbered IRIs:
+ *   sio:SIO_000008  has attribute
+ *   sio:SIO_000300  has value
+ *   sio:SIO_000011  is attribute of
+ *   sio:SIO_000221  has unit (written by writeUnit, unit-lookup.js)
+ */
+
 /**
  * Fetch a distribution file stream using internal services (MinIO or local file store).
  * Parses the file URL to determine storage type and retrieves the stream directly.
@@ -611,7 +619,7 @@ function generateAttributes(
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
 /**
- * Build the sio:hasAttribute array for an SDD nanopub assertion.
+ * Build the sample nodes for an SDD nanopub assertion.
  *
  * 1. Classifies distribution files into SDD (xlsx) and CSV(s)
  * 2. Fetches & parses the XLSX Dictionary Mapping sheet
@@ -621,7 +629,8 @@ function generateAttributes(
  * @param {Object} distributionLd - The distribution LD from nanopubSkeleton
  * @param {string} npId - The nanopub ID (e.g. http://materialsmine.org/np/xxx)
  * @param {Object} logger - Logger instance
- * @returns {Promise<Object[]>} Array of sample assertion nodes with sio:hasAttribute
+ * @returns {Promise<Object[]>} Sample assertion nodes, each with its attributes
+ *   under sio:SIO_000008 (has attribute)
  */
 async function buildSddAttributes(distributionLd, npId, logger) {
   const { sddFile, csvFiles } = classifyDistributionFiles(distributionLd);

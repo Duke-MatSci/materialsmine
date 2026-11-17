@@ -372,6 +372,8 @@ const litNum = (v) => {
 };
 
 /* ---------- helper: dataset/table helper ---------- */
+// Rows link their cells by sio:SIO_000008 (has attribute) and each cell
+// its value by sio:SIO_000300 (has value).
 function buildSioDatasetFromTable(table, datasetId, desc = null) {
   if (!table) return null;
 

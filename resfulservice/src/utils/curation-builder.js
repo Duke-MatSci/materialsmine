@@ -110,8 +110,10 @@ const unitIssueLine = (source, i, where) =>
   `[${source}] ${i.code} unit "${i.value}" in ${where}: ${i.message}`;
 
 /** ---------- Output context ----------
- * - We emit sio:hasAttribute/hasValue explicitly; units go through writeUnit
- *   (unit-lookup.js).
+ * - SIO links are written under their numbered IRIs:
+ *     sio:SIO_000008  has attribute
+ *     sio:SIO_000300  has value
+ *     sio:SIO_000221  has unit (written by writeUnit, unit-lookup.js)
  * - All nodes use @id / @type.
  */
 
@@ -172,7 +174,7 @@ async function buildArticle(common, logger) {
 
 /* ------------------------ Builders for Matrix & Processing ------------------------ */
 
-/** Build a single MatrixComponent node with nested sio:hasAttribute. */
+/** Build a single MatrixComponent node with nested attributes. */
 function buildMatrixComponent(mc, componentId) {
   const componentAttrs = [];
 

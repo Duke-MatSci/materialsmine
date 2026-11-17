@@ -138,7 +138,7 @@ function lookupUnit (text) {
 }
 
 /**
- * Writes a unit onto an attribute node: `sio:hasUnit` links `iri` when it is
+ * Writes a unit onto a node: `sio:SIO_000221` (has unit) links `iri` when it is
  * given, and `mm:hasUnitText` holds the trimmed text. Blank text writes
  * nothing.
  */
