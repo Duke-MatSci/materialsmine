@@ -15,9 +15,9 @@ from app.config import Config
 from app.ontology.helpers.materialize import _fuseki_query
 
 QUDT_VERSION = '3.5.3'
-QUDT_UNITS_FILE = Path(__file__).resolve().parents[1] / 'data' / 'qudt-units-v3.5.3.ttl'
+QUDT_UNITS_FILE = Path(__file__).resolve().parents[1] / 'data' / f'qudt-units-v{QUDT_VERSION}.ttl'
 QUDT_UNITS_SHA256 = '5e84f3e10ae6a3c535e2e7616dc2affee09dd52bea5229822188730493fd4418'
-QUDT_UNITS_GRAPH = 'http://qudt.org/3.5.3/vocab/unit'
+QUDT_UNITS_GRAPH = f'http://qudt.org/{QUDT_VERSION}/vocab/unit'
 
 VERSION_PLACEHOLDER = '$$QUDT_VERSION$$'
 UNIT_GRAPH_PATTERN = re.compile(r'^http://qudt\.org/[^/]+/vocab/unit$')
