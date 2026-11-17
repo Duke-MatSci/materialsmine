@@ -1,6 +1,6 @@
 'use strict';
 
-const { units } = require('../../config/qudt-units.json');
+const { units, deprecated } = require('../../config/qudt-units.json');
 const {
   OUTPUT_CONTEXT: { unit: QUDT_UNIT }
 } = require('../../config/constant');
@@ -57,8 +57,65 @@ const fromOwners = (owners, value) => {
   );
 };
 
+// Current unit names by their lowercased spelling; none collide.
+const foldedNames = new Map(
+  Object.keys(units).map((name) => [name.toLowerCase(), name])
+);
+
+const SHORT_PREFIX = 'unit:';
+
+const isAddress = (text) =>
+  text.startsWith(QUDT_UNIT) ||
+  text.startsWith(SHORT_PREFIX) ||
+  /^https?:\/\//.test(text);
+
+const localName = (text) => {
+  if (text.startsWith(QUDT_UNIT)) return text.slice(QUDT_UNIT.length);
+  if (text.startsWith(SHORT_PREFIX)) return text.slice(SHORT_PREFIX.length);
+  return null;
+};
+
 /**
- * Link unit text to a QUDT unit: the trimmed text's exact match first,
+ * Link a unit address to a QUDT unit. Only a full QUDT unit IRI or a
+ * `unit:` short form naming a pinned unit links; a deprecated name links
+ * to its replacement with a UNIT_DEPRECATED issue, and anything else gives
+ * a UNIT_NOT_QUDT issue.
+ * @param {string} text - The address as written
+ * @returns {Object} { iri }, { iri, issue }, or { issue }
+ */
+function lookupAddress (text) {
+  const name = localName(String(text).trim());
+  if (name && own(units, name)) return { iri: QUDT_UNIT + name };
+  if (name && Object.prototype.hasOwnProperty.call(deprecated, name)) {
+    const replacement = deprecated[name];
+    if (!replacement) {
+      return issue(
+        'UNIT_DEPRECATED',
+        `Unit "${name}" is deprecated in QUDT, which gives no replacement`,
+        text
+      );
+    }
+    return {
+      iri: QUDT_UNIT + replacement,
+      ...issue(
+        'UNIT_DEPRECATED',
+        `Unit "${name}" is deprecated in QUDT; linked to ${replacement}`,
+        text
+      )
+    };
+  }
+  const folded = name && foldedNames.get(name.toLowerCase());
+  if (folded) return { iri: QUDT_UNIT + folded };
+  return issue(
+    'UNIT_NOT_QUDT',
+    `Unit address "${text}" is not a QUDT unit`,
+    text
+  );
+}
+
+/**
+ * Link unit text to a QUDT unit. An address goes to lookupAddress; other
+ * text takes its exact match first: the trimmed text's exact match first,
  * then its case-folded match.
  * @param {string} text - The unit text as typed
  * @returns {Object} { iri }, { issue: { code, message, value } }, or {}
@@ -67,6 +124,7 @@ function lookupUnit (text) {
   if (text == null) return {};
   const trimmed = String(text).trim();
   if (!trimmed || notUnits.has(trimmed)) return {};
+  if (isAddress(trimmed)) return lookupAddress(text);
   const target = own(aliases, trimmed) || own(tieBreaks, trimmed);
   if (target) return { iri: QUDT_UNIT + target };
   const owners = exact.get(trimmed) || folded.get(trimmed.toLowerCase());
@@ -74,4 +132,4 @@ function lookupUnit (text) {
   return issue('UNIT_UNRESOLVED', `Unit "${text}" matches no QUDT unit`, text);
 }
 
-module.exports = { lookupUnit };
+module.exports = { lookupUnit, lookupAddress };

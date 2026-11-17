@@ -4,7 +4,7 @@ const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const minioClient = require('./minio');
 const FileManager = require('./fileManager');
-const { lookupUnit } = require('./unit-lookup');
+const { lookupUnit, lookupAddress } = require('./unit-lookup');
 const {
   MinioBucket,
   FILE_FORMATS: FILE_FORMATS_ARR,
@@ -401,17 +401,27 @@ function parseCodeMappingsSheet(workbook) {
 }
 
 /**
- * Resolve a shorthand code to a URI using code mappings, then the QUDT unit lookup.
+ * Resolve a unit code: a Code Mappings row for it wins, and its address is
+ * judged by the QUDT address rules alone; otherwise the QUDT unit lookup.
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
+ * @param {Map} codeMappings - Parsed code mappings from the SDD
+ * @returns {Object} { iri }, { iri, issue }, { issue }, or {}
+ */
+function resolveUnit (code, codeMappings) {
+  if (!code) return {};
+  const mapped = codeMappings.get(code.trim().toLowerCase());
+  if (mapped) return lookupAddress(mapped.uri);
+  return lookupUnit(code);
+}
+
+/**
+ * Resolve a shorthand code to a QUDT unit IRI through resolveUnit.
  * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
  * @param {Map} codeMappings - Parsed code mappings from the SDD
  * @returns {string|undefined} The resolved URI, or undefined
  */
 function resolveCodeMapping(code, codeMappings) {
-  if (!code) return undefined;
-  const key = code.trim().toLowerCase();
-  const mapped = codeMappings.get(key);
-  if (mapped) return mapped.uri;
-  return lookupUnit(code).iri;
+  return resolveUnit(code, codeMappings).iri;
 }
 
 /**
@@ -755,6 +765,7 @@ module.exports = {
   parseCodeMappingsSheet,
   parsePrefixesSheet,
   resolveCodeMapping,
+  resolveUnit,
   generateAttributes,
   generateAttributeId,
   getInferredValues,
