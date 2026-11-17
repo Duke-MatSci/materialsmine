@@ -213,6 +213,135 @@ function cleanXml() {
   };
 }
 
+const Z = 'zorkmid';
+const vu = () => ({ value: '1', unit: Z });
+const mixingAll = () => ({
+  Mixing: { RPM: vu(), Time: vu(), Temperature: vu() }
+});
+const extrusionAll = () => ({
+  Extrusion: {
+    TwinScrewExtrusion: {
+      ScrewDiameter: vu(),
+      FlightClearance: vu(),
+      HeatingZone: [
+        { barrelTemperature: vu(), lengthOfHeatingZone: vu() },
+        { barrelTemperature: vu() }
+      ],
+      Output: [{ MeltTemperature: vu() }, { MeltTemperature: vu() }]
+    }
+  }
+});
+const paramsAll = () => [
+  { Curing: { Temperature: vu() } },
+  { Additive: { Additive: 'a', Amount: vu() } },
+  { Solvent: { SolventAmount: vu() } },
+  mixingAll(),
+  extrusionAll()
+];
+
+// One parsed record with an unresolvable unit in every unit field the XML
+// builder writes, under matrix, filler and section processing, in repeated
+// items, and in the second spellings (value.unit, Unit).
+function everyUnitXml() {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      MATERIALS: {
+        Matrix: {
+          MatrixComponent: {
+            ChemicalName: 'e',
+            MolecularWeight: [
+              { value: '5', unit: Z },
+              { value: { value: '6', unit: Z } }
+            ],
+            Density: vu(),
+            Viscosity: { value: vu() },
+            Additive: { Additive: 'q', Amount: vu() }
+          },
+          MatrixProcessing: { ChooseParameter: paramsAll() }
+        },
+        Filler: {
+          FillerComponent: [
+            {
+              ChemicalName: 's',
+              Density: vu(),
+              SphericalParticleDiameter: [vu(), vu()],
+              SurfaceArea: { specific: vu(), total: vu() },
+              ParticleAspectRatio: vu(),
+              NonSphericalShape: { Width: vu() },
+              ParticleSurfaceTreatment: {
+                ChemicalName: 'c',
+                Density: vu(),
+                GraftDensity: vu(),
+                MolecularWeight: vu()
+              }
+            },
+            { ChemicalName: 't', Density: vu() }
+          ],
+          FillerProcessing: { ChooseParameter: [mixingAll()] }
+        }
+      },
+      PROCESSING: { MeltMixing: { ChooseParameter: paramsAll() } },
+      PROPERTIES: {
+        Thermal: {
+          GlassTransitionTemperature: { value: '1', Unit: Z },
+          Crystallinity: { DegreeOfCrystallization: vu() }
+        },
+        Mechanical: {
+          Tensile: {
+            TensileModulus: [vu(), vu()],
+            LoadingProfile: {
+              AxisLabel: { xName: 'a', yName: 'b', yUnit: Z }
+            }
+          }
+        }
+      },
+      MICROSTRUCTURE: {
+        LengthUnit: Z,
+        ImageFile: [
+          { Dimension: { width: '1', height: '2' } },
+          { Dimension: { width: '1' } }
+        ]
+      }
+    }
+  };
+}
+
+// Dotted paths below the PolymerNanocomposite root of every leaf equal to
+// text, with a 1-based [i] after the key of each array item.
+function leafPaths(xml, text) {
+  const paths = [];
+  const visit = (v, path) => {
+    if (Array.isArray(v)) {
+      v.forEach((item, i) => visit(item, `${path}[${i + 1}]`));
+    } else if (v && typeof v === 'object') {
+      Object.entries(v).forEach(([k, child]) =>
+        visit(child, path ? `${path}.${k}` : k)
+      );
+    } else if (v === text) {
+      paths.push(path);
+    }
+  };
+  visit(xml.PolymerNanocomposite, '');
+  return paths;
+}
+
+// The shared LengthUnit is written on each image dimension, so there are
+// more unit text nodes than issues.
+const TEXT_NODES = 53;
+
+function countUnitText(root, text) {
+  let n = 0;
+  const visit = (v) => {
+    if (Array.isArray(v)) return v.forEach(visit);
+    if (!v || typeof v !== 'object') return;
+    if (v['mm:hasUnitText'] === text) n++;
+    Object.values(v).forEach(visit);
+  };
+  visit(root);
+  return n;
+}
+
 describe('QUDT unit issues', function () {
   afterEach(function () {
     sinon.restore();
@@ -272,6 +401,24 @@ describe('QUDT unit issues', function () {
         i.record,
         i.path
       ]);
+    });
+
+    it('reports an issue at every unit field of a record whose units all fail', async function () {
+      const xml = everyUnitXml();
+      const { nanopub, issues } = await transformXmlToNanopub(
+        xml,
+        stubLogger()
+      );
+      expect(countUnitText(nanopub, Z)).to.equal(TEXT_NODES);
+      expect(issues.map((i) => i.path).sort()).to.deep.equal(
+        leafPaths(xml, Z).sort()
+      );
+      issues.forEach((i) => {
+        expect([i.code, i.record], i.path).to.deep.equal([
+          'UNIT_UNRESOLVED',
+          RECORD
+        ]);
+      });
     });
   });
 
