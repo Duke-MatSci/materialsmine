@@ -37,6 +37,15 @@
         <http://www.nanopub.org/nschema#> ;
     owl:versionIRI :1.1 .
 
+# Properties
+:hasUnitText a owl:DatatypeProperty ;
+    rdfs:label "has unit text"@en, "a pour texte d’unité"@fr, "tiene texto de unidad"@es, "hat Einheitentext"@de ;
+    rdfs:range <http://www.w3.org/2001/XMLSchema#string> ;
+    skos:definition "The unit of a value as the curator wrote it. It sits beside the linked unit (sio:hasUnit), and it is the only record of the unit when the text names no QUDT unit."@en,
+                    "L’unité d’une valeur telle que le curateur l’a écrite. Elle accompagne l’unité liée (sio:hasUnit), et c’est le seul enregistrement de l’unité lorsque le texte ne nomme aucune unité QUDT."@fr,
+                    "La unidad de un valor tal como la escribió el curador. Acompaña a la unidad enlazada (sio:hasUnit) y es el único registro de la unidad cuando el texto no nombra ninguna unidad de QUDT."@es,
+                    "Die Einheit eines Werts, wie der Kurator sie geschrieben hat. Sie steht neben der verknüpften Einheit (sio:hasUnit) und ist der einzige Eintrag der Einheit, wenn der Text keine QUDT-Einheit nennt."@de .
+
 # Classes
 :1DGeometry a owl:Class ;
     rdfs:label "1D Geometry"@en, "Géométrie 1D"@fr, "Geometría 1D"@es, "1D-Geometrie"@de ;
