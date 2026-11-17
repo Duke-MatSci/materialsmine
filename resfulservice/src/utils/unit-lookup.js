@@ -117,8 +117,9 @@ function lookupAddress (text) {
 }
 
 /**
- * Link unit text to a QUDT unit. An address goes to lookupAddress; other
- * text takes the trimmed text's exact match first, then its case-folded match.
+ * Link unit text to a QUDT unit. Blank text and the notUnits texts give {}.
+ * An address goes to lookupAddress; other text takes the trimmed text's
+ * alias or tie-break first, then its exact match, then its case-folded match.
  * @param {string} text - The unit text as typed
  * @returns {Object} { iri }, { iri, issue }, { issue: { code, message, value } },
  *   or {}
