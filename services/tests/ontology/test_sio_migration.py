@@ -286,7 +286,8 @@ class TestMigrateSioPredicates(MigrationCase):
         self.assertEqual(body.get('skipped'), SKIPPED)
 
     def test_second_run_finds_nothing_and_sends_no_update(self):
-        """Run again, the migration reports zero everywhere, sends no update
+        """Run again, the migration reports zero migrated and remaining and
+        the same skipped counts, sends no update
         and leaves the dataset as the first run left it."""
         first = self.post_migrate()
         self.assertEqual(first.status_code, 200, first.get_data(as_text=True))

@@ -1,6 +1,9 @@
 """
-Rewrite the four named SIO predicates stored in Fuseki's named graphs to
-their numbered forms, in place, in one SPARQL Update request.
+Rewrite the four named SIO predicates stored in Fuseki's nanopub graphs,
+the named graphs whose IRI starts with NP_GRAPH_PREFIX, to their numbered
+forms, in place, in one SPARQL Update request. Other named graphs and the
+default graph are left alone; the named-predicate triples found in other
+named graphs are reported as skipped.
 """
 from typing import Any, Dict, Optional, Tuple
 
@@ -76,10 +79,10 @@ def migrate_sio_predicates() -> Tuple[Dict[str, Any], int]:
         if not ok:
             return {'message': 'Fuseki did not accept the SIO predicate migration',
                     'fuseki': fuseki}, 502
-    ok, remaining = count_named_predicates()
+    ok, recount = count_named_predicates()
     body: Dict[str, Optional[Any]] = {
-        'migrated': migrated, 'remaining': remaining[0] if ok else None,
+        'migrated': migrated, 'remaining': recount[0] if ok else None,
         'skipped': skipped}
     if not ok:
-        body['count_error'] = str(remaining)
+        body['count_error'] = str(recount)
     return body, 200

@@ -181,7 +181,9 @@ answers 401.
 - **POST /ontology/migrate-sio/**: Rewrites the named SIO predicates stored
   in Fuseki to the numbered SIO IRIs the curation writers emit. Run it once
   per KG, after deploying those writers, to bring nanopubs published before
-  then into the same form. In every named graph, each triple whose predicate
+  then into the same form. In every named graph whose IRI starts with
+  `http://materialsmine.org/np/` (the nanopub graphs the curation routes
+  write), each triple whose predicate
   is one of the four below gets the numbered predicate, with the same
   subject, object and graph:
 
@@ -192,19 +194,21 @@ answers 401.
   | `hasUnit`       | `SIO_000221`      |
   | `isAttributeOf` | `SIO_000011`      |
 
-  Only predicate position in named graphs is touched: triples stored in the
-  default graph itself, every other predicate, and these IRIs as subject or
-  object are left alone.
+  Only predicate position in nanopub graphs is touched: every other named
+  graph, triples stored in the default graph itself, every other predicate,
+  and these IRIs as subject or object are left alone.
   The rewrite is one SPARQL Update, so it applies whole or not at all, and it
   is sent only when something needs migrating. Running it again finds nothing
   and changes nothing. The request body is ignored. It has been checked live
   against the stack's `kgraph`: the dataset's triple count was unchanged, and
   a migrated nanopub matched the same record written fresh.
-  - **200**: `{migrated, remaining}`, each keyed by local name
+  - **200**: `{migrated, remaining, skipped}`, each keyed by local name
     (`hasAttribute`, `hasValue`, `hasUnit`, `isAttributeOf`): the triples
-    found before the rewrite and those left after it, all 0 after a
-    successful run. If the count after the rewrite fails, the rewrite still
-    stands: `remaining` is `null` and `count_error` says why.
+    in nanopub graphs found before the rewrite and those left after it, all
+    0 after a successful run, and the triples in other named graphs found
+    before the rewrite and left alone. If the count after the rewrite fails,
+    the rewrite still stands: `remaining` is `null` and `count_error` says
+    why.
   - **502**: `{message, fuseki}`: Fuseki refused or did not answer the count
     before the rewrite (then no update is sent), or refused the update.
 

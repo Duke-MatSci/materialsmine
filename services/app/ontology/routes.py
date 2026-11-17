@@ -408,8 +408,8 @@ def load_qudt_units(request_id):
 def migrate_sio(request_id):
     """
     POST /ontology/migrate-sio/
-    Rewrite the named SIO predicates in every named graph to their numbered
-    forms and report the counts migrated and remaining.
+    Rewrite the named SIO predicates in the nanopub graphs to their numbered
+    forms and report the counts migrated, remaining and skipped.
     """
     body, status = sio_migration.migrate_sio_predicates()
     return jsonify(body), status
