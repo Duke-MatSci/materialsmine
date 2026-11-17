@@ -152,7 +152,7 @@ Below are the API endpoints to initialize Tri-VE and Chemprops via Swagger:
 ### Ontology API Endpoints
 
 Called directly on the managed service (`http://localhost:5050`), not through
-`/api/mn`. It needs `Authorization: Bearer <token>`, an HS256 JWT signed with
+`/api/mn`. Each route needs `Authorization: Bearer <token>`, an HS256 JWT signed with
 the managed service's `SECRET_KEY` and carrying a `reqId` claim; without one it
 answers 401.
 
@@ -176,6 +176,43 @@ answers 401.
 
   ```bash
   docker exec managedservices python -c "from app.ontology.helpers.qudt_units import load_units; print(load_units())"
+  ```
+
+- **POST /ontology/migrate-sio/**: Rewrites the named SIO predicates stored
+  in Fuseki to the numbered SIO IRIs the curation writers emit. Run it once
+  per KG, after deploying those writers, to bring nanopubs published before
+  then into the same form. In every named graph, each triple whose predicate
+  is one of the four below gets the numbered predicate, with the same
+  subject, object and graph:
+
+  | named (`sio:`)  | numbered (`sio:`) |
+  |-----------------|-------------------|
+  | `hasAttribute`  | `SIO_000008`      |
+  | `hasValue`      | `SIO_000300`      |
+  | `hasUnit`       | `SIO_000221`      |
+  | `isAttributeOf` | `SIO_000011`      |
+
+  Only predicate position in named graphs is touched: triples stored in the
+  default graph itself, every other predicate, and these IRIs as subject or
+  object are left alone.
+  The rewrite is one SPARQL Update, so it applies whole or not at all, and it
+  is sent only when something needs migrating. Running it again finds nothing
+  and changes nothing. The request body is ignored. It has been checked live
+  against the stack's `kgraph`: the dataset's triple count was unchanged, and
+  a migrated nanopub matched the same record written fresh.
+  - **200**: `{migrated, remaining}`, each keyed by local name
+    (`hasAttribute`, `hasValue`, `hasUnit`, `isAttributeOf`): the triples
+    found before the rewrite and those left after it, all 0 after a
+    successful run. If the count after the rewrite fails, the rewrite still
+    stands: `remaining` is `null` and `count_error` says why.
+  - **502**: `{message, fuseki}`: Fuseki refused or did not answer the count
+    before the rewrite (then no update is sent), or refused the update.
+
+  To migrate without a token, run the same code inside the running container.
+  It prints the body and status the route would return:
+
+  ```bash
+  docker exec managedservices python -c "from app.ontology.helpers.sio_migration import migrate_sio_predicates; print(migrate_sio_predicates())"
   ```
 
 ## Onboarding Your Own Python Application
