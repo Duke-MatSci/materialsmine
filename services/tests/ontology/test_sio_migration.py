@@ -1,6 +1,7 @@
 """
 Tests for the SIO predicate migration, which rewrites the four named SIO
-predicates in Fuseki's named graphs to their numbered forms. Fuseki is
+predicates in Fuseki's nanopub graphs, those under
+http://materialsmine.org/np/, to their numbered forms. Fuseki is
 faked by an rdflib Dataset that runs the SPARQL posted to it; no test
 reaches the network.
 """
@@ -49,6 +50,9 @@ ZERO = {'hasAttribute': 0, 'hasValue': 0, 'hasUnit': 0, 'isAttributeOf': 0}
 NP1 = URIRef('http://materialsmine.org/np/1/assertion')
 NP2 = URIRef('http://materialsmine.org/np/2/assertion')
 OTHER = URIRef('http://materialsmine.org/ontology')
+LEGACY = URIRef('http://example.org/legacy/chart1')
+LOOKALIKE = URIRef('https://materialsmine.org/np/x/assertion')
+NPX = URIRef('http://materialsmine.org/npx/1')
 UNIT_PA = URIRef('http://qudt.org/vocab/unit/PA')
 UNIT_K = URIRef('http://qudt.org/vocab/unit/K')
 
@@ -87,14 +91,28 @@ FIXTURE = [
     # the default graph is outside the named graphs and is left alone
     (_u('d1'), NAMED['hasValue'], Literal('7', datatype=XSD.integer), DEFAULT_GRAPH),
 ]
+
+# Named graphs outside http://materialsmine.org/np/, left alone. Their
+# named-predicate counts: hasAttribute 3, hasValue 1, hasUnit 2,
+# isAttributeOf 0.
+OUT_OF_SCOPE = [
+    (_u('c2'), NAMED['hasValue'], Literal('1.5', datatype=XSD.double), LEGACY),
+    (_u('c2'), NAMED['hasAttribute'], _u('c3'), LEGACY),
+    (_u('x1'), NAMED['hasUnit'], UNIT_PA, LOOKALIKE),
+    (_u('x2'), NAMED['hasUnit'], UNIT_K, LOOKALIKE),
+    (_u('x1'), NAMED['hasAttribute'], _u('x3'), LOOKALIKE),
+    (_u('y1'), NAMED['hasAttribute'], _u('y2'), NPX),
+]
+FIXTURE = FIXTURE + OUT_OF_SCOPE
 MIGRATED = {'hasAttribute': 1, 'hasValue': 2, 'hasUnit': 3, 'isAttributeOf': 4}
+SKIPPED = {'hasAttribute': 3, 'hasValue': 1, 'hasUnit': 2, 'isAttributeOf': 0}
 
 
 def expected_quads():
-    """The fixture with each named predicate in a named graph renumbered."""
+    """The fixture with each named predicate in a nanopub graph renumbered."""
     out = set()
     for s, p, o, g in FIXTURE:
-        if g != DEFAULT_GRAPH:
+        if str(g).startswith('http://materialsmine.org/np/'):
             p = NUMBERED.get(p, p)
         out.add((s, p, o, g))
     return out
@@ -216,10 +234,12 @@ class FakeFuseki:
 
 
 class MigrationCase(unittest.TestCase):
-    """Starts a fake Fuseki holding FIXTURE and fixed settings per test."""
+    """Starts a fake Fuseki holding QUADS and fixed settings per test."""
+
+    QUADS = FIXTURE
 
     def setUp(self):
-        self.fuseki = FakeFuseki(FIXTURE)
+        self.fuseki = FakeFuseki(self.QUADS)
         patches = [
             patch.object(Config, 'SECRET_KEY', SECRET),
             patch.object(Config, 'FUSEKI_BASE_URL', BASE),
@@ -247,11 +267,12 @@ class MigrationCase(unittest.TestCase):
 
 
 class TestMigrateSioPredicates(MigrationCase):
-    """A successful run renumbers the four predicates in named graphs only."""
+    """A successful run renumbers the four predicates in nanopub graphs only."""
 
     def test_rewrites_named_predicates_in_named_graphs_and_reports_counts(self):
-        """One update renumbers every named-predicate triple in its own graph,
-        leaves all else as it was, and reports the counts per local name."""
+        """One update renumbers every named-predicate triple in its own
+        nanopub graph, leaves all else as it was, other named graphs
+        included, and reports the counts per local name."""
         resp = self.post_migrate()
         self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
 
@@ -262,6 +283,7 @@ class TestMigrateSioPredicates(MigrationCase):
         body = resp.get_json()
         self.assertEqual(body['migrated'], MIGRATED)
         self.assertEqual(body['remaining'], ZERO)
+        self.assertEqual(body.get('skipped'), SKIPPED)
 
     def test_second_run_finds_nothing_and_sends_no_update(self):
         """Run again, the migration reports zero everywhere, sends no update
@@ -278,6 +300,7 @@ class TestMigrateSioPredicates(MigrationCase):
         body = resp.get_json()
         self.assertEqual(body['migrated'], ZERO)
         self.assertEqual(body['remaining'], ZERO)
+        self.assertEqual(body.get('skipped'), SKIPPED)
 
     def test_function_migrates_without_a_request(self):
         """migrate_sio_predicates(), called with no Flask app or token,
@@ -289,6 +312,27 @@ class TestMigrateSioPredicates(MigrationCase):
         self.assertEqual(self.fuseki.quads(), expected_quads())
         self.assertEqual(body['migrated'], MIGRATED)
         self.assertEqual(body['remaining'], ZERO)
+        self.assertEqual(body.get('skipped'), SKIPPED)
+
+
+class TestMigrateSioOutOfScopeOnly(MigrationCase):
+    """A dataset whose named predicates all lie outside the nanopub graphs."""
+
+    QUADS = [q for q in FIXTURE if q[3] not in (NP1, NP2)]
+
+    def test_sends_no_update_and_reports_them_as_skipped(self):
+        """With nothing under http://materialsmine.org/np/ to migrate, the
+        run sends no update, changes nothing and reports the named
+        predicates of the other graphs as skipped."""
+        resp = self.post_migrate()
+        self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
+        self.assertEqual(self.fuseki.to(UPDATE), [])
+        self.assertEqual(self.fuseki.quads(), set(self.QUADS))
+
+        body = resp.get_json()
+        self.assertEqual(body['migrated'], ZERO)
+        self.assertEqual(body['remaining'], ZERO)
+        self.assertEqual(body.get('skipped'), SKIPPED)
 
 
 class TestMigrateSioAuth(MigrationCase):
@@ -345,7 +389,7 @@ class TestMigrateSioFailures(MigrationCase):
 
     def test_failed_recount_still_gives_200_with_remaining_null(self):
         """A recount that fails after the update stood gives 200 with the
-        migrated counts, remaining null and a count_error."""
+        migrated and skipped counts, remaining null and a count_error."""
         self.fuseki.fail_queries_after_update = 500
         resp = self.post_migrate()
         self.assertEqual(resp.status_code, 200, resp.get_data(as_text=True))
@@ -354,6 +398,7 @@ class TestMigrateSioFailures(MigrationCase):
         self.assertEqual(body['migrated'], MIGRATED)
         self.assertIsNone(body['remaining'])
         self.assertTrue(body['count_error'])
+        self.assertEqual(body.get('skipped'), SKIPPED)
 
 
 if __name__ == '__main__':
