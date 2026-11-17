@@ -1958,6 +1958,7 @@ exports.curationRehydration = async (req, res, next) => {};
  * @param {Object} res - The response object
  * @param {Function} next - The next middleware function
  * @returns {Object} - The ETL result containing processed and failed items
+ *   and the records' unit issues
  * @example
  * POST /api/curation/etl
  * Body:

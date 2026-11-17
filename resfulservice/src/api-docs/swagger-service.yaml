@@ -1111,6 +1111,14 @@ paths:
                     type: boolean
                   nanopubSkeleton:
                     type: object
+                  issues:
+                    type: array
+                    description: >
+                      Unit issues of the dictionary; empty when there are
+                      none. The multi-batch event stream carries the same
+                      list in its `done` event and its batch-failure event.
+                    items:
+                      $ref: '#/components/schemas/UnitIssue'
         '400':
           description: Invalid Request Payload
           content:
@@ -2925,6 +2933,47 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FailedItem'
+        issues:
+          type: array
+          description: >
+            Unit issues of every record that reached the transform, failed
+            ones included; empty when there are none.
+          items:
+            $ref: '#/components/schemas/UnitIssue'
+
+    UnitIssue:
+      type: object
+      description: >
+        A unit the transform could not link to a single current QUDT unit.
+        SDD issues are located by `column`, XML issues by `record` and `path`.
+      required: [severity, code, message, value]
+      properties:
+        severity:
+          type: string
+          enum: [warning]
+        code:
+          type: string
+          enum:
+            - UNIT_UNRESOLVED
+            - UNIT_AMBIGUOUS
+            - UNIT_NOT_QUDT
+            - UNIT_DEPRECATED
+        message:
+          type: string
+        value:
+          type: string
+          description: The unit text or address as written in the input.
+        column:
+          type: string
+          description: SDD dictionary column whose unit has the issue.
+        record:
+          type: string
+          description: XML record ID.
+        path:
+          type: string
+          description: >
+            Dotted path of the XML unit field below the PolymerNanocomposite
+            root.
 
     ProcessedItem:
       type: object
@@ -2977,7 +3026,14 @@ components:
                     stage: "xsd"
                     errors:
                       - "Element 'Matrix': Missing child element(s). Expected: MatrixComponent."
-    
+                issues:
+                  - severity: "warning"
+                    code: "UNIT_UNRESOLVED"
+                    message: "Unit \"zorkmid\" matches no QUDT unit"
+                    value: "zorkmid"
+                    record: "L134_S16_Tomer_2010"
+                    path: "MATERIALS.Matrix.MatrixComponent.Density.unit"
+
     Successful-Materialsmine-Data:
       type: object
       example: 
