@@ -52,7 +52,7 @@ export default {
       dynamfitTransformTabRequest: 0,
       dynamfitResetCount: 0,
       dynamfit: {
-        range: 100,
+        range: null,
         fitSettings: false,
         model: 'Linear',
         fileUpload: '',

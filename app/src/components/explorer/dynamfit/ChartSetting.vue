@@ -144,6 +144,14 @@
                   <li>{{ cAxisLabel }} · E' · E" · E' Error · E" Error</li>
                 </ul>
                 <p>
+                  Units are not checked.
+                  <template v-if="isFrequencyDomain">
+                    Frequency is taken as angular frequency in rad/s.
+                  </template>
+                  The moduli keep whatever units and kind of modulus you supply; they are
+                  labelled E and Pa regardless.
+                </p>
+                <p>
                   Error is an <b>absolute standard deviation in Pa</b> — the same units as
                   the moduli, not a fraction or a percent. If E' is 1e9 Pa, a 5%
                   uncertainty is <b>5e7</b>, not 0.05.
@@ -151,7 +159,8 @@
                 <p>
                   Every error value must be greater than 0. Error columns set the fit
                   weights (1/σ), and the setting below becomes an Error Scale that
-                  multiplies them. They are not drawn as error bars.
+                  multiplies them. They are not drawn on the data points, but they
+                  feed the ±1σ bands drawn around the fit.
                 </p>
               </div>
             </template>
@@ -320,14 +329,10 @@
       class="viz-u-mgbottom-sm"
     >
       <label for="prony" class="md-body-2">
-        Relaxation Grid Size <span>[{{ dynamfit.range }}]</span>
+        Relaxation Grid Size <span>[{{ cPronyShown }}]</span>
         <HelpPopover label="Relaxation grid size">
-          How many relaxation times the fit may choose from, log-spaced across your data's
-          span. The default is about 3 per decade of frequency; a finer grid fits finer
-          detail but can overfit noisy data. This is an upper bound rather than the answer:
-          the fit discards terms it does not need, and temperature-domain data is capped
-          against the frequency span the ω-T transform produces. The figure legends and the
-          coefficient table report how many terms the fit actually kept.
+          How many log-spaced relaxation times the fit may choose from; the default is about
+          3 per decade. It is an upper bound: the fit keeps only the terms it needs.
         </HelpPopover>
       </label>
       <div class="nuplot-range-slider u--margin-centered u_centralize_text viz-u-postion__rel">
@@ -336,25 +341,27 @@
           @mouseenter="showToolTip = true"
           @mouseleave="showToolTip = false"
           name="prony"
-          v-model.lazy.number="dynamfit.range"
+          :value="cPronyShown"
+          @input="onPronyTermsInput"
+          @change="onPronyTermsChange"
           type="range"
           min="1"
-          max="100"
+          :max="cPronyMax"
           :class="[disableInput ? 'nuplot-masked' : '']"
           class="nuplot-range-slider u--layout-width u--margin-centered u_centralize_text viz-u-postion__abs utility-transparentbg"
         />
         <div
-          :style="{ left: `${dynamfit.range}%` }"
-          v-if="showToolTip"
+          :style="{ left: `${cPronyTooltipLeft}%` }"
+          v-if="showToolTip || pronyDrag !== null"
           class="u_margin-top-med viz-u-display__show nuplot-slider-tooltip"
           id="parame-selector-slider-id"
         >
-          {{ dynamfit.range }}
+          {{ cPronyShown }}
         </div>
       </div>
       <div class="u--layout-flex u--layout-flex-justify-sb u--color-grey-sec">
         <div>1</div>
-        <div>100</div>
+        <div>{{ cPronyMax }}</div>
       </div>
     </div>
 
@@ -366,22 +373,22 @@
       >
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
           <label for="smoothnessC" class="md-body-2">
-            Smoothness (%)
+            Smoothness
             <HelpPopover label="Smoothness">
-              Penalty on curvature of the relaxation spectrum, as a percentage.  Larger values give
-              a smoother spectrum; 0 disables smoothing; over 100% is possible but not recommended.
+              Penalty on curvature of the relaxation spectrum. Larger values give a smoother
+              spectrum; 0 disables smoothing.
             </HelpPopover>
           </label>
           <input
             :disabled="disableInput"
-            v-model.number="smoothnessPercent"
+            v-model.number="smoothness"
             :class="[disableInput ? 'nuplot-masked' : '', 'form__input form__input--flat']"
             type="number"
             name="smoothness"
             id="smoothnessC"
-            min="0"
-            max="100"
-            :step="PERCENT_INPUT_STEP"
+            :min="SMOOTHNESS_MIN"
+            :max="SMOOTHNESS_MAX"
+            :step="SMOOTHNESS_STEP"
           />
         </div>
         <div class="u_display-flex u--layout-flex-column grid_gap-smaller">
@@ -492,14 +499,15 @@
             </span>
           </div>
 
-          <!-- Coefficient fields (WLF / Hybrid). The model's anchor leads the
-               list: TC is the hybrid crossover, Tg the WLF reference. In the
-               frequency domain neither anchor has an estimate checkbox — a
-               master curve's tan-δ and E″ peaks are frequencies, so there is
-               nothing to estimate a temperature from, and the server refuses
-               Tg_estimate/TC_estimate there. -->
+          <!-- Coefficient fields (WLF / Hybrid), one row per parameter of the
+               selected model (shiftModelParameters). The model's anchor leads
+               the list: TC is the hybrid crossover, Tg the WLF reference; Tg
+               has no row for hybrid. In the frequency domain neither anchor
+               has an estimate checkbox — a master curve's tan-δ and E″ peaks
+               are frequencies, so there is nothing to estimate a temperature
+               from, and the server refuses Tg_estimate/TC_estimate there. -->
           <template v-if="isWLF || isHybrid">
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('TC')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTCValue"
@@ -516,7 +524,7 @@
                 Use Estimated Tc
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('Tg')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspTgValue"
@@ -565,7 +573,7 @@
                 Use Estimated C2
               </md-checkbox>
             </div>
-            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="isHybrid">
+            <div class="u--layout-flex u--layout-flex-justify-sb" v-if="showsShiftParameter('Ea')">
               <md-field class="dynamfit-field--half">
                 <md-input
                   v-model="ttspEAValue"
@@ -668,18 +676,30 @@ import { useStore } from 'vuex';
 import { useOptionalChaining } from '@/composables';
 import { useReduce } from '@/composables/useReduce';
 import {
-  computeDefaultPronyTerms,
   fractionToPercent,
   percentToFraction,
   ERROR_SCALE_DEFAULT,
   ERROR_SCALE_STEP,
   PERCENT_INPUT_STEP,
   RELATIVE_ERROR_DEFAULT_PERCENT,
-  SMOOTHNESS_DEFAULT_PERCENT,
+  SMOOTHNESS_DEFAULT,
+  SMOOTHNESS_MAX,
+  SMOOTHNESS_MIN,
+  SMOOTHNESS_STEP,
+  displayedPronyTerms,
+  effectivePronyMax,
+  pronyRequestFields,
+  pronyTooltipLeft,
+  pronyTermsForLoadedFile,
+  usablePronyCap,
 } from '@/composables/useDynamfitDefaults';
 import {
   resolveShiftFitModel,
   resolveExtractTransformMethod,
+  shiftModelParameters,
+  buildShiftModelPayload,
+  ShiftFitModel,
+  ShiftParameter,
 } from '@/composables/useDynamfitShift';
 import Pagination from '@/components/explorer/Pagination.vue';
 import HelpPopover from '@/components/HelpPopover.vue';
@@ -740,14 +760,14 @@ const eAEstimated = ref(false);
 // nothing collapses them again except an explicit click on the header caret.
 const cDataSourceOpen = ref(true);
 const cFormatOpen = ref(false);
-// Held as the fractions the API takes; the inputs bind to the percent proxies
-// below so the units on screen match the labels. The boxes start at the real
+// Held as the values the API takes; the relative-error input binds to the
+// percent proxy below so the units on screen match its label. The boxes start at the real
 // defaults (no placeholder: the spinner steps from the box's value, and a
-// placeholder made it step from '' → 0.1 instead of from 4 → 4.1). A cleared
+// placeholder made it step from '' → 0.1 instead of from 1 → 1.1). A cleared
 // box is '' (what v-model.number yields for an emptied number input) and
 // stands for the default; the payload substitutes it at send time.
 type Blankable = number | '';
-const smoothness = ref<Blankable>(percentToFraction(SMOOTHNESS_DEFAULT_PERCENT));
+const smoothness = ref<Blankable>(SMOOTHNESS_DEFAULT);
 const relativeError = ref<Blankable>(percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT));
 // The widget's other mode: a plain multiplier on the file's own error
 // columns. Both values ride in every request and the server consumes
@@ -759,12 +779,6 @@ const errorScale = ref<Blankable>(ERROR_SCALE_DEFAULT);
 const orDefault = (v: Blankable, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback;
 
-const smoothnessPercent = computed<Blankable>({
-  get: () => (smoothness.value === '' ? '' : fractionToPercent(smoothness.value)),
-  set: (v) => {
-    smoothness.value = v === '' ? '' : percentToFraction(v);
-  },
-});
 const relativeErrorPercent = computed<Blankable>({
   get: () => (relativeError.value === '' ? '' : fractionToPercent(relativeError.value)),
   set: (v) => {
@@ -834,7 +848,7 @@ const allPolymerFiles = [
     domain: 'temperature',
   },
   {
-    path: '/docs/dynamfit/PMMA-R09-temp-sweep-clean.csv',
+    path: '/docs/dynamfit/PMMA-R09-1Hz_temp-sweep-clean.csv',
     label: 'PMMA R09 (1Hz)',
     domain: 'temperature',
   },
@@ -862,8 +876,41 @@ const dynamfitData = computed(() => {
   return store.getters['explorer/getDynamfitData'];
 });
 
+// The server's term cap for the extracted data; null on the temperature
+// preview or before the first response.
+const cServerMaxProny = computed(() => usablePronyCap(dynamfitData.value?.max_prony));
+const cPronyTerms = computed(() =>
+  displayedPronyTerms(dynamfit.value.range, dynamfitData.value?.number_of_prony)
+);
+const cPronyMax = computed(() => effectivePronyMax(cServerMaxProny.value, cPronyTerms.value));
+// The value under the thumb while it is being dragged, null otherwise. It is
+// local, so the label and tooltip follow the drag without a write into
+// dynamfit, which would refit on every step.
+const pronyDrag = ref<number | null>(null);
+const cPronyShown = computed(() => pronyDrag.value ?? cPronyTerms.value);
+const cPronyTooltipLeft = computed(() => pronyTooltipLeft(cPronyShown.value, cPronyMax.value));
+// A release that ends where the drag began fires no change event, so the drag
+// also ends on the pointer's release, wherever that lands. Deferred a task so
+// the change event of the same release still reads the dragged value.
+const endPronyDrag = (): void => {
+  setTimeout(() => {
+    pronyDrag.value = null;
+  }, 0);
+};
+const onPronyTermsInput = (event: Event): void => {
+  if (pronyDrag.value === null) {
+    window.addEventListener('pointerup', endPronyDrag, { once: true });
+  }
+  pronyDrag.value = Number((event.target as HTMLInputElement).value);
+};
+// The user's move of the slider sets the grid size, one write on change.
+const onPronyTermsChange = (event: Event): void => {
+  dynamfit.value.range = Number((event.target as HTMLInputElement).value);
+  pronyDrag.value = null;
+};
+
 const cAxisLabel = computed(() =>
-  selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (Hz)'
+  selectedProperty.value === 'temperature' ? 'Temperature (°C)' : 'Frequency (rad/s)'
 );
 
 const isFrequencyDomain = computed(() => selectedProperty.value === 'frequency');
@@ -927,6 +974,12 @@ const isManual = computed(() => {
   return ttsp.value && transformMethod.value === 'manual';
 });
 
+// Whether the selected WLF/hybrid model takes this coefficient, i.e. whether
+// its input row renders. Never for none/manual.
+const showsShiftParameter = (param: ShiftParameter): boolean =>
+  (isWLF.value || isHybrid.value) &&
+  shiftModelParameters(transformMethod.value as ShiftFitModel).includes(param);
+
 // Everything the last successful /fit-shift returned, including which model it
 // ran. Kept in the store rather than in transformMethod: the radio says what
 // drives the transform, this says what was fitted, and in manual mode those are
@@ -953,7 +1006,7 @@ const resetAll = async (): Promise<void> => {
   dataType.value = undefined;
   transformMethod.value = '';
   ttsp.value = false;
-  smoothness.value = percentToFraction(SMOOTHNESS_DEFAULT_PERCENT);
+  smoothness.value = SMOOTHNESS_DEFAULT;
   relativeError.value = percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT);
   errorScale.value = ERROR_SCALE_DEFAULT;
   store.commit('explorer/setDynamfitManualFile', '');
@@ -988,7 +1041,7 @@ const resetAll = async (): Promise<void> => {
 };
 
 const downloadTitle = (): string => {
-  const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (Hz)';
+  const axis = selectedProperty.value === 'temperature' ? 'temperature (°C)' : 'frequency (rad/s)';
   return (
     `An example tsv file of 3 columns: ${axis}, E' (Pa), E" (Pa).`
   );
@@ -998,15 +1051,11 @@ const downloadTitle = (): string => {
 // deep watcher on `dynamfit` triggers the fit, and Vue batches watcher
 // callbacks per flush, so two writes in one tick cost exactly one request.
 const applyDefaultPronyTerms = (fileText: string): void => {
-  // Only the frequency domain has a span worth measuring — a temperature file
-  // has no frequency axis until the ω-T transform has run. The store default
-  // (100) is sent there and the server applies the same per-decade rule to the
-  // master curve the transform produces, treating what we send as a ceiling
-  // (see prony_terms_for_span in dynamfit2.py). Turning the input down still
-  // reaches the fit; turning it up past what the span supports does not.
-  if (selectedProperty.value !== 'frequency') return;
-  const terms = computeDefaultPronyTerms(fileText);
-  if (terms !== null) dynamfit.value.range = terms;
+  // A temperature file has no frequency axis until the ω-T transform has run,
+  // so its grid size starts unset: the server sizes each fit from the span
+  // and the slider shows the size reported. A frequency file gets 3 terms per
+  // decade of its span (unset when it has no readable span).
+  dynamfit.value.range = pronyTermsForLoadedFile(fileText, selectedProperty.value);
 };
 
 // Clear everything inside the ω-T segment — model, coefficients, estimate
@@ -1267,10 +1316,10 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
   const payload: Record<string, unknown> = {
     useSample: useSample.value,
     file_name: dynamfit.value.fileUpload,
-    number_of_prony: dynamfit.value.range,
+    ...pronyRequestFields(dynamfit.value.range),
     model: dynamfit.value.model,
     domain: selectedProperty.value,
-    smoothness: orDefault(smoothness.value, percentToFraction(SMOOTHNESS_DEFAULT_PERCENT)),
+    smoothness: orDefault(smoothness.value, SMOOTHNESS_DEFAULT),
     relative_error: orDefault(relativeError.value, percentToFraction(RELATIVE_ERROR_DEFAULT_PERCENT)),
     error_scale: orDefault(errorScale.value, ERROR_SCALE_DEFAULT),
     // Say "no transform" out loud rather than leaving the key off. Both
@@ -1301,19 +1350,21 @@ const updateChart = async (fromUpdate = false): Promise<void> => {
 
   if (transformMethod.value && (isWLF.value || isHybrid.value)) {
     payload.transform_method = transformMethod.value;
-    if (ttspTgValue.value) payload.Tg = ttspTgValue.value;
-    if (ttspC1Value.value) payload.C1 = ttspC1Value.value;
-    if (ttspC2Value.value) payload.C2 = ttspC2Value.value;
-    if (tgEstimated.value) payload.Tg_estimate = tgEstimated.value;
-    if (c1Estimated.value) payload.C1_estimate = c1Estimated.value;
-    if (c2Estimated.value) payload.C2_estimate = c2Estimated.value;
-
-    if (isHybrid.value) {
-      if (ttspEAValue.value) payload.Ea = ttspEAValue.value;
-      if (ttspTCValue.value) payload.TC = ttspTCValue.value;
-      if (eAEstimated.value) payload.Ea_estimate = eAEstimated.value;
-      if (tCEstimated.value) payload.TC_estimate = tCEstimated.value;
-    }
+    Object.assign(
+      payload,
+      buildShiftModelPayload(transformMethod.value as ShiftFitModel, {
+        Tg: ttspTgValue.value,
+        C1: ttspC1Value.value,
+        C2: ttspC2Value.value,
+        Ea: ttspEAValue.value,
+        TC: ttspTCValue.value,
+        Tg_estimate: tgEstimated.value,
+        C1_estimate: c1Estimated.value,
+        C2_estimate: c2Estimated.value,
+        Ea_estimate: eAEstimated.value,
+        TC_estimate: tCEstimated.value,
+      })
+    );
 
     // A previously uploaded shift file stays on the shift figure as the
     // Experiment markers for comparison against the model curve — display
@@ -1433,7 +1484,7 @@ const handleSelect = async (): Promise<void> => {
       id: currentItem.value?.id,
       domain: selectedProperty.value,
       index: selectedItemProperty.value.index,
-      numberOfProny: dynamfit.value.range,
+      numberOfProny: cPronyTerms.value,
       model: dynamfit.value.model,
     };
 
@@ -1523,14 +1574,15 @@ watch(transformMethod, (newValue) => {
     // No Tg/TC estimate in the frequency domain: a master curve's tan-δ and
     // E″ peaks are frequencies, and the server 400s a frequency-domain
     // Tg_estimate/TC_estimate. The checkboxes are hidden there; the anchor
-    // must be typed.
-    if (!isFrequencyDomain.value) tgEstimated.value = true;
+    // must be typed. Only the picked model's own boxes are checked.
+    const params = shiftModelParameters(newValue);
+    if (!isFrequencyDomain.value) {
+      if (params.includes('Tg')) tgEstimated.value = true;
+      if (params.includes('TC')) tCEstimated.value = true;
+    }
     c1Estimated.value = true;
     c2Estimated.value = true;
-    if (newValue === 'hybrid') {
-      if (!isFrequencyDomain.value) tCEstimated.value = true;
-      eAEstimated.value = true;
-    }
+    if (params.includes('Ea')) eAEstimated.value = true;
   }
   // A user-picked model also orphans any fitted shift coefficients: leaving
   // them standing shows a stale a_T_ref/misfit readout (and a Shift Coeff

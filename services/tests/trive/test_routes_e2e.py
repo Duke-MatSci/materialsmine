@@ -37,16 +37,22 @@ import sys
 import json
 import tempfile
 import numpy as np
+from unittest.mock import patch
 
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from app.trive.fit import smooth_prony_fit
+from app.trive.prony import prony_terms_for_span
 from app.trive.shift import wlf_shift, hybrid_shift
 from app.trive.calibration import peak_edge_warning
 from app.config import Config
 from app.utils.util import upload_init
 
-from ._route_helpers import make_app, make_token, REAL_FILES_DIR
+from ._paths import TRIVE_FILES_DIR
+from ._route_helpers import make_app, make_token
+from ._figure_lines import facet_axes, names_number, vertical_lines
+from ._tc_scan import assert_search_properties
 
 
 class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
@@ -63,7 +69,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._orig_files_dir = Config.FILES_DIRECTORY
-        Config.FILES_DIRECTORY = REAL_FILES_DIR
+        Config.FILES_DIRECTORY = TRIVE_FILES_DIR
         Config.SECRET_KEY = 'test-secret'
         cls.app = make_app()
         cls.client = cls.app.test_client()
@@ -192,6 +198,143 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         n = len(T)
         self.assertAlmostEqual(chi2, log_rmse ** 2 * n / (n - 4), places=10)
 
+    def test_hybrid_e2e_in_range_free_Ea_result_does_not_move(self):
+        """
+        VeroCyan at T_C=80 °C has its free Ea optimum well inside
+        [100, 400] kJ/mol, so the Ea bounds leave the stored result alone.
+        """
+        resp = self._post({
+            'shift_file_name': 'VeroCyan (5) shift factors 80C clean.txt',
+            'transform_method': 'hybrid',
+            'TC': 80.0,
+        })
+        self.assertEqual(resp.status_code, 200)
+        result = json.loads(resp.data)
+        np.testing.assert_allclose(
+            [result[k] for k in ('C1', 'C2', 'Ea', 'a_T_ref', 'chi2_reduced')],
+            [6.52281, 17.67855, 268.37107, 9.06991, 0.58959],
+            rtol=1e-4,
+        )
+
+    def test_hybrid_e2e_out_of_range_Ea_in_body_is_held_exactly(self):
+        """An Ea in the body is fixed, not optimized, so the bounds pass it."""
+        resp = self._post({
+            'shift_file_name': 'VeroCyan (5) shift factors 80C clean.txt',
+            'transform_method': 'hybrid',
+            'TC': 80.0,
+            'Ea': 80.0,
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(json.loads(resp.data)['Ea'], 80.0)
+
+    def _real_table(self, file_name):
+        shift_data = upload_init(file_name, 'shift')
+        return (np.asarray(shift_data['Temperature'], dtype=float),
+                np.asarray(shift_data['a_T'], dtype=float))
+
+    def _post_without_tc(self, file_name, **body):
+        return self._post({
+            'shift_file_name': file_name,
+            'transform_method': 'hybrid',
+            **body,
+        })
+
+    @staticmethod
+    def _searched(result):
+        return tuple(result[k] for k in (
+            'TC', 'C1', 'C2', 'Ea', 'a_T_ref', 'chi2_reduced'))
+
+    def _write_table(self, name, rows):
+        path = os.path.join(TRIVE_FILES_DIR, name)
+        np.savetxt(path, rows, delimiter='\t')
+        self.addCleanup(os.remove, path)
+
+    def test_hybrid_e2e_without_tc_searches_the_real_tables(self):
+        """
+        Hybrid with no TC on either real table answers with a chosen TC: no
+        exact value is pinned, since chi-squared against Tc on real data is
+        not known to have a single minimum, only that the choice lies between
+        the best candidate's grid neighbours and scores no worse than it.
+        """
+        for name in ('VeroCyan (5) shift factors 80C clean.txt',
+                     'agilus30 (8) shift factors 20C clean.txt'):
+            with self.subTest(file=name):
+                resp = self._post_without_tc(name)
+                self.assertEqual(resp.status_code, 200)
+                result = json.loads(resp.data)
+                self.assertEqual(set(result), {
+                    'transform_method', 'Tg', 'C1', 'C2', 'Ea', 'TC',
+                    'a_T_ref', 'chi2_reduced'})
+                self.assertEqual(result['transform_method'], 'hybrid')
+                self.assertIsNone(result['Tg'])
+                T, a_T = self._real_table(name)
+                assert_search_properties(self, T, a_T, self._searched(result))
+
+    def test_hybrid_e2e_without_tc_holds_values_in_the_body(self):
+        """A value in the body is held through the search, an Ea outside the
+        free-Ea range included, and takes a free parameter off chi2_reduced."""
+        name = 'agilus30 (8) shift factors 20C clean.txt'
+        T, a_T = self._real_table(name)
+        for body, hold in (
+                ({'Ea': 60.0}, {'Ea': 60.0, 'fix_Ea': True}),
+                ({'C1': 14.0, 'C2': 45.0},
+                 {'C1': 14.0, 'C2': 45.0, 'fix_C1': True, 'fix_C2': True})):
+            with self.subTest(body=body):
+                resp = self._post_without_tc(name, **body)
+                self.assertEqual(resp.status_code, 200)
+                assert_search_properties(
+                    self, T, a_T, self._searched(json.loads(resp.data)), **hold)
+
+    def test_hybrid_e2e_without_tc_refines_away_from_the_second_best(self):
+        """A noiseless true Tc of 27.3 sits below the best temperature, 28,
+        whose second best, 30, is above it: the answer is the true Tc."""
+        name = '_tmp_shift_tc_below_best.txt'
+        T = np.array([-20.0, -10.0, 0.0, 15.0, 28.0, 30.0, 40.0, 50.0, 60.0,
+                      70.0, 80.0, 90.0])
+        a_T = hybrid_shift(T, 27.3, 14.0, 45.0, 120.0)
+        self._write_table(name, np.column_stack((T, a_T)))
+        resp = self._post_without_tc(name)
+        self.assertEqual(resp.status_code, 200)
+        result = json.loads(resp.data)
+        self.assertAlmostEqual(result['TC'], 27.3, delta=0.1)
+        assert_search_properties(self, T, a_T, self._searched(result))
+
+    def test_hybrid_e2e_without_tc_on_four_rows_fits_at_the_only_candidate(self):
+        name = '_tmp_shift_four_rows.txt'
+        self._write_table(name, [[0.0, 3.0], [10.0, 2.0], [20.0, 1.0],
+                                 [30.0, 0.5]])
+        resp = self._post_without_tc(name)
+        self.assertEqual(resp.status_code, 200)
+        result = json.loads(resp.data)
+        self.assertEqual(result['TC'], 10.0)
+        self.assertIsNone(result['chi2_reduced'])
+
+    def test_hybrid_e2e_without_tc_on_three_rows_returns_400_for_the_search(self):
+        """The refusal is the search's: Tc is no longer a required input."""
+        name = '_tmp_shift_three_rows.txt'
+        self._write_table(name, [[0.0, 3.0], [10.0, 1.0], [20.0, 0.5]])
+        resp = self._post_without_tc(name)
+        self.assertEqual(resp.status_code, 400)
+        message = json.loads(resp.data)['message']
+        self.assertTrue(message)
+        self.assertNotIn('Tc is required', message)
+
+    def test_hybrid_e2e_without_tc_on_one_row_keeps_the_upload_400(self):
+        name = '_tmp_shift_one_row.txt'
+        self._write_table(name, [[0.0, 3.0]])
+        self.assertEqual(self._post_without_tc(name).status_code, 400)
+
+    def test_hybrid_e2e_without_tc_on_duplicate_temperatures_stays_500(self):
+        """An assertion in the fit is not a failed candidate; tied tables stay
+        the 500 they are when a TC is supplied."""
+        name = '_tmp_shift_duplicate_T.txt'
+        rows = [[0.0, 9.0], [0.0, 8.0], [10.0, 4.0], [20.0, 1.0],
+                [30.0, 0.5], [40.0, 0.25], [50.0, 0.1]]
+        self._write_table(name, rows)
+        self.assertEqual(
+            self._post_without_tc(name, TC=20.0).status_code, 500)
+        self.assertEqual(self._post_without_tc(name).status_code, 500)
+
     def test_wlf_e2e_error_column_weights_fit_and_chi2(self):
         """
         A 3-column shift file (Temperature, a_T, Error) must reach the fit as
@@ -207,7 +350,7 @@ class TestFitShiftCoefficientsEndToEnd(unittest.TestCase):
         for scale in (1.0, 2.0):
             err = 0.1 * a_T * scale  # 10% (then 20%) relative error on a_T
             name = f'_tmp_shift_with_error_x{scale:g}.txt'
-            path = os.path.join(REAL_FILES_DIR, name)
+            path = os.path.join(TRIVE_FILES_DIR, name)
             np.savetxt(path, np.column_stack([T, a_T, err]), delimiter='\t')
             self.addCleanup(os.remove, path)
             resp = self._post({
@@ -241,7 +384,7 @@ class TestExtractRoute(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._orig_files_dir = Config.FILES_DIRECTORY
-        Config.FILES_DIRECTORY = REAL_FILES_DIR
+        Config.FILES_DIRECTORY = TRIVE_FILES_DIR
         Config.SECRET_KEY = 'test-secret'
         cls.app = make_app()
         cls.client = cls.app.test_client()
@@ -292,6 +435,125 @@ class TestExtractRoute(unittest.TestCase):
                     'mytable', 'upload-data',
                     'C1', 'C2', 'Tg', 'Ea', 'TC', 'warnings'):
             self.assertIn(key, response)
+
+    def test_max_prony_is_a_json_integer(self):
+        """
+        max_prony must arrive as a JSON integer: the route uses stdlib
+        json.dumps, which raises on numpy scalars. No noise_prony is sent.
+        """
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIs(type(response['max_prony']), int)
+        self.assertGreaterEqual(response['max_prony'], 1)
+        self.assertLessEqual(response['max_prony'], 100)
+        self.assertNotIn('noise_prony', response)
+
+    def test_coarse_grid_extract_suggests_a_finer_grid(self):
+        """A coarse grid's complex-modulus chart JSON carries the grid-size
+        suggestion; the noise ceiling behind it stays server-side."""
+        resp = self._post(self._freq_body(
+            number_of_prony=6, smoothness=0.3, relative_error=0.01))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        texts = [a.get('text', '') for a in
+                 response['complex-chart']['layout'].get('annotations', [])]
+        self.assertTrue(any(
+            t.startswith('if the error profile is accurate, the data can '
+                         'support more terms; try a relaxation grid size of ')
+            for t in texts), texts)
+        self.assertEqual([k for k in response if 'noise' in k], [])
+
+    def test_smoothed_extract_carries_credible_ribbons(self):
+        """A smoothed fit's chart JSON carries the +-1 sigma ribbons."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        for key, traces in (('complex-chart', 4), ('complex-tand-chart', 4),
+                            ('relaxation-chart', 2)):
+            names = [t.get('name') for t in response[key]['data']]
+            self.assertEqual(names.count('±1σ credible'), traces, key)
+
+    def test_smoothed_extract_carries_prediction_ribbons(self):
+        """Prediction ribbons ride on the measured-quantity charts only."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        for key, traces in (('complex-chart', 4), ('complex-tand-chart', 4),
+                            ('relaxation-chart', 0),
+                            ('relaxation-spectrum-chart', 0)):
+            names = [t.get('name') for t in response[key]['data']]
+            self.assertEqual(names.count('±1σ prediction'), traces, key)
+
+    def test_smoothed_extract_table_carries_coefficient_bounds(self):
+        """Each mytable row of a smoothed fit carries its +-1 sigma in Pa."""
+        resp = self._post(self._freq_body(number_of_prony=20, smoothness=0.3))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        mytable = json.loads(resp.data)['response']['mytable']
+        self.assertTrue(mytable)
+        for row in mytable:
+            self.assertIn('E_i_lower', row)
+            self.assertIn('E_i_upper', row)
+            self.assertLess(0.0, row['E_i_lower'])
+            self.assertLessEqual(row['E_i_lower'], row['E_i'])
+            self.assertLessEqual(row['E_i'], row['E_i_upper'])
+
+    @staticmethod
+    def _load_strict(body):
+        """json.loads that fails on a bare NaN / Infinity token, which
+        browsers' JSON.parse rejects. A substring search would also hit
+        those letters inside base64 figure data."""
+        def reject(token):
+            raise AssertionError(f'non-finite {token} in the response body')
+        return json.loads(body, parse_constant=reject)
+
+    def test_extract_table_ends_with_the_plateau_row(self):
+        """The equilibrium modulus is the last mytable row, i = N and
+        tau_i the string 'inf'; with a smoothed fit it carries its +-1 sigma
+        interval, and every row has the same keys. The body is strict
+        JSON."""
+        for N, smoothness, keys in (
+                (5, 0.0, {'i', 'tau_i', 'E_i'}),
+                (20, 0.3, {'i', 'tau_i', 'E_i', 'E_i_lower', 'E_i_upper'})):
+            with self.subTest(smoothness=smoothness):
+                resp = self._post(self._freq_body(number_of_prony=N,
+                                                  smoothness=smoothness))
+                self.assertEqual(resp.status_code, 200, resp.data[:400])
+                mytable = self._load_strict(resp.data)['response']['mytable']
+                plateau = [row for row in mytable if row['tau_i'] == 'inf']
+                self.assertEqual(len(plateau), 1)
+                self.assertIs(mytable[-1], plateau[0])
+                self.assertEqual(plateau[0]['i'], N)
+                self.assertGreater(plateau[0]['E_i'], 0.0)
+                for row in mytable:
+                    self.assertSetEqual(set(row), keys)
+                if 'E_i_lower' in keys:
+                    self.assertLess(0.0, plateau[0]['E_i_lower'])
+                    self.assertLess(plateau[0]['E_i_lower'],
+                                    plateau[0]['E_i'])
+                    self.assertLess(plateau[0]['E_i'],
+                                    plateau[0]['E_i_upper'])
+
+    def test_request_above_max_prony_still_fits(self):
+        """The cap is advisory: any N in the route's 1..100 range fits."""
+        resp = self._post(self._freq_body())
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        max_prony = json.loads(resp.data)['response']['max_prony']
+        self.assertLess(max_prony, 100)  # precondition: there is room above
+        resp = self._post(self._freq_body(number_of_prony=100))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        self.assertTrue(json.loads(resp.data)['response']['mytable'])
+
+    def test_temperature_preview_max_prony_is_null(self):
+        """No transform means no master curve, so nothing to measure."""
+        resp = self._post({
+            'file_name': 'agilus30 (8) Temperature Ramp clean.txt',
+            'domain': 'temperature', 'number_of_prony': 5,
+        })
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        response = json.loads(resp.data)['response']
+        self.assertIn('max_prony', sorted(response))
+        self.assertIsNone(response['max_prony'])
 
     def test_upload_data_is_array_of_row_objects(self):
         """
@@ -507,11 +769,208 @@ class TestExtractRoute(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
 
 
+class TestExtractRouteWlfPoleDrop(unittest.TestCase):
+    """
+    E2E: the bundled VeroCyan ramp at Tg 78.22 with universal WLF constants
+    puts its pole (26.62 C) inside the data. The extract drops the rows past
+    the cold edge (54.36 C), fits the rest, warns, and marks the cutoff.
+    """
+
+    _orig_files_dir = None
+    FILE = 'VeroCyan (5) Temperature Ramp clean.txt'
+    TG, C1, C2 = 78.22, 17.44, 51.6
+    COLD_EDGE = TG - 15.0 * C2 / (C1 + 15.0)
+    N_ROWS = 122
+    N_DROPPED = 68
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        Config.FILES_DIRECTORY = TRIVE_FILES_DIR
+        Config.SECRET_KEY = 'test-secret'
+        client = make_app().test_client()
+        headers = {
+            'Authorization': f'Bearer {make_token()}',
+            'Content-Type': 'application/json',
+        }
+        body = {
+            'file_name': cls.FILE, 'domain': 'temperature',
+            'number_of_prony': 20, 'smoothness': 0.1,
+            'transform_method': 'WLF',
+            'Tg': cls.TG, 'C1': cls.C1, 'C2': cls.C2,
+        }
+        cls.resp = client.post('/tri-ve/extract/', data=json.dumps(body),
+                               headers=headers)
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+
+    def _response(self):
+        self.assertEqual(self.resp.status_code, 200, self.resp.data[:400])
+        return json.loads(self.resp.data)['response']
+
+    def test_ramp_through_the_pole_fits_and_warns(self):
+        """A 200 whose warnings carry one entry naming 68 of 122 rows, the
+        cutoff and the pole Tg - C2."""
+        warnings = self._response()['warnings']
+        self.assertEqual(len(warnings), 1, warnings)
+        text = warnings[0]
+        for value in (self.N_DROPPED, self.N_ROWS, self.COLD_EDGE,
+                      self.TG - self.C2):
+            self.assertTrue(names_number(text, value), (value, text))
+
+    def test_every_chart_marks_the_cutoff_on_every_facet(self):
+        """Temperature and shift charts at the cold edge, frequency charts
+        at 1e15 rad/s, relaxation charts at 1e-15 s."""
+        response = self._response()
+        expected = {
+            'complex-temp-chart': (self.COLD_EDGE, dict(rtol=0, atol=1e-6)),
+            'temp-tand-chart': (self.COLD_EDGE, dict(rtol=0, atol=1e-6)),
+            'shift-chart': (self.COLD_EDGE, dict(rtol=0, atol=1e-6)),
+            'complex-chart': (1e15, dict(rtol=1e-6)),
+            'complex-tand-chart': (1e15, dict(rtol=1e-6)),
+            'relaxation-chart': (1e-15, dict(rtol=1e-6)),
+            'relaxation-spectrum-chart': (1e-15, dict(rtol=1e-6)),
+        }
+        for key, (x, tol) in expected.items():
+            fig = response[key]
+            lines = vertical_lines(fig)
+            for axis in sorted(facet_axes(fig)):
+                with self.subTest(chart=key, axis=axis):
+                    got = [v for a, v in lines if a == axis]
+                    self.assertEqual(len(got), 1, lines)
+                    np.testing.assert_allclose(got, [x], **tol)
+
+
+class TestExtractRouteGridSize(unittest.TestCase):
+    """
+    E2E: the response's number_of_prony is the grid size the fit ran with,
+    len(tau_i). A request without number_of_prony (key absent or null) has
+    the server size the grid from the fitted curve's span; one that carries
+    it fits the size it was sent.
+    """
+
+    _orig_files_dir = None
+    FILE = 'VeroCyan (5) Temperature Ramp clean.txt'
+    WLF = {'transform_method': 'WLF', 'Tg': 78.22, 'C1': 17.44, 'C2': 51.6}
+
+    @classmethod
+    def setUpClass(cls):
+        cls._orig_files_dir = Config.FILES_DIRECTORY
+        Config.FILES_DIRECTORY = TRIVE_FILES_DIR
+        Config.SECRET_KEY = 'test-secret'
+        cls.client = make_app().test_client()
+        cls.headers = {
+            'Authorization': f'Bearer {make_token()}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def tearDownClass(cls):
+        Config.FILES_DIRECTORY = cls._orig_files_dir
+
+    def _post(self, body):
+        """(status, response dict or None, [(N, len(tau_i), omega)] for
+        each fit the request ran)."""
+        fits = []
+
+        def fit(**kwargs):
+            out = smooth_prony_fit(**kwargs)
+            fits.append((kwargs['N'], len(out[0]), kwargs['omega']))
+            return out
+
+        with patch('app.trive.chart.smooth_prony_fit', side_effect=fit):
+            resp = self.client.post('/tri-ve/extract/',
+                                    data=json.dumps(body),
+                                    headers=self.headers)
+        response = None
+        if resp.status_code == 200:
+            response = json.loads(resp.data)['response']
+        return resp.status_code, response, fits
+
+    def _temperature(self, **overrides):
+        body = {'file_name': self.FILE, 'domain': 'temperature',
+                'smoothness': 0.0, **self.WLF}
+        body.update(overrides)
+        return body
+
+    def test_temperature_fit_without_a_size_reports_the_span_sized_grid(self):
+        """A temperature fit sent no grid size fits the span-sized grid of
+        the master curve and reports that size as a JSON integer."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post(
+                    self._temperature(**extra))
+                self.assertEqual(status, 200)
+                self.assertEqual(len(fits), 1)
+                N, n_tau, omega = fits[0]
+                self.assertLess(N, 100)
+                self.assertEqual(N, prony_terms_for_span(omega))
+                self.assertIs(type(response['number_of_prony']), int)
+                self.assertEqual(response['number_of_prony'], n_tau)
+                self.assertEqual(response['number_of_prony'], N)
+
+    def test_temperature_fit_uses_the_size_sent(self):
+        """A temperature fit sent a grid size runs it, above the span-sized
+        count, and reports it."""
+        status, _, first = self._post(self._temperature())
+        self.assertEqual(status, 200)
+        sent = first[0][0] + 10
+        self.assertLessEqual(sent, 100)
+        status, response, fits = self._post(self._temperature(
+            number_of_prony=sent))
+        self.assertEqual(status, 200)
+        self.assertEqual([N for N, _, _ in fits], [sent])
+        self.assertEqual(response['number_of_prony'], sent)
+
+    def test_frequency_fit_without_a_size_reports_the_span_sized_grid(self):
+        """A frequency fit sent no grid size fits the span-sized grid of
+        the file's own frequencies and reports that size."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post({
+                    'file_name': 'agilus30 (8) master curve 20C.txt',
+                    'domain': 'frequency', 'smoothness': 0.0, **extra,
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(len(fits), 1)
+                N, n_tau, omega = fits[0]
+                self.assertNotEqual(N, 100)
+                self.assertEqual(N, prony_terms_for_span(omega))
+                self.assertIs(type(response['number_of_prony']), int)
+                self.assertEqual(response['number_of_prony'], n_tau)
+                self.assertEqual(response['number_of_prony'], N)
+
+    def test_frequency_fit_reports_the_size_sent(self):
+        status, response, fits = self._post({
+            'file_name': 'agilus30 (8) master curve 20C.txt',
+            'domain': 'frequency', 'number_of_prony': 5,
+        })
+        self.assertEqual(status, 200)
+        self.assertEqual([n_tau for _, n_tau, _ in fits], [5])
+        self.assertIs(type(response['number_of_prony']), int)
+        self.assertEqual(response['number_of_prony'], 5)
+
+    def test_temperature_preview_reports_null(self):
+        """No transform means no fit, so there is no grid size to report."""
+        for extra in ({}, {'number_of_prony': None}):
+            with self.subTest(**extra):
+                status, response, fits = self._post({
+                    'file_name': self.FILE, 'domain': 'temperature',
+                    **extra,
+                })
+                self.assertEqual(status, 200)
+                self.assertEqual(fits, [])
+                self.assertIn('number_of_prony', sorted(response))
+                self.assertIsNone(response['number_of_prony'])
+
+
 class TestExtractRouteErrorColumns(unittest.TestCase):
     """
     Route-level coverage for the optional error columns.
 
-    Every fixture in REAL_FILES_DIR is 3-column, so this class writes its own
+    Every fixture in TRIVE_FILES_DIR is 3-column, so this class writes its own
     4- and 5-column files into a temporary FILES_DIRECTORY.
     """
 
@@ -729,6 +1188,21 @@ class TestExtractRouteEstimateWarnings(unittest.TestCase):
         warnings = json.loads(resp.data)['response']['warnings']
         self.assertEqual(len(warnings), 1)
         self.assertIn('Tg', warnings[0])
+
+    def test_edge_estimate_warning_precedes_the_wlf_drop_warning(self):
+        # Peak at 78 C: the estimated Tg warns, and with universal C1/C2 the
+        # cold edge sits at 54.1 C, so rows 0..54 (28 of 41) are dropped.
+        name = self._write_ramp('hot_edge_wlf.tsv', 78)
+        resp = self._post(self._temp_body(
+            name, transform_method='WLF',
+            Tg_estimate=True, C1_estimate=True, C2_estimate=True,
+        ))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        warnings = json.loads(resp.data)['response']['warnings']
+        self.assertEqual(len(warnings), 2, warnings)
+        self.assertTrue(warnings[0].startswith('Estimated Tg'), warnings)
+        self.assertTrue(names_number(warnings[1], 28), warnings)
+        self.assertTrue(names_number(warnings[1], 41), warnings)
 
     def test_both_estimates_near_edge_warn_twice(self):
         # Peak at 78 °C — within 5° of the hot edge; Tg and TC both estimate

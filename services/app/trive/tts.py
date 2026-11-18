@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from .shift import hybrid_shift, inverse_hybrid_shift, inverse_wlf_shift, wlf_shift
+from .shift import (hybrid_shift, inverse_hybrid_shift, inverse_wlf_shift,
+                    wlf_log10_shift, wlf_shift)
 
 
 # Drop master-curve rows whose |log10(a_T)| exceeds this; near the WLF
@@ -21,8 +22,21 @@ MAX_ABS_LOG10_SHIFT = 15.0
 
 # Reference frequency / temperature for the frequency-domain visualization's
 # inverse-WLF scatter; arbitrary but stable so the temperature axis stays
-# comparable across uploads.
-VIS_REF_FREQUENCY_HZ = 1.0
+# comparable across uploads. In the upload's own frequency units, which are
+# not inspected and are taken as rad/s.
+VIS_REF_FREQUENCY = 1.0
+
+
+def wlf_window(T, T_ref, C1, C2):
+    """
+    The rows a WLF transform keeps: those above the pole T_ref - C2 whose
+    |log10 a_T| is at most MAX_ABS_LOG10_SHIFT. Never raises, so the rows
+    near the pole can be dropped instead of failing the whole upload.
+    """
+    T = np.asarray(T, dtype=float)
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        log_a_T = wlf_log10_shift(T, T_ref, C1, C2)
+        return (T > T_ref - C2) & (np.abs(log_a_T) <= MAX_ABS_LOG10_SHIFT)
 
 
 def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
@@ -42,9 +56,10 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         temp_sweep_data (pd.DataFrame): Input data with columns
             ['Temperature', "E'", "E''"], optionally including 'Frequency'
             for the per-row measurement frequency. If 'Frequency' is absent,
-            1.0 Hz is assumed (typical for a fixed-frequency DMA temperature sweep).
+            a frequency of 1.0 is assigned (a fixed-frequency DMA temperature
+            sweep); like every frequency here it is taken as rad/s.
         shift_model (str): Which shift function to apply. 'WLF' uses
-            wlf_shift across all temperatures; 'hybrid' uses hybrid_shift
+            wlf_shift on the rows wlf_window keeps; 'hybrid' uses hybrid_shift
             (Arrhenius at or below TC, WLF above); 'manual' requires
             shiftData and uses it directly.
         Tg (float): WLF reference temperature (used when shift_model == 'WLF').
@@ -70,7 +85,8 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
         ['Frequency', 'Temperature', "E'", "E''"], sorted by Frequency with a
         fresh 0..N-1 index. Input temp_sweep_data is not mutated. Rows whose
         |log10(a_T)| exceeds MAX_ABS_LOG10_SHIFT are dropped (WLF-singularity
-        guard), so the result may be shorter than the input.
+        guard), and under WLF so is every row at or below the pole
+        Tg - C2 (see wlf_window), so the result may be shorter than the input.
 
     Raises:
         ValueError: If shift_model is 'manual' without shiftData, or if no rows
@@ -105,7 +121,11 @@ def tts_temperature_to_frequency_V2(temp_sweep_data, shift_model, *,
                     "or match the row counts."
                 )
     elif shift_model == 'WLF':
-        a_T = wlf_shift(T, Tg, C1, C2)
+        # Rows outside wlf_window get an infinite a_T, which the window check
+        # below drops along with any other out-of-window row.
+        in_window = wlf_window(T, Tg, C1, C2)
+        a_T = np.full(len(T), np.inf)
+        a_T[in_window] = wlf_shift(T[in_window], Tg, C1, C2)
     elif shift_model == 'hybrid':
         a_T = hybrid_shift(T, TC, C1, C2, Ea)
     elif shift_model == 'manual':
@@ -315,7 +335,7 @@ def _freq_to_temp_via_shift_table(freq_sweep_data: pd.DataFrame, shiftData,
 def tts_frequency_to_temperature_V2(freq_sweep_data: pd.DataFrame, shift_model, *,
                                     Tg=None, TC=None, C1=None, C2=None, Ea=None,
                                     shiftData=None,
-                                    omega_ref: float = VIS_REF_FREQUENCY_HZ) -> pd.DataFrame:
+                                    omega_ref: float = VIS_REF_FREQUENCY) -> pd.DataFrame:
     """
     Convert a frequency master curve to a temperature sweep via inverse TTS.
 

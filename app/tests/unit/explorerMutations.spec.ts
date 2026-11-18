@@ -4,6 +4,7 @@
  *
  * @jest-environment node
  */
+import { effectivePronyMax } from '@/composables/useDynamfitDefaults';
 import mutations from '@/store/modules/explorer/mutations';
 import { ExplorerState } from '@/store/modules/explorer/types';
 
@@ -58,6 +59,22 @@ describe('explorer mutations — dynamfit file metadata', () => {
     expect(state.dynamfitFileMeta).toEqual({ label: '', originalName: '' });
     expect(state.dynamfit.fileUpload).toBe('');
   });
+
+  it('resetDynamfit leaves the grid size unset so the server sizes the next fit', () => {
+    const state = makeState({
+      dynamfit: {
+        range: 40,
+        fitSettings: true,
+        model: 'WLF',
+        fileUpload: 'ramp.tsv',
+      },
+    });
+    mutations.resetDynamfit(state);
+    expect(state.dynamfit.range).toBeNull();
+    expect(state.dynamfit.fitSettings).toBe(false);
+    expect(state.dynamfit.model).toBe('Linear');
+    expect(state.dynamfit.fileUpload).toBe('');
+  });
 });
 
 describe('explorer mutations — dynamfit shift coefficients', () => {
@@ -91,5 +108,109 @@ describe('explorer mutations — dynamfit shift coefficients', () => {
       chi2_reduced: null,
       model: null,
     });
+  });
+});
+
+describe('explorer mutations — grid size follows the term cap in a fit response', () => {
+  const withRange = (range: number): ExplorerState =>
+    makeState({
+      dynamfit: {
+        range,
+        fitSettings: true,
+        model: 'WLF',
+        fileUpload: 'ramp.tsv',
+      },
+    });
+
+  it('setDynamfitData drops a value above the cap to exactly the cap', () => {
+    for (const range of [100, 58]) {
+      const state = withRange(range);
+      mutations.setDynamfitData(state, { max_prony: 23 });
+      expect(state.dynamfit.range).toBe(23);
+      // The slider's maximum and its value read the same number.
+      expect(effectivePronyMax(23, state.dynamfit.range)).toBe(23);
+      expect(state.dynamfit).toEqual({
+        range: 23,
+        fitSettings: true,
+        model: 'WLF',
+        fileUpload: 'ramp.tsv',
+      });
+    }
+  });
+
+  it('setDynamfitData leaves a value at or below the cap alone', () => {
+    const above = withRange(58);
+    mutations.setDynamfitData(above, { max_prony: 23 });
+    expect(above.dynamfit.range).toBe(23);
+
+    for (const range of [20, 23]) {
+      const state = withRange(range);
+      mutations.setDynamfitData(state, { max_prony: 23 });
+      expect(state.dynamfit.range).toBe(range);
+    }
+  });
+
+  it('setDynamfitData leaves the value alone when the response has no usable cap', () => {
+    const capped = withRange(100);
+    mutations.setDynamfitData(capped, { max_prony: 23 });
+    expect(capped.dynamfit.range).toBe(23);
+
+    // null on the temperature preview; absent from an empty response body; a
+    // non-integer or a count below one term is no cap at all.
+    const noCap = [
+      { max_prony: null },
+      {},
+      { max_prony: 12.5 },
+      { max_prony: 0 },
+      { max_prony: -3 },
+    ];
+    for (const payload of noCap) {
+      const state = withRange(100);
+      mutations.setDynamfitData(state, payload);
+      expect(state.dynamfit.range).toBe(100);
+    }
+    // A cap above the static maximum behaves as the maximum itself.
+    const wide = withRange(100);
+    mutations.setDynamfitData(wide, { max_prony: 250 });
+    expect(wide.dynamfit.range).toBe(100);
+  });
+});
+
+describe('explorer mutations — a reported grid size writes nothing into dynamfit', () => {
+  // Every write inside state.dynamfit refits through the deep watcher, so a
+  // response that changed it would send a second request for the same fit.
+  const withRange = (range: number | null): ExplorerState =>
+    makeState({
+      dynamfit: { range, fitSettings: true, model: 'WLF', fileUpload: 'ramp.tsv' },
+    });
+
+  const expectUntouched = (state: ExplorerState, payload: Record<string, any>) => {
+    const dynamfit = state.dynamfit;
+    const before = { ...dynamfit };
+    mutations.setDynamfitData(state, payload);
+    expect(state.dynamfitData).toBe(payload);
+    expect(state.dynamfit).toBe(dynamfit);
+    expect(state.dynamfit).toEqual(before);
+  };
+
+  it('setDynamfitData leaves an unset grid size unset when the fit reports its size', () => {
+    // The slider shows the reported size; the next fit still goes out unsized.
+    expectUntouched(withRange(null), { number_of_prony: 55, max_prony: 82 });
+  });
+
+  it('setDynamfitData leaves an unset grid size unset when the reported size tops the cap', () => {
+    expectUntouched(withRange(null), { number_of_prony: 90, max_prony: 82 });
+    expectUntouched(withRange(null), { number_of_prony: 90, max_prony: 23 });
+  });
+
+  it('setDynamfitData leaves an unset grid size unset when nothing is reported', () => {
+    // The temperature preview runs no fit and reports null for both.
+    expectUntouched(withRange(null), { number_of_prony: null, max_prony: null });
+    expectUntouched(withRange(null), {});
+  });
+
+  it('setDynamfitData leaves the size the user set when the response reports another', () => {
+    // Following the grid-size suggestion must not be undone by the response.
+    expectUntouched(withRange(80), { number_of_prony: 55, max_prony: 82 });
   });
 });

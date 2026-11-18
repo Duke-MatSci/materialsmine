@@ -2,10 +2,11 @@
 Shift-coefficient calibration: `fit_wlf_coefficients` (recovers C1/C2) and
 `fit_hybrid_coefficients` (recovers C1/C2/Ea) from measured shift-factor data.
 Both co-fit the a_T_ref offset — the data's shift factor at the model's anchor.
+`search_hybrid_tc` chooses Tc itself by a grid search and a 1D refinement.
 
 Pure functions running the real optimizer on small synthetic data — no Flask
-app, no disk. Run when changing the fit math, the pole-avoidance bounds, or the
-degenerate-segment guards.
+app, no disk. Run when changing the fit math, the pole-avoidance bounds, the
+free-Ea bounds, the Tc search, or the degenerate-segment guards.
 
     python -m unittest tests.trive.test_coefficient_fits
 """
@@ -26,6 +27,14 @@ from app.trive.shift import (
     UNIVERSAL_WLF_C2,
 )
 from app.trive.calibration import fit_wlf_coefficients, fit_hybrid_coefficients
+import app.trive as trive
+
+from ._tc_scan import (
+    assert_search_properties,
+    candidate_grid,
+    chi2_sum,
+    scan_candidates,
+)
 
 
 class TestFitWlfCoefficients(unittest.TestCase):
@@ -154,7 +163,7 @@ class TestFitHybridCoefficients(unittest.TestCase):
     TC = 25.0       # WLF/Arrhenius crossover — required input, never fitted
     C1_TRUE = 14.0
     C2_TRUE = 45.0
-    EA_TRUE = 80.0  # kJ/mol — well within curve_fit's convergence basin
+    EA_TRUE = 200.0  # kJ/mol — inside the free-Ea bounds, away from either
 
     @classmethod
     def setUpClass(cls):
@@ -266,12 +275,386 @@ class TestFitHybridCoefficients(unittest.TestCase):
         self.assertAlmostEqual(a_T_ref, 1.0, places=4)
 
 
+class TestHybridEaBounds(unittest.TestCase):
+    """A free Ea is optimized within [100, 400] kJ/mol, bounds included; a
+    fixed Ea is not optimized, so the bounds do not apply to it."""
+
+    TC = 25.0
+    C1_TRUE = 14.0
+    C2_TRUE = 45.0
+    EA_MIN = 100.0
+    EA_MAX = 400.0
+    # A solver may stop just inside an active bound, never outside it.
+    AT_BOUND = 1e-3  # kJ/mol
+
+    @classmethod
+    def setUpClass(cls):
+        cls.T = np.linspace(5.0, 70.0, 30)
+
+    def _data(self, Ea):
+        return hybrid_shift(self.T, self.TC, self.C1_TRUE, self.C2_TRUE, Ea)
+
+    def _fit(self, Ea_true, **kwargs):
+        return fit_hybrid_coefficients(
+            self.T, self._data(Ea_true), self.TC,
+            C1=self.C1_TRUE, C2=self.C2_TRUE, **kwargs,
+        )
+
+    def _assert_at_bound(self, Ea_fit, bound):
+        self.assertGreaterEqual(Ea_fit, self.EA_MIN)
+        self.assertLessEqual(Ea_fit, self.EA_MAX)
+        self.assertAlmostEqual(Ea_fit, bound, delta=self.AT_BOUND)
+
+    def test_free_Ea_optimum_below_range_returns_lower_bound(self):
+        """Data whose optimum Ea is 60 fits at the 100 kJ/mol bound."""
+        _, _, Ea_fit, _ = self._fit(60.0)
+        self._assert_at_bound(Ea_fit, self.EA_MIN)
+
+    def test_free_Ea_optimum_above_range_returns_upper_bound(self):
+        """Data whose optimum Ea is 600 fits at the 400 kJ/mol bound."""
+        _, _, Ea_fit, _ = self._fit(600.0)
+        self._assert_at_bound(Ea_fit, self.EA_MAX)
+
+    def test_other_coefficients_are_optimized_against_the_active_bound(self):
+        """A fit stopped at a bound equals the fit with Ea fixed there, so the
+        bound constrains the optimization, not only the reported Ea. A free
+        Ea counts as a parameter even at its bound, so chi2 keeps nu = n - 4
+        where the Ea-held fit has nu = n - 3."""
+        n = self.T.size
+        for Ea_true, bound in ((60.0, self.EA_MIN), (600.0, self.EA_MAX)):
+            with self.subTest(Ea_true=Ea_true):
+                C1_fit, C2_fit, _, a_T_ref, chi2 = self._fit(
+                    Ea_true, return_quality=True)
+                C1_held, C2_held, _, a_T_ref_held, chi2_held = self._fit(
+                    Ea_true, Ea=bound, fix_Ea=True, return_quality=True)
+                np.testing.assert_allclose(
+                    [C1_fit, C2_fit, a_T_ref],
+                    [C1_held, C2_held, a_T_ref_held],
+                    rtol=1e-2,
+                )
+                np.testing.assert_allclose(
+                    chi2, chi2_held * (n - 3) / (n - 4), rtol=1e-2)
+
+    def test_out_of_range_initial_guess_is_clipped_into_range(self):
+        """A free Ea guess outside the bounds is a start point, not an error:
+        the fit still finds an in-range optimum and still stops at a bound."""
+        cases = (
+            (50.0, 200.0, 200.0),
+            (900.0, 200.0, 200.0),
+            (50.0, 60.0, self.EA_MIN),
+            (900.0, 600.0, self.EA_MAX),
+        )
+        for guess, Ea_true, expected in cases:
+            with self.subTest(guess=guess, Ea_true=Ea_true):
+                _, _, Ea_fit, _ = self._fit(Ea_true, Ea=guess)
+                self.assertAlmostEqual(
+                    Ea_fit, expected, delta=self.AT_BOUND)
+
+    def test_fixed_out_of_range_Ea_is_returned_exactly(self):
+        """fix_Ea holds any supplied value, inside the bounds or not."""
+        for Ea in (80.0, 500.0):
+            with self.subTest(Ea=Ea):
+                C1_fit, C2_fit, Ea_fit, _ = self._fit(Ea, Ea=Ea, fix_Ea=True)
+                self.assertEqual(Ea_fit, Ea)
+                self.assertAlmostEqual(C1_fit, self.C1_TRUE, places=4)
+                self.assertAlmostEqual(C2_fit, self.C2_TRUE, places=4)
+
+
+class TestSearchHybridTc(unittest.TestCase):
+    """search_hybrid_tc chooses Tc from the table's measured temperatures,
+    keeping two points on either side, then refines across the best one's
+    left and right neighbours on that grid."""
+
+    C1_TRUE = 14.0
+    C2_TRUE = 45.0
+    EA_TRUE = 120.0  # shallow Arrhenius against WLF's C1/C2 slope at Tc
+    TC_OFF_GRID = 27.3
+    # On noiseless data the objective is sharply quadratic about the true Tc,
+    # and a grid-only answer is 2.3 degC away.
+    TC_RECOVERY = 0.1
+
+    @classmethod
+    def setUpClass(cls):
+        cls.T = np.arange(-20.0, 91.0, 5.0)
+        cls.T_NOISY = np.arange(-20.0, 71.0, 5.0)
+        # Deterministic multiplicative noise, ~0.1 decades.
+        rng = np.random.RandomState(0)
+        cls.a_T_noisy = hybrid_shift(
+            cls.T_NOISY, 22.0, cls.C1_TRUE, cls.C2_TRUE, 150.0,
+        ) * 10.0 ** (0.1 * rng.randn(len(cls.T_NOISY)))
+
+    def _table(self, TC, Ea=None, a_T_ref=1.0):
+        return hybrid_shift(self.T, TC, self.C1_TRUE, self.C2_TRUE,
+                            self.EA_TRUE if Ea is None else Ea, a_T_ref)
+
+    def test_noiseless_off_grid_tc_and_coefficients_are_recovered(self):
+        """A true Tc between measured temperatures is found by the refinement,
+        with the coefficients and offset that belong to it."""
+        a_T = self._table(self.TC_OFF_GRID, a_T_ref=3.0)
+        result = trive.search_hybrid_tc(self.T, a_T)
+        TC, C1, C2, Ea, a_T_ref, _ = result
+        self.assertAlmostEqual(TC, self.TC_OFF_GRID, delta=self.TC_RECOVERY)
+        self.assertAlmostEqual(C1, self.C1_TRUE, delta=0.2)
+        self.assertAlmostEqual(C2, self.C2_TRUE, delta=1.0)
+        self.assertAlmostEqual(Ea, self.EA_TRUE, delta=1.0)
+        self.assertAlmostEqual(a_T_ref, 3.0, delta=0.2)
+        assert_search_properties(self, self.T, a_T, result)
+
+    def test_held_coefficients_are_returned_exactly_while_tc_is_searched(self):
+        """Tc is searched with supplied values held, and a held Ea may lie
+        outside the free-Ea range."""
+        cases = (
+            (120.0, {'Ea': 120.0, 'fix_Ea': True}),
+            (60.0, {'Ea': 60.0, 'fix_Ea': True}),
+            (120.0, {'C1': 14.0, 'fix_C1': True}),
+            (120.0, {'C1': 14.0, 'C2': 45.0, 'fix_C1': True, 'fix_C2': True}),
+        )
+        for Ea_true, hold in cases:
+            with self.subTest(hold=hold):
+                a_T = self._table(self.TC_OFF_GRID, Ea=Ea_true)
+                result = trive.search_hybrid_tc(self.T, a_T, **hold)
+                self.assertAlmostEqual(
+                    result[0], self.TC_OFF_GRID, delta=self.TC_RECOVERY)
+                assert_search_properties(self, self.T, a_T, result, **hold)
+
+    def test_all_coefficients_held_positionally_leaves_only_tc_and_offset(self):
+        """The signature takes the guesses, then the fix flags, after a_T."""
+        a_T = self._table(self.TC_OFF_GRID, a_T_ref=3.0)
+        result = trive.search_hybrid_tc(
+            self.T, a_T, 14.0, 45.0, 120.0, True, True, True)
+        self.assertAlmostEqual(
+            result[0], self.TC_OFF_GRID, delta=self.TC_RECOVERY)
+        assert_search_properties(
+            self, self.T, a_T, result, C1=14.0, C2=45.0, Ea=120.0,
+            fix_C1=True, fix_C2=True, fix_Ea=True)
+
+    def test_noisy_table_result_has_the_search_properties(self):
+        """Between the best candidate's neighbours, no worse than any
+        candidate, and chi2_reduced over n - (5 - fixes), for any set of held
+        values."""
+        for hold in ({},
+                     {'Ea': 150.0, 'fix_Ea': True},
+                     {'C1': 14.0, 'fix_C1': True},
+                     {'C1': 14.0, 'C2': 45.0, 'fix_C1': True, 'fix_C2': True},
+                     {'C1': 14.0, 'C2': 45.0, 'Ea': 150.0, 'fix_C1': True,
+                      'fix_C2': True, 'fix_Ea': True}):
+            with self.subTest(hold=hold):
+                result = trive.search_hybrid_tc(
+                    self.T_NOISY, self.a_T_noisy, **hold)
+                assert_search_properties(
+                    self, self.T_NOISY, self.a_T_noisy, result, **hold)
+
+    def test_refinement_reaches_side_away_from_an_adjacent_second_best(self):
+        """A noiseless true Tc beside the best candidate is recovered when the
+        second best is the neighbour on the other side of the best."""
+        cold = [-20.0, -10.0, 0.0]
+        hot = [50.0, 60.0, 70.0, 80.0, 90.0]
+        for middle, expected_best, expected_second in (
+                ([15.0, 28.0, 30.0, 40.0], 28.0, 30.0),
+                ([10.0, 25.0, 27.0, 40.0], 27.0, 25.0)):
+            with self.subTest(middle=middle):
+                T = np.array(cold + middle + hot)
+                a_T = hybrid_shift(T, self.TC_OFF_GRID, self.C1_TRUE,
+                                   self.C2_TRUE, self.EA_TRUE)
+                (_, best_TC), (_, second_TC) = scan_candidates(T, a_T)[:2]
+                self.assertEqual(
+                    (best_TC, second_TC), (expected_best, expected_second))
+
+                result = trive.search_hybrid_tc(T, a_T)
+                self.assertAlmostEqual(
+                    result[0], self.TC_OFF_GRID, delta=self.TC_RECOVERY)
+                assert_search_properties(self, T, a_T, result)
+
+    def test_refinement_reaches_a_dip_away_from_a_distant_second_best(self):
+        """The second best lies two grid steps above the best, and the lower
+        objective is just below the best, inside its left neighbour."""
+        T = np.arange(0.0, 76.0, 5.0)
+        rng = np.random.RandomState(0)
+        a_T = hybrid_shift(T, 30.0, self.C1_TRUE, self.C2_TRUE, 150.0) \
+            * 10.0 ** (0.6 * rng.randn(len(T)))
+        (best, best_TC), (_, second_TC) = scan_candidates(T, a_T)[:2]
+        self.assertEqual((best_TC, second_TC), (20.0, 30.0))
+
+        result = trive.search_hybrid_tc(T, a_T)
+        self.assertLess(result[0], best_TC)
+        self.assertLess(chi2_sum(T, a_T, *result[:5]), best)
+        assert_search_properties(self, T, a_T, result)
+
+    def test_refinement_stops_at_the_only_neighbour_at_an_end_of_the_grid(self):
+        """The best candidate first or last on the grid refines toward its one
+        neighbour, so a lower objective past that neighbour is not reached,
+        even at a second best further along the grid."""
+        for n, seed, amplitude, TC_true, end, neighbour, second in (
+                (12, 424, 0.6, 10.0, 0, 1, 30.0),
+                (10, 224, 0.3, 30.0, -1, -2, 25.0)):
+            with self.subTest(end=end):
+                T = np.arange(0.0, n * 5.0, 5.0)
+                rng = np.random.RandomState(seed)
+                a_T = hybrid_shift(
+                    T, TC_true, self.C1_TRUE, self.C2_TRUE, 150.0,
+                ) * 10.0 ** (amplitude * rng.randn(n))
+                grid = candidate_grid(T)
+                (_, best_TC), (_, second_TC) = scan_candidates(T, a_T)[:2]
+                self.assertEqual((best_TC, second_TC), (grid[end], second))
+
+                result = trive.search_hybrid_tc(T, a_T)
+                self.assertGreaterEqual(
+                    result[0], min(grid[end], grid[neighbour]))
+                self.assertLessEqual(
+                    result[0], max(grid[end], grid[neighbour]))
+                assert_search_properties(self, T, a_T, result)
+
+    def test_refinement_at_an_end_of_the_grid_finds_tc_in_the_interval(self):
+        """A noiseless true Tc between an end candidate and its one neighbour
+        is recovered from either end."""
+        grid = candidate_grid(self.T)
+        for TC_true, expected_best in ((grid[0] + 1.5, grid[0]),
+                                       (grid[-1] - 1.0, grid[-1])):
+            with self.subTest(TC_true=TC_true):
+                a_T = self._table(TC_true)
+                self.assertEqual(scan_candidates(self.T, a_T)[0][1],
+                                 expected_best)
+                result = trive.search_hybrid_tc(self.T, a_T)
+                self.assertAlmostEqual(
+                    result[0], TC_true, delta=self.TC_RECOVERY)
+                assert_search_properties(self, self.T, a_T, result)
+
+    def test_a_neighbour_whose_fit_fails_still_bounds_the_refinement(self):
+        """Neighbours are adjacent on the grid however they scored: with these
+        C1 and C2 held the 35 degC fit raises, yet refinement around the best
+        candidate, 40 degC, still reaches the true Tc on that side of it."""
+        T = np.arange(0.0, 71.0, 5.0)
+        hold = {'C1': -400.0, 'C2': 10.0, 'fix_C1': True, 'fix_C2': True}
+        a_T = hybrid_shift(T, 39.0, -400.0, 10.0, 150.0)
+        scan = scan_candidates(T, a_T, **hold)
+        self.assertEqual((scan[0][1], scan[1][1]), (40.0, 45.0))
+        self.assertNotIn(35.0, [TC for _, TC in scan])
+
+        result = trive.search_hybrid_tc(T, a_T, **hold)
+        self.assertAlmostEqual(result[0], 39.0, delta=self.TC_RECOVERY)
+        assert_search_properties(self, T, a_T, result, **hold)
+
+    def test_result_is_never_worse_than_the_best_candidate(self):
+        """Noiseless data whose true Tc is a measured temperature cannot be
+        improved on: any point strictly inside the interval scores higher, so
+        the candidate itself comes back."""
+        a_T = self._table(25.0)
+        result = trive.search_hybrid_tc(self.T, a_T)
+        self.assertAlmostEqual(result[0], 25.0, delta=1e-3)
+        # The candidate scores ~5e-19; 1e-5 degC away from it scores ~2e-12.
+        self.assertLess(chi2_sum(self.T, a_T, *result[:5]), 1e-16)
+        assert_search_properties(self, self.T, a_T, result)
+
+    def test_candidates_stop_two_temperatures_from_each_end(self):
+        """T[1] and T[n-3] are the end candidates, since a point at Tc is on
+        the cold side; a best fit further out is not available."""
+        n = len(self.T)
+        for k, on_candidate, hold in (
+                (1, True, {}),
+                (n - 3, True, {}),
+                (0, False, {'Ea': 120.0, 'fix_Ea': True}),
+                (n - 2, False, {})):
+            with self.subTest(T_true=self.T[k]):
+                a_T = self._table(self.T[k])
+                result = trive.search_hybrid_tc(self.T, a_T, **hold)
+                self.assertGreaterEqual(result[0], self.T[1])
+                self.assertLessEqual(result[0], self.T[n - 3])
+                if on_candidate:
+                    self.assertAlmostEqual(result[0], self.T[k], delta=1e-3)
+                assert_search_properties(self, self.T, a_T, result, **hold)
+
+    def test_five_rows_search_only_two_candidates_and_count_tc_as_free(self):
+        """Five rows have no surplus against five free parameters, so
+        chi2_reduced is None until a coefficient is held."""
+        T = np.array([0.0, 10.0, 20.0, 30.0, 40.0])
+        a_T = np.array([3.0, 2.0, 1.0, 0.5, 0.25])
+        result = trive.search_hybrid_tc(T, a_T)
+        self.assertIsNone(result[5])
+        assert_search_properties(self, T, a_T, result)
+        hold = {'Ea': 150.0, 'fix_Ea': True}
+        result = trive.search_hybrid_tc(T, a_T, **hold)
+        self.assertIsNotNone(result[5])
+        assert_search_properties(self, T, a_T, result, **hold)
+
+    def test_four_rows_fit_at_the_only_candidate_without_refinement(self):
+        """T[1] is the one feasible Tc, so it comes back exactly, however
+        much the data would prefer another."""
+        T = np.array([0.0, 10.0, 20.0, 30.0])
+        a_T = hybrid_shift(T, 15.0, self.C1_TRUE, self.C2_TRUE, 150.0)
+        TC, C1, C2, Ea, a_T_ref, chi2 = trive.search_hybrid_tc(T, a_T)
+        self.assertEqual(TC, 10.0)
+        np.testing.assert_allclose(
+            [C1, C2, Ea, a_T_ref],
+            fit_hybrid_coefficients(T, a_T, 10.0), rtol=1e-6)
+        self.assertIsNone(chi2)
+
+    def test_fewer_than_four_rows_raises_value_error(self):
+        T = np.array([0.0, 10.0, 20.0])
+        a_T = np.array([3.0, 1.0, 0.5])
+        for n in (1, 2, 3):
+            with self.subTest(n=n):
+                with self.assertRaises(ValueError):
+                    trive.search_hybrid_tc(T[:n], a_T[:n])
+
+    def test_candidates_whose_fit_fails_are_skipped(self):
+        """With these C1 and C2 held, WLF overflows when the hottest point is
+        over 33.5 degC above Tc, so the fits below 40 degC raise ValueError."""
+        T = np.arange(0.0, 71.0, 5.0)
+        hold = {'C1': -400.0, 'C2': 10.0, 'fix_C1': True, 'fix_C2': True}
+        a_T = hybrid_shift(T, 50.0, -400.0, 10.0, 150.0)
+        result = trive.search_hybrid_tc(T, a_T, **hold)
+        self.assertAlmostEqual(result[0], 50.0, delta=1e-3)
+        assert_search_properties(self, T, a_T, result, **hold)
+
+    def test_every_candidate_failing_raises_value_error(self):
+        overflow_T = np.array([0.0, 40.0, 80.0, 120.0, 160.0, 200.0])
+        overflow_a_T = np.array([3.0, 2.0, 1.0, 0.5, 0.25, 0.1])
+        with self.subTest('every fit overflows'):
+            with self.assertRaises(ValueError):
+                trive.search_hybrid_tc(
+                    overflow_T, overflow_a_T, C1=-400.0, C2=10.0,
+                    fix_C1=True, fix_C2=True)
+        with self.subTest('a non-positive shift factor'):
+            bad_a_T = self._table(25.0)
+            bad_a_T[5] = 0.0
+            with self.assertRaises(ValueError):
+                trive.search_hybrid_tc(self.T, bad_a_T)
+
+    def test_duplicate_temperatures_stay_an_assertion_error(self):
+        """The fit's sortedness assert is not a failed candidate to skip."""
+        T = np.array([0.0, 0.0, 10.0, 20.0, 30.0, 40.0, 50.0])
+        a_T = np.array([9.0, 8.0, 4.0, 1.0, 0.5, 0.25, 0.1])
+        with self.assertRaises(AssertionError):
+            trive.search_hybrid_tc(T, a_T)
+
+    def test_sigma_weights_decide_the_search(self):
+        """The objective is sigma-weighted: a table whose cold half has its
+        kink at 5 degC and hot half at 45 degC follows whichever half the
+        Error column trusts."""
+        T = self.T_NOISY
+        a_T = np.where(
+            T < 25.0,
+            hybrid_shift(T, 5.0, self.C1_TRUE, self.C2_TRUE, 150.0),
+            hybrid_shift(T, 45.0, self.C1_TRUE, self.C2_TRUE, 150.0))
+        sigma = a_T * np.log(10.0) * 0.1
+        for ignored, low, high in ((T < 25.0, 30.0, 70.0),
+                                   (T >= 25.0, -20.0, 20.0)):
+            with self.subTest(low=low, high=high):
+                sigma_a_T = np.where(ignored, 100.0 * sigma, sigma)
+                result = trive.search_hybrid_tc(T, a_T, sigma_a_T=sigma_a_T)
+                self.assertGreater(result[0], low)
+                self.assertLess(result[0], high)
+                assert_search_properties(
+                    self, T, a_T, result, sigma_a_T=sigma_a_T)
+
+
 class TestHybridOffsetFarFromTC(unittest.TestCase):
     """fit_hybrid_coefficients finds a_T_ref in log space: data referenced
     many decades away from TC fits as accurately as data referenced near it."""
 
     TC = 25.0
-    # Coefficients the fit is seeded with (and pinned to when fixed). The data
+    # Coefficients the fit is seeded with (and pinned to when fixed; a free
+    # EA seed is clipped into its bounds first). The data
     # below is generated with different ones plus noise, so the optimum
     # offset is not simply the data's value at TC.
     C1 = 14.0

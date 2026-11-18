@@ -9,7 +9,7 @@ from flask import request, Blueprint, jsonify,  Response
 from app.trive import (
     update_line_chart, argmax_peak, peak_edge_warning,
     UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
-    fit_wlf_coefficients, fit_hybrid_coefficients,
+    fit_wlf_coefficients, fit_hybrid_coefficients, search_hybrid_tc,
 )
 from app.utils.util import token_required, upload_init, request_logger, log_errors
 from app.config import Config
@@ -81,7 +81,8 @@ def extract_data_from_file(request_id):
         start_time = datetime.datetime.now()
         data = request.get_json()
         file_name = data.get('file_name')
-        number_of_prony = data.get('number_of_prony', 100)
+        # Absent or null: the server sizes the grid from the fitted span.
+        number_of_prony = data.get('number_of_prony')
         smoothness = as_float(data.get('smoothness', 0), 'smoothness')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
@@ -134,7 +135,9 @@ def extract_data_from_file(request_id):
         if not check_file_exists(file_name):
             return jsonify({'message': f"File '{file_name}' not found"}), 404
 
-        if number_of_prony not in range(1, 101) or not isinstance(number_of_prony, int):
+        if number_of_prony is not None and (
+                number_of_prony not in range(1, 101)
+                or not isinstance(number_of_prony, int)):
             # Named for the widget the value comes from, not for the wire field:
             # this string is shown to the user in a snackbar.
             return jsonify({'message': 'The relaxation grid size must be between 1 and 100'}), 400
@@ -246,6 +249,7 @@ def extract_data_from_file(request_id):
             'mytable_placeholder': result[6],
             'shift_chart_placeholder': result[7],
             'shift_table_placeholder': result[8],
+            'max_prony': result[9],
         }
         
         # Constructing the data dictionary
@@ -261,6 +265,9 @@ def extract_data_from_file(request_id):
                 "shift-chart": json.loads(chart_data['shift_chart_placeholder'].to_json()),
                 "shift-table": chart_data['shift_table_placeholder'],
                 "mytable": chart_data['mytable_placeholder'],
+                "max_prony": chart_data['max_prony'],
+                # The grid size the fit ran with; None on the preview.
+                "number_of_prony": result.number_of_prony,
                 # Emit upload-data as row-objects (one dict per row), matching
                 # mytable's shape and the frontend "Uploaded Data" tab, whose
                 # TableComponent derives columns from Object.keys(rows[0]).
@@ -284,7 +291,7 @@ def extract_data_from_file(request_id):
                 "Tg": Tg,
                 "Ea": Ea,
                 "TC": TC,
-                "warnings": estimate_warnings,
+                "warnings": estimate_warnings + result[10],
             }
         }
         end_time = datetime.datetime.now()
@@ -325,10 +332,13 @@ def fit_shift_coefficients(request_id):
     (chi2_reduced; None when there are no surplus degrees of freedom) — no
     Prony fit, no charts.
 
-    WLF requires Tg (the a_T == 1 anchor); hybrid requires TC. Both are
-    upstream-supplied inputs — this route does not load the main viscoelastic
-    data file and so cannot estimate them. Supplying any of C1/C2/Ea holds that
-    coefficient fixed instead of fitting it.
+    WLF requires Tg (the a_T == 1 anchor), an upstream-supplied input — this
+    route does not load the main viscoelastic
+    data file and so cannot estimate it. Hybrid fits at a supplied TC; without
+    one, search_hybrid_tc chooses it from the table and the response reports
+    the choice. Supplying any of C1/C2/Ea holds that
+    coefficient fixed instead of fitting it; a fitted hybrid Ea stays within
+    the range fit_hybrid_coefficients documents.
 
     Both fits co-fit a vertical reference offset, surfaced as a_T_ref: the
     data's shift factor at the model's anchor (Tg for WLF, TC for hybrid), and
@@ -383,17 +393,19 @@ def fit_shift_coefficients(request_id):
                 'chi2_reduced': chi2_reduced,
             }
         else:  # hybrid
-            if TC is None:
-                return jsonify({'message': 'Tc is required for hybrid coefficient fitting'}), 400
-            C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced = fit_hybrid_coefficients(
-                T, a_T, TC=TC,
+            fit_inputs = dict(
                 C1=C1, C2=C2, Ea=Ea,
                 fix_C1=(C1 is not None),
                 fix_C2=(C2 is not None),
                 fix_Ea=(Ea is not None),
                 sigma_a_T=sigma_a_T,
-                return_quality=True,
             )
+            if TC is None:
+                TC, C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced = search_hybrid_tc(
+                    T, a_T, **fit_inputs)
+            else:
+                C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced = fit_hybrid_coefficients(
+                    T, a_T, TC=TC, **fit_inputs, return_quality=True)
             result_data = {
                 'transform_method': 'hybrid',
                 'Tg': None, 'C1': C1_fit, 'C2': C2_fit,

@@ -1671,7 +1671,12 @@ paths:
       tags:
         - Managed Services
       requestBody:
-        description: A payload that contains the information required by the Tri-VE application
+        description: >-
+          A payload that contains the information required by the Tri-VE application.
+          number_of_prony (an integer from 1 to 100) is optional; when it is absent or
+          null the server sizes the relaxation grid from the span of the fitted curve.
+          The response reports the grid size fitted as number_of_prony (null when no
+          fit ran).
         required: true
         content:
           application/json:

@@ -1,3 +1,4 @@
+import { usablePronyCap } from '@/composables/useDynamfitDefaults';
 import { ExplorerState } from './types';
 
 export default {
@@ -40,6 +41,15 @@ export default {
   },
   setDynamfitData(state: ExplorerState, payload: Record<string, any>): void {
     state.dynamfitData = payload;
+    // A reported number_of_prony writes nothing here: any write inside
+    // dynamfit refits. A grid size the user set above the fit's term cap
+    // drops to the cap, so the slider's
+    // value and maximum move together and the next fit asks for the cap.
+    const cap = usablePronyCap(payload?.max_prony);
+    const range = state.dynamfit?.range;
+    if (cap !== null && typeof range === 'number' && range > cap) {
+      state.dynamfit.range = cap;
+    }
   },
   resetDynamfitData(state: ExplorerState): void {
     state.dynamfitData = {};
@@ -49,7 +59,7 @@ export default {
   },
   resetDynamfit(state: ExplorerState): void {
     state.dynamfit = {
-      range: 100,
+      range: null,
       fitSettings: false,
       model: 'Linear',
       fileUpload: '',
