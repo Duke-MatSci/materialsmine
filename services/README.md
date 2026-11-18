@@ -151,6 +151,17 @@ Below are the API endpoints to initialize Tri-VE and Chemprops via Swagger:
 
 ### Ontology API Endpoints
 
+These are admin routes that keep a Fuseki knowledge graph in step with what
+the curation routes write. Curation links each unit to a QUDT unit IRI and
+stores its SIO links under numbered IRIs, such as `sio:SIO_000221` for "has
+unit". Queries written for that shape, such as the parameterized query PQ01,
+need both. They show each unit's QUDT symbol, which Fuseki holds only once
+the QUDT unit vocabulary is loaded. They also match only the numbered links,
+so they miss nanopubs published before those writers until the stored links
+are migrated. Nothing in the app calls these routes. An admin runs each once
+per Fuseki after deploying, and loads the units again after the pinned QUDT
+release is bumped.
+
 Called directly on the managed service (`http://localhost:5050`), not through
 `/api/mn`. Each route needs `Authorization: Bearer <token>`, an HS256 JWT signed with
 the managed service's `SECRET_KEY` and carrying a `reqId` claim; without one it
