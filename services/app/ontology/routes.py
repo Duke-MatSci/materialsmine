@@ -9,6 +9,7 @@ from app.ontology.helpers.extract import details_from_turtle
 from app.ontology.cache_service import check_cache, save_to_cache
 from app.ontology.helpers.validation import DEFAULT_ONTOLOGY_LINK, FREQ_UNITS, _build_shapes_graph, _load_graph_from_text_or_link, _detect_mm_base_iri, _serialize_shacl_results, _collect_resolvable_urls, _head_check
 from app.ontology.helpers.crud import push_to_fuseki, list_named_graphs, upsert_np_graphs_strict_transaction, delete_np_graphs
+from app.ontology.helpers import qudt_units, sio_migration
 from app.ontology.helpers.materialize import materialize_all_types, materialize_nanopub_types, cleanup_inferred_types, get_materialize_status
 
 ontology = Blueprint("ontology", __name__, url_prefix="/ontology")
@@ -383,3 +384,32 @@ def inference_status(request_id):
     """
     status = get_materialize_status()
     return jsonify(status), 200
+
+
+@ontology.route("/units/", methods=["POST"])
+@log_errors
+@request_logger
+@token_required
+def load_qudt_units(request_id):
+    """
+    POST /ontology/units/
+
+    Loads the bundled QUDT unit vocabulary into Fuseki as its versioned
+    graph and drops the other versioned QUDT unit graphs.
+    """
+    body, status = qudt_units.load_units()
+    return jsonify(body), status
+
+
+@ontology.route("/migrate-sio/", methods=["POST"])
+@log_errors
+@request_logger
+@token_required
+def migrate_sio(request_id):
+    """
+    POST /ontology/migrate-sio/
+    Rewrite the named SIO predicates in the nanopub graphs to their numbered
+    forms and report the counts migrated, remaining and skipped.
+    """
+    body, status = sio_migration.migrate_sio_predicates()
+    return jsonify(body), status
