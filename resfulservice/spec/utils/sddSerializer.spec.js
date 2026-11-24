@@ -647,7 +647,7 @@ describe('SDD Serializer', function () {
         expect(attr).to.not.have.property('rdfs:label');
       });
 
-      it('should apply unit with resolved IRI', function () {
+      it('should keep only the text of a unit QUDT does not write', function () {
         const dict = [
           makeDictRow({
             column: 'Temp',
@@ -658,9 +658,7 @@ describe('SDD Serializer', function () {
         const csvRows = [{ Temp: '25' }];
         const result = generateAttributes(csvRows, dict, npId, 0);
         const attr = result[0]['sio:SIO_000008'][0];
-        expect(attr['sio:SIO_000221']).to.deep.equal({
-          '@id': 'http://qudt.org/vocab/unit/DEG_C'
-        });
+        expect(attr).to.not.have.property('sio:SIO_000221');
         expect(attr['mm:hasUnitText']).to.equal('celsius');
       });
 

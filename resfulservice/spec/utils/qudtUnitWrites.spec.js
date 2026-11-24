@@ -276,9 +276,9 @@ describe('QUDT unit writes', function () {
       ['nm', [link('NanoM'), text('nm')]],
       ['Hz', [link('HZ'), text('Hz')]],
       ['zorkmids', [text('zorkmids')]],
-      ['N/A', [text('N/A')]],
+      ['N/A', [link('N-PER-A'), text('N/A')]],
       ['unit:Gs', [link(deprecated.Gs), text('unit:Gs')]],
-      ['celsius', [link('DEG_C'), text('celsius')]],
+      ['celsius', [text('celsius')]],
       [OM2_DEGREE_CELSIUS, [text(OM2_DEGREE_CELSIUS)]],
       [' GPa ', [link('GigaPA'), text('GPa')]]
     ];

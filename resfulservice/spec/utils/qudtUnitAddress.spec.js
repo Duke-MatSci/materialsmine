@@ -32,12 +32,12 @@ const LINKED = [
   ['  unit:DEG_C  ', 'DEG_C']
 ];
 
-// Legacy lowercase local names link to the one unit they fold to.
-const FOLDED = [
-  ['http://qudt.org/vocab/unit/j-per-gm', 'J-PER-GM'],
-  ['http://qudt.org/vocab/unit/k-per-min', 'K-PER-MIN'],
-  ['http://qudt.org/vocab/unit/per-k', 'PER-K'],
-  ['unit:nanom', 'NanoM']
+// Local names that differ only in case from a unit name name no unit.
+const CASE_DIFFERING = [
+  'http://qudt.org/vocab/unit/j-per-gm',
+  'http://qudt.org/vocab/unit/k-per-min',
+  'http://qudt.org/vocab/unit/per-k',
+  'unit:nanom'
 ];
 
 // Addresses that name no pinned QUDT unit, and every non-QUDT address.
@@ -51,12 +51,13 @@ const NOT_QUDT = [
   'http://example.org/my-gpa',
   // GPa is a text key of GigaPA, but not a unit name.
   'unit:GPa',
-  '  unit:zorkmids  '
+  '  unit:zorkmids  ',
+  ...CASE_DIFFERING
 ];
 
 describe('QUDT unit addresses', function () {
   describe('address text naming a pinned unit', function () {
-    [...LINKED, ...FOLDED].forEach(([text, name]) => {
+    LINKED.forEach(([text, name]) => {
       it(`lookupUnit links '${text}' to unit:${name}`, function () {
         expect(lookupUnit(text)).to.deep.equal({ iri: QUDT + name });
       });
@@ -164,6 +165,17 @@ describe('QUDT unit addresses', function () {
 
       it(`mapUnit leaves '${text}' unlinked`, function () {
         expect(mapUnit(text)).to.equal(null);
+      });
+    });
+  });
+
+  describe('local name differing only in case from a unit name', function () {
+    CASE_DIFFERING.forEach((text) => {
+      it(`lookupUnit gives '${text}' the not-a-QUDT-unit message`, function () {
+        expect(lookupUnit(text)).to.have.nested.property(
+          'issue.message',
+          `Unit address "${text}" is not a QUDT unit`
+        );
       });
     });
   });

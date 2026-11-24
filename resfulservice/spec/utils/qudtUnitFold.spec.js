@@ -8,68 +8,64 @@ const { mapUnit } = require('../../src/utils/curation-utility');
 const lookupUnit = (text) =>
   require('../../src/utils/unit-lookup').lookupUnit(text);
 
-const QUDT = 'http://qudt.org/vocab/unit/';
-
-// No exact match, but ignoring case exactly one unit has a key, alias or
-// tie-break that folds to the text, and no not-a-unit value does: link to that unit.
-const ONE_UNIT_FOLDS = [
-  ['hz', 'HZ'],
-  ['kv', 'KiloV'],
-  ['KV', 'KiloV'],
-  ['\u00b0c', 'DEG_C'],
-  ['k', 'K'],
-  ['gpa', 'GigaPA'],
-  ['GPA', 'GigaPA'],
-  ['KPa', 'KiloPA'],
-  ['Celsius', 'DEG_C'],
-  ['c', 'C'],
-  ['unitless', 'UNITLESS'],
-  ['mg/ml', 'MilliGM-PER-MilliL'],
-  ['foot', 'FT'],
-  ['inches', 'IN']
+// Text that QUDT does not write in this case, if at all.
+const CASE_VARIANTS = [
+  'hz',
+  'kv',
+  'KV',
+  '\u00b0c',
+  'k',
+  'gpa',
+  'GPA',
+  'KPa',
+  'Celsius',
+  'c',
+  'unitless',
+  'mg/ml',
+  'foot',
+  'inches',
+  'pa',
+  'mv',
+  'mpa'
 ];
 
-// Hand-kept aliases supply common spellings that QUDT does not.
-const ALIASES = [
-  ['wt%', 'PERCENT'],
-  ['wt.%', 'PERCENT'],
-  ['w/w', 'PERCENT'],
-  ['mass%', 'PERCENT'],
-  ['vol%', 'PERCENT'],
-  ['v/v', 'PERCENT'],
-  ['celsius', 'DEG_C'],
-  ['celcius', 'DEG_C'],
-  ['deg C', 'DEG_C'],
-  ['celsius/min', 'DEG_C-PER-MIN'],
-  ['celsius/minute', 'DEG_C-PER-MIN'],
-  ['hr', 'HR'],
-  ['\u00b5m', 'MicroM'],
-  ['1/s', 'PER-SEC'],
-  ['1/cm', 'PER-CentiM'],
-  ['g/cc', 'GM-PER-CentiM3'],
-  ['M', 'MOL-PER-L'],
-  ['nM', 'NanoMOL-PER-L'],
-  ['\u00b5M', 'MicroMOL-PER-L'],
-  ['\u03bcM', 'MicroMOL-PER-L'],
-  ['pM', 'PicoMOL-PER-L']
+// Common spellings that QUDT does not write, including the micro sign
+// U+00B5 where QUDT writes the Greek mu U+03BC.
+const NOT_QUDT_SPELLINGS = [
+  'wt%',
+  'wt.%',
+  'w/w',
+  'mass%',
+  'vol%',
+  'v/v',
+  'celsius',
+  'celcius',
+  'deg C',
+  'celsius/min',
+  'celsius/minute',
+  'hr',
+  '\u00b5m',
+  '1/s',
+  '1/cm',
+  'g/cc',
+  'M',
+  'nM',
+  '\u00b5M',
+  '\u03bcM',
+  'pM'
 ];
 
-const GROUPS = [
-  ['case-folded match to one unit', ONE_UNIT_FOLDS],
-  ['hand-kept aliases', ALIASES]
-];
-
-// Text that several units match: the issue names every candidate.
+// Text that several units write, with no tie-break: the issue names every
+// candidate.
 const AMBIGUOUS = [
-  ['pa', ['PA', 'PetaA', 'PicoA']],
-  ['mv', ['MegaV', 'MilliV']],
-  ['mpa', ['MegaPA', 'MilliPA']],
   ['cal', ['CAL_IT', 'CAL_TH']],
   ['B', ['B', 'BREWSTER', 'BYTE']]
 ];
 
-// Text that no unit matches, exactly or folded.
+// Text that no unit writes exactly.
 const UNRESOLVED = [
+  ...CASE_VARIANTS,
+  ...NOT_QUDT_SPELLINGS,
   'g/cm3',
   'g/cm^3',
   'A/m^2',
@@ -80,33 +76,17 @@ const UNRESOLVED = [
   'kV/mm'
 ];
 
-describe('QUDT case-folded unit lookup', function () {
-  GROUPS.forEach(([title, cases]) => {
-    describe(title, function () {
-      cases.forEach(([text, localName]) => {
-        it(`resolveCodeMapping links '${text}' to unit:${localName}`, function () {
-          expect(resolveCodeMapping(text, new Map())).to.equal(
-            QUDT + localName
-          );
-        });
-
-        it(`mapUnit links '${text}' to unit:${localName}`, function () {
-          expect(mapUnit(text)).to.equal(QUDT + localName);
-        });
-      });
-    });
-  });
-
+describe('QUDT unit text that does not link', function () {
   describe('text that several units match', function () {
     AMBIGUOUS.forEach(([text, candidates]) => {
       it(`lookupUnit reports '${text}' as ambiguous among ${candidates.join(', ')}`, function () {
         const { issue } = lookupUnit(text);
+        expect(issue, 'issue').to.exist;
         expect(issue.code).to.equal('UNIT_AMBIGUOUS');
         expect(issue.value).to.equal(text);
-        expect(issue.message).to.be.a('string');
-        candidates.forEach((name) => {
-          expect(issue.message).to.include(name);
-        });
+        expect(issue.message).to.equal(
+          `Unit "${text}" matches several QUDT units: ${candidates.join(', ')}`
+        );
       });
 
       it(`resolveCodeMapping leaves '${text}' unlinked`, function () {
@@ -123,6 +103,7 @@ describe('QUDT case-folded unit lookup', function () {
     UNRESOLVED.forEach((text) => {
       it(`lookupUnit reports '${text}' as unresolved`, function () {
         const { issue } = lookupUnit(text);
+        expect(issue, 'issue').to.exist;
         expect(issue.code).to.equal('UNIT_UNRESOLVED');
         expect(issue.value).to.equal(text);
         expect(issue.message).to.be.a('string').that.is.not.empty;

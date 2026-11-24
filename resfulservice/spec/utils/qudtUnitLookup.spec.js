@@ -13,7 +13,8 @@ const lookupUnit = (text) =>
 
 const QUDT = 'http://qudt.org/vocab/unit/';
 
-// Text that is a key of exactly one QUDT unit, and not a caseClashes spelling, links to it, on both routes.
+// Text that is a QUDT symbol, code or English label of exactly one unit
+// links to it, on both routes.
 const EXACT_KEYS = [
   ['\u00b0C', 'DEG_C'],
   ['MPa', 'MegaPA'],
@@ -42,8 +43,8 @@ const EXACT_KEYS = [
   ['Kelvin', 'K']
 ];
 
-// The exact tier is case-sensitive and beats any case-folded match, except
-// for the caseClashes spellings (qudtUnitCaseClash.spec.js).
+// Matching is case-sensitive: text links only to the unit that writes it
+// in that case.
 const CASE_SENSITIVE = [
   ['pA', 'PicoA'],
   ['nA', 'NanoA'],
@@ -59,8 +60,8 @@ const CODES = [
   ['Cel', 'DEG_C']
 ];
 
-// An exact key wins over units whose keys only fold to the text, unless the
-// text is a caseClashes spelling (qudtUnitCaseClash.spec.js).
+// Text links to its own unit, not to units whose strings differ from it
+// only in case.
 const EXACT_WINS = [
   ['C', 'C'],
   ['ML', 'MegaL'],
@@ -87,11 +88,15 @@ const GROUPS = [
   ['case-sensitive exact match', CASE_SENSITIVE],
   ['surrounding whitespace', TRIMMED],
   ['exact codes', CODES],
-  ['exact match over folded match', EXACT_WINS],
+  ['exact match over case-twins', EXACT_WINS],
   ['tie-break defaults', TIE_BREAKS]
 ];
 
-const NOT_UNITS = ['-', 'N/A', 'NA', 'n/a', 'none'];
+// Placeholder text that QUDT does not write is unresolved like any other.
+const PLACEHOLDERS = ['-', 'NA', 'n/a', 'none'];
+
+// N/A is the QUDT symbol of newton per ampere.
+const NEWTON_PER_AMPERE = 'N/A';
 
 describe('QUDT exact unit lookup', function () {
   GROUPS.forEach(([title, cases]) => {
@@ -133,10 +138,14 @@ describe('QUDT exact unit lookup', function () {
     });
   });
 
-  describe('values that are not units', function () {
-    NOT_UNITS.forEach((text) => {
-      it(`lookupUnit gives no link and no issue for '${text}'`, function () {
-        expect(lookupUnit(text)).to.deep.equal({});
+  describe('placeholder text', function () {
+    PLACEHOLDERS.forEach((text) => {
+      it(`lookupUnit reports '${text}' as unresolved`, function () {
+        const { iri, issue } = lookupUnit(text);
+        expect(issue, 'issue').to.exist;
+        expect(iri).to.equal(undefined);
+        expect(issue.code).to.equal('UNIT_UNRESOLVED');
+        expect(issue.value).to.equal(text);
       });
 
       it(`resolveCodeMapping leaves '${text}' unlinked`, function () {
@@ -146,6 +155,22 @@ describe('QUDT exact unit lookup', function () {
       it(`mapUnit leaves '${text}' unlinked`, function () {
         expect(mapUnit(text)).to.equal(null);
       });
+    });
+  });
+
+  describe('the QUDT symbol N/A', function () {
+    const iri = QUDT + 'N-PER-A';
+
+    it('lookupUnit links it to unit:N-PER-A with no issue', function () {
+      expect(lookupUnit(NEWTON_PER_AMPERE)).to.deep.equal({ iri });
+    });
+
+    it('resolveCodeMapping links it to unit:N-PER-A', function () {
+      expect(resolveCodeMapping(NEWTON_PER_AMPERE, new Map())).to.equal(iri);
+    });
+
+    it('mapUnit links it to unit:N-PER-A', function () {
+      expect(mapUnit(NEWTON_PER_AMPERE)).to.equal(iri);
     });
   });
 

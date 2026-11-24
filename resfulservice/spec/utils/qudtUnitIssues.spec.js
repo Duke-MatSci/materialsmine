@@ -142,7 +142,7 @@ const FAILING_XML_ISSUES = () => [
   ),
   xmlIssue(
     'pa',
-    'UNIT_AMBIGUOUS',
+    'UNIT_UNRESOLVED',
     'PROPERTIES.Mechanical.Tensile.LoadingProfile.AxisLabel.xUnit'
   )
 ];
@@ -183,7 +183,7 @@ function microstructureXml(unit) {
   };
 }
 
-// One record whose units resolve, are blank or are not units.
+// One record whose units link or are blank, but for one celsius.
 function cleanXml() {
   return {
     PolymerNanocomposite: {
@@ -370,7 +370,7 @@ describe('QUDT unit issues', function () {
           ),
           xmlIssue(
             'pa',
-            'UNIT_AMBIGUOUS',
+            'UNIT_UNRESOLVED',
             'PROCESSING.MeltMixing.ChooseParameter[4].Mixing.RPM.unit'
           )
         ])
@@ -387,11 +387,18 @@ describe('QUDT unit issues', function () {
       ]);
     });
 
-    it('returns no issues and logs no unit warning for clean, blank and non-unit text', async function () {
+    it('returns and logs an issue only for celsius among linked and blank text', async function () {
       const logger = stubLogger();
       const result = await transformXmlToNanopub(cleanXml(), logger);
-      expect(result.issues).to.deep.equal([]);
-      expect(unitWarnings(logger)).to.deep.equal([]);
+      const expected = [
+        xmlIssue(
+          'celsius',
+          'UNIT_UNRESOLVED',
+          'PROCESSING.MeltMixing.ChooseParameter[1].Mixing.RPM.unit'
+        )
+      ];
+      expect(result.issues).to.deep.equal(expected);
+      expectOneWarningPerIssue(logger, expected, (i) => [i.record, i.path]);
     });
 
     it('logs one warning per issue naming its code, value, record and path', async function () {
@@ -521,7 +528,7 @@ describe('QUDT unit issues', function () {
     const sddIssue = (unit, code, column) =>
       issueFrom(resolveUnit(unit, CODE_MAPPINGS), code, { column });
 
-    // Dictionary rows with failing, mapped, clean, blank and non-unit units.
+    // Dictionary rows with failing, mapped, linked and blank units.
     // Absent has no CSV column; ??Calc is inferred on every row.
     function serveFailingSdd() {
       stubStore({
@@ -549,7 +556,8 @@ describe('QUDT unit issues', function () {
 
     const FAILING_SDD_ISSUES = () => [
       sddIssue('zorkmid', 'UNIT_UNRESOLVED', 'Temp'),
-      sddIssue('pa', 'UNIT_AMBIGUOUS', 'Pres'),
+      sddIssue('pa', 'UNIT_UNRESOLVED', 'Pres'),
+      sddIssue('celsius', 'UNIT_UNRESOLVED', 'Clean'),
       // A mapped unit's value is its Code Mappings address.
       { ...sddIssue('nm', 'UNIT_NOT_QUDT', 'Len'), value: MAPPED_URI },
       sddIssue('unit:Gs', 'UNIT_DEPRECATED', 'Mag'),
@@ -566,7 +574,7 @@ describe('QUDT unit issues', function () {
       expect(issues).to.deep.equal(FAILING_SDD_ISSUES());
     });
 
-    it('returns no issues and logs no unit warning for clean, blank and non-unit text', async function () {
+    it('returns and logs an issue only for celsius among linked and blank text', async function () {
       stubStore({
         [SDD_NAME]: buildSddXlsx([
           dictRow('Temp', 'celsius'),
@@ -577,8 +585,9 @@ describe('QUDT unit issues', function () {
       });
       const logger = stubLogger();
       const result = await transformSddToNanopub(skeleton(), logger);
-      expect(result.issues).to.deep.equal([]);
-      expect(unitWarnings(logger)).to.deep.equal([]);
+      const expected = [sddIssue('celsius', 'UNIT_UNRESOLVED', 'Temp')];
+      expect(result.issues).to.deep.equal(expected);
+      expectOneWarningPerIssue(logger, expected, (i) => [i.column]);
     });
 
     it('logs one warning per issue naming its code, value and column', async function () {
