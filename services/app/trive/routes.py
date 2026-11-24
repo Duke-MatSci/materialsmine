@@ -7,8 +7,9 @@ import numpy as np
 from flask import request, Blueprint, jsonify,  Response
 
 from app.trive import (
-    update_line_chart, argmax_peak, peak_edge_warning,
-    UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2, SMOOTHNESS_DEFAULT, RELATIVE_ERROR_DEFAULT,
+    update_line_chart, estimate_tg, estimate_tc,
+    UNIVERSAL_EA, UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+    SMOOTHNESS_DEFAULT, RELATIVE_ERROR_DEFAULT,
     fit_wlf_coefficients, fit_hybrid_coefficients, search_hybrid_tc,
 )
 from app.utils.util import token_required, upload_init, request_logger, log_errors
@@ -208,26 +209,22 @@ def extract_data_from_file(request_id):
                 'curve — its tan-δ and E-loss peaks are frequencies, not '
                 'temperatures. Enter the value directly.'
             )}), 400
-        if Tg_estimate or TC_estimate:
-            temperatures = uploadData["Temperature"]
-            # Tg from the tan-δ peak
-            if Tg_estimate:
-                tan_delta = (uploadData["E Loss"] / uploadData["E Storage"])
-                Tg = temperatures[argmax_peak(tan_delta)]
-                warning = peak_edge_warning(Tg, temperatures, 'Tg')
-                if warning:
-                    estimate_warnings.append(warning)
-            # The E_loss peak temperature is TL by convention; it serves as
-            # the default estimate of the WLF/Arrhenius crossover TC.
-            if TC_estimate:
-                TL = temperatures[argmax_peak(uploadData["E Loss"])]
-                TC = TL
-                warning = peak_edge_warning(TC, temperatures, 'Tc')
-                if warning:
-                    estimate_warnings.append(warning)
-        # Use "generic" Ea for thermoplastic elastomers
+        # Estimates override a supplied Tg/TC. Tg is the tan-δ peak; the
+        # E_loss peak temperature is TL by convention, and it serves as the
+        # default estimate of the WLF/Arrhenius crossover TC.
+        if Tg_estimate:
+            Tg, warning = estimate_tg(uploadData["Temperature"],
+                                      uploadData["E Storage"],
+                                      uploadData["E Loss"])
+            if warning:
+                estimate_warnings.append(warning)
+        if TC_estimate:
+            TC, warning = estimate_tc(uploadData["Temperature"],
+                                      uploadData["E Loss"])
+            if warning:
+                estimate_warnings.append(warning)
         if Ea_estimate:
-            Ea = 200  # kJ/mol
+            Ea = UNIVERSAL_EA
 
         shift_params = dict(Tg=Tg, C1=C1, C2=C2, Ea=Ea, TC=TC, shift_model=shift_model, shiftData=shiftData)
 

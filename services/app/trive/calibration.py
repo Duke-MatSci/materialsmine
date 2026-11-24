@@ -1,8 +1,8 @@
 """
 Deriving shift-model parameters from measured data: the C1/C2/Ea curve fits
-and hybrid Tc search behind the /fit-shift/ route, and the peak finder
-the /extract/ route uses to
-estimate Tg (tan-δ peak) and TL (E'' peak).
+and hybrid Tc search behind the /fit-shift/ route, and estimate_tg /
+estimate_tc, which the /extract/ route and scripts share to
+estimate Tg (tan-δ peak) and TC (TL, the E'' peak).
 
 The inverse of `shift`: that module evaluates a_T given coefficients, this one
 recovers coefficients given a_T. Everything here fits in log10(a_T) space so

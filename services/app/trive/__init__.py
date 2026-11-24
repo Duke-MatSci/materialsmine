@@ -29,7 +29,7 @@ bottom-up:
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift
                  data, searching for a hybrid TC when none is given, and the
-                 peak finder that estimates Tg and TC
+                 Tg and TC estimates from a temperature sweep's peaks
     tts          applying a shift model to a data frame, both directions
 
     figures      plotly figures, their captions, the uncertainty ribbons and
@@ -83,6 +83,7 @@ from .reduction import (  # noqa: E402
     prony_resolution,
 )
 from .shift import (  # noqa: E402
+    UNIVERSAL_EA,
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
     hybrid_shift,
@@ -108,6 +109,7 @@ __all__ = [
     'PRONY_TERMS_PER_DECADE',
     'RELATIVE_ERROR_DEFAULT',
     'SMOOTHNESS_DEFAULT',
+    'UNIVERSAL_EA',
     'UNIVERSAL_WLF_C1',
     'UNIVERSAL_WLF_C2',
     'VIS_REF_FREQUENCY',

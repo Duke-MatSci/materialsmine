@@ -23,9 +23,12 @@ R = 8.31446261815324  # J/(mol*K)
 # across many polymers when the user hasn't supplied material-specific values.
 # Used (a) by the frequency-domain visualization to scatter the master curve
 # across a temperature axis, and (b) by the route as the fallback when the
-# C1/C2 "estimate" toggles are on.
+# C1/C2 "estimate" toggles are on. UNIVERSAL_EA, kJ/mol, is a generic
+# activation energy in the same spirit (one typical of thermoplastic
+# elastomers), the route's fallback when the Ea "estimate" toggle is on.
 UNIVERSAL_WLF_C1 = 17.44
 UNIVERSAL_WLF_C2 = 51.6
+UNIVERSAL_EA = 200.0
 
 
 @contextmanager
