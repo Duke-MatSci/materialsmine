@@ -12,14 +12,12 @@ below (QUDT_URL), and the script refuses a file whose SHA-256 is not
 QUDT_SHA256.
 
 The output maps each current QUDT unit's local name to its keys, the
-spellings the lookup matches exactly and, case-folded, when they name one
-unit: qudt:symbol and qudt:altSymbol values, plus names generated from its
-English rdfs:label and skos:altLabel values (the label, its US spelling
-with -meter and -liter, and each of those with its first word pluralised).
-It also lists the unit's codes, its qudt:ucumCode and qudt:udunitsCode
-values that are not also keys of that unit, which the lookup matches
-exactly but never case-folded. Spellings
-are kept as QUDT writes them: no superscript, caret or dot variants.
+spellings the lookup matches exactly and case-sensitively: its
+qudt:symbol and qudt:altSymbol values and its English rdfs:label and
+skos:altLabel values. It also lists the unit's codes, its qudt:ucumCode
+and qudt:udunitsCode values that are not also keys of that unit, which
+the lookup matches the same way. Spellings are kept exactly as QUDT
+writes them: no generated names and no superscript, caret or dot variants.
 Deprecated units and currency units get no keys. Deprecated units are
 listed apart, each with its dcterms:isReplacedBy unit when QUDT names one.
 
@@ -30,17 +28,11 @@ collision. Collisions are printed for review and are not errors; the
 lookup leaves such a key unlinked unless config/qudt-unit-overrides.json
 gives it a tie-break.
 
-The overrides file holds four tables, which src/utils/unit-lookup.js
-applies: aliases, unit text QUDT lacks, each linking one unit; tieBreaks,
-the unit a collision links; notUnits, text that is not a unit and links
-nothing; and caseClashes, exact keys or codes that differ only in case from
-an alias or tie-break naming another unit, which the lookup reports as
-ambiguous instead of linking. The script exits non-zero, naming offenders,
-when an override targets something that is not a current QUDT unit, when an
-alias is itself an exact key, when a tie-break names a key that is not a
-collision, when a not-a-unit entry is also an alias or a tie-break, or when
-a case clash is not an exact key or code or has no alias or tie-break
-differing from it only in case that names a unit outside its own.
+The overrides file holds one table, tieBreaks, which
+src/utils/unit-lookup.js applies: for a colliding key, the one of its
+owners the key links. The script exits non-zero, naming offenders, when a
+tie-break targets something that is not a current QUDT unit or one of the
+key's owners, or names a key that is not a collision.
 """
 import hashlib
 import json
@@ -72,25 +64,6 @@ CONFIG = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                       '..', 'config')
 OUT_PATH = os.path.join(CONFIG, 'qudt-units.json')
 OVERRIDES_PATH = os.path.join(CONFIG, 'qudt-unit-overrides.json')
-
-
-def plural_first_word(name):
-    """Return name with the text before its first space pluralised."""
-    first, sep, rest = name.partition(' ')
-    if first.endswith(('ch', 'sh')):
-        first += 'es'
-    elif not first.endswith(('s', 'x', 'z')):
-        first += 's'
-    return first + sep + rest
-
-
-def label_names(label):
-    """Return the names generated from one English unit label."""
-    us = label
-    for uk, us_form in (('metre', 'meter'), ('Metre', 'Meter'),
-                        ('litre', 'liter'), ('Litre', 'Liter')):
-        us = us.replace(uk, us_form)
-    return {label, us, plural_first_word(label), plural_first_word(us)}
 
 
 def local_name(node):
@@ -140,8 +113,7 @@ def unit_spellings(graph, units):
         for pred in (RDFS.label, SKOS.altLabel):
             for value in graph.objects(node, pred):
                 if is_english(value):
-                    for key in label_names(str(value)):
-                        spellings[key][name].add('name')
+                    spellings[str(value)][name].add('name')
     return spellings
 
 
@@ -187,42 +159,19 @@ def unit_keys(graph):
 def check_overrides(units, owners, overrides):
     """Return (collisions without a tie-break, problem lines)."""
     tie_breaks = overrides.get('tieBreaks', {})
-    aliases = overrides.get('aliases', {})
-    not_units = overrides.get('notUnits', [])
-    case_clashes = overrides.get('caseClashes', [])
     collisions = sorted(k for k, o in owners.items()
                         if len(o) > 1 and k not in tie_breaks)
     problems = []
-    for table, entries in (('tieBreaks', tie_breaks), ('aliases', aliases)):
-        for key, target in sorted(entries.items()):
-            if target not in units:
-                problems.append('%s[%r] -> %r is not a current QUDT unit'
-                                % (table, key, target))
-    for key in sorted(aliases):
-        if key in owners:
-            problems.append('aliases[%r] is an exact QUDT key (units: %s)'
-                            % (key, ', '.join(sorted(owners[key]))))
-    for key in sorted(tie_breaks):
+    for key, target in sorted(tie_breaks.items()):
+        if target not in units:
+            problems.append('tieBreaks[%r] -> %r is not a current QUDT unit'
+                            % (key, target))
         if len(owners.get(key, ())) < 2:
-            problems.append('tieBreaks[%r] is not a collision; make it an '
-                            'alias or drop it' % key)
-    for key in not_units:
-        if key in aliases or key in tie_breaks:
-            problems.append('notUnits %r is also an alias or a tie-break'
+            problems.append('tieBreaks[%r] is not a collision; drop it'
                             % key)
-    twins = {**aliases, **tie_breaks}
-    for key in case_clashes:
-        own = owners.get(key, set())
-        if not own:
-            problems.append('caseClashes %r is not an exact QUDT key or code'
-                            % key)
-        elsewhere = [k for k, target in twins.items()
-                     if k != key and k.lower() == key.lower()
-                     and target not in own]
-        if not elsewhere:
-            problems.append('caseClashes %r has no alias or tie-break '
-                            'differing only in case that names another unit'
-                            % key)
+        elif target not in owners[key]:
+            problems.append('tieBreaks[%r] -> %r is not one of its owners'
+                            % (key, target))
     return collisions, problems
 
 
@@ -263,10 +212,6 @@ def main(argv):
                       os.path.normpath(OUT_PATH)))
     for key in collisions:
         print('  collision %r: %s' % (key, ', '.join(sorted(owners[key]))))
-    for key in overrides.get('notUnits', []):
-        if key in owners:
-            print('  notUnits %r hides QUDT key of %s'
-                  % (key, ', '.join(sorted(owners[key]))))
 
     if problems:
         for line in problems:

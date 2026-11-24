@@ -7,100 +7,40 @@ const {
 
 /**
  * Read the hand-kept unit overrides. This is the only reader of
- * config/qudt-unit-overrides.json; the matching below gets its tables from
- * here alone.
- * @returns {Object} { aliases, tieBreaks, notUnits, caseClashes }: aliases
- *   and tieBreaks map unit text to a QUDT local name, notUnits lists text
- *   that is not a unit, and caseClashes lists exact spellings that differ
- *   only in case from an alias or tie-break naming another unit
+ * config/qudt-unit-overrides.json.
+ * @returns {Object} { tieBreaks }: colliding QUDT text to the local name
+ *   of the one owner it links
  */
 function readUnitOverrides () {
   return require('../../config/qudt-unit-overrides.json');
 }
 
-const {
-  aliases,
-  tieBreaks,
-  notUnits: notUnitList,
-  caseClashes
-} = readUnitOverrides();
-const notUnits = new Set(notUnitList);
+const { tieBreaks } = readUnitOverrides();
 
 const has = (table, key) => Object.prototype.hasOwnProperty.call(table, key);
 const own = (table, key) => (has(table, key) ? table[key] : undefined);
 
-const addOwner = (map, key, name) => {
-  if (!map.has(key)) map.set(key, new Set());
-  map.get(key).add(name);
-};
-
 // Exact, case-sensitive spellings: unit keys and codes to their owners.
 const exact = new Map();
-// Case-folded spellings: unit keys, alias keys and tie-break keys.
-const folded = new Map();
 Object.entries(units).forEach(([name, { keys = [], codes = [] }]) => {
-  keys.forEach((key) => {
-    addOwner(exact, key, name);
-    if (has(tieBreaks, key) || notUnits.has(key)) return;
-    addOwner(folded, key.toLowerCase(), name);
+  [...keys, ...codes].forEach((key) => {
+    if (!exact.has(key)) exact.set(key, new Set());
+    exact.get(key).add(name);
   });
-  codes.forEach((code) => addOwner(exact, code, name));
-});
-[aliases, tieBreaks].forEach((table) => {
-  Object.entries(table).forEach(([key, name]) => {
-    addOwner(folded, key.toLowerCase(), name);
-  });
-});
-
-// Not-a-unit values by their lowercased spelling.
-const foldedNotUnits = new Map();
-notUnitList.forEach((value) => {
-  addOwner(foldedNotUnits, value.toLowerCase(), value);
-});
-
-// Listed spellings to the units they and their override case-twins name.
-const clashes = new Map();
-caseClashes.forEach((spelling) => {
-  const owners = new Set(exact.get(spelling) || []);
-  [aliases, tieBreaks].forEach((table) => {
-    Object.entries(table).forEach(([key, name]) => {
-      if (key.toLowerCase() === spelling.toLowerCase()) owners.add(name);
-    });
-  });
-  clashes.set(spelling, owners);
 });
 
 const issue = (code, message, value) => ({ issue: { code, message, value } });
 
-const plural = (word, count) => (count === 1 ? word : word + 's');
-
-const ambiguity = (owners, value, notUnitValues) => {
+// One owner links; more are ambiguous.
+const fromOwners = (owners, value) => {
+  if (owners.size === 1) return { iri: QUDT_UNIT + [...owners][0] };
   const names = [...owners].sort().join(', ');
-  if (!notUnitValues.length) {
-    return `Unit "${value}" matches several QUDT units: ${names}`;
-  }
-  const units = plural('QUDT unit', owners.size);
-  const texts = plural('not-a-unit text', notUnitValues.length);
-  const quoted = notUnitValues.map((v) => `"${v}"`).join(', ');
-  return `Unit "${value}" matches ${units} ${names} and the ${texts} ${quoted}`;
-};
-
-// One owner and no not-a-unit value links; anything more is ambiguous.
-const fromOwners = (owners, value, notUnitValues = []) => {
-  if (owners.size === 1 && !notUnitValues.length) {
-    return { iri: QUDT_UNIT + [...owners][0] };
-  }
   return issue(
     'UNIT_AMBIGUOUS',
-    ambiguity(owners, value, notUnitValues),
+    `Unit "${value}" matches several QUDT units: ${names}`,
     value
   );
 };
-
-// Current unit names by their lowercased spelling; none collide.
-const foldedNames = new Map(
-  Object.keys(units).map((name) => [name.toLowerCase(), name])
-);
 
 const SHORT_PREFIX = 'unit:';
 
@@ -139,9 +79,9 @@ const fromDeprecated = (name, text) => {
 /**
  * Link a unit address to a QUDT unit. Only a full QUDT unit IRI or a
  * `unit:` short form links. Its local name matches a pinned unit name
- * exactly, then a deprecated name, which links to its replacement with a
- * UNIT_DEPRECATED issue, then a pinned unit name case-folded. Anything
- * else gives a UNIT_NOT_QUDT issue.
+ * exactly, else a deprecated name exactly, which links to its replacement
+ * with a UNIT_DEPRECATED issue. Anything else, including a name differing
+ * only in case, gives a UNIT_NOT_QUDT issue.
  * @param {string} text - The address as written
  * @returns {Object} { iri }, { iri, issue }, or { issue }
  */
@@ -151,23 +91,19 @@ function lookupAddress (text) {
   if (has(units, name)) return { iri: QUDT_UNIT + name };
   // A deprecated name may map to null: QUDT gives it no replacement.
   if (has(deprecated, name)) return fromDeprecated(name, text);
-  const caseMatch = foldedNames.get(name.toLowerCase());
-  if (caseMatch) return { iri: QUDT_UNIT + caseMatch };
   return notQudt(text);
 }
 
 /**
- * Link unit text to a QUDT unit. The trimmed text is tried against these
- * rules in order, and the first that applies decides:
- * - blank text, or text equal to a notUnits value, gives {};
+ * Link unit text to a QUDT unit. Matching is exact and case-sensitive,
+ * against strings QUDT itself writes. The trimmed text is tried against
+ * these rules in order, and the first that applies decides:
+ * - blank text gives {};
  * - an address goes to lookupAddress;
- * - an alias or tie-break key links its target;
- * - a caseClashes spelling gives UNIT_AMBIGUOUS, naming the units it is an
- *   exact key or code of and the targets of its case-twin overrides;
- * - an exact unit key or code links its one owner, else is UNIT_AMBIGUOUS;
- * - a case-folded unit, alias or tie-break key links its one owner; more
- *   owners, or a notUnits value folding to the same text, give
- *   UNIT_AMBIGUOUS, naming every candidate;
+ * - a tie-break key links its target;
+ * - a qudt:symbol, qudt:altSymbol, qudt:ucumCode, qudt:udunitsCode or
+ *   English rdfs:label or skos:altLabel value links its one owner, else is
+ *   UNIT_AMBIGUOUS;
  * - anything else gives UNIT_UNRESOLVED.
  * @param {string} text - The unit text as typed
  * @returns {Object} { iri }, { iri, issue }, { issue: { code, message, value } },
@@ -176,17 +112,12 @@ function lookupAddress (text) {
 function lookupUnit (text) {
   if (text == null) return {};
   const trimmed = String(text).trim();
-  if (!trimmed || notUnits.has(trimmed)) return {};
+  if (!trimmed) return {};
   if (isAddress(trimmed)) return lookupAddress(text);
-  const target = own(aliases, trimmed) || own(tieBreaks, trimmed);
+  const target = own(tieBreaks, trimmed);
   if (target) return { iri: QUDT_UNIT + target };
-  if (clashes.has(trimmed)) return fromOwners(clashes.get(trimmed), text);
-  const exactOwners = exact.get(trimmed);
-  if (exactOwners) return fromOwners(exactOwners, text);
-  const lower = trimmed.toLowerCase();
-  const owners = folded.get(lower);
-  const notUnitValues = [...(foldedNotUnits.get(lower) || [])].sort();
-  if (owners) return fromOwners(owners, text, notUnitValues);
+  const owners = exact.get(trimmed);
+  if (owners) return fromOwners(owners, text);
   return issue('UNIT_UNRESOLVED', `Unit "${text}" matches no QUDT unit`, text);
 }
 

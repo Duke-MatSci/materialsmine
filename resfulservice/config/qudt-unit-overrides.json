@@ -1,38 +1,4 @@
 {
-  "aliases": {
-    "1/cm": "PER-CentiM",
-    "1/s": "PER-SEC",
-    "celcius": "DEG_C",
-    "celsius": "DEG_C",
-    "celsius/min": "DEG_C-PER-MIN",
-    "celsius/minute": "DEG_C-PER-MIN",
-    "deg C": "DEG_C",
-    "g/cc": "GM-PER-CentiM3",
-    "hr": "HR",
-    "M": "MOL-PER-L",
-    "mass%": "PERCENT",
-    "nM": "NanoMOL-PER-L",
-    "pM": "PicoMOL-PER-L",
-    "v/v": "PERCENT",
-    "vol%": "PERCENT",
-    "w/w": "PERCENT",
-    "wt%": "PERCENT",
-    "wt.%": "PERCENT",
-    "µM": "MicroMOL-PER-L",
-    "µm": "MicroM",
-    "μM": "MicroMOL-PER-L"
-  },
-  "caseClashes": [
-    "V/V",
-    "ph"
-  ],
-  "notUnits": [
-    "-",
-    "N/A",
-    "NA",
-    "n/a",
-    "none"
-  ],
   "tieBreaks": {
     "F": "FARAD",
     "K": "K",
