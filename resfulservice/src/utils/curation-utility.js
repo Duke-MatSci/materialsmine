@@ -601,31 +601,8 @@ function prepareForValidation(doc) {
   const clone =
     typeof doc === 'string' ? JSON.parse(doc) : structuredClone(doc);
 
-  const UNIT_MAP = { nm: 'unit:NanoM', Hz: 'unit:HZ' /* extend as needed */ };
-
-  // helper: recursively normalize unit strings to IRIs for both hasUnit and sio:hasUnit
-  const normalizeUnitsDeep = (node) => {
-    if (!node || typeof node !== 'object') return;
-    // normalize legacy keys
-    if (typeof node.hasUnit === 'string') {
-      node.hasUnit = UNIT_MAP[node.hasUnit] || node.hasUnit;
-    }
-    if (typeof node['sio:hasUnit'] === 'string') {
-      node['sio:hasUnit'] =
-        UNIT_MAP[node['sio:hasUnit']] || node['sio:hasUnit'];
-    }
-    // recurse
-    for (const k of Object.keys(node)) {
-      const v = node[k];
-      if (Array.isArray(v)) v.forEach(normalizeUnitsDeep);
-      else if (v && typeof v === 'object') normalizeUnitsDeep(v);
-    }
-  };
-
   for (const g of clone['@graph'] ?? []) {
     for (const n of g['@graph'] ?? []) {
-      normalizeUnitsDeep(n);
-
       // ScholarlyArticle adjustments (unchanged)
       if (
         n['@type'] === 'schema:ScholarlyArticle' &&
