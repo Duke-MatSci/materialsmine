@@ -16,3 +16,8 @@ TRIVE_FILES_DIR = os.path.abspath(os.path.join(
 DYNAMFIT_DIR = os.path.abspath(os.path.join(
     _SERVICES_DIR, '..', 'app', 'public', 'docs', 'dynamfit',
 ))
+
+# The frontend's fit defaults, which the Python side mirrors.
+FRONTEND_DEFAULTS_TS = os.path.abspath(os.path.join(
+    _SERVICES_DIR, '..', 'app', 'src', 'composables', 'useDynamfitDefaults.ts',
+))

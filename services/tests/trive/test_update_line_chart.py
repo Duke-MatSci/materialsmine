@@ -33,6 +33,7 @@ from app.trive.figures import (
     _PLOT_MAX_POINTS, _build_coef_records, _build_complex_figures,
     _build_relaxation_figures,
 )
+from app.trive import RELATIVE_ERROR_DEFAULT
 from app.trive.chart import update_line_chart
 from app.trive.uncertainty import (
     _SIGMA_DISPLAY_CAP, complex_modulus_sigma,
@@ -964,6 +965,8 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
     BAND = '±1σ credible'
     FILE = 'agilus30 (8) master curve 20C.txt'
     N = 20
+    # Built at 20%, where the 0.004 fit's log-sigmas exceed the cap.
+    RELATIVE_ERROR = 0.2
 
     @classmethod
     def _run(cls, smoothness, fit_settings=True):
@@ -979,7 +982,7 @@ class TestUpdateLineChartCredibleBands(unittest.TestCase):
             result = update_line_chart(
                 cls.uploadData, number_of_prony=cls.N,
                 smoothness=smoothness, fit_settings=fit_settings,
-                domain='frequency',
+                domain='frequency', relative_error=cls.RELATIVE_ERROR,
             )
         tau_i, E_i, quality = fits[-1]
         return result, (tau_i, E_i, quality.covariance)
@@ -1379,6 +1382,8 @@ class TestUpdateLineChartPredictionBands(unittest.TestCase):
     FILE = 'agilus30 (8) master curve 20C.txt'
     N = 20
     ERROR_SCALE = 1.5
+    # The fixtures were built at 20%, so the weak fit still hits the cap.
+    RELATIVE_ERROR = 0.2
 
     @classmethod
     def _run(cls, upload, smoothness, **kwargs):
@@ -1393,7 +1398,8 @@ class TestUpdateLineChartPredictionBands(unittest.TestCase):
         with patch('app.trive.chart.smooth_prony_fit', side_effect=record):
             result = update_line_chart(
                 upload, number_of_prony=cls.N, smoothness=smoothness,
-                fit_settings=True, domain='frequency', **kwargs,
+                fit_settings=True, domain='frequency',
+                relative_error=cls.RELATIVE_ERROR, **kwargs,
             )
         kw, (tau_i, E_i, quality) = calls[-1]
         return result, (tau_i, E_i, quality.covariance, kw)
@@ -1504,11 +1510,11 @@ class TestUpdateLineChartPredictionBands(unittest.TestCase):
         """Relative Error r (no error columns): the storage facet's sigma is
         exactly hypot(credible, r |E*_fit|)."""
         tau_i, E_i, cov, kw = self.fit
-        self.assertEqual(kw['std_scale'], 0.2)  # the default setting
+        self.assertEqual(kw['std_scale'], self.RELATIVE_ERROR)
         for fig in self.result[:2]:
             x = np.asarray(self._prony(fig, 'x').x, dtype=float)
             cred = complex_modulus_sigma(x, tau_i, E_i, cov)['E Storage']
-            noise = 0.2 * self._fit_magnitude(x, tau_i, E_i)
+            noise = self.RELATIVE_ERROR * self._fit_magnitude(x, tau_i, E_i)
             self._check_edges(fig, 'x', 'y', np.hypot(cred, noise), True)
 
     def test_uploaded_error_columns_set_the_noise_profile(self):
@@ -2379,7 +2385,8 @@ class TestUpdateLineChartErrorColumns(unittest.TestCase):
                 fit_settings=False, domain='frequency',
             )
         kwargs = spy.call_args.kwargs
-        expected = np.abs(data['E Storage'] + 1.0j * data['E Loss']) * 0.2
+        expected = (np.abs(data['E Storage'] + 1.0j * data['E Loss'])
+                    * RELATIVE_ERROR_DEFAULT)
         # The factor rides in std_scale rather than the array, so the sigma the
         # fit actually sees is the product. Asserting the product keeps this
         # test about the weighting rather than about where the factor is held.
@@ -2660,7 +2667,8 @@ class TestUpdateLineChartPlotDecimation(unittest.TestCase):
         freq = self.uploadData['Frequency']
         es = self.uploadData['E Storage']
         el = self.uploadData['E Loss']
-        std = np.abs(es + 1.0j * el) * 0.2  # default relative_error path
+        # default relative_error path
+        std = np.abs(es + 1.0j * el) * RELATIVE_ERROR_DEFAULT
         tau_i, E_i = smooth_prony_fit(
             freq, es, el, E_stor_std=std, E_loss_std=std,
             N=10, smoothness=0.0, solid=True,

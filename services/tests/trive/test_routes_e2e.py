@@ -42,6 +42,7 @@ from unittest.mock import patch
 # Append the directory above 'tests' to sys.path to find the 'app' module
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
+from app.trive import RELATIVE_ERROR_DEFAULT, SMOOTHNESS_DEFAULT
 from app.trive.fit import smooth_prony_fit
 from app.trive.prony import prony_terms_for_span
 from app.trive.shift import wlf_shift, hybrid_shift
@@ -571,12 +572,45 @@ class TestExtractRoute(unittest.TestCase):
         self.assertIsInstance(upload[0]['Frequency'], (int, float))
 
     def test_mytable_records_have_expected_keys(self):
-        resp = self._post(self._freq_body())
+        # An unsmoothed fit has no covariance, so no bounds columns.
+        resp = self._post(self._freq_body(smoothness=0))
         self.assertEqual(resp.status_code, 200, resp.data[:400])
         mytable = json.loads(resp.data)['response']['mytable']
         self.assertIsInstance(mytable, list)
         self.assertTrue(mytable, 'expected at least one Prony coefficient record')
         self.assertEqual(set(mytable[0]), {'i', 'tau_i', 'E_i'})
+
+    def _mytable(self, **overrides):
+        resp = self._post(self._freq_body(**overrides))
+        self.assertEqual(resp.status_code, 200, resp.data[:400])
+        return json.loads(resp.data)['response']['mytable']
+
+    def test_omitted_smoothness_and_relative_error_take_the_defaults(self):
+        """A body without smoothness or relative_error fits exactly as one
+        that sends the frontend's defaults."""
+        self.assertEqual(
+            self._mytable(),
+            self._mytable(smoothness=SMOOTHNESS_DEFAULT,
+                          relative_error=RELATIVE_ERROR_DEFAULT),
+        )
+
+    def test_omitted_smoothness_alone_takes_the_default(self):
+        """Leaving out smoothness defaults it and keeps the relative error
+        that was sent."""
+        self.assertEqual(
+            self._mytable(relative_error=0.05),
+            self._mytable(smoothness=SMOOTHNESS_DEFAULT, relative_error=0.05),
+        )
+
+    def test_omitted_relative_error_alone_takes_the_default(self):
+        """Leaving out relative_error defaults it and keeps the smoothness
+        that was sent."""
+        # Nonzero smoothness: an unsmoothed fit ignores a uniform sigma.
+        self.assertEqual(
+            self._mytable(smoothness=0.1),
+            self._mytable(smoothness=0.1,
+                          relative_error=RELATIVE_ERROR_DEFAULT),
+        )
 
     def test_frequency_peak_estimation_returns_400(self):
         """
