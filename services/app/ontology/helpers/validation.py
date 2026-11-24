@@ -211,14 +211,6 @@ mm:ArticleShape a sh:NodeShape ;
   ] .
 
 [] a sh:NodeShape ;
-  sh:targetObjectsOf sio:SIO_000008 ;
-  sh:property [
-    sh:path sio:SIO_000300 ;
-    sh:minCount 1 ;
-    sh:message "Attributes must carry a sio:has value."
-  ] .
-
-[] a sh:NodeShape ;
   sh:targetClass rdfs:Class ;
   sh:property [
     sh:path rdfs:label ;
