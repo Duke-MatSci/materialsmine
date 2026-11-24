@@ -53,6 +53,8 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 from .calibration import (  # noqa: E402
     argmax_peak,
+    estimate_tc,
+    estimate_tg,
     fit_hybrid_coefficients,
     fit_wlf_coefficients,
     peak_edge_warning,
@@ -112,6 +114,8 @@ __all__ = [
     'argmax_peak',
     'compute_complex',
     'compute_relaxation_modulus',
+    'estimate_tc',
+    'estimate_tg',
     'fit_hybrid_coefficients',
     'fit_wlf_coefficients',
     'hybrid_shift',

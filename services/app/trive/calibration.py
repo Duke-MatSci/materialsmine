@@ -622,3 +622,29 @@ def peak_edge_warning(peak_T: float, T: np.ndarray, label: str,
             f"artifact. Consider supplying {label} manually."
         )
     return None
+
+
+def estimate_tg(temperatures, E_stor, E_loss):
+    """
+    Estimate Tg as the temperature at the tan δ (E_loss / E_stor) peak.
+
+    Returns:
+        tuple: (Tg in °C, edge warning from peak_edge_warning or None).
+    """
+    T = np.asarray(temperatures, dtype=float)
+    tan_delta = (np.asarray(E_loss, dtype=float)
+                 / np.asarray(E_stor, dtype=float))
+    Tg = T[argmax_peak(tan_delta)]
+    return Tg, peak_edge_warning(Tg, T, 'Tg')
+
+
+def estimate_tc(temperatures, E_loss):
+    """
+    Estimate TC as the temperature at the E_loss peak.
+
+    Returns:
+        tuple: (TC in °C, edge warning from peak_edge_warning or None).
+    """
+    T = np.asarray(temperatures, dtype=float)
+    TC = T[argmax_peak(np.asarray(E_loss, dtype=float))]
+    return TC, peak_edge_warning(TC, T, 'Tc')
