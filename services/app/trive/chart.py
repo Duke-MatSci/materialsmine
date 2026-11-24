@@ -48,6 +48,11 @@ EXPECTED_DOMAIN_COLUMNS = {
 # fires from 1 to 8 of 1092.
 _MAX_GAUSS_NEWTON_CORRECTION = 1.5
 
+# Fit defaults for callers that omit them. They mirror the frontend's
+# useDynamfitDefaults and are checked by tests/trive/test_frontend_defaults.py.
+SMOOTHNESS_DEFAULT = 0.3
+RELATIVE_ERROR_DEFAULT = 0.01  # a fraction (1%)
+
 
 class _ChartResult(tuple):
     """update_line_chart's result tuple, carrying the grid size the fit ran
@@ -62,7 +67,7 @@ class _ChartResult(tuple):
 @log_errors
 def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, domain,
                       Tg=None, C1=None, C2=None, Ea=None, TC=None, shift_model=None, shiftData=None,
-                      relative_error=0.2, error_scale=1.0, a_T_ref=None,
+                      relative_error=RELATIVE_ERROR_DEFAULT, error_scale=1.0, a_T_ref=None,
                       shift_chi2_reduced=None, shift_reference=None):
     """
     Update the Tri-VE figures and Prony coefficient table for an uploaded dataset.

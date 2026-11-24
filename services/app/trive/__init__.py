@@ -56,7 +56,12 @@ from .calibration import (  # noqa: E402
     peak_edge_warning,
     search_hybrid_tc,
 )
-from .chart import EXPECTED_DOMAIN_COLUMNS, update_line_chart  # noqa: E402
+from .chart import (  # noqa: E402
+    EXPECTED_DOMAIN_COLUMNS,
+    RELATIVE_ERROR_DEFAULT,
+    SMOOTHNESS_DEFAULT,
+    update_line_chart,
+)
 from .fit import smooth_prony_fit  # noqa: E402
 from .prony import (  # noqa: E402
     PRONY_TERMS_MAX,
@@ -97,6 +102,8 @@ __all__ = [
     'PRONY_TERMS_MAX',
     'PRONY_TERMS_MIN',
     'PRONY_TERMS_PER_DECADE',
+    'RELATIVE_ERROR_DEFAULT',
+    'SMOOTHNESS_DEFAULT',
     'UNIVERSAL_WLF_C1',
     'UNIVERSAL_WLF_C2',
     'VIS_REF_FREQUENCY',

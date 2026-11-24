@@ -8,7 +8,7 @@ from flask import request, Blueprint, jsonify,  Response
 
 from app.trive import (
     update_line_chart, argmax_peak, peak_edge_warning,
-    UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2,
+    UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2, SMOOTHNESS_DEFAULT, RELATIVE_ERROR_DEFAULT,
     fit_wlf_coefficients, fit_hybrid_coefficients, search_hybrid_tc,
 )
 from app.utils.util import token_required, upload_init, request_logger, log_errors
@@ -83,10 +83,10 @@ def extract_data_from_file(request_id):
         file_name = data.get('file_name')
         # Absent or null: the server sizes the grid from the fitted span.
         number_of_prony = data.get('number_of_prony')
-        smoothness = as_float(data.get('smoothness', 0), 'smoothness')
+        smoothness = as_float(data.get('smoothness', SMOOTHNESS_DEFAULT), 'smoothness')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')
-        relative_error = as_float(data.get('relative_error', 0.2), 'relative_error')
+        relative_error = as_float(data.get('relative_error', RELATIVE_ERROR_DEFAULT), 'relative_error')
         # Multiplier on the file's own error columns; the client sends both
         # this and relative_error every time, and update_line_chart consumes
         # whichever matches the upload's shape. That keeps the first fit after
