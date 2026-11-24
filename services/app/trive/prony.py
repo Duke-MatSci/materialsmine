@@ -15,7 +15,8 @@ import pandas as pd
 # useDynamfitDefaults (PRONY_TERMS_PER_DECADE / PRONY_TERMS_MIN / _MAX), which
 # applies it to the first column of a frequency-domain upload. The two copies
 # run on different inputs — the raw column there, the fitted curve
-# here — and neither can import the other, so they are kept in step by eye.
+# here — and neither can import the other, so
+# tests/trive/test_frontend_defaults.py checks they agree.
 PRONY_TERMS_PER_DECADE = 3
 PRONY_TERMS_MIN = 5
 PRONY_TERMS_MAX = 100

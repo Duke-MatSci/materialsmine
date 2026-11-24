@@ -83,6 +83,9 @@ def extract_data_from_file(request_id):
         file_name = data.get('file_name')
         # Absent or null: the server sizes the grid from the fitted span.
         number_of_prony = data.get('number_of_prony')
+        # Absent: the frontend's defaults. The client sends smoothness and
+        # relative_error every time, so only other callers rely on these; an
+        # explicit null is a 400, not an omission.
         smoothness = as_float(data.get('smoothness', SMOOTHNESS_DEFAULT), 'smoothness')
         fit_settings = data.get('fit_settings', False)
         domain = data.get('domain', 'frequency')

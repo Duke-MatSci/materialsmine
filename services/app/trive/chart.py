@@ -97,7 +97,8 @@ def update_line_chart(uploadData, number_of_prony, smoothness, fit_settings, dom
             Supplying one counts as requesting a transform even under 'none'.
         relative_error (float): Fractional uncertainty used to synthesize the
             per-point sigma (relative_error * |E*|) when the upload carries no
-            error columns. Ignored when it does.
+            error columns. Ignored when it does. Defaults to
+            RELATIVE_ERROR_DEFAULT (1%).
         error_scale (float): Uniform multiplier on the upload's own error
             columns when present; 1.0 uses them as supplied. Ignored when the
             upload has none. Kept separate from relative_error so each widget

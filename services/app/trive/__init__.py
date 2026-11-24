@@ -36,7 +36,9 @@ bottom-up:
                  error bars, plot-trace thinning, the
                  shift-factor figure, and the coefficient table
     chart        update_line_chart — the whole pipeline, called by the route;
-                 its grid-suggestion comment sets out that rule in full
+                 its grid-suggestion comment sets out that rule in full; and
+                 the smoothness and relative-error defaults, which mirror the
+                 frontend's
 
 Public names are re-exported below. Private helpers (anything underscored) stay
 in their own modules: import them from there, and note that monkeypatching one
