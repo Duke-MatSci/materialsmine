@@ -37,12 +37,7 @@ export default {
   getDynamfitDomain(state: ExplorerState): string {
     return state.dynamfitDomain;
   },
-  dynamfit(state: ExplorerState): {
-    range: number;
-    fitSettings: boolean;
-    model: string;
-    fileUpload: string;
-  } {
+  dynamfit(state: ExplorerState): ExplorerState['dynamfit'] {
     return state.dynamfit;
   },
   getDynamfitTransformMethod(state: ExplorerState): 'none' | 'WLF' | 'hybrid' | 'manual' {

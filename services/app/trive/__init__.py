@@ -12,20 +12,33 @@ bottom-up:
                  curvature its smoothness penalty is built from, and the
                  scaling that makes `smoothness` mesh-independent
     reduction    the chunked QR that compresses the weighted least-squares
-                 problem to O(N) rows, and its content-addressed LRU cache
-    quality      scoring a converged fit: reduced chi-squared, the Laplace
+                 problem to O(N) rows, and its content-addressed LRU cache;
+                 also the probe-basis rank behind the term-count limit and
+                 the probe resolution behind the grid-size suggestion,
+                 and the fit-grid Gauss-Newton count that corrects it
+    quality      scoring a converged fit: chi-squared per effective degree of
+                 freedom, the Laplace
                  posterior of the smoothing weight, the spectrum's roughness
     fit          smooth_prony_fit — composes the four above into the single
-                 call that turns data into (tau_i, E_i)
+                 call that turns data into (tau_i, E_i), failing fast with
+                 a remedy when the Newton solve stalls
+    uncertainty  delta-method 1-sigma bands: the reported covariance carried
+                 to the spectrum, the complex moduli and E(t), and the
+                 measurement noise a prediction band adds to the moduli
 
     shift        WLF / Arrhenius / hybrid shift factors and their inverses
     calibration  the reverse direction — fitting C1/C2/Ea to measured shift
-                 data, and the peak finder that estimates Tg and TC
+                 data, searching for a hybrid TC when none is given, and the
+                 Tg and TC estimates from a temperature sweep's peaks
     tts          applying a shift model to a data frame, both directions
 
-    figures      plotly figures, their captions, plot-trace thinning, the
+    figures      plotly figures, their captions, the uncertainty ribbons and
+                 error bars, plot-trace thinning, the
                  shift-factor figure, and the coefficient table
-    chart        update_line_chart — the whole pipeline, called by the route
+    chart        update_line_chart — the whole pipeline, called by the route;
+                 its grid-suggestion comment sets out that rule in full; and
+                 the smoothness and relative-error defaults, which mirror the
+                 frontend's
 
 Public names are re-exported below. Private helpers (anything underscored) stay
 in their own modules: import them from there, and note that monkeypatching one
@@ -40,11 +53,19 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
 from .calibration import (  # noqa: E402
     argmax_peak,
+    estimate_tc,
+    estimate_tg,
     fit_hybrid_coefficients,
     fit_wlf_coefficients,
     peak_edge_warning,
+    search_hybrid_tc,
 )
-from .chart import EXPECTED_DOMAIN_COLUMNS, update_line_chart  # noqa: E402
+from .chart import (  # noqa: E402
+    EXPECTED_DOMAIN_COLUMNS,
+    RELATIVE_ERROR_DEFAULT,
+    SMOOTHNESS_DEFAULT,
+    update_line_chart,
+)
 from .fit import smooth_prony_fit  # noqa: E402
 from .prony import (  # noqa: E402
     PRONY_TERMS_MAX,
@@ -56,7 +77,13 @@ from .prony import (  # noqa: E402
     prony_relaxation_space,
     prony_terms_for_span,
 )
+from .reduction import (  # noqa: E402
+    prony_noise_ceiling,
+    prony_rank_limit,
+    prony_resolution,
+)
 from .shift import (  # noqa: E402
+    UNIVERSAL_EA,
     UNIVERSAL_WLF_C1,
     UNIVERSAL_WLF_C2,
     hybrid_shift,
@@ -67,7 +94,7 @@ from .shift import (  # noqa: E402
 )
 from .tts import (  # noqa: E402
     MAX_ABS_LOG10_SHIFT,
-    VIS_REF_FREQUENCY_HZ,
+    VIS_REF_FREQUENCY,
     tts_frequency_to_temperature,
     tts_frequency_to_temperature_V2,
     tts_frequency_to_temperature_hybrid,
@@ -80,12 +107,17 @@ __all__ = [
     'PRONY_TERMS_MAX',
     'PRONY_TERMS_MIN',
     'PRONY_TERMS_PER_DECADE',
+    'RELATIVE_ERROR_DEFAULT',
+    'SMOOTHNESS_DEFAULT',
+    'UNIVERSAL_EA',
     'UNIVERSAL_WLF_C1',
     'UNIVERSAL_WLF_C2',
-    'VIS_REF_FREQUENCY_HZ',
+    'VIS_REF_FREQUENCY',
     'argmax_peak',
     'compute_complex',
     'compute_relaxation_modulus',
+    'estimate_tc',
+    'estimate_tg',
     'fit_hybrid_coefficients',
     'fit_wlf_coefficients',
     'hybrid_shift',
@@ -93,8 +125,12 @@ __all__ = [
     'inverse_wlf_shift',
     'peak_edge_warning',
     'prony_basis',
+    'prony_noise_ceiling',
+    'prony_rank_limit',
+    'prony_resolution',
     'prony_relaxation_space',
     'prony_terms_for_span',
+    'search_hybrid_tc',
     'smooth_prony_fit',
     'tts_frequency_to_temperature',
     'tts_frequency_to_temperature_V2',

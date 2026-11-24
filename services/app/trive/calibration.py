@@ -1,7 +1,8 @@
 """
 Deriving shift-model parameters from measured data: the C1/C2/Ea curve fits
-behind the /fit-shift/ route, and the peak finder the /extract/ route uses to
-estimate Tg (tan-δ peak) and TL (E'' peak).
+and hybrid Tc search behind the /fit-shift/ route, and estimate_tg /
+estimate_tc, which the /extract/ route and scripts share to
+estimate Tg (tan-δ peak) and TC (TL, the E'' peak).
 
 The inverse of `shift`: that module evaluates a_T given coefficients, this one
 recovers coefficients given a_T. Everything here fits in log10(a_T) space so
@@ -9,10 +10,14 @@ that points spanning many decades of shift factor carry equal weight.
 """
 
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, minimize_scalar
 from scipy.signal import find_peaks
 
 from .shift import hybrid_shift, UNIVERSAL_WLF_C1, UNIVERSAL_WLF_C2, wlf_log10_shift
+
+# Range a free Ea is optimized within, kJ/mol, bounds included.
+_EA_MIN = 100.0
+_EA_MAX = 400.0
 
 
 def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
@@ -48,14 +53,14 @@ def _curve_fit_shift(model, T: np.ndarray, log10_a_T: np.ndarray,
     Raises:
         ValueError: If curve_fit fails to converge.
     """
-    # TODO(scipy>=1.11): fixed parameters are currently held constant by
-    # closure reparametrization (excluded from the fit vector and captured in
-    # `model`) because scipy 1.10.1 rejects equal bounds with "Each lower bound
-    # must be strictly less than each upper bound". Once the services env is
-    # bumped to scipy >= 1.11, this can be revised to pass ALL parameters to
-    # curve_fit with bounds, fixing a parameter via lb == ub. That would let the
-    # callers (fit_wlf_coefficients / fit_hybrid_coefficients) drop their
-    # per-parameter free/fixed branching in favor of one bounds vector.
+    # Fixed parameters are held constant by closure reparametrization
+    # (excluded from the fit vector and captured in `model`) because
+    # curve_fit rejects equal bounds with "Each lower bound must be strictly
+    # less than each upper bound". This is not a version gap: minimize
+    # already factors out lb == ub variables in the pinned scipy 1.10.1,
+    # but least_squares (which curve_fit wraps) rejects them there and
+    # still does on current scipy. A scipy bump does not let the callers
+    # drop their per-parameter free/fixed branching.
     try:
         popt, _ = curve_fit(model, T, log10_a_T, p0=p0, bounds=bounds,
                             sigma=sigma, absolute_sigma=sigma is not None)
@@ -243,8 +248,8 @@ def fit_wlf_coefficients(
     log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
 
     # Build a model over only the free parameters; fixed ones are closed over.
-    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject. The offset is always free.
+    # This avoids passing degenerate lb==ub bounds to curve_fit, which
+    # rejects them. The offset is always free.
     free_names = [n for n, fixed in
                   [('C1', fix_C1), ('C2', fix_C2), ('log10_a_T_ref', False)]
                   if not fixed]
@@ -305,8 +310,9 @@ def fit_hybrid_coefficients(
 
     Uses scipy.optimize.curve_fit in log10(a_T) space so that points spanning
     many decades of shift factor receive uniform weight. TC is required and is
-    never optimized — it is produced upstream by the E-loss-peak logic in the
-    extract step and is a physical input, not a fit parameter. The data's
+    never optimized here: it is the caller's, either a physical input such as
+    the extract step's E-loss-peak estimate or a candidate from
+    search_hybrid_tc, which chooses TC by repeating this fit. The data's
     shift factor at TC, a_T_ref, is always co-fitted as a vertical offset and,
     as in fit_wlf_coefficients, carried through the optimizer as
     log10(a_T_ref), so data referenced decades away from TC fits as well as
@@ -315,9 +321,13 @@ def fit_hybrid_coefficients(
     Individual parameters can be fixed at their supplied values by setting the
     corresponding fix_* flag. A supplied-but-not-fixed value becomes the
     initial guess; otherwise the WLF universal constants are used for C1/C2 and
-    a moderate activation energy (100 kJ/mol) for Ea. Fixed parameters are held
+    the low end of its range (100 kJ/mol) for Ea. Fixed parameters are held
     constant by closing them over inside the model rather than passing them to
     curve_fit.
+
+    A free Ea is optimized within [100, 400] kJ/mol, bounds included, so a
+    result may sit on a bound; an initial guess outside the range is clipped
+    into it. A fixed Ea is not optimized and may hold any value.
 
     Parameters:
         T (numpy.ndarray): 1-D array of temperatures in °C, same length as a_T.
@@ -368,10 +378,12 @@ def fit_hybrid_coefficients(
     assert np.all(np.isfinite(T)), "T must contain only finite values"
     sigma = _sigma_log10(a_T, sigma_a_T)
 
-    _EA_DEFAULT = 100.0  # kJ/mol — broad mid-range starting point
+    _EA_DEFAULT = 100.0  # kJ/mol — low end of the free-Ea range
     C1_0 = C1 if C1 is not None else UNIVERSAL_WLF_C1
     C2_0 = C2 if C2 is not None else UNIVERSAL_WLF_C2
     Ea_0 = Ea if Ea is not None else _EA_DEFAULT
+    if not fix_Ea:
+        Ea_0 = float(np.clip(Ea_0, _EA_MIN, _EA_MAX))
 
     diffs = np.diff(T)
     if len(diffs) > 0:
@@ -406,8 +418,8 @@ def fit_hybrid_coefficients(
     log10_a_T_ref_0 = float(weights @ resid_0 / weights.sum())
 
     # Build a model over only the free parameters; fixed ones are closed over.
-    # This avoids passing degenerate lb==ub bounds to curve_fit, which some
-    # scipy versions reject. The offset is always free.
+    # This avoids passing degenerate lb==ub bounds to curve_fit, which
+    # rejects them. The offset is always free.
     free_names = [n for n, fixed in
                   [('C1', fix_C1), ('C2', fix_C2), ('Ea', fix_Ea),
                    ('log10_a_T_ref', False)]
@@ -418,8 +430,10 @@ def fit_hybrid_coefficients(
           if not fixed]
 
     # C2 floored at 1.0 to stay off the WLF pole.
-    lb = [1.0 if n == 'C2' else -np.inf for n in free_names]
-    ub = [np.inf] * len(free_names)
+    lower = {'C2': 1.0, 'Ea': _EA_MIN}
+    upper = {'Ea': _EA_MAX}
+    lb = [lower.get(n, -np.inf) for n in free_names]
+    ub = [upper.get(n, np.inf) for n in free_names]
 
     def model(T_arg, *free_vals):
         vals = dict(zip(free_names, free_vals))
@@ -449,6 +463,105 @@ def fit_hybrid_coefficients(
     n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
     chi2 = _shift_chi2_reduced(log10_model - log10_a_T, sigma, n_free)
     return C1_fit, C2_fit, Ea_fit, a_T_ref_fit, chi2
+
+
+def search_hybrid_tc(
+        T: np.ndarray,
+        a_T: np.ndarray,
+        C1: float = None,
+        C2: float = None,
+        Ea: float = None,
+        fix_C1: bool = False,
+        fix_C2: bool = False,
+        fix_Ea: bool = False,
+        *,
+        sigma_a_T: np.ndarray = None,
+) -> tuple:
+    """
+    Choose Tc for a hybrid fit, then fit the coefficients at it.
+
+    On the ascending table the candidates are the measured temperatures T[1]
+    through T[n-3], which keeps two points on either side (a point at Tc is on
+    the cold side). Each is scored by fit_hybrid_coefficients' weighted
+    chi-squared sum, and a bounded 1D optimizer refines across the best one's
+    left and right neighbours on that grid, however they scored, or to its one
+    neighbour at an end of the grid. A candidate or refinement probe whose fit
+    fails is passed over. The result is never worse than the best candidate.
+
+    Parameters:
+        T (numpy.ndarray): 1-D array of temperatures in °C, in either order.
+        a_T (numpy.ndarray): 1-D array of positive shift factors (linear scale).
+        C1, C2, Ea, fix_C1, fix_C2, fix_Ea, sigma_a_T: as for
+            fit_hybrid_coefficients, and applied to every fit in the search.
+
+    Returns:
+        tuple: (TC, C1_fit, C2_fit, Ea_fit, a_T_ref, chi2_reduced). Unless the
+            table has a single candidate, chi2_reduced counts Tc as a free
+            parameter; it is None when the degrees of freedom are not positive.
+
+    Raises:
+        ValueError: If T has fewer than 4 rows, or if every candidate fit fails.
+    """
+    T = np.atleast_1d(T)
+    a_T = np.atleast_1d(a_T)
+    assert len(T) == len(a_T), \
+        f"T and a_T must have the same length; got {len(T)} and {len(a_T)}"
+    n = len(T)
+    if n < 4:
+        raise ValueError(
+            f"Choosing Tc needs at least 4 shift factor rows, two on either "
+            f"side of it; got {n}. Supply Tc or add temperatures.")
+    order = np.argsort(T)
+    T, a_T = T[order], a_T[order]
+    if sigma_a_T is not None:
+        sigma_a_T = np.atleast_1d(sigma_a_T)[order]
+
+    failures = []
+
+    def fit_at(TC):
+        """(objective, TC, C1, C2, Ea, a_T_ref), or None if the fit fails."""
+        try:
+            fitted = fit_hybrid_coefficients(
+                T, a_T, TC, C1, C2, Ea, fix_C1, fix_C2, fix_Ea,
+                sigma_a_T=sigma_a_T)
+            C1_fit, C2_fit, Ea_fit, a_T_ref = fitted
+            resid = (np.log10(hybrid_shift(T, TC, C1_fit, C2_fit, Ea_fit))
+                     + np.log10(a_T_ref) - np.log10(a_T))
+        except (ValueError, RuntimeError) as err:
+            failures.append(err)
+            return None
+        scaled = resid / _sigma_log10(a_T, sigma_a_T)
+        return (float(scaled @ scaled), float(TC), *fitted)
+
+    def objective_at(TC):
+        fit = fit_at(TC)
+        return np.inf if fit is None else fit[0]
+
+    candidates = T[1:n - 2]
+    fits = [fit_at(TC) for TC in candidates]
+    scored = [i for i, fit in enumerate(fits) if fit is not None]
+    if not scored:
+        raise ValueError(
+            f"No candidate Tc gave a hybrid fit: {failures[-1]}")
+
+    i_best = min(scored, key=lambda i: fits[i][0])
+    best = fits[i_best]
+    if len(candidates) > 1:
+        refined = minimize_scalar(
+            objective_at,
+            bounds=(candidates[max(i_best - 1, 0)],
+                    candidates[min(i_best + 1, len(candidates) - 1)]),
+            method='bounded',
+        )
+        fit = fit_at(refined.x)
+        if fit is not None and fit[0] < best[0]:
+            best = fit
+
+    n_free = 4 - int(fix_C1) - int(fix_C2) - int(fix_Ea)  # a_T_ref always free
+    if len(candidates) > 1:
+        n_free += 1  # Tc was chosen from the data as well
+    dof = n - n_free
+    return (*best[1:], best[0] / dof if dof > 0 else None)
 
 
 def argmax_peak(signal: np.ndarray) -> int:
@@ -509,3 +622,29 @@ def peak_edge_warning(peak_T: float, T: np.ndarray, label: str,
             f"artifact. Consider supplying {label} manually."
         )
     return None
+
+
+def estimate_tg(temperatures, E_stor, E_loss):
+    """
+    Estimate Tg as the temperature at the tan δ (E_loss / E_stor) peak.
+
+    Returns:
+        tuple: (Tg in °C, edge warning from peak_edge_warning or None).
+    """
+    T = np.asarray(temperatures, dtype=float)
+    tan_delta = (np.asarray(E_loss, dtype=float)
+                 / np.asarray(E_stor, dtype=float))
+    Tg = T[argmax_peak(tan_delta)]
+    return Tg, peak_edge_warning(Tg, T, 'Tg')
+
+
+def estimate_tc(temperatures, E_loss):
+    """
+    Estimate TC as the temperature at the E_loss peak.
+
+    Returns:
+        tuple: (TC in °C, edge warning from peak_edge_warning or None).
+    """
+    T = np.asarray(temperatures, dtype=float)
+    TC = T[argmax_peak(np.asarray(E_loss, dtype=float))]
+    return TC, peak_edge_warning(TC, T, 'Tc')
