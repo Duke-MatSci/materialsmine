@@ -1120,6 +1120,17 @@ class TestExtractRouteErrorColumns(unittest.TestCase):
                 self.assertEqual(resp.status_code, 400, resp.data[:400])
                 self.assertIn(f'{field} must be a number', json.loads(resp.data)['message'])
 
+    def test_null_smoothness_or_relative_error_returns_400(self):
+        """An explicit null is not an omitted field: only an absent key
+        takes the default, so null stays a readable 400."""
+        name = self._write('plain.tsv', self._rows(3))
+        for field in ('smoothness', 'relative_error'):
+            with self.subTest(field=field):
+                resp = self._post(self._body(name, **{field: None}))
+                self.assertEqual(resp.status_code, 400, resp.data[:400])
+                self.assertIn(f'{field} must be a number',
+                              json.loads(resp.data)['message'])
+
 
 class TestPeakEdgeWarning(unittest.TestCase):
     """
