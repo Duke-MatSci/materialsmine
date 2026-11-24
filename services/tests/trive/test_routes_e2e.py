@@ -1292,6 +1292,43 @@ class TestExtractRouteEstimateWarnings(unittest.TestCase):
         self.assertEqual(resp.status_code, 200, resp.data[:400])
         self.assertEqual(json.loads(resp.data)['response']['warnings'], [])
 
+    def test_ea_estimate_echoes_200_even_over_a_supplied_ea(self):
+        """Ea_estimate fits and echoes Ea = 200 kJ/mol, whether or not the
+        body also supplies an Ea."""
+        name = self._write_ramp('ea_estimate_bump.tsv', 40)
+        for extra in ({}, {'Ea': 80.0}):
+            with self.subTest(**extra):
+                resp = self._post(self._temp_body(
+                    name, transform_method='hybrid', TC=40.0,
+                    C1_estimate=True, C2_estimate=True, Ea_estimate=True,
+                    **extra,
+                ))
+                self.assertEqual(resp.status_code, 200, resp.data[:400])
+                self.assertEqual(json.loads(resp.data)['response']['Ea'], 200)
+
+    def test_peakless_sweep_estimate_returns_400(self):
+        """A sweep with no tan-delta or E-loss peak cannot estimate Tg or
+        Tc: the request is a 400 that says no peaks were found."""
+        lines = []
+        for T in range(0, 81, 2):
+            lines.append(f'{T:.1f}\t{1.0e9:.6e}\t{1.0e7 + T * 1.0e5:.6e}')
+        name = 'peakless_ramp.tsv'
+        with open(os.path.join(self._tmpdir.name, name), 'w') as f:
+            f.write('\n'.join(lines) + '\n')
+        cases = {
+            'Tg_estimate': dict(transform_method='WLF', Tg_estimate=True,
+                                C1_estimate=True, C2_estimate=True),
+            'TC_estimate': dict(transform_method='hybrid', TC_estimate=True,
+                                Ea=200.0, C1_estimate=True,
+                                C2_estimate=True),
+        }
+        for flag, overrides in cases.items():
+            with self.subTest(flag=flag):
+                resp = self._post(self._temp_body(name, **overrides))
+                self.assertEqual(resp.status_code, 400, resp.data[:400])
+                self.assertIn('No peaks found',
+                              json.loads(resp.data)['message'])
+
 
 if __name__ == '__main__':
     unittest.main()
