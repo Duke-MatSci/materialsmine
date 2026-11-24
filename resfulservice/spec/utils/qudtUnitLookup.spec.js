@@ -15,7 +15,7 @@ const QUDT = 'http://qudt.org/vocab/unit/';
 
 // Text that is a QUDT symbol, code or English label of exactly one unit
 // links to it, on both routes.
-const EXACT_KEYS = [
+const EXACT_SPELLINGS = [
   ['\u00b0C', 'DEG_C'],
   ['MPa', 'MegaPA'],
   ['GPa', 'GigaPA'],
@@ -69,7 +69,7 @@ const EXACT_WINS = [
   ['s/m', 'SEC-PER-M']
 ];
 
-// Keys several units share link to the hand-kept tie-break unit.
+// Spellings several units share link to the hand-kept tie-break unit.
 const TIE_BREAKS = [
   ['K', 'K'],
   ['S', 'S'],
@@ -84,11 +84,11 @@ const TIE_BREAKS = [
 ];
 
 const GROUPS = [
-  ['exact QUDT keys and symbols', EXACT_KEYS],
+  ['exact QUDT spellings', EXACT_SPELLINGS],
   ['case-sensitive exact match', CASE_SENSITIVE],
   ['surrounding whitespace', TRIMMED],
   ['exact codes', CODES],
-  ['exact match over case-twins', EXACT_WINS],
+  ['the unit writing that case', EXACT_WINS],
   ['tie-break defaults', TIE_BREAKS]
 ];
 
@@ -121,7 +121,7 @@ describe('QUDT exact unit lookup', function () {
     });
   });
 
-  describe('codes are not case-folded', function () {
+  describe('a code typed in another case', function () {
     it("lookupUnit reports 'cel' as unresolved", function () {
       const { issue } = lookupUnit('cel');
       expect(issue.code).to.equal('UNIT_UNRESOLVED');

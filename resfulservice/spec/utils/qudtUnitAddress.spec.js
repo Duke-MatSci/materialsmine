@@ -27,7 +27,7 @@ const LINKED = [
   ['unit:RAD-PER-MIN', 'RAD-PER-MIN'],
   ['http://qudt.org/vocab/unit/MegaV-PER-M', 'MegaV-PER-M'],
   ['unit:CI', 'CI'],
-  // PA is a unit name, and also a text key of PetaA only.
+  // PA is a unit name, and also a spelling of PetaA only.
   ['unit:PA', 'PA'],
   ['  unit:DEG_C  ', 'DEG_C']
 ];
@@ -49,7 +49,7 @@ const NOT_QUDT = [
   'http://www.ontology-of-units-of-measure.org/resource/om-2/degreeCelsius',
   'https://qudt.org/vocab/unit/DEG_C',
   'http://example.org/my-gpa',
-  // GPa is a text key of GigaPA, but not a unit name.
+  // GPa is a spelling of GigaPA, but not a unit name.
   'unit:GPa',
   '  unit:zorkmids  ',
   ...CASE_DIFFERING

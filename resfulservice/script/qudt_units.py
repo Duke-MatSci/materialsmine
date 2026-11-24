@@ -11,28 +11,26 @@ It is upstream's VOCAB_QUDT-UNITS-ALL.ttl at the tag and commit pinned
 below (QUDT_URL), and the script refuses a file whose SHA-256 is not
 QUDT_SHA256.
 
-The output maps each current QUDT unit's local name to its keys, the
-spellings the lookup matches exactly and case-sensitively: its
-qudt:symbol and qudt:altSymbol values and its English rdfs:label and
-skos:altLabel values. It also lists the unit's codes, its qudt:ucumCode
-and qudt:udunitsCode values that are not also keys of that unit, which
-the lookup matches the same way. Spellings are kept exactly as QUDT
-writes them: no generated names and no superscript, caret or dot variants.
-Deprecated units and currency units get no keys. Deprecated units are
-listed apart, each with its dcterms:isReplacedBy unit when QUDT names one.
+The output maps each current QUDT unit's local name to its spellings,
+the strings the lookup matches exactly and case-sensitively: its
+qudt:symbol, qudt:altSymbol, qudt:ucumCode and qudt:udunitsCode values
+and its English rdfs:label and skos:altLabel values. Spellings are kept
+exactly as QUDT writes them: no generated names and no superscript, caret
+or dot variants. Deprecated units and currency units get no spellings.
+Deprecated units are listed apart, each with its dcterms:isReplacedBy unit when QUDT names one.
 
-When several units share a key and are all qudt:exactMatch to one another,
-the key is kept for one of them only: the one whose own symbol it is, else
-the first by local name. A key still shared by several units is a
+When several units share a spelling and are all qudt:exactMatch to one another,
+the spelling is kept for one of them only: the one whose own symbol it is, else
+the first by local name. A spelling still shared by several units is a
 collision. Collisions are printed for review and are not errors; the
-lookup leaves such a key unlinked unless config/qudt-unit-overrides.json
+lookup leaves such a spelling unlinked unless config/qudt-unit-overrides.json
 gives it a tie-break.
 
 The overrides file holds one table, tieBreaks, which
-src/utils/unit-lookup.js applies: for a colliding key, the one of its
-owners the key links. The script exits non-zero, naming offenders, when a
+src/utils/unit-lookup.js applies: for a colliding spelling, the one of its
+owners the spelling links. The script exits non-zero, naming offenders, when a
 tie-break targets something that is not a current QUDT unit or one of the
-key's owners, or names a key that is not a collision.
+spelling's owners, or names a spelling that is not a collision.
 """
 import hashlib
 import json
@@ -133,12 +131,12 @@ def exact_match_groups(graph, units):
     return {name: find(name) for name in parent}
 
 
-def unit_keys(graph):
-    """Return (units {name: {'keys', 'codes'}}, deprecated, owners)."""
+def unit_table(graph):
+    """Return (units {name: [spelling]}, deprecated, owners)."""
     current, deprecated = read_units(graph)
     spellings = unit_spellings(graph, current)
     group = exact_match_groups(graph, current)
-    units = {local_name(n): {'keys': [], 'codes': []} for n in current}
+    units = {local_name(n): [] for n in current}
     owners = {}
     for spelling, holders in spellings.items():
         if len(holders) > 1 and len({group[n] for n in holders}) == 1:
@@ -147,12 +145,10 @@ def unit_keys(graph):
             keep = (own or sorted(holders))[0]
             holders = {keep: holders[keep]}
         owners[spelling] = set(holders)
-        for name, kinds in holders.items():
-            field = 'codes' if kinds == {'code'} else 'keys'
-            units[name][field].append(spelling)
+        for name in holders:
+            units[name].append(spelling)
     for entry in units.values():
-        entry['keys'].sort()
-        entry['codes'].sort()
+        entry.sort()
     return units, deprecated, owners
 
 
@@ -186,7 +182,7 @@ def main(argv):
                  % (argv[1], digest, QUDT_SHA256))
     graph = Graph()
     graph.parse(data=data, format='turtle')
-    units, deprecated, owners = unit_keys(graph)
+    units, deprecated, owners = unit_table(graph)
 
     with open(OVERRIDES_PATH, encoding='utf-8') as f:
         overrides = json.load(f)
@@ -207,8 +203,8 @@ def main(argv):
              '  }', '}']
     with open(OUT_PATH, 'w', encoding='utf-8', newline='\n') as f:
         f.write('\n'.join(lines) + '\n')
-    print('%d units (%d deprecated), %d colliding keys without a tie-break'
-          ' -> %s' % (len(units), len(deprecated), len(collisions),
+    print('%d units (%d deprecated), %d colliding spellings without a'
+          ' tie-break -> %s' % (len(units), len(deprecated), len(collisions),
                       os.path.normpath(OUT_PATH)))
     for key in collisions:
         print('  collision %r: %s' % (key, ', '.join(sorted(owners[key]))))

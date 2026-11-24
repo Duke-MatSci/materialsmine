@@ -411,7 +411,7 @@ function parseCodeMappingsSheet(workbook) {
 /**
  * Resolve a unit code: a Code Mappings row for it wins, and its address is
  * judged by the QUDT address rules alone; otherwise the QUDT unit lookup.
- * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/mL')
  * @param {Map} codeMappings - Parsed code mappings from the SDD
  * @returns {Object} { iri }, { iri, issue }, { issue }, or {}
  */
@@ -424,7 +424,7 @@ function resolveUnit (code, codeMappings) {
 
 /**
  * Resolve a shorthand code to a QUDT unit IRI through resolveUnit.
- * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/mL')
  * @param {Map} codeMappings - Parsed code mappings from the SDD
  * @returns {string|undefined} The resolved URI, or undefined
  */

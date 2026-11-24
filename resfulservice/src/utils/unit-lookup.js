@@ -1,32 +1,26 @@
 'use strict';
 
 const { units, deprecated } = require('../../config/qudt-units.json');
+// The hand-kept tie-breaks: a colliding spelling to the local name of the
+// one owner it links. This is the only reader of the overrides file.
+const { tieBreaks } = require('../../config/qudt-unit-overrides.json');
 const {
   OUTPUT_CONTEXT: { unit: QUDT_UNIT }
 } = require('../../config/constant');
 
-/**
- * Read the hand-kept unit overrides. This is the only reader of
- * config/qudt-unit-overrides.json.
- * @returns {Object} { tieBreaks }: colliding QUDT text to the local name
- *   of the one owner it links
- */
-function readUnitOverrides () {
-  return require('../../config/qudt-unit-overrides.json');
-}
-
-const { tieBreaks } = readUnitOverrides();
-
 const has = (table, key) => Object.prototype.hasOwnProperty.call(table, key);
-const own = (table, key) => (has(table, key) ? table[key] : undefined);
 
-// Exact, case-sensitive spellings: unit keys and codes to their owners.
-const exact = new Map();
-Object.entries(units).forEach(([name, { keys = [], codes = [] }]) => {
-  [...keys, ...codes].forEach((key) => {
-    if (!exact.has(key)) exact.set(key, new Set());
-    exact.get(key).add(name);
+// Each spelling QUDT writes to the units that write it, exact and
+// case-sensitive. A tie-break leaves its spelling the one unit it names.
+const spellingOwners = new Map();
+Object.entries(units).forEach(([name, spellings]) => {
+  spellings.forEach((spelling) => {
+    if (!spellingOwners.has(spelling)) spellingOwners.set(spelling, new Set());
+    spellingOwners.get(spelling).add(name);
   });
+});
+Object.entries(tieBreaks).forEach(([spelling, name]) => {
+  spellingOwners.set(spelling, new Set([name]));
 });
 
 const issue = (code, message, value) => ({ issue: { code, message, value } });
@@ -100,10 +94,9 @@ function lookupAddress (text) {
  * these rules in order, and the first that applies decides:
  * - blank text gives {};
  * - an address goes to lookupAddress;
- * - a tie-break key links its target;
  * - a qudt:symbol, qudt:altSymbol, qudt:ucumCode, qudt:udunitsCode or
- *   English rdfs:label or skos:altLabel value links its one owner, else is
- *   UNIT_AMBIGUOUS;
+ *   English rdfs:label or skos:altLabel value links its one owner, or the
+ *   owner its tie-break names, else is UNIT_AMBIGUOUS;
  * - anything else gives UNIT_UNRESOLVED.
  * @param {string} text - The unit text as typed
  * @returns {Object} { iri }, { iri, issue }, { issue: { code, message, value } },
@@ -114,9 +107,7 @@ function lookupUnit (text) {
   const trimmed = String(text).trim();
   if (!trimmed) return {};
   if (isAddress(trimmed)) return lookupAddress(text);
-  const target = own(tieBreaks, trimmed);
-  if (target) return { iri: QUDT_UNIT + target };
-  const owners = exact.get(trimmed);
+  const owners = spellingOwners.get(trimmed);
   if (owners) return fromOwners(owners, text);
   return issue('UNIT_UNRESOLVED', `Unit "${text}" matches no QUDT unit`, text);
 }
