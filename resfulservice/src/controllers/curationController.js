@@ -1958,6 +1958,7 @@ exports.curationRehydration = async (req, res, next) => {};
  * @param {Object} res - The response object
  * @param {Function} next - The next middleware function
  * @returns {Object} - The ETL result containing processed and failed items
+ *   and the records' unit issues
  * @example
  * POST /api/curation/etl
  * Body:
@@ -2004,6 +2005,7 @@ exports.curationETL = async (req, res, next) => {
 
     const processed = [];
     const failed = [];
+    const issues = [];
 
     for (const src of items) {
       let idForFailure = null;
@@ -2060,9 +2062,10 @@ exports.curationETL = async (req, res, next) => {
         });
 
         // Transform → nanopub
-        const { nanopubId, nanopub, assertionId } =
+        const { nanopubId, nanopub, assertionId, issues: recordIssues } =
           await Builder.transformXmlToNanopub(parsed, req.logger);
         sampleIdForFailure = nanopubId;
+        issues.push(...recordIssues);
 
         // Serialize → SHACL validate → changelog (shared logic)
         const { success, result, failure } = await Builder.serializeAndValidate(
@@ -2112,7 +2115,8 @@ exports.curationETL = async (req, res, next) => {
       processedCount: processed.length,
       failedCount: failed.length,
       processed,
-      failed
+      failed,
+      issues
     });
   } catch (err) {
     return next(errorWriter(req, err, 'curationETL', 500));
@@ -2157,7 +2161,8 @@ exports.sddCurationETL = async (req, res, next) => {
       assertionId,
       remainingBatches,
       totalBatches,
-      _batchMeta
+      _batchMeta,
+      issues
     } = await Builder.transformSddToNanopub(nanopubSkeleton, logger);
 
     const isMultiBatch = totalBatches > 1;
@@ -2244,14 +2249,15 @@ exports.sddCurationETL = async (req, res, next) => {
           error: true,
           batch: 1,
           total: totalBatches,
-          failure: batch1Result.failure
+          failure: batch1Result.failure,
+          issues
         });
         return res.end();
       }
       latency.latencyCalculator(res);
       return res
         .status(400)
-        .json({ ok: false, failed: [batch1Result.failure] });
+        .json({ ok: false, failed: [batch1Result.failure], issues });
     }
 
     if (isMultiBatch) {
@@ -2296,7 +2302,8 @@ exports.sddCurationETL = async (req, res, next) => {
             error: true,
             batch: batchNum,
             total: totalBatches,
-            failure: batchResult.failure
+            failure: batchResult.failure,
+            issues
           });
           return res.end();
         }
@@ -2332,12 +2339,12 @@ exports.sddCurationETL = async (req, res, next) => {
 
     // --- Final response ---
     if (isMultiBatch) {
-      sendSSE({ done: true, ...finalPayload });
+      sendSSE({ done: true, ...finalPayload, issues });
       return res.end();
     }
 
     latency.latencyCalculator(res);
-    return res.status(200).json(finalPayload);
+    return res.status(200).json({ ...finalPayload, issues });
   } catch (err) {
     if (res.headersSent) {
       try {
@@ -2707,7 +2714,7 @@ exports.submitDatasetToKG = async (req, res, next) => {
       depiction: depictionLd
     };
 
-    const { nanopubId, nanopub, assertionId } =
+    const { nanopubId, nanopub, assertionId, issues } =
       await Builder.transformSddToNanopub(nanopubSkeleton, logger);
 
     const { success, result, failure } = await Builder.serializeAndValidate({
@@ -2726,7 +2733,7 @@ exports.submitDatasetToKG = async (req, res, next) => {
 
     if (!success) {
       latency.latencyCalculator(res);
-      return res.status(400).json({ ok: false, failed: [failure] });
+      return res.status(400).json({ ok: false, failed: [failure], issues });
     }
 
     await elasticSearch.indexDataset(req, {
@@ -2745,7 +2752,7 @@ exports.submitDatasetToKG = async (req, res, next) => {
       'submitDatasetToKG'
     );
     latency.latencyCalculator(res);
-    return res.status(200).json({ ok: true, result });
+    return res.status(200).json({ ok: true, result, issues });
   } catch (error) {
     next(
       errorWriter(

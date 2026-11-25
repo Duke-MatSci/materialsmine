@@ -5,3 +5,6 @@
 *.sh        text eol=lf
 .husky/**   text eol=lf
 install     text eol=lf
+
+# Pinned upstream file, checked by SHA-256 at load time: never convert its line endings
+services/app/ontology/data/qudt-units-v3.5.3.ttl -text

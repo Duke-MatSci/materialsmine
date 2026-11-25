@@ -1,0 +1,602 @@
+'use strict';
+
+const { expect } = require('chai');
+const sinon = require('sinon');
+const XLSX = require('xlsx');
+const { Readable } = require('stream');
+const minioClient = require('../../src/utils/minio');
+const {
+  transformXmlToNanopub,
+  transformSddToNanopub
+} = require('../../src/utils/curation-builder');
+const { lookupUnit } = require('../../src/utils/unit-lookup');
+const { resolveUnit } = require('../../src/utils/sdd-serializer');
+
+const UNIT_CODE = /UNIT_(UNRESOLVED|AMBIGUOUS|NOT_QUDT|DEPRECATED)/;
+
+function stubLogger() {
+  return {
+    info: sinon.stub(),
+    warn: sinon.stub(),
+    error: sinon.stub(),
+    debug: sinon.stub()
+  };
+}
+
+// First arguments of the logger's warn calls that name a unit issue code.
+function unitWarnings(logger) {
+  return logger.warn
+    .getCalls()
+    .map((c) => c.args[0])
+    .filter((m) => typeof m === 'string' && UNIT_CODE.test(m));
+}
+
+// Each expected issue is logged by exactly one unit warning that holds its
+// code, its value and every location string, and there are no others.
+function expectOneWarningPerIssue(logger, expected, locate) {
+  const messages = unitWarnings(logger);
+  expect(messages).to.have.lengthOf(expected.length);
+  expected.forEach((issue) => {
+    const parts = [issue.code, issue.value, ...locate(issue)];
+    const hits = messages.filter((m) => parts.every((p) => m.includes(p)));
+    expect(hits, JSON.stringify(parts)).to.have.lengthOf(1);
+  });
+}
+
+// The issue the route gives for a unit, from the lookup's own issue.
+function issueFrom(lookup, code, location) {
+  expect(lookup.issue, JSON.stringify(location)).to.exist;
+  expect(lookup.issue.code, JSON.stringify(location)).to.equal(code);
+  return {
+    severity: 'warning',
+    code,
+    message: lookup.issue.message,
+    value: lookup.issue.value,
+    ...location
+  };
+}
+
+/* ------------------------------ XML route ------------------------------ */
+
+const RECORD = 'issues-1';
+
+const xmlIssue = (unit, code, path) =>
+  issueFrom(lookupUnit(unit), code, { record: RECORD, path });
+
+function byPath(list) {
+  expect(list).to.be.an('array');
+  return [...list].sort((a, b) =>
+    a.path < b.path ? -1 : a.path > b.path ? 1 : 0
+  );
+}
+
+const mixing = (unit) => ({ Mixing: { RPM: { value: '100', unit } } });
+
+// One parsed XML record whose units fail the lookup at sites of each kind.
+function failingXml() {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      MATERIALS: {
+        Matrix: {
+          MatrixComponent: {
+            ChemicalName: 'epoxy',
+            Density: { value: '1.2', unit: 'zorkmid' },
+            Viscosity: {
+              FixedValue: { value: { value: '5', unit: 'zorkmid' } }
+            }
+          }
+        },
+        Filler: {
+          FillerComponent: {
+            ChemicalName: 'silica',
+            SurfaceArea: {
+              specific: { unit: 'nm' },
+              total: { value: '20', unit: 'unit:Gs' }
+            }
+          }
+        }
+      },
+      PROPERTIES: {
+        Thermal: {
+          MeltingTemperature: { value: '160', Unit: ' http://ex/x ' }
+        },
+        Mechanical: {
+          Tensile: {
+            TensileModulus: { value: '3', unit: 'N/A' },
+            LoadingProfile: {
+              AxisLabel: {
+                xName: 'Strain',
+                xUnit: 'pa',
+                yName: 'Stress',
+                yUnit: ''
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+}
+
+const FAILING_XML_ISSUES = () => [
+  xmlIssue(
+    'zorkmid',
+    'UNIT_UNRESOLVED',
+    'MATERIALS.Matrix.MatrixComponent.Density.unit'
+  ),
+  xmlIssue(
+    'zorkmid',
+    'UNIT_UNRESOLVED',
+    'MATERIALS.Matrix.MatrixComponent.Viscosity.FixedValue.value.unit'
+  ),
+  xmlIssue(
+    'unit:Gs',
+    'UNIT_DEPRECATED',
+    'MATERIALS.Filler.FillerComponent.SurfaceArea.total.unit'
+  ),
+  xmlIssue(
+    ' http://ex/x ',
+    'UNIT_NOT_QUDT',
+    'PROPERTIES.Thermal.MeltingTemperature.Unit'
+  ),
+  xmlIssue(
+    'pa',
+    'UNIT_UNRESOLVED',
+    'PROPERTIES.Mechanical.Tensile.LoadingProfile.AxisLabel.xUnit'
+  )
+];
+
+// Mixing entries at positions 1, 2 and 4 of a ChooseParameter array, with
+// an Additive at 3 whose amount has a unit and no value.
+function chooseParameterXml() {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      PROCESSING: {
+        MeltMixing: {
+          ChooseParameter: [
+            mixing('nm'),
+            mixing('zorkmid'),
+            { Additive: { Additive: 'x', Amount: { unit: 'zorkmid' } } },
+            mixing('pa')
+          ]
+        }
+      }
+    }
+  };
+}
+
+// One LengthUnit shared by two images, each with a width and a height.
+function microstructureXml(unit) {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      MICROSTRUCTURE: {
+        LengthUnit: unit,
+        ImageFile: [
+          { File: 'http://x/a', Dimension: { width: '20', height: '20' } },
+          { File: 'http://x/b', Dimension: { width: '5', height: '6' } }
+        ]
+      }
+    }
+  };
+}
+
+// One record whose units link or are blank, but for one celsius.
+function cleanXml() {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      MATERIALS: {
+        Matrix: {
+          MatrixComponent: {
+            ChemicalName: 'epoxy',
+            Density: { value: '1.2', unit: 'nm' }
+          }
+        }
+      },
+      PROCESSING: {
+        MeltMixing: { ChooseParameter: [mixing('celsius'), mixing('')] }
+      },
+      PROPERTIES: {
+        Thermal: { MeltingTemperature: { value: '160', unit: 'N/A' } }
+      },
+      MICROSTRUCTURE: {
+        LengthUnit: '   ',
+        ImageFile: {
+          File: 'http://x/a',
+          Dimension: { width: '20', height: '20' }
+        }
+      }
+    }
+  };
+}
+
+const Z = 'zorkmid';
+const vu = () => ({ value: '1', unit: Z });
+const mixingAll = () => ({
+  Mixing: { RPM: vu(), Time: vu(), Temperature: vu() }
+});
+const extrusionAll = () => ({
+  Extrusion: {
+    TwinScrewExtrusion: {
+      ScrewDiameter: vu(),
+      FlightClearance: vu(),
+      HeatingZone: [
+        { barrelTemperature: vu(), lengthOfHeatingZone: vu() },
+        { barrelTemperature: vu() }
+      ],
+      Output: [{ MeltTemperature: vu() }, { MeltTemperature: vu() }]
+    }
+  }
+});
+const paramsAll = () => [
+  { Curing: { Temperature: vu() } },
+  { Additive: { Additive: 'a', Amount: vu() } },
+  { Solvent: { SolventAmount: vu() } },
+  mixingAll(),
+  extrusionAll()
+];
+
+// One parsed record with an unresolvable unit in every unit field the XML
+// builder writes, under matrix, filler and section processing, in repeated
+// items, and in the second spellings (value.unit, Unit).
+function everyUnitXml() {
+  return {
+    PolymerNanocomposite: {
+      ID: RECORD,
+      MATERIALS: {
+        Matrix: {
+          MatrixComponent: {
+            ChemicalName: 'e',
+            MolecularWeight: [
+              { value: '5', unit: Z },
+              { value: { value: '6', unit: Z } }
+            ],
+            Density: vu(),
+            Viscosity: { value: vu() },
+            Additive: { Additive: 'q', Amount: vu() }
+          },
+          MatrixProcessing: { ChooseParameter: paramsAll() }
+        },
+        Filler: {
+          FillerComponent: [
+            {
+              ChemicalName: 's',
+              Density: vu(),
+              SphericalParticleDiameter: [vu(), vu()],
+              SurfaceArea: { specific: vu(), total: vu() },
+              ParticleAspectRatio: vu(),
+              NonSphericalShape: { Width: vu() },
+              ParticleSurfaceTreatment: {
+                ChemicalName: 'c',
+                Density: vu(),
+                GraftDensity: vu(),
+                MolecularWeight: vu()
+              }
+            },
+            { ChemicalName: 't', Density: vu() }
+          ],
+          FillerProcessing: { ChooseParameter: [mixingAll()] }
+        }
+      },
+      PROCESSING: { MeltMixing: { ChooseParameter: paramsAll() } },
+      PROPERTIES: {
+        Thermal: {
+          GlassTransitionTemperature: { value: '1', Unit: Z },
+          Crystallinity: { DegreeOfCrystallization: vu() }
+        },
+        Mechanical: {
+          Tensile: {
+            TensileModulus: [vu(), vu()],
+            LoadingProfile: {
+              AxisLabel: { xName: 'a', yName: 'b', yUnit: Z }
+            }
+          }
+        }
+      },
+      MICROSTRUCTURE: {
+        LengthUnit: Z,
+        ImageFile: [
+          { Dimension: { width: '1', height: '2' } },
+          { Dimension: { width: '1' } }
+        ]
+      }
+    }
+  };
+}
+
+// Dotted paths below the PolymerNanocomposite root of every leaf equal to
+// text, with a 1-based [i] after the key of each array item.
+function leafPaths(xml, text) {
+  const paths = [];
+  const visit = (v, path) => {
+    if (Array.isArray(v)) {
+      v.forEach((item, i) => visit(item, `${path}[${i + 1}]`));
+    } else if (v && typeof v === 'object') {
+      Object.entries(v).forEach(([k, child]) =>
+        visit(child, path ? `${path}.${k}` : k)
+      );
+    } else if (v === text) {
+      paths.push(path);
+    }
+  };
+  visit(xml.PolymerNanocomposite, '');
+  return paths;
+}
+
+// The shared LengthUnit is written on each image dimension, so there are
+// more unit text nodes than issues.
+const TEXT_NODES = 53;
+
+function countUnitText(root, text) {
+  let n = 0;
+  const visit = (v) => {
+    if (Array.isArray(v)) return v.forEach(visit);
+    if (!v || typeof v !== 'object') return;
+    if (v['mm:hasUnitText'] === text) n++;
+    Object.values(v).forEach(visit);
+  };
+  visit(root);
+  return n;
+}
+
+describe('QUDT unit issues', function () {
+  afterEach(function () {
+    sinon.restore();
+  });
+
+  describe('XML route', function () {
+    it('returns one warning per failing unit, located by record and input path', async function () {
+      const { issues } = await transformXmlToNanopub(
+        failingXml(),
+        stubLogger()
+      );
+      expect(byPath(issues)).to.deep.equal(byPath(FAILING_XML_ISSUES()));
+    });
+
+    it('indexes a repeated element by its 1-based position in the path', async function () {
+      const { issues } = await transformXmlToNanopub(
+        chooseParameterXml(),
+        stubLogger()
+      );
+      expect(byPath(issues)).to.deep.equal(
+        byPath([
+          xmlIssue(
+            'zorkmid',
+            'UNIT_UNRESOLVED',
+            'PROCESSING.MeltMixing.ChooseParameter[2].Mixing.RPM.unit'
+          ),
+          xmlIssue(
+            'pa',
+            'UNIT_UNRESOLVED',
+            'PROCESSING.MeltMixing.ChooseParameter[4].Mixing.RPM.unit'
+          )
+        ])
+      );
+    });
+
+    it('gives one issue for a LengthUnit written on every image', async function () {
+      const { issues } = await transformXmlToNanopub(
+        microstructureXml('zorkmid'),
+        stubLogger()
+      );
+      expect(issues).to.deep.equal([
+        xmlIssue('zorkmid', 'UNIT_UNRESOLVED', 'MICROSTRUCTURE.LengthUnit')
+      ]);
+    });
+
+    it('returns and logs an issue only for celsius among linked and blank text', async function () {
+      const logger = stubLogger();
+      const result = await transformXmlToNanopub(cleanXml(), logger);
+      const expected = [
+        xmlIssue(
+          'celsius',
+          'UNIT_UNRESOLVED',
+          'PROCESSING.MeltMixing.ChooseParameter[1].Mixing.RPM.unit'
+        )
+      ];
+      expect(result.issues).to.deep.equal(expected);
+      expectOneWarningPerIssue(logger, expected, (i) => [i.record, i.path]);
+    });
+
+    it('logs one warning per issue naming its code, value, record and path', async function () {
+      const logger = stubLogger();
+      await transformXmlToNanopub(failingXml(), logger);
+      expectOneWarningPerIssue(logger, FAILING_XML_ISSUES(), (i) => [
+        i.record,
+        i.path
+      ]);
+    });
+
+    it('reports an issue at every unit field of a record whose units all fail', async function () {
+      const xml = everyUnitXml();
+      const { nanopub, issues } = await transformXmlToNanopub(
+        xml,
+        stubLogger()
+      );
+      expect(countUnitText(nanopub, Z)).to.equal(TEXT_NODES);
+      expect(issues.map((i) => i.path).sort()).to.deep.equal(
+        leafPaths(xml, Z).sort()
+      );
+      issues.forEach((i) => {
+        expect([i.code, i.record], i.path).to.deep.equal([
+          'UNIT_UNRESOLVED',
+          RECORD
+        ]);
+      });
+    });
+  });
+
+  /* ------------------------------ SDD route ------------------------------ */
+
+  describe('SDD route', function () {
+    const SDD_NAME = 'issues-sdd.xlsx';
+    const CSV_NAME = 'issues-data.csv';
+    const MAPPED_URI = 'http://ex/um2';
+    const CODE_MAPPINGS = new Map([['nm', { uri: MAPPED_URI, label: '' }]]);
+
+    function dictRow(column, unit) {
+      const row = {
+        column,
+        label: '',
+        comment: '',
+        definition: '',
+        attribute: 'sio:Quantity',
+        attributeOf: '',
+        unit,
+        format: '',
+        time: '',
+        entity: '',
+        role: '',
+        relation: '',
+        inRelationTo: '',
+        wasDerivedFrom: '',
+        wasGeneratedBy: '',
+        template: ''
+      };
+      return Object.values(row);
+    }
+
+    function buildSddXlsx(dictRows, codeMappingRows) {
+      const wb = XLSX.utils.book_new();
+      const dictHeader = [
+        'Column',
+        'Label',
+        'Comment',
+        'Definition',
+        'Attribute',
+        'attributeOf',
+        'Unit',
+        'Format',
+        'Time',
+        'Entity',
+        'Role',
+        'Relation',
+        'inRelationTo',
+        'wasDerivedFrom',
+        'wasGeneratedBy',
+        'Template'
+      ];
+      XLSX.utils.book_append_sheet(
+        wb,
+        XLSX.utils.aoa_to_sheet([dictHeader, ...dictRows]),
+        'Dictionary Mapping'
+      );
+      if (codeMappingRows) {
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.aoa_to_sheet([
+            ['Code', 'URI', 'Label'],
+            ...codeMappingRows
+          ]),
+          'Code Mappings'
+        );
+      }
+      return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    }
+
+    function distribution(objectNames) {
+      return {
+        'mm:hasDistribution': {
+          'dcat:distribution': objectNames.map((name) => ({
+            '@id': `http://localhost/api/files/${name}?isStore=true`,
+            'rdfs:label': name
+          }))
+        }
+      };
+    }
+
+    // Serve each object name from an in-memory store, a fresh stream per call.
+    function stubStore(contents) {
+      return sinon
+        .stub(minioClient, 'getObject')
+        .callsFake((bucket, name) => {
+          if (!(name in contents)) throw new Error(`unexpected object ${name}`);
+          return Readable.from([contents[name]]);
+        });
+    }
+
+    function skeleton() {
+      return {
+        id: 'http://materialsmine.org/np/issues-sdd',
+        distribution: distribution([SDD_NAME, CSV_NAME])
+      };
+    }
+
+    const sddIssue = (unit, code, column) =>
+      issueFrom(resolveUnit(unit, CODE_MAPPINGS), code, { column });
+
+    // Dictionary rows with failing, mapped, linked and blank units.
+    // Absent has no CSV column; ??Calc is inferred on every row.
+    function serveFailingSdd() {
+      stubStore({
+        [SDD_NAME]: buildSddXlsx(
+          [
+            dictRow('Temp', 'zorkmid'),
+            dictRow('Pres', 'pa'),
+            dictRow('Clean', 'celsius'),
+            dictRow('Len', 'nm'),
+            dictRow('Blank', ''),
+            dictRow('Mag', 'unit:Gs'),
+            dictRow('NA', 'N/A'),
+            dictRow('??Calc', 'zorkmid'),
+            dictRow('Absent', 'zorkmid')
+          ],
+          [['nm', MAPPED_URI, 'mapped nm']]
+        ),
+        [CSV_NAME]:
+          'Temp,Pres,Clean,Len,Blank,Mag,NA\n' +
+          '1,2,3,4,5,6,7\n' +
+          '8,9,10,11,12,13,14\n' +
+          '15,16,17,18,19,20,21\n'
+      });
+    }
+
+    const FAILING_SDD_ISSUES = () => [
+      sddIssue('zorkmid', 'UNIT_UNRESOLVED', 'Temp'),
+      sddIssue('pa', 'UNIT_UNRESOLVED', 'Pres'),
+      sddIssue('celsius', 'UNIT_UNRESOLVED', 'Clean'),
+      // A mapped unit's value is its Code Mappings address.
+      { ...sddIssue('nm', 'UNIT_NOT_QUDT', 'Len'), value: MAPPED_URI },
+      sddIssue('unit:Gs', 'UNIT_DEPRECATED', 'Mag'),
+      sddIssue('zorkmid', 'UNIT_UNRESOLVED', '??Calc'),
+      sddIssue('zorkmid', 'UNIT_UNRESOLVED', 'Absent')
+    ];
+
+    it('returns one warning per failing dictionary row, in dictionary order, located by its column', async function () {
+      serveFailingSdd();
+      const { issues } = await transformSddToNanopub(
+        skeleton(),
+        stubLogger()
+      );
+      expect(issues).to.deep.equal(FAILING_SDD_ISSUES());
+    });
+
+    it('returns and logs an issue only for celsius among linked and blank text', async function () {
+      stubStore({
+        [SDD_NAME]: buildSddXlsx([
+          dictRow('Temp', 'celsius'),
+          dictRow('Blank', ''),
+          dictRow('NA', 'N/A')
+        ]),
+        [CSV_NAME]: 'Temp,Blank,NA\n1,2,3\n'
+      });
+      const logger = stubLogger();
+      const result = await transformSddToNanopub(skeleton(), logger);
+      const expected = [sddIssue('celsius', 'UNIT_UNRESOLVED', 'Temp')];
+      expect(result.issues).to.deep.equal(expected);
+      expectOneWarningPerIssue(logger, expected, (i) => [i.column]);
+    });
+
+    it('logs one warning per issue naming its code, value and column', async function () {
+      serveFailingSdd();
+      const logger = stubLogger();
+      await transformSddToNanopub(skeleton(), logger);
+      expectOneWarningPerIssue(logger, FAILING_SDD_ISSUES(), (i) => [
+        i.column
+      ]);
+    });
+  });
+});

@@ -1,0 +1,14 @@
+{
+  "tieBreaks": {
+    "F": "FARAD",
+    "K": "K",
+    "L": "L",
+    "S": "S",
+    "d": "DAY",
+    "mrad": "MilliRAD",
+    "pH": "PH",
+    "rad": "RAD",
+    "s-1": "PER-SEC",
+    "t": "TONNE"
+  }
+}

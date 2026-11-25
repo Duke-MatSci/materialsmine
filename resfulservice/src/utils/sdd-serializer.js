@@ -4,9 +4,9 @@ const XLSX = require('xlsx');
 const csv = require('csv-parser');
 const minioClient = require('./minio');
 const FileManager = require('./fileManager');
+const { lookupUnit, lookupAddress, writeUnit } = require('./unit-lookup');
 const {
   MinioBucket,
-  UNIT_IRI,
   FILE_FORMATS: FILE_FORMATS_ARR,
   SupportedFileResponseHeaders,
   SDD_SHEET_NAMES,
@@ -15,6 +15,14 @@ const {
   SDD_MATCH_THRESHOLD
 } = require('../../config/constant');
 const bucketName = process.env?.MINIO_BUCKET ?? MinioBucket;
+
+/*
+ * SIO links are written under their numbered IRIs:
+ *   sio:SIO_000008  has attribute
+ *   sio:SIO_000300  has value
+ *   sio:SIO_000011  is attribute of
+ *   sio:SIO_000221  has unit (written by writeUnit, unit-lookup.js)
+ */
 
 /**
  * Fetch a distribution file stream using internal services (MinIO or local file store).
@@ -69,9 +77,6 @@ function streamToBuffer(stream) {
     stream.on('error', reject);
   });
 }
-
-/* ────────────────────────── Unit Map ────────────────────────── */
-const unitMap = UNIT_IRI;
 
 /* ────────────────── File reference handling ────────────────── */
 
@@ -404,17 +409,27 @@ function parseCodeMappingsSheet(workbook) {
 }
 
 /**
- * Resolve a shorthand code to a URI using code mappings, then the hardcoded unitMap.
- * @param {string} code - The shorthand string (e.g., 'nm', 'mg/ml')
+ * Resolve a unit code: a Code Mappings row for it wins, and its address is
+ * judged by the QUDT address rules alone; otherwise the QUDT unit lookup.
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/mL')
+ * @param {Map} codeMappings - Parsed code mappings from the SDD
+ * @returns {Object} { iri }, { iri, issue }, { issue }, or {}
+ */
+function resolveUnit (code, codeMappings) {
+  if (!code) return {};
+  const mapped = codeMappings.get(code.trim().toLowerCase());
+  if (mapped) return lookupAddress(mapped.uri);
+  return lookupUnit(code);
+}
+
+/**
+ * Resolve a shorthand code to a QUDT unit IRI through resolveUnit.
+ * @param {string} code - The shorthand string (e.g., 'nm', 'mg/mL')
  * @param {Map} codeMappings - Parsed code mappings from the SDD
  * @returns {string|undefined} The resolved URI, or undefined
  */
 function resolveCodeMapping(code, codeMappings) {
-  if (!code) return undefined;
-  const key = code.trim().toLowerCase();
-  const mapped = codeMappings.get(key);
-  if (mapped) return mapped.uri;
-  return unitMap[key] || unitMap[code] || undefined;
+  return resolveUnit(code, codeMappings).iri;
 }
 
 /**
@@ -467,13 +482,10 @@ function applyDictPredicates(node, d, sampleId, codeMappings) {
     node[predicate] = getInferredValues(sampleId, d.inRelationTo);
   }
   if (d.attributeOf) {
-    node['sio:isAttributeOf'] = getInferredValues(sampleId, d.attributeOf);
+    node['sio:SIO_000011'] = getInferredValues(sampleId, d.attributeOf);
   }
   if (d.unit) {
-    const unitUri = resolveCodeMapping(d.unit, codeMappings);
-    node['sio:hasUnit'] = [
-      { ...(unitUri ? { '@type': unitUri } : {}), '@value': d.unit }
-    ];
+    writeUnit(node, d.unit, resolveCodeMapping(d.unit, codeMappings));
   }
   if (d.comment) node['rdfs:comment'] = d.comment;
   if (d.definition) node['skos:definition'] = d.definition;
@@ -556,10 +568,10 @@ function generateAttributes(
             node['@type'] = fileNodes[0]['@type'];
             node['schema:contentUrl'] = fileNodes[0]['schema:contentUrl'];
           } else {
-            node['sio:hasAttribute'] = fileNodes;
+            node['sio:SIO_000008'] = fileNodes;
           }
         } else {
-          node['sio:hasValue'] = isNaN(Number(value))
+          node['sio:SIO_000300'] = isNaN(Number(value))
             ? String(value)
             : { '@value': Number(value), '@type': 'xsd:double' };
         }
@@ -584,7 +596,7 @@ function generateAttributes(
       for (const [parentKey, children] of childrenOf) {
         const parent = nodeMap.get(parentKey);
         if (parent) {
-          parent['sio:hasAttribute'] = children;
+          parent['sio:SIO_000008'] = children;
         } else {
           rootNodes.push(...children);
         }
@@ -596,7 +608,7 @@ function generateAttributes(
       samples.push({
         '@id': sampleId,
         '@type': 'sio:SIO_001050',
-        'sio:hasAttribute': allNodes
+        'sio:SIO_000008': allNodes
       });
     }
   });
@@ -607,7 +619,7 @@ function generateAttributes(
 /* ────────────────── Main: buildSddAttributes ────────────────── */
 
 /**
- * Build the sio:hasAttribute array for an SDD nanopub assertion.
+ * Build the sample nodes for an SDD nanopub assertion.
  *
  * 1. Classifies distribution files into SDD (xlsx) and CSV(s)
  * 2. Fetches & parses the XLSX Dictionary Mapping sheet
@@ -617,7 +629,8 @@ function generateAttributes(
  * @param {Object} distributionLd - The distribution LD from nanopubSkeleton
  * @param {string} npId - The nanopub ID (e.g. http://materialsmine.org/np/xxx)
  * @param {Object} logger - Logger instance
- * @returns {Promise<Object[]>} Array of sample assertion nodes with sio:hasAttribute
+ * @returns {Promise<Object[]>} Sample assertion nodes, each with its attributes
+ *   under sio:SIO_000008 (has attribute)
  */
 async function buildSddAttributes(distributionLd, npId, logger) {
   const { sddFile, csvFiles } = classifyDistributionFiles(distributionLd);
@@ -758,6 +771,7 @@ module.exports = {
   parseCodeMappingsSheet,
   parsePrefixesSheet,
   resolveCodeMapping,
+  resolveUnit,
   generateAttributes,
   generateAttributeId,
   getInferredValues,

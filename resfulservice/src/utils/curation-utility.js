@@ -13,7 +13,7 @@ const { jsonSchema2xsd } = require('xsdlibrary');
 const csv = require('csv-parser');
 const { spawn } = require('child_process');
 const { deleteFile, deleteFolder } = require('../utils/fileManager');
-const { UNIT_IRI } = require('../../config/constant');
+const { lookupUnit } = require('./unit-lookup');
 
 exports.xlsxFileReader = async (path, sheetName) => {
   try {
@@ -359,8 +359,7 @@ function pick(obj, path, fallback = undefined) {
 const toArray = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const asDecimal = (v) =>
   v == null || v === '' ? undefined : Number.isFinite(+v) ? +v : undefined;
-const mapUnit = (u) =>
-  u ? UNIT_IRI[String(u).trim().toLowerCase()] || null : null;
+const mapUnit = (u) => lookupUnit(u).iri || null;
 
 /* ------------------------ Value helpers ------------------------ */
 const litStr = (v) =>
@@ -373,6 +372,8 @@ const litNum = (v) => {
 };
 
 /* ---------- helper: dataset/table helper ---------- */
+// Rows link their cells by sio:SIO_000008 (has attribute) and each cell
+// its value by sio:SIO_000300 (has value).
 function buildSioDatasetFromTable(table, datasetId, desc = null) {
   if (!table) return null;
 
@@ -447,14 +448,14 @@ function buildSioDatasetFromTable(table, datasetId, desc = null) {
       attrs.push({
         '@type': 'sio:attribute',
         'rdfs:label': label,
-        'sio:hasValue': vLit
+        'sio:SIO_000300': vLit
       });
     });
 
     if (attrs.length) {
       parts.push({
         '@type': 'sio:row',
-        'sio:hasAttribute': attrs
+        'sio:SIO_000008': attrs
       });
     }
   });
@@ -596,122 +597,12 @@ async function validateXmlAgainstXsd(TMP_DIRECTORY, xmlString, xsdUrl) {
 //   };
 // }
 
-// function prepareForValidation(doc) {
-//   // Accept either stringified JSON-LD or object
-//   const clone =
-//     typeof doc === 'string' ? JSON.parse(doc) : JSON.parse(JSON.stringify(doc));
-
-//   // Helper: ensure explicit @value/@type
-//   const ensureTypedValue = (val) => {
-//     if (val == null) return null;
-//     if (typeof val === 'object' && '@value' in val) return val;
-//     if (typeof val === 'number')
-//       return { '@value': val, '@type': 'xsd:double' };
-//     const n = Number(val);
-//     if (Number.isFinite(n) && String(val).trim() !== '') {
-//       return { '@value': n, '@type': 'xsd:double' };
-//     }
-//     return { '@value': String(val), '@type': 'xsd:string' };
-//   };
-
-//   // Helper: normalize unit to IRI (unit:*) when possible
-//   const toUnitIri = (u) => {
-//     if (!u) return null;
-//     // already curie or absolute IRI
-//     if (
-//       typeof u === 'string' &&
-//       (u.startsWith('unit:') || /^https?:\/\//i.test(u))
-//     ) {
-//       return u;
-//     }
-//     return UNIT_IRI[String(u).trim()] || null;
-//   };
-
-//   // Walk all graphs/nodes
-//   for (const g of clone['@graph'] ?? []) {
-//     for (const n of g['@graph'] ?? []) {
-//       // 1) Legacy 'hasUnit' → normalize to 'sio:hasUnit'
-//       if (n.hasUnit) {
-//         const unitIri = toUnitIri(n.hasUnit);
-//         if (unitIri) n['sio:hasUnit'] = unitIri;
-//         else n['sio:hasUnit'] = String(n.hasUnit);
-//         delete n.hasUnit;
-//       }
-
-//       // 2) If 'sio:hasUnit' is a raw literal we can map, map it
-//       if (n['sio:hasUnit'] && typeof n['sio:hasUnit'] === 'string') {
-//         const mapped = toUnitIri(n['sio:hasUnit']);
-//         if (mapped) n['sio:hasUnit'] = mapped;
-//       }
-
-//       // 3) Legacy 'hasValue' → normalize to 'sio:hasValue' with explicit typing
-//       if (n.hasValue != null) {
-//         n['sio:hasValue'] = ensureTypedValue(n.hasValue);
-//         delete n.hasValue;
-//       } else if (n['sio:hasValue'] != null) {
-//         // Ensure explicit typing even when already present but primitive
-//         if (
-//           typeof n['sio:hasValue'] !== 'object' ||
-//           !('@value' in n['sio:hasValue'])
-//         ) {
-//           n['sio:hasValue'] = ensureTypedValue(n['sio:hasValue']);
-//         }
-//       }
-
-//       // 4) Clean up non-shape fields if needed
-//       // (Kept from your original; safe to keep)
-//       delete n.countsByYear;
-
-//       // 5) Normalize schema:publication → journal node if still present
-//       if (n['schema:publication'] && !n.journal) {
-//         const j = n['schema:publication'];
-//         n.journal = {
-//           id: `mm:journal/${String(j).toLowerCase().replace(/\W+/g, '-')}`,
-//           type: 'schema:Periodical',
-//           'schema:name': j
-//         };
-//         delete n['schema:publication'];
-//       }
-
-//       // 6) If any primaryLocation id starts with doi:, normalize
-//       if (n.primaryLocation?.id?.startsWith?.('doi:')) {
-//         const doi = n.primaryLocation.id.replace(/^doi:/, '');
-//         n.primaryLocation.id = `https://doi.org/${doi}`;
-//       }
-//     }
-//   }
-
-//   return clone;
-// }
 function prepareForValidation(doc) {
   const clone =
     typeof doc === 'string' ? JSON.parse(doc) : structuredClone(doc);
 
-  const UNIT_MAP = { nm: 'unit:NanoM', Hz: 'unit:HZ' /* extend as needed */ };
-
-  // helper: recursively normalize unit strings to IRIs for both hasUnit and sio:hasUnit
-  const normalizeUnitsDeep = (node) => {
-    if (!node || typeof node !== 'object') return;
-    // normalize legacy keys
-    if (typeof node.hasUnit === 'string') {
-      node.hasUnit = UNIT_MAP[node.hasUnit] || node.hasUnit;
-    }
-    if (typeof node['sio:hasUnit'] === 'string') {
-      node['sio:hasUnit'] =
-        UNIT_MAP[node['sio:hasUnit']] || node['sio:hasUnit'];
-    }
-    // recurse
-    for (const k of Object.keys(node)) {
-      const v = node[k];
-      if (Array.isArray(v)) v.forEach(normalizeUnitsDeep);
-      else if (v && typeof v === 'object') normalizeUnitsDeep(v);
-    }
-  };
-
   for (const g of clone['@graph'] ?? []) {
     for (const n of g['@graph'] ?? []) {
-      normalizeUnitsDeep(n);
-
       // ScholarlyArticle adjustments (unchanged)
       if (
         n['@type'] === 'schema:ScholarlyArticle' &&

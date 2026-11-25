@@ -149,6 +149,85 @@ Below are the API endpoints to initialize Tri-VE and Chemprops via Swagger:
 - **GET /mn/chemprops/init**: Initialize the Chemprops service.
 - **POST /mn/chemprops**: Calls the nmChemPropsAPI with provided parameters.
 
+### Ontology API Endpoints
+
+These are admin routes that keep a Fuseki knowledge graph in step with what
+the curation routes write. Curation links each unit to a QUDT unit IRI and
+stores its SIO links under numbered IRIs, such as `sio:SIO_000221` for "has
+unit". Queries written for that shape, such as the parameterized query PQ01,
+need both. They show each unit's QUDT symbol, which Fuseki holds only once
+the QUDT unit vocabulary is loaded. They also match only the numbered links,
+so they miss nanopubs published before those writers until the stored links
+are migrated. Nothing in the app calls these routes. An admin runs each once
+per Fuseki after deploying, and loads the units again after the pinned QUDT
+release is bumped.
+
+Called directly on the managed service (`http://localhost:5050`), not through
+`/api/mn`. Each route needs `Authorization: Bearer <token>`, an HS256 JWT signed with
+the managed service's `SECRET_KEY` and carrying a `reqId` claim; without one it
+answers 401.
+
+- **POST /ontology/units/**: Loads the bundled QUDT unit vocabulary
+  (`app/ontology/data/qudt-units-v3.5.3.ttl`, checked against its pinned
+  SHA-256, with `$$QUDT_VERSION$$` filled in as `3.5.3`) into Fuseki as the
+  named graph `http://qudt.org/3.5.3/vocab/unit`, replacing that graph. It then
+  drops every other versioned unit graph (`http://qudt.org/<version>/vocab/unit`);
+  the unversioned graph and other QUDT vocabularies are left alone. The request
+  body is ignored.
+  - **200**: `{graph, version, triples, fuseki: {ok, status, error}, dropped}`,
+    where `dropped` lists the graphs removed. If listing or dropping graphs
+    fails, the load still stands and `drop_errors` lists the failures.
+  - **500**: `{message}`: the bundled file is missing or fails its checksum.
+    Nothing is sent to Fuseki.
+  - **502**: `{message, fuseki}`: Fuseki rejected the load or could not be
+    reached. No graphs are dropped.
+
+  To load the units without a token, run the same code inside the running
+  container. It prints the body and status the route would return:
+
+  ```bash
+  docker exec managedservices python -c "from app.ontology.helpers.qudt_units import load_units; print(load_units())"
+  ```
+
+- **POST /ontology/migrate-sio/**: Rewrites the named SIO predicates stored
+  in Fuseki to the numbered SIO IRIs the curation writers emit. Run it once
+  per KG, after deploying those writers, to bring nanopubs published before
+  then into the same form. In every named graph whose IRI starts with
+  `http://materialsmine.org/np/` (the nanopub graphs the curation routes
+  write), each triple whose predicate
+  is one of the four below gets the numbered predicate, with the same
+  subject, object and graph:
+
+  | named (`sio:`)  | numbered (`sio:`) |
+  |-----------------|-------------------|
+  | `hasAttribute`  | `SIO_000008`      |
+  | `hasValue`      | `SIO_000300`      |
+  | `hasUnit`       | `SIO_000221`      |
+  | `isAttributeOf` | `SIO_000011`      |
+
+  Only predicate position in nanopub graphs is touched: every other named
+  graph, triples stored in the default graph itself, every other predicate,
+  and these IRIs as subject or object are left alone.
+  The rewrite is one SPARQL Update, so it applies whole or not at all, and it
+  is sent only when something needs migrating. Running it again finds nothing
+  and changes nothing. The request body is ignored.
+  - **200**: `{migrated, remaining, skipped}`, each keyed by local name
+    (`hasAttribute`, `hasValue`, `hasUnit`, `isAttributeOf`): the triples
+    in nanopub graphs found before the rewrite and those left after it, all
+    0 after a successful run, and the triples in other named graphs found
+    before the rewrite and left alone. If the count after the rewrite fails,
+    the rewrite still stands: `remaining` is `null` and `count_error` says
+    why.
+  - **502**: `{message, fuseki}`: Fuseki refused or did not answer the count
+    before the rewrite (then no update is sent), or refused the update.
+
+  To migrate without a token, run the same code inside the running container.
+  It prints the body and status the route would return:
+
+  ```bash
+  docker exec managedservices python -c "from app.ontology.helpers.sio_migration import migrate_sio_predicates; print(migrate_sio_predicates())"
+  ```
+
 ## Onboarding Your Own Python Application
 
 Follow the detailed steps below to onboard a new application into managed
